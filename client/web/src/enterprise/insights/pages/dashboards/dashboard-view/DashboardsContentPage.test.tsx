@@ -9,7 +9,7 @@ import sinon from 'sinon'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
     GetDashboardAccessibleInsightsResult,

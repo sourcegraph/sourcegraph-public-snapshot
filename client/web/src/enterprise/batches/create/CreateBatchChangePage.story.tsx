@@ -1,10 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
@@ -64,20 +61,24 @@ export const ExperimentalExecutionDisabled: Story = () => (
 
 ExperimentalExecutionDisabled.storyName = 'Experimental execution disabled'
 
-const FIXTURE_ORG: SettingsOrgSubject = {
+const FIXTURE_ORG: OrgSettingFields = {
     __typename: 'Org',
     name: 'sourcegraph',
     displayName: 'Sourcegraph',
     id: 'a',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
-const FIXTURE_USER: SettingsUserSubject = {
+const FIXTURE_USER: UserSettingFields = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
 export const ExperimentalExecutionEnabled: Story = () => (

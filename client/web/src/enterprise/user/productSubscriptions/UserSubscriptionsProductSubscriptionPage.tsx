@@ -13,7 +13,11 @@ import { LoadingSpinner, useObservable, Link, H2, ErrorAlert } from '@sourcegrap
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { ProductSubscriptionFieldsOnSubscriptionPage, UserAreaUserFields } from '../../../graphql-operations'
+import {
+    ProductSubscriptionFieldsOnSubscriptionPage,
+    ProductSubscriptionResult,
+    UserAreaUserFields,
+} from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -98,7 +102,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
 }
 
 function queryProductSubscription(uuid: string): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
-    return queryGraphQL(
+    return queryGraphQL<ProductSubscriptionResult>(
         gql`
             query ProductSubscription($uuid: String!) {
                 dotcom {

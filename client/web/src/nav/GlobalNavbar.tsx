@@ -5,19 +5,18 @@ import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
-import { SearchContextInputProps } from '@sourcegraph/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { buildGetStartedURL, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -35,7 +34,7 @@ import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -155,10 +154,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
-    const showSearchContext =
-        useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled
+    const showSearchNotebook = notebooksEnabled
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -247,13 +245,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {enableLegacyExtensions && (
-                        <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
-                                Extensions
-                            </NavLink>
-                        </NavItem>
-                    )}
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (
@@ -299,7 +290,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
                             className={styles.signUp}
-                            to="https://signup.sourcegraph.com"
+                            to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                         >
@@ -345,7 +336,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Button>
                                     <ButtonLink
                                         className={styles.signUp}
-                                        to={buildGetStartedURL(isSourcegraphDotCom)}
+                                        to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >

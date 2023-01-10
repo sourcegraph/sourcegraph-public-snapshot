@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Tooltip } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'

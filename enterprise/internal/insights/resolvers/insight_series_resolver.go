@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/inconshreveable/log15"
@@ -20,7 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -68,7 +67,12 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
 			}
 			inc, exc := plan.ToQ().Repositories()
-			include = append(include, inc...)
+			for _, repoFilter := range inc {
+				if len(repoFilter.Revs) > 0 {
+					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
+				}
+				include = append(include, repoFilter.Repo)
+			}
 			exclude = append(exclude, exc...)
 		}
 	}
@@ -77,13 +81,28 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
-type insightsDataPointResolver struct{ p store.SeriesPoint }
+type insightsDataPointResolver struct {
+	p        store.SeriesPoint
+	diffInfo *querybuilder.PointDiffQueryOpts
+}
 
 func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: i.p.Time}
 }
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
+
+func (i insightsDataPointResolver) DiffQuery() (*string, error) {
+	if i.diffInfo == nil {
+		return nil, nil
+	}
+	query, err := querybuilder.PointDiffQuery(*i.diffInfo)
+	if err != nil {
+		return nil, err
+	}
+	q := query.String()
+	return &q, nil
+}
 
 type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
@@ -208,10 +227,58 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
+	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
+	scLoader := &scLoader{primary: db}
 	modifiedPoints := removeClosePoints(p.points, p.series)
-	for _, point := range modifiedPoints {
-		resolvers = append(resolvers, insightsDataPointResolver{point})
+	filterRepoIncludes := []string{}
+	filterRepoExcludes := []string{}
+
+	if !isNilOrEmpty(p.filters.IncludeRepoRegex) {
+		filterRepoIncludes = append(filterRepoIncludes, *p.filters.IncludeRepoRegex)
 	}
+	if !isNilOrEmpty(p.filters.ExcludeRepoRegex) {
+		filterRepoExcludes = append(filterRepoExcludes, *p.filters.ExcludeRepoRegex)
+	}
+
+	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
+	includeRepos, excludeRepos, _ := unwrapSearchContexts(ctx, scLoader, p.filters.SearchContexts)
+	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
+	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
+
+	// Replacing capture group values if present
+	// Ignoring errors so it falls back to the entered query
+	query := p.series.Query
+	if p.series.GeneratedFromCaptureGroups && len(modifiedPoints) > 0 {
+		replacer, _ := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(query), searchquery.SearchTypeRegex)
+		if replacer != nil {
+			replaced, err := replacer.Replace(*modifiedPoints[0].Capture)
+			if err == nil {
+				query = replaced.String()
+			}
+		}
+	}
+
+	for i := 0; i < len(modifiedPoints); i++ {
+		var after *time.Time
+		if i > 0 {
+			after = &modifiedPoints[i-1].Time
+		}
+
+		pointResolver := insightsDataPointResolver{
+			p: modifiedPoints[i],
+			diffInfo: &querybuilder.PointDiffQueryOpts{
+				After:              after,
+				Before:             modifiedPoints[i].Time,
+				FilterRepoIncludes: filterRepoIncludes,
+				FilterRepoExcludes: filterRepoExcludes,
+				RepoList:           p.series.Repositories,
+				RepoSearch:         p.series.RepositoryCriteria,
+				SearchQuery:        querybuilder.BasicQuery(query),
+			},
+		}
+		resolvers = append(resolvers, pointResolver)
+	}
+
 	return resolvers, nil
 }
 
@@ -465,58 +532,6 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	return resolvers, nil
 }
 
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
-}
-
-func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "StreamingQueryExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
-}
-
 var _ graphqlbackend.TimeoutDatapointAlert = &timeoutDatapointAlertResolver{}
 var _ graphqlbackend.GenericIncompleteDatapointAlert = &genericIncompleteDatapointAlertResolver{}
 var _ graphqlbackend.IncompleteDatapointAlert = &IncompleteDataPointAlertResolver{}
@@ -574,4 +589,10 @@ func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resol
 	}
 
 	return resolvers, err
+}
+func isNilOrEmpty(s *string) bool {
+	if s == nil {
+		return true
+	}
+	return *s == ""
 }

@@ -31,6 +31,8 @@ export interface InsightCreateEvent {
 }
 
 export interface SearchInsightCreationPageProps extends TelemetryProps {
+    backUrl: string
+
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -51,7 +53,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
 }
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -95,7 +97,7 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
 
     return (
         <CodeInsightsPage className={styles.creationPage}>
-            <PageTitle title="Create insight - Code Insights" />
+            <PageTitle title="Create track changes insight - Code Insights" />
 
             {loading && (
                 // loading state for 1 click creation insight values resolve operation
@@ -112,7 +114,11 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
                     <>
                         <PageHeader
                             className="mb-5"
-                            path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
+                            path={[
+                                { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                                { text: 'Create', to: backUrl },
+                                { text: 'Track changes insight' },
+                            ]}
                             description={
                                 <span className="text-muted">
                                     Search-based code insights analyze your code based on any search query.{' '}

@@ -86,6 +86,7 @@ type InsightViewDebugArgs struct {
 type InsightsDataPointResolver interface {
 	DateTime() gqlutil.DateTime
 	Value() float64
+	DiffQuery() (*string, error)
 }
 
 type InsightViewDebugResolver interface {
@@ -120,12 +121,6 @@ type InsightResolver interface {
 	Description() string
 	Series() []InsightSeriesResolver
 	ID() string
-}
-
-type InsightConnectionResolver interface {
-	Nodes(ctx context.Context) ([]InsightResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type InsightsDashboardsArgs struct {
@@ -188,6 +183,7 @@ type DeleteInsightsDashboardArgs struct {
 
 type InsightViewConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightViewResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 

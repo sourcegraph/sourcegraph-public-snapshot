@@ -1,9 +1,9 @@
 import * as React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
 import { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'

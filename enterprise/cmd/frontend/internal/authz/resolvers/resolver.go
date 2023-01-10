@@ -238,11 +238,12 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	db, err := r.db.Transact(ctx)
+	ossDB, err := r.db.Transact(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
 	}
-	defer func() { err = db.Done(err) }()
+	defer func() { err = ossDB.Done(err) }()
+	db := edb.NewEnterpriseDB(ossDB)
 
 	// Make sure the repo ID is valid.
 	if _, err = db.Repos().Get(ctx, repoID); err != nil {

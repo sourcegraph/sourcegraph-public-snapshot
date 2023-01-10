@@ -4,7 +4,7 @@ import { act, fireEvent, screen } from '@testing-library/react'
 import { Route } from 'react-router'
 import { spy, assert } from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { useScrollManager } from './useScrollManager'
 

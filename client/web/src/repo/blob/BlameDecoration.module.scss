@@ -1,27 +1,68 @@
 :root {
-    --blame-decoration-width: 240px;
+    --blame-decoration-width: 300px;
+    --blame-recency-width: 5px;
+}
+
+.blame {
+    display: flex;
+    height: 100%;
+    user-select: none;
+}
+
+.recency {
+    // We need to overlap the border-top
+    top: -1px;
+    position: relative;
+    // Using 1px for a hairline border
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    height: calc(1.5rem + 1px);
+    flex: 0 0 var(--blame-recency-width);
+}
+
+.recency-first-in-hunk {
+    height: calc(1.5rem) !important;
+    top: 0 !important;
 }
 
 .popover {
     &-trigger {
         overflow: hidden;
         text-overflow: ellipsis;
-        display: block;
-        height: 1rem;
+        display: inline-block;
+        width: calc(100% - var(--blame-recency-width));
+        max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
+        height: 1.5rem;
 
         color: var(--body-color);
         &:hover {
             color: var(--body-color);
         }
 
-        .content {
+        .avatar {
+            min-width: 1rem;
+            width: 1rem;
+            min-height: 1rem;
+            height: 1rem;
+            font-size: 0.5rem;
+        }
+
+        .author {
+            margin: 0 0.5rem;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .content,
+        .author,
+        .date {
             white-space: pre;
             color: var(--text-muted);
             font-family: var(--font-family-base);
+        }
 
-            &::before {
-                content: attr(data-contents);
-            }
+        .date {
+            min-width: 80px;
+            display: inline-block;
         }
     }
 

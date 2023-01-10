@@ -33,13 +33,25 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 			conf: mockSiteConf{
 				EmailTemplates: &schema.EmailTemplates{
 					SetPassword: &schema.EmailTemplate{
+						Subject: "",
+						Text:    "",
+						Html:    "<body>hello world from {{.Host}}</body>",
+					},
+				},
+			},
+			want: autogold.Want("incomplete template", []string{"`email.templates.setPassword` is invalid: fields 'subject' and 'html' are required"}),
+		},
+		{
+			conf: mockSiteConf{
+				EmailTemplates: &schema.EmailTemplates{
+					SetPassword: &schema.EmailTemplate{
 						Subject: "Set up your Sourcegraph Cloud account for {{.Host}}!",
 						Text:    "",
 						Html:    "<body>hello world from {{.Host}}</body>",
 					},
 				},
 			},
-			want: autogold.Want("incomplete template", []string{"`email.templates.setPassword` is invalid: fields 'subject', 'text', and 'html' are all required"}),
+			want: autogold.Want("text field is autofilled", []string{}),
 		},
 		{
 			conf: mockSiteConf{

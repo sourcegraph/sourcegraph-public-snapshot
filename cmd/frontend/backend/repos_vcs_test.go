@@ -195,7 +195,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	var calledVCSRepoGetCommit bool
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions, authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
+	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	})

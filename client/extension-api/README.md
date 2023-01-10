@@ -5,5 +5,3 @@
 [![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/packages/extension-api)
 
 This package contains only the types for the [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) ([`sourcegraph.d.ts`](https://github.com/sourcegraph/sourcegraph/blob/main/packages/extension-api/src/sourcegraph.d.ts)).
-
-See [Sourcegraph extensions documentation](https://docs.sourcegraph.com/extensions) for more information.

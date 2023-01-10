@@ -44,7 +44,7 @@ func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Cli
 	}
 }
 
-func (h *BitbucketServerWebhook) Register(router *fewebhooks.WebhookRouter) {
+func (h *BitbucketServerWebhook) Register(router *fewebhooks.Router) {
 	router.Register(
 		h.handleEvent,
 		extsvc.KindBitbucketServer,

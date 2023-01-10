@@ -240,7 +240,7 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}

@@ -59,7 +59,7 @@ export const DefaultStory: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}

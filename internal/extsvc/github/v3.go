@@ -694,6 +694,14 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	}
 	repos := make([]*Repository, 0, len(restRepos))
 	for _, restRepo := range restRepos {
+		// Sometimes GitHub API returns null JSON objects and JSON decoder unmarshalls
+		// them as a zero-valued `restRepository` objects.
+		//
+		// See https://github.com/sourcegraph/customer/issues/1688 for details.
+		if restRepo.ID == "" {
+			c.log.Warn("GitHub returned a repository without an ID", log.String("restRepository", fmt.Sprintf("%#v", restRepo)))
+			continue
+		}
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, respState.hasNextPage(), nil

@@ -55,7 +55,7 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
 
             <PageHeader
                 className="mb-3"
-                path={[{ icon: CodeInsightsIcon }, { text: 'Edit insight' }]}
+                path={[{ icon: CodeInsightsIcon, to: '/insights' }, { text: 'Edit insight' }]}
                 description={
                     <Text className="text-muted">
                         Insights analyze your code based on any search query.{' '}

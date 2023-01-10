@@ -50,7 +50,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 first: args.first ?? null,
                 account: props.user.id,
             }
-            return queryGraphQL(
+            return queryGraphQL<ProductSubscriptionsResult>(
                 gql`
                     query ProductSubscriptions($first: Int, $account: ID) {
                         dotcom {

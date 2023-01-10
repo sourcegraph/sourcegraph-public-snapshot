@@ -1,7 +1,7 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 
-import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
+import { merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -13,14 +13,11 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { FileDecoration } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 
-import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
@@ -41,7 +38,6 @@ import {
 
 export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     entryInfo: TreeEntryInfo
-    fileDecorations?: FileDecoration[]
     onHover: (filePath: string) => void
     repoID: Scalars['ID']
     enableMergedFileSymbolSidebar: boolean
@@ -50,8 +46,6 @@ export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
 const LOADING = 'loading' as const
 interface TreeLayerState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
-
-    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
@@ -70,9 +64,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             url: this.props.entryInfo ? this.props.entryInfo.url : '',
         }
 
-        this.state = {
-            fileDecorationsByPath: {},
-        }
+        this.state = {}
     }
 
     public componentDidMount(): void {
@@ -101,31 +93,10 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.subscriptions.add(
             treeOrErrors.subscribe(
                 treeOrError => {
-                    // clear file decorations before latest file decorations come
-                    this.setState({ treeOrError, fileDecorationsByPath: {} })
+                    this.setState({ treeOrError })
                 },
                 error => logger.error(error)
             )
-        )
-
-        this.subscriptions.add(
-            treeOrErrors
-                .pipe(
-                    switchMap(treeOrError =>
-                        treeOrError !== 'loading' && !isErrorLike(treeOrError)
-                            ? getFileDecorations({
-                                  files: treeOrError.entries,
-                                  repoName: this.props.repoName,
-                                  commitID: this.props.commitID,
-                                  extensionsController: this.props.extensionsController,
-                                  parentNodeUri: treeOrError.url,
-                              })
-                            : EMPTY
-                    )
-                )
-                .subscribe(fileDecorationsByPath => {
-                    this.setState({ fileDecorationsByPath })
-                })
         )
 
         // If the layer is already expanded, fetch contents.
@@ -276,11 +247,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         {entryInfo.isDirectory ? (
                             <>
                                 <Directory
-                                    fileDecorations={this.props.fileDecorations}
                                     entryInfo={this.props.entryInfo}
                                     depth={this.props.depth}
                                     index={this.props.index}
-                                    isLightTheme={this.props.isLightTheme}
                                     loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
                                     noopRowClick={this.noopRowClick}
@@ -309,7 +278,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         singleChildTreeEntry={singleChildTreeEntry}
                                                         childrenEntries={singleChildTreeEntry.children}
                                                         setChildNodes={this.setChildNode}
-                                                        fileDecorationsByPath={this.state.fileDecorationsByPath}
                                                         enableMergedFileSymbolSidebar={
                                                             this.props.enableMergedFileSymbolSidebar
                                                         }
@@ -322,11 +290,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             </>
                         ) : (
                             <File
-                                fileDecorations={this.props.fileDecorations}
                                 entryInfo={this.props.entryInfo}
                                 depth={this.props.depth}
                                 index={this.props.index}
-                                isLightTheme={this.props.isLightTheme}
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}

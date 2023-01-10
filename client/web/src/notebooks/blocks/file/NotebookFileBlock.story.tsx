@@ -2,7 +2,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
-import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileBlockInput } from '../..'
 import { WebStory } from '../../../components/WebStory'
@@ -50,7 +50,6 @@ export const Default: Story = () => (
                 showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -70,7 +69,6 @@ export const EditMode: Story = () => (
                 showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -92,7 +90,6 @@ export const ErrorFetchingFile: Story = () => (
                 showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
-                extensionsController={extensionsController}
             />
         )}
     </WebStory>

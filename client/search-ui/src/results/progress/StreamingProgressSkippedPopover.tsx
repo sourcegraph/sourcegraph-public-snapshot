@@ -4,7 +4,6 @@ import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, 
 import classNames from 'classnames'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import {
     Button,
@@ -19,6 +18,8 @@ import {
     Markdown,
     Form,
 } from '@sourcegraph/wildcard'
+
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'

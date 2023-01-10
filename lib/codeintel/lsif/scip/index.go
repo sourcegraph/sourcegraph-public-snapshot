@@ -1,6 +1,7 @@
 package scip
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -8,11 +9,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 )
 
+const unknownIndexer = "lsif-void"
+
 // ConvertLSIF converts the given raw LSIF reader into a SCIP index.
-func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerName string) (*scip.Index, error) {
-	groupedBundleData, err := conversion.Correlate(ctx, r, root, nil)
+func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*scip.Index, error) {
+	var buf bytes.Buffer
+	indexerName, err := upload.ReadIndexerName(io.TeeReader(r, &buf))
+	if err != nil {
+		indexerName = unknownIndexer
+	}
+
+	groupedBundleData, err := conversion.Correlate(ctx, io.MultiReader(bytes.NewReader(buf.Bytes()), r), root, nil)
 	if err != nil {
 		return nil, err
 	}

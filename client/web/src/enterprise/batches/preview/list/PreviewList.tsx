@@ -4,7 +4,6 @@ import { mdiMagnify } from '@mdi/js'
 import * as H from 'history'
 import { tap } from 'rxjs/operators'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
@@ -28,7 +27,7 @@ import { PreviewSelectRow } from './PreviewSelectRow'
 
 import styles from './PreviewList.module.scss'
 
-interface Props extends ThemeProps {
+interface Props {
     batchSpecID: Scalars['ID']
     history: H.History
     location: H.Location
@@ -52,7 +51,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     history,
     location,
     authenticatedUser,
-    isLightTheme,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -137,7 +135,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
-                    isLightTheme,
                     history,
                     location,
                     authenticatedUser,

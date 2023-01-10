@@ -3,10 +3,8 @@ import React from 'react'
 import { Args } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { PopoverTrigger, H1 } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
 
 import { FeedbackPrompt } from '.'
@@ -16,11 +14,7 @@ import styles from './FeedbackPrompt.module.scss'
 const config: Meta = {
     title: 'wildcard/FeedbackPrompt',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         /**
          * Uncomment this once Storybook is upgraded to v6.4.* and the `play` function

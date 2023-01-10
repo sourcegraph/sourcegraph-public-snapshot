@@ -33,5 +33,5 @@ func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoNa
 	if len(revision) > 0 {
 		options.Range = revision
 	}
-	return g.Gitclient.Commits(ctx, repoName, options, authz.DefaultSubRepoPermsChecker)
+	return g.Gitclient.Commits(ctx, authz.DefaultSubRepoPermsChecker, repoName, options)
 }

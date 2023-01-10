@@ -9,7 +9,7 @@ import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileMatchChildren } from './FileMatchChildren'
 import { LegacyResultContainer } from './LegacyResultContainer'

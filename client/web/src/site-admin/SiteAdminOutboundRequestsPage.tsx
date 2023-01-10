@@ -8,6 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client/src'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -33,7 +34,6 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
 import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'

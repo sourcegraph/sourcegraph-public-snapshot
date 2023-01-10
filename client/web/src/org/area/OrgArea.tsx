@@ -8,7 +8,6 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 
 import { ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -116,7 +115,6 @@ export interface OrgAreaProps
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
@@ -142,8 +140,7 @@ interface State extends BreadcrumbSetters {
  * Properties passed to all page components in the org area.
  */
 export interface OrgAreaRouteContext
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
@@ -279,7 +276,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensionsController: this.props.extensionsController,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,

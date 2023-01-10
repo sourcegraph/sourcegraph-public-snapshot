@@ -115,7 +115,9 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             ))}
             {loading && <ConnectionLoading />}
             {!loading && connection && (
-                <SummaryContainer>{hasNextPage && <ShowMoreButton onClick={fetchMore} />}</SummaryContainer>
+                <SummaryContainer centered={true}>
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                </SummaryContainer>
             )}
         </ConnectionContainer>
     )

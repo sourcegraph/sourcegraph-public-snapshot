@@ -3,8 +3,7 @@ import { FunctionComponent, PropsWithChildren, useState } from 'react'
 import classNames from 'classnames'
 
 import { PopoverRoot } from '@sourcegraph/wildcard'
-
-import { ChromaticThemeContext, ChromaticTheme } from '../../../hooks/useChromaticTheme'
+import { ChromaticThemeContext, ChromaticTheme } from '@sourcegraph/wildcard/src/stories'
 
 import styles from './ChromaticRoot.module.scss'
 

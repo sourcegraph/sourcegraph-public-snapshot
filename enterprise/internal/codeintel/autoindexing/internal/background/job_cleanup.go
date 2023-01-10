@@ -7,6 +7,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -41,7 +42,8 @@ func NewJanitor(
 ) goroutine.BackgroundRoutine {
 	metrics := NewJanitorMetrics(observationCtx)
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		// We should use an internal actor when doing cross service calls.
+		actor.WithInternalActor(context.Background()),
 		"codeintel.autoindexing-janitor", "cleanup autoindexing jobs for unknown repos, commits etc",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

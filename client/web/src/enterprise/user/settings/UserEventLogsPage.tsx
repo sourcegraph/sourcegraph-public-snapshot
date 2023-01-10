@@ -5,6 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
@@ -12,7 +13,6 @@ import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import {
     UserEventLogFields,
     UserEventLogsConnectionFields,

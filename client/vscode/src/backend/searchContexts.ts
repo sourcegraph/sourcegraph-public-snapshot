@@ -3,7 +3,7 @@ import { catchError } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { getAvailableSearchContextSpecOrFallback } from '@sourcegraph/search'
+import { getAvailableSearchContextSpecOrFallback } from '@sourcegraph/shared/src/search'
 
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from '../settings/LocalStorageService'
 import { VSCEStateMachine } from '../state'

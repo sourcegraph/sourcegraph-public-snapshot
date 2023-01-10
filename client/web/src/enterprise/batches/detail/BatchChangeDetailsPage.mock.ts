@@ -190,6 +190,7 @@ export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
                                     url: 'https://test.test/my/pr',
                                 },
                                 repository: {
+                                    id: 'a',
                                     name: 'sourcegraph/sourcegraph',
                                     url: '/github.com/sourcegraph/sourcegraph',
                                 },

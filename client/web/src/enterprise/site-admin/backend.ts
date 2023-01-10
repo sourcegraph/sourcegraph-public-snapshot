@@ -14,7 +14,7 @@ export function fetchLsifUpload({
 }: {
     id: string
 }): Observable<Extract<SiteAdminLsifUploadResult['node'], { __typename: 'LSIFUpload' }> | null> {
-    return queryGraphQL(
+    return queryGraphQL<SiteAdminLsifUploadResult>(
         gql`
             query SiteAdminLsifUpload($id: ID!) {
                 node(id: $id) {

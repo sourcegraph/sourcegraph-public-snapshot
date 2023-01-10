@@ -111,8 +111,6 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension.
-
 Feedback and feature requests can be submitted to our [VS Code Extension Feedback Discussion Board](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
 
 ## Uninstallation

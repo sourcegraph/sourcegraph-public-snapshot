@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -122,7 +123,18 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.WriteWithOverride(ctx, raw, raw.ID, true)
+		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
+		// never have a non nil actor available here to determine the user ID. This is consistent
+		// with the behaviour of global settings as well. See settings.CreateIfUpToDate in
+		// overrideGlobalSettings below.
+		//
+		// A value of 0 will be treated as null when writing to the the database for this column.
+		//
+		// Nevertheless, we still use actor.FromContext() because it makes this code future proof in
+		// case some how this gets used in a non-startup path as well where an actor is available.
+		// In which case we will start populating the authorUserID in the database which is a good
+		// thing.
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, actor.FromContext(ctx).UID, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -450,11 +462,11 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
-	return c.WriteWithOverride(ctx, input, lastID, false)
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, authorUserID, false)
 }
 
-func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, isOverride bool) error {
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
@@ -462,7 +474,7 @@ func (c *configurationSource) WriteWithOverride(ctx context.Context, input conft
 	if site.ID != lastID {
 		return errors.New("site config has been modified by another request, write not allowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site, isOverride)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
 	if err != nil {
 		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")

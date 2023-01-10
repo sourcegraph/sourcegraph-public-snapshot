@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { mockAuthenticatedUser } from '../testing/util'

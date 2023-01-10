@@ -6,13 +6,14 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'

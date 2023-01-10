@@ -14,10 +14,7 @@ linters:
     - staticcheck
     - typecheck
     - unconvert
-    # Both of these are disabled because they produce a lot of errors. The issues below address these errors
-    # https://github.com/sourcegraph/sourcegraph/issues/43753
-    # https://github.com/sourcegraph/sourcegraph/issues/43755
-    #- unused
+    # - unused
     - unparam
     - exportloopref
 

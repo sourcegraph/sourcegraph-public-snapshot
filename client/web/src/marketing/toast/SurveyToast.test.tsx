@@ -10,7 +10,7 @@ import {
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
@@ -20,7 +20,7 @@ import { SurveyToast } from '.'
 export const mockAuthenticatedUser: AuthenticatedUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
 } as AuthenticatedUser
 
 describe('SurveyToast', () => {

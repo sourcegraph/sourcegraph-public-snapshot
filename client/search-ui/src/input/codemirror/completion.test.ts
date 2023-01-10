@@ -6,7 +6,7 @@ import { ScanResult, scanSearchQuery, ScanSuccess } from '@sourcegraph/shared/sr
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { createDefaultSuggestionSources, suggestionTypeFromTokens } from './completion'
+import { createDefaultSuggestionSources, FILTER_SHORTHAND_SUGGESTIONS, suggestionTypeFromTokens } from './completion'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -45,6 +45,7 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 const getTokens = (query: string): Token[] => toSuccess(scanSearchQuery(query))
 const getToken = (query: string, tokenIndex: number): Token => getTokens(query)[tokenIndex]
+const shorthandSuggestions = FILTER_SHORTHAND_SUGGESTIONS.map(({ label }) => label)
 
 // Using async as a short way to create functions that return promises
 /* eslint-disable @typescript-eslint/require-await */
@@ -69,39 +70,42 @@ describe('codmirror completions', () => {
                     },
                 ])
             )?.map(({ label }) => label)
-        ).toStrictEqual([
-            'after',
-            'archived',
-            'author',
-            '-author',
-            'before',
-            'case',
-            'committer',
-            '-committer',
-            'content',
-            '-content',
-            'context',
-            'count',
-            'file',
-            '-file',
-            'fork',
-            'lang',
-            '-lang',
-            'message',
-            '-message',
-            'patterntype',
-            'repo',
-            '-repo',
-            'repohascommitafter',
-            'repohasfile',
-            '-repohasfile',
-            'rev',
-            'select',
-            'timeout',
-            'type',
-            'visibility',
-            'RepoRoutes',
-        ])
+        ).toStrictEqual(
+            [
+                'after',
+                'archived',
+                'author',
+                '-author',
+                'before',
+                'case',
+                'committer',
+                '-committer',
+                'content',
+                '-content',
+                'context',
+                'count',
+                'file',
+                '-file',
+                'fork',
+                'lang',
+                '-lang',
+                'message',
+                '-message',
+                'patterntype',
+                'repo',
+                '-repo',
+                'repohascommitafter',
+                'repohasfile',
+                '-repohasfile',
+                'rev',
+                'select',
+                'timeout',
+                'type',
+                'visibility',
+                ...shorthandSuggestions,
+                'RepoRoutes',
+            ].filter(label => label.toLowerCase().includes('re'))
+        )
     })
 
     test('returns suggestions for an empty query', async () => {
@@ -137,6 +141,7 @@ describe('codmirror completions', () => {
                 'timeout',
                 'type',
                 'visibility',
+                ...shorthandSuggestions,
             ]
         )
     })
@@ -175,44 +180,48 @@ describe('codmirror completions', () => {
             'timeout',
             'type',
             'visibility',
+            ...shorthandSuggestions,
         ])
     })
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
             (await getCompletionItems(getToken('rE', 0), 2, async () => []))?.map(({ label }) => label)
-        ).toStrictEqual([
-            'after',
-            'archived',
-            'author',
-            '-author',
-            'before',
-            'case',
-            'committer',
-            '-committer',
-            'content',
-            '-content',
-            'context',
-            'count',
-            'file',
-            '-file',
-            'fork',
-            'lang',
-            '-lang',
-            'message',
-            '-message',
-            'patterntype',
-            'repo',
-            '-repo',
-            'repohascommitafter',
-            'repohasfile',
-            '-repohasfile',
-            'rev',
-            'select',
-            'timeout',
-            'type',
-            'visibility',
-        ])
+        ).toStrictEqual(
+            [
+                'after',
+                'archived',
+                'author',
+                '-author',
+                'before',
+                'case',
+                'committer',
+                '-committer',
+                'content',
+                '-content',
+                'context',
+                'count',
+                'file',
+                '-file',
+                'fork',
+                'lang',
+                '-lang',
+                'message',
+                '-message',
+                'patterntype',
+                'repo',
+                '-repo',
+                'repohascommitafter',
+                'repohasfile',
+                '-repohasfile',
+                'rev',
+                'select',
+                'timeout',
+                'type',
+                'visibility',
+                ...shorthandSuggestions,
+            ].filter(label => label.toLowerCase().includes('re'))
+        )
     })
 
     test('returns completions for filters with discrete values', async () => {

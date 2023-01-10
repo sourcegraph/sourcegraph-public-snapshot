@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type scipMigrator struct {
@@ -68,27 +70,51 @@ SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cas
 	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
 `
 
+func getEnv(name string, defaultValue int) int {
+	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
+		return value
+	}
+
+	return defaultValue
+}
+
 var (
 	// NOTE: modified in tests
-	scipMigratorUploadBatchSize             = 64
-	scipMigratorDocumentBatchSize           = 128
-	scipMigratorResultChunkDefaultCacheSize = 1024
+	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
+	scipMigratorUploadBatchSize             = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigratorDocumentBatchSize           = 64
+	scipMigratorResultChunkDefaultCacheSize = 8192
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
+	ch := make(chan struct{}, scipMigratorUploadBatchSize)
 	for i := 0; i < scipMigratorUploadBatchSize; i++ {
-		if err := m.upSingle(ctx); err != nil {
-			return err
-		}
+		ch <- struct{}{}
+	}
+	close(ch)
+
+	g := group.New().WithContext(ctx)
+	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
+		g.Go(func(ctx context.Context) error {
+			for range ch {
+				if ok, err := m.upSingle(ctx); err != nil {
+					return err
+				} else if !ok {
+					break
+				}
+			}
+
+			return nil
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
-func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
+func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
 	tx, err := m.codeintelStore.Transact(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -96,31 +122,39 @@ func (m *scipMigrator) upSingle(ctx context.Context) (err error) {
 	// compete with other migrator routines that may be running.
 	uploadID, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scipMigratorSelectForMigrationQuery)))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return nil
+		return false, nil
 	}
+
+	defer func() {
+		if err != nil {
+			// Wrap any error after this point with the associated upload ID. This will present
+			// itself in the database/UI for site-admins/engineers to locate a poisonous record.
+			err = errors.Wrapf(err, "failed to migrate upload %d", uploadID)
+		}
+	}()
 
 	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err := migrateUpload(ctx, m.store, tx, m.serializer, scipWriter, uploadID); err != nil {
-		return err
+		return false, err
 	}
 	if err := scipWriter.Flush(ctx); err != nil {
-		return err
+		return false, err
 	}
 	if err := deleteLSIFData(ctx, tx, uploadID); err != nil {
-		return err
+		return false, err
 	}
 
 	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 const scipMigratorSelectForMigrationQuery = `
@@ -171,23 +205,25 @@ func migrateUpload(
 		return nil
 	}
 
-	cacheSize := scipMigratorResultChunkDefaultCacheSize
-	if numResultChunks < cacheSize {
-		cacheSize = numResultChunks
+	resultChunkCacheSize := scipMigratorResultChunkDefaultCacheSize
+	if numResultChunks < resultChunkCacheSize {
+		resultChunkCacheSize = numResultChunks
 	}
-	resultChunkCache := lru.New(cacheSize)
+	resultChunkCache := lru.New(resultChunkCacheSize)
+
+	scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
+		resultChunkCache.Add(idx, resultChunk)
+		return nil
+	})
+	scanDocuments := makeDocumentScanner(serializer)
 
 	// Warm result chunk cache if it will all fit in the cache
-	if numResultChunks <= cacheSize {
+	if numResultChunks <= resultChunkCacheSize {
 		ids := make([]ID, 0, numResultChunks)
 		for i := 0; i < numResultChunks; i++ {
 			ids = append(ids, ID(strconv.Itoa(i)))
 		}
 
-		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunkCache.Add(idx, resultChunk)
-			return nil
-		})
 		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanResultChunksQuery,
 			uploadID,
@@ -198,7 +234,7 @@ func migrateUpload(
 	}
 
 	for page := 0; ; page++ {
-		documentsByPath, err := makeDocumentScanner(serializer)(codeintelTx.Query(ctx, sqlf.Sprintf(
+		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
 			scipMigratorDocumentBatchSize,
@@ -211,19 +247,38 @@ func migrateUpload(
 			break
 		}
 
-		for path, document := range documentsByPath {
-			if err := processDocument(
+		paths := make([]string, 0, len(documentsByPath))
+		for path := range documentsByPath {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+
+		definitionResultIDs := make([][]ID, 0, len(paths))
+		for _, path := range paths {
+			definitionResultIDs = append(definitionResultIDs, extractDefinitionResultIDs(documentsByPath[path].Ranges))
+		}
+		for i, path := range paths {
+			scipDocument, err := processDocument(
 				ctx,
 				codeintelTx,
 				serializer,
-				scipWriter,
 				resultChunkCache,
+				resultChunkCacheSize,
 				uploadID,
 				numResultChunks,
 				indexerName,
 				path,
-				document,
-			); err != nil {
+				documentsByPath[path],
+				// Load all of the definitions for this document
+				definitionResultIDs[i],
+				// Load as many definitions from the next document as possible
+				definitionResultIDs[i+1:],
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
 				return err
 			}
 		}
@@ -277,14 +332,16 @@ func processDocument(
 	ctx context.Context,
 	tx *basestore.Store,
 	serializer *serializer,
-	scipWriter *scipWriter,
 	resultChunkCache *lru.Cache,
+	resultChunkCacheSize int,
 	uploadID int,
 	numResultChunks int,
 	indexerName,
 	path string,
 	document DocumentData,
-) error {
+	definitionResultIDs []ID,
+	preloadDefinitionResultIDs [][]ID,
+) (*ogscip.Document, error) {
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
 	// in a row.
@@ -294,12 +351,14 @@ func processDocument(
 		tx,
 		serializer,
 		resultChunkCache,
+		resultChunkCacheSize,
 		uploadID,
 		numResultChunks,
-		extractDefinitionResultIDs(document.Ranges),
+		definitionResultIDs,
+		preloadDefinitionResultIDs,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	definitionMatcher := func(
@@ -329,11 +388,7 @@ func processDocument(
 		toPreciseTypes(document),
 	))
 
-	if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
-		return err
-	}
-
-	return nil
+	return scipDocument, nil
 }
 
 // fetchResultChunks queries for the set of result chunks containing one of the given result set
@@ -343,30 +398,53 @@ func fetchResultChunks(
 	tx *basestore.Store,
 	serializer *serializer,
 	resultChunkCache *lru.Cache,
+	resultChunkCacheSize int,
 	uploadID int,
 	numResultChunks int,
 	ids []ID,
+	preloadDefinitionResultIDs [][]ID,
 ) (map[int]ResultChunkData, error) {
+	// Stores a set of indexes that need to be loaded from the database. The value associated
+	// with an index is true if the result chunk should be returned to the caller and false if
+	// it should only be preloaded and written to the cache.
+	indexMap := map[int]bool{}
+
+	// The map from result chunk index to data payload we'll return. We first populate what
+	// we already have from the cache, then we fetch (and cache) the remaining indexes from
+	// the database.
 	resultChunks := map[int]ResultChunkData{}
-	indexMap := map[int]struct{}{}
 
-	for _, id := range ids {
-		// Calculate result chunk index that this identifier belongs to
-		idx := precise.HashKey(precise.ID(id), numResultChunks)
+outer:
+	for i, ids := range append([][]ID{ids}, preloadDefinitionResultIDs...) {
+		for _, id := range ids {
+			if len(indexMap) >= resultChunkCacheSize && i != 0 {
+				// Only add fetch preload IDs if we have more room in our request
+				break outer
+			}
 
-		// Skip if we already loaded this result chunk from the cache
-		if _, ok := resultChunks[idx]; ok {
-			continue
-		}
+			// Calculate result chunk index that this identifier belongs to
+			idx := precise.HashKey(precise.ID(id), numResultChunks)
 
-		// Attempt to load result chunk data from the cache. If it's present then we can add it to
-		// the output map immediately. If it's not present in the cache, then we'll need to fetch it
-		// from the database. Collect each such result chunk index so we can do a batch load.
+			// Skip if we already loaded this result chunk from the cache
+			if _, ok := resultChunks[idx]; ok {
+				continue
+			}
 
-		if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
-			resultChunks[idx] = rawResultChunk.(ResultChunkData)
-		} else {
-			indexMap[idx] = struct{}{}
+			// Attempt to load result chunk data from the cache. If it's present then we can add it to
+			// the output map immediately. If it's not present in the cache, then we'll need to fetch it
+			// from the database. Collect each such result chunk index so we can do a batch load.
+
+			if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
+				if i == 0 {
+					// Don't stash preloaded result chunks for return
+					resultChunks[idx] = rawResultChunk.(ResultChunkData)
+				}
+			} else {
+				// Store true if it's not _only_ a preload; note that a definition ID and a preloaded ID
+				// can hash to the same index. In this case we do need to return it from this call as well
+				// as the call when processing the next document.
+				indexMap[idx] = i == 0 || indexMap[idx]
+			}
 		}
 	}
 
@@ -380,7 +458,12 @@ func fetchResultChunks(
 		// the cache shared while processing this particular upload.
 
 		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			resultChunks[idx] = resultChunk
+			if indexMap[idx] {
+				// Don't stash preloaded result chunks for return
+				resultChunks[idx] = resultChunk
+			}
+
+			// Always cache
 			resultChunkCache.Add(idx, resultChunk)
 			return nil
 		})
@@ -789,19 +872,23 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 }
 
 func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
-	return basestore.NewCallbackScanner(func(s dbutil.Scanner) error {
+	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte
 		if err := s.Scan(&idx, &rawData); err != nil {
-			return err
+			return false, err
 		}
 
 		data, err := serializer.UnmarshalResultChunkData(rawData)
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		return f(idx, data)
+		if err := f(idx, data); err != nil {
+			return false, err
+		}
+
+		return true, nil
 	})
 }
 

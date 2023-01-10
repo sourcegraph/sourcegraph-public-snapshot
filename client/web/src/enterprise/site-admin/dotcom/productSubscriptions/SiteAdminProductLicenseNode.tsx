@@ -1,10 +1,10 @@
 import * as React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
 import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import { ProductLicenseFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'

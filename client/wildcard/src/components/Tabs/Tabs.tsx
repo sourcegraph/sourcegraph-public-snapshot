@@ -213,14 +213,14 @@ const TabListPlain = React.forwardRef((props, reference) => {
 >
 
 export const Tab = React.forwardRef((props, reference) => {
-    const { as = 'button', ...reachProps } = props
+    const { as = 'button', className, ...reachProps } = props
     const {
         settings: { size, longTabList },
     } = useTabsState()
 
     return (
         <ReachTab
-            className={classNames(styles[size], longTabList === 'scroll' && styles.tabNowrap)}
+            className={classNames(styles[size], longTabList === 'scroll' && styles.tabNowrap, className)}
             data-testid="wildcard-tab"
             as={as}
             ref={reference}

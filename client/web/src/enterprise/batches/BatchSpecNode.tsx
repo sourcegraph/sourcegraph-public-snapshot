@@ -15,6 +15,7 @@ import {
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -33,7 +34,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     BatchSpecListFields,
     Scalars,

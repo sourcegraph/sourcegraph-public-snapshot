@@ -11,13 +11,12 @@ export type FeatureFlagName =
     | 'ab-visitor-tour-with-notebooks'
     | 'ab-email-verification-alert'
     | 'contrast-compliant-syntax-highlighting'
-    | 'admin-analytics-disabled'
     | 'admin-analytics-cache-disabled'
     | 'search-input-show-history'
-    | 'user-management-disabled'
     | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
+    | 'enable-rbac'
 
 interface OrgFlagOverride {
     orgID: string

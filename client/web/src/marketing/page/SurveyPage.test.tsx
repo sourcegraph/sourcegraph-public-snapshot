@@ -4,7 +4,7 @@ import { createMemoryHistory } from 'history'
 import { Route } from 'react-router'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'

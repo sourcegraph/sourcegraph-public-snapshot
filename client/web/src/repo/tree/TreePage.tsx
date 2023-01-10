@@ -8,13 +8,13 @@ import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -79,6 +79,7 @@ interface Props
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     match: RepositoryFileTreePageProps['match']
     isSourcegraphDotCom: boolean
+    className?: string
 }
 
 export const treePageRepositoryFragment = gql`
@@ -105,6 +106,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     useActionItemsBar,
     match,
     isSourcegraphDotCom,
+    className,
     ...props
 }) => {
     useEffect(() => {
@@ -200,7 +202,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featureFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
     const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
@@ -309,7 +311,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     )
 
     return (
-        <div className={styles.treePage}>
+        <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
                 {!showPageTitle && <PageTitle title={getPageTitle()} />}
                 {treeOrError === undefined || repo === undefined ? (
@@ -395,7 +397,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                     <RepositoryCompareArea
                                                         repo={repo}
                                                         match={match}
-                                                        settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
                                                         location={location}
                                                         {...props}

@@ -17,4 +17,5 @@
 		username: "my-user"
 		password: "my-password"
 	}
+	maxConcurrency: 25 // how many repositories can be cloned from the source and created at the destination concurrently
 }

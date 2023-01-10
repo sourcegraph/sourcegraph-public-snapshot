@@ -9,7 +9,7 @@ import {
     InsightViewNode,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
+import { InsightType } from '../../../../types'
 import {
     InsightCreateInput,
     MinimalCaptureGroupInsightData,
@@ -25,13 +25,13 @@ import { getInsightCreateGqlInput, getLangStatsInsightCreateInput } from './seri
  * Main handler to create insight with GQL api. It absorbs all implementation details around GQL api.
  */
 export const createInsight = (apolloClient: ApolloClient<object>, input: InsightCreateInput): Observable<unknown> => {
-    const { insight, dashboard } = input
+    const { insight, dashboardId } = input
 
     switch (insight.type) {
         case InsightType.CaptureGroup:
         case InsightType.Compute:
         case InsightType.SearchBased: {
-            return createSearchBasedInsight(apolloClient, insight, dashboard)
+            return createSearchBasedInsight(apolloClient, insight, dashboardId)
         }
 
         case InsightType.LangStats: {
@@ -46,7 +46,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
                             }
                         }
                     `,
-                    variables: { input: getLangStatsInsightCreateInput(insight, dashboard) },
+                    variables: { input: getLangStatsInsightCreateInput(insight, dashboardId) },
                 })
             )
         }
@@ -61,9 +61,9 @@ type CreationSeriesInsightData =
 function createSearchBasedInsight(
     apolloClient: ApolloClient<object>,
     insight: CreationSeriesInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): Observable<unknown> {
-    const input = getInsightCreateGqlInput(insight, dashboard)
+    const input = getInsightCreateGqlInput(insight, dashboardId)
 
     return from(
         apolloClient.mutate<CreateSearchBasedInsightResult>({
@@ -85,7 +85,7 @@ function createSearchBasedInsight(
                     return
                 }
 
-                searchInsightCreationOptimisticUpdate(cache, data.createLineChartSearchInsight.view, dashboard)
+                searchInsightCreationOptimisticUpdate(cache, data.createLineChartSearchInsight.view, dashboardId)
             },
         })
     )
@@ -98,12 +98,12 @@ function createSearchBasedInsight(
 export function searchInsightCreationOptimisticUpdate(
     cache: ApolloCache<unknown>,
     createdView: InsightViewNode,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): void {
-    if (dashboard && !isVirtualDashboard(dashboard)) {
+    if (dashboardId) {
         const cachedDashboardQuery = cache.readQuery<GetDashboardInsightsResult, GetDashboardInsightsVariables>({
             query: GET_DASHBOARD_INSIGHTS_GQL,
-            variables: { id: dashboard.id },
+            variables: { id: dashboardId },
         })
 
         if (!cachedDashboardQuery) {
@@ -122,7 +122,7 @@ export function searchInsightCreationOptimisticUpdate(
 
         cache.writeQuery<GetDashboardInsightsResult>({
             query: GET_DASHBOARD_INSIGHTS_GQL,
-            variables: { id: dashboard.id },
+            variables: { id: dashboardId },
             data: {
                 insightsDashboards: {
                     ...cachedDashboardQuery.insightsDashboards,

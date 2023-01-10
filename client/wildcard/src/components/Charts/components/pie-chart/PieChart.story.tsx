@@ -1,19 +1,13 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
+import { BrandedStory } from '../../../../stories/BrandedStory'
 import { H2, Text } from '../../../Typography'
 
 import { PieChart } from './PieChart'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },

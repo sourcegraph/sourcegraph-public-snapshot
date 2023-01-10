@@ -4,9 +4,9 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -18,7 +18,7 @@ describe('CreateCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',
         username: 'username',
-        email: 'user@me.com',
+        emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
         siteAdmin: true,
     } as AuthenticatedUser
 
