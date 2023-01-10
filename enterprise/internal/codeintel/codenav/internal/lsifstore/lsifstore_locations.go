@@ -678,7 +678,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 			references = append(references, scip.NewRange(occ.Range))
 		}
 
-		// This occurrence is a definition of a symbol with a implementation relationship
+		// This occurrence is a definition of a symbol with an implementation relationship
 		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
 			implementations = append(implementations, scip.NewRange(occ.Range))
 		}
