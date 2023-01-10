@@ -105,7 +105,7 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry onRetryLogFn, barIndex int, numParts int) error {
 	retrier := makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)
 
-	errs := retrier(func(attempt int) (_ bool, err error) {
+	return retrier(func(attempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
 				progress.SetValue(barIndex, 0)
@@ -133,8 +133,6 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 		// Perform upload
 		return performUploadRequest(ctx, httpClient, requestOptions)
 	})
-
-	return errors.Append(nil, errs...)
 }
 
 // uploadMultipartIndex uploads the index file described by the given options to a
@@ -178,7 +176,7 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	)
 	defer func() { complete(err) }()
 
-	errs := makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+	err = makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
 		if attempt != 0 {
 			retry(fmt.Sprintf("Failed to prepare multipart upload (will retry; attempt #%d)", attempt))
 		}
@@ -192,7 +190,7 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 		})
 	})
 
-	return id, errors.Append(nil, errs...)
+	return id, err
 }
 
 // uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
@@ -270,20 +268,17 @@ func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts U
 	)
 	defer func() { complete(err) }()
 
-	errs := makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+	return makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
 		if attempt != 0 {
 			retry(fmt.Sprintf("Failed to finalize multipart upload (will retry; attempt #%d)", attempt))
 		}
 
-		retry, err := performUploadRequest(ctx, httpClient, uploadRequestOptions{
+		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			UploadID:      id,
 			Done:          true,
 		})
-		return retry, err
 	})
-
-	return errors.Append(nil, errs...)
 }
 
 // splitReader returns a slice of read-seekers into the input ReaderAt, each of max size maxPayloadSize.
