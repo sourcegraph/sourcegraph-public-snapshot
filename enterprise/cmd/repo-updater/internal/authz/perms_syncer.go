@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -43,11 +44,6 @@ func PermissionSyncingDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
-}
-
-// TODO: Implement this and actually check a feature flag
-func DatabaseBackedPermSyncerIsEnabled() bool {
-	return false
 }
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -1189,10 +1185,10 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
+		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx)
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("databased-backed perm syncer", workerEnabled))
 
-		// TODO: make this nicer
-		if DatabaseBackedPermSyncerIsEnabled() {
+		if workerEnabled {
 			for _, u := range schedule.Users {
 				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
 				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {

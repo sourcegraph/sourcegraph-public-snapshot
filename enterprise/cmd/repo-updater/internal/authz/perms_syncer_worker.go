@@ -2,11 +2,9 @@ package authz
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -109,33 +107,6 @@ func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "permission_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
-		Metrics:  makeResetterMetrics(observationCtx, "permission_sync_job_worker"),
+		Metrics:  *dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
 	})
-}
-
-// TODO: this function is copy pasted and should be made reusable
-func makeResetterMetrics(observationCtx *observation.Context, workerName string) dbworker.ResetterMetrics {
-	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_reset_failures_total", workerName),
-		Help: "The number of reset failures.",
-	})
-	observationCtx.Registerer.MustRegister(resetFailures)
-
-	resets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_resets_total", workerName),
-		Help: "The number of records reset.",
-	})
-	observationCtx.Registerer.MustRegister(resets)
-
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_reset_errors_total", workerName),
-		Help: "The number of errors that occur when resetting records.",
-	})
-	observationCtx.Registerer.MustRegister(errors)
-
-	return dbworker.ResetterMetrics{
-		RecordResets:        resets,
-		RecordResetFailures: resetFailures,
-		Errors:              errors,
-	}
 }
