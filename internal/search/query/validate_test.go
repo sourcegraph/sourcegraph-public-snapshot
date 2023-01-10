@@ -269,9 +269,8 @@ func TestForAll(t *testing.T) {
 
 func TestContainsRefGlobs(t *testing.T) {
 	cases := []struct {
-		input    string
-		want     bool
-		globbing bool
+		input string
+		want  bool
 	}{
 		{
 			input: "repo:foo",
@@ -302,11 +301,6 @@ func TestContainsRefGlobs(t *testing.T) {
 			want:  true,
 		},
 		{
-			input:    "repo:*foo*@v3.14.3",
-			globbing: true,
-			want:     false,
-		},
-		{
 			input: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
 			want:  true,
 		},
@@ -316,7 +310,6 @@ func TestContainsRefGlobs(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			query, err := Run(Sequence(
 				Init(c.input, SearchTypeLiteral),
-				Globbing,
 			))
 			if err != nil {
 				t.Error(err)

@@ -49,23 +49,11 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
-                <Route path={`${match.url}/create`}>
-                    <CreationRoutes telemetryService={telemetryService} />
-                </Route>
+                <Route path={match.url} exact={true} component={CodeInsightsSmartRoutingRedirect} />
 
                 <Route
-                    path={`${match.url}/insight/:id`}
-                    render={props => (
-                        <CodeInsightIndependentPage
-                            insightId={props.match.params.id}
-                            telemetryService={telemetryService}
-                        />
-                    )}
-                />
-
-                <Route
-                    path={`${match.url}/edit/:insightId`}
-                    render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
+                    path={`${match.url}/create`}
+                    render={() => <CreationRoutes telemetryService={telemetryService} />}
                 />
 
                 <Route
@@ -89,14 +77,40 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     )}
                 />
 
-                <Route path={match.url} exact={true} component={CodeInsightsRedirect} />
+                <Route
+                    // Deprecated URL, delete this in the 4.10
+                    path={`${match.url}/edit/:insightId`}
+                    render={props => <Redirect to={`${match.url}/${props.match.params.insightId}/edit`} />}
+                />
+
+                <Route
+                    path={`${match.url}/:insightId/edit`}
+                    render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
+                />
+
+                <Route
+                    // Deprecated URL, delete this in the 4.10
+                    path={`${match.url}/insight/:id`}
+                    render={props => <Redirect to={`${match.url}/${props.match.params.id}`} />}
+                />
+
+                <Route
+                    path={`${match.url}/:id`}
+                    render={props => (
+                        <CodeInsightIndependentPage
+                            insightId={props.match.params.id}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                />
+
                 <Route render={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </CodeInsightsBackendContext.Provider>
     )
 })
 
-const CodeInsightsRedirect: FC = () => {
+const CodeInsightsSmartRoutingRedirect: FC = () => {
     const match = useRouteMatch()
     const state = useDashboardExistence()
 

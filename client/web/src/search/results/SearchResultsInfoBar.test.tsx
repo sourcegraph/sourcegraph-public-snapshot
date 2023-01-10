@@ -17,7 +17,11 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     history,
     location: createLocation('/search'),
-    authenticatedUser: { id: 'userID', displayName: 'Chuck Cheese', email: 'chuck@chuckeecheese.com' },
+    authenticatedUser: {
+        id: 'userID',
+        displayName: 'Chuck Cheese',
+        emails: [{ email: 'chuck@chuckeecheese.com', isPrimary: true, verified: true }],
+    },
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,

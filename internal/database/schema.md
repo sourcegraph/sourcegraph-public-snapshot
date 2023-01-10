@@ -963,18 +963,21 @@ Indexes:
 
 # Table "public.critical_and_site_config"
 ```
-   Column   |           Type           | Collation | Nullable |                       Default                        
-------------+--------------------------+-----------+----------+------------------------------------------------------
- id         | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
- type       | critical_or_site         |           | not null | 
- contents   | text                     |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- updated_at | timestamp with time zone |           | not null | now()
+     Column     |           Type           | Collation | Nullable |                       Default                        
+----------------+--------------------------+-----------+----------+------------------------------------------------------
+ id             | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type           | critical_or_site         |           | not null | 
+ contents       | text                     |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+ author_user_id | integer                  |           |          | 
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
 
 ```
+
+**author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
 
 # Table "public.discussion_comments"
 ```
@@ -1474,6 +1477,8 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
+ corrupted_at    | timestamp with time zone |           |          | 
+ corruption_logs | jsonb                    |           | not null | '[]'::jsonb
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1492,6 +1497,10 @@ Triggers:
     trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()
 
 ```
+
+**corrupted_at**: Timestamp of when repo corruption was detected
+
+**corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
 
 # Table "public.gitserver_repos_statistics"
 ```
@@ -2146,7 +2155,7 @@ Stores metadata about an LSIF index uploaded by a user.
  uploaded_at         | timestamp with time zone |           | not null | 
  indexer             | text                     |           | not null | 
  indexer_version     | text                     |           |          | 
- upload_size         | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
  associated_index_id | integer                  |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
  reason              | text                     |           |          | ''::text

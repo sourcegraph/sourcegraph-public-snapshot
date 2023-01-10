@@ -21,9 +21,9 @@ const ExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/ExternalServicesPage'),
     'ExternalServicesPage'
 )
-const ExternalServicePage = lazyComponent(
-    () => import('../components/externalServices/ExternalServicePage'),
-    'ExternalServicePage'
+const ExternalServiceEditPage = lazyComponent(
+    () => import('../components/externalServices/ExternalServiceEditPage'),
+    'ExternalServiceEditPage'
 )
 
 const AddExternalServicesPage = lazyComponent(
@@ -95,9 +95,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={`${match.url}/:id`}
+                path={`${match.url}/:id/edit`}
                 render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
-                    <ExternalServicePage
+                    <ExternalServiceEditPage
                         {...outerProps}
                         {...props}
                         externalServiceID={match.params.id}

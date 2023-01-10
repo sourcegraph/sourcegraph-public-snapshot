@@ -121,6 +121,10 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        isCorrupted
+        corruptionLogs {
+            timestamp
+        }
         lastError
         byteSize
         shard
@@ -547,6 +551,7 @@ export function randomizeUserPassword(
             mutation RandomizeUserPassword($user: ID!) {
                 randomizeUserPassword(user: $user) {
                     resetPasswordURL
+                    emailSent
                 }
             }
         `,

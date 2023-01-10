@@ -11,12 +11,12 @@ import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState
 import { WebStory } from '../WebStory'
 
 import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
-import { ExternalServicePage } from './ExternalServicePage'
+import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/External services/ExternalServicePage',
+    title: 'web/External services/ExternalServiceEditPage',
     parameters: {
         chromatic: {
             // Delay screenshot taking, so Monaco has some time to get syntax highlighting prepared.
@@ -130,7 +130,7 @@ export const ViewConfig: Story = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider link={newFetchMock(externalService)}>
-                <ExternalServicePage
+                <ExternalServiceEditPage
                     {...webProps}
                     queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
                     afterUpdateRoute="/site-admin/after"
@@ -151,7 +151,7 @@ export const ConfigWithInvalidUrl: Story = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
-                <ExternalServicePage
+                <ExternalServiceEditPage
                     {...webProps}
                     queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
                     afterUpdateRoute="/site-admin/after"
@@ -174,7 +174,7 @@ export const ConfigWithWarning: Story = () => (
             <MockedTestProvider
                 link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
             >
-                <ExternalServicePage
+                <ExternalServiceEditPage
                     {...webProps}
                     queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
                     afterUpdateRoute="/site-admin/after"
@@ -197,7 +197,7 @@ export const EditingDisabled: Story = () => (
             <MockedTestProvider
                 link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
             >
-                <ExternalServicePage
+                <ExternalServiceEditPage
                     {...webProps}
                     queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
                     afterUpdateRoute="/site-admin/after"
