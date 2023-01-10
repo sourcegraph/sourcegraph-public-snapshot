@@ -261,6 +261,11 @@ func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
+
+		// If the user is using a local dev build, let them get away.
+		if trimmed == "dev" {
+			return nil
+		}
 		return check.Version("src", trimmed, versionConstraint)
 	}
 }

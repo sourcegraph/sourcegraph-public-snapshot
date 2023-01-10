@@ -5,7 +5,17 @@ export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
 export { ErrorMessage, renderError } from './ErrorMessage'
-export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
+export {
+    LineChart,
+    BarChart,
+    PieChart,
+    StackedMeter,
+    LegendList,
+    LegendItem,
+    LegendItemPoint,
+    ScrollBox,
+    ParentSize,
+} from './Charts'
 export {
     Checkbox,
     FlexTextArea,

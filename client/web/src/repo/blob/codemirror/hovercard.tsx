@@ -127,7 +127,7 @@ interface Hovercard {
 }
 
 const HOVER_INFO_CACHE_SIZE = 30
-const HOVER_DEBOUNCE_TIME = 25 // ms
+export const HOVER_DEBOUNCE_TIME = 25 // ms
 
 /**
  * Some style overrides to replicate the existing hovercard style.
@@ -155,7 +155,7 @@ const hovercardTheme = EditorView.theme({
 /**
  * Decorations for highlighting the range of the {@link Hovercard}.
  */
-const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
+export const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
 const selectionGoToDefinitionDecoration = Decoration.mark({ class: 'selection-highlight hover-gtd' })
 
 /**
@@ -233,7 +233,7 @@ const pinHovercard = StateEffect.define<void>()
 /**
  * Field for storing hover and pinned hovercard information. Gets updated by
  * {@link pinManager} and {@link hoverManager} and provides input for
- * {@link hovercards}.
+ * {@link hovercardSource}.
  */
 const hovercardState = StateField.define<{ pinned: Hovercard | null; hover: Hovercard | null }>({
     create() {
@@ -378,7 +378,7 @@ const pinManager = ViewPlugin.fromClass(
  * The MouseEvent uses numbers to indicate which button was pressed.
  * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
  */
-const MOUSE_NO_BUTTON = 0
+export const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -457,7 +457,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 return next
                             }
 
-                            const direction = this.computeMouseDirection(
+                            const direction = computeMouseDirection(
                                 tooltipView.dom.getBoundingClientRect(),
                                 previous,
                                 next
@@ -508,27 +508,6 @@ const hoverManager = ViewPlugin.fromClass(
             this.view.dom.addEventListener('mouseleave', this.mouseleave)
         }
 
-        private computeMouseDirection(
-            rect: DOMRect,
-            position1: { x: number; y: number },
-            position2: { x: number; y: number }
-        ): 'towards' | 'away' {
-            if (
-                // Moves away from the top
-                (position2.y < position1.y && position2.y < rect.top) ||
-                // Moves away from the bottom
-                (position2.y > position1.y && position2.y > rect.bottom) ||
-                // Moves away from the left
-                (position2.x < position1.x && position2.x < rect.left) ||
-                // Moves away from the right
-                (position2.x > position1.x && position2.x > rect.right)
-            ) {
-                return 'away'
-            }
-
-            return 'towards'
-        }
-
         private mouseleave = (): void => {
             this.nextOffset.next(null)
         }
@@ -539,6 +518,27 @@ const hoverManager = ViewPlugin.fromClass(
         }
     }
 )
+
+export function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.

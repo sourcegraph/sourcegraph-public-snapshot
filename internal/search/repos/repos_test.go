@@ -37,6 +37,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
+	repoFilters := make([]query.ParsedRepoFilter, len(repoRevs))
+	for i, r := range repoRevs {
+		repoFilters[i] = query.ParseRepositoryRevisions(r)
+	}
+	return repoFilters
+}
+
 func TestRevisionValidation(t *testing.T) {
 	mockGitserver := gitserver.NewMockClient()
 	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -67,10 +75,9 @@ func TestRevisionValidation(t *testing.T) {
 	})
 
 	tests := []struct {
-		repoFilters              []string
-		wantRepoRevs             []*search.RepositoryRevisions
-		wantMissingRepoRevisions []RepoRevSpecs
-		wantErr                  error
+		repoFilters  []string
+		wantRepoRevs []*search.RepositoryRevisions
+		wantErr      error
 	}{
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
@@ -78,7 +85,6 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar", "^revBas"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@*refs/heads/*:*!refs/heads/revBas"},
@@ -86,7 +92,6 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
@@ -94,31 +99,29 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{{
-					RevSpec: "^revQux",
+			wantErr: &MissingRepoRevsError{
+				Missing: []RepoRevSpecs{{
+					Repo: types.MinimalRepo{Name: "repoFoo"},
+					Revs: []query.RevisionSpecifier{{
+						RevSpec: "^revQux",
+					}},
 				}},
-			}},
-			wantErr: &MissingRepoRevsError{},
+			},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  &gitdomain.BadCommitError{},
+			repoFilters:  []string{"repoFoo@revBar:bad_commit"},
+			wantRepoRevs: nil,
+			wantErr:      &gitdomain.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  &gitdomain.BadCommitError{},
+			repoFilters:  []string{"repoFoo@revBar:^bad_commit"},
+			wantRepoRevs: nil,
+			wantErr:      &gitdomain.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  context.DeadlineExceeded,
+			repoFilters:  []string{"repoFoo@revBar:deadline_exceeded"},
+			wantRepoRevs: nil,
+			wantErr:      context.DeadlineExceeded,
 		},
 		{
 			repoFilters: []string{"repoFoo"},
@@ -126,8 +129,7 @@ func TestRevisionValidation(t *testing.T) {
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{""},
 			}},
-			wantMissingRepoRevisions: []RepoRevSpecs{},
-			wantErr:                  nil,
+			wantErr: nil,
 		},
 	}
 
@@ -138,18 +140,14 @@ func TestRevisionValidation(t *testing.T) {
 			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			op := search.RepoOptions{RepoFilters: tt.repoFilters}
+			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
+			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
 				t.Error(diff)
 			}
-			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
+			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
 			}
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
@@ -167,8 +165,8 @@ func TestSearchRevspecs(t *testing.T) {
 		specs    []string
 		repo     string
 		err      error
-		matched  []search.RevisionSpecifier
-		clashing []search.RevisionSpecifier
+		matched  []query.RevisionSpecifier
+		clashing []query.RevisionSpecifier
 	}
 
 	tests := []testCase{
@@ -177,7 +175,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{"foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
+			matched:  []query.RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
 		{
@@ -185,7 +183,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -193,7 +191,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -201,7 +199,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -210,14 +208,14 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  nil,
-			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
+			clashing: []query.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
 		{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
 		{
@@ -225,7 +223,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
+			matched:  []query.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
 		{
@@ -239,7 +237,8 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			_, pats, err := findPatternRevs(test.specs)
+			repoRevs := toParsedRepoFilters(test.specs...)
+			_, pats, err := findPatternRevs(repoRevs)
 			if err != nil {
 				if test.err == nil {
 					t.Errorf("unexpected error: '%s'", err)
@@ -266,14 +265,16 @@ func TestSearchRevspecs(t *testing.T) {
 
 func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
-		_, pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
+		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
+		_, pats, _ := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
 
 	b.Run("multiple overlapping", func(b *testing.B) {
-		_, pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
+		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
+		_, pats, _ := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -314,7 +315,7 @@ func TestResolverIterator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: []string{"foo/bar[0-4]@rev"}})
+	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,16 +338,14 @@ func TestResolverIterator(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs:        all.RepoRevs[:3],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[:3],
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 					},
 				},
 				{
-					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[3:],
 				},
 			},
 		},
@@ -354,7 +353,7 @@ func TestResolverIterator(t *testing.T) {
 			name: "with limit 3 and fatal error",
 			opts: search.RepoOptions{
 				Limit:       3,
-				RepoFilters: []string{"foo/bar[0-5]@bad_commit"},
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@bad_commit"),
 			},
 			err:   &gitdomain.BadCommitError{},
 			pages: nil,
@@ -363,30 +362,28 @@ func TestResolverIterator(t *testing.T) {
 			name: "with limit 3 and missing repo revs",
 			opts: search.RepoOptions{
 				Limit:       3,
-				RepoFilters: []string{"foo/bar[0-5]@rev"},
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@rev"),
 			},
-			err: &MissingRepoRevsError{},
+			err: &MissingRepoRevsError{Missing: []RepoRevSpecs{
+				{
+					Repo: all.RepoRevs[0].Repo, // corresponds to foo/bar5
+					Revs: []query.RevisionSpecifier{
+						{
+							RevSpec: "rev",
+						},
+					},
+				},
+			}},
 			pages: []Resolved{
 				{
 					RepoRevs: allAtRev.RepoRevs[:2],
-					MissingRepoRevs: []RepoRevSpecs{
-						{
-							Repo: all.RepoRevs[0].Repo, // corresponds to foo/bar5
-							Revs: []search.RevisionSpecifier{
-								{
-									RevSpec: "rev",
-								},
-							},
-						},
-					},
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.ID)},
 					},
 				},
 				{
-					RepoRevs:        allAtRev.RepoRevs[2:],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: allAtRev.RepoRevs[2:],
 				},
 			},
 		},
@@ -401,8 +398,7 @@ func TestResolverIterator(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []RepoRevSpecs{},
+					RepoRevs: all.RepoRevs[3:],
 				},
 			},
 		},
@@ -419,8 +415,8 @@ func TestResolverIterator(t *testing.T) {
 			}
 
 			err = it.Err()
-			if !errors.Is(err, tc.err) {
-				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))
+			if diff := cmp.Diff(errors.UnwrapAll(err), tc.err); diff != "" {
+				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, diff)
 			}
 
 			if diff := cmp.Diff(pages, tc.pages); diff != "" {
@@ -626,7 +622,7 @@ func TestRepoHasFileContent(t *testing.T) {
 
 			res := NewResolver(logtest.Scoped(t), db, gitserver.NewMockClient(), endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
-				RepoFilters:    []string{".*"},
+				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
 			})
 			require.NoError(t, err)
@@ -730,7 +726,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
 			res.gitserver = mockGitserver
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
-				RepoFilters: []string{tc.nameFilter},
+				RepoFilters: toParsedRepoFilters(tc.nameFilter),
 				CommitAfter: tc.commitAfter,
 			})
 			require.Equal(t, tc.err, err)

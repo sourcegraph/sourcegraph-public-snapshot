@@ -8,6 +8,7 @@ import { Link, H3, Icon } from '@sourcegraph/wildcard'
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexRoot } from '../../shared/components/CodeIntelUploadOrIndexRoot'
@@ -35,7 +36,13 @@ export const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildre
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
-                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                    <CodeIntelUploadOrIndexCommit node={node} />
+                    {node.tags.length > 0 && (
+                        <>
+                            , <CodeIntelUploadOrIndexCommitTags tags={node.tags} />,
+                        </>
+                    )}{' '}
+                    by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
             </div>
         </div>

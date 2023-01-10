@@ -815,7 +815,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -864,7 +864,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -938,7 +938,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We don't care exactly what the error is here
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError", "CorruptionLogs")
 	// But we do care that it exists
 	if fromDB.LastError == "" {
 		t.Errorf("Expected an error when trying to clone from an invalid URL")
@@ -967,7 +967,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -1109,7 +1109,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "CorruptionLogs")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
@@ -1272,6 +1272,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
+		// wait for repo to be cloned
 		dst := s.dir("example.com/foo/bar")
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.locker.Status(dst)
@@ -1730,6 +1731,73 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		if result.StatusCode != http.StatusOK {
 			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
 		}
+	})
+}
+
+func TestLogIfCorrupt(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	remoteDir := t.TempDir()
+
+	reposDir := t.TempDir()
+	hostname := "test"
+
+	repoName := api.RepoName("example.com/bar/foo")
+	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
+	s.Hostname = hostname
+
+	t.Run("git corruption output creates corruption log", func(t *testing.T) {
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			URI:         string(repoName),
+			Description: "Test",
+		}
+
+		// Insert the repo into our database
+		err := db.Repos().Create(ctx, dbRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			db.Repos().Delete(ctx, dbRepo.ID)
+		})
+
+		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
+
+		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
+
+		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+		assert.NoError(t, err)
+		assert.Len(t, fromDB.CorruptionLogs, 1)
+		assert.Contains(t, fromDB.CorruptionLogs[0].Reason, stdErr)
+	})
+
+	t.Run("non corruption output does not create corruption log", func(t *testing.T) {
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			URI:         string(repoName),
+			Description: "Test",
+		}
+
+		// Insert the repo into our database
+		err := db.Repos().Create(ctx, dbRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			db.Repos().Delete(ctx, dbRepo.ID)
+		})
+
+		stdErr := "Brought to you by Horsegraph"
+
+		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
+
+		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+		assert.NoError(t, err)
+		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
 }
 
