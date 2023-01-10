@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package searcher;
+
+option go_package = "github.com/sourcegraph/sourcegraph/cmd/searcher/proto/";
+
+service Searcher {
+    rpc Search(SearchRequest) returns (stream SearchResponse) {};
+};
+
+message SearchRequest {
+    string repo = 1;
+    int32 repo_id = 2;
+    string commit_oid = 3;
+    bool indexed = 4;
+    PatternInfo pattern_info = 5;
+
+    reserved 6 to 15;
+
+    string url = 16;
+    string branch = 17;
+    string fetch_timeout = 18;
+    bool feat_hybrid = 19;
+};
+
+message SearchResponse {
+    FileMatch file_match = 1;
+    bool limit_hit = 2;
+    bool deadline_hit = 3;
+};
+
+message FileMatch {
+    string path = 1;
+    repeated ChunkMatch chunk_matches = 2;
+    bool limit_hit = 3;
+};
+
+message ChunkMatch {
+    bytes content = 1;
+    Location content_start = 2;
+    repeated Range ranges = 3;
+};
+
+message Range {
+    Location start = 1;
+    Location end = 2;
+};
+
+message Location {
+    int32 offset = 1;
+    int32 line = 2;
+    int32 column = 3;
+};
+
+message PatternInfo {
+    string pattern = 1;
+    bool is_negated = 2;
+    bool is_regexp = 3;
+    bool is_structural = 4;
+    bool is_word_match = 5;
+    bool is_case_sensitive = 6;
+    string exclude_pattern = 7;
+    repeated string include_patterns = 8;
+    bool path_patterns_are_case_sensitive = 9;
+    int32 limit = 10;
+    bool pattern_matches_content = 11;
+    bool pattern_matches_path = 12;
+
+    reserved 13 to 15;
+
+    string comby_rule = 16;
+    repeated string languages = 17;
+    string select = 18;
+};
