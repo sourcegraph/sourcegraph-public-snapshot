@@ -202,6 +202,7 @@ importers:
       axe-core: ^4.4.1
       babel-jest: ^28.1.0
       babel-loader: ^9.1.0
+      babel-plugin-istanbul: 6.1.1
       babel-plugin-lodash: ^3.3.4
       babel-plugin-webpack-chunkname: ^1.2.0
       bloomfilter: ^0.0.18
@@ -682,6 +683,7 @@ importers:
       axe-core: 4.4.2
       babel-jest: 28.1.3_@babel+core@7.20.5
       babel-loader: 9.1.0_ztqwsvkb6z73luspkai6ilstpu
+      babel-plugin-istanbul: 6.1.1
       babel-plugin-lodash: 3.3.4
       babel-plugin-webpack-chunkname: 1.2.0
       browserslist: 4.21.4
