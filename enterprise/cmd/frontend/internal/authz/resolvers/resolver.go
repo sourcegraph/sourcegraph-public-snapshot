@@ -14,13 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -175,14 +178,10 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
-	err = r.db.PermissionSyncJobs().CreateRepoSyncJob(ctx, int32(repoID), jobOpts)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
-	}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repoID},
+	})
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -201,15 +200,13 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	jobOpts := database.PermissionSyncJobOpts{HighPriority: true}
-	if args.Options != nil && args.Options.InvalidateCaches != nil {
-		jobOpts.InvalidateCaches = *args.Options.InvalidateCaches
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}}
+	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
+		req.Options.InvalidateCaches = true
 	}
 
-	err = r.db.PermissionSyncJobs().CreateUserSyncJob(ctx, userID, jobOpts)
-	if err != nil {
-		return nil, err
-	}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 

@@ -12,8 +12,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -52,18 +55,30 @@ func TestSetGitHubHandlerSleepTime(t *testing.T, val time.Duration) {
 }
 
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
-	switch e := payload.(type) {
-	case *gh.RepositoryEvent:
-		h.handleRepositoryEvent(ctx, db, e)
-	case *gh.MemberEvent:
-		h.handleMemberEvent(ctx, db, e, codeHostURN)
-	case *gh.OrganizationEvent:
-		h.handleOrganizationEvent(ctx, db, e, codeHostURN)
-	case *gh.MembershipEvent:
-		h.handleMembershipEvent(ctx, db, e, codeHostURN)
-	case *gh.TeamEvent:
-		h.handleTeamEvent(ctx, e, db)
-	}
+	// TODO: This MUST be removed once permissions syncing jobs are database backed!
+	// If we react too quickly to a webhook, the changes may not yet have properly
+	// propagated on GitHub's system, and we'll get old results, making the
+	// webhook useless.
+	// We have to wait some amount of time to process the webhook to ensure
+	// that we are getting fresh results.
+	go func() {
+		time.Sleep(sleepTime)
+		eventContext, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		switch e := payload.(type) {
+		case *gh.RepositoryEvent:
+			h.handleRepositoryEvent(eventContext, db, e)
+		case *gh.MemberEvent:
+			h.handleMemberEvent(eventContext, db, e, codeHostURN)
+		case *gh.OrganizationEvent:
+			h.handleOrganizationEvent(eventContext, db, e, codeHostURN)
+		case *gh.MembershipEvent:
+			h.handleMembershipEvent(eventContext, db, e, codeHostURN)
+		case *gh.TeamEvent:
+			h.handleTeamEvent(eventContext, e, db)
+		}
+	}()
 	return nil
 }
 
@@ -126,16 +141,11 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	permsJobsStore := db.PermissionSyncJobs()
-	err = permsJobsStore.CreateUserSyncJob(ctx, externalAccounts[0].UserID, database.PermissionSyncJobOpts{
-		HighPriority: true,
-		// Wait 15s before sync to give GitHub time to propagate events across
-		// their system
-		NextSyncAt: time.Now().Add(15 * time.Second),
+	// TODO: Here we should call another method to set `NextSyncAt` on the
+	// PermsSyncJob if that feature is enabled.
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+		UserIDs: []int32{externalAccounts[0].UserID},
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
-	}
 
 	return err
 }
@@ -148,16 +158,11 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	permsJobsStore := db.PermissionSyncJobs()
-	err = permsJobsStore.CreateRepoSyncJob(ctx, int32(repo.ID), database.PermissionSyncJobOpts{
-		HighPriority: true,
-		// Wait 15s before sync to give GitHub time to propagate events across
-		// their system
-		NextSyncAt: time.Now().Add(15 * time.Second),
+	// TODO: Here we should call another method to set `NextSyncAt` on the
+	// PermsSyncJob if that feature is enabled.
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repo.ID},
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
-	}
 
-	return err
+	return nil
 }

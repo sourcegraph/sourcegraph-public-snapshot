@@ -12,19 +12,20 @@ import (
 	"time"
 
 	"github.com/google/go-github/v47/github"
-	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -58,7 +59,6 @@ func TestGitHubWebhooks(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := basestore.NewWithHandle(db.Handle())
 	whStore := db.Webhooks(keyring.Default().WebhookKey)
 	esStore := db.ExternalServices()
 
@@ -252,30 +252,26 @@ func TestGitHubWebhooks(t *testing.T) {
 
 	for _, webhookTest := range webhookTests {
 		t.Run(webhookTest.name, func(t *testing.T) {
-			if _, err := db.ExecContext(ctx, "DELETE FROM permission_sync_jobs;"); err != nil {
-				t.Fatal(err)
+			webhookCalled := make(chan bool)
+			// Need to have variables scoped here to avoid race condition
+			// detection by test runner
+			wantRepo := webhookTest.wantRepo
+			wantUser := webhookTest.wantUser
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+				if wantRepo {
+					webhookCalled <- req.RepoIDs[0] == repo.ID
+				}
+				if wantUser {
+					webhookCalled <- req.UserIDs[0] == u.ID
+				}
 			}
+			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			req := newReq(t, webhookTest.eventType, webhookTest.event)
 
 			responseRecorder := httptest.NewRecorder()
 			hook.ServeHTTP(responseRecorder, req)
-
-			var q *sqlf.Query
-			if webhookTest.wantRepo {
-				q = sqlf.Sprintf("SELECT TRUE FROM permission_sync_jobs WHERE repository_id = %s AND process_after IS NOT NULL", repo.ID)
-			} else {
-				q = sqlf.Sprintf("SELECT TRUE FROM permission_sync_jobs WHERE user_id = %s AND process_after IS NOT NULL", u.ID)
-			}
-
-			jobExists, ok, err := basestore.ScanFirstBool(s.Query(ctx, q))
-			if err != nil {
-				t.Fatalf("failed to query permission sync jobs: %s", err)
-			}
-
-			if !ok || !jobExists {
-				t.Fatalf("expected permission sync job to exist but does not")
-			}
+			waitUntil(t, webhookCalled)
 		})
 	}
 }

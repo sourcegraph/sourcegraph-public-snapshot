@@ -386,14 +386,11 @@ func TestAddOrganizationMember(t *testing.T) {
 	}
 	defer func() { repoupdater.MockSchedulePermsSync = nil }()
 
-	permSyncJobs := database.NewMockPermissionSyncJobStore()
-
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 

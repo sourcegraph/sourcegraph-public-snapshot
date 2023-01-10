@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -27,9 +28,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -314,14 +317,22 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	permSyncJobs := database.NewMockPermissionSyncJobStore()
-
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
+
+	r := &Resolver{db: db}
 
 	repoID := 1
-	r := &Resolver{db: db}
+
+	called := false
+	permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		called = true
+		if len(req.RepoIDs) != 1 && req.RepoIDs[0] == api.RepoID(repoID) {
+			t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, req.RepoIDs[0])
+		}
+	}
+	t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
 	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
 		Repository: graphqlbackend.MarshalRepositoryID(api.RepoID(repoID)),
 	})
@@ -329,16 +340,14 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	calls := permSyncJobs.CreateRepoSyncJobFunc.History()
-	if len(calls) != 1 {
-		t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
-	}
-	if value := calls[0].Arg1; value != int32(repoID) {
-		t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, value)
+	if !called {
+		t.Fatalf("SchedulePermsSync not called")
 	}
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
+	licensing.MockCheckFeatureError("")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -359,19 +368,23 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	permSyncJobs := database.NewMockPermissionSyncJobStore()
-
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
 
 	userID := int32(1)
 
 	t.Run("queue a user", func(t *testing.T) {
-		permSyncJobs := database.NewMockPermissionSyncJobStore()
-		db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
-
 		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
+			}
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
 		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
 			User: graphqlbackend.MarshalUserID(userID),
 		})
@@ -379,20 +392,26 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		calls := permSyncJobs.CreateUserSyncJobFunc.History()
-		if len(calls) != 1 {
-			t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
-		}
-		if value := calls[0].Arg1; value != userID {
-			t.Errorf("unexpected user ID argument. want=%d have=%d", userID, value)
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
 		}
 	})
 
 	t.Run("queue a user with options", func(t *testing.T) {
-		permSyncJobs := database.NewMockPermissionSyncJobStore()
-		db.PermissionSyncJobsFunc.SetDefaultReturn(permSyncJobs)
-
 		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
+			}
+			if !req.Options.InvalidateCaches {
+				t.Errorf("expected InvalidateCaches to be set, but wasn't")
+			}
+		}
+
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 		trueVal := true
 		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
 			User:    graphqlbackend.MarshalUserID(userID),
@@ -402,15 +421,8 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		calls := permSyncJobs.CreateUserSyncJobFunc.History()
-		if len(calls) != 1 {
-			t.Fatalf("unexpected number of CreateRepoSyncJob calls. want=%d have=%d", 1, len(calls))
-		}
-		if value := calls[0].Arg1; value != userID {
-			t.Errorf("unexpected user ID argument. want=%d have=%d", userID, value)
-		}
-		if value := calls[0].Arg2; !value.InvalidateCaches {
-			t.Error("InvalidateCaches is not set")
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
 		}
 	})
 }
