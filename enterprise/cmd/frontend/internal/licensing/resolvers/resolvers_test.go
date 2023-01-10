@@ -39,14 +39,14 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		wantErr bool
 	}{
 		"real feature, enabled": {
-			feature: licensing.FeatureBatchChanges{}.FeatureName(),
-			mock:    buildMock(licensing.FeatureBatchChanges{}),
+			feature: (&licensing.FeatureBatchChanges{}).FeatureName(),
+			mock:    buildMock(&licensing.FeatureBatchChanges{}),
 			want:    true,
 			wantErr: false,
 		},
 		"real feature, disabled": {
 			feature: string(licensing.FeatureMonitoring),
-			mock:    buildMock(licensing.FeatureBatchChanges{}),
+			mock:    buildMock(&licensing.FeatureBatchChanges{}),
 			want:    false,
 			wantErr: false,
 		},

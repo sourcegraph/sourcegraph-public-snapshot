@@ -145,10 +145,10 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	maxNumBatchChanges := 5
+	maxNumChangesets := 5
 
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*btypes.ChangesetSpec, maxNumBatchChanges+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, maxNumChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			BaseRepoID: repo.ID,
@@ -170,6 +170,8 @@ func TestCreateBatchSpec(t *testing.T) {
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	rawSpec := bt.TestRawBatchSpec
 
+	bcFeatureName := (&licensing.FeatureBatchChanges{}).FeatureName()
+
 	for name, tc := range map[string]struct {
 		changesetSpecs []*btypes.ChangesetSpec
 		hasLicenseFor  map[string]licensing.Feature
@@ -178,14 +180,21 @@ func TestCreateBatchSpec(t *testing.T) {
 		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
 			hasLicenseFor: map[string]licensing.Feature{
-				licensing.FeatureBatchChanges{}.FeatureName(): licensing.FeatureBatchChanges{MaxNumChangesets: maxNumBatchChanges},
+				bcFeatureName: &licensing.FeatureBatchChanges{MaxNumChangesets: maxNumChangesets},
+			},
+			wantErr: true,
+		},
+		"batch changes license, restricted, under the limit": {
+			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
+			hasLicenseFor: map[string]licensing.Feature{
+				bcFeatureName: &licensing.FeatureBatchChanges{MaxNumChangesets: maxNumChangesets},
 			},
 			wantErr: true,
 		},
 		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
 			hasLicenseFor: map[string]licensing.Feature{
-				licensing.FeatureBatchChanges{}.FeatureName(): licensing.FeatureBatchChanges{Unrestricted: true, MaxNumChangesets: maxNumBatchChanges},
+				bcFeatureName: &licensing.FeatureBatchChanges{Unrestricted: true, MaxNumChangesets: maxNumChangesets},
 			},
 			wantErr: false,
 		},
@@ -196,8 +205,8 @@ func TestCreateBatchSpec(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"no licence": {
-			changesetSpecs: changesetSpecs[0:maxNumBatchChanges],
+		"no license": {
+			changesetSpecs: changesetSpecs[0:1],
 			hasLicenseFor:  map[string]licensing.Feature{},
 			wantErr:        true,
 		},

@@ -62,23 +62,12 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 // checkLicense returns the current plan's configured Batch Changes feature.
 // Returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
-func checkLicense() (licensing.FeatureBatchChanges, error) {
-	var batchChangesFeature licensing.FeatureBatchChanges
-	if licensing.FeatureAs(&batchChangesFeature) {
-		return batchChangesFeature, nil
+func checkLicense() (bcFeature *licensing.FeatureBatchChanges, err error) {
+	if err = licensing.Check(bcFeature); err != nil {
+		err = errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
 
-	batchChangesErr := licensing.Check(batchChangesFeature)
-	if licensing.IsFeatureNotActivated(batchChangesErr) {
-		// Let's fallback and check whether (deprecated) campaigns are enabled:
-		campaignsErr := licensing.Check(licensing.FeatureCampaigns)
-		if campaignsErr == nil {
-			return licensing.FeatureBatchChanges{Unrestricted: true}, nil
-		}
-		return batchChangesFeature, batchChangesErr
-	}
-
-	return batchChangesFeature, errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	return
 }
 
 type batchSpecCreatedArg struct {
@@ -518,7 +507,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 			return nil, err
 		}
 		if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumChangesets {
-			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
 		}
 	} else {
 		return nil, ErrBatchChangesUnlicensed{licenseErr}
@@ -567,7 +556,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 
 	if batchChangesFeature, err := checkLicense(); err == nil {
 		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumChangesets {
-			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of batch changes (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
 		}
 	} else {
 		return nil, ErrBatchChangesUnlicensed{err}

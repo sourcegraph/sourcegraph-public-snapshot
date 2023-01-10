@@ -26,7 +26,7 @@ func (p Plan) HasFeature(target Feature) bool {
 	for _, f := range planFeatures[p] {
 		if target.FeatureName() == f.FeatureName() {
 			if val.Kind() == reflect.Ptr {
-				val.Elem().Set(reflect.ValueOf(f))
+				val.Elem().Set(reflect.ValueOf(f).Elem())
 			}
 			return true
 		}
