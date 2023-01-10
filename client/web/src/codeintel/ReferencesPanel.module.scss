@@ -117,6 +117,9 @@
         top: 0;
         background-color: var(--color-bg-1);
         padding-left: 0.25rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     &--link:hover {
