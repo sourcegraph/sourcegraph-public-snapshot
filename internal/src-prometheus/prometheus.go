@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"syscall"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -29,7 +28,6 @@ var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 // prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 type Client interface {
 	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
-	GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error)
 	GetConfigStatus(ctx context.Context) (*ConfigStatus, error)
 }
 
@@ -104,29 +102,6 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 		return nil, err
 	}
 	return &alertsStatus, nil
-}
-
-const EndpointAlertsStatusHistory = EndpointAlertsStatus + "/history"
-
-// GetAlertsHistory retrieves a historical summary of all alerts
-func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error) {
-	query := make(url.Values)
-	query.Add("timespan", timespan.String())
-	req, err := c.newRequest(EndpointAlertsStatusHistory, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	var alertsHistory AlertsHistory
-	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&alertsHistory); err != nil {
-		return nil, err
-	}
-	return &alertsHistory, nil
 }
 
 const EndpointConfigSubscriber = "/prom-wrapper/config-subscriber"
