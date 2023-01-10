@@ -15,7 +15,7 @@ const (
 	alertRulesFileSuffix = "_alert_rules.yml"
 )
 
-var defaultRuleEvaluationInterval = 30 * time.Second
+var defaultRuleEvaluationInterval = model.Duration(30 * time.Second)
 
 // prometheusAlertName creates an alertname that is unique given the combination of parameters
 func prometheusAlertName(level, service, name string) string {
@@ -56,7 +56,7 @@ type PrometheusRules struct {
 type PrometheusRuleGroup struct {
 	Name     string           `json:"name"`
 	Rules    []PrometheusRule `json:"rules"`
-	Interval *time.Duration   `json:"interval"`
+	Interval *model.Duration  `json:"interval"`
 }
 
 func newPrometheusRuleGroup(name string) PrometheusRuleGroup {
