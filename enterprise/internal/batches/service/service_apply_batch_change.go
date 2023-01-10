@@ -156,17 +156,15 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	for i, changeset := range newChangesets {
+	for _, changeset := range newChangesets {
 		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
 			changeset.UiPublicationState = state
-			newChangesets[i] = changeset
 		}
 	}
 
-	for i, changeset := range updatedChangesets {
+	for _, changeset := range updatedChangesets {
 		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
 			changeset.UiPublicationState = state
-			updatedChangesets[i] = changeset
 		}
 	}
 
