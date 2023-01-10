@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiAccountHardHat, mdiAlert, mdiCached, mdiDatabase, mdiHelp, mdiNumeric, mdiShape } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
@@ -7,7 +7,17 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, Icon, LoadingSpinner, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    ErrorAlert,
+    Icon,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+    Tooltip,
+    useSessionStorage,
+} from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
@@ -20,7 +30,7 @@ import styles from './SiteAdminBackgroundJobsPage.module.scss'
 
 export interface SiteAdminBackgroundJobsPageProps extends RouteComponentProps, TelemetryProps {}
 
-export type BackgroundJobs = BackgroundJobsResult['backgroundJobs']['nodes'][0]
+export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
 
 type RunLengthCategory = 'short' | 'long' | 'dangerous'
 
@@ -31,10 +41,13 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
         telemetryService.logPageView('SiteAdminBackgroundJobs')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(BACKGROUND_JOBS, {
-        variables: { recentRunCount: 5 },
-        pollInterval: BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS,
-    })
+    const { data, loading, error, stopPolling, startPolling } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(
+        BACKGROUND_JOBS,
+        {
+            variables: { recentRunCount: 5 },
+            pollInterval: BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS,
+        }
+    )
 
     return (
         <div>
@@ -42,44 +55,50 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <PageHeader
                 path={[{ text: 'Background jobs' }]}
                 headingElement="h2"
-                description={
-                    <>
-                        <Text>
-                            This page lists all running jobs, their routines, recent runs, any errors, timings, and
-                            stats. Terminology:
-                        </Text>
-                        <ul>
-                            <li>
-                                <strong>Job</strong>: a bag of routines, started when the Sourcegraph app is launched
-                            </li>
-                            <li>
-                                <strong>Routine</strong>: a background process that repeatedly executes its task
-                                indefinitely, using an interval passed at start
-                            </li>
-                            <li>
-                                <strong>Run</strong>: a single execution of a routine's task
-                            </li>
-                            <li>
-                                <strong>Host</strong>: a Sourcegraph instance that starts some jobs when launched
-                            </li>
-                            <li>
-                                <strong>Instance</strong>: a job ran on a host
-                            </li>
-                        </ul>
-                    </>
-                }
+                description="This page lists all running jobs, their routines, recent runs, any errors, timings, and stats."
                 className="mb-3"
             />
+            <Text>Terminology:</Text>
+            <ul>
+                <li>
+                    <strong>Job</strong>: a bag of routines, started when the Sourcegraph app is launched
+                </li>
+                <li>
+                    <strong>Routine</strong>: a background process that repeatedly executes its task indefinitely, using
+                    an interval passed at start
+                </li>
+                <li>
+                    <strong>Run</strong>: a single execution of a routine's task
+                </li>
+                <li>
+                    <strong>Host</strong>: a Sourcegraph instance that starts some jobs when launched
+                </li>
+                <li>
+                    <strong>Instance</strong>: a job ran on a host
+                </li>
+            </ul>
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
-                {!loading && !error && data?.backgroundJobs.nodes && <JobList jobs={data.backgroundJobs.nodes} />}
+                {!loading && !error && data?.backgroundJobs.nodes && (
+                    <JobList jobs={data.backgroundJobs.nodes} stopPolling={stopPolling} startPolling={startPolling} />
+                )}
             </Container>
         </div>
     )
 }
 
-const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) => {
+const JobList: React.FunctionComponent<{
+    jobs: BackgroundJob[]
+    stopPolling: () => void
+    startPolling: (pollInterval: number) => void
+}> = ({ jobs, stopPolling, startPolling }) => {
+    const [polling, setPolling] = useState(true)
+    const [onlyShowProblematic, setOnlyShowProblematic] = useSessionStorage(
+        'site-admin.background-jobs.only-show-problematic-routines',
+        false
+    )
+
     const hostNames = useMemo(
         () =>
             jobs
@@ -89,6 +108,78 @@ const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) 
         [jobs]
     )
 
+    const jobsToDisplay = onlyShowProblematic
+        ? jobs.filter(job => job.routines.some(routine => isRoutineProblematic(routine)))
+        : jobs
+
+    return (
+        <>
+            <div className="text-right mb-4">
+                <Button variant="secondary" onClick={() => setOnlyShowProblematic(!onlyShowProblematic)}>
+                    {onlyShowProblematic ? 'Show all routines' : 'Only show problematic routines'}
+                </Button>
+                <Button
+                    variant="secondary"
+                    onClick={() => {
+                        if (polling) {
+                            stopPolling()
+                        } else {
+                            startPolling(BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS)
+                        }
+                        setPolling(!polling)
+                    }}
+                    className="ml-2"
+                >
+                    {polling ? 'Pause polling' : 'Resume polling'}
+                </Button>
+            </div>
+            <LegendList jobs={jobsToDisplay} hostNameCount={hostNames.length} />
+            {jobsToDisplay ? (
+                <ul className="list-group list-group-flush">
+                    {jobsToDisplay.map(job => {
+                        const jobHostNames = [
+                            ...new Set(
+                                job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()
+                            ),
+                        ].sort()
+                        return (
+                            <li key={job.name} className="list-group-item px-0 py-2">
+                                <div className="d-flex align-items-center justify-content-between mb-2">
+                                    <div className="d-flex flex-row align-items-center mb-0">
+                                        <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
+                                        <Text className="mb-0 ml-2">
+                                            <strong>{job.name}</strong> (starts {job.routines.length}{' '}
+                                            {pluralize('routine', job.routines.length)}
+                                            {hostNames.length > 1
+                                                ? ` on ${jobHostNames.length} ${pluralize(
+                                                      'instance',
+                                                      jobHostNames.length
+                                                  )}`
+                                                : ''}
+                                            )
+                                        </Text>
+                                    </div>
+                                </div>
+                                {job.routines
+                                    .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
+                                    .map(routine => (
+                                        <RoutineComponent routine={routine} key={routine.name} />
+                                    ))}
+                            </li>
+                        )
+                    })}
+                </ul>
+            ) : (
+                'No jobs to display.'
+            )}
+        </>
+    )
+}
+
+const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount: number }> = ({
+    jobs,
+    hostNameCount,
+}) => {
     const legends = useMemo<ValueLegendListProps['items']>(() => {
         const routineCount = jobs.reduce((acc, job) => acc + job.routines.length, 0)
         const routineInstanceCount = jobs.reduce(
@@ -121,8 +212,8 @@ const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) 
                 tooltip: 'The total number of routines across all jobs.',
             },
             {
-                value: hostNames.length,
-                description: pluralize('Host', hostNames.length),
+                value: hostNameCount,
+                description: pluralize('Host', hostNameCount),
                 tooltip: 'The total number of known hosts where jobs run.',
             },
             {
@@ -148,45 +239,12 @@ const JobList: React.FunctionComponent<{ jobs: BackgroundJobs[] }> = ({ jobs }) 
                 tooltip: 'The total number of runs used for calculating the stats below.',
             },
         ]
-    }, [jobs, hostNames.length])
+    }, [jobs, hostNameCount])
 
-    return (
-        <>
-            {legends && <ValueLegendList className="mb-3" items={legends} />}
-            <ul className="list-group list-group-flush">
-                {jobs.map(job => {
-                    const jobHostNames = [
-                        ...new Set(
-                            job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()
-                        ),
-                    ].sort()
-                    return (
-                        <li key={job.name} className="list-group-item px-0 py-2">
-                            <div className="d-flex align-items-center justify-content-between mb-2">
-                                <div className="d-flex flex-row align-items-center mb-0">
-                                    <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
-                                    <Text className="mb-0 ml-2">
-                                        <strong>{job.name}</strong> (starts {job.routines.length}{' '}
-                                        {pluralize('routine', job.routines.length)}
-                                        {hostNames.length > 1
-                                            ? ` on ${jobHostNames.length} ${pluralize('instance', jobHostNames.length)}`
-                                            : ''}
-                                        )
-                                    </Text>
-                                </div>
-                            </div>
-                            {job.routines.map(routine => (
-                                <RoutineComponent routine={routine} key={routine.name} />
-                            ))}
-                        </li>
-                    )
-                })}
-            </ul>
-        </>
-    )
+    return legends && <ValueLegendList className="mb-3" items={legends} />
 }
 
-const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routines'][0] }> = ({ routine }) => {
+const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
     const commonHostName = routine.recentRuns.reduce<string | undefined | null>(
         (hostName, run) => (hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null),
         undefined
@@ -214,56 +272,6 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
     }
     const intervalColor = intervalUnitToColor[roughInterval.unit] || 'var(--gray)'
 
-    // Contains some magic numbers
-    const categorizeRunDuration: (durationMs: number) => RunLengthCategory = useCallback(
-        (durationMs: number) => {
-            if (!routine.intervalMs) {
-                return durationMs > 5000 ? 'long' : 'short'
-            }
-            if (durationMs > routine.intervalMs * 0.7) {
-                return 'dangerous'
-            }
-            // Uses both a relative and an absolute filter
-            if (durationMs > routine.intervalMs * 0.1 || durationMs > 5000) {
-                return 'long'
-            }
-            return 'short'
-        },
-        [routine.intervalMs]
-    )
-    // This contains some magic numbers
-    const getRunDurationTextClass: (durationMs: number) => string = useCallback(
-        (durationMs: number) => {
-            const category = categorizeRunDuration(durationMs)
-            if (category === 'dangerous') {
-                return 'text-danger'
-            }
-
-            if (category === 'long') {
-                return 'text-warning'
-            }
-
-            return 'text-success'
-        },
-        [categorizeRunDuration]
-    )
-
-    const getRunDurationColor: (durationMs: number) => string = useCallback(
-        (durationMs: number) => {
-            const category = categorizeRunDuration(durationMs)
-            if (category === 'dangerous') {
-                return 'var(--red)'
-            }
-
-            if (category === 'long') {
-                return 'var(--yellow)'
-            }
-
-            return 'var(--green)'
-        },
-        [categorizeRunDuration]
-    )
-
     const recentRunsTooltipContent = (
         <div>
             {commonHostName ? <Text className="mb-0">All on “{commonHostName}”:</Text> : ''}
@@ -277,8 +285,11 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
                                 ? ''
                                 : `On host
                                                     called “${run.hostName}”,`}{' '}
-                            for <span className={getRunDurationTextClass(run.durationMs)}>{run.durationMs}ms</span>.
-                            {run.error ? ` Error: ${run.error.message}` : ''}
+                            for{' '}
+                            <span className={getRunDurationTextClass(run.durationMs, routine.intervalMs)}>
+                                {run.durationMs}ms
+                            </span>
+                            .{run.error ? ` Error: ${run.error.message}` : ''}
                         </Text>
                     </li>
                 ))}
@@ -292,7 +303,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
         <div className={styles.routine}>
             <div>
                 <ValueLegendItem
-                    value={routine.intervalMs ? roughInterval.amount : 'NaN'}
+                    value={routine.intervalMs ? roughInterval.amount : '–'}
                     description={routine.intervalMs ? roughInterval.unit : 'Non-periodic'}
                     color={routine.intervalMs ? intervalColor : 'var(--gray)'}
                     tooltip={
@@ -319,7 +330,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
                     description={pluralize('recent\nrun', routine.recentRuns.length)}
                     tooltip={recentRunsWithErrors.length < routine.recentRuns.length ? recentRunsTooltipContent : ''}
                     className={styles.legendItem}
-                    color={getRunDurationColor(slowestRecentRunDuration)}
+                    color={getRunDurationColor(slowestRecentRunDuration, routine.intervalMs)}
                 />
             </div>
             <div>
@@ -337,15 +348,21 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
                         <div>
                             <Text className="mb-0">Fastest / avg / slowest run:</Text>
                             <Text className="mb-0">
-                                <strong className={getRunDurationTextClass(routine.stats.minDurationMs)}>
+                                <strong
+                                    className={getRunDurationTextClass(routine.stats.minDurationMs, routine.intervalMs)}
+                                >
                                     {routine.stats.minDurationMs}ms
                                 </strong>{' '}
                                 /{' '}
-                                <strong className={getRunDurationTextClass(routine.stats.avgDurationMs)}>
+                                <strong
+                                    className={getRunDurationTextClass(routine.stats.avgDurationMs, routine.intervalMs)}
+                                >
                                     {routine.stats.avgDurationMs}ms
                                 </strong>{' '}
                                 /{' '}
-                                <strong className={getRunDurationTextClass(routine.stats.maxDurationMs)}>
+                                <strong
+                                    className={getRunDurationTextClass(routine.stats.maxDurationMs, routine.intervalMs)}
+                                >
                                     {routine.stats.maxDurationMs}ms
                                 </strong>
                             </Text>
@@ -367,4 +384,57 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJobs['routi
             </div>
         </div>
     )
+}
+
+function isRoutineProblematic(routine: BackgroundJob['routines'][0]): boolean {
+    return (
+        routine.stats.errorCount > 0 ||
+        routine.recentRuns.some(
+            run => run.error || categorizeRunDuration(run.durationMs, routine.intervalMs) !== 'short'
+        ) ||
+        categorizeRunDuration(routine.stats.minDurationMs, routine.intervalMs) !== 'short' ||
+        categorizeRunDuration(routine.stats.avgDurationMs, routine.intervalMs) !== 'short' ||
+        categorizeRunDuration(routine.stats.maxDurationMs, routine.intervalMs) !== 'short'
+    )
+}
+
+// Contains some magic numbers
+function categorizeRunDuration(durationMs: number, routineIntervalMs: number): RunLengthCategory {
+    if (!routineIntervalMs) {
+        return durationMs > 5000 ? 'long' : 'short'
+    }
+    if (durationMs > routineIntervalMs * 0.7) {
+        return 'dangerous'
+    }
+    // Uses both a relative and an absolute filter
+    if (durationMs > routineIntervalMs * 0.1 || durationMs > 5000) {
+        return 'long'
+    }
+    return 'short'
+}
+
+function getRunDurationTextClass(durationMs: number, routineIntervalMs: number): string {
+    const category = categorizeRunDuration(durationMs, routineIntervalMs)
+    if (category === 'dangerous') {
+        return 'text-danger'
+    }
+
+    if (category === 'long') {
+        return 'text-warning'
+    }
+
+    return 'text-success'
+}
+
+function getRunDurationColor(durationMs: number, routineIntervalMs: number): string {
+    const category = categorizeRunDuration(durationMs, routineIntervalMs)
+    if (category === 'dangerous') {
+        return 'var(--red)'
+    }
+
+    if (category === 'long') {
+        return 'var(--yellow)'
+    }
+
+    return 'var(--green)'
 }
