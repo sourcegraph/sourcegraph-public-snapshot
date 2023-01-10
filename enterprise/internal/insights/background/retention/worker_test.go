@@ -17,43 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func Test_selectOldestRecordingTimeBeforeMax(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	insightStore := store.NewInsightStore(insightsDB)
-	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
-
-	// create a series with id 1 to attach to recording times
-	setupSeries(ctx, insightStore, t)
-
-	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
-	newTime := time.Now().Truncate(time.Hour)
-	var expectedOldestTimestamp time.Time
-	for i := 1; i <= 12; i++ {
-		newTime = newTime.Add(time.Hour)
-		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
-			Snapshot: false, Timestamp: newTime,
-		})
-		if i == 7 {
-			expectedOldestTimestamp = newTime
-		}
-	}
-	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := selectOldestRecordingTimeBeforeMax(ctx, seriesStore, 1, 6)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got == nil || got.String() != expectedOldestTimestamp.String() {
-		t.Errorf("expected timestamp %v got %v", expectedOldestTimestamp, got)
-	}
-}
-
 func Test_archiveOldSeriesPoints(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -97,11 +60,11 @@ SELECT recording_time,
 	}
 
 	sampleSize := 8
-	oldestTimestamp, err := selectOldestRecordingTimeBeforeMax(ctx, seriesStore, 1, sampleSize)
+	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := archiveOldSeriesPoints(ctx, seriesStore, seriesID, *oldestTimestamp); err != nil {
+	if err := archiveOldSeriesPoints(ctx, seriesStore, seriesID, oldestTimestamp); err != nil {
 		t.Fatal(err)
 	}
 
@@ -139,11 +102,11 @@ func Test_archiveOldRecordingTimes(t *testing.T) {
 	}
 
 	sampleSize := 4
-	oldestTimestamp, err := selectOldestRecordingTimeBeforeMax(ctx, seriesStore, 1, sampleSize)
+	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := archiveOldRecordingTimes(ctx, seriesStore, 1, *oldestTimestamp); err != nil {
+	if err := archiveOldRecordingTimes(ctx, seriesStore, 1, oldestTimestamp); err != nil {
 		t.Fatal(err)
 	}
 

@@ -38,22 +38,23 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 	defer func() { err = tx.Done(err) }()
 
-	oldestRecordingTime, err := selectOldestRecordingTimeBeforeMax(ctx, tx, record.InsightSeriesID, maximumSampleSize)
+	// We remove 1 off the maximum sample size so that we get the last timestamp that we want to keep data for.
+	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, maximumSampleSize-1)
 	if err != nil {
-		return errors.Wrap(err, "selectOldestRecordingTimeBeforeMax")
+		return errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
 
-	if oldestRecordingTime == nil {
+	if oldestRecordingTime.IsZero() {
 		// this series does not have any data beyond the max sample size
 		logger.Debug("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
 	}
 
-	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, oldestRecordingTime); err != nil {
 		return errors.Wrap(err, "archiveOldRecordingTimes")
 	}
 
-	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, oldestRecordingTime); err != nil {
 		return errors.Wrap(err, "archiveOldSeriesPoints")
 	}
 
@@ -127,22 +128,6 @@ const enqueueJobFmtStr = `
 INSERT INTO insights_data_retention_jobs (series_id, series_id_string) VALUES (%s, %s)
 RETURNING id
 `
-
-func selectOldestRecordingTimeBeforeMax(ctx context.Context, tx *store.Store, seriesID int, maxSampleSize int) (_ *time.Time, err error) {
-	oldestTime, got, err := basestore.ScanFirstTime(tx.Query(ctx, sqlf.Sprintf(selectOldestRecordingTimeSql, seriesID, maxSampleSize-1)))
-	if err != nil {
-		return nil, err
-	}
-	if !got || oldestTime.IsZero() {
-		return nil, nil
-	}
-	return &oldestTime, nil
-}
-
-const selectOldestRecordingTimeSql = `
-SELECT recording_time FROM insight_series_recording_times
-WHERE insight_series_id = %s AND snapshot IS FALSE
-ORDER BY recording_time DESC OFFSET %s LIMIT 1;`
 
 func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
 	return tx.Exec(ctx, sqlf.Sprintf(archiveOldSeriesPointsSql, seriesID, oldestTimestamp))
