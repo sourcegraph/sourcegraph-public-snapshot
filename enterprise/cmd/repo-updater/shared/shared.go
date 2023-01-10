@@ -67,11 +67,10 @@ func EnterpriseInit(
 		if permssync.PermissionSyncWorkerEnabled(ctx) {
 			opts := ossDB.PermissionSyncJobOpts{HighPriority: true}
 			return permsJobStore.CreateRepoSyncJob(ctx, int32(repo), opts)
-		} else {
-			// .. otherwise we just call the PermsSyncer
-			permsSyncer.ScheduleRepos(ctx, repo)
-			return nil
 		}
+		// .. otherwise we just call the PermsSyncer
+		permsSyncer.ScheduleRepos(ctx, repo)
+		return nil
 	}
 
 	workerStore := authz.MakeStore(observationCtx, db.Handle())
