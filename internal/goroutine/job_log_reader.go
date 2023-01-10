@@ -277,8 +277,8 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 	// Get all stats
 	var stats types.BackgroundRoutineRunStats
 	for i := int32(0); i < dayCount; i++ {
-		isoDate := now.AddDate(0, 0, -int(i)).Format("2006-01-02")
-		statsRaw, found := c.Get(routineName + ":runStats:" + isoDate)
+		date := now.AddDate(0, 0, -int(i)).Truncate(24 * time.Hour)
+		statsRaw, found := c.Get(routineName + ":runStats:" + date.Format("2006-01-02"))
 		if found {
 			var statsForDay types.BackgroundRoutineRunStats
 			err := json.Unmarshal(statsRaw, &statsForDay)
@@ -287,11 +287,7 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 			}
 
 			if stats.Since == nil {
-				dayStart, err := time.Parse("2006-01-02", isoDate)
-				if err != nil {
-					return types.BackgroundRoutineRunStats{}, errors.Wrap(err, "parse day start")
-				}
-				stats.Since = &dayStart
+				stats.Since = &date
 			}
 			stats.MinDurationMs = int32(math.Min(float64(stats.MinDurationMs), float64(statsForDay.MinDurationMs)))
 			stats.MaxDurationMs = int32(math.Max(float64(stats.MaxDurationMs), float64(statsForDay.MaxDurationMs)))
