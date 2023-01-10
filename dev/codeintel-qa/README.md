@@ -8,7 +8,8 @@ Ensure that the following tools are available on your path:
 
 - [`src`](https://github.com/sourcegraph/src-cli)
 - [`lsif-go`](https://github.com/sourcegraph/lsif-go)
-- [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install) (and authenticated to the `sourcegraph-dev` project)
+
+You should have enviornment variables that authenticate you to the `sourcegraph-dev` GCS project if you plan to upload or download index files (as we do in CI).
 
 Set:
 
@@ -33,7 +34,7 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
 2. Download the test indexes by running the following command:
 
 ```
-./scripts/download.sh
+go run ./cmd/download
 ```
 
 Alternatively, generate them by running the following command (this takes much longer):
@@ -70,10 +71,10 @@ Generate indexes by running the following command:
 ./scripts/clone-and-index.sh
 ```
 
-Upload the generated indexes by running the following command:
+Upload the generated indexes to GCS by running the following command:
 
 ```
-./scripts/upload.sh
+go run ./cmd/upload-gcs
 ```
 
 Or if you just want to test an indexer change locally, you can:

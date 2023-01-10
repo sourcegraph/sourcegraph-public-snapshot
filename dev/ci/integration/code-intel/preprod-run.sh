@@ -28,7 +28,7 @@ pushd dev/codeintel-qa
 
 echo "--- :brain: Running the test suite"
 echo '--- :zero: downloading test data from GCS'
-./scripts/download.sh
+go run ./cmd/download
 echo '--- :one: clearing existing state'
 go run ./cmd/clear
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'

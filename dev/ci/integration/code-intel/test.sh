@@ -25,8 +25,9 @@ source /root/.sg_envrc
 popd || exit 1
 
 pushd dev/codeintel-qa || exit 1
+
 echo '--- downloading test data from GCS'
-./scripts/download.sh
+go run ./cmd/download
 echo '--- integration test ./dev/codeintel-qa/cmd/upload'
 go build ./cmd/upload
 ./upload --timeout=5m -verbose
