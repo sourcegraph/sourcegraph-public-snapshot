@@ -12,7 +12,7 @@ try {
     packageJson.name = 'sourcegraph'
     fs.writeFileSync('package.json', JSON.stringify(packageJson))
 
-    childProcess.execSync('vsce package --yarn --allow-star-activation -o dist', { stdio: 'inherit' })
+    childProcess.execSync('vsce package --no-dependencies --allow-star-activation -o dist', { stdio: 'inherit' })
 } finally {
     fs.writeFileSync('package.json', originalPackageJson)
 }
