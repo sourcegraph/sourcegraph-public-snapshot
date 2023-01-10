@@ -63,6 +63,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
+import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
@@ -72,7 +73,6 @@ import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { ShowOwnersAction } from './ShowOwnersAction'
 
 import styles from './BlobPage.module.scss'
 
@@ -403,11 +403,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
-                priority={30}
+                priority={20}
                 id="toggle-ownership-panel"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {context => <ShowOwnersAction actionType={context.actionType} key="toggle-ownership-panel" />}
+                {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
             </RepoHeaderContributionPortal>
         </>
     )
