@@ -246,7 +246,7 @@ func generateAll(
 			plog := dlog.Scoped("prometheus", "prometheus rules generation")
 
 			plog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
+			promAlertsFile, err := dashboard.RenderPrometheusRules(opts.InjectLabelMatchers)
 			if err != nil {
 				return generatedAssets, errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
 			}

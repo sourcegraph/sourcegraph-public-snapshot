@@ -43,20 +43,20 @@ func (r *promRule) validate() error {
 	return nil
 }
 
-// promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)
+// prometheusRules represents a Prometheus recording rules file (which we use for defining our alerts)
 // see:
 //
 // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-type promRulesFile struct {
-	Groups []promGroup
+type prometheusRules struct {
+	Groups []prometheusGroup
 }
 
-type promGroup struct {
+type prometheusGroup struct {
 	Name  string
 	Rules []promRule
 }
 
-func (g *promGroup) validate() error {
+func (g *prometheusGroup) validate() error {
 	if g.Name == "" {
 		return errors.New("promGroup requires name")
 	}
@@ -68,7 +68,7 @@ func (g *promGroup) validate() error {
 	return nil
 }
 
-func (g *promGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
+func (g *prometheusGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
 	labels["alert_type"] = "builtin" // indicate alert is generated
 	var forDuration *model.Duration
 	if duration > 0 {
@@ -97,7 +97,7 @@ func (g *promGroup) appendRow(alertQuery string, labels map[string]string, durat
 		})
 }
 
-func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
+func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*prometheusRules, error) {
 	// Hardcode the desired label matcher values as labels
 	labels := make(map[string]string)
 	for _, matcher := range injectLabelMatchers {
@@ -113,8 +113,8 @@ func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*promRulesFil
 		return injected
 	}
 
-	rulesFile := &promRulesFile{
-		Groups: []promGroup{{
+	rulesFile := &prometheusRules{
+		Groups: []prometheusGroup{{
 			Name: "cadvisor.rules",
 			Rules: []promRule{{
 				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
