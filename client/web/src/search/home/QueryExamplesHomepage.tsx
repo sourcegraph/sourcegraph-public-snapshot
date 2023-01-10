@@ -10,6 +10,7 @@ import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { SearchPatternType } from '../../graphql-operations'
@@ -137,7 +138,9 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                                 to={buildCloudTrialURL(authenticatedUser)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                onClick={() =>
+                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeUnderSearch' })
+                                }
                             >
                                 try Sourcegraph Cloud
                             </Link>

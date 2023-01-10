@@ -108,7 +108,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 to="https://signup.sourcegraph.com"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBar' })}
                             >
                                 Sign up
                             </Link>

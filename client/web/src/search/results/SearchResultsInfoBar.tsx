@@ -12,12 +12,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     getCodeMonitoringCreateAction,
@@ -33,7 +33,6 @@ import styles from './SearchResultsInfoBar.module.scss'
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
-        TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
@@ -174,7 +173,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'SearchResults' })}
                         >
                             try Sourcegraph Cloud
                         </Link>

@@ -20,6 +20,7 @@ import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, NotebooksListProps } from './NotebooksList'
@@ -297,7 +298,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Notebooks' })}
                                 >
                                     try Sourcegraph Cloud
                                 </Link>

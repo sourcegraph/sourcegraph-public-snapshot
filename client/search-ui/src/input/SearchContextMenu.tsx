@@ -257,7 +257,11 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                     To search across your team's private repositories,{' '}
                                     <Link
                                         to={buildCloudTrialURL(authenticatedUser, 'context')}
-                                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnCloudCTA', {
+                                                cloudCtaType: 'ContextDropDown',
+                                            })
+                                        }
                                     >
                                         try Sourcegraph Cloud
                                     </Link>

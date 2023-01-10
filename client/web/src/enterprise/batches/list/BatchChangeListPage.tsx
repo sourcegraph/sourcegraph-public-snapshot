@@ -164,7 +164,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             target="_blank"
                             rel="noopener noreferrer"
                             variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryBatchChanges' })}
                         >
                             Try Batch Changes
                         </Button>

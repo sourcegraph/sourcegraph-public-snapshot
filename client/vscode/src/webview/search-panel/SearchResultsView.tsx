@@ -399,7 +399,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         <StreamingSearchResultsList
                             isLightTheme={theme === 'theme-light'}
                             settingsCascade={settingsCascade}
-                            telemetryService={platformContext.telemetryService}
                             allExpanded={allExpanded}
                             // Debt: dotcom prop used only for "run search" link
                             // for search examples. Fix on VSCE.
