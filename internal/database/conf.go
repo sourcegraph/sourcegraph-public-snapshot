@@ -52,7 +52,8 @@ type confStore struct {
 	*basestore.Store
 }
 
-// SiteConfig contains the contents of a site config along with associated metadata.
+// SiteConfig contains the contents of a site config along with associated me
+// tadata.
 type SiteConfig struct {
 	ID           int32  // the unique ID of this config
 	AuthorUserID int32  // the user id of the author that updated this config
@@ -61,6 +62,8 @@ type SiteConfig struct {
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
 }
+
+type SiteConfigListOptions struct{}
 
 var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
@@ -115,6 +118,27 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	}
 
 	return tx.getLatest(ctx)
+}
+
+func (s *confStore) List(ctx context.Context, opt *SiteConfigListOptions) ([]*SiteConfig, error) {
+	// q := sqlf.Sprintf(
+	// 	"SELECT id, type, contents, author_user_id, created_at, updated_at  FROM critical_and_site_config WHERE %s ORDER BY created_at %s",
+	// )
+	// rows, err := s.Query(ctx, q)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// history := []*SiteConfig{}
+	// defer rows.Close()
+	// for rows.Next() {
+	// 	var c SiteConfig
+	// 	err := rows.Scan()
+	// }
+
+	return []*SiteConfig{
+		{ID: 1}, {ID: 2},
+	}, nil
 }
 
 func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents string) (newLastID *int32, _ error) {
