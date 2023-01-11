@@ -30,7 +30,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - name: Install npm dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - run: pnpm generate
       - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces
       - run: cp index.scip dump.lsif-typed

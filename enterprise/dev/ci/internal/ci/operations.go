@@ -278,7 +278,7 @@ func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
@@ -300,7 +300,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
-				bk.Cmd("pnpm install --fetch-timeout 60000"),
+				bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 				bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 				bk.Cmd("pnpm run cover-browser-integration"),
 				bk.Cmd("pnpm nyc report -r json"),
@@ -320,7 +320,7 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("pnpm install --fetch-timeout 60000"),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 			bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 			bk.Cmd("pnpm --filter @sourcegraph/browser run record-integration"),
 			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
@@ -345,7 +345,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/jetbrains run build"),
 	)
@@ -524,7 +524,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("pnpm install --fetch-timeout 60000"),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 			bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 			bk.Cmd("pnpm mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
@@ -540,20 +540,20 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:npm"))
 }
@@ -563,7 +563,7 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 	// Publish extension to the VS Code Marketplace
 	pipeline.AddStep(":vscode: Extension release",
 		withPnpmCache(),
-		bk.Cmd("pnpm install --fetch-timeout 60000"),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }

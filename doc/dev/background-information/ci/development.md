@@ -142,7 +142,7 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
 ```go
   pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
     // ...
-    bk.Cmd("pnpm install --fetch-timeout 60000"),
+    bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
     bk.Cmd("pnpm --filter @sourcegraph/browser -s run build"),
     bk.Cmd("pnpm run cover-browser-integration"),
     bk.Cmd("pnpm nyc report -r json"),
