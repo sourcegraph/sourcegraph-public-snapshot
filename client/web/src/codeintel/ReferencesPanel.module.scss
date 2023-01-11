@@ -110,13 +110,14 @@
     }
 
     &--active-icon {
-        width: 1.25rem;
-        height: 100%;
+        width: 1.35rem;
+        height: calc(100% - 1px);
         position: absolute;
         right: 0;
         top: 0;
-        background-color: var(--color-bg-1);
+        background-color: var(--color-bg-3);
         padding-left: 0.25rem;
+        padding-right: 0.1rem;
         display: flex;
         justify-content: center;
         align-items: center;
