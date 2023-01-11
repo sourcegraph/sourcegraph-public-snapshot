@@ -15,7 +15,7 @@ func newRetentionEnqueuer(ctx context.Context, workerBaseStore *basestore.Store,
 	return goroutine.NewPeriodicGoroutine(ctx,
 		"insights.retention.enqueuer",
 		"enqueues series retention jobs",
-		24*time.Hour,
+		12*time.Hour,
 		goroutine.HandlerFunc(
 			func(ctx context.Context) error {
 				seriesArgs := store.GetDataSeriesArgs{ExcludeJustInTime: true}
