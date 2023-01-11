@@ -19,7 +19,7 @@ type RulesKey struct {
 type RulesCache struct {
 	rules map[RulesKey]*codeownerspb.File
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func NewRulesCache() RulesCache {
@@ -27,9 +27,16 @@ func NewRulesCache() RulesCache {
 }
 
 func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+	c.mu.RLock()
+	key := RulesKey{repoName, commitID}
+	if _, ok := c.rules[key]; ok {
+		defer c.mu.RUnlock()
+		return c.rules[key], nil
+	}
+	c.mu.RUnlock()
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	key := RulesKey{repoName, commitID}
+	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
 		file, err := backend.NewOwnService(gitserver).OwnersFile(ctx, repoName, commitID)
 		if err != nil {

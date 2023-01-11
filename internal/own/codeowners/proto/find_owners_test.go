@@ -38,18 +38,52 @@ func TestFileOwnersMatch(t *testing.T) {
 				"/directory/file",
 				"/prefix/directory/another_file",
 			},
+			// Inverse:
+			// /directory/path/file should NOT match.
 		},
 		{
 			pattern: "/toplevelfile",
 			paths: []string{
 				"/toplevelfile",
+				"/toplevelfile/actualfile",
 			},
+		},
+		{
+			pattern: "/toplevelfile/",
+			paths: []string{
+				"/toplevelfile/actualfile",
+			},
+			// NOT: "/toplevelfile",
 		},
 		{
 			pattern: "/main/src/**/README.md",
 			paths: []string{
 				"/main/src/README.md",
 				"/main/src/foo/bar/README.md",
+			},
+		},
+		// Universal catch-all.
+		{
+			pattern: "*",
+			paths: []string{
+				"/README.md",
+				"/main/README.md",
+				"/main/src/foo/bar/README.md",
+			},
+		},
+		// File extension catch-all.
+		{
+			pattern: "*.md",
+			paths: []string{
+				"/README.md",
+				"/main/README.md",
+				"/main/src/foo/bar/README.md",
+			},
+		},
+		{
+			pattern: "src/java/test/**/*Test.java",
+			paths: []string{
+				"/src/java/test/UnitTest.java",
 			},
 		},
 	}
@@ -159,4 +193,7 @@ func TestFileOwnersOrder(t *testing.T) {
 	}
 	got := file.FindOwners("/top-level-directory/some/path/main.go")
 	assert.Equal(t, wantOwner, got)
+	// TODO: Tests for "erasing" ownership:
+	// /apps/ @eseliger
+	// /apps/github # Note: Intentionally blank, meaning apps/github is NOT owned by me.
 }

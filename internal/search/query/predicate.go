@@ -351,9 +351,6 @@ type FileHasOwnerPredicate struct {
 }
 
 func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
-	if params == "" {
-		return errors.Errorf("file:has.owner argument should not be empty")
-	}
 	f.Owner = params
 	f.Negated = negated
 	return nil

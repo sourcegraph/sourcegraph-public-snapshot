@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -18,9 +19,11 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
-func New(child job.Job, includeOwners, excludeOwners []string) job.Job {
+func New(child job.Job, onlyOwned, onlyUnowned bool, includeOwners, excludeOwners []string) job.Job {
 	return &codeownershipJob{
 		child:         child,
+		onlyOwned:     onlyOwned,
+		onlyUnowned:   onlyUnowned,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
 	}
@@ -31,6 +34,8 @@ type codeownershipJob struct {
 
 	includeOwners []string
 	excludeOwners []string
+	onlyOwned     bool
+	onlyUnowned   bool
 }
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -46,7 +51,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.onlyOwned, s.onlyUnowned, s.includeOwners, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -72,6 +77,8 @@ func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
+			trace.Strings("onlyOwned", []string{fmt.Sprintf("%t", s.onlyOwned)}),
+			trace.Strings("onlyUnowned", []string{fmt.Sprintf("%t", s.onlyUnowned)}),
 			trace.Strings("includeOwners", s.includeOwners),
 			trace.Strings("excludeOwners", s.excludeOwners),
 		)
@@ -93,9 +100,12 @@ func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	gitserver gitserver.Client,
 	rules *RulesCache,
+	onlyOwned,
+	onlyUnowned bool,
 	includeOwners,
 	excludeOwners []string,
-	matches []result.Match) ([]result.Match, error) {
+	matches []result.Match,
+) ([]result.Match, error) {
 	var errs error
 
 	filtered := matches[:0]
@@ -123,6 +133,12 @@ matchesLoop:
 				continue matchesLoop
 			}
 		}
+		if onlyOwned && len(owners) == 0 {
+			continue matchesLoop
+		}
+		if onlyUnowned && len(owners) > 0 {
+			continue matchesLoop
+		}
 
 		filtered = append(filtered, m)
 	}
@@ -131,8 +147,14 @@ matchesLoop:
 }
 
 func containsOwner(owners []*codeownerspb.Owner, owner string) bool {
+	ownerHasAtPrefix := strings.HasPrefix(owner, "@")
+	var ownerWithoutAtPrefix string
+	if ownerHasAtPrefix {
+		ownerWithoutAtPrefix = strings.TrimPrefix(owner, "@")
+	}
 	for _, o := range owners {
-		if strings.HasPrefix(owner, "@") && o.Handle == strings.TrimPrefix(owner, "@") {
+		// todo: should we match case-insensitive?
+		if ownerHasAtPrefix && o.Handle == ownerWithoutAtPrefix {
 			return true
 		}
 		if o.Email == owner {

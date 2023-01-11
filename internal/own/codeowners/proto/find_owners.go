@@ -14,6 +14,7 @@ import (
 func (x *File) FindOwners(path string) []*Owner {
 	var owners []*Owner
 	for _, rule := range x.GetRule() {
+		// TODO: Cache compiled patterns.
 		glob, err := compile(rule.GetPattern())
 		if err != nil {
 			continue
@@ -50,6 +51,15 @@ type exactMatch string
 func (p exactMatch) String() string         { return string(p) }
 func (p exactMatch) Match(part string) bool { return string(p) == part }
 
+type patternMatch string
+
+func (p patternMatch) String() string { return "PATTERN(" + string(p) + ")" }
+func (p patternMatch) Match(part string) bool {
+	return true
+	// matched, _ := filepath.Match(string(p), part)
+	// return matched
+}
+
 // anyMatch is indicated by * in a glob pattern, and matches any single file
 // or directory on the path.
 type anyMatch struct{}
@@ -66,7 +76,8 @@ func compile(pattern string) (globPattern, error) {
 	if !strings.HasPrefix(pattern, separator) {
 		glob = append(glob, anySubPath{})
 	}
-	for _, part := range strings.Split(strings.Trim(pattern, separator), separator) {
+	parts := strings.Split(strings.Trim(pattern, separator), separator)
+	for _, part := range parts {
 		switch part {
 		case "":
 			return nil, errors.New("two consecutive forward slashes")
@@ -75,7 +86,11 @@ func compile(pattern string) (globPattern, error) {
 		case "**":
 			glob = append(glob, anySubPath{})
 		default:
-			glob = append(glob, exactMatch(part))
+			if strings.Contains(part, "*") {
+				glob = append(glob, patternMatch(part))
+			} else {
+				glob = append(glob, exactMatch(part))
+			}
 		}
 	}
 	// Trailing `/` is equivalent with trailing `/**/*`.
@@ -87,6 +102,13 @@ func compile(pattern string) (globPattern, error) {
 	if strings.HasSuffix(pattern, separator) {
 		glob = append(glob, anySubPath{}, anyMatch{})
 	}
+	//  else {
+	// 	glob = append(glob, anyMatch{})
+	// glob = append(glob, orMatch{
+	// 	exactMatch(parts[len(parts)-1]),
+	// 	andMatch{exactMatch(parts[len(parts)-1]), anyMatch{}},
+	// })
+	// }
 	return glob, nil
 }
 

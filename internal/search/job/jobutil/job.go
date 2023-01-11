@@ -186,8 +186,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
-			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
+		if onlyOwned, onlyUnowned, includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters && (len(includeOwners) > 0 || len(excludeOwners) > 0 || onlyOwned || onlyUnowned) {
+			basicJob = codeownershipjob.New(basicJob, onlyOwned, onlyUnowned, includeOwners, excludeOwners)
 		}
 	}
 
