@@ -5,11 +5,10 @@ package srcprometheus
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"syscall"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -77,8 +76,10 @@ func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, err
 		return nil, errors.Errorf("src-prometheus: %w", err)
 	}
 	if resp.StatusCode != 200 {
-		log15.Error("src-prometheus request made but failed with non-zero status", "request", req, "resp", resp)
-		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d", req.Method, req.URL.String(), resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d: %s",
+			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 	return resp, nil
 }
