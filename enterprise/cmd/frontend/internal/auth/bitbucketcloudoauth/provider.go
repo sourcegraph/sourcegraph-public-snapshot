@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -109,9 +108,6 @@ func validateClientKeyOrSecret(clientKeyOrSecret string) (valid bool) {
 
 func requestedScopes() []string {
 	scopes := []string{"account", "email"}
-	if !envvar.SourcegraphDotComMode() {
-		scopes = append(scopes, "repository")
-	}
 
 	return scopes
 }
