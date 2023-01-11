@@ -1,0 +1,59 @@
+load("//dev:defs.bzl", "ts_project")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+# end-to-end/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/browser:tsconfig",
+        "//client/shared/src/testing:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "end-to-end",
+    srcs = ["shared.ts"],
+    data = ["//:node_modules/expect"],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@types/node",
+        "//:node_modules/expect",
+        "//:node_modules/puppeteer",  #keep
+        "//client/browser:node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "end-to-end_tests",
+    testonly = True,
+    srcs = [
+        "bitbucket.test.ts",
+        "ghe.test.ts",
+        "github.test.ts",
+        "gitlab.test.ts",
+        "phabricator.test.ts",
+    ],
+    data = [
+        "//:node_modules/expect",
+        "//:node_modules/lodash",
+        "//:node_modules/rxjs",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":end-to-end",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node",
+        "//:node_modules/expect",
+        "//:node_modules/lodash",
+        "//:node_modules/puppeteer",  #keep
+        "//:node_modules/rxjs",
+        "//client/browser:browser_lib",  #keep
+        "//client/browser:node_modules/@sourcegraph/common",
+        "//client/browser:node_modules/@sourcegraph/shared",
+    ],
+)

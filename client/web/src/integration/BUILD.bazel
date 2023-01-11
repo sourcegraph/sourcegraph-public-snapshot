@@ -1,0 +1,5 @@
+# TODO(bazel): disabled for now
+# gazelle:js disabled
+
+# integration/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}

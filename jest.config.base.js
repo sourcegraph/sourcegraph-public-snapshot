@@ -2,6 +2,11 @@
 
 const path = require('path')
 
+// TODO(bazel): drop when non-bazel removed.
+const IS_BAZEL = !!process.env.BAZEL_TEST
+const SRC_EXT = IS_BAZEL ? 'js' : 'ts'
+const rootDir = IS_BAZEL ? process.cwd() : __dirname
+
 // Use the same locale for test runs so that snapshots generated using code that
 // uses Intl or toLocaleString() are consistent.
 //
@@ -13,6 +18,7 @@ const path = require('path')
 // ugly side effect. (This is especially evident when running tests in-band.)
 process.env.LANG = 'en_US.UTF-8'
 
+// TODO(bazel): use esm modules and remove transform exclusion.
 const ESM_NPM_DEPS = [
   'abortable-rx',
   '@sourcegraph/comlink',
@@ -31,21 +37,19 @@ const ESM_NPM_DEPS = [
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
   // for example to change the URL in window.location
-  testEnvironment: __dirname + '/client/shared/dev/jest-environment.js',
+  testEnvironment: path.join(rootDir, 'client/shared/dev/jest-environment.js'),
 
   collectCoverage: !!process.env.CI,
-  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
+  collectCoverageFrom: [`<rootDir>/src/**/*.{${SRC_EXT},${SRC_EXT}x}`],
   coverageDirectory: '<rootDir>/coverage',
-  coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.tsx?$/.source, /\.d\.ts$/.source],
+  coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.{jsx,tsx}?$/.source, /\.d\.ts$/.source],
   roots: ['<rootDir>/src'],
 
-  transform: { '\\.[jt]sx?$': ['babel-jest', { root: __dirname }] },
+  transform: { '\\.[jt]sx?$': ['babel-jest', { root: rootDir }] },
 
-  // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
-  // modules). If you get an error from jest like "Jest encountered an unexpected token. ... SyntaxError:
-  // unexpected token import/export", then add it here. See
-  // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
-  // this is necessary.
+  // TODO(bazel): use esm modules and remove transforms.
+  // PNPM style rules_js version.
+  // See pnpm notes at https://jestjs.io/docs/configuration#transformignorepatterns-arraystring
   transformIgnorePatterns: [
     // packages within the root pnpm/rules_js package store
     `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
@@ -72,25 +76,25 @@ const config = {
   coverageReporters: ['json', 'lcov', 'text-summary'],
 
   setupFiles: [
-    path.join(__dirname, 'client/shared/dev/mockDate.js'),
+    path.join(rootDir, 'client/shared/dev/mockDate.js'),
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
-    path.join(__dirname, 'client/shared/dev/fetch'),
-    path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
-    path.join(__dirname, 'client/shared/dev/mockDomRect.ts'),
-    path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
-    path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
-    path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
-    path.join(__dirname, 'client/shared/dev/mockMatchMedia.ts'),
-  ],
+    path.join(rootDir, 'client/shared/dev/fetch'),
+    path.join(rootDir, 'client/shared/dev/setLinkComponentForTest.ts'),
+    path.join(rootDir, 'client/shared/dev/mockDomRect.ts'),
+    path.join(rootDir, 'client/shared/dev/mockResizeObserver.ts'),
+    path.join(rootDir, 'client/shared/dev/mockUniqueId.ts'),
+    path.join(rootDir, 'client/shared/dev/mockSentryBrowser.ts'),
+    path.join(rootDir, 'client/shared/dev/mockMatchMedia.ts'),
+  ].map(file => IS_BAZEL ? file.replace('.ts', '') : file),
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
-    path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
-  ],
-  globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
+    path.join(rootDir, 'client/shared/dev/reactCleanup.ts'),
+  ].map(file => IS_BAZEL ? file.replace('.ts', '') : file),
+  globalSetup: path.join(rootDir, 'client/shared/dev/jestGlobalSetup.js'),
   globals: {
     Uint8Array,
   },

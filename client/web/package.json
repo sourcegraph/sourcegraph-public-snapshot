@@ -46,7 +46,6 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
-    "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*"
   }

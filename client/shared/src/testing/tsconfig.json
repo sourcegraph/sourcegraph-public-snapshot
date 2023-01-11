@@ -4,6 +4,9 @@
   "compilerOptions": {
     "types": ["mocha", "node"],
     "module": "commonjs",
+    "paths": {
+      "*": ["../types/*", "*"],
+    },
   },
   "include": ["**/*"],
   "exclude": [],

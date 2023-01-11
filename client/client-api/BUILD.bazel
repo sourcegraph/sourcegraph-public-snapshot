@@ -1,0 +1,57 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/extension-api-types:tsconfig",
+        "//client/template-parser:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "client-api_lib",
+    srcs = [
+        "src/contribution.ts",
+        "src/hover.ts",
+        "src/index.ts",
+        "src/reference.ts",
+        "src/textDocument.ts",
+    ],
+    data = ["//:node_modules/@sourcegraph/extension-api-classes"],
+    tsconfig = ":tsconfig",
+    # TODO(bazel): "#keep"s required for type-only imports
+    deps = [
+        "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@sourcegraph/extension-api-types",  #keep
+        "//:node_modules/@sourcegraph/template-parser",  #keep
+        "//:node_modules/sourcegraph",  #keep
+        "//:node_modules/utility-types",  #keep
+    ],
+)
+
+ts_project(
+    name = "client-api_tests",
+    testonly = True,
+    srcs = ["src/hover.test.ts"],
+    data = ["//:node_modules/@sourcegraph/extension-api-classes"],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":client-api_lib",
+        "//:node_modules/@sourcegraph/extension-api-classes",
+    ],
+)
+
+npm_package(
+    name = "client-api",
+    srcs = [
+        "package.json",
+        ":client-api_lib",
+    ],
+)

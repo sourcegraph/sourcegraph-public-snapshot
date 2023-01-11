@@ -52,6 +52,9 @@ export const createInvalidGraphQLMutationResponseError = (queryName: string): Gr
 
 export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     baseUrl?: string
+
+    //TODO(bazel): why is the inherited 'RequestInit.headers' not picked up?
+    headers?: HeadersInit
 }
 
 interface BuildGraphQLUrlOptions {

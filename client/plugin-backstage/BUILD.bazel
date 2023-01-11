@@ -1,0 +1,82 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package", "ts_project")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        ":node_modules/@backstage/cli",
+
+        # TODO(bazel): transitive deps of @backstage/cli are not included?
+        ":node_modules/@types/jest",
+        ":node_modules/@types/node",
+        ":node_modules/@types/webpack-env",
+    ],
+)
+
+ts_project(
+    name = "plugin-backstage_lib",
+    srcs = [
+        "src/components/ExampleComponent/ExampleComponent.tsx",
+        "src/components/ExampleComponent/index.ts",
+        "src/components/ExampleFetchComponent/ExampleFetchComponent.tsx",
+        "src/components/ExampleFetchComponent/index.ts",
+        "src/index.ts",
+        "src/plugin.ts",
+        "src/routes.ts",
+        "src/setupTests.ts",
+    ],
+    allow_js = True,
+    composite = False,
+    declaration_map = False,
+    emit_declaration_only = True,
+    incremental = True,
+    source_map = False,
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@backstage/core-components",
+        ":node_modules/@backstage/core-plugin-api",
+        ":node_modules/@material-ui/core",
+        ":node_modules/@material-ui/lab",
+        ":node_modules/@testing-library/jest-dom",
+        ":node_modules/cross-fetch",
+        ":node_modules/react-use",
+        "//:node_modules/@types/react",  #keep
+        "//:node_modules/@types/testing-library__jest-dom",
+    ],
+)
+
+ts_project(
+    name = "plugin-backstage_tests",
+    testonly = True,
+    srcs = [
+        "src/components/ExampleComponent/ExampleComponent.test.tsx",
+        "src/components/ExampleFetchComponent/ExampleFetchComponent.test.tsx",
+        "src/plugin.test.ts",
+    ],
+    allow_js = True,
+    composite = False,
+    declaration_map = False,
+    emit_declaration_only = True,
+    incremental = True,
+    source_map = False,
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@backstage/test-utils",
+        ":node_modules/@testing-library/react",
+        ":node_modules/msw",
+        ":plugin-backstage_lib",
+    ],
+)
+
+npm_package(
+    name = "plugin-backstage",
+    srcs = [
+        "package.json",
+        ":plugin-backstage_lib",
+    ],
+)
