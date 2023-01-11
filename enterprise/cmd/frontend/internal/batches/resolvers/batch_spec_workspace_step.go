@@ -54,14 +54,8 @@ func (r *batchSpecWorkspaceStepV1Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.stepInfo.Skipped
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
+func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context) (*[]string, error) {
 	lines := r.stepInfo.OutputLines
-	if args.After != nil {
-		lines = lines[*args.After:]
-	}
-	if int(args.First) < len(lines) {
-		lines = lines[:args.First]
-	}
 	// TODO: Return nil when execution not yet started.
 	return &lines, nil
 }
@@ -210,19 +204,12 @@ func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.skipped
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
+func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context) (*[]string, error) {
 	if !r.logEntryFound {
 		return nil, nil
 	}
 
 	lines := strings.Split(r.logEntry.Out, "\n")
-
-	if args.After != nil {
-		lines = lines[*args.After:]
-	}
-	if int(args.First) < len(lines) {
-		lines = lines[:args.First]
-	}
 	return &lines, nil
 }
 

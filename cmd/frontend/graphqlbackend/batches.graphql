@@ -2477,16 +2477,7 @@ type BatchSpecWorkspaceStep {
     The output logs, prefixed with either "stdout " or "stderr ". Null, if the
     step has not run yet.
     """
-    outputLines(
-        """
-        Return the first N lines of logs.
-        """
-        first: Int = 500
-        """
-        Return the log lines after N lines.
-        """
-        after: Int
-    ): [String!]
+    outputLines: [String!]
 
     """
     The time when the step started processing. Null, if not yet started.
