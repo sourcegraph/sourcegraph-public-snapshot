@@ -314,6 +314,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     )
 }
 
+const EMPTY: any[] = []
+
 interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
     value: string
     onEditorCreated?: (editor: EditorView) => void
@@ -328,7 +330,7 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * theming, syntax highlighting and token info.
  */
 export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
-    ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
+    ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = EMPTY }) => {
         // This is using state instead of a ref because `useRef` doesn't cause a
         // re-render when the ref is attached, but we need that so that
         // `useCodeMirror` is called again and the editor is actually created.

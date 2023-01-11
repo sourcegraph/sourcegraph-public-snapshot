@@ -2041,8 +2041,6 @@ type SettingsExperimentalFeatures struct {
 	CodeNavigation *string `json:"codeNavigation,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
-	// Editor description: Specifies which (code) editor to use for query and text input
-	Editor *string `json:"editor,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
@@ -2149,7 +2147,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "codeNavigation")
 	delete(m, "copyQueryButton")
-	delete(m, "editor")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")

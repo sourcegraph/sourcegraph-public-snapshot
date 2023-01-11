@@ -51,10 +51,8 @@ export type LazyQueryInputProps = CodeMirrorQueryInputFacadeProps
 /**
  * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
  */
-export const LazyQueryInput: React.FunctionComponent<LazyQueryInputProps> = ({ ...props }) => {
-    return (
-        <Suspense fallback={<PlainQueryInput {...props} placeholder={props.placeholder} />}>
-            <CodeMirrorQueryInput {...props} />
-        </Suspense>
-    )
-}
+export const LazyQueryInput: React.FunctionComponent<LazyQueryInputProps> = ({ ...props }) => (
+    <Suspense fallback={<PlainQueryInput {...props} placeholder={props.placeholder} />}>
+        <CodeMirrorQueryInput {...props} />
+    </Suspense>
+)
