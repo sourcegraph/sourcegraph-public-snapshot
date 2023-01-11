@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -85,16 +84,16 @@ func (s *outboundWebhookStore) ToLogStore() OutboundWebhookLogStore {
 	}
 }
 
-type OutboundWebhookCountOpts struct {
-	// EventTypes matches any outbound webhook with the given event, ignoring
-	// scope.
-	EventTypes []string
+const FilterEventTypeNoScope string = "RESERVED_KEYWORD_MATCH_NULL_SCOPE"
 
-	// ScopedEventTypes matches any outbound webhook with the given event _and_
-	// scope. If the scope is nil, then only records with an actual NULL scope
-	// are returned; this does _not_ function as a wildcard. (Use EventTypes in
-	// that case.)
-	ScopedEventTypes []ScopedEventType
+type FilterEventType struct {
+	EventType string
+	// "foo" matches "foo", NoScope matches NULL, omit to match any scope
+	Scope *string
+}
+
+type OutboundWebhookCountOpts struct {
+	EventTypes []FilterEventType
 }
 
 func (opts *OutboundWebhookCountOpts) where() *sqlf.Query {
@@ -102,20 +101,22 @@ func (opts *OutboundWebhookCountOpts) where() *sqlf.Query {
 	// outbound_webhook_event_types, if any.
 	preds := []*sqlf.Query{}
 	if len(opts.EventTypes) > 0 {
-		preds = append(preds, sqlf.Sprintf(
-			"event_type = ANY (%s)",
-			pq.Array(opts.EventTypes),
-		))
-	}
-	if len(opts.ScopedEventTypes) > 0 {
-		for _, opt := range opts.ScopedEventTypes {
+		for _, opt := range opts.EventTypes {
 			if opt.Scope == nil {
 				preds = append(preds, sqlf.Sprintf(
+					// Filter to ones that match the event type, ignoring scope
+					"(event_type = %s)",
+					opt.EventType,
+				))
+			} else if *opt.Scope == FilterEventTypeNoScope {
+				preds = append(preds, sqlf.Sprintf(
+					// Filter to ones that match the event type and have a NULL scope
 					"(event_type = %s AND scope IS NULL)",
 					opt.EventType,
 				))
 			} else {
 				preds = append(preds, sqlf.Sprintf(
+					// Filter to ones that match the event type and scope
 					"(event_type = %s AND scope = %s)",
 					opt.EventType,
 					*opt.Scope,

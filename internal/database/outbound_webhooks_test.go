@@ -118,7 +118,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"no matches based on event type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []string{"not found"},
+								EventTypes: []FilterEventType{{EventType: "not found"}},
 							},
 						},
 						want: []*types.OutboundWebhook{},
@@ -126,8 +126,8 @@ func TestOutboundWebhooks(t *testing.T) {
 					"scoped, missing type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
-									{EventType: "not found"},
+								EventTypes: []FilterEventType{
+									{EventType: "not found", Scope: stringPtr(FilterEventTypeNoScope)},
 								},
 							},
 						},
@@ -136,7 +136,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"scoped, no scopes in type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
+								EventTypes: []FilterEventType{
 									{EventType: "foo", Scope: stringPtr("bar")},
 								},
 							},
@@ -146,7 +146,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"scoped, missing scope in type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
+								EventTypes: []FilterEventType{
 									{EventType: "quux", Scope: stringPtr("789")},
 								},
 							},
@@ -160,7 +160,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"unscoped": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []string{"foo", "bar"},
+								EventTypes: []FilterEventType{{EventType: "foo"}, {EventType: "bar"}},
 							},
 						},
 						want: []*types.OutboundWebhook{
@@ -172,8 +172,8 @@ func TestOutboundWebhooks(t *testing.T) {
 						// they have scopes attached.
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
-									{EventType: "foo"},
+								EventTypes: []FilterEventType{
+									{EventType: "foo", Scope: stringPtr(FilterEventTypeNoScope)},
 									{EventType: "quux"},
 								},
 							},
@@ -187,7 +187,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						// the foos don't have scopes.
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
+								EventTypes: []FilterEventType{
 									{EventType: "foo", Scope: stringPtr("no match")},
 									{EventType: "quux", Scope: stringPtr("123")},
 									{EventType: "quux", Scope: stringPtr("456")},
@@ -204,7 +204,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"scoped with only one scope": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								ScopedEventTypes: []ScopedEventType{
+								EventTypes: []FilterEventType{
 									{EventType: "quux", Scope: stringPtr("123")},
 								},
 							},
@@ -217,8 +217,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					"mixed unscoped and scoped": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []string{"bar"},
-								ScopedEventTypes: []ScopedEventType{
+								EventTypes: []FilterEventType{{EventType: "bar"},
 									{EventType: "quux", Scope: stringPtr("123")},
 								},
 							},
