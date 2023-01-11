@@ -201,7 +201,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	g, ctx := errgroup.WithContext(ctx)
 
 	grpcServer := grpc.NewServer()
-	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{})
+	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
+		Service: service,
+	})
 
 	host := ""
 	if env.InsecureDev {
@@ -246,6 +248,8 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 // grpcHandlerFunc returns an http.Handler that delegates to grpcServer on incoming gRPC
 // connections or otherHandler otherwise. Copied from cockroachdb.
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+	// More info about why this is needed here:
+	// https://kennethjenkins.net/posts/go-nginx-grpc/
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
