@@ -1,7 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings, SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
@@ -9,9 +8,11 @@ import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
-const CODE_HIGHLIGHTING_QUERIES: Partial<
-    keyof (WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations)
->[] = ['highlightCode', 'Blob', 'HighlightedFile']
+const CODE_HIGHLIGHTING_QUERIES: Partial<keyof (WebGraphQlOperations & SharedGraphQlOperations)>[] = [
+    'highlightCode',
+    'Blob',
+    'HighlightedFile',
+]
 
 /**
  * Matches a URL against an expected query that will handle code highlighting.
@@ -324,6 +325,8 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         case 'monaco':
         case 'codemirror6':
             break
+        case undefined:
+            throw new Error("Can't determine editor, data-editor=... is not set.")
         default:
             throw new Error(`${editor} is not a supported editor`)
     }
@@ -345,3 +348,13 @@ export const withSearchQueryInput = (callback: (editorName: Editor) => void): vo
         callback(editor)
     }
 }
+
+export const isElementDisabled = (driver: Driver, query: string): Promise<boolean> =>
+    driver.page.evaluate((query: string) => {
+        const element = document.querySelector<HTMLButtonElement>(query)
+
+        const disabledAttribute = element!.disabled
+        const ariaDisabled = element!.getAttribute('aria-disabled')
+
+        return disabledAttribute || ariaDisabled === 'true'
+    }, query)

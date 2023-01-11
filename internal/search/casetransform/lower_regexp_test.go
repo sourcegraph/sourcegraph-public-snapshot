@@ -3,7 +3,7 @@ package casetransform
 import (
 	"testing"
 
-	"github.com/grafana/regexp/syntax"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 )
 
 func TestLowerRegexpASCII(t *testing.T) {

@@ -37,7 +37,7 @@ import {
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
@@ -329,7 +329,7 @@ interface InternalHoverifierState<C extends object, D, A> {
  * The primary purpose of this is to reduce UI jitter by not showing the overlay when there is nothing to show
  * (because there is no content, or because it is still loading).
  */
-const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolean =>
+const shouldRenderOverlay = <C extends object, D, A>(state: InternalHoverifierState<C, D, A>): boolean =>
     !(!state.pinned && state.mouseIsMoving) &&
     ((!!state.hoverOrError && state.hoverOrError !== LOADING) ||
         (!!state.actionsOrError &&
@@ -445,25 +445,28 @@ export function createHoverifier<C extends object, D, A>({
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
 
-    const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
-        observable.pipe(
-            withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
-            switchMap(([value, overlayElement]) =>
-                overlayElement === null
-                    ? of(value)
-                    : race(
-                          fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
-                          of('emit').pipe(delay(MOUSEOVER_DELAY))
-                      ).pipe(
-                          filter(action => action === 'emit'),
-                          mapTo(value)
-                      )
+    const suppressWhileOverlayShown =
+        <T>(): MonoTypeOperatorFunction<T> =>
+        observable =>
+            observable.pipe(
+                withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
+                switchMap(([value, overlayElement]) =>
+                    overlayElement === null
+                        ? of(value)
+                        : race(
+                              fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
+                              of('emit').pipe(delay(MOUSEOVER_DELAY))
+                          ).pipe(
+                              filter(action => action === 'emit'),
+                              mapTo(value)
+                          )
+                )
             )
-        )
 
-    const isEventType = <T extends SupportedMouseEvent>(type: T) => (
-        event: MouseEventTrigger
-    ): event is MouseEventTrigger & { eventType: T } => event.eventType === type
+    const isEventType =
+        <T extends SupportedMouseEvent>(type: T) =>
+        (event: MouseEventTrigger): event is MouseEventTrigger & { eventType: T } =>
+            event.eventType === type
     const allCodeMouseMoves = allPositionsFromEvents.pipe(filter(isEventType('mousemove')), suppressWhileOverlayShown())
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
     const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
@@ -563,7 +566,7 @@ export function createHoverifier<C extends object, D, A>({
                     if (target) {
                         part = dom.getDiffCodePart?.(target)
                     } else {
-                        console.warn('Could not find target for position in file', position)
+                        logger.warn('Could not find target for position in file', position)
                     }
                 }
             }
@@ -904,7 +907,7 @@ export function createHoverifier<C extends object, D, A>({
             // Get the document highlights for that position
             return from(getDocumentHighlights(position)).pipe(
                 catchError(error => {
-                    console.error(error)
+                    logger.error(error)
                     return []
                 }),
                 map(documentHighlights => ({

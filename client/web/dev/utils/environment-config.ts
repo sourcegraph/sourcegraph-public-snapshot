@@ -33,8 +33,14 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
     // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
-    // Allow overriding default Webpack naming behavior for debugging
+    // The name used to generate Statoscope JSON stats and HTML report in the `/ui/assets` folder.
+    WEBPACK_STATS_NAME: process.env.WEBPACK_STATS_NAME,
+    // Allow overriding default Webpack naming behavior for debugging.
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
+    // Enables the plugin that write Webpack stats to disk.
+    WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
+    // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
+    WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
 
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
@@ -52,6 +58,20 @@ export const ENVIRONMENT_CONFIG = {
     //  Webpack is the default web build tool, and esbuild is an experimental option (see
     //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
     DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,
+
+    /**
+     * Omit slow deps (such as Monaco and GraphiQL) in the build to get a ~40% reduction in esbuild
+     * rebuild time. The web app will show placeholders if features needing these deps are used.
+     * (Esbuild only.)
+     */
+    DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
+
+    /**
+     * Force tree-shaking in esbuild. Currently unsafe due to
+     * https://github.com/evanw/esbuild/pull/1458; see the other comments in this repository
+     * mentioning that PR for more information. (Esbuild only.)
+     */
+    DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING: Boolean(process.env.DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING),
 
     /**
      * ----------------------------------------

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -39,6 +40,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Version,
 		args.PatternType,
 		args.Query,
+		search.Precise,
 		search.Batch,
 		settings,
 		envvar.SourcegraphDotComMode(),
@@ -52,6 +54,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
+		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
@@ -64,6 +67,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
+	logger       log.Logger
 	client       client.SearchClient
 	SearchInputs *search.Inputs
 	db           database.DB
@@ -82,7 +86,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, gitserver.NewClient(db)).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

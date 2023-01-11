@@ -4,7 +4,6 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink sidebarSectionListItem"
-    data-state="closed"
     href="/"
   >
     <svg
@@ -24,7 +23,6 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
   </a>
   <a
     class="anchorLink sidebarSectionListItem"
-    data-state="closed"
     href="http://example.com"
   >
     <svg

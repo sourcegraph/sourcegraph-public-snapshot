@@ -38,13 +38,12 @@ func (m *externalServiceWebhookMigrator) Interval() time.Duration { return time.
 
 // Progress returns the percentage (ranged [0, 1]) of external services with a
 // populated has_webhooks column.
-func (m *externalServiceWebhookMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *externalServiceWebhookMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(externalServiceWebhookMigratorProgressQuery)))
 	return progress, err
 }
 
 const externalServiceWebhookMigratorProgressQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		CAST(c1.count AS float) / CAST(c2.count AS float)
@@ -159,12 +158,10 @@ func (m *externalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 }
 
 const externalServiceWebhookMigratorSelectQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
 SELECT id, kind, config, encryption_key_id FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL ORDER BY id LIMIT %s FOR UPDATE
 `
 
 const externalServiceWebhookMigratorUpdateQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
 UPDATE external_services SET has_webhooks = %s WHERE id = %s
 `
 

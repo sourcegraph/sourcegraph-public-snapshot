@@ -6,19 +6,22 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -48,603 +51,731 @@ func TestNewPlanJob(t *testing.T) {
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("user search context", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (SEQUENTIAL
-          (ensureUnique . false)
-          (REPOPAGER
-            (repoOpts.searchContextSpec . @userA)
-            (PARTIALREPOS
-              (ZOEKTREPOSUBSETTEXTSEARCH
-                (query . substr:"foo")
-                (type . text))))
-          (REPOPAGER
-            (repoOpts.searchContextSpec . @userA)
-            (PARTIALREPOS
-              (SEARCHERTEXTSEARCH
-                (indexed . false)))))
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.searchContextSpec . @userA))
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
         (PARALLEL
-          NoopJob
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)))))))`),
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (REPOPAGER
+              (repoOpts.searchContextSpec . @userA)
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (query . substr:"foo")
+                  (type . text))))
+            (REPOPAGER
+              (repoOpts.searchContextSpec . @userA)
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (indexed . false))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [foo])(repoOpts.searchContextSpec . @userA)
+              (repoNamePatterns . [(?i)foo])))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.searchContextSpec . @userA))
+          (PARALLEL
+            NoopJob
+            NoopJob))))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("global search explicit context", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"foo")
-          (type . text)
-          (repoOpts.searchContextSpec . global))
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.searchContextSpec . global))
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . substr:"foo")
+              (type . text)
+              (repoOpts.searchContextSpec . global))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [foo])(repoOpts.searchContextSpec . global)
+              (repoNamePatterns . [(?i)foo])))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.searchContextSpec . global))
+          NoopJob)))))`),
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("global search implicit context", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"foo")
-          (type . text)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . substr:"foo")
+              (type . text)
+              )
+            (REPOSEARCH
+              (repoOpts.repoFilters . [foo])
+              (repoNamePatterns . [(?i)foo])))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("nonglobal repo", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (SEQUENTIAL
-          (ensureUnique . false)
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)
-            (PARTIALREPOS
-              (ZOEKTREPOSUBSETTEXTSEARCH
-                (query . substr:"foo")
-                (type . text))))
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)
-            (PARTIALREPOS
-              (SEARCHERTEXTSEARCH
-                (indexed . false)))))
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.repoFilters.0 . sourcegraph/sourcegraph))
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
         (PARALLEL
-          NoopJob
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)))))))`),
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (REPOPAGER
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph])
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (query . substr:"foo")
+                  (type . text))))
+            (REPOPAGER
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph])
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (indexed . false))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph foo])
+              (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.repoFilters . [sourcegraph/sourcegraph]))
+          (PARALLEL
+            NoopJob
+            NoopJob))))))`),
 	}, {
 		query:      `ok ok`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeRegex,
 		want: autogold.Want("supported repo job", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . regex:"ok(?-s:.)*?ok")
-          (type . text)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . (?:ok).*?(?:ok)))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . regex:"ok(?-s:.)*?ok")
+              (type . text)
+              )
+            (REPOSEARCH
+              (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
+              (repoNamePatterns . [(?i)(?:ok).*?(?:ok)])))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeLiteral,
 		want: autogold.Want("supported repo job literal", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"ok @thing")
-          (type . text)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . ok ))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . substr:"ok @thing")
+              (type . text)
+              )
+            (REPOSEARCH
+              (repoOpts.repoFilters . [ok ])
+              (repoNamePatterns . [(?i)ok ])))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
 	}, {
 		query:      `@nope`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeRegex,
 		want: autogold.Want("unsupported repo job literal", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"@nope")
-          (type . text)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `foo @bar`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("unsupported repo job regexp", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . regex:"foo(?-s:.)*?@bar")
-          (type . text)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:symbol test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("symbol", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALSYMBOLSEARCH
-          (query . sym:substr:"test")
-          (type . symbol)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("commit", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (COMMITSEARCH
-          (query . *protocol.MessageMatches(test))
-          (repoOpts.onlyCloned . true)
-          (diff . false)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:diff test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("diff", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (DIFFSEARCH
-          (query . *protocol.DiffMatches(test))
-          (repoOpts.onlyCloned . true)
-          (diff . true)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("streaming file or commit", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . content_substr:"test")
-          (type . text)
-          )
-        (COMMITSEARCH
-          (query . *protocol.MessageMatches(test))
-          (repoOpts.onlyCloned . true)
-          (diff . false)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("streaming many types", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (SEQUENTIAL
-          (ensureUnique . false)
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (ZOEKTREPOSUBSETTEXTSEARCH
-                (query . substr:"test")
-                (type . text))))
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (SEARCHERTEXTSEARCH
-                (indexed . false)))))
-        (REPOPAGER
-          (repoOpts.repoFilters.0 . test)
-          (PARTIALREPOS
-            (ZOEKTSYMBOLSEARCH
-              (query . sym:substr:"test"))))
-        (COMMITSEARCH
-          (query . *protocol.MessageMatches(test))
-          (repoOpts.repoFilters.0 . test)(repoOpts.onlyCloned . true)
-          (diff . false)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.repoFilters.0 . test))
-        (PARALLEL
-          NoopJob
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (SEARCHERSYMBOLSEARCH
-                (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
-                (numRepos . 0)
-                (limit . 500))))
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)))))))`),
-	}, {
-		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("batched file or commit", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . content_substr:"test")
-          (type . text)
-          )
-        (COMMITSEARCH
-          (query . *protocol.MessageMatches(test))
-          (repoOpts.onlyCloned . true)
-          (diff . false)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          )
-        NoopJob))))`),
-	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("batched many types", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (SEQUENTIAL
-          (ensureUnique . false)
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (ZOEKTREPOSUBSETTEXTSEARCH
-                (query . substr:"test")
-                (type . text))))
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (SEARCHERTEXTSEARCH
-                (indexed . false)))))
-        (REPOPAGER
-          (repoOpts.repoFilters.0 . test)
-          (PARTIALREPOS
-            (ZOEKTSYMBOLSEARCH
-              (query . sym:substr:"test"))))
-        (COMMITSEARCH
-          (query . *protocol.MessageMatches(test))
-          (repoOpts.repoFilters.0 . test)(repoOpts.onlyCloned . true)
-          (diff . false)
-          (limit . 500))
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.repoFilters.0 . test))
-        (PARALLEL
-          NoopJob
-          (REPOPAGER
-            (repoOpts.repoFilters.0 . test)
-            (PARTIALREPOS
-              (SEARCHERSYMBOLSEARCH
-                (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
-                (numRepos . 0)
-                (limit . 500))))
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)))))))`),
-	}, {
-		query:      `(type:commit or type:diff) (a or b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
-		want: autogold.Want("complex commit diff", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (OR
-    (TIMEOUT
-      (timeout . 20s)
-      (LIMIT
-        (limit . 500)
-        (PARALLEL
-          (COMMITSEARCH
-            (query . (*protocol.MessageMatches((?:a)|(?:b))))
-            (repoOpts.onlyCloned . true)
-            (diff . false)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          (OR
-            NoopJob
-            NoopJob))))
-    (TIMEOUT
-      (timeout . 20s)
-      (LIMIT
-        (limit . 500)
-        (PARALLEL
-          (DIFFSEARCH
-            (query . (*protocol.DiffMatches((?:a)|(?:b))))
-            (repoOpts.onlyCloned . true)
-            (diff . true)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          (OR
-            NoopJob
-            NoopJob))))))`),
-	}, {
-		query:      `(type:repo a) or (type:file b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Want("disjunct types", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (OR
-    (TIMEOUT
-      (timeout . 20s)
-      (LIMIT
-        (limit . 500)
-        (PARALLEL
-          (REPOSCOMPUTEEXCLUDED
-            )
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . a)))))
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
-            (query . content_substr:"b")
+            (query . substr:"@nope")
             (type . text)
             )
           (REPOSCOMPUTEEXCLUDED
             )
           NoopJob)))))`),
 	}, {
+		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeLucky,
+		want: autogold.Want("repo: and rev:", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . lucky)
+    (FEELINGLUCKYSEARCH
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
+              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
+	}, {
+		query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeLucky,
+		want: autogold.Want("repo@rev", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . lucky)
+    (FEELINGLUCKYSEARCH
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
+              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
+	}, {
+		query:      `foo @bar`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("unsupported repo job regexp", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . regex:"foo(?-s:.)*?@bar")
+            (type . text)
+            )
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:symbol test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("symbol", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (ZOEKTGLOBALSYMBOLSEARCH
+            (query . sym:substr:"test")
+            (type . symbol)
+            )
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:commit test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("commit", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (COMMITSEARCH
+            (query . *protocol.MessageMatches(test))
+            (repoOpts.onlyCloned . true)
+            (diff . false)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:diff test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("diff", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (DIFFSEARCH
+            (query . *protocol.DiffMatches(test))
+            (repoOpts.onlyCloned . true)
+            (diff . true)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:file type:commit test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("streaming file or commit", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . content_substr:"test")
+            (type . text)
+            )
+          (COMMITSEARCH
+            (query . *protocol.MessageMatches(test))
+            (repoOpts.onlyCloned . true)
+            (diff . false)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("streaming many types", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (query . substr:"test")
+                  (type . text))))
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (indexed . false))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [test test])
+              (repoNamePatterns . [(?i)test (?i)test])))
+          (REPOPAGER
+            (repoOpts.repoFilters . [test])
+            (PARTIALREPOS
+              (ZOEKTSYMBOLSEARCH
+                (query . sym:substr:"test"))))
+          (COMMITSEARCH
+            (query . *protocol.MessageMatches(test))
+            (repoOpts.repoFilters . [test])(repoOpts.onlyCloned . true)
+            (diff . false)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.repoFilters . [test]))
+          (PARALLEL
+            NoopJob
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (SEARCHERSYMBOLSEARCH
+                  (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
+                  (numRepos . 0)
+                  (limit . 500))))
+            NoopJob))))))`),
+	}, {
+		query:      `type:file type:commit test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("batched file or commit", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . content_substr:"test")
+            (type . text)
+            )
+          (COMMITSEARCH
+            (query . *protocol.MessageMatches(test))
+            (repoOpts.onlyCloned . true)
+            (diff . false)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+	}, {
+		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("batched many types", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (query . substr:"test")
+                  (type . text))))
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (indexed . false))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [test test])
+              (repoNamePatterns . [(?i)test (?i)test])))
+          (REPOPAGER
+            (repoOpts.repoFilters . [test])
+            (PARTIALREPOS
+              (ZOEKTSYMBOLSEARCH
+                (query . sym:substr:"test"))))
+          (COMMITSEARCH
+            (query . *protocol.MessageMatches(test))
+            (repoOpts.repoFilters . [test])(repoOpts.onlyCloned . true)
+            (diff . false)
+            (limit . 500))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.repoFilters . [test]))
+          (PARALLEL
+            NoopJob
+            (REPOPAGER
+              (repoOpts.repoFilters . [test])
+              (PARTIALREPOS
+                (SEARCHERSYMBOLSEARCH
+                  (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
+                  (numRepos . 0)
+                  (limit . 500))))
+            NoopJob))))))`),
+	}, {
+		query:      `(type:commit or type:diff) (a or b)`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
+		want: autogold.Want("complex commit diff", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (OR
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (COMMITSEARCH
+              (query . (*protocol.MessageMatches((?:a)|(?:b))))
+              (repoOpts.onlyCloned . true)
+              (diff . false)
+              (limit . 500))
+            (REPOSCOMPUTEEXCLUDED
+              )
+            (OR
+              NoopJob
+              NoopJob))))
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (DIFFSEARCH
+              (query . (*protocol.DiffMatches((?:a)|(?:b))))
+              (repoOpts.onlyCloned . true)
+              (diff . true)
+              (limit . 500))
+            (REPOSCOMPUTEEXCLUDED
+              )
+            (OR
+              NoopJob
+              NoopJob)))))))`),
+	}, {
+		query:      `(type:repo a) or (type:file b)`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("disjunct types", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (OR
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (REPOSCOMPUTEEXCLUDED
+              )
+            (REPOSEARCH
+              (repoOpts.repoFilters . [a])
+              (repoNamePatterns . [(?i)a])))))
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 500)
+          (PARALLEL
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . content_substr:"b")
+              (type . text)
+              )
+            (REPOSCOMPUTEEXCLUDED
+              )
+            NoopJob))))))`),
+	}, {
 		query:      `type:symbol a or b`,
 		protocol:   search.Streaming,
 		searchType: query.SearchTypeRegex,
 		want: autogold.Want("symbol with or", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (ZOEKTGLOBALSYMBOLSEARCH
-          (query . (or sym:substr:"a" sym:substr:"b"))
-          (type . symbol)
-          )
-        (REPOSCOMPUTEEXCLUDED
-          )
-        (OR
-          NoopJob
-          NoopJob)))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (ZOEKTGLOBALSYMBOLSEARCH
+            (query . (or sym:substr:"a" sym:substr:"b"))
+            (type . symbol)
+            )
+          (REPOSCOMPUTEEXCLUDED
+            )
+          (OR
+            NoopJob
+            NoopJob))))))`),
 	},
 		{
 			query:      `repo:contains.path(a) repo:contains.content(b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
 			want: autogold.Want("repo contains path and repo contains content", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))
-        (REPOSEARCH
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))
+          (REPOSEARCH
+            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b)
+            (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
 			want: autogold.Want("repo contains path and content", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
-        (REPOSEARCH
-          (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
+          (REPOSEARCH
+            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b)
+            (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:has(key:value)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
 			want: autogold.Want("repo has kvp", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
-        (REPOSEARCH
-          (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
+          (REPOSEARCH
+            (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value)
+            (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:has.tag(tag)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
 			want: autogold.Want("repo has tag", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . regex)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (REPOSCOMPUTEEXCLUDED
-          (repoOpts.hasKVPs[0].key . tag))
-        (REPOSEARCH
-          (repoOpts.hasKVPs[0].key . tag))))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasKVPs[0].key . tag))
+          (REPOSEARCH
+            (repoOpts.hasKVPs[0].key . tag)
+            (repoNamePatterns . [])))))))`),
+		}, {
+			query:      `repo:has.tag(tag) foo`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has tag and foo", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . regex)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (SEQUENTIAL
+            (ensureUnique . false)
+            (REPOPAGER
+              (repoOpts.hasKVPs[0].key . tag)
+              (PARTIALREPOS
+                (ZOEKTREPOSUBSETTEXTSEARCH
+                  (query . substr:"foo")
+                  (type . text))))
+            (REPOPAGER
+              (repoOpts.hasKVPs[0].key . tag)
+              (PARTIALREPOS
+                (SEARCHERTEXTSEARCH
+                  (indexed . false))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [foo])(repoOpts.hasKVPs[0].key . tag)
+              (repoNamePatterns . [(?i)foo])))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.hasKVPs[0].key . tag))
+          (PARALLEL
+            NoopJob
+            NoopJob))))))`),
 		}, {
 			query:      `(...)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeStructural,
 			want: autogold.Want("stream structural search", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . structural)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (PARALLEL
-        (REPOSCOMPUTEEXCLUDED
-          )
-        (STRUCTURALSEARCH
-          (query . regex:"(:_)")
-          (type . text)
-          (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
-          )))))`),
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . structural)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (REPOSCOMPUTEEXCLUDED
+            )
+          (STRUCTURALSEARCH
+            (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
+            ))))))`),
 		},
 	}
 
@@ -686,12 +817,14 @@ func TestToEvaluateJob(t *testing.T) {
 
 	autogold.Want("root limit for streaming search", `
 (REPOSEARCH
-  (repoOpts.repoFilters.0 . foo))
+  (repoOpts.repoFilters . [foo])
+  (repoNamePatterns . [(?i)foo]))
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
 (REPOSEARCH
-  (repoOpts.repoFilters.0 . foo))
+  (repoOpts.repoFilters . [foo])
+  (repoNamePatterns . [(?i)foo]))
 `).Equal(t, test("foo", search.Batch))
 }
 
@@ -849,9 +982,8 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := search.Batch
-		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteral)
+		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
 		p := toTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -883,6 +1015,23 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		}
 	})
 	return searchType
+}
+
+func Test_computeResultTypes(t *testing.T) {
+	test := func(input string) string {
+		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+		b := plan[0]
+		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		return resultTypes.String()
+	}
+
+	t.Run("only search file content when type not set", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo content:bar")))
+	})
+
+	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo bar")))
+	})
 }
 
 func TestRepoSubsetTextSearch(t *testing.T) {
@@ -1102,12 +1251,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
-	trueVal := true
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{SearchMultipleRevisionsPerRepository: &trueVal},
-	}})
-	defer conf.Mock(nil)
-
 	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
@@ -1152,19 +1295,94 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	require.Equal(t, wantResultKeys, matchKeys)
 }
 
+func TestZoektQueryPatternsAsRegexps(t *testing.T) {
+	tests := []struct {
+		name  string
+		input zoektquery.Q
+		want  []*regexp.Regexp
+	}{
+		{
+			name:  "literal substring query",
+			input: &zoektquery.Substring{Pattern: "foobar"},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
+		},
+		{
+			name:  "regex query",
+			input: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
+			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
+		},
+		{
+			name: "and query",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "or query",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Substring{Pattern: "baz"},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)baz`),
+			},
+		},
+		{
+			name: "literal and regex",
+			input: zoektquery.NewAnd([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name: "literal or regex",
+			input: zoektquery.NewOr([]zoektquery.Q{
+				&zoektquery.Substring{Pattern: "foobar"},
+				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+			}...),
+			want: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobar`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			},
+		},
+		{
+			name:  "respect case sensitivity setting",
+			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
+			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := zoektQueryPatternsAsRegexps(tc.input)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
-		revs := make([]string, 0, len(revSpecs))
-		for _, revSpec := range revSpecs {
+		repoRevs := query.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
 			// treat empty list as HEAD
 			revs = []string{""}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }

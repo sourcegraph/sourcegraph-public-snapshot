@@ -9,7 +9,7 @@
     &:last-child {
         margin-right: 0;
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         margin: 0;
     }
 
@@ -26,7 +26,7 @@
                 padding: 0.125rem;
                 margin: -0.125rem;
             }
-            @media (--sm-breakpoint-down) {
+            @media (--xs-breakpoint-down) {
                 margin: 0;
                 border: 0;
             }
@@ -56,7 +56,7 @@
         .link-content {
             margin-bottom: -0.125rem;
         }
-        @media (--sm-breakpoint-down) {
+        @media (--xs-breakpoint-down) {
             margin: 0;
             border: 0;
             background-color: var(--link-color);
@@ -73,7 +73,7 @@
         display: inline-flex;
         align-items: center;
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         padding: 0.75rem 0.625rem;
         flex: 1;
         align-items: flex-start;
@@ -85,14 +85,14 @@
     border-bottom: 2px solid var(--brand-secondary);
     &:focus-visible {
         margin-top: 0.125rem;
-        @media (--sm-breakpoint-down) {
+        @media (--xs-breakpoint-down) {
             margin-top: 0;
         }
     }
     .link-content {
         margin-bottom: -0.125rem;
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         .link-content {
             margin-bottom: 0;
         }
@@ -101,7 +101,7 @@
     }
     .text,
     .icon {
-        @media (--sm-breakpoint-down) {
+        @media (--xs-breakpoint-down) {
             color: var(--light-text);
         }
     }
@@ -113,7 +113,7 @@
     @media (--md-breakpoint-down) {
         color: var(--icon-color);
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         color: var(--body-color);
     }
 }
@@ -129,7 +129,7 @@
     @media (--md-breakpoint-down) {
         display: none;
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         display: inline-flex;
     }
 }

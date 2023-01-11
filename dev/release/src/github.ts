@@ -88,6 +88,10 @@ interface IssueTemplateArguments {
      */
     version: semver.SemVer
     /**
+     * Available as `$ONE_WORKING_WEEK_BEFORE_RELEASE`
+     */
+    oneWorkingWeekBeforeRelease: Date
+    /**
      * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
      */
     threeWorkingDaysBeforeRelease: Date
@@ -122,13 +126,6 @@ const getTemplates = () => {
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
-    const upgradeManagedInstanceIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/upgrade_managed_issue_template.md',
-        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
-    }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
@@ -136,7 +133,7 @@ const getTemplates = () => {
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue, securityAssessmentIssue }
+    return { releaseIssue, patchReleaseIssue, securityAssessmentIssue }
 }
 
 function dateMarkdown(date: Date, name: string): string {
@@ -146,7 +143,13 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    { version, threeWorkingDaysBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
+    {
+        version,
+        oneWorkingWeekBeforeRelease,
+        threeWorkingDaysBeforeRelease,
+        releaseDate,
+        oneWorkingDayAfterRelease,
+    }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -155,6 +158,10 @@ async function execTemplate(
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
+        .replace(
+            /\$ONE_WORKING_WEEK_BEFORE_RELEASE/g,
+            dateMarkdown(oneWorkingWeekBeforeRelease, `One working week before ${name} release`)
+        )
         .replace(
             /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
             dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
@@ -182,6 +189,7 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
+    oneWorkingWeekBeforeRelease,
     threeWorkingDaysBeforeRelease,
     oneWorkingDayAfterRelease,
     dryRun,
@@ -189,6 +197,7 @@ export async function ensureTrackingIssues({
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
+    oneWorkingWeekBeforeRelease: Date
     threeWorkingDaysBeforeRelease: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
@@ -201,9 +210,9 @@ export async function ensureTrackingIssues({
     // tracking issue, and subsequent issues will contain references to it.
     let issueTemplates: IssueTemplate[]
     if (version.patch === 0) {
-        issueTemplates = [templates.releaseIssue, templates.upgradeManagedInstanceIssue]
+        issueTemplates = [templates.releaseIssue]
     } else {
-        issueTemplates = [templates.patchReleaseIssue, templates.upgradeManagedInstanceIssue]
+        issueTemplates = [templates.patchReleaseIssue]
     }
 
     // Release milestones are not as emphasised now as they used to be, since most teams
@@ -225,6 +234,7 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
+            oneWorkingWeekBeforeRelease,
             threeWorkingDaysBeforeRelease,
             oneWorkingDayAfterRelease,
         })

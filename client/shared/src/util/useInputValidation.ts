@@ -116,10 +116,10 @@ export function useInputValidation(
         [inputReferences]
     )
 
-    const validationPipeline = useMemo(() => createValidationPipeline(options, inputReferences, setInputState), [
-        options,
-        inputReferences,
-    ])
+    const validationPipeline = useMemo(
+        () => createValidationPipeline(options, inputReferences, setInputState),
+        [options, inputReferences]
+    )
 
     const [nextInputValidationEvent] = useEventObservable(validationPipeline)
 

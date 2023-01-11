@@ -4,8 +4,9 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -17,7 +18,7 @@ describe('CreateCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',
         username: 'username',
-        email: 'user@me.com',
+        emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
         siteAdmin: true,
     } as AuthenticatedUser
 
@@ -106,6 +107,6 @@ describe('CreateCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const actionButton = screen.getByTestId('form-action-toggle-email')
-        expect(actionButton).toBeDisabled()
+        assertAriaDisabled(actionButton)
     })
 })

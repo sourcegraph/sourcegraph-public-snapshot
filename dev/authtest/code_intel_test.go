@@ -69,7 +69,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 
 	t.Run("LSIF upload", func(t *testing.T) {
 		// Update site configuration to enable "lsifEnforceAuth".
-		siteConfig, err := client.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,21 +77,25 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		oldSiteConfig := new(schema.SiteConfiguration)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			err = client.UpdateSiteConfiguration(oldSiteConfig)
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
 		siteConfig.LsifEnforceAuth = true
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
-		err = gqltestutil.Retry(10*time.Second, func() error {
+		err = gqltestutil.Retry(15*time.Second, func() error {
 			resp, err := userClient.Post(*baseURL+"/.api/lsif/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
 			if err != nil {
 				t.Fatal(err)
@@ -161,7 +165,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 }
 
 func setExecutorAccessToken(t *testing.T, token string) func() {
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,11 +174,15 @@ func setExecutorAccessToken(t *testing.T, token string) func() {
 	*oldSiteConfig = *siteConfig
 	siteConfig.ExecutorsAccessToken = token
 
-	if err := client.UpdateSiteConfiguration(siteConfig); err != nil {
+	if err := client.UpdateSiteConfiguration(siteConfig, lastID); err != nil {
 		t.Fatal(err)
 	}
 	return func() {
-		if err := client.UpdateSiteConfiguration(oldSiteConfig); err != nil {
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := client.UpdateSiteConfiguration(oldSiteConfig, lastID); err != nil {
 			t.Fatal(err)
 		}
 	}

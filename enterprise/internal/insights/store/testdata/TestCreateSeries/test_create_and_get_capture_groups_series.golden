@@ -12,4 +12,6 @@
 	SampleIntervalUnit:         "MONTH",
 	GeneratedFromCaptureGroups: true,
 	GenerationMethod:           types.GenerationMethod("search"),
+	SupportsAugmentation:       true,
+	RepositoryCriteria:         valast.Addr("repo:a").(*string),
 }}

@@ -3,9 +3,8 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom-v5-compat'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
-import { Label, Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
+import { asError, logger } from '@sourcegraph/common'
+import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -81,7 +80,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     }
                 })
                 .catch(error => {
-                    console.error('Auth error:', error)
+                    logger.error('Auth error:', error)
                     setLoading(false)
                     onAuthError(asError(error))
                 })

@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type CodeMonitorsResolver interface {
@@ -35,7 +36,7 @@ type MonitorConnectionResolver interface {
 type MonitorResolver interface {
 	ID() graphql.ID
 	CreatedBy(ctx context.Context) (*UserResolver, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 	Description() string
 	Owner(ctx context.Context) (NamespaceResolver, error)
 	Enabled() bool
@@ -63,7 +64,7 @@ type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
 	Status() (string, error)
 	Message() *string
-	Timestamp() (DateTime, error)
+	Timestamp() (gqlutil.DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 	ResultCount() int32
 	Query() *string
@@ -128,7 +129,7 @@ type MonitorActionEventResolver interface {
 	ID() graphql.ID
 	Status() (string, error)
 	Message() *string
-	Timestamp() DateTime
+	Timestamp() gqlutil.DateTime
 }
 
 type ListEventsArgs struct {

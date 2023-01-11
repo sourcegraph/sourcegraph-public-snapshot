@@ -14,8 +14,9 @@ const specExpireInteral = 60 * time.Minute
 func NewSpecExpirer(ctx context.Context, bstore *store.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
+		"batchchanges.spec-expirer", "expire batch changes specs",
 		specExpireInteral,
-		goroutine.NewHandlerWithErrorMessage("expire batch changes specs", func(ctx context.Context) error {
+		goroutine.HandlerFunc(func(ctx context.Context) error {
 			// Delete all unattached changeset specs...
 			if err := bstore.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
 				return errors.Wrap(err, "DeleteExpiredChangesetSpecs")

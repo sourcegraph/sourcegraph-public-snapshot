@@ -11,9 +11,11 @@ const https = require('https')
 const util = require('util')
 
 let fixedHeaders = {}
+let proxyAgent = null
 
-module.exports = function polyfillEventSource(headers) {
+module.exports = function polyfillEventSource(headers, agent) {
   fixedHeaders = { ...headers }
+  proxyAgent = agent
 
   global.EventSource = EventSource
 
@@ -169,6 +171,10 @@ function EventSource(url, eventSourceInitDict) {
     // Pass this on to the XHR
     if (eventSourceInitDict && eventSourceInitDict.withCredentials !== undefined) {
       options.withCredentials = eventSourceInitDict.withCredentials
+    }
+
+    if (proxyAgent) {
+      options.agent = proxyAgent(url)
     }
 
     request = (isSecure ? https : http).request(options, res => {

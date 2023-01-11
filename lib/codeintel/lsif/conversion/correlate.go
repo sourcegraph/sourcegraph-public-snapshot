@@ -36,11 +36,7 @@ func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathex
 	}
 
 	// Convert data to the format we send to the writer
-	groupedBundleData, err := groupBundleData(ctx, state)
-	if err != nil {
-		return nil, err
-	}
-
+	groupedBundleData := groupBundleData(ctx, state)
 	return groupedBundleData, nil
 }
 

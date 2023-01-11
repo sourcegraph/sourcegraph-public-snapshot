@@ -13,6 +13,29 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox 22.11.24.1820, Safari v1.19
+
+- Fix route change handlers for GitHub: [issues/44074](https://github.com/sourcegraph/sourcegraph/issues/44074), [pull/44783](https://github.com/sourcegraph/sourcegraph/pull/44783)
+- Fix selectors used to inject Sourcegraph code intelligence on GitHub: [issues/44759](https://github.com/sourcegraph/sourcegraph/issues/44759), [pull/44766](https://github.com/sourcegraph/sourcegraph/pull/44766)
+
+## Chrome 22.11.14.1520, Firefox 22.11.14.1521, Safari v1.18
+
+- Add new GitHub UI support: [issues/44237](https://github.com/sourcegraph/sourcegraph/issues/44237), [pull/44285](https://github.com/sourcegraph/sourcegraph/pull/44285)
+- Remove 'Search on Sourcegraph' buttons from GitHub search pages: [pull/44328](https://github.com/sourcegraph/sourcegraph/pull/44328)
+
+## Chrome 22.10.18.1144, Firefox 22.10.18.1133, Safari v1.17
+
+- Updated the info text when accessing an unindexed repository [pull/42509](https://github.com/sourcegraph/sourcegraph/pull/42509)
+- Fix an issue that caused the native code host integration to not work on gitlab.com [pull/42748](https://github.com/sourcegraph/sourcegraph/pull/42748)
+
+## Chrome & Firefox v22.9.27.1330, Safari v1.16
+
+- Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
+## Chrome v22.9.14.1335, Firefox v22.9.14.1616, Safari v1.15
+
+- Fix code-intel issue on GitHub Enterprise: [pull/41646](https://github.com/sourcegraph/sourcegraph/pull/41646)
+
 ## Chrome & Firefox 22.7.29.851, Safari v1.14 (22.8.2.1319)
 
 - Fix extensions decorations issue when navigating project files on GitHub: [codecov/sourcegraph-codecov/issues/86](https://github.com/codecov/sourcegraph-codecov/issues/86), [pull/39557](https://github.com/sourcegraph/sourcegraph/pull/39557)

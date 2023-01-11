@@ -150,7 +150,6 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 }
 
 type SearchJob struct {
-	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
@@ -163,8 +162,13 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
-	return nil, repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	it := repos.Iterator(ctx, s.RepoOpts)
+
+	for it.Next() {
+		page := it.Current()
+		page.MaybeSendStats(stream)
+
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			clients.Logger,
@@ -175,15 +179,20 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			s.ContainsRefGlobs,
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		repoSet := []repoData{UnindexedList(unindexed)}
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
-	})
+		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, it.Err()
 }
 
 func (*SearchJob) Name() string {
@@ -197,14 +206,10 @@ func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
 			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
 			log.String("useIndex", string(s.UseIndex)),
-			trace.Printf("select", "%q", s.ZoektArgs.Select),
-			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", s.ZoektArgs.Query),
-			log.String("type", string(s.ZoektArgs.Typ)),
 			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
 		)

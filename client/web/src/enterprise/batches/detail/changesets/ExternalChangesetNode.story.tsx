@@ -63,9 +63,8 @@ export const AllStates: Story = args => {
                                     forkNamespace: index % 2 === 0 ? 'user' : null,
                                     diffStat: {
                                         __typename: 'DiffStat',
-                                        added: 10,
-                                        changed: 20,
-                                        deleted: 8,
+                                        added: 30,
+                                        deleted: 28,
                                     },
                                     labels: [
                                         {
@@ -148,9 +147,8 @@ export const Unpublished: Story = args => {
                         forkNamespace: null,
                         diffStat: {
                             __typename: 'DiffStat',
-                            added: 10,
-                            changed: 20,
-                            deleted: 8,
+                            added: 30,
+                            deleted: 28,
                         },
                         labels: [
                             {

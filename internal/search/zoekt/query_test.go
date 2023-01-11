@@ -99,9 +99,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Name == "regex" {
-				t.Skip("@jac needs to port optimizeRegex from zoekt so we generate the same regex")
-			}
 			sourceQuery, _ := query.ParseRegexp(tt.Pattern)
 			b, _ := query.ToBasicQuery(sourceQuery)
 

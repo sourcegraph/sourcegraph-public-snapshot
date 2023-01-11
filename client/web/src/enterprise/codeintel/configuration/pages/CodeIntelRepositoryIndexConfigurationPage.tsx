@@ -18,7 +18,7 @@ export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemePro
 }
 
 export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
-    React.PropsWithChildren<CodeIntelRepositoryIndexConfigurationPageProps>
+    CodeIntelRepositoryIndexConfigurationPageProps
 > = ({ repo, authenticatedUser, history, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
 

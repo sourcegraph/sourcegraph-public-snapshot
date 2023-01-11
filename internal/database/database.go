@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -35,21 +36,28 @@ type DB interface {
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	OrgStats() OrgStatsStore
+	Permissions() PermissionStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
+	RolePermissions() RolePermissionStore
+	Roles() RoleStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
-	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
-	UserPublicRepos() UserPublicRepoStore
+	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Webhooks(encryption.Key) WebhookStore
 	RepoStatistics() RepoStatisticsStore
+	Executors() ExecutorStore
+	ExecutorSecrets(encryption.Key) ExecutorSecretStore
+	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
+	ZoektRepos() ZoektReposStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -60,7 +68,7 @@ var _ DB = (*db)(nil)
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
 func NewDB(logger log.Logger, inner *sql.DB) DB {
-	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
@@ -73,15 +81,15 @@ type db struct {
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
+	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {
@@ -97,7 +105,7 @@ func (d *db) Done(err error) error {
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokensWith(d.Store)
+	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
@@ -117,7 +125,7 @@ func (d *db) EventLogs() EventLogStore {
 }
 
 func (d *db) SecurityEventLogs() SecurityEventLogsStore {
-	return SecurityEventLogsWith(d.Store)
+	return SecurityEventLogsWith(d.logger, d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
@@ -160,6 +168,10 @@ func (d *db) OrgStats() OrgStatsStore {
 	return OrgStatsWith(d.Store)
 }
 
+func (d *db) Permissions() PermissionStore {
+	return PermissionsWith(d.Store)
+}
+
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
 }
@@ -172,6 +184,14 @@ func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
 }
 
+func (d *db) RolePermissions() RolePermissionStore {
+	return RolePermissionsWith(d.Store)
+}
+
+func (d *db) Roles() RoleStore {
+	return RolesWith(d.Store)
+}
+
 func (d *db) SavedSearches() SavedSearchStore {
 	return SavedSearchesWith(d.Store)
 }
@@ -182,10 +202,6 @@ func (d *db) SearchContexts() SearchContextsStore {
 
 func (d *db) Settings() SettingsStore {
 	return SettingsWith(d.Store)
-}
-
-func (d *db) SubRepoPerms() SubRepoPermsStore {
-	return SubRepoPermsWith(d.Store)
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
@@ -204,8 +220,8 @@ func (d *db) UserExternalAccounts() UserExternalAccountsStore {
 	return ExternalAccountsWith(d.logger, d.Store)
 }
 
-func (d *db) UserPublicRepos() UserPublicRepoStore {
-	return UserPublicReposWith(d.Store)
+func (d *db) UserRoles() UserRoleStore {
+	return UserRolesWith(d.Store)
 }
 
 func (d *db) Users() UserStore {
@@ -216,6 +232,26 @@ func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
 }
 
+func (d *db) Webhooks(key encryption.Key) WebhookStore {
+	return WebhooksWith(d.Store, key)
+}
+
 func (d *db) RepoStatistics() RepoStatisticsStore {
 	return RepoStatisticsWith(d.Store)
+}
+
+func (d *db) Executors() ExecutorStore {
+	return ExecutorsWith(d.Store)
+}
+
+func (d *db) ExecutorSecrets(key encryption.Key) ExecutorSecretStore {
+	return ExecutorSecretsWith(d.logger, d.Store, key)
+}
+
+func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
+	return ExecutorSecretAccessLogsWith(d.Store)
+}
+
+func (d *db) ZoektRepos() ZoektReposStore {
+	return ZoektReposWith(d.Store)
 }

@@ -44,6 +44,14 @@ func (nt NullTime) Value() (driver.Value, error) {
 	return *nt.Time, nil
 }
 
+// NullTimeColumn represents a timestamp that should be inserted/updated as NULL when t.IsZero() is true.
+func NullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
 // NullString represents a string that may be null. NullString implements the
 // sql.Scanner interface so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, String is set to the zero value.
@@ -76,6 +84,14 @@ func (nt NullString) Value() (driver.Value, error) {
 	return *nt.S, nil
 }
 
+// NullStringColumn represents a string that should be inserted/updated as NULL when blank.
+func NullStringColumn(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // NullInt32 represents an int32 that may be null. NullInt32 implements the
 // sql.Scanner interface so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int32 is set to the zero value.
@@ -102,6 +118,14 @@ func (n NullInt32) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return *n.N, nil
+}
+
+// NullInt32Column represents an int32 that should be inserted/updated as NULL when the value is 0.
+func NullInt32Column(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 // NullInt64 represents an int64 that may be null. NullInt64 implements the
@@ -138,6 +162,14 @@ func (n NullInt64) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return *n.N, nil
+}
+
+// NullInt64Column represents an int64 that should be inserted/updated as NULL when the value is 0.
+func NullInt64Column(n int64) *int64 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 // NullInt represents an int that may be null. NullInt implements the

@@ -56,9 +56,9 @@ func init() {
 var schemeMatcher = lazyregexp.New(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
 
 // dialRedis dials Redis given the raw endpoint string. The string can have two formats:
-// 1) If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
-//    must be of the format specified in https://www.iana.org/assignments/uri-schemes/prov/redis.
-// 2) Otherwise, it is assumed to be of the format $HOSTNAME:$PORT.
+//  1. If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
+//     must be of the format specified in https://www.iana.org/assignments/uri-schemes/prov/redis.
+//  2. Otherwise, it is assumed to be of the format $HOSTNAME:$PORT.
 func dialRedis(rawEndpoint string) (redis.Conn, error) {
 	if schemeMatcher.MatchString(rawEndpoint) { // expect "redis://"
 		return redis.DialURL(rawEndpoint)

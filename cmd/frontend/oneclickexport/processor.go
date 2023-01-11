@@ -3,7 +3,7 @@ package oneclickexport
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/sourcegraph/log"
@@ -41,7 +41,7 @@ func (s SiteConfigProcessor) Process(_ context.Context, _ ConfigRequest, dir str
 	configBytes := []byte(siteConfig.Site)
 
 	outputFile := path.Join(dir, "site-config.json")
-	err = ioutil.WriteFile(outputFile, configBytes, 0644)
+	err = os.WriteFile(outputFile, configBytes, 0644)
 	if err != nil {
 		s.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
@@ -88,7 +88,7 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, d
 	}
 
 	outputFile := path.Join(dir, "code-host-config.json")
-	err = ioutil.WriteFile(outputFile, configBytes, 0644)
+	err = os.WriteFile(outputFile, configBytes, 0644)
 	if err != nil {
 		c.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}

@@ -5,7 +5,8 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { InfoDivider } from './InfoDivider'
 import { RepoName } from './RepoName'
@@ -23,25 +24,27 @@ function renderResultElementsForContentMatch(
     selectResult: (resultId: string) => void,
     openResult: (resultId: string) => void
 ): JSX.Element[] {
-    return match.lineMatches.map(line => (
-        <SelectableSearchResult
-            key={getResultId(match, line)}
-            lineOrSymbolMatch={line}
-            match={match}
-            selectedResult={selectedResult}
-            selectResult={selectResult}
-            openResult={openResult}
-        >
-            {isActive => (
-                <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
-                    <TrimmedCodeLineWithHighlights line={line} />
-                </SearchResultLayout>
-            )}
-        </SelectableSearchResult>
-    ))
+    return (
+        match.lineMatches?.map(line => (
+            <SelectableSearchResult
+                key={getResultId(match, line)}
+                lineOrSymbolMatch={line}
+                match={match}
+                selectedResult={selectedResult}
+                selectResult={selectResult}
+                openResult={openResult}
+            >
+                {isActive => (
+                    <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
+                        <TrimmedCodeLineWithHighlights line={line} />
+                    </SearchResultLayout>
+                )}
+            </SelectableSearchResult>
+        )) || []
+    )
 }
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     selectResult: (resultId: string) => void
     selectedResult: null | string
     match: ContentMatch | SymbolMatch
@@ -52,7 +55,8 @@ function renderResultElementsForSymbolMatch(
     match: SymbolMatch,
     selectedResult: string | null,
     selectResult: (resultId: string) => void,
-    openResult: (resultId: string) => void
+    openResult: (resultId: string) => void,
+    settingsCascade: SettingsCascadeProps['settingsCascade']
 ): JSX.Element[] {
     return match.symbols.map(symbol => (
         <SelectableSearchResult
@@ -65,7 +69,14 @@ function renderResultElementsForSymbolMatch(
         >
             {isActive => (
                 <SearchResultLayout className={styles.code} isActive={isActive}>
-                    <SymbolIcon kind={symbol.kind} className="mr-1" />
+                    <SymbolKind
+                        kind={symbol.kind}
+                        className="mr-1"
+                        symbolKindTags={
+                            isSettingsValid(settingsCascade) &&
+                            settingsCascade.final.experimentalFeatures?.symbolKindTags
+                        }
+                    />
                     {symbol.name} {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
                 </SearchResultLayout>
             )}
@@ -78,17 +89,27 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
     selectedResult,
     selectResult,
     openResult,
+    settingsCascade,
 }: Props) => {
     const lines =
         match.type === 'content'
             ? renderResultElementsForContentMatch(match, selectedResult, selectResult, openResult)
-            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult)
+            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult, settingsCascade)
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     const onClick = (): void =>
         lines.length
-            ? selectResult(getResultId(match, match.type === 'content' ? match.lineMatches[0] : match.symbols[0]))
+            ? selectResult(
+                  getResultId(
+                      match,
+                      match.type === 'content'
+                          ? match.lineMatches
+                              ? match.lineMatches[0]
+                              : undefined
+                          : match.symbols[0]
+                  )
+              )
             : undefined
 
     const title = (

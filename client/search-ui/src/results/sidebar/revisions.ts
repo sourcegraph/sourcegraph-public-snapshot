@@ -1,4 +1,4 @@
-import { QueryUpdate } from '@sourcegraph/search'
+import { QueryUpdate } from '@sourcegraph/shared/src/search'
 
 export enum TabIndex {
     BRANCHES,

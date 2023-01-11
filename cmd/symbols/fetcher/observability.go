@@ -15,30 +15,30 @@ type operations struct {
 	fetchRepositoryArchive *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	fetching := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Name:      "codeintel_symbols_fetching",
 		Help:      "The number of fetches currently running.",
 	})
-	observationContext.Registerer.MustRegister(fetching)
+	observationCtx.Registerer.MustRegister(fetching)
 
 	fetchQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Name:      "codeintel_symbols_fetch_queue_size",
 		Help:      "The number of fetch jobs enqueued.",
 	})
-	observationContext.Registerer.MustRegister(fetchQueueSize)
+	observationCtx.Registerer.MustRegister(fetchQueueSize)
 
 	operationMetrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"codeintel_symbols_repository_fetcher",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.symbols.parser.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           operationMetrics,

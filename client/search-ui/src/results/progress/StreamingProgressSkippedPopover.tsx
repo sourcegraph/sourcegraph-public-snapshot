@@ -3,13 +3,23 @@ import React, { useCallback, useState } from 'react'
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, H4, Text, H3 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Icon,
+    Checkbox,
+    H4,
+    Text,
+    H3,
+    Markdown,
+    Form,
+} from '@sourcegraph/wildcard'
+
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './StreamingProgressCount'
@@ -104,8 +114,6 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
     React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -132,24 +140,20 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
 
     return (
         <>
-            {coreWorkflowImprovementsEnabled && (
-                <Text className="mx-3 mt-3">
-                    Found {limitHit(progress) ? 'more than ' : ''}
-                    {progress.matchCount} {pluralize('result', progress.matchCount)}
-                    {progress.repositoriesCount !== undefined
-                        ? ` from ${progress.repositoriesCount} ${pluralize(
-                              'repository',
-                              progress.repositoriesCount,
-                              'repositories'
-                          )}`
-                        : ''}
-                    .
-                </Text>
-            )}
+            <Text className="mx-3 mt-3">
+                Found {limitHit(progress) ? 'more than ' : ''}
+                {progress.matchCount} {pluralize('result', progress.matchCount)}
+                {progress.repositoriesCount !== undefined
+                    ? ` from ${progress.repositoriesCount} ${pluralize(
+                          'repository',
+                          progress.repositoriesCount,
+                          'repositories'
+                      )}`
+                    : ''}
+                .
+            </Text>
 
-            {coreWorkflowImprovementsEnabled && sortedSkippedItems.length > 0 && (
-                <H3 className="mx-3">Some results skipped:</H3>
-            )}
+            {sortedSkippedItems.length > 0 && <H3 className="mx-3">Some results skipped:</H3>}
             {sortedSkippedItems.map((skipped, index) => (
                 <SkippedMessage
                     key={skipped.reason}

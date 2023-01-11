@@ -38,7 +38,6 @@ func (s *gitserverLocalCloneStore) Transact(ctx context.Context) (GitserverLocal
 func (s *gitserverLocalCloneStore) Enqueue(ctx context.Context, repoID int, sourceHostname string, destHostname string, deleteSource bool) (int, error) {
 	var jobId int
 	err := s.QueryRow(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_localclone_jobs.go:gitserverLocalCloneStore.Enqueue
 INSERT INTO
 	gitserver_relocator_jobs (repo_id, source_hostname, dest_hostname, delete_source)
 VALUES (%s, %s, %s, %s) RETURNING id

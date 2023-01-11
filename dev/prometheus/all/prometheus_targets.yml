@@ -7,8 +7,10 @@
 - labels:
     job: gitserver
   targets:
-    # gitserver
-    - host.docker.internal:6068
+    # gitserver 1
+    - host.docker.internal:3551
+    # gitserver 2
+    - host.docker.internal:3552
 - labels:
     job: searcher
   targets:
@@ -56,3 +58,13 @@
   targets:
     # postgres exporter
     - host.docker.internal:9187
+- labels:
+    job: github-proxy
+  targets:
+    # github proxy
+    - host.docker.internal:6090
+- labels:
+    job: otel-collector
+  targets:
+    # opentelemetry collector
+    - host.docker.internal:8888

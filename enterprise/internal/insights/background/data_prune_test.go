@@ -29,7 +29,7 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
@@ -108,7 +108,6 @@ func TestPerformPurge(t *testing.T) {
 			SeriesID: doNotWantSeries,
 			Time:     now,
 			Value:    15,
-			Metadata: nil,
 			Capture:  nil,
 		},
 		RepoName:    &repoName,
@@ -124,7 +123,6 @@ func TestPerformPurge(t *testing.T) {
 			SeriesID: wantSeries,
 			Time:     now,
 			Value:    10,
-			Metadata: nil,
 			Capture:  nil,
 		},
 		RepoName:    &repoName,
@@ -136,12 +134,16 @@ func TestPerformPurge(t *testing.T) {
 	}
 
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    doNotWantSeries,
-		SearchQuery: "delete_me",
-		RecordTime:  &now,
-		Cost:        5,
-		Priority:    5,
-		PersistMode: string(store.RecordMode),
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    doNotWantSeries,
+			SearchQuery: "delete_me",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
+		Cost:     5,
+		Priority: 5,
+
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,
@@ -150,12 +152,15 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    wantSeries,
-		SearchQuery: "should_remain",
-		RecordTime:  &now,
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    wantSeries,
+			SearchQuery: "should_remain",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
 		Cost:        3,
 		Priority:    3,
-		PersistMode: string(store.RecordMode),
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,
@@ -164,7 +169,7 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = performPurge(ctx, postgres, insightsDB, time.Now())
+	err = performPurge(ctx, postgres, insightsDB, logger, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

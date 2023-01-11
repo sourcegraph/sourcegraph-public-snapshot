@@ -27,6 +27,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
     [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
     [ExternalServiceKind.RUSTPACKAGES]: 'unsupported',
+    [ExternalServiceKind.RUBYPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {

@@ -58,8 +58,8 @@ main() {
     exit 1
   fi
 
-  printf '%s\n' 'running sg install' 1>&2
-  "$_file" install </dev/tty
+  printf 'running "%s %s"\n' 'sg install' "$*" 1>&2
+  "$_file" install "$*" </dev/tty
 }
 
 get_architecture() {

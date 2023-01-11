@@ -1,12 +1,9 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
-
-import { getDocumentNode } from '@sourcegraph/http-client'
-import { MockedStoryProvider } from '@sourcegraph/storybook'
+import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { mockWorkspaces } from '../../batch-spec.mock'
-import { BATCH_SPEC_WORKSPACES } from '../backend'
+import { queryWorkspacesList as _queryWorkspacesList } from '../backend'
 
 import { Workspaces } from './Workspaces'
 
@@ -19,23 +16,20 @@ const config: Meta = {
 
 export default config
 
-const MOCKS = new WildcardMockLink([
-    {
-        request: {
-            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaces(50) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-])
+const queryWorkspacesList: typeof _queryWorkspacesList = () =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    of(mockWorkspaces(50).node.workspaceResolution!.workspaces)
 
 export const WorkspacesStory: Story = () => (
     <WebStory>
         {props => (
-            <MockedStoryProvider link={MOCKS}>
-                <Workspaces batchSpecID="1" selectedNode="workspace1" executionURL="" {...props} />
-            </MockedStoryProvider>
+            <Workspaces
+                batchSpecID="1"
+                selectedNode="workspace1"
+                executionURL=""
+                queryWorkspacesList={queryWorkspacesList}
+                {...props}
+            />
         )}
     </WebStory>
 )

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { TourLanguage, TourTaskStepType } from './types'
+import { TourLanguage, TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 
 interface TourContextType {
     /**

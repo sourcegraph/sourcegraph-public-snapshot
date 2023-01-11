@@ -1,0 +1,31 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+package(default_visibility = ["//client/shared:__pkg__"])
+
+js_library(
+    name = "json-schema-draft-07",
+    srcs = [
+        "json-schema-draft-07.schema.json",
+    ],
+)
+
+js_library(
+    name = "settings",
+    srcs = [
+        "settings.schema.json",
+    ],
+)
+
+js_library(
+    name = "site",
+    srcs = [
+        "site.schema.json",
+    ],
+)
+
+js_library(
+    name = "batch_spec",
+    srcs = [
+        "batch_spec.schema.json",
+    ],
+)

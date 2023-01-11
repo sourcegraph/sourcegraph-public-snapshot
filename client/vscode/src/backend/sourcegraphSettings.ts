@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 import { createAggregateError } from '@sourcegraph/common'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     gqlToCascade,
@@ -15,11 +14,7 @@ import {
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 
-export function initializeSourcegraphSettings({
-    context,
-}: {
-    context: vscode.ExtensionContext
-}): {
+export function initializeSourcegraphSettings({ context }: { context: vscode.ExtensionContext }): {
     settings: Observable<SettingsCascadeOrError<Settings>>
     refreshSettings: () => void
 } {
@@ -41,7 +36,7 @@ export function initializeSourcegraphSettings({
                     throw createAggregateError(errors)
                 }
 
-                return gqlToCascade(data?.viewerSettings as ISettingsCascade)
+                return gqlToCascade(data.viewerSettings)
             }),
             catchError(() => of(EMPTY_SETTINGS_CASCADE))
         )

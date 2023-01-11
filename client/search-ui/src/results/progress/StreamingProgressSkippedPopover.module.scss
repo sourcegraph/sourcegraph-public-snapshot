@@ -16,8 +16,7 @@
 
 .button {
     &:disabled {
-        opacity: 1;
-        color: var(--body-color);
+        --btn-light-disabled-text-color: var(--body-color);
     }
 }
 

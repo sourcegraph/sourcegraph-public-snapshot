@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
@@ -15,25 +16,29 @@ func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
 var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}}
 
 type gitoliteFetcher struct {
-	client iGitoliteClient
+	client gitoliteRepoLister
 }
 
-type iGitoliteClient interface {
+type gitoliteRepoLister interface {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
 // listRepos lists the repos of a Gitolite server reachable at the address in gitoliteHost
 func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w http.ResponseWriter) {
 	var (
-		repos = []*gitolite.Repo{}
+		repos []*gitolite.Repo
 		err   error
 	)
 
-	if gitoliteHost != "" {
-		if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	// 🚨 SECURITY: If gitoliteHost is a non-empty string that fails hostname validation, return an error
+	if gitoliteHost != "" && !security.ValidateRemoteAddr(gitoliteHost) {
+		http.Error(w, "invalid hostname", http.StatusInternalServerError)
+		return
+	}
+
+	if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err = json.NewEncoder(w).Encode(repos); err != nil {

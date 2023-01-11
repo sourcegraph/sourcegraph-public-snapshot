@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { QueryState } from '@sourcegraph/shared/src/search'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Container,
     PageHeader,
@@ -17,11 +17,15 @@ import {
     Input,
     Code,
     Label,
+    ErrorAlert,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
+import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
+import { useExperimentalFeatures } from '../stores'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -34,7 +38,7 @@ export interface SavedQueryFields {
     slackWebhookURL: string | null
 }
 
-export interface SavedSearchFormProps extends NamespaceProps {
+export interface SavedSearchFormProps extends NamespaceProps, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
@@ -42,6 +46,7 @@ export interface SavedSearchFormProps extends NamespaceProps {
     onSubmit: (fields: Omit<SavedQueryFields, 'id'>) => void
     loading: boolean
     error?: any
+    isSourcegraphDotCom: boolean
 }
 
 export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
@@ -58,15 +63,15 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (
-        key: keyof SavedQueryFields
-    ): React.FormEventHandler<HTMLInputElement> => event => {
-        const { value, checked, type } = event.currentTarget
-        setValues(values => ({
-            ...values,
-            [key]: type === 'checkbox' ? checked : value,
-        }))
-    }
+    const createInputChangeHandler =
+        (key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> =>
+        event => {
+            const { value, checked, type } = event.currentTarget
+            setValues(values => ({
+                ...values,
+                [key]: type === 'checkbox' ? checked : value,
+            }))
+        }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
@@ -90,6 +95,16 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
+    const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
+
+    useEffect(() => {
+        setValues(values => ({ ...values, query: queryState.query }))
+    }, [queryState.query])
+
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
@@ -104,9 +119,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <Input
-                        id="saved-search-form-input-description"
                         name="description"
-                        placeholder="Description"
                         required={true}
                         value={description}
                         onChange={createInputChangeHandler('description')}
@@ -114,17 +127,23 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         label="Description"
                         autoFocus={true}
                     />
-                    <Input
-                        id="saved-search-form-input-query"
-                        name="query"
-                        placeholder="Query"
-                        required={true}
-                        value={query}
-                        onChange={createInputChangeHandler('query')}
-                        className={classNames('form-group', styles.label)}
-                        label="Query"
-                    />
+                    <Label className={classNames('w-100 form-group', styles.label)}>
+                        <div className="mb-2">Query</div>
 
+                        <LazyMonacoQueryInput
+                            className={classNames('form-control', styles.queryInput)}
+                            editorComponent={editorComponent}
+                            isLightTheme={props.isLightTheme}
+                            patternType={SearchPatternType.standard}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            caseSensitive={false}
+                            queryState={queryState}
+                            onChange={setQueryState}
+                            globbing={false}
+                            preventNewLine={true}
+                            applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        />
+                    </Label>
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}

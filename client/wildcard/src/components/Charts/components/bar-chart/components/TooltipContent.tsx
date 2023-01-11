@@ -13,19 +13,21 @@ interface BarTooltipContentProps<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
     getDatumHover?: (datum: Datum) => string
+    getDatumHoverValueLabel?: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
 }
 
 export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): ReactElement {
-    const { category, getDatumName, getDatumHover, getDatumValue, getDatumColor, activeBar } = props
+    const { category, getDatumName, getDatumHover, getDatumHoverValueLabel, getDatumValue, getDatumColor, activeBar } =
+        props
     const getName = getDatumHover ?? getDatumName
     const activeDatumHover = getName(activeBar)
 
     // Handle a special case when we don't have any multiple datum per group
     if (category.data.length === 1) {
         const datum = category.data[0]
-        const name = getDatumName(datum)
-        const value = getDatumValue(datum)
+        const name = getName(datum)
+        const value = getDatumHoverValueLabel?.(datum) || getDatumValue(datum)
 
         return (
             <Text className={styles.oneLineTooltip}>
@@ -38,7 +40,7 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
     // Handle a special case when we don't have any multiple datum per group
     if (category.data.length === 1) {
         const datum = category.data[0]
-        const name = getDatumName(datum)
+        const name = getName(datum)
         const value = getDatumValue(datum)
 
         return (

@@ -8,6 +8,8 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -76,7 +78,7 @@ func TestCheckForUpcomingLicenseExpirations(t *testing.T) {
 	})
 
 	client := &fakeSlackClient{}
-	checkForUpcomingLicenseExpirations(db, clock, client)
+	checkForUpcomingLicenseExpirations(logtest.Scoped(t), db, clock, client)
 
 	wantPayloads := []*slack.Payload{
 		{Text: "The license for user `alice` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:"},

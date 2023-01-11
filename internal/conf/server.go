@@ -11,7 +11,7 @@ import (
 // "raw" configuration.
 type ConfigurationSource interface {
 	// Write updates the configuration. The Deployment field is ignored.
-	Write(ctx context.Context, data conftypes.RawUnified) error
+	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error
 	Read(ctx context.Context) (conftypes.RawUnified, error)
 }
 
@@ -41,7 +41,7 @@ func NewServer(source ConfigurationSource) *Server {
 }
 
 // Write validates and writes input to the server's source.
-func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (s *Server) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	_, err := ParseConfig(input)
@@ -49,7 +49,7 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 		return err
 	}
 
-	err = s.source.Write(ctx, input)
+	err = s.source.Write(ctx, input, lastID, authorUserID)
 	if err != nil {
 		return err
 	}

@@ -85,8 +85,7 @@ describe('github/codeHost', () => {
         describe('on blob page', () => {
             beforeAll(() => {
                 jsdom.reconfigure({
-                    url:
-                        'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx',
+                    url: 'https://github.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx',
                 })
             })
             it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {

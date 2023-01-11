@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'

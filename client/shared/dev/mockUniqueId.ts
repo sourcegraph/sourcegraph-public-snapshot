@@ -4,4 +4,9 @@
 
 // The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables
 // eslint-disable-next-line unicorn/consistent-function-scoping
-jest.mock('lodash/uniqueId', () => (prefix = '') => `${prefix}test-id`)
+jest.mock(
+    'lodash/uniqueId',
+    () =>
+        (prefix = '') =>
+            `${prefix}test-id`
+)

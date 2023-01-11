@@ -1,5 +1,7 @@
 import React, { createContext, useEffect } from 'react'
 
+import { logger } from '@sourcegraph/common'
+
 import { migrateLocalStorageToTemporarySettings } from './migrateLocalStorageToTemporarySettings'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
@@ -23,7 +25,7 @@ export const TemporarySettingsProvider: React.FunctionComponent<
             await migrateLocalStorageToTemporarySettings(temporarySettingsStorage)
         }
 
-        migrate().catch(console.error)
+        migrate().catch(logger.error)
     }, [temporarySettingsStorage])
 
     // Dispose temporary settings storage on unmount.

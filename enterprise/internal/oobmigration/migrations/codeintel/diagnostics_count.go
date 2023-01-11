@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type diagnosticsCountMigrator struct {
@@ -13,7 +14,7 @@ type diagnosticsCountMigrator struct {
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
 // the lsif_data_documents table with a schema version of 1 and populates that record's
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
-func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) *migrator {
+func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
 	driver := &diagnosticsCountMigrator{
 		serializer: newSerializer(),
 	}
@@ -22,6 +23,7 @@ func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize int) *migrato
 		tableName:     "lsif_data_documents",
 		targetVersion: 2,
 		batchSize:     batchSize,
+		numRoutines:   numRoutines,
 		fields: []fieldSpec{
 			{name: "path", postgresType: "text not null", primaryKey: true},
 			{name: "data", postgresType: "bytea", readOnly: true},
@@ -35,7 +37,7 @@ func (m *diagnosticsCountMigrator) Interval() time.Duration { return time.Second
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *diagnosticsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 
@@ -52,7 +54,7 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) 
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *diagnosticsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 

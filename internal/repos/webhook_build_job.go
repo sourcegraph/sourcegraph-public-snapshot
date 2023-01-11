@@ -4,19 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
-
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	webhookworker "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,8 +18,7 @@ import (
 
 // webhookBuildJob implements the Job interface
 // from package job
-type webhookBuildJob struct {
-}
+type webhookBuildJob struct{}
 
 func NewWebhookBuildJob() *webhookBuildJob {
 	return &webhookBuildJob{}
@@ -39,41 +32,33 @@ func (w *webhookBuildJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "background webhook build job"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationCtx, "webhook_build_worker")
 
-	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
-
-	mainAppDB, err := workerdb.Init()
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db := database.NewDB(logger, mainAppDB)
-	store := NewStore(logger, db)
+	store := NewStore(observationCtx.Logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(store.Handle())
+	workerStore := webhookworker.CreateWorkerStore(observationCtx, store.Handle())
 
-	cf := httpcli.ExternalClientFactory
-	opts := []httpcli.Opt{}
-	doer, err := cf.Doer(opts...)
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(observationCtx.Logger))
+	doer, err := cf.Doer()
 	if err != nil {
 		return nil, errors.Wrap(err, "create client")
 	}
 
 	return []goroutine.BackgroundRoutine{
-		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
-		webhookworker.NewCleaner(ctx, baseStore, observationContext),
+		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
+		webhookworker.NewResetter(context.Background(), observationCtx.Logger, workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewCleaner(context.Background(), observationCtx, baseStore),
 	}, nil
 }
 
-func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, fmt.Sprintf("%s_processor", workerName))
-	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
-	return workerMetrics, *resetterMetrics
+func newWebhookBuildWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
+	workerMetrics := workerutil.NewMetrics(observationCtx, fmt.Sprintf("%s_processor", workerName))
+	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
+	return workerMetrics, resetterMetrics
 }

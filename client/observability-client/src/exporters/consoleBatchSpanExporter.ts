@@ -2,7 +2,7 @@ import { Attributes } from '@opentelemetry/api'
 import { ExportResultCode, hrTimeToMilliseconds, ExportResult } from '@opentelemetry/core'
 import { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { parseAttributes } from '../sdk/pareAttributes'
+import { logger } from '@sourcegraph/common'
 
 interface FormattedSpan {
     name?: string
@@ -35,7 +35,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
             }
 
             formattedSpan.raw = span
-            formattedSpan.attrs = parseAttributes(attributes)
+            formattedSpan.attrs = attributes
             formattedSpan.name = `${span.name} - ${this.formatDuration(span)}`
 
             if (parentSpanId) {
@@ -73,7 +73,7 @@ export class ConsoleBatchSpanExporter implements SpanExporter {
         const formattedSpans = this.groupSpans(spans).map(this.nestSpans)
 
         for (const span of formattedSpans) {
-            console.debug(span)
+            logger.debug(span)
         }
 
         return resultCallback({ code: ExportResultCode.SUCCESS })

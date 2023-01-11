@@ -102,7 +102,7 @@ However, you should take some steps before the migration. For the `3.27` release
    see the relevant kubernetes
    docs [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims).
 
-   You can use `kubctl exec -it $DB_POD_NAME -- df -h`. By default, the database will be mounted under `/data/`.
+   You can use `kubectl exec -it $DB_POD_NAME -- df -h`. By default, the database will be mounted under `/data/`.
 
 #### Single-container Sourcegraph
 

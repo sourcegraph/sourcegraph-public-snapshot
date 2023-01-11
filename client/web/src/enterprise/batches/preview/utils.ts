@@ -42,8 +42,7 @@ export const checkPublishability = (
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return {
             publishable: false,
-            reason:
-                'You cannot modify the publication state for a changeset that will be detached from this batch change.',
+            reason: 'You cannot modify the publication state for a changeset that will be detached from this batch change.',
         }
     }
     // The changeset is hidden to the user applying
@@ -64,8 +63,7 @@ export const checkPublishability = (
     if (node.targets.changesetSpec.description.published !== null) {
         return {
             publishable: false,
-            reason:
-                "This changeset's publication state is being controlled by the spec file. To modify it here, omit it from your spec.",
+            reason: "This changeset's publication state is being controlled by the spec file. To modify it here, omit it from your spec.",
         }
     }
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate') {

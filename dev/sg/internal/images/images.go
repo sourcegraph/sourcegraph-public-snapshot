@@ -513,8 +513,7 @@ func (i *imageRepository) checkLegacy(rawImage string) bool {
 
 // Effectively the same as:
 //
-// 	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
-//
+//	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
 func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", i.name, tag), nil)
 	if err != nil {
@@ -547,8 +546,7 @@ const dockerImageTagsURL = "https://index.docker.io/v2/%s/tags/list"
 
 // Effectively the same as:
 //
-// 	$ export token=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:sourcegraph/server:pull" | jq -r .token)
-//
+//	$ export token=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:sourcegraph/server:pull" | jq -r .token)
 func (i *imageRepository) fetchAllTags() ([]string, error) {
 	if !i.isDockerRegistry {
 		return nil, ErrUnsupportedRegistry

@@ -5,8 +5,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { H1, H2, H3 } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
 
@@ -31,10 +31,7 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
         isFullPage={false}
         isActivated={true}
         onToggleActivated={action('onToggleActivated')}
-        optionFlags={[
-            { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-            { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-        ]}
+        optionFlags={[{ key: 'allowErrorReporting', label: 'Allow error reporting', value: false }]}
         onChangeOptionFlag={action('onChangeOptionFlag')}
         version=""
         sourcegraphUrl=""
@@ -53,7 +50,6 @@ const Interactive: Story = args => {
 const WithAdvancedSettings: Story = args => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: true },
     ])
     const setOptionFlag = (key: string, value: boolean) => {
         setOptionFlagValues(optionFlagValues.map(flag => (flag.key === key ? { ...flag, value } : flag)))
@@ -90,10 +86,10 @@ export const AllOptionsPages: Story = (args = {}) => (
 
             <div className="d-flex justify-content-center mt-5">
                 <div className="mx-4">
-                    <H3 className="text-center">On Sourcegraph Cloud</H3>
+                    <H3 className="text-center">On Sourcegraph.com</H3>
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphCloudAlert={true}
+                        showSourcegraphComAlert={true}
                         sourcegraphUrl={args.sourcegraphUrl}
                         version={args.version}
                     />
@@ -111,13 +107,13 @@ export const AllOptionsPages: Story = (args = {}) => (
             <H2 className="mt-5 text-center">Not synced repository</H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
-                    <H3 className="text-center">Sourcegraph Cloud</H3>
+                    <H3 className="text-center">Sourcegraph.com</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl="https://sourcegraph.com"
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphCloudAlert={args.showSourcegraphCloudAlert}
+                        showSourcegraphComAlert={args.showSourcegraphComAlert}
                         version={args.version}
                     />
                 </div>
@@ -152,7 +148,7 @@ AllOptionsPages.argTypes = {
         control: { type: 'text' },
         defaultValue: '0.0.0',
     },
-    showSourcegraphCloudAlert: {
+    showSourcegraphComAlert: {
         control: { type: 'boolean' },
         defaultValue: false,
     },

@@ -1,6 +1,9 @@
 package result
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // Types represents a set of result types.
 // It's a bitset corresponding to the disjunction of types it represents.
@@ -50,5 +53,6 @@ func (r Types) String() string {
 		}
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return strings.Join(names, "|")
 }

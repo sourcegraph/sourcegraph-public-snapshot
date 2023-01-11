@@ -23,13 +23,6 @@ const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
     returnTo: 'user/settings/tokens/new',
 }
 const VSCE_LINK_PARAMS_EDITOR = { editor: 'vscode' }
-// UTM for Commands
-const VSCE_LINK_PARAMS_UTM_COMMANDS = {
-    utm_campaign: 'vscode-extension',
-    utm_medium: 'direct_traffic',
-    utm_source: 'vscode-extension',
-    utm_content: 'vsce-commands',
-}
 // UTM for Sidebar actions
 const VSCE_LINK_PARAMS_UTM_SIDEBAR = {
     utm_campaign: 'vsce-sign-up',
@@ -37,7 +30,6 @@ const VSCE_LINK_PARAMS_UTM_SIDEBAR = {
     utm_source: 'sidebar',
     utm_content: 'sign-up',
 }
-export const VSCE_COMMANDS_PARAMS = new URLSearchParams({ ...VSCE_LINK_PARAMS_UTM_COMMANDS }).toString()
 // MISC
 export const VSCE_LINK_MARKETPLACE = 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph'
 export const VSCE_LINK_USER_DOCS =

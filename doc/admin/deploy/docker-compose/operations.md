@@ -1,13 +1,16 @@
 
 # Management Operations
 
-## Manage storage
+> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
+---
 
 The Sourcegraph Docker Compose yaml file uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
 
-Guides for managing cloud storage and backups are available in our [cloud-specific installation guides](./index.md#cloud-installation):
+Guides for managing cloud storage and backups are available in our cloud-specific installation guides:
 
 - [Storage and backups for Amazon Web Services](./aws.md#storage-and-backups)
+- [Storage and backups for Azure](./aws.md#storage-and-backups)
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
 
@@ -21,11 +24,9 @@ docker exec -it codeintel-db psql -U sg #access codeintel-db container and run p
 ```
 ## Database Migrations
 
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
-
 The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
+To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker--docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ## Backup and restore
 
@@ -63,7 +64,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -141,7 +142,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -209,7 +210,7 @@ gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
                                                                                      0.0.0.0:6831->6831/tcp, 6831/udp, 0.0.0.0:6832->6832/tcp, 6832/udp
-minio                       /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
+blobstore                   /usr/bin/docker-entrypoint ...   Up (healthy)            9000/tcp
 pgsql                       /postgres.sh                     Up (healthy)            5432/tcp
 precise-code-intel-worker   /sbin/tini -- /usr/local/b ...   Up (health: starting)   3188/tcp
 prometheus                  /bin/prom-wrapper                Up                      0.0.0.0:9090->9090/tcp
@@ -234,4 +235,35 @@ You can monitor the health of a deployment in several ways:
 - Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
 - Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
   - This requires direct access to your instance's host machine.
-  
+
+## OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+### Configure a tracing backend
+
+[Tracing](../../observability/tracing.md) export can be configured via the [OpenTelemetry collector](../../observability/opentelemetry.md) deployed by default in all Sourcegraph docker-compose deployments.
+To get started, edit the mounted configuration file in `otel-collector/config.yaml` based on the [OpenTelemetry collector configuration guidance](../../observability/opentelemetry.md) and edit your `docker-compose.yaml` file to have the `otel-collector` service use the mounted configuration:
+
+```yaml
+services:
+  # ...
+  otel-collector:
+    # ...
+    command: ['--config', '/etc/otel-collector/config.yaml']
+    volumes:
+      - '../otel-collector/config.yaml:/etc/otel-collector/config.yaml'
+```
+
+#### Enable the bundled Jaeger deployment
+
+Alternatively, you can use the `jaeger` overlay to easily deploy Sourcegraph with some default configuration that exports traces to a standalone Jaeger instance:
+
+```sh
+docker-compose \
+    -f docker-compose/docker-compose.yaml \
+    -f docker-compose/jaeger/docker-compose.yaml \
+    up
+```
+
+Once a tracing backend has been set up, refer to the [tracing guidance](../../observability/tracing.md) for more details.

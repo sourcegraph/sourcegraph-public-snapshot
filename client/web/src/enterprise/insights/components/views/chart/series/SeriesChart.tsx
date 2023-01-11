@@ -26,8 +26,11 @@ const DEFAULT_TRUE_GETTER = (): true => true
 export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactElement {
     const { series, type, locked, seriesToggleState, ...otherProps } = props
 
-    const { isSeriesHovered = DEFAULT_TRUE_GETTER, isSeriesSelected = DEFAULT_TRUE_GETTER, hoveredId } =
-        seriesToggleState || {}
+    const {
+        isSeriesHovered = DEFAULT_TRUE_GETTER,
+        isSeriesSelected = DEFAULT_TRUE_GETTER,
+        hoveredId,
+    } = seriesToggleState || {}
 
     const getOpacity = (id: string, hasActivePoint: boolean, isActive: boolean): number => {
         if (hoveredId && !isSeriesHovered(id)) {
@@ -78,6 +81,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
     return (
         <LineChart
+            aria-label="Line chart"
             series={series}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}

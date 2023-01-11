@@ -28,8 +28,8 @@
 .center-column {
     display: flex;
     flex-direction: column;
-    min-width: #{$viewport-lg};
-    max-width: #{$viewport-xl};
+    min-width: var(--viewport-lg);
+    max-width: var(--viewport-xl);
 
     @media (--lg-breakpoint-down) {
         min-width: 0;
@@ -60,7 +60,7 @@
 .notepad-cta {
     position: relative;
     bottom: 0;
-    max-width: #{$viewport-md};
+    max-width: var(--viewport-md);
     margin: auto;
     margin-bottom: 1rem;
 

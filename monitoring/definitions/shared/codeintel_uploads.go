@@ -41,7 +41,7 @@ func (codeIntelligence) NewUploadsStoreGroup(containerName string) monitoring.Gr
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > Store",
+			DescriptionRoot: "Uploads > Store (internal)",
 			Hidden:          false,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -130,11 +130,44 @@ func (codeIntelligence) NewUploadsHTTPTransportGroup(containerName string) monit
 	})
 }
 
+// src_codeintel_uploads_background_total
+// src_codeintel_uploads_background_duration_seconds_bucket
+// src_codeintel_uploads_background_errors_total
+func (codeIntelligence) NewUploadsBackgroundGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Uploads > Background (internal)",
+			Hidden:          false,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_uploads_background",
+				MetricDescriptionRoot: "background",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_background_upload_records_removed_total
 // src_codeintel_background_index_records_removed_total
 // src_codeintel_background_uploads_purged_total
 // src_codeintel_background_audit_log_records_expired_total
 // src_codeintel_uploads_background_cleanup_errors_total
+// src_codeintel_autoindexing_background_cleanup_errors_total
 func (codeIntelligence) NewUploadsCleanupTaskGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
 		Title:  "Codeintel: Uploads > Cleanup task",
@@ -174,7 +207,13 @@ func (codeIntelligence) NewUploadsCleanupTaskGroup(containerName string) monitor
 					MetricNameRoot:        "codeintel_uploads_background_cleanup",
 					MetricDescriptionRoot: "cleanup task",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of code intelligence cleanup task errors every 5m
+					Number of code intelligence uploads cleanup task errors every 5m
+				`).Observable(),
+				Observation.Errors(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_autoindexing_background_cleanup",
+					MetricDescriptionRoot: "cleanup task",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of code intelligence autoindexing cleanup task errors every 5m
 				`).Observable(),
 			},
 		},
@@ -192,28 +231,28 @@ func (codeIntelligence) NewUploadsExpirationTaskGroup(containerName string) moni
 		Rows: []monitoring.Row{
 			{
 				Standard.Count("repositories scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_repositories_scanned_total",
+					MetricNameRoot:        "codeintel_background_repositories_scanned",
 					MetricDescriptionRoot: "lsif upload repository scan",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of repositories scanned for data retention
 				`).Observable(),
 
 				Standard.Count("records scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_scanned_total",
+					MetricNameRoot:        "codeintel_background_upload_records_scanned",
 					MetricDescriptionRoot: "lsif upload records scan",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records scanned for data retention
 				`).Observable(),
 
 				Standard.Count("commits scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_commits_scanned_total",
+					MetricNameRoot:        "codeintel_background_commits_scanned",
 					MetricDescriptionRoot: "lsif upload commits scanned",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of commits reachable from a codeintel upload record scanned for data retention
 				`).Observable(),
 
 				Standard.Count("uploads scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_expired_total",
+					MetricNameRoot:        "codeintel_background_upload_records_expired",
 					MetricDescriptionRoot: "lsif upload records expired",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records marked as expired

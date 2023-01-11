@@ -57,6 +57,16 @@ type requestMeta struct {
 	NoPerms    bool
 }
 
+func (r requestMeta) IDFieldName() string {
+	switch r.Type {
+	case requestTypeRepo:
+		return "repo_id"
+	case requestTypeUser:
+		return "user_id"
+	}
+	return "id"
+}
+
 // syncRequest is a permissions syncing request with its current status in the queue.
 type syncRequest struct {
 	*requestMeta

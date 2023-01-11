@@ -42,7 +42,7 @@ func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUser
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
 
-	if f.cache == true {
+	if f.cache {
 		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -137,7 +137,7 @@ func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalR
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
-	if f.cache == true {
+	if f.cache {
 		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
 			return summary, nil
 		}

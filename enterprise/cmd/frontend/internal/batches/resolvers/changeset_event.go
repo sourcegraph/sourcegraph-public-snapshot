@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type changesetEventResolver struct {
@@ -25,8 +26,8 @@ func (r *changesetEventResolver) ID() graphql.ID {
 	return marshalChangesetEventID(r.ChangesetEvent.ID)
 }
 
-func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.ChangesetEvent.CreatedAt}
+func (r *changesetEventResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.ChangesetEvent.CreatedAt}
 }
 
 func (r *changesetEventResolver) Changeset() graphqlbackend.ExternalChangesetResolver {

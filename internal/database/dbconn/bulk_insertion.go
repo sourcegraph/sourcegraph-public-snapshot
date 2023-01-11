@@ -4,9 +4,9 @@ import (
 	"context"
 )
 
-type key struct{}
+type bulkInsertionKeyType struct{}
 
-var bulkInsertionKey = key{}
+var bulkInsertionKey = bulkInsertionKeyType{}
 
 // isBulkInsertion indicates if a bulk insertion is occurring within this context,
 // as set by WithBulkInsertion

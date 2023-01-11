@@ -1,14 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
+	"os"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/google/go-github/v41/github"
@@ -16,8 +13,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const JobShowLimit = 10
 
 type NotificationClient struct {
 	slack   slack.Client
@@ -27,7 +25,8 @@ type NotificationClient struct {
 }
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
-	slack := slack.New(slackToken)
+	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
+	slack := slack.New(slackToken, slack.OptionDebug(debug))
 
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
@@ -57,7 +56,8 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	}
 
 	logger.Debug("sending notification")
-	_, _, err = c.slack.PostMessage(c.channel, slack.MsgOptionBlocks(blocks...))
+	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
+	_, _, err = c.slack.PostMessage(c.channel, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to post message", log.Error(err))
 		return err
@@ -65,74 +65,6 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 
 	logger.Info("notification posted")
 	return nil
-}
-
-type GrafanaQuery struct {
-	RefId string `json:"refId"`
-	Expr  string `json:"expr"`
-}
-
-type GrafanaRange struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-}
-
-type GrafanaPayload struct {
-	DataSource string         `json:"datasource"`
-	Queries    []GrafanaQuery `json:"queries"`
-	Range      GrafanaRange   `json:"range"`
-}
-
-func grafanaURLFor(build *Build) (string, error) {
-	queryData := struct {
-		Build int
-	}{
-		Build: intp(build.Number),
-	}
-	tmpl := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, queryData); err != nil {
-		return "", err
-	}
-	var expression = buf.String()
-
-	begin := time.Now().Add(-(2 * time.Hour)).UnixMilli()
-	end := time.Now().Add(15 * time.Minute).UnixMilli()
-
-	data := GrafanaPayload{
-		DataSource: "grafanacloud-sourcegraph-logs",
-		Queries: []GrafanaQuery{
-			{
-				RefId: "A",
-				Expr:  expression,
-			},
-		},
-		Range: GrafanaRange{
-			From: fmt.Sprintf("%d", begin),
-			To:   fmt.Sprintf("%d", end),
-		},
-	}
-
-	result, err := json.Marshal(data)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshall GrafanaPayload")
-	}
-
-	query := url.PathEscape(string(result))
-	// default query escapes ":", which we  don't want since it is json. Query and Path escape
-	// escape a few characters incorrectly so we fix it with this replacer.
-	// Got the idea from https://sourcegraph.com/github.com/kubernetes/kubernetes/-/blob/vendor/github.com/PuerkitoBio/urlesc/urlesc.go?L115-121
-	replacer := strings.NewReplacer(
-		"+", "%20",
-		"%28", "(",
-		"%29", ")",
-		"=", "%3D",
-		"%2C", ",",
-	)
-	query = replacer.Replace(query)
-
-	return "https://sourcegraph.grafana.net/explore?orgId=1&left=" + query, nil
 }
 
 func commitLink(msg, commit string) string {
@@ -155,16 +87,25 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
 
 	// create a bulleted list of all the failed jobs
-	failedSection += "*Failed jobs:*\n\n"
+	//
+	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
+	// since the message will to big and slack will reject the message with "invalid_blocks"
 	failedJobs := build.failedJobs()
-	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
-	for _, j := range failedJobs {
-		failedSection += fmt.Sprintf("• %s", *j.Name)
-		if j.WebURL != "" {
-			failedSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
-		}
-		failedSection += "\n"
+	jobSection := "*Failed jobs:*\n\n"
+	if len(failedJobs) > JobShowLimit {
+		jobSection = fmt.Sprintf("* %d Failed jobs (showing %d):*\n\n", len(failedJobs), JobShowLimit)
 	}
+	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
+	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
+		j := failedJobs[i]
+		jobSection += fmt.Sprintf("• %s", *j.Name)
+		if j.WebURL != "" {
+			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+		}
+		jobSection += "\n"
+	}
+
+	failedSection += jobSection
 
 	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
 	teammate, err := c.getTeammateForBuild(build)
@@ -184,11 +125,6 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 			log.String("github", teammate.GitHub),
 		))
 		author = slackMention(teammate)
-	}
-
-	grafanaURL, err := grafanaURLFor(build)
-	if err != nil {
-		return nil, err
 	}
 
 	blocks := []slack.Block{
@@ -215,11 +151,6 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
-					URL:  grafanaURL,
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
-				},
-				&slack.ButtonBlockElement{
-					Type: slack.METButton,
 					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
 					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
 				},
@@ -232,8 +163,9 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 			&slack.TextBlockObject{
 				Type: slack.MarkdownType,
 				Text: `:books: *More information on flakes*
-• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>
-• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>
+• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flaky tests>
+• <https://github.com/sourcegraph/sourcegraph/issues/new/choose|Create a flaky test issue>
+• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
 
 _Disable flakes on sight and save your fellow teammate some time!_`,
 			},

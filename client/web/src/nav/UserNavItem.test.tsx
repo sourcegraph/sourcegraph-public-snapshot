@@ -5,8 +5,8 @@ import { MemoryRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ThemePreference } from '../theme'
 
@@ -31,6 +31,7 @@ describe('UserNavItem', () => {
         organizations: {
             nodes: [
                 {
+                    __typename: 'Org',
                     id: '0',
                     name: 'acme',
                     displayName: 'Acme Corp',
@@ -38,6 +39,7 @@ describe('UserNavItem', () => {
                     settingsURL: '/organizations/acme/settings',
                 },
                 {
+                    __typename: 'Org',
                     id: '1',
                     name: 'beta',
                     displayName: 'Beta Inc',
@@ -56,7 +58,6 @@ describe('UserNavItem', () => {
                 <MemoryRouter>
                     <CompatRouter>
                         <UserNavItem
-                            showRepositorySection={true}
                             isLightTheme={true}
                             onThemePreferenceChange={() => undefined}
                             showKeyboardShortcutsHelp={() => undefined}
@@ -64,6 +65,7 @@ describe('UserNavItem', () => {
                             authenticatedUser={USER}
                             showDotComMarketing={true}
                             codeHostIntegrationMessaging="browser-extension"
+                            showFeedbackModal={() => undefined}
                         />
                     </CompatRouter>
                 </MemoryRouter>
@@ -74,7 +76,6 @@ describe('UserNavItem', () => {
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         renderWithBrandedContext(
             <UserNavItem
-                showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
                 showKeyboardShortcutsHelp={() => undefined}
@@ -82,6 +83,7 @@ describe('UserNavItem', () => {
                 authenticatedUser={USER}
                 showDotComMarketing={true}
                 codeHostIntegrationMessaging="browser-extension"
+                showFeedbackModal={() => undefined}
             />,
             {
                 history,

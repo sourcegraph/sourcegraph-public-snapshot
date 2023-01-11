@@ -32,9 +32,8 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
             forkNamespace: null,
             diffStat: {
                 __typename: 'DiffStat',
-                added: 10,
-                changed: 20,
-                deleted: 8,
+                added: 30,
+                deleted: 28,
             },
             labels: [],
             repository: {

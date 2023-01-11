@@ -4,17 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -109,7 +113,7 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Fatal(err)
 		}
 		got = []string{}
-		for r := range rle.Minimal {
+		for r := range rle.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)
@@ -192,9 +196,9 @@ func TestSyncSearchers(t *testing.T) {
 	}
 }
 
-func TestIgnoreDownEndpoints(t *testing.T) {
+func TestZoektRolloutErrors(t *testing.T) {
 	var endpoints atomicMap
-	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "up"})
+	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "read-failed", "up"})
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
@@ -235,6 +239,20 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 					SearchError: err,
 					ListError:   err,
 				}
+			case "read-failed":
+				err := &net.OpError{
+					Op:   "read",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.42.39:6070"),
+					Err: &os.SyscallError{
+						Syscall: "read",
+						Err:     syscall.EINTR,
+					},
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
 			case "up":
 				var rle zoekt.RepoListEntry
 				rle.Repository.Name = "repo"
@@ -259,12 +277,17 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 	defer searcher.Close()
 
+	want := 4
+
 	sr, err := searcher.Search(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(sr.Files) == 0 {
 		t.Fatal("Search: expected results")
+	}
+	if sr.Crashes != want {
+		t.Fatalf("Search: expected %d crashes to be recorded, got %d", want, sr.Crashes)
 	}
 
 	rle, err := searcher.List(context.Background(), nil, nil)
@@ -273,6 +296,9 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 	if len(rle.Repos) == 0 {
 		t.Fatal("List: expected results")
+	}
+	if rle.Crashes != want {
+		t.Fatalf("List: expected %d crashes to be recorded, got %d", want, rle.Crashes)
 	}
 
 	// now test we do return errors if they occur
@@ -285,6 +311,85 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	_, err = searcher.List(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("List: expected error")
+	}
+}
+
+func TestResultQueueSettingsFromConfig(t *testing.T) {
+	dummy := 100
+
+	cases := []struct {
+		name                   string
+		siteConfig             schema.SiteConfiguration
+		wantMaxQueueDepth      int
+		wantMaxReorderDuration time.Duration
+		wantMaxQueueMatchCount int
+		wantMaxSizeBytes       int
+	}{
+		{
+			name:                   "defaults",
+			siteConfig:             schema.SiteConfiguration{},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
+		},
+		{
+			name: "MaxReorderDurationMS",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderDurationMS: 5,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxReorderDuration: 5 * time.Millisecond,
+			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
+		},
+		{
+			name: "MaxReorderQueueSize",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxReorderQueueSize: &dummy}}},
+			wantMaxQueueDepth:      dummy,
+			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
+		},
+		{
+			name: "MaxQueueMatchCount",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxQueueMatchCount: &dummy,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: dummy,
+			wantMaxSizeBytes:       -1,
+		},
+		{
+			name: "MaxSizeBytes",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxQueueSizeBytes: &dummy,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       dummy,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			settings := newRankingSiteConfig(tt.siteConfig)
+
+			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
+			}
+
+			if settings.maxReorderDuration != tt.wantMaxReorderDuration {
+				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, settings.maxReorderDuration)
+			}
+
+			if settings.maxMatchCount != tt.wantMaxQueueMatchCount {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, settings.maxMatchCount)
+			}
+
+			if settings.maxSizeBytes != tt.wantMaxSizeBytes {
+				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, settings.maxSizeBytes)
+			}
+		})
 	}
 }
 

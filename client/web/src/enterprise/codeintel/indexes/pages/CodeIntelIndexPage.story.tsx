@@ -1,10 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { LSIFUploadState } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../../graphql-operations'
+import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields, LSIFUploadState } from '../../../../graphql-operations'
 
 import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 
@@ -175,7 +173,7 @@ const completedSteps: LsifIndexStepsFields = {
                 '--ssh',
                 '--name',
                 'executors-9a1b6d36-45a5-4986-a1d0-5cf17424788d',
-                'sourcegraph/ignite-ubuntu:insiders',
+                'sourcegraph/executor-vm',
             ],
             startTime: '2020-06-15T17:57:10Z',
             exitCode: 0,
@@ -291,7 +289,7 @@ const completedSteps: LsifIndexStepsFields = {
         },
     },
     upload: {
-        key: 'step.src.0',
+        key: 'step.src.batch-exec',
         command: [
             'ignite',
             'exec',
@@ -387,6 +385,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps
         },
     },
     associatedUpload: null,
+    shouldReindex: false,
 }
 
 const now = () => new Date('2020-06-15T19:25:00+00:00')

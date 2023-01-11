@@ -110,38 +110,10 @@ func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factor
 // riskyHeaderFilter deletes anything that looks risky in request and response
 // headers.
 func riskyHeaderFilter(i *cassette.Interaction) error {
-	riskyHeaderKeys := []string{
-		"auth", "cookie", "token",
-	}
-	riskyHeaderValues := []string{
-		"bearer", "ghp_", "glpat-",
-	}
-
-	isRiskyKey := func(key string) bool {
-		lowerKey := strings.ToLower(key)
-		for _, riskyKey := range riskyHeaderKeys {
-			if strings.Contains(lowerKey, riskyKey) {
-				return true
-			}
-		}
-		return false
-	}
-	hasRiskyValue := func(values []string) bool {
-		for _, value := range values {
-			lowerValue := strings.ToLower(value)
-			for _, riskyValue := range riskyHeaderValues {
-				if strings.Contains(lowerValue, riskyValue) {
-					return true
-				}
-			}
-		}
-		return false
-	}
-
 	for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
-		for k, values := range headers {
-			if isRiskyKey(k) || hasRiskyValue(values) {
-				delete(headers, k)
+		for name, values := range headers {
+			if httpcli.IsRiskyHeader(name, values) {
+				delete(headers, name)
 			}
 		}
 	}

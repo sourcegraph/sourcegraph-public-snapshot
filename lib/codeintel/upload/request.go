@@ -60,7 +60,6 @@ func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-ndjson+lsif")
 	if opts.UncompressedSize != 0 {
 		req.Header.Set("X-Uncompressed-Size", strconv.Itoa(int(opts.UncompressedSize)))
 	}

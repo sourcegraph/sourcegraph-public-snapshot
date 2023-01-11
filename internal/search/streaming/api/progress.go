@@ -38,6 +38,7 @@ type ProgressStats struct {
 	MatchCount          int
 	ElapsedMilliseconds int
 	RepositoriesCount   *int
+	BackendsMissing     int
 	ExcludedArchived    int
 	ExcludedForks       int
 
@@ -158,6 +159,21 @@ func shardMatchLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	}, true
 }
 
+func backendsMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	count := resultsResolver.BackendsMissing
+	if count == 0 {
+		return Skipped{}, false
+	}
+
+	amount := number(count)
+	return Skipped{
+		Reason:   BackendMissing,
+		Title:    fmt.Sprintf("%s %s down", amount, plural("backend", "backends", count)),
+		Message:  "Some results may be missing due to backends being down. This is likely transient and due to a rollout, so retry your search.",
+		Severity: SeverityWarn,
+	}, true
+}
+
 func excludedForkHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	forks := resultsResolver.ExcludedForks
 	if forks == 0 {
@@ -204,6 +220,7 @@ var skippedHandlers = []func(stats ProgressStats) (Skipped, bool){
 	shardMatchLimitHandler,
 	// repositoryLimitHandler,
 	shardTimeoutHandler,
+	backendsMissingHandler,
 	excludedForkHandler,
 	excludedArchiveHandler,
 	displayLimitHandler,

@@ -8,18 +8,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
-	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestGet(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -39,10 +42,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null,'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, 'repo:*');`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,71 +69,79 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-1",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label1",
-				LineColor:           "color1",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label1",
+				LineColor:            "color1",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-2",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label2",
-				LineColor:           "color2",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
-				GroupBy:             &groupByRepo,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label2",
+				LineColor:            "color2",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              2,
-				UniqueID:            "unique-2",
-				SeriesID:            "series-id-2",
-				Title:               "test title 2",
-				Description:         "test description 2",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "second-label-2",
-				LineColor:           "second-color-2",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            true,
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				UniqueID:             "unique-2",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title 2",
+				Description:          "test description 2",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "second-label-2",
+				LineColor:            "second-color-2",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             true,
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 		}
 
@@ -147,49 +158,55 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-1",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label1",
-				LineColor:           "color1",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label1",
+				LineColor:            "color1",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-2",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label2",
-				LineColor:           "color2",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
-				GroupBy:             &groupByRepo,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label2",
+				LineColor:            "color2",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 		}
 
@@ -205,49 +222,55 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		sampleIntervalUnit := "MONTH"
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-1",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label1",
-				LineColor:           "color1",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label1",
+				LineColor:            "color1",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              1,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-2",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				SampleIntervalValue: 1,
-				SampleIntervalUnit:  sampleIntervalUnit,
-				Label:               "label2",
-				LineColor:           "color2",
-				PresentationType:    types.Line,
-				GenerationMethod:    types.Search,
-				IsFrozen:            false,
-				GroupBy:             &groupByRepo,
+				ViewID:               1,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				SampleIntervalValue:  1,
+				SampleIntervalUnit:   sampleIntervalUnit,
+				Label:                "label2",
+				LineColor:            "color2",
+				PresentationType:     types.Line,
+				GenerationMethod:     types.Search,
+				IsFrozen:             false,
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 		}
 
@@ -259,7 +282,7 @@ func TestGet(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 	ctx := context.Background()
@@ -287,9 +310,9 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
-		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo')`, now)
+		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null)`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,109 +354,122 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              5,
-				UniqueID:            "b",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 3",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label5-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              5,
-				UniqueID:            "b",
-				SeriesID:            "series-id-2",
-				Title:               "user can view 3",
-				Description:         "",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label5-2",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-2",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-2",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              3,
-				UniqueID:            "e",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 2",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label3-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               3,
+				UniqueID:             "e",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 2",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label3-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -446,48 +482,53 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              5,
-				UniqueID:            "b",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 3",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label5-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              5,
-				UniqueID:            "b",
-				SeriesID:            "series-id-2",
-				Title:               "user can view 3",
-				Description:         "",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label5-2",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               5,
+				UniqueID:             "b",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 3",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label5-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -500,48 +541,53 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-2",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-2",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -554,68 +600,76 @@ func TestGetAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              2,
-				UniqueID:            "d",
-				SeriesID:            "series-id-2",
-				Title:               "user can view 1",
-				Description:         "",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-2",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              3,
-				UniqueID:            "e",
-				SeriesID:            "series-id-1",
-				Title:               "user can view 2",
-				Description:         "",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label3-1",
-				LineColor:           "color",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               3,
+				UniqueID:             "e",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 2",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label3-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -626,7 +680,7 @@ func TestGetAll(t *testing.T) {
 
 func TestGetAllOnDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -640,10 +694,10 @@ func TestGetAllOnDashboard(t *testing.T) {
 	}
 
 	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by)
-                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo'),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method, group_by, repository_criteria)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search', null, 'repo:a'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search', 'repo', null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search', null, null);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -679,93 +733,103 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              2,
-				DashboardViewID:     1,
-				UniqueID:            "unique-2",
-				SeriesID:            "series-id-2",
-				Title:               "test title 2",
-				Description:         "test description 2",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-2",
-				LineColor:           "color2",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				DashboardViewID:      1,
+				UniqueID:             "unique-2",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title 2",
+				Description:          "test description 2",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color2",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              1,
-				DashboardViewID:     2,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-1",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label1-1",
-				LineColor:           "color1",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               1,
+				DashboardViewID:      2,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label1-1",
+				LineColor:            "color1",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 			{
-				ViewID:              4,
-				DashboardViewID:     3,
-				UniqueID:            "unique-4",
-				SeriesID:            "series-id-2",
-				Title:               "test title 4",
-				Description:         "test description 4",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label4-2",
-				LineColor:           "color4",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               4,
+				DashboardViewID:      3,
+				UniqueID:             "unique-4",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title 4",
+				Description:          "test description 4",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label4-2",
+				LineColor:            "color4",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              3,
-				DashboardViewID:     4,
-				UniqueID:            "unique-3",
-				SeriesID:            "series-id-1",
-				Title:               "test title 3",
-				Description:         "test description 3",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label3-1",
-				LineColor:           "color3",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               3,
+				DashboardViewID:      4,
+				UniqueID:             "unique-3",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title 3",
+				Description:          "test description 3",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label3-1",
+				LineColor:            "color3",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -778,50 +842,55 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              2,
-				DashboardViewID:     1,
-				UniqueID:            "unique-2",
-				SeriesID:            "series-id-2",
-				Title:               "test title 2",
-				Description:         "test description 2",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label2-2",
-				LineColor:           "color2",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               2,
+				DashboardViewID:      1,
+				UniqueID:             "unique-2",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title 2",
+				Description:          "test description 2",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color2",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              1,
-				DashboardViewID:     2,
-				UniqueID:            "unique-1",
-				SeriesID:            "series-id-1",
-				Title:               "test title",
-				Description:         "test description",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label1-1",
-				LineColor:           "color1",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               1,
+				DashboardViewID:      2,
+				UniqueID:             "unique-1",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title",
+				Description:          "test description",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label1-1",
+				LineColor:            "color1",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -834,50 +903,55 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		series1RepoCriteria := "repo:a"
 		want := []types.InsightViewSeries{
 			{
-				ViewID:              4,
-				DashboardViewID:     3,
-				UniqueID:            "unique-4",
-				SeriesID:            "series-id-2",
-				Title:               "test title 4",
-				Description:         "test description 4",
-				Query:               "query-2",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label4-2",
-				LineColor:           "color4",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
-				GroupBy:             &groupByRepo,
+				ViewID:               4,
+				DashboardViewID:      3,
+				UniqueID:             "unique-4",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "test title 4",
+				Description:          "test description 4",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label4-2",
+				LineColor:            "color4",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
 			},
 			{
-				ViewID:              3,
-				DashboardViewID:     4,
-				UniqueID:            "unique-3",
-				SeriesID:            "series-id-1",
-				Title:               "test title 3",
-				Description:         "test description 3",
-				Query:               "query-1",
-				CreatedAt:           now,
-				OldestHistoricalAt:  now,
-				LastRecordedAt:      now,
-				NextRecordingAfter:  now,
-				LastSnapshotAt:      now,
-				NextSnapshotAfter:   now,
-				Label:               "label3-1",
-				LineColor:           "color3",
-				SampleIntervalUnit:  "MONTH",
-				SampleIntervalValue: 1,
-				PresentationType:    types.PresentationType("LINE"),
-				GenerationMethod:    types.GenerationMethod("search"),
+				ViewID:               3,
+				DashboardViewID:      4,
+				UniqueID:             "unique-3",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "test title 3",
+				Description:          "test description 3",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label3-1",
+				LineColor:            "color3",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -888,7 +962,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 
 func TestCreateSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 
@@ -900,6 +974,7 @@ func TestCreateSeries(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("test create series", func(t *testing.T) {
+		repoCriteria := "repo:a"
 		series := types.InsightSeries{
 			SeriesID:           "unique-1",
 			Query:              "query-1",
@@ -912,6 +987,7 @@ func TestCreateSeries(t *testing.T) {
 			SampleIntervalUnit: string(types.Month),
 			GenerationMethod:   types.Search,
 			GroupBy:            &groupByRepo,
+			RepositoryCriteria: &repoCriteria,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -920,22 +996,22 @@ func TestCreateSeries(t *testing.T) {
 		}
 
 		want := types.InsightSeries{
-			ID:                 1,
-			SeriesID:           "unique-1",
-			Query:              "query-1",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
-			CreatedAt:          now,
-			Enabled:            true,
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-			GroupBy:            &groupByRepo,
+			ID:                   1,
+			SeriesID:             "unique-1",
+			Query:                "query-1",
+			OldestHistoricalAt:   now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:       now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:   now,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			CreatedAt:            now,
+			Enabled:              true,
+			SampleIntervalUnit:   string(types.Month),
+			GenerationMethod:     types.Search,
+			GroupBy:              &groupByRepo,
+			SupportsAugmentation: true,
+			RepositoryCriteria:   &repoCriteria,
 		}
-
-		log15.Info("values", "want", want, "got", got)
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
@@ -944,6 +1020,7 @@ func TestCreateSeries(t *testing.T) {
 	t.Run("test create and get capture groups series", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		sampleIntervalUnit := "MONTH"
+		repoCriteria := "repo:a"
 		_, err := store.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   "capture-group-1",
 			Query:                      "well hello there",
@@ -958,6 +1035,7 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:                  now,
 			GeneratedFromCaptureGroups: true,
 			GenerationMethod:           types.Search,
+			RepositoryCriteria:         &repoCriteria,
 		})
 		if err != nil {
 			return
@@ -980,7 +1058,7 @@ func TestCreateSeries(t *testing.T) {
 
 func TestCreateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -990,7 +1068,6 @@ func TestCreateView(t *testing.T) {
 	}
 
 	t.Run("test create view", func(t *testing.T) {
-
 		view := types.InsightView{
 			Title:            "my view",
 			Description:      "my view description",
@@ -1025,7 +1102,7 @@ func TestCreateView(t *testing.T) {
 
 func TestCreateGetView_WithGrants(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1156,7 +1233,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 
 func TestUpdateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1211,7 +1288,7 @@ func TestUpdateView(t *testing.T) {
 
 func TestUpdateViewSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	groupByRepo := "repo"
 	ctx := context.Background()
@@ -1273,7 +1350,7 @@ func TestUpdateViewSeries(t *testing.T) {
 
 func TestDeleteView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1340,7 +1417,7 @@ func TestDeleteView(t *testing.T) {
 
 func TestAttachSeriesView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1391,24 +1468,26 @@ func TestAttachSeriesView(t *testing.T) {
 
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{{
-			ViewID:              1,
-			UniqueID:            view.UniqueID,
-			SeriesID:            series.SeriesID,
-			Title:               view.Title,
-			Description:         view.Description,
-			Query:               series.Query,
-			CreatedAt:           series.CreatedAt,
-			OldestHistoricalAt:  series.OldestHistoricalAt,
-			LastRecordedAt:      series.LastRecordedAt,
-			NextRecordingAfter:  series.NextRecordingAfter,
-			LastSnapshotAt:      now,
-			NextSnapshotAfter:   now,
-			SampleIntervalValue: 1,
-			SampleIntervalUnit:  sampleIntervalUnit,
-			Label:               "my label",
-			LineColor:           "my stroke",
-			PresentationType:    types.Line,
-			GenerationMethod:    types.Search,
+			ViewID:               1,
+			UniqueID:             view.UniqueID,
+			InsightSeriesID:      series.ID,
+			SeriesID:             series.SeriesID,
+			Title:                view.Title,
+			Description:          view.Description,
+			Query:                series.Query,
+			CreatedAt:            series.CreatedAt,
+			OldestHistoricalAt:   series.OldestHistoricalAt,
+			LastRecordedAt:       series.LastRecordedAt,
+			NextRecordingAfter:   series.NextRecordingAfter,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			SampleIntervalValue:  1,
+			SampleIntervalUnit:   sampleIntervalUnit,
+			Label:                "my label",
+			LineColor:            "my stroke",
+			PresentationType:     types.Line,
+			GenerationMethod:     types.Search,
+			SupportsAugmentation: true,
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -1419,7 +1498,7 @@ func TestAttachSeriesView(t *testing.T) {
 
 func TestRemoveSeriesFromView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1470,24 +1549,26 @@ func TestRemoveSeriesFromView(t *testing.T) {
 
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{{
-			ViewID:              1,
-			UniqueID:            view.UniqueID,
-			SeriesID:            series.SeriesID,
-			Title:               view.Title,
-			Description:         view.Description,
-			Query:               series.Query,
-			CreatedAt:           series.CreatedAt,
-			OldestHistoricalAt:  series.OldestHistoricalAt,
-			LastRecordedAt:      series.LastRecordedAt,
-			NextRecordingAfter:  series.NextRecordingAfter,
-			LastSnapshotAt:      now,
-			NextSnapshotAfter:   now,
-			SampleIntervalValue: 1,
-			SampleIntervalUnit:  sampleIntervalUnit,
-			Label:               "my label",
-			LineColor:           "my stroke",
-			PresentationType:    types.Line,
-			GenerationMethod:    types.Search,
+			ViewID:               1,
+			UniqueID:             view.UniqueID,
+			InsightSeriesID:      series.ID,
+			SeriesID:             series.SeriesID,
+			Title:                view.Title,
+			Description:          view.Description,
+			Query:                series.Query,
+			CreatedAt:            series.CreatedAt,
+			OldestHistoricalAt:   series.OldestHistoricalAt,
+			LastRecordedAt:       series.LastRecordedAt,
+			NextRecordingAfter:   series.NextRecordingAfter,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			SampleIntervalValue:  1,
+			SampleIntervalUnit:   sampleIntervalUnit,
+			Label:                "my label",
+			LineColor:            "my stroke",
+			PresentationType:     types.Line,
+			GenerationMethod:     types.Search,
+			SupportsAugmentation: true,
 		}}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
@@ -1517,7 +1598,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 
 func TestInsightStore_GetDataSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	groupByRepo := "repo"
 	ctx := context.Background()
@@ -1539,17 +1620,18 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 	t.Run("test create and get series", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:           "unique-1",
-			Query:              "query-1",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
-			Enabled:            true,
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-			GroupBy:            &groupByRepo,
+			SeriesID:             "unique-1",
+			Query:                "query-1",
+			OldestHistoricalAt:   now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:       now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:   now,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			Enabled:              true,
+			SampleIntervalUnit:   string(types.Month),
+			GenerationMethod:     types.Search,
+			GroupBy:              &groupByRepo,
+			SupportsAugmentation: true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -1569,17 +1651,18 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 	t.Run("test create and get series just in time generation method", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:           "unique-1-gm-jit",
-			Query:              "query-1-abc",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
-			Enabled:            true,
-			SampleIntervalUnit: string(types.Month),
-			JustInTime:         true,
-			GenerationMethod:   types.Search,
+			SeriesID:             "unique-1-gm-jit",
+			Query:                "query-1-abc",
+			OldestHistoricalAt:   now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:       now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:   now,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			Enabled:              true,
+			SampleIntervalUnit:   string(types.Month),
+			JustInTime:           true,
+			GenerationMethod:     types.Search,
+			SupportsAugmentation: true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -1600,7 +1683,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 func TestInsightStore_StampRecording(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1642,9 +1725,9 @@ func TestInsightStore_StampRecording(t *testing.T) {
 	})
 }
 
-func TestInsightStore_StampBackfill(t *testing.T) {
+func TestInsightStore_StampBackfillQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1673,10 +1756,107 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	repoScope := "repo:scope"
+	repoScopedSeries := types.InsightSeries{
+		SeriesID:           "repoScoped",
+		Query:              "query-2",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+		RepositoryCriteria: &repoScope,
+	}
+	repoScopedSeries, err = store.CreateSeries(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.StampBackfill(ctx, repoScopedSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("test only incomplete", func(t *testing.T) {
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
-			BackfillIncomplete: true,
+			BackfillNotQueued: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 0
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched not queued backfill_stamp count want/got: %v", diff)
+		}
+	})
+	t.Run("test get all", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 2
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched get all count want/got: %v", diff)
+		}
+	})
+	t.Run("test global only", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			GlobalOnly: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantCount := 1
+		want := series.SeriesID
+		if diff := cmp.Diff(wantCount, len(got)); diff != "" {
+			t.Errorf("mismatched global only count want/got: %v", diff)
+		}
+		if diff := cmp.Diff(want, got[0].SeriesID); diff != "" {
+			t.Errorf("mismatched global only seriesID want/got: %v", diff)
+		}
+	})
+}
+
+func TestInsightStore_StampBackfillCompleted(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(insightsDB)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	series := types.InsightSeries{
+		SeriesID:           "unique-1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	_, err := store.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.SetSeriesBackfillComplete(ctx, "unique-1", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test only incomplete", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			BackfillNotComplete: true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1700,154 +1880,9 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 	})
 }
 
-func TestDirtyQueries(t *testing.T) {
-	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	now := time.Now().Round(0).Truncate(time.Microsecond)
-	ctx := context.Background()
-
-	store := NewInsightStore(insightsDB)
-	store.Now = func() time.Time {
-		return now
-	}
-
-	t.Run("test read with no inserts", func(t *testing.T) {
-		series := types.InsightSeries{
-			ID:       1,
-			SeriesID: "asdf",
-			Query:    "qwerwre",
-		}
-		queries, err := store.GetDirtyQueries(ctx, &series)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(queries) != 0 {
-			t.Fatal("unexpected results of dirty queries")
-		}
-	})
-
-	t.Run("write and read back", func(t *testing.T) {
-		series := types.InsightSeries{
-			SeriesID:           "asdf",
-			Query:              "qwerwre",
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-		}
-
-		created, err := store.CreateSeries(ctx, series)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		at := time.Date(2020, 1, 1, 5, 5, 5, 5, time.UTC).Truncate(time.Microsecond)
-
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "this is a reason",
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		got, err := store.GetDirtyQueries(ctx, &created)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []*types.DirtyQuery{
-			{
-				ID:      1,
-				Query:   created.Query,
-				ForTime: at,
-				DirtyAt: now,
-				Reason:  "this is a reason",
-			},
-		}
-
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched dirty query (want/got): %v", diff)
-		}
-	})
-}
-
-func TestDirtyQueriesAggregated(t *testing.T) {
-	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	now := time.Now().Round(0).Truncate(time.Microsecond)
-	ctx := context.Background()
-
-	store := NewInsightStore(insightsDB)
-	store.Now = func() time.Time {
-		return now
-	}
-
-	t.Run("test read with no inserts", func(t *testing.T) {
-		series := types.InsightSeries{
-			ID:       1,
-			SeriesID: "asdf",
-			Query:    "qwerwre",
-		}
-		queries, err := store.GetDirtyQueriesAggregated(ctx, series.SeriesID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(queries) != 0 {
-			t.Fatal("unexpected results of dirty queries")
-		}
-	})
-
-	t.Run("write and read back", func(t *testing.T) {
-		series := types.InsightSeries{
-			SeriesID:           "asdf",
-			Query:              "qwerwre",
-			SampleIntervalUnit: string(types.Month),
-			GenerationMethod:   types.Search,
-		}
-
-		created, err := store.CreateSeries(ctx, series)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		at := time.Date(2020, 1, 1, 5, 5, 5, 5, time.UTC).Truncate(time.Microsecond)
-
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "reason1",
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at.AddDate(0, 0, 1),
-			Reason:  "reason2",
-		}); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.InsertDirtyQuery(ctx, &created, &types.DirtyQuery{
-			ID:      1,
-			Query:   created.Query,
-			ForTime: at,
-			Reason:  "reason1",
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		got, err := store.GetDirtyQueriesAggregated(ctx, created.SeriesID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-}
-
 func TestSetSeriesEnabled(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1912,7 +1947,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 
 func TestFindMatchingSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1985,7 +2020,7 @@ func TestFindMatchingSeries(t *testing.T) {
 
 func TestUpdateFrontendSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2018,19 +2053,20 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("BeforeUpdateSeries", []types.InsightSeries{{
-			ID:                  1,
-			SeriesID:            "series id 1",
-			Query:               "query 1",
-			CreatedAt:           now,
-			OldestHistoricalAt:  now,
-			LastRecordedAt:      now,
-			NextRecordingAfter:  now,
-			LastSnapshotAt:      now,
-			NextSnapshotAfter:   now,
-			Enabled:             true,
-			SampleIntervalUnit:  "WEEK",
-			SampleIntervalValue: 1,
-			GenerationMethod:    "search",
+			ID:                   1,
+			SeriesID:             "series id 1",
+			Query:                "query 1",
+			CreatedAt:            now,
+			OldestHistoricalAt:   now,
+			LastRecordedAt:       now,
+			NextRecordingAfter:   now,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			Enabled:              true,
+			SampleIntervalUnit:   "WEEK",
+			SampleIntervalValue:  1,
+			GenerationMethod:     "search",
+			SupportsAugmentation: true,
 		}}).Equal(t, gotBeforeUpdate)
 
 		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
@@ -2047,26 +2083,27 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterUpdateSeries", []types.InsightSeries{{
-			ID:                  1,
-			SeriesID:            "series id 1",
-			Query:               "updated query!",
-			CreatedAt:           now,
-			OldestHistoricalAt:  now,
-			LastRecordedAt:      now,
-			NextRecordingAfter:  now,
-			LastSnapshotAt:      now,
-			NextSnapshotAfter:   now,
-			Enabled:             true,
-			SampleIntervalUnit:  "MONTH",
-			SampleIntervalValue: 5,
-			GenerationMethod:    "search",
+			ID:                   1,
+			SeriesID:             "series id 1",
+			Query:                "updated query!",
+			CreatedAt:            now,
+			OldestHistoricalAt:   now,
+			LastRecordedAt:       now,
+			NextRecordingAfter:   now,
+			LastSnapshotAt:       now,
+			NextSnapshotAfter:    now,
+			Enabled:              true,
+			SampleIntervalUnit:   "MONTH",
+			SampleIntervalValue:  5,
+			GenerationMethod:     "search",
+			SupportsAugmentation: true,
 		}}).Equal(t, gotAfterUpdate)
 	})
 }
 
 func TestGetReferenceCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -2124,7 +2161,7 @@ func TestGetReferenceCount(t *testing.T) {
 
 func TestGetSoftDeletedSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -2165,7 +2202,7 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 
 func TestGetUnfrozenInsightCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2238,7 +2275,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 
 func TestUnfreezeGlobalInsights(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2328,7 +2365,7 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 
 func TestIncrementBackfillAttempts(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -2394,8 +2431,102 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 
 			got := series[0].BackfillAttempts
 			tc.want.Equal(t, got)
-
 		})
 	}
+}
 
+func TestHardDeleteSeries(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	clock := timeutil.Now
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	permStore := NewInsightPermissionStore(postgres)
+	insightStore := NewInsightStore(insightsdb)
+	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+
+	series := types.InsightSeries{
+		SeriesID:           "series1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	got, err := insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
+	series.SeriesID = "series2" // copy to make a new one
+	got, err = insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 2 {
+		t.Errorf("expected second series to have id 2")
+	}
+
+	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
+		{
+			InsightSeriesID: 1,
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
+		},
+		{
+			InsightSeriesID: 2,
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err = insightStore.HardDeleteSeries(ctx, "series1"); err != nil {
+		t.Fatal(err)
+	}
+
+	getInsightSeries := func(ctx context.Context, timeseriesStore *Store, seriesId string) bool {
+		q := sqlf.Sprintf("select count(*) from insight_series where series_id = %s;", seriesId)
+		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val == 1
+	}
+
+	getTimesCountforSeries := func(ctx context.Context, timeseriesStore *Store, seriesId int) int {
+		q := sqlf.Sprintf("select count(*) from insight_series_recording_times where insight_series_id = %s;", seriesId)
+		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val
+	}
+
+	if getInsightSeries(ctx, timeseriesStore, "series1") {
+		t.Errorf("expected series1 to be deleted")
+	}
+	if getTimesCountforSeries(ctx, timeseriesStore, 1) != 0 {
+		t.Errorf("expected 0 recording times to remain for series1")
+	}
+
+	if !getInsightSeries(ctx, timeseriesStore, "series2") {
+		t.Errorf("expected series2 to be there")
+	}
+	if getTimesCountforSeries(ctx, timeseriesStore, 2) != 1 {
+		t.Errorf("expected 1 recording times to remain for series2")
+	}
 }

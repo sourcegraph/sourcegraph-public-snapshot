@@ -101,6 +101,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
         teardown: [executionLogPrototype],
     },
     associatedUpload: null,
+    shouldReindex: false,
 }
 
 const completedUpload = {
@@ -225,6 +226,7 @@ const searchBasedSupport = [
 ]
 
 const emptyPayload: UseCodeIntelStatusPayload = {
+    availableIndexers: [],
     activeUploads: [],
     recentUploads: [],
     recentIndexes: [],

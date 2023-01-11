@@ -119,7 +119,9 @@ type worker struct {
 func (wkr *worker) run(ctx context.Context) {
 	defer wkr.wg.Done()
 
-	wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
+	if wkr.currentOrg == "" {
+		wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
+	}
 
 	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
 

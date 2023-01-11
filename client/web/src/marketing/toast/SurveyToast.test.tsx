@@ -9,8 +9,8 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../../auth'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
@@ -20,7 +20,7 @@ import { SurveyToast } from '.'
 export const mockAuthenticatedUser: AuthenticatedUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
 } as AuthenticatedUser
 
 describe('SurveyToast', () => {
@@ -34,7 +34,7 @@ describe('SurveyToast', () => {
     const mockClient = createMockClient(
         { contents: JSON.stringify({}) },
         gql`
-            query {
+            query TemporarySettings {
                 temporarySettings {
                     contents
                 }
@@ -213,11 +213,11 @@ describe('SurveyToast', () => {
 
         it('Should render use case form correctly', () => {
             expect(renderResult.getByLabelText('What do you use Sourcegraph for?')).toBeVisible()
-            expect(renderResult.getByLabelText('What would make Sourcegraph better?')).toBeVisible()
+            expect(renderResult.getByLabelText('How can we make Sourcegraph better?')).toBeVisible()
         })
 
         it('Should show some gratitude after usecase submission', async () => {
-            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
+            const reasonInput = renderResult.getByLabelText('How can we make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 

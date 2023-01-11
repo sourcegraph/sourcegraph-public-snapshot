@@ -26,11 +26,4 @@
         stroke: var(--border-color-2);
         stroke-width: 1;
     }
-
-    &--vertical {
-        line {
-            // Hide line ticks visually and hide them from voice over
-            stroke-width: 0;
-        }
-    }
 }

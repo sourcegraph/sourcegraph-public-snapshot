@@ -1,6 +1,7 @@
+import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -13,11 +14,15 @@ describe('SignInPage', () => {
             displayName: 'Builtin username-password authentication',
             isBuiltin: true,
             serviceType: 'builtin',
+            authenticationURL: '',
+            serviceID: '',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
+            authenticationURL: '/.auth/github/login?pc=f00bar',
+            serviceID: 'https://github.com',
         },
     ]
 
@@ -37,6 +42,7 @@ describe('SignInPage', () => {
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -44,6 +50,59 @@ describe('SignInPage', () => {
                 { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
+    })
+
+    describe('with Sourcegraph operator auth provider', () => {
+        it('renders page with 2 providers', () => {
+            const rendered = render('/sign-in')
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
+            ).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        it('renders page with 3 providers (url-param present)', () => {
+            const rendered = render('/sign-in?sourcegraph-operator')
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
+            ).toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        function render(route: string) {
+            const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
+                ...authProviders,
+                {
+                    displayName: 'Sourcegraph Operators',
+                    isBuiltin: false,
+                    serviceType: 'sourcegraph-operator',
+                    authenticationURL: '',
+                    serviceID: '',
+                },
+            ]
+
+            return renderWithBrandedContext(
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders: withSourcegraphOperator,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                }}
+                                isSourcegraphDotCom={false}
+                            />
+                        }
+                    />
+                </Routes>,
+                { route }
+            )
+        }
     })
 
     it('renders sign in page (cloud)', () => {
@@ -62,6 +121,7 @@ describe('SignInPage', () => {
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />
@@ -76,7 +136,7 @@ describe('SignInPage', () => {
         const mockUser = {
             id: 'userID',
             username: 'username',
-            email: 'user@me.com',
+            emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
             siteAdmin: true,
         } as AuthenticatedUser
 
@@ -95,6 +155,7 @@ describe('SignInPage', () => {
                                     xhrHeaders: {},
                                     resetPasswordEnabled: true,
                                 }}
+                                isSourcegraphDotCom={false}
                             />
                         }
                     />

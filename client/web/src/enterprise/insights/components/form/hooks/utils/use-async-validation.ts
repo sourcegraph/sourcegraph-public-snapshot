@@ -5,14 +5,10 @@ import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
 import { useEventObservable } from '@sourcegraph/wildcard'
 
-import { FieldState, ValidationResult } from '../useForm'
+import { FieldState } from '../useForm'
+import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage } from '../validators'
 
 const ASYNC_VALIDATION_DEBOUNCE_TIME = 500
-
-export type AsyncValidator<FieldValue> = (
-    value: FieldValue | undefined,
-    validity: ValidityState | null
-) => Promise<ValidationResult>
 
 export interface UseAsyncValidationProps<FieldValue> {
     /**
@@ -103,15 +99,19 @@ export function useAsyncValidation<FieldValue>(
                 switchMap(({ value, validity, canceled }) =>
                     !canceled ? from(asyncValidator!(value, validity)) : EMPTY
                 ),
-                tap(validationMessage => {
+                tap(validationResult => {
                     const inputElement = inputReference.current
                     const validity = inputElement?.validity ?? null
 
-                    if (validationMessage) {
+                    if (validationResult) {
+                        const validationMessage = getCustomValidationMessage(validationResult)
+                        const validationContext = getCustomValidationContext(validationResult)
+
                         inputElement?.setCustomValidity?.(validationMessage)
                         onValidationChangeReference.current?.({
                             validState: 'INVALID',
                             error: validationMessage,
+                            errorContext: validationContext,
                             validity,
                         })
                     } else {

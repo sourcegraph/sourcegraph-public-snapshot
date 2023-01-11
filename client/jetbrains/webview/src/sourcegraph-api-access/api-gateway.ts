@@ -1,17 +1,65 @@
-import { requestGraphQLCommon } from '@sourcegraph/http-client'
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { gql, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
-export async function getAuthenticatedUser(
+export type SiteVersionAndCurrentAuthStateResult = CurrentAuthStateResult & {
+    site: {
+        productVersion: string
+    }
+}
+
+// TODO: Could be deduplicated with `currentAuthStateQuery` in `shared/src/auth.ts`, using fragments
+export const siteVersionAndUserQuery = gql`
+    query SiteVersionAndCurrentUser {
+        site {
+            productVersion
+        }
+        currentUser {
+            __typename
+            id
+            databaseID
+            username
+            avatarURL
+            email
+            displayName
+            siteAdmin
+            tags
+            url
+            settingsURL
+            organizations {
+                nodes {
+                    id
+                    name
+                    displayName
+                    url
+                    settingsURL
+                }
+            }
+            session {
+                canSignOut
+            }
+            viewerCanAdminister
+            tags
+        }
+    }
+`
+
+export interface SiteVersionAndCurrentUser {
+    site: { productVersion: string } | null
+    currentUser: AuthenticatedUser | null
+}
+
+export async function getSiteVersionAndAuthenticatedUser(
     instanceURL: string,
-    accessToken: string | null
-): Promise<AuthenticatedUser | null> {
+    accessToken: string | null,
+    customRequestHeaders: { [name: string]: string } | null
+): Promise<SiteVersionAndCurrentUser> {
     if (!instanceURL) {
-        return null
+        return { site: null, currentUser: null }
     }
 
-    const result = await requestGraphQLCommon<CurrentAuthStateResult, CurrentAuthStateVariables>({
-        request: currentAuthStateQuery,
+    const result = await requestGraphQLCommon<SiteVersionAndCurrentAuthStateResult, CurrentAuthStateVariables>({
+        request: siteVersionAndUserQuery,
         variables: {},
         baseUrl: instanceURL,
         headers: {
@@ -19,8 +67,9 @@ export async function getAuthenticatedUser(
             'Content-Type': 'application/json',
             'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
             ...(accessToken && { Authorization: `token ${accessToken}` }),
+            ...customRequestHeaders,
         },
     }).toPromise()
 
-    return result.data?.currentUser ?? null
+    return result.data ?? { site: null, currentUser: null }
 }

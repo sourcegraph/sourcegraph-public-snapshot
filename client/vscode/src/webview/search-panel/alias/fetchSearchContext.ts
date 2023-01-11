@@ -3,7 +3,6 @@ import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 export type Maybe<T> = T | null
 
@@ -55,6 +54,8 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         repositories {
             __typename
             repository {
@@ -78,7 +79,7 @@ export function fetchSearchContexts({
     query?: string
     namespaces?: Maybe<Scalars['ID']>[]
     after?: string
-    orderBy?: GQL.SearchContextsOrderBy
+    orderBy?: SearchContextsOrderBy
     descending?: boolean
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<ListSearchContextsResult['searchContexts']> {
@@ -118,7 +119,7 @@ export function fetchSearchContexts({
                 after: after ?? null,
                 query: query ?? null,
                 namespaces: namespaces ?? [],
-                orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                orderBy: orderBy ?? SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                 descending: descending ?? false,
             },
             mightContainPrivateInfo: true,
@@ -139,6 +140,8 @@ export interface SearchContextFields {
     autoDefined: boolean
     updatedAt: string
     viewerCanManage: boolean
+    viewerHasAsDefault: boolean
+    viewerHasStarred: boolean
     query: string
     namespace: Maybe<
         | { __typename: 'User'; id: string; namespaceName: string }
@@ -149,13 +152,6 @@ export interface SearchContextFields {
         revisions: string[]
         repository: { __typename?: 'Repository'; name: string }
     }[]
-}
-
-export type AutoDefinedSearchContextsVariables = Exact<{ [key: string]: never }>
-
-export interface AutoDefinedSearchContextsResult {
-    __typename?: 'Query'
-    autoDefinedSearchContexts: ({ __typename?: 'SearchContext' } & SearchContextFields)[]
 }
 
 export type ListSearchContextsVariables = Exact<{

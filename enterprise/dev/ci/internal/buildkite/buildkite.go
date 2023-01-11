@@ -2,8 +2,8 @@
 //
 // Usage:
 //
-//    pipeline := buildkite.Pipeline{}
-//    pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
+//	pipeline := buildkite.Pipeline{}
+//	pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
 package buildkite
 
 import (
@@ -258,6 +258,13 @@ const (
 	AnnotationTypeInfo    AnnotationType = "info"
 	AnnotationTypeWarning AnnotationType = "warning"
 	AnnotationTypeError   AnnotationType = "error"
+	// AnnotationTypeAuto lets the annotated-cmd.sh script guess the annotation type
+	// based on the filename, e.g:
+	// - If file starts with "WARN_", it's a warning.
+	// - If file starts with "ERROR_", it's an error.
+	// - ...
+	// - Defaults to error if no prefix is present.
+	AnnotationTypeAuto AnnotationType = "auto"
 )
 
 type AnnotationOpts struct {

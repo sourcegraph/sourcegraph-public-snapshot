@@ -1,41 +1,39 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FileIcon from 'mdi-react/FileIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
-    ContentMatch,
-    SymbolMatch,
-    PathMatch,
     SearchMatch,
     getMatchUrl,
+    getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { luckySearchClickedEvent } from '../util/events'
+import { CommitSearchResult } from '../components/CommitSearchResult'
+import { FileContentSearchResult } from '../components/FileContentSearchResult'
+import { FilePathSearchResult } from '../components/FilePathSearchResult'
+import { RepoSearchResult } from '../components/RepoSearchResult'
+import { SymbolSearchResult } from '../components/SymbolSearchResult'
+import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
+import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
+import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
@@ -48,17 +46,11 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
-    showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
-    /** Render prop for `<SearchUserNeedsCodeHost>`  */
-    renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 
-    extensionsController?: Pick<ExtensionsController, 'extHostAPI'> | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     /**
      * Latest run query. Resets scroll visibility state when changed.
      * For example, `location.search` on web.
@@ -72,7 +64,13 @@ export interface StreamingSearchResultsListProps
     /**
      * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
      */
-    luckySearchEnabled?: boolean
+    smartSearchEnabled?: boolean
+
+    prefetchFile?: FilePrefetcher
+
+    prefetchFileEnabled?: boolean
+
+    enableKeyboardNavigation?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -86,21 +84,19 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    authenticatedUser,
-    showSearchContext,
     assetsRoot,
-    renderSearchUserNeedsCodeHost,
     platformContext,
-    extensionsController,
-    hoverifier,
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    luckySearchEnabled,
+    prefetchFile,
+    prefetchFileEnabled,
+    enableKeyboardNavigation,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
+    const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -110,17 +106,23 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (luckySearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (
+                !(
+                    results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results'
+                )
+            ) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
-                luckySearchEnabled &&
-                results?.alert?.kind === 'lucky-search-queries' &&
+                (results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
-                const event = luckySearchClickedEvent(
+                const event = smartSearchClickedEvent(
+                    results.alert.kind,
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
@@ -128,88 +130,130 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, luckySearchEnabled]
+        [telemetryService, results]
     )
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
-            switch (result.type) {
-                case 'content':
-                case 'path':
-                case 'symbol':
-                    return (
-                        <FileSearchResult
-                            index={index}
-                            location={location}
-                            telemetryService={telemetryService}
-                            icon={getFileMatchIcon(result)}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                            expanded={false}
-                            showAllMatches={false}
-                            allExpanded={allExpanded}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            repoDisplayName={displayRepoName(result.repository)}
-                            settingsCascade={settingsCascade}
-                            extensionsController={extensionsController}
-                            hoverifier={hoverifier}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
-                case 'commit':
-                    return (
-                        <CommitSearchResult
-                            index={index}
-                            result={result}
-                            platformContext={platformContext}
-                            onSelect={() => logSearchResultClicked(index, 'commit')}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
-                case 'repo':
-                    return (
-                        <RepoSearchResult
-                            index={index}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'repo')}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
+            function renderResultContent(): JSX.Element {
+                switch (result.type) {
+                    case 'content':
+                    case 'symbol':
+                    case 'path':
+                        return (
+                            <PrefetchableFile
+                                isPrefetchEnabled={prefetchFileEnabled}
+                                prefetch={prefetchFile}
+                                filePath={result.path}
+                                revision={getRevision(result.branches, result.commit)}
+                                repoName={result.repository}
+                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                                // child components than is worth doing right now for this experimental feature
+                                className={resultContainerStyles.resultContainer}
+                                as="li"
+                            >
+                                {result.type === 'content' && (
+                                    <FileContentSearchResult
+                                        index={index}
+                                        location={location}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        defaultExpanded={false}
+                                        showAllMatches={false}
+                                        allExpanded={allExpanded}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'symbol' && (
+                                    <SymbolSearchResult
+                                        index={index}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'path' && (
+                                    <FilePathSearchResult
+                                        index={index}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        containerClassName={resultClassName}
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
+                            </PrefetchableFile>
+                        )
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
+                                index={index}
+                                result={result}
+                                platformContext={platformContext}
+                                onSelect={() => logSearchResultClicked(index, 'commit')}
+                                openInNewTab={openMatchesInNewTab}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                index={index}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                }
             }
+
+            return (
+                <TraceSpanProvider
+                    name="StreamingSearchResultsListItem"
+                    attributes={{
+                        type: result.type,
+                        index,
+                    }}
+                >
+                    {renderResultContent()}
+                </TraceSpanProvider>
+            )
         },
         [
+            prefetchFileEnabled,
+            prefetchFile,
             location,
             telemetryService,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
-            platformContext,
-            extensionsController,
-            hoverifier,
             openMatchesInNewTab,
             resultClassName,
+            platformContext,
             logSearchResultClicked,
         ]
     )
 
+    const [showFocusInputMessage, onVisibilityChange] = useSearchResultsKeyboardNavigation(
+        rootRef,
+        enableKeyboardNavigation
+    )
+
     return (
         <>
-            <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
-                <div className="align-self-stretch">
-                    {renderSearchUserNeedsCodeHost &&
-                        isSourcegraphDotCom &&
-                        searchContextsEnabled &&
-                        authenticatedUser &&
-                        results?.state === 'complete' &&
-                        results?.results.length === 0 &&
-                        renderSearchUserNeedsCodeHost(authenticatedUser)}
-                </div>
-            </div>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
@@ -220,10 +264,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
+                onRef={setRootRef}
+                onVisibilityChange={onVisibilityChange}
             />
 
+            <div
+                className={classNames(styles.focusInputMessage, showFocusInputMessage && styles.focusInputMessageShow)}
+            >
+                Press <span className={styles.focusInputMessageSlash}>/</span> to focus the search input
+            </div>
+
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -231,7 +283,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
-                                showSearchContext={showSearchContext}
+                                showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}
                             />
                         )}
@@ -244,22 +296,15 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
 function itemKey(item: SearchMatch): string {
     if (item.type === 'content') {
-        const lineStart = item.lineMatches.length > 0 ? item.lineMatches[0].lineNumber : 0
+        const lineStart = item.chunkMatches
+            ? item.chunkMatches.length > 0
+                ? item.chunkMatches[0].contentStart.line
+                : 0
+            : 0
         return `file:${getMatchUrl(item)}:${lineStart}`
     }
     if (item.type === 'symbol') {
         return `file:${getMatchUrl(item)}`
     }
     return getMatchUrl(item)
-}
-
-function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
-    switch (result.type) {
-        case 'content':
-            return FileDocumentIcon
-        case 'symbol':
-            return AlphaSBoxIcon
-        case 'path':
-            return FileIcon
-    }
 }

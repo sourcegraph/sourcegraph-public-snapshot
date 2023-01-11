@@ -1,7 +1,6 @@
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
-import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
-import { InputBoxOptions } from 'sourcegraph'
+import { Observable, Subscribable, Subscription } from 'rxjs'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { ErrorLike, hasProperty } from '@sourcegraph/common'
@@ -9,6 +8,7 @@ import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
+import type { InputBoxOptions } from '../codeintel/legacy-extensions/api'
 import { Scalars } from '../graphql-operations'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
@@ -104,7 +104,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
      */
-    requestGraphQL: <R, V = object>(options: {
+    requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**
          * The GraphQL request (query or mutation)
          */
@@ -187,12 +187,6 @@ export interface PlatformContext {
      * fixed.
      */
     clientApplication: 'sourcegraph' | 'other'
-
-    /**
-     * The URL to the Parcel dev server for a single extension.
-     * Used for extension development purposes, to run an extension that isn't on the registry.
-     */
-    sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
 
     /**
      * A telemetry service implementation to log events.

@@ -2,16 +2,12 @@ import { useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { Button, Grid, Code, Text, Input } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Tooltip } from '.'
 
-const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
-)
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'wildcard/Tooltip',
@@ -134,7 +130,7 @@ export const LongContent: Story = () => (
         <div>
             <Tooltip
                 content="Nulla porttitor accumsan tincidunt. IAmVeryLongTextWithNoBreaksAndIWantToBeWrappedInMultipleLines. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada."
-                placement="right"
+                placement="bottom"
             >
                 <Button variant="primary">Example</Button>
             </Tooltip>

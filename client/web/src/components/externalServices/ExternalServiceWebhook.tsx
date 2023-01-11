@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Alert, Link, H3, Text, H4 } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { CopyableText } from '../CopyableText'
@@ -59,6 +59,12 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
     return (
         <Alert variant="info" className={className}>
             <H3>Batch changes webhooks</H3>
+            <H4>
+                Adding webhooks via code host connections has been{' '}
+                <Link to="/help/admin/config/webhooks#deprecation-notice" target="_blank" rel="noopener noreferrer">
+                    deprecated.
+                </Link>
+            </H4>
             {description}
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
             <Text className="mb-0">

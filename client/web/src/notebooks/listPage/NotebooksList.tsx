@@ -33,10 +33,10 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
     fetchNotebooks,
     telemetryService,
 }) => {
-    useEffect(() => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`), [
-        logEventName,
-        telemetryService,
-    ])
+    useEffect(
+        () => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`),
+        [logEventName, telemetryService]
+    )
 
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {

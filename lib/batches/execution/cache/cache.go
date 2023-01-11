@@ -135,22 +135,24 @@ func (key CacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int) Keyer {
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, globalEnv []string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
 	sort.Strings(r.FileMatches)
 
 	return CacheKey{
 		Repository:            r,
 		Path:                  path,
 		OnlyFetchWorkspace:    onlyFetchWorkspace,
+		GlobalEnv:             globalEnv,
 		Steps:                 steps,
 		BatchChangeAttributes: batchChangeAttributes,
 		StepIndex:             stepIndex,
+		MetadataRetriever:     retriever,
 	}
 }
 
 // ChangesetSpecsFromCache takes the execution.Result and generates all changeset specs from it.
-func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string) ([]*batches.ChangesetSpec, error) {
-	if result.Diff == "" {
+func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string, binaryDiffs bool) ([]*batches.ChangesetSpec, error) {
+	if len(result.Diff) == 0 {
 		return []*batches.ChangesetSpec{}, nil
 	}
 
@@ -168,5 +170,5 @@ func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, resu
 		Path:             path,
 	}
 
-	return batches.BuildChangesetSpecs(input)
+	return batches.BuildChangesetSpecs(input, binaryDiffs)
 }

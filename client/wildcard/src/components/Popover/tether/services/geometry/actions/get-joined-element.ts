@@ -1,5 +1,5 @@
 import { createRectangle, Rectangle } from '../../../models/geometry/rectangle'
-import { Position } from '../../../models/tether-models'
+import { ElementPosition } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -26,7 +26,7 @@ import { POSITION_VARIANTS } from '../constants'
  * @param target - Target element rectangle
  * @param position - Desirable tooltip position
  */
-export function getJoinedElement(element: Rectangle, target: Rectangle, position: Position): Rectangle {
+export function getJoinedElement(element: Rectangle, target: Rectangle, position: ElementPosition): Rectangle {
     const elementA = POSITION_VARIANTS[position].elementAttachments
     const elementX = element.left + element.width * elementA.x
     const elementY = element.top + element.height * elementA.y

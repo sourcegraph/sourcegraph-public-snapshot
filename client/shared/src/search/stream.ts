@@ -1,13 +1,13 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-/* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
-import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../schema'
+import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
+import { SearchPatternType, SymbolKind } from '../graphql-operations'
+
+import { SearchMode } from './searchQueryState'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -34,23 +34,28 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    debug?: string
 }
 
 export interface ContentMatch {
     type: 'content'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    debug?: string
 }
 
 export interface DecoratedHunk {
@@ -76,10 +81,17 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -92,6 +104,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    debug?: string
 }
 
 export interface MatchedSymbol {
@@ -118,6 +131,8 @@ export interface CommitMatch {
     message: string
     authorName: string
     authorDate: string
+    committerName: string
+    committerDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -129,6 +144,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string
@@ -180,6 +196,7 @@ export interface Skipped {
      * - shard-timeout :: we ran out of time before searching a shard/repository.
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - backend-missing :: we may be missing results due to a backend being transiently down.
      * - excluded-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
      * - display :: we hit the display limit, so we stopped sending results from the backend.
@@ -191,6 +208,7 @@ export interface Skipped {
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
+        | 'backend-missing'
         | 'excluded-fork'
         | 'excluded-archive'
         | 'display'
@@ -222,7 +240,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'lucky-search-queries'
+export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 
 interface Alert {
     title: string
@@ -231,8 +249,12 @@ interface Alert {
     proposedQueries: ProposedQuery[] | null
 }
 
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
+
 interface ProposedQuery {
     description?: string | null
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 
@@ -419,10 +441,13 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
+    searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
     displayLimit?: number
+    chunkMatches?: boolean
 }
 
 function initiateSearchStream(
@@ -432,10 +457,13 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        featureOverrides,
         decorationKinds,
         decorationContextLines,
+        searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -446,15 +474,20 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['sm', searchMode.toString()],
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        for (const value of featureOverrides || []) {
+            parameters.push(['feat', value])
+        }
+        const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
@@ -570,6 +603,9 @@ export function streamComputeQuery(query: string): Observable<string[]> {
             onmessage(event) {
                 allData.push(event.data)
                 observer.next(allData)
+            },
+            onerror(event) {
+                observer.error(event)
             },
         }).then(
             () => observer.complete(),

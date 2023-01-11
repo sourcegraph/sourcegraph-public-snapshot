@@ -90,7 +90,6 @@ func (s *releaseStore) Transact(ctx context.Context) (ReleaseStore, error) {
 
 func (s *releaseStore) Create(ctx context.Context, release *Release) (id int64, err error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:Create
 INSERT INTO registry_extension_releases
 	(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
 VALUES
@@ -119,7 +118,6 @@ RETURNING id
 
 func (s *releaseStore) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeArtifacts bool) (*Release, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetLatest
 SELECT
 	id,
 	registry_extension_id,
@@ -163,7 +161,6 @@ func (s *releaseStore) GetLatestBatch(ctx context.Context, registryExtensionIDs 
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetLatestBatch
 SELECT DISTINCT ON (rer.registry_extension_id)
 	rer.id,
 	rer.registry_extension_id,
@@ -212,7 +209,6 @@ ORDER BY
 
 func (s *releaseStore) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetArtifacts
 SELECT
 	bundle,
 	source_map

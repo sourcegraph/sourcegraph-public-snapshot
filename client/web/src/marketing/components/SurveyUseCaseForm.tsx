@@ -15,6 +15,12 @@ interface SurveyUseCaseFormProps extends UseCaseFeedbackState, UseCaseFeedbackMo
     authenticatedUser?: AuthenticatedUser | null
 }
 
+export const SURVEY_QUESTIONS: Record<'otherUseCase' | 'better' | 'reason', string> = {
+    otherUseCase: 'What do you use Sourcegraph for?',
+    better: 'How can we make Sourcegraph better?',
+    reason: 'What is the most important reason for the score you gave Sourcegraph?',
+}
+
 export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({
     otherUseCase,
     onChangeOtherUseCase,
@@ -33,7 +39,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             containerClassName="mt-3"
             label={
                 <H4 as="span" className={classNames('d-flex', styles.title, formLabelClassName)}>
-                    What do you use Sourcegraph for?
+                    {SURVEY_QUESTIONS.otherUseCase}
                 </H4>
             }
             onChange={event => onChangeOtherUseCase(event.target.value)}
@@ -45,7 +51,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             containerClassName="mt-3"
             label={
                 <H4 as="span" className={classNames('d-flex', styles.title, formLabelClassName)}>
-                    What would make Sourcegraph better?
+                    {SURVEY_QUESTIONS.better}
                 </H4>
             }
             onChange={event => onChangeBetter(event.target.value)}

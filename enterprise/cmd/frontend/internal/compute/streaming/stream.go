@@ -91,7 +91,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
-	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // Deprecated: Ok until we update the observation package
 
 	events, getResults := NewComputeStream(ctx, h.logger, h.db, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
@@ -164,9 +164,9 @@ LOOP:
 		})
 	}
 	if alert != nil {
-		var pqs []streamhttp.ProposedQuery
+		var pqs []streamhttp.QueryDescription
 		for _, pq := range alert.ProposedQueries {
-			pqs = append(pqs, streamhttp.ProposedQuery{
+			pqs = append(pqs, streamhttp.QueryDescription{
 				Description: pq.Description,
 				Query:       pq.QueryString(),
 			})

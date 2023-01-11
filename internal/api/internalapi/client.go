@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -48,9 +49,19 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 	return externalURL, nil
 }
 
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &message, nil)
+// SendEmail issues a request to send an email. All services outside the frontend should
+// use this to send emails.  Source is used to categorize metrics, and should indicate the
+// product feature that is sending this email.
+//
+// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
+// the email should be verified or not, and conduct the appropriate checks before sending.
+// This helps reduce the chance that we damage email sender reputations when attempting to
+// send emails to nonexistent email addresses.
+func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
+	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
+		Source:  source,
+		Message: message,
+	}, nil)
 }
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
@@ -119,6 +130,13 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	// Check if we have an actor, if not, ensure that we use our internal actor since
+	// this is an internal request.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() && !a.IsInternal() {
+		ctx = actor.WithInternalActor(ctx)
+	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {

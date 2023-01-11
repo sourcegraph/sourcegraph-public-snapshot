@@ -2,7 +2,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields, SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
+import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
@@ -21,13 +22,13 @@ const config: Meta = {
 
 export default config
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextRepositoryRevisionsFields[] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example',
-        } as IRepository,
+        },
         revisions: ['REVISION1', 'REVISION2'],
     },
     {
@@ -35,12 +36,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/really-really-really-really-really-really-long-name',
-        } as IRepository,
+        },
         revisions: ['REVISION3', 'LONG-LONG-LONG-LONG-LONG-LONG-LONG-LONG-REVISION'],
     },
 ]
 
-const mockContext: ISearchContext = {
+const mockContext: SearchContextFields = {
     __typename: 'SearchContext',
     id: '1',
     spec: 'public-ctx',
@@ -53,23 +54,30 @@ const mockContext: ISearchContext = {
     repositories,
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,
+    viewerHasAsDefault: false,
+    viewerHasStarred: true,
 }
 
-const fetchPublicContext = (): Observable<ISearchContext> => of(mockContext)
+const fetchPublicContext = (): Observable<SearchContextFields> => of(mockContext)
 
-const fetchPrivateContext = (): Observable<ISearchContext> =>
+const fetchPrivateContext = (): Observable<SearchContextFields> =>
     of({
         ...mockContext,
         spec: 'private-ctx',
         name: 'private-ctx',
         namespace: null,
         public: false,
+        viewerHasStarred: false,
     })
 
-const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
+const fetchAutoDefinedContext = (): Observable<SearchContextFields> =>
     of({
         ...mockContext,
         autoDefined: true,
+        viewerHasStarred: false,
+        viewerHasAsDefault: true,
+        spec: 'auto-ctx',
+        name: 'auto-ctx',
     })
 
 export const PublicContext: Story = () => (
@@ -79,12 +87,28 @@ export const PublicContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchPublicContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
 )
 
 PublicContext.storyName = 'public context'
+
+export const PublicContextUnauthenticated: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SearchContextPage
+                {...webProps}
+                fetchSearchContextBySpec={fetchPublicContext}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={null}
+            />
+        )}
+    </WebStory>
+)
+
+PublicContextUnauthenticated.storyName = 'public context, unauthenticated user'
 
 export const AutodefinedContext: Story = () => (
     <WebStory>
@@ -93,6 +117,7 @@ export const AutodefinedContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchAutoDefinedContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -107,6 +132,7 @@ export const PrivateContext: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={fetchPrivateContext}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -121,6 +147,7 @@ export const Loading: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={() => NEVER}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>
@@ -135,6 +162,7 @@ export const ErrorStory: Story = () => (
                 {...webProps}
                 fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                authenticatedUser={mockAuthenticatedUser}
             />
         )}
     </WebStory>

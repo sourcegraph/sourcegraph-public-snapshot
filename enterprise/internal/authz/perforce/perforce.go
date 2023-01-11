@@ -11,8 +11,8 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -88,10 +88,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	tr, ctx := trace.New(ctx, "perforce.authz.provider.FetchAccount", "")
 	defer func() {
-		tr.LogFields(
-			otlog.String("user.name", user.Username),
-			otlog.Int32("user.id", user.ID),
-		)
+		tr.SetAttributes(
+			attribute.String("user.name", user.Username),
+			attribute.Int("user.id", int(user.ID)))
 
 		if err != nil {
 			tr.SetError(err)
@@ -189,12 +188,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
 	return perms, errors.Wrap(err, "FetchUserPerms")
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *Provider) FetchUserPermsByToken(_ context.Context, _ string, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
 // getAllUserEmails returns a set of username -> email pairs of all users in the Perforce server.
@@ -385,9 +378,9 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(_ context.Context) (problems []string) {
+func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
-	rc, _, err := p.p4Execer.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {
 		_ = rc.Close()
 		return nil

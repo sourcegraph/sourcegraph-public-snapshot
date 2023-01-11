@@ -1,4 +1,4 @@
-FROM golang:1.18.1-alpine@sha256:42d35674864fbb577594b60b84ddfba1be52b4d4298c961b46ba95e9fb4712e8 AS builder
+FROM golang:1.19.3-alpine@sha256:27a9653759f44afd08c94418307a26d2db9cf78af12933200bc2ca63c4844316 AS builder
 
 WORKDIR /go/src/app
 
@@ -12,6 +12,7 @@ RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine \
 
 
 COPY git-combine.go .
+COPY default-branch.sh .
 
 RUN go mod download \
     && go mod tidy
@@ -23,7 +24,12 @@ RUN go build .
 # alpine_base CHECK:ALPINE_OK
 FROM alpine:3.15 as alpine_base
 
-RUN apk add --no-cache git ca-certificates tini
+RUN apk add --no-cache\
+    bash \
+    ca-certificates \
+    git \
+    parallel \
+    tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/
 

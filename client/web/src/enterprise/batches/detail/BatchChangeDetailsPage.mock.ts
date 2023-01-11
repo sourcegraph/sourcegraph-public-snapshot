@@ -1,7 +1,5 @@
 import { subDays } from 'date-fns'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-
 import {
     BatchChangeFields,
     BulkOperationState,
@@ -14,6 +12,7 @@ import {
     ChangesetCheckState,
     BatchSpecState,
     BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
 
 const now = new Date()
@@ -67,6 +66,38 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            nodes: [],
+            totalCount: 0,
+        },
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
+        },
+        files: {
+            totalCount: 2,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'random-id',
+                    name: 'test.txt',
+                    binary: false,
+                    byteSize: 74,
+                    url: 'test/url',
+                },
+                {
+                    id: 'random-id-2',
+                    name: 'src-cli',
+                    binary: true,
+                    byteSize: 75,
+                    url: 'test/url',
+                },
+            ],
+        },
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
@@ -87,7 +118,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             },
         ],
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
 }
 
 export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
@@ -159,6 +190,7 @@ export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
                                     url: 'https://test.test/my/pr',
                                 },
                                 repository: {
+                                    id: 'a',
                                     name: 'sourcegraph/sourcegraph',
                                     url: '/github.com/sourcegraph/sourcegraph',
                                 },
@@ -233,9 +265,8 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 checkState: ChangesetCheckState.PASSED,
                 diffStat: {
                     __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
+                    added: 19,
+                    deleted: 10,
                 },
                 externalID: '123',
                 externalURL: {
@@ -281,9 +312,8 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 checkState: null,
                 diffStat: {
                     __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
+                    added: 19,
+                    deleted: 10,
                 },
                 externalID: null,
                 externalURL: null,

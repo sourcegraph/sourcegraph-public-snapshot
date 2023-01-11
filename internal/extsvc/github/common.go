@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1505,19 +1506,17 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
-			return nil, errors.Wrap(err, "authenticating request")
-		}
-	}
+	// Prevent the CachedTransportOpt from caching client side, but still use ETags
+	// to cache server-side
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -1529,9 +1528,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "request failed")
 	}
 	defer resp.Body.Close()
 
@@ -1875,21 +1874,17 @@ type restTopicsResponse struct {
 
 func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		var u github.User
-		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
+		usr, err = encryption.DecryptJSON[github.User](ctx, data.Data)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		usr = &u
 	}
 
 	if data.AuthData != nil {
-		var t oauth2.Token
-		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
 			return nil, nil, err
 		}
-
-		tok = &t
 	}
 
 	return usr, tok, nil
@@ -2014,4 +2009,32 @@ func handlePullRequestError(err error) error {
 // which is used for GitHub App access tokens.
 func IsGitHubAppAccessToken(token string) bool {
 	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+			}
+		}
+	}
+	return nil
 }

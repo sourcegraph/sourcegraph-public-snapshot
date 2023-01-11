@@ -11,35 +11,34 @@
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
-    "**/.eslintcache": true,
+    "**/.eslintcache": true
   },
   "files.exclude": {
-    "**/*.scss.d.ts": true,
+    "**/*.scss.d.ts": true
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
-    "**/.mocharc.json": "jsonc",
+    "**/.mocharc.json": "jsonc"
   },
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json"
     },
     {
       "fileMatch": ["dev/site-config.json"],
-      "url": "/schema/site.schema.json",
-    },
+      "url": "/schema/site.schema.json"
+    }
   ],
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
     "build.allowImplicitNetworkAccess": true,
-    "local": "github.com/sourcegraph/sourcegraph",
+    "local": "github.com/sourcegraph/sourcegraph"
   },
-  "jest.pathToJest": "yarn -s test",
+  "jest.jestCommandLine": "yarn test",
   "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false, // until we confirm people like it
   "gulp.autoDetect": "off",
   "npm.packageManager": "yarn",
   "npm.runSilent": true,
@@ -51,20 +50,26 @@
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-  },
+  "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
-  "jest.jestCommandLine": "yarn -s test",
   "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
   "nix.enableLanguageServer": true,
   "[nix]": {
     "editor.insertSpaces": true,
-    "editor.tabSize": 2,
+    "editor.tabSize": 2
   },
+  "files.watcherExclude": {
+    "**/target": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

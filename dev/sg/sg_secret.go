@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -33,7 +34,7 @@ sg secret reset buildkite
 				ArgsUsage:    "<...key>",
 				Usage:        "Remove a specific secret from secrets file",
 				Action:       resetSecretExec,
-				BashComplete: completeOptions(bashCompleteSecrets),
+				BashComplete: completions.CompleteOptions(bashCompleteSecrets),
 			},
 			{
 				Name:  "list",

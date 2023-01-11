@@ -10,9 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -22,7 +22,7 @@ import (
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -78,20 +78,24 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 }
 
 type Event struct {
-	Event          string
-	UserCookieID   string
-	FirstSourceURL *string
-	LastSourceURL  *string
-	URL            string
-	Source         string
-	Argument       *string
-	CohortID       *string
-	Referrer       *string
-	PublicArgument *string
-	UserProperties *string
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Event            string
+	UserCookieID     string
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	URL              string
+	Source           string
+	Argument         *string
+	CohortID         *string
+	Referrer         *string
+	OriginalReferrer *string
+	SessionReferrer  *string
+	SessionFirstURL  *string
+	DeviceSessionID  *string
+	PublicArgument   *string
+	UserProperties   *string
+	DeviceID         *string
+	InsertID         *string
+	EventID          *int32
 }
 
 type EventBatch struct {
@@ -175,11 +179,15 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			EvaluatedFlagSet: featureflag.GetEvaluatedFlagSet(ctx),
 			CohortID:         args.CohortID,
 			Referrer:         args.Referrer,
+			OriginalReferrer: args.OriginalReferrer,
+			SessionReferrer:  args.SessionReferrer,
+			SessionFirstURL:  args.SessionFirstURL,
 			PublicArgument:   publicArgumentPayload,
 			UserProperties:   userPropertiesPayload,
 			DeviceID:         args.DeviceID,
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
+			DeviceSessionID:  args.DeviceSessionID,
 		})
 	}
 

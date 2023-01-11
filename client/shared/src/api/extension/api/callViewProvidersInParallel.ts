@@ -3,7 +3,7 @@ import { catchError, defaultIfEmpty, map, mergeMap, scan, startWith, switchMap }
 import sourcegraph from 'sourcegraph'
 
 import { ContributableViewContainer } from '@sourcegraph/client-api'
-import { allOf, asError, ErrorLike, isDefined, isExactly, isNot, property } from '@sourcegraph/common'
+import { allOf, asError, ErrorLike, isDefined, isExactly, isNot, logger, property } from '@sourcegraph/common'
 
 import { RegisteredViewProvider, ViewContexts, ViewProviderResult } from '../extensionHostApi'
 
@@ -61,7 +61,7 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
                               providerResultToObservable(provider.viewProvider.provideView(context)).pipe(
                                   defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                                   catchError((error: unknown): [ErrorLike] => {
-                                      console.error('View provider errored:', error)
+                                      logger.error('View provider errored:', error)
 
                                       // Pass only primitive copied values because Error object is not
                                       // cloneable in Firefox and Safari

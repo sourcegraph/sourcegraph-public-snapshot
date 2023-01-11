@@ -27,13 +27,12 @@ func NewSubscriptionAccountNumberMigrator(store *basestore.Store, batchSize int)
 func (m *subscriptionAccountNumberMigrator) ID() int                 { return 15 }
 func (m *subscriptionAccountNumberMigrator) Interval() time.Duration { return time.Second * 5 }
 
-func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(subscriptionAccountNumberMigratorProgressQuery)))
 	return progress, err
 }
 
 const subscriptionAccountNumberMigratorProgressQuery = `
--- source: enterprise/internal/productsubscription/subscription_account_number_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		cast(c1.count as float) / cast(c2.count as float)
@@ -48,7 +47,6 @@ func (m *subscriptionAccountNumberMigrator) Up(ctx context.Context) (err error) 
 }
 
 const subscriptionAccountNumberMigratorUpQuery = `
--- source: enterprise/internal/productsubscription/subscription_account_number_migrator.go:Up
 WITH candidates AS (
 	SELECT
 		product_subscriptions.id::uuid AS subscription_id,

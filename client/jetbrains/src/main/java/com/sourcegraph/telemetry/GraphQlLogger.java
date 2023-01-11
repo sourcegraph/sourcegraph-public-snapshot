@@ -36,6 +36,7 @@ public class GraphQlLogger {
     private static void logEvent(Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
         String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
         String accessToken = ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null;
+        String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
         new Thread(() -> {
             String query = "" +
                 "mutation LogEvents($events: [Event!]) {" +
@@ -50,7 +51,7 @@ public class GraphQlLogger {
             variables.add("events", events);
 
             try {
-                int responseStatusCode = GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, variables).getStatusCode();
+                int responseStatusCode = GraphQlClient.callGraphQLService(instanceUrl, accessToken, customRequestHeaders, query, variables).getStatusCode();
                 if (callback != null) {
                     callback.accept(responseStatusCode);
                 }

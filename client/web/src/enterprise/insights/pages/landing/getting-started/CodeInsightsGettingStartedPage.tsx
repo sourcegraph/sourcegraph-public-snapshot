@@ -5,7 +5,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { PageTitle } from '../../../../../components/PageTitle'
 
 import { CodeInsightsExamples } from './components/code-insights-examples/CodeInsightsExamples'
-import { CodeInsightsLearnMore } from './components/code-insights-learn-more/CodeInsightsLearnMore'
 import { CodeInsightsTemplates } from './components/code-insights-templates/CodeInsightsTemplates'
 import { DynamicCodeInsightExample } from './components/dynamic-code-insight-example/DynamicCodeInsightExample'
 
@@ -28,7 +27,6 @@ export const CodeInsightsGettingStartedPage: React.FunctionComponent<
             <DynamicCodeInsightExample telemetryService={telemetryService} />
             <CodeInsightsExamples telemetryService={telemetryService} className={styles.section} />
             <CodeInsightsTemplates telemetryService={telemetryService} className={styles.section} />
-            <CodeInsightsLearnMore telemetryService={telemetryService} className={styles.section} />
         </main>
     )
 }

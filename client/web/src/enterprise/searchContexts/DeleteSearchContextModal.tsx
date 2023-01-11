@@ -5,9 +5,9 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
@@ -16,7 +16,7 @@ interface DeleteSearchContextModalProps
     extends Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     isOpen: boolean
-    searchContext: ISearchContext
+    searchContext: SearchContextFields
     toggleDeleteModal: () => void
 }
 

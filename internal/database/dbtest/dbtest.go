@@ -4,6 +4,7 @@ import (
 	crand "crypto/rand"
 	"database/sql"
 	"encoding/binary"
+	"fmt"
 	"hash/fnv"
 	"math/rand"
 	"net/url"
@@ -25,7 +26,9 @@ import (
 // transaction if an error didn't occur.
 //
 // After opening this transaction, it executes the query
-//     SET CONSTRAINTS ALL DEFERRED
+//
+//	SET CONSTRAINTS ALL DEFERRED
+//
 // which aids in testing.
 func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	tx, err := db.Begin()
@@ -58,37 +61,67 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
-var dbTemplateOnce sync.Once
-
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
 func NewDB(logger log.Logger, t testing.TB) *sql.DB {
-	dbTemplateOnce.Do(func() {
-		initTemplateDB(logger, t, "migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
-	})
-
-	return newFromDSN(logger, t, "migrated")
+	return newDB(logger, t, "migrated", schemas.Frontend, schemas.CodeIntel)
 }
 
-var insightsTemplateOnce sync.Once
+// NewDBAtRev returns a connection to a clean, new temporary testing database with
+// the same schema as Sourcegraph's production Postgres database at the given revision.
+func NewDBAtRev(logger log.Logger, t testing.TB, rev string) *sql.DB {
+	return newDB(
+		logger,
+		t,
+		fmt.Sprintf("migrated-%s", rev),
+		getSchemaAtRev(t, "frontend", rev),
+		getSchemaAtRev(t, "codeintel", rev),
+	)
+}
+
+func getSchemaAtRev(t testing.TB, name, rev string) *schemas.Schema {
+	schema, err := schemas.ResolveSchemaAtRev(name, rev)
+	if err != nil {
+		t.Fatalf("failed to resolve %q schema: %s", name, err)
+	}
+
+	return schema
+}
 
 // NewInsightsDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's CodeInsights production Postgres database.
 func NewInsightsDB(logger log.Logger, t testing.TB) *sql.DB {
-	insightsTemplateOnce.Do(func() {
-		initTemplateDB(logger, t, "insights", []*schemas.Schema{schemas.CodeInsights})
-	})
-	return newFromDSN(logger, t, "insights")
+	return newDB(logger, t, "insights", schemas.CodeInsights)
 }
-
-var rawTemplateOnce sync.Once
 
 // NewRawDB returns a connection to a clean, new temporary testing database.
 func NewRawDB(logger log.Logger, t testing.TB) *sql.DB {
-	rawTemplateOnce.Do(func() {
-		initTemplateDB(logger, t, "raw", nil)
-	})
-	return newFromDSN(logger, t, "raw")
+	return newDB(logger, t, "raw")
+}
+
+func newDB(logger log.Logger, t testing.TB, name string, schemas ...*schemas.Schema) *sql.DB {
+	if testing.Short() {
+		t.Skip("DB tests disabled since go test -short is specified")
+	}
+
+	onceByName(name).Do(func() { initTemplateDB(logger, t, name, schemas) })
+	return newFromDSN(logger, t, name)
+}
+
+var onceByNameMap = map[string]*sync.Once{}
+var onceByNameMutex sync.Mutex
+
+func onceByName(name string) *sync.Once {
+	onceByNameMutex.Lock()
+	defer onceByNameMutex.Unlock()
+
+	if once, ok := onceByNameMap[name]; ok {
+		return once
+	}
+
+	once := new(sync.Once)
+	onceByNameMap[name] = once
+	return once
 }
 
 func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.DB {
@@ -96,7 +129,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 		t.Skip("skipping DB test since -short specified")
 	}
 
-	config, err := getDSN()
+	config, err := GetDSN()
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
@@ -143,7 +176,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 // current package. New databases can then do a cheap copy of the migrated schema
 // rather than running the full migration every time.
 func initTemplateDB(logger log.Logger, t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
-	config, err := getDSN()
+	config, err := GetDSN()
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}

@@ -3,4 +3,4 @@ export { MaybeLink } from './components/MaybeLink'
 export { ScrollBox } from './components/scroll-box'
 export { Tooltip, TooltipList, TooltipListItem, TooltipListBlankItem } from './components/tooltip/Tooltip'
 
-export { getChartContentSizes } from './utils/get-chart-content-sizes'
+export { SvgRoot, SvgAxisLeft, SvgAxisBottom, SvgContent, SVGRootContext } from './components/SvgRoot'

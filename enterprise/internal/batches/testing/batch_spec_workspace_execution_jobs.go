@@ -36,8 +36,8 @@ WHERE
 	q := sqlf.Sprintf(
 		fmtStr,
 		job.State,
-		nullTimeColumn(job.StartedAt),
-		nullTimeColumn(job.FinishedAt),
+		dbutil.NullTimeColumn(job.StartedAt),
+		dbutil.NullTimeColumn(job.FinishedAt),
 		job.Cancel,
 		job.WorkerHostname,
 		job.FailureMessage,
@@ -105,6 +105,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"NULL as place_in_global_queue",
 			"batch_spec_workspace_execution_jobs.created_at",
 			"batch_spec_workspace_execution_jobs.updated_at",
+			"batch_spec_workspace_execution_jobs.version",
 		},
 		func(rows dbutil.Scanner) error {
 			i++
@@ -112,11 +113,4 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 		},
 		inserter,
 	)
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -27,7 +26,7 @@ func addFeedbackFlags(commands []*cli.Command) {
 		if command.Action != nil {
 			feedbackFlag := cli.BoolFlag{
 				Name:  "feedback",
-				Usage: "provide feedback about this command by opening up a Github discussion",
+				Usage: "provide feedback about this command by opening up a GitHub discussion",
 			}
 
 			command.Flags = append(command.Flags, &feedbackFlag)
@@ -46,8 +45,8 @@ func addFeedbackFlags(commands []*cli.Command) {
 
 var feedbackCommand = &cli.Command{
 	Name:     "feedback",
-	Usage:    "opens up a Github discussion page to provide feedback about sg",
-	Category: CategoryCompany,
+	Usage:    "Provide feedback about sg",
+	Category: CategoryUtil,
 	Action:   feedbackAction,
 }
 
@@ -59,7 +58,7 @@ func feedbackAction(ctx *cli.Context) error {
 	}
 	body = addSGInformation(ctx, body)
 
-	if err := sendFeedback(ctx.Context, title, "developer-experience", body); err != nil {
+	if err := sendFeedback(title, "developer-experience", body); err != nil {
 		return err
 	}
 	return nil
@@ -130,7 +129,7 @@ Flags: {{ inline_code .Flags}}
 	return buf.String()
 }
 
-func sendFeedback(ctx context.Context, title, category, body string) error {
+func sendFeedback(title, category, body string) error {
 	values := make(url.Values)
 	values["category"] = []string{category}
 	values["title"] = []string{title}

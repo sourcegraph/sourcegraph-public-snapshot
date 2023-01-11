@@ -20,14 +20,18 @@ func TestSiteConfig(t *testing.T) {
 		removeTestUserAfterTest(t, testClient1.AuthenticatedUserID())
 
 		// Update site configuration to not allow sign up for builtin auth provider.
-		siteConfig, err := client.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
 		}
 		oldSiteConfig := new(schema.SiteConfiguration)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			err = client.UpdateSiteConfiguration(oldSiteConfig)
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -41,7 +45,7 @@ func TestSiteConfig(t *testing.T) {
 				},
 			},
 		}
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}

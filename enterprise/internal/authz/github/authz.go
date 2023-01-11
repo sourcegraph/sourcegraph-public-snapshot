@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,11 +33,11 @@ type ExternalConnection struct {
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func NewAuthzProviders(
-	externalServicesStore database.ExternalServiceStore,
+	db database.DB,
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
-) (ps []authz.Provider, problems []string, warnings []string) {
+) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {
@@ -58,8 +58,9 @@ func NewAuthzProviders(
 
 	for _, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(externalServicesStore, c)
+		p, err := newAuthzProvider(db, c)
 		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypeGitHub)
 			problems = append(problems, err.Error())
 		}
 		if p == nil {
@@ -96,17 +97,21 @@ func NewAuthzProviders(
 		ps = append(ps, p)
 	}
 
-	return ps, problems, warnings
+	return ps, problems, warnings, invalidConnections
 }
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
 func newAuthzProvider(
-	externalServicesStore database.ExternalServiceStore,
+	db database.DB,
 	c *ExternalConnection,
 ) (*Provider, error) {
 	if c.Authorization == nil {
 		return nil, nil
+	}
+
+	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+		return nil, errLicense
 	}
 
 	baseURL, err := url.Parse(c.Url)
@@ -120,12 +125,15 @@ func newAuthzProvider(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
-			return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
+		config, err := conf.GitHubAppConfig()
+		if err != nil {
+			return nil, err
+		}
+		if !config.Configured() {
+			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
 		}
 
-		return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
+		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now

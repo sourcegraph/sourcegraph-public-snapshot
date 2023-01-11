@@ -1,7 +1,8 @@
 import * as comlink from 'comlink'
-import { from, Subscription } from 'rxjs'
+import { from, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { Unsubscribable } from 'sourcegraph'
+
+import { logger } from '@sourcegraph/common'
 
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
@@ -48,7 +49,6 @@ export async function createExtensionHostClientConnection(
         | 'getGraphQLClient'
         | 'requestGraphQL'
         | 'telemetryService'
-        | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'clientApplication'
     >
@@ -88,7 +88,7 @@ export async function createExtensionHostClientConnection(
 
     comlink.expose(clientAPI, endpoints.expose)
     proxy.mainThreadAPIInitialized().catch(() => {
-        console.error('Error notifying extension host of main thread API init.')
+        logger.error('Error notifying extension host of main thread API init.')
     })
 
     // TODO(tj): return MainThreadAPI and add to Controller interface

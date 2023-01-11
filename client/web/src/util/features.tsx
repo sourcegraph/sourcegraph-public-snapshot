@@ -8,8 +8,3 @@
  * that are intended for Sourcegraph.com.
  */
 export const showDotComMarketing = window.context?.sourcegraphDotComMode
-
-/**
- * Whether the signup form should show the Enterprise trial checkbox
- */
-export const enterpriseTrial = window.context ? !window.context.sourcegraphDotComMode : false

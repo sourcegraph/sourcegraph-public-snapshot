@@ -1,6 +1,6 @@
 import { Point } from '../models/geometry/point'
 import { Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Padding, Position, Strategy } from '../models/tether-models'
+import { Constraint, ElementPosition, Flipping, Overlapping, Padding, Strategy } from '../models/tether-models'
 
 export interface Tether {
     /** Reference on target HTML element in the DOM. */
@@ -24,7 +24,7 @@ export interface Tether {
      * during position calculation that takes into account layout data (constraints,
      * viewport space, paddings, etc)
      */
-    position?: Position
+    position?: ElementPosition
 
     /**
      * Position flipping strategy. With active flipping tooltip tries to find other
@@ -70,7 +70,7 @@ export interface TetherLayout {
     marker: Rectangle
 
     /** Tooltip position relative to target */
-    position: Position
+    position: ElementPosition
 
     /** Position flipping strategy */
     flipping: Flipping

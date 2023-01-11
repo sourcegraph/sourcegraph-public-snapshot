@@ -20,74 +20,155 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	cs := make([]*btypes.BatchChange, 0, 5)
+	bcs := make([]*btypes.BatchChange, 0, 5)
 
 	logger := logtest.Scoped(t)
 
+	// Set up users and organisations for later tests.
+	var (
+		adminUser  = bt.CreateTestUser(t, s.DatabaseDB(), true)
+		orgUser    = bt.CreateTestUser(t, s.DatabaseDB(), false)
+		nonOrgUser = bt.CreateTestUser(t, s.DatabaseDB(), false)
+		org        = bt.CreateTestOrg(t, s.DatabaseDB(), "org", orgUser.ID)
+	)
+
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(cs); i++ {
+		// We're going to create five batch changes, both to unit test the
+		// Create method here and for use in sub-tests further down.
+		//
+		// 0: draft, owned by org
+		// 1: open, owned by orgUser
+		// 2: open, owned by org
+		// 3: open, owned by adminUser
+		// 4: closed, owned by org
+		for i, tc := range []struct {
+			draft           bool
+			closed          bool
+			nonNilTimes     bool
+			creatorID       int32
+			namespaceUserID int32
+			namespaceOrgID  int32
+		}{
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID, draft: true, nonNilTimes: true},
+			{namespaceUserID: orgUser.ID, creatorID: orgUser.ID},
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID},
+			{namespaceUserID: adminUser.ID, creatorID: adminUser.ID},
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID, closed: true},
+		} {
 			c := &btypes.BatchChange{
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
-				BatchSpecID: 1742 + int64(i),
-				ClosedAt:    clock.Now(),
+				NamespaceUserID: tc.namespaceUserID,
+				NamespaceOrgID:  tc.namespaceOrgID,
 			}
 
-			if i <= 1 {
-				// Check for nullability of fields by not setting them
+			// Check for nullability of fields by setting them to a non-nil,
+			// zero value.
+			if tc.nonNilTimes {
 				c.ClosedAt = time.Time{}
 				c.LastAppliedAt = time.Time{}
 			}
 
-			if i != 0 {
-				// The very first batch change is a draft, the rest are not.
-				c.CreatorID = int32(i) + 50
+			if !tc.draft {
+				c.BatchSpecID = 1742 + int64(i)
+				c.CreatorID = tc.creatorID
 				c.LastAppliedAt = clock.Now()
-				c.LastApplierID = int32(i) + 99
+				c.LastApplierID = tc.creatorID
 			}
 
-			// the fifth batch change is a closed batch change that wasn't applied.
-			// it shouldn't show up in the draft batch change list, it should instead
-			// show up in the closed batch change list.
-			if i == 5 {
+			if tc.closed {
 				c.ClosedAt = clock.Now()
-				c.LastAppliedAt = time.Time{}
-				c.LastApplierID = 0
-				c.CreatorID = 0
-			}
-
-			if i%2 == 0 {
-				c.NamespaceOrgID = int32(i) + 23
-			} else {
-				c.NamespaceUserID = c.CreatorID
 			}
 
 			want := c.Clone()
 			have := c
 
 			err := s.CreateBatchChange(ctx, have)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
-			}
+			assert.NoError(t, err)
+			assert.NotZero(t, have.ID)
 
 			want.ID = have.ID
 			want.CreatedAt = clock.Now()
 			want.UpdatedAt = clock.Now()
+			assert.Equal(t, want, have)
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
-
-			cs = append(cs, c)
+			bcs = append(bcs, c)
 		}
+
+		t.Run("invalid name", func(t *testing.T) {
+			c := &btypes.BatchChange{
+				Name:        "Invalid name",
+				Description: "All the Javascripts are belong to us",
+
+				NamespaceUserID: adminUser.ID,
+			}
+			tx, err := s.Transact(ctx)
+			assert.NoError(t, err)
+			defer tx.Done(errors.New("always rollback"))
+			err = tx.CreateBatchChange(ctx, c)
+			if err != ErrInvalidBatchChangeName {
+				t.Fatal("invalid error returned", err)
+			}
+		})
+	})
+
+	t.Run("Upsert", func(t *testing.T) {
+		c := &btypes.BatchChange{
+			Name:        fmt.Sprintf("test-batch-change-upsert"),
+			Description: "All the Javascripts are belong to us",
+
+			NamespaceUserID: adminUser.ID,
+		}
+
+		c.BatchSpecID = 1742
+		c.CreatorID = adminUser.ID
+		c.LastAppliedAt = clock.Now()
+		c.LastApplierID = adminUser.ID
+
+		want := c.Clone()
+		have := c
+
+		err := s.UpsertBatchChange(ctx, have)
+		assert.NoError(t, err)
+		assert.NotZero(t, have.ID)
+
+		t.Cleanup(func() {
+			// Cleanup.
+			assert.NoError(t, s.DeleteBatchChange(ctx, c.ID))
+		})
+
+		want.ID = have.ID
+		want.CreatedAt = clock.Now()
+		want.UpdatedAt = clock.Now()
+		assert.Equal(t, want, have)
+
+		c.ClosedAt = clock.Now()
+		want = c.Clone()
+		err = s.UpsertBatchChange(ctx, have)
+		assert.NoError(t, err)
+		assert.NotZero(t, have.ID)
+
+		want.ID = have.ID
+		want.CreatedAt = clock.Now()
+		want.UpdatedAt = clock.Now()
+		assert.Equal(t, want, have)
+
+		// Invalid name:
+		t.Run("Invalid name", func(t *testing.T) {
+			tx, err := s.Transact(ctx)
+			assert.NoError(t, err)
+			defer tx.Done(errors.New("always rollback"))
+			c.Name = "invalid name"
+			err = tx.UpsertBatchChange(ctx, have)
+			if err != ErrInvalidBatchChangeName {
+				t.Fatal("Invalid error returned for invalid name")
+			}
+		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
@@ -96,7 +177,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			t.Fatal(err)
 		}
 
-		if have, want := count, len(cs); have != want {
+		if have, want := count, len(bcs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -106,14 +187,14 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				t.Fatal(err)
 			}
 
-			if have, want := count, len(cs); have != want {
+			if have, want := count, len(bcs); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		})
 
 		t.Run("ChangesetID", func(t *testing.T) {
 			changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
 			})
 
 			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
@@ -140,17 +221,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			// 1 batch change + changeset is associated with the first repo
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo1.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
 			})
 
 			// 2 batch changes, each with 1 changeset, are associated with the second repo
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
 			})
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[1].ID}},
 			})
 
 			// no batch changes are associated with the third repo
@@ -191,23 +272,34 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			}
 		})
 
-		t.Run("OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range cs {
-				if c.CreatorID != 0 {
-					count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if have, want := count, 1; have != want {
-						t.Fatalf("Incorrect number of batch changes counted, want=%d have=%d", want, have)
-					}
-				}
+		t.Run("OnlyAdministeredByUserID set", func(t *testing.T) {
+			for name, tc := range map[string]struct {
+				userID int32
+				want   int
+			}{
+				// No adminUser test case because the store layer doesn't
+				// actually know that site admins have access to everything.
+
+				// orgUser has access to batch changes 0, 1, 2, and 4.
+				"orgUser": {userID: orgUser.ID, want: 4},
+
+				// nonOrgUser has access to no batch changes.
+				"nonOrgUser": {userID: nonOrgUser.ID, want: 0},
+			} {
+				t.Run(name, func(t *testing.T) {
+					count, err := s.CountBatchChanges(
+						ctx,
+						CountBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+					)
+					assert.NoError(t, err)
+					assert.EqualValues(t, tc.want, count)
+				})
 			}
 		})
 
 		t.Run("NamespaceUserID", func(t *testing.T) {
 			wantCounts := map[int32]int{}
-			for _, c := range cs {
+			for _, c := range bcs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -231,7 +323,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		t.Run("NamespaceOrgID", func(t *testing.T) {
 			wantCounts := map[int32]int{}
-			for _, c := range cs {
+			for _, c := range bcs {
 				if c.NamespaceOrgID == 0 {
 					continue
 				}
@@ -256,9 +348,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("By ChangesetID", func(t *testing.T) {
-			for i := 1; i <= len(cs); i++ {
+			for i := 1; i <= len(bcs); i++ {
 				changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[i-1].ID}},
+					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[i-1].ID}},
 				})
 				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
 
@@ -271,7 +363,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 				}
 
-				have, want := ts, cs[i-1:i]
+				have, want := ts, bcs[i-1:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d batch changes, want: %d", len(have), len(want))
 				}
@@ -296,17 +388,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			// 1 batch change + changeset is associated with the first repo
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo1.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
 			})
 
 			// 2 batch changes, each with 1 changeset, are associated with the second repo
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
 			})
 			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[1].ID}},
 			})
 
 			// no batch changes are associated with the third repo
@@ -320,12 +412,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					{
 						repoID:        repo1.ID,
 						listLen:       1,
-						batchChangeID: &cs[0].ID,
+						batchChangeID: &bcs[0].ID,
 					},
 					{
 						repoID:        repo2.ID,
 						listLen:       2,
-						batchChangeID: &cs[1].ID,
+						batchChangeID: &bcs[1].ID,
 					},
 					{
 						repoID:        repo3.ID,
@@ -363,9 +455,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		// The batch changes store returns the batch changes in reversed order.
-		reversedBatchChanges := make([]*btypes.BatchChange, len(cs))
-		for i, c := range cs {
-			reversedBatchChanges[len(cs)-i-1] = c
+		reversedBatchChanges := make([]*btypes.BatchChange, len(bcs))
+		for i, c := range bcs {
+			reversedBatchChanges[len(bcs)-i-1] = c
 		}
 
 		t.Run("With Limit", func(t *testing.T) {
@@ -430,17 +522,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			{
 				name:  "Closed",
 				state: btypes.BatchChangeStateClosed,
-				want:  reversedBatchChanges[:len(reversedBatchChanges)-2],
+				want:  []*btypes.BatchChange{bcs[4]},
 			},
 			{
 				name:  "Open",
 				state: btypes.BatchChangeStateOpen,
-				want:  cs[1:2],
+				want:  []*btypes.BatchChange{bcs[3], bcs[2], bcs[1]},
 			},
 			{
 				name:  "Draft",
 				state: btypes.BatchChangeStateDraft,
-				want:  cs[0:1],
+				want:  []*btypes.BatchChange{bcs[0]},
 			},
 		}
 
@@ -455,10 +547,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				}
 			})
 		}
-
-		draftAndClosed := []*btypes.BatchChange{}
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:3]...)
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
 
 		multiFilterTests := []struct {
 			name   string
@@ -478,23 +566,23 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			{
 				name:   "Open + Draft",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateDraft},
-				want:   reversedBatchChanges[len(reversedBatchChanges)-2:],
+				want:   []*btypes.BatchChange{bcs[3], bcs[2], bcs[1], bcs[0]},
 			},
 			{
 				name:   "Open + Closed",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed},
-				want:   reversedBatchChanges[:len(reversedBatchChanges)-1],
+				want:   []*btypes.BatchChange{bcs[4], bcs[3], bcs[2], bcs[1]},
 			},
 			{
 				name:   "Draft + Closed",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateClosed},
-				want:   draftAndClosed,
+				want:   []*btypes.BatchChange{bcs[4], bcs[0]},
 			},
 			// Multiple of the same state should behave as if it were only one
 			{
 				name:   "Draft, multiple times",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft},
-				want:   cs[:1],
+				want:   []*btypes.BatchChange{bcs[0]},
 			},
 		}
 
@@ -511,28 +599,39 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			})
 		}
 
-		t.Run("ListBatchChanges OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range cs {
-				if c.CreatorID != 0 {
-					have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if next != 0 {
-						t.Fatal("Next value was true, but false expected")
-					}
-					if have, want := len(have), 1; have != want {
-						t.Fatalf("Incorrect number of batch changes returned, want=%d have=%d", want, have)
-					}
-					if diff := cmp.Diff(have[0], c); diff != "" {
-						t.Fatal(diff)
-					}
-				}
+		t.Run("ListBatchChanges OnlyAdministeredByUserID set", func(t *testing.T) {
+			for name, tc := range map[string]struct {
+				userID int32
+				want   []*btypes.BatchChange
+			}{
+				// No adminUser test case because the store layer doesn't
+				// actually know that site admins have access to everything.
+
+				// orgUser has access to batch changes 0, 1, 2, and 4.
+				"orgUser": {
+					userID: orgUser.ID,
+					want:   []*btypes.BatchChange{bcs[4], bcs[2], bcs[1], bcs[0]},
+				},
+
+				// nonOrgUser has access to no batch changes.
+				"nonOrgUser": {
+					userID: nonOrgUser.ID,
+					want:   []*btypes.BatchChange{},
+				},
+			} {
+				t.Run(name, func(t *testing.T) {
+					have, _, err := s.ListBatchChanges(
+						ctx,
+						ListBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+					)
+					assert.NoError(t, err)
+					assert.Equal(t, tc.want, have)
+				})
 			}
 		})
 
 		t.Run("ListBatchChanges by NamespaceUserID", func(t *testing.T) {
-			for _, c := range cs {
+			for _, c := range bcs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -551,27 +650,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ListBatchChanges by NamespaceOrgID", func(t *testing.T) {
-			for _, c := range cs {
-				if c.NamespaceOrgID == 0 {
-					continue
-				}
-				opts := ListBatchChangesOpts{NamespaceOrgID: c.NamespaceOrgID}
-				have, _, err := s.ListBatchChanges(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for _, haveBatchChange := range have {
-					if have, want := haveBatchChange.NamespaceOrgID, opts.NamespaceOrgID; have != want {
-						t.Fatalf("batch change has wrong NamespaceOrgID. want=%d, have=%d", want, have)
-					}
-				}
-			}
+			want := []*btypes.BatchChange{bcs[4], bcs[2], bcs[0]}
+			have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{
+				NamespaceOrgID: org.ID,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, want, have)
 		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		for _, c := range cs {
+		for _, c := range bcs {
 			c.Name += "-updated"
 			c.Description += "-updated"
 			c.CreatorID++
@@ -599,11 +688,24 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				t.Fatal(diff)
 			}
 		}
+
+		t.Run("invalid name", func(t *testing.T) {
+			c := bcs[1].Clone()
+
+			c.Name = "Invalid name"
+			tx, err := s.Transact(ctx)
+			assert.NoError(t, err)
+			defer tx.Done(errors.New("always rollback"))
+			err = tx.UpdateBatchChange(ctx, c)
+			if err != ErrInvalidBatchChangeName {
+				t.Fatal("invalid error returned", err)
+			}
+		})
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := cs[0]
+			want := bcs[0]
 			opts := GetBatchChangeOpts{ID: want.ID}
 
 			have, err := s.GetBatchChange(ctx, opts)
@@ -617,7 +719,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ByBatchSpecID", func(t *testing.T) {
-			want := cs[0]
+			want := bcs[1]
 			opts := GetBatchChangeOpts{BatchSpecID: want.BatchSpecID}
 
 			have, err := s.GetBatchChange(ctx, opts)
@@ -631,7 +733,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ByName", func(t *testing.T) {
-			want := cs[0]
+			want := bcs[0]
 
 			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{Name: want.Name})
 			if err != nil {
@@ -644,7 +746,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ByNamespaceUserID", func(t *testing.T) {
-			for _, c := range cs {
+			for _, c := range bcs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -664,23 +766,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ByNamespaceOrgID", func(t *testing.T) {
-			for _, c := range cs {
-				if c.NamespaceOrgID == 0 {
-					continue
-				}
-
-				want := c
-				opts := GetBatchChangeOpts{NamespaceOrgID: c.NamespaceOrgID}
-
-				have, err := s.GetBatchChange(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-			}
+			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{
+				// The organisation ID was changed by the Update test above.
+				NamespaceOrgID: org.ID + 1,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, bcs[4], have)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -706,20 +797,18 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			t.Fatal(err)
 		}
 
-		batchChangeID := cs[0].ID
+		batchChangeID := bcs[0].ID
 		var testDiffStatCount int32 = 10
 		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
 			DiffStatAdded:   testDiffStatCount,
-			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,
 		})
 
 		{
 			want := &diff.Stat{
 				Added:   testDiffStatCount,
-				Changed: testDiffStatCount,
 				Deleted: testDiffStatCount,
 			}
 			opts := GetBatchChangeDiffStatOpts{BatchChangeID: batchChangeID}
@@ -765,7 +854,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			t.Fatal(err)
 		}
 
-		batchChangeID := cs[0].ID
+		batchChangeID := bcs[0].ID
 		var testDiffStatCount1 int32 = 10
 		var testDiffStatCount2 int32 = 20
 
@@ -774,14 +863,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount1,
-			DiffStatChanged: testDiffStatCount1,
 			DiffStatDeleted: testDiffStatCount1,
 		})
 		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: 0,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 
@@ -790,7 +877,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo2.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: testDiffStatCount2,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 
@@ -805,7 +891,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo1.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount1 + testDiffStatCount2,
-						Changed: testDiffStatCount1,
 						Deleted: testDiffStatCount1 + testDiffStatCount2,
 					},
 				},
@@ -813,7 +898,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo2.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount2,
-						Changed: testDiffStatCount2,
 						Deleted: testDiffStatCount2,
 					},
 				},
@@ -821,7 +905,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo3.ID,
 					want: &diff.Stat{
 						Added:   0,
-						Changed: 0,
 						Deleted: 0,
 					},
 				},
@@ -862,8 +945,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		for i := range cs {
-			err := s.DeleteBatchChange(ctx, cs[i].ID)
+		for i := range bcs {
+			err := s.DeleteBatchChange(ctx, bcs[i].ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -873,7 +956,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				t.Fatal(err)
 			}
 
-			if have, want := count, len(cs)-(i+1); have != want {
+			if have, want := count, len(bcs)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
@@ -881,7 +964,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
+	orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "user-delete-cascades").ID
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	logger := logtest.Scoped(t)
@@ -1019,7 +1102,7 @@ func testBatchChangesDeletedNamespace(t *testing.T, ctx context.Context, s *Stor
 	})
 
 	t.Run("Org Deleted", func(t *testing.T) {
-		orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "my-org")
+		orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "my-org").ID
 
 		bc := &btypes.BatchChange{
 			Name:           "my-batch-change",

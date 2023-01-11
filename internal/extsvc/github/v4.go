@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -154,7 +155,8 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "rate limit")
 	}
 
-	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+	// Wait for the rate limit, or return if context has been canceled.
+	timeutil.SleepWithContext(ctx, c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
 	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
@@ -594,11 +596,11 @@ fragment RepositoryFields on Repository {
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
-func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
 type RecentCommittersParams struct {

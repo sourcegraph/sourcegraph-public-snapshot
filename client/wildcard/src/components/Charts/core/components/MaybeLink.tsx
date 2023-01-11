@@ -1,21 +1,18 @@
-import React from 'react'
+import { FC, AnchorHTMLAttributes, HTMLAttributes } from 'react'
 
 import { Link } from '../../../Link'
 
-interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+interface MaybeLinkProps extends AnchorHTMLAttributes<HTMLElement> {
     to?: string | void | null
 }
 
 /** Wraps the children in a link if to (link href) prop is passed. */
-export const MaybeLink: React.FunctionComponent<React.PropsWithChildren<MaybeLinkProps>> = ({
-    children,
-    to,
-    ...props
-}) =>
-    to ? (
-        <Link {...props} to={to}>
-            {children}
-        </Link>
+export const MaybeLink: FC<MaybeLinkProps> = props => {
+    const { to, target, rel, ...attributes } = props
+
+    return to ? (
+        <Link {...attributes} to={to} target={target} rel={rel} />
     ) : (
-        (children as React.ReactElement)
+        <g {...(attributes as HTMLAttributes<SVGGElement>)} />
     )
+}

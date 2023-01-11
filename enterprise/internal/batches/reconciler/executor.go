@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,9 +30,9 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
-		gitserverClient:   gitserverClient,
+		client:            client,
 		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
@@ -44,7 +45,7 @@ func executePlan(ctx context.Context, logger log.Logger, gitserverClient Gitserv
 }
 
 type executor struct {
-	gitserverClient   GitserverClient
+	client            gitserver.Client
 	logger            log.Logger
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
@@ -137,7 +138,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
+	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -167,8 +168,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
-	// au is nil if we want to use the global credentials stored in the external
-	// service configuration.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
 		return err
@@ -184,14 +183,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), remoteRepo)
+	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
 		return err
 	}
-	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
-	if err != nil {
-		return err
-	}
+	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
@@ -528,14 +524,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	// This is a ChangesetSource authenticated with the external service
-	// token.
-	css, err := sourcer.ForRepo(ctx, s, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo, false)
+	css, err := sourcer.ForChangeset(ctx, s, ch)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -569,10 +558,15 @@ func (e pushCommitError) Error() string {
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
+	_, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
+			// Make "patch does not apply" errors a fatal error. Retrying the changeset
+			// rollout won't help here and just causes noise.
+			if strings.Contains(e.CombinedOutput, "patch does not apply") {
+				return errcode.MakeNonRetryable(pushCommitError{e})
+			}
 			return pushCommitError{e}
 		}
 		return err
@@ -617,14 +611,16 @@ func handleArchivedRepo(
 	return nil
 }
 
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
-	opts = protocol.CreateCommitFromPatchRequest{
+func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
+	// will fail with "corrupt patch at line <N>" where N is the last line.
+	patch := append([]byte{}, spec.Diff...)
+	patch = append(patch, []byte("\n")...)
+	opts := protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
 		BaseCommit: api.CommitID(spec.BaseRev),
-		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     string(spec.Diff) + "\n",
-		TargetRef: spec.HeadRef,
+		Patch:      patch,
+		TargetRef:  spec.HeadRef,
 
 		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
@@ -645,7 +641,7 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		Push:         pushOpts,
 	}
 
-	return opts, nil
+	return opts
 }
 
 type getBatchChanger interface {

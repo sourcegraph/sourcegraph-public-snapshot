@@ -32,12 +32,10 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
-import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL, getFilePath } from './util'
+import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -107,35 +105,37 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const getSnippetPositionAdjuster = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({ direction, codeView, position }) =>
-    fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
-        map(lines => {
-            const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
-                codeView,
-                position.line,
-                position.part
-            )
-            if (!codeElement) {
-                throw new Error('(adjustPosition) could not find code element for line provided')
-            }
+const getSnippetPositionAdjuster =
+    (
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> =>
+    ({ direction, codeView, position }) =>
+        fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
+            map(lines => {
+                const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
+                    codeView,
+                    position.line,
+                    position.part
+                )
+                if (!codeElement) {
+                    throw new Error('(adjustPosition) could not find code element for line provided')
+                }
 
-            const actualLine = lines[position.line - 1]
-            const documentLine = codeElement.textContent || ''
+                const actualLine = lines[position.line - 1]
+                const documentLine = codeElement.textContent || ''
 
-            const actualLeadingWhiteSpace = actualLine.length - trimStart(actualLine).length
-            const documentLeadingWhiteSpace = documentLine.length - trimStart(documentLine).length
+                const actualLeadingWhiteSpace = actualLine.length - trimStart(actualLine).length
+                const documentLeadingWhiteSpace = documentLine.length - trimStart(documentLine).length
 
-            const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
-            const delta = Math.abs(actualLeadingWhiteSpace - documentLeadingWhiteSpace) * modifier
+                const modifier = direction === AdjustmentDirection.ActualToCodeView ? -1 : 1
+                const delta = Math.abs(actualLeadingWhiteSpace - documentLeadingWhiteSpace) * modifier
 
-            return {
-                line: position.line,
-                character: position.character + delta,
-            }
-        })
-    )
+                return {
+                    line: position.line,
+                    character: position.character + delta,
+                }
+            })
+        )
 
 const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
@@ -162,21 +162,33 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.verticalAlign = 'middle'
     mountElement.style.alignItems = 'center'
     mountElement.className = className
+
+    // new GitHub UI
+    const container =
+        codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+    if (container instanceof HTMLElement) {
+        container.prepend(mountElement)
+        return mountElement
+    }
+
+    // old GitHub UI (e.g., GHE)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
-    if (!buttonGroup?.parentNode) {
-        throw new Error('File actions not found')
+    if (buttonGroup?.parentNode) {
+        buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
+        return mountElement
     }
-    buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
-    return mountElement
+
+    throw new Error('Failed to create file toolbar mount node: container not found.')
 }
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
-export const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container',
+const fileLineContainerResolver: ViewResolver<CodeView> = {
+    selector: getSelectorFor('blobContainer'),
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
         const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
         if (embeddedBlobWrapper) {
@@ -195,7 +207,9 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('#repo-content-turbo-frame')
+
+        // selector depends on whether the page was rendered using the client-side navigation or not
+        const repositoryContent = fileLineContainer.closest('.repository-content, #repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -424,6 +438,7 @@ const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
 const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
 const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
+    // TODO(#44327): Do not rely on window.location.search - it may be present not only on search pages (e.g., issues, pulls, etc.).
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
@@ -590,9 +605,8 @@ function enhanceSearchPage(sourcegraphURL: string): void {
 
             const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
             const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
-            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>(
-                "button[type='submit']"
-            )
+            const pageSearchFormSubmitButton =
+                pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>("button[type='submit']")
 
             if (pageSearchInput && pageSearchFormSubmitButton) {
                 const buttonContainer = queryByIdOrCreate('pageSearchFormSourcegraphButton', 'ml-2 d-none d-md-block')
@@ -615,9 +629,8 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             )
             const searchResultsContainer = document.querySelector<HTMLDivElement>('.codesearch-results')
             const emptyResultsContainer = searchResultsContainer?.querySelector('.blankslate')
-            const searchResultsContainerHeading = searchResultsContainer?.querySelector<HTMLHeadingElement>(
-                'div > div > h3'
-            )
+            const searchResultsContainerHeading =
+                searchResultsContainer?.querySelector<HTMLHeadingElement>('div > div > h3')
 
             if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
                 const buttonContainer: HTMLElement = queryByIdOrCreate(
@@ -669,7 +682,6 @@ export const githubCodeHost: GithubCodeHost = {
     searchEnhancement,
     enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
-    contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     routeChange: mutations =>
         mutations.pipe(
@@ -683,9 +695,10 @@ export const githubCodeHost: GithubCodeHost = {
                 }
 
                 // search results page filters being applied
-                if (isSearchResultsPage()) {
-                    return document.querySelector('.codesearch-results h3')?.textContent?.trim()
-                }
+                // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+                // if (isSearchResultsPage()) {
+                //     return document.querySelector('.codesearch-results h3')?.textContent?.trim()
+                // }
 
                 // other pages
                 return pathname
@@ -749,8 +762,6 @@ export const githubCodeHost: GithubCodeHost = {
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
-    setElementTooltip,
-    linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (sourcegraphURL, target, context) => {
         if (target.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on

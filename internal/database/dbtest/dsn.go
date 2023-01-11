@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
-func getDSN() (*url.URL, error) {
+func GetDSN() (*url.URL, error) {
 	defaults := map[string]string{
 		"PGHOST":     "127.0.0.1",
 		"PGPORT":     "5432",

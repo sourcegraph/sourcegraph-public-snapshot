@@ -41,17 +41,15 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffInfo>
             diffID: getDiffID(),
         })
     ).pipe(
-        map(
-            (info): DiffInfo => {
-                const { rawRepoName, baseRawRepoName, commitID, baseCommitID } = info
-                const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+        map((info): DiffInfo => {
+            const { rawRepoName, baseRawRepoName, commitID, baseCommitID } = info
+            const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
 
-                return {
-                    head: { rawRepoName, filePath: headFilePath, commitID },
-                    base: { rawRepoName: baseRawRepoName, filePath: baseFilePath, commitID: baseCommitID },
-                }
+            return {
+                head: { rawRepoName, filePath: headFilePath, commitID },
+                base: { rawRepoName: baseRawRepoName, filePath: baseFilePath, commitID: baseCommitID },
             }
-        )
+        })
     )
 
 /**
@@ -65,13 +63,11 @@ export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<DiffInf
                 map(baseCommitID => ({ commitID, baseCommitID, rawRepoName }))
             )
         ),
-        map(
-            ({ commitID, baseCommitID, rawRepoName }): DiffInfo => {
-                const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
-                return {
-                    head: { rawRepoName, filePath: headFilePath, commitID },
-                    base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
-                }
+        map(({ commitID, baseCommitID, rawRepoName }): DiffInfo => {
+            const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+            return {
+                head: { rawRepoName, filePath: headFilePath, commitID },
+                base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
             }
-        )
+        })
     )

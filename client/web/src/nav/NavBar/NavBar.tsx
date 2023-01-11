@@ -61,7 +61,7 @@ const useOnClickDetector = (
 
 export const NavBar = forwardRef(
     ({ children, logo }, reference): JSX.Element => (
-        <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
+        <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             <H1 className={navBarStyles.logo}>
                 <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                     {logo}

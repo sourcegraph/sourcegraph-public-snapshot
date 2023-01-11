@@ -19,15 +19,15 @@ import (
 
 // Client is a HubSpot API client
 type Client struct {
-	portalID string
-	hapiKey  string
+	portalID    string
+	accessToken string
 }
 
 // New returns a new HubSpot client using the given Portal ID.
-func New(portalID, hapiKey string) *Client {
+func New(portalID, accessToken string) *Client {
 	return &Client{
-		portalID: portalID,
-		hapiKey:  hapiKey,
+		portalID:    portalID,
+		accessToken: accessToken,
 	}
 }
 
@@ -55,6 +55,7 @@ func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, bo
 		return wrapError(methodName, err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	setAccessTokenAuthorizationHeader(req, c.accessToken)
 
 	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
@@ -87,8 +88,8 @@ func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respP
 	if err != nil {
 		return wrapError(methodName, err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
+	setAccessTokenAuthorizationHeader(req, c.accessToken)
 
 	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
@@ -119,6 +120,7 @@ func (c *Client) get(methodName string, baseURL *url.URL, suffix string, params 
 		return wrapError(methodName, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	setAccessTokenAuthorizationHeader(req, c.accessToken)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -134,6 +136,14 @@ func (c *Client) get(methodName string, baseURL *url.URL, suffix string, params 
 		return wrapError(methodName, errors.Errorf("Code %v: %s", resp.StatusCode, buf.String()))
 	}
 	return nil
+}
+
+func setAccessTokenAuthorizationHeader(req *http.Request, accessToken string) {
+	if accessToken != "" {
+		// As documented at:
+		// https://developers.hubspot.com/docs/api/migrate-an-api-key-integration-to-a-private-app#update-the-authorization-method-of-your-integration-s-api-requests.
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+	}
 }
 
 func wrapError(methodName string, err error) error {

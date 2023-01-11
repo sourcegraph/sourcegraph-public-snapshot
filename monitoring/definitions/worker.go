@@ -85,7 +85,7 @@ func Worker() *monitoring.Dashboard {
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				func(containerName string, owner monitoring.ObservableOwner) shared.Observable {
+				func(owner monitoring.ObservableOwner) shared.Observable {
 					return shared.Observable{
 						Name:        "records_encrypted_at_rest_percentage",
 						Description: "percentage of database records encrypted at rest",
@@ -93,7 +93,7 @@ func Worker() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
 						Owner:       owner,
 					}
-				}(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				}(monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
 					Percentage of encrypted database records
 				`).Observable(),
 
@@ -144,12 +144,10 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
 			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
-			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),

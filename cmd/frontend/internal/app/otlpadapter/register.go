@@ -8,14 +8,18 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/otel"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Register sets up adapter services and registers proxies on the router.
-func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router) {
+// Register sets up adapter services and registers proxies on the router. enabled can be
+// provided to atomically toggle whether the signal endpoints are enabled serverside -
+// this is important because clients might not receive updated configuration for quite a
+// while, so we need to stop accepting incoming requests.
+func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router, enabled *atomic.Bool) {
 	// Build an OTLP exporter that exports directly to the desired protocol and endpoint
 	exporterFactory, signalExporterConfig, err := newExporter(protocol, endpoint)
 	if err != nil {
@@ -61,6 +65,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 				}
 				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
 			},
+			Enabled: enabled,
 		},
 		{
 			PathPrefix: "/v1/metrics",
@@ -75,6 +80,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 				}
 				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
 			},
+			Enabled: enabled,
 		},
 		{
 			PathPrefix: "/v1/logs",
@@ -89,6 +95,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 				}
 				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
 			},
+			Enabled: enabled,
 		},
 	}
 

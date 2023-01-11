@@ -19,13 +19,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -73,7 +73,6 @@ const (
 	routeCncf                    = "community-search-contexts.cncf"
 	routeSnippets                = "snippets"
 	routeSubscriptions           = "subscriptions"
-	routeStats                   = "stats"
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
@@ -118,9 +117,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func InitRouter(db database.DB) {
 	router := newRouter()
-	initRouter(db, router, codeIntelResolver)
+	initRouter(db, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -129,8 +128,13 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
+	homeRouteMethods := []string{"GET"}
+	if envvar.SourcegraphDotComMode() {
+		homeRouteMethods = append(homeRouteMethods, "HEAD")
+	}
+
 	// Top-level routes.
-	r.Path("/").Methods("GET").Name(routeHome)
+	r.Path("/").Methods(homeRouteMethods...).Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
@@ -161,7 +165,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
-	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
@@ -173,7 +176,7 @@ func newRouter() *mux.Router {
 
 	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
 	if envvar.SourcegraphDotComMode() {
-		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui", "julia"}
+		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui", "julia", "backstage"}
 		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name(routeCommunitySearchContexts)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -223,7 +226,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func initRouter(db database.DB, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -262,11 +265,16 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
-	router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
+	if ShouldRedirectLegacyExtensionEndpoints() {
+		router.Get(routeExtensions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		})
+	} else {
+		router.Get(routeExtensions).Handler(brandedIndex("Extensions"))
+	}
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
-	router.Get(routeStats).Handler(brandedNoIndex("Stats"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
@@ -358,7 +366,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db)))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -372,9 +380,8 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 // The scheme, host, and path in the specified url override ones in the incoming
 // request. For example:
 //
-// 	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
-// 	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
-//
+//	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
+//	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
 func staticRedirectHandler(u string, code int) http.Handler {
 	target, err := url.Parse(u)
 	if err != nil {
@@ -414,9 +421,8 @@ func limitString(s string, n int, ellipsis bool) string {
 // Clients that wish to return their own HTTP status code should use this from
 // their handler:
 //
-// 	serveError(w, r, err, http.MyStatusCode)
-//  return nil
-//
+//	serveError(w, r, err, http.MyStatusCode)
+//	return nil
 func handler(db database.DB, f handlerFunc) http.Handler {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -538,7 +544,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 // serveErrorTest makes it easy to test styling/layout of the error template by
 // visiting:
 //
-// 	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+//	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
 //
 // The `nodebug=true` parameter hides error messages (which is ALWAYS the case
 // in production), `error` controls the error message text, and status controls

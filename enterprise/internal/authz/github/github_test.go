@@ -15,11 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//nolint:unparam // unparam complains that `u` always has same value across call-sites, but that's OK
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
@@ -42,7 +42,7 @@ func mockClientFunc(mockClient client) func() (client, error) {
 // which is lost during moving the client interface to mockgen usage
 func newMockClientWithTokenMock() *MockClient {
 	mockClient := NewMockClient()
-	mockClient.WithTokenFunc.SetDefaultReturn(mockClient)
+	mockClient.WithAuthenticatorFunc.SetDefaultReturn(mockClient)
 	return mockClient
 }
 
@@ -107,7 +107,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		}
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
@@ -124,10 +123,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return []*github.Repository{}, false, 1, nil
 		}
 
-		mockOrgNoRead  = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgNoRead2 = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead    = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		//nolint:unparam // Returning constant value for 'int' result is OK
+		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgNoRead2     = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
+		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
 		mockListOrgDetails = func(_ context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
 			switch page {
 			case 1:
@@ -149,7 +147,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return nil, false, 1, nil
 		}
 
-		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			switch org {
 			case mockOrgRead.Login:
@@ -225,8 +222,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})
 			// should call with token
 			calledWithToken := false
-			mockClient.WithTokenFunc.SetDefaultHook(
-				func(_ string) client {
+			mockClient.WithAuthenticatorFunc.SetDefaultHook(
+				func(_ auth.Authenticator) client {
 					calledWithToken = true
 					return mockClient
 				})
@@ -639,7 +636,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			},
 		}
 
-		//nolint:unparam // Allow returning nil error on all code paths
 		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:

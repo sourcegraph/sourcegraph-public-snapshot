@@ -1,56 +1,40 @@
 .root {
     position: relative;
-    padding: 0;
+    overflow: hidden;
 
-    &--with-scroll {
-        overflow: auto;
+    &::before,
+    &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        width: 100%;
+        height: 2rem;
+        max-height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
     }
 
-    &--with-top-fader {
-        .fader--top {
-            opacity: 1;
-        }
+    &::before {
+        top: 0;
+        background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
     }
 
-    &--with-bottom-fader {
-        .fader--bottom {
-            opacity: 1;
-        }
+    &::after {
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
+    }
+
+    &--with-top-fader::before {
+        opacity: 1;
+    }
+
+    &--with-bottom-fader::after {
+        opacity: 1;
     }
 }
 
-.fader {
-    display: block;
-    position: sticky;
-    z-index: 1;
-    height: 0;
-    width: 100%;
-    opacity: 0;
-    pointer-events: none;
-
-    &--top {
-        top: 0;
-
-        &::before {
-            content: '';
-            display: block;
-            position: absolute;
-            width: 100%;
-            height: 3rem;
-            background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
-        }
-    }
-
-    &--bottom {
-        top: calc(100% - 3rem);
-
-        &::before {
-            content: '';
-            display: block;
-            position: absolute;
-            width: 100%;
-            height: 3rem;
-            background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
-        }
-    }
+.scroll-container {
+    overflow-y: auto;
+    height: 100%;
 }

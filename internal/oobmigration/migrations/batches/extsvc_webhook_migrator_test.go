@@ -143,13 +143,13 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 
 		// By default, all the external services should have non-NULL
 		// has_webhooks.
-		progress, err := m.Progress(ctx)
+		progress, err := m.Progress(ctx, false)
 		assert.Nil(t, err)
 		assert.EqualValues(t, 1., progress)
 
 		// Now we'll clear that flag and ensure the progress drops to zero.
 		clearHasWebhooks(t, ctx, store)
-		progress, err = m.Progress(ctx)
+		progress, err = m.Progress(ctx, true)
 		assert.Nil(t, err)
 		assert.EqualValues(t, 0., progress)
 	})

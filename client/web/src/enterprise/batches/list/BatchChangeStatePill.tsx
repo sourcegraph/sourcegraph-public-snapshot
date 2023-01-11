@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Badge, Tooltip, Icon } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
@@ -56,13 +56,12 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
 
     return (
         <div
-            role="group"
             className={classNames(styles.pillGroup, className, {
                 [styles.open]: state === BatchChangeState.OPEN,
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
-            aria-label={`${state} status`}
+            aria-label={`${state.toLowerCase()} batch change`}
         >
             <StatePill state={state} />
             {executionStatePill}
@@ -103,44 +102,46 @@ const ExecutionStatePill: React.FunctionComponent<
         case BatchSpecState.PROCESSING:
         case BatchSpecState.QUEUED:
             return (
-                <Tooltip
-                    content={`This batch change has a new spec ${
+                <Badge
+                    variant="warning"
+                    aria-label={`This batch change has a new spec ${
                         latestExecutionState === BatchSpecState.QUEUED
                             ? 'queued for execution'
                             : 'in the process of executing'
                     }.`}
+                    tooltip={`This batch change has a new spec ${
+                        latestExecutionState === BatchSpecState.QUEUED
+                            ? 'queued for execution'
+                            : 'in the process of executing'
+                    }.`}
+                    className={styles.executionPill}
                 >
-                    <Badge variant="warning" className={styles.executionPill}>
-                        <Icon
-                            className={styles.executionIcon}
-                            svgPath={mdiHistory}
-                            inline={false}
-                            aria-label={`This batch change has a new spec ${
-                                latestExecutionState === BatchSpecState.QUEUED
-                                    ? 'queued for execution'
-                                    : 'in the process of executing'
-                            }.`}
-                        />
-                    </Badge>
-                </Tooltip>
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                </Badge>
             )
 
         case BatchSpecState.COMPLETED:
             return (
-                <Tooltip content="This batch change has a newer batch spec execution that is ready to be applied.">
-                    <Badge variant="primary" className={styles.executionPill}>
-                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
-                    </Badge>
-                </Tooltip>
+                <Badge
+                    variant="primary"
+                    aria-label="This batch change has a newer batch spec execution that is ready to be applied."
+                    tooltip="This batch change has a newer batch spec execution that is ready to be applied."
+                    className={styles.executionPill}
+                >
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                </Badge>
             )
         case BatchSpecState.FAILED:
         default:
             return (
-                <Tooltip content="The latest batch spec execution for this batch change failed.">
-                    <Badge variant="danger" className={styles.executionPill}>
-                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
-                    </Badge>
-                </Tooltip>
+                <Badge
+                    variant="danger"
+                    aria-label="The latest batch spec execution for this batch change failed."
+                    tooltip="The latest batch spec execution for this batch change failed."
+                    className={styles.executionPill}
+                >
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                </Badge>
             )
     }
 }

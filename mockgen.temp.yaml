@@ -1,7 +1,3 @@
-- filename: cmd/frontend/internal/auth/userpasswd/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
-  interfaces:
-    - LockoutStore
 - filename: dev/team/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/dev/team
   interfaces:
@@ -10,18 +6,6 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
-  interfaces:
-    - Resolver
-- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/mocks_temps.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql
-  interfaces:
-    - Resolver
-- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
-  interfaces:
-    - GitBlobLSIFDataResolver
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:
@@ -33,20 +17,12 @@
     - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
-- filename: enterprise/internal/insights/background/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
-  interfaces:
-    - RepoStore
-- filename: enterprise/internal/insights/compression/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
-  interfaces:
-    - CommitStore
+    - SubRepoPermsStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
     - IndexableReposLister
     - RepoStore
-    - SettingStore
 - filename: enterprise/internal/insights/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:
@@ -57,6 +33,9 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
+- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+  interfaces:
     - SubRepoPermissionsGetter
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
@@ -82,14 +61,17 @@
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
-    - SubRepoPermsStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserPublicRepoStore
     - UserStore
+    - WebhookStore
     - WebhookLogStore
+    - ExecutorStore
+    - ExecutorSecretStore
+    - ExecutorSecretAccessLogStore
+    - ZoektReposStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -123,3 +105,8 @@
   interfaces:
     - Store
     - DistributedStore
+- filename: cmd/frontend/backend/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
+  interfaces:
+    - UserEmailsService
+    - ReposService

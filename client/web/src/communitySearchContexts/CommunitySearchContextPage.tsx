@@ -6,12 +6,11 @@ import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -34,7 +33,6 @@ export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
@@ -82,13 +80,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         )
     )
 
-    const onSubmitExample = (query: string, patternType: SearchPatternType) => (
-        event?: React.MouseEvent<HTMLButtonElement>
-    ): void => {
-        eventLogger.log('CommunitySearchContextSuggestionClicked')
-        event?.preventDefault()
-        submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
-    }
+    const onSubmitExample =
+        (query: string, patternType: SearchPatternType) =>
+        (event?: React.MouseEvent<HTMLButtonElement>): void => {
+            eventLogger.log('CommunitySearchContextSuggestionClicked')
+            event?.preventDefault()
+            submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+        }
 
     return (
         <div className={styles.communitySearchContextsPage}>
@@ -246,7 +244,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
                 </Link>
             </>
         )}
-        {repo.startsWith('bitbucket.com') && (
+        {repo.startsWith('bitbucket.org') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />

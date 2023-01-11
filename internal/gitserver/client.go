@@ -25,6 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -92,8 +94,9 @@ func NewClient(db database.DB) Client {
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
-		logger: sglog.Scoped("NewTestClient", "Test New client"),
+		logger: logger,
 		addrs: func() []string {
 			return addrs
 		},
@@ -105,8 +108,79 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
-		operations: newOperations(&observation.TestContext),
+		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
+}
+
+// NewMockClientWithExecReader return new MockClient with provided mocked
+// behaviour of ExecReader function.
+func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
+	client := NewMockClient()
+	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
+		if opts.Base == DevNullSHA {
+			opts.RangeType = ".."
+		} else if opts.RangeType != ".." {
+			opts.RangeType = "..."
+		}
+
+		rangeSpec := opts.Base + opts.RangeType + opts.Head
+		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
+			return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
+		}
+
+		// Here is where all the mocking happens!
+		rdr, err := execReader(ctx, opts.Repo, append([]string{
+			"diff",
+			"--find-renames",
+			"--full-index",
+			"--inter-hunk-context=3",
+			"--no-prefix",
+			rangeSpec,
+			"--",
+		}, opts.Paths...))
+		if err != nil {
+			return nil, errors.Wrap(err, "executing git diff")
+		}
+
+		return &DiffFileIterator{
+			rdr:            rdr,
+			mfdr:           diff.NewMultiFileDiffReader(rdr),
+			fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
+		}, nil
+	})
+
+	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
+	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+		a := actor.FromContext(ctx)
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+			return nil, err
+		} else if !hasAccess {
+			return nil, os.ErrNotExist
+		}
+		// Here is where all the mocking happens!
+		reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+
+		output, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+		if len(output) == 0 {
+			return nil, nil
+		}
+
+		d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+		if err != nil {
+			return nil, err
+		}
+		return d.Hunks, nil
+	})
+
+	return client
 }
 
 // clientImplementor is a gitserver client.
@@ -147,6 +221,10 @@ type RawBatchLogResult struct {
 }
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
+type HunkReader interface {
+	Read() (hunks []*Hunk, done bool, err error)
+}
+
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
@@ -161,6 +239,8 @@ type Client interface {
 
 	// BlameFile returns Git blame information about a file.
 	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
+
+	StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error)
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -179,7 +259,7 @@ type Client interface {
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error)
+	HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (bool, error)
 
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
@@ -243,6 +323,9 @@ type Client interface {
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
+
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
@@ -260,20 +343,20 @@ type Client interface {
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use
-	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+	NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 
 	// ListFiles returns a list of root-relative file paths matching the given
 	// pattern in a particular commit of a repository.
-	ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) ([]string, error)
+	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) ([]string, error)
 
 	// Commits returns all commits matching the options.
-	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
-	FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+	FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error)
 
 	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
@@ -286,38 +369,38 @@ type Client interface {
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
-	Diff(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error)
+	Diff(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error)
 
 	// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 	// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error)
+	ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
 
 	// BranchesContaining returns a map from branch names to branch tip hashes for
 	// each branch containing the given commit.
-	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error)
+	BranchesContaining(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error)
 
 	// RefDescriptions returns a map from commits to descriptions of the tip of each
 	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
 
 	// CommitExists determines if the given commit exists in the given repository.
-	CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error)
+	CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error)
 
 	// CommitsExist determines if the given commits exists in the given repositories. This function returns
 	// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
 	// exists.
-	CommitsExist(ctx context.Context, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error)
+	CommitsExist(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit) ([]bool, error)
 
 	// Head determines the tip commit of the default branch for the given repository.
 	// If no HEAD revision exists for the given repository (which occurs with empty
 	// repositories), a false-valued flag is returned along with a nil error and
 	// empty revision.
-	Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (string, bool, error)
+	Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (string, bool, error)
 
 	// CommitDate returns the time that the given commit was committed. If the given
 	// revision does not exist, a false-valued flag is returned along with a nil
 	// error and zero-valued time.
-	CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (string, time.Time, bool, error)
+	CommitDate(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will
@@ -331,10 +414,15 @@ type Client interface {
 	// commits on {branchName} not also on the tip of the default branch. If the
 	// supplied branch name is the default branch, then this method instead returns
 	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (map[string]time.Time, error)
+	CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
+
+	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
+	// at path. If the path is not an LFS pointer, the file contents from git
+	// are returned instead.
+	LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (io.ReadCloser, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -342,7 +430,7 @@ type Client interface {
 	//
 	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 	// resulting commit to be nil, but not fail the entire operation.
-	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+	GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
 
 	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 	// exists.
@@ -350,7 +438,7 @@ type Client interface {
 	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
@@ -517,7 +605,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -539,6 +627,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
+		Stdin:          c.stdin,
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.execFn(ctx, repoName, "exec", req)
@@ -566,7 +655,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
@@ -628,7 +717,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -717,7 +806,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 		defer resp.Body.Close()
-		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
+		logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
 			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
@@ -727,7 +816,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return err
 		}
-		logger.Log(log.Int("numResults", len(response.Results)))
+		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 
 		for _, result := range response.Results {
 			var err error
@@ -897,6 +986,29 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	return info, err
 }
 
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var info *protocol.RepoCloneResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
+}
+
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
 var MockIsRepoCloneable func(api.RepoName) error
 
@@ -1039,12 +1151,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1123,16 +1230,24 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
-// do performs a request to a gitserver instance based on the address in the uri argument.
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
+//
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -1148,6 +1263,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
@@ -1165,28 +1284,41 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
+	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
+			Repo:         req.Repo,
+			BaseCommit:   req.BaseCommit,
+			Patch:        string(req.Patch),
+			TargetRef:    req.TargetRef,
+			UniqueRef:    req.UniqueRef,
+			CommitInfo:   req.CommitInfo,
+			Push:         req.Push,
+			GitApplyArgs: req.GitApplyArgs,
+		})
+		if err != nil {
+			return "", err
 		}
+		defer resp.Body.Close()
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
 	var res protocol.CreateCommitFromPatchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.Unmarshal(body, &res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
 		}
 	}
 

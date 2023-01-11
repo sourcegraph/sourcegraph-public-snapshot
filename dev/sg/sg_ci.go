@@ -27,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -201,6 +203,11 @@ sg ci build --help
 		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
 		Flags: []cli.Flag{
 			&ciBranchFlag,
+			&cli.StringFlag{
+				Name:  "format",
+				Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
+				Value: "markdown",
+			},
 		},
 		Action: func(cmd *cli.Context) error {
 			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
@@ -220,16 +227,39 @@ sg ci build --help
 				return err
 			}
 
-			previewCmd := usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
-				Env(map[string]string{
-					"BUILDKITE_BRANCH":  target.target, // this must be a branch
-					"BUILDKITE_MESSAGE": message,
-				})
-			out, err := root.Run(previewCmd).String()
-			if err != nil {
-				return err
+			var previewCmd *sgrun.Command
+			env := map[string]string{
+				"BUILDKITE_BRANCH":  target.target, // this must be a branch
+				"BUILDKITE_MESSAGE": message,
 			}
-			return std.Out.WriteMarkdown(out)
+			switch cmd.String("format") {
+			case "markdown":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteMarkdown(out)
+			case "json":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("json", out)
+			case "yaml":
+				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+					Env(env)
+				out, err := root.Run(previewCmd).String()
+				if err != nil {
+					return err
+				}
+				return std.Out.WriteCode("yaml", out)
+			default:
+				return errors.Newf("unsupported format type: %q", cmd.String("format"))
+			}
 		},
 	}, {
 		Name:    "status",
@@ -352,7 +382,7 @@ sg ci build --help
 		},
 	}, {
 		Name:      "build",
-		ArgsUsage: "[runtype]",
+		ArgsUsage: "[runtype] <argument>",
 		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
 		Description: fmt.Sprintf(`Optionally provide a run type to build with.
 
@@ -366,11 +396,21 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * %s
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
-		BashComplete: completeOptions(getAllowedBuildTypeArgs),
+		UsageText: `
+# Start a main-dry-run build
+sg ci build main-dry-run
+
+# Publish a custom image build
+sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+sg ci build docker-images-patch-notest prometheus
+`,
+		BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&ciPipelineFlag,
 			&cli.StringFlag{
@@ -412,6 +452,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				if response != "yes" {
 					return errors.New("Cancelling request.")
 				}
+				branch = fmt.Sprintf("_manually_triggered_external/%s", commit)
 			}
 
 			var rt runtype.RunType
@@ -423,7 +464,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				if rt == runtype.PullRequest {
 					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
 					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					return NewEmptyExitErr(1)
+					return exit.NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {
@@ -680,7 +721,38 @@ From there, you can start exploring logs with the Grafana explore panel.
 			}
 			return open.URL(buildkiteURL)
 		},
+	}, {
+		Name:      "search-failures",
+		ArgsUsage: "[text to search for]",
+		Usage:     "Open Sourcegraph's CI failures Grafana logs page in browser",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "step",
+				Usage: "Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')",
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			text := "TODO"
+			stepName := ctx.String("step")
+
+			if ctx.Args().Len() > 0 {
+				text = ctx.Args().Slice()[0]
+			}
+			grafanaURL := buildGrafanaURL(text, stepName)
+			return open.URL(grafanaURL)
+		},
 	}},
+}
+
+func buildGrafanaURL(text string, stepName string) string {
+	var base string
+	if stepName == "" {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	} else {
+		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+	}
+	url := strings.ReplaceAll(base, "_TEXT_", text)
+	return strings.ReplaceAll(url, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
 }
 
 func getAllowedBuildTypeArgs() []string {

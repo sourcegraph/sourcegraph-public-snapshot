@@ -2,7 +2,7 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 
 import { DOMFunctions } from '../shared/codeViews'
 
-import { isDiffPageType, parseURL } from './util'
+import { getSelectorFor, isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const tableCell = codeElement.closest('td')!
@@ -43,6 +43,10 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
  * Gets the line number for a given code element on unified diff, split diff and blob views
  */
 const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
+    // In the new GitHub UI element may actually be the one containing the line number
+    if (codeElement.dataset.lineNumber) {
+        return parseInt(codeElement.dataset.lineNumber, 10)
+    }
     // In diff views, the code element is the `<span>` inside the cell
     // On blob views, the code element is the `<td>` itself, so `closest()` will simply return it
     // Walk all previous sibling cells until we find one with the line number
@@ -60,7 +64,7 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
  * Gets the `<td>` element for a target that contains the code
  */
 const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null => {
-    const cell = target.closest<HTMLTableCellElement>('td.blob-code')
+    const cell = target.closest<HTMLTableCellElement>(getSelectorFor('codeCell'))
     // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines
     if (!cell || cell.parentElement?.classList.contains('js-expandable-line')) {
         return null

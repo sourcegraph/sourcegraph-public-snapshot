@@ -40,7 +40,6 @@ func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 }
 
 var createSiteCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:CreateSiteCredential
 INSERT INTO	batch_changes_site_credentials (
 	external_service_type,
 	external_service_id,
@@ -94,7 +93,6 @@ func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) 
 }
 
 var deleteSiteCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:DeleteSiteCredential
 DELETE FROM
 	batch_changes_site_credentials
 WHERE
@@ -136,7 +134,6 @@ func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpt
 }
 
 var getSiteCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:GetSiteCredential
 SELECT
 	%s
 FROM batch_changes_site_credentials
@@ -193,7 +190,6 @@ func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredential
 }
 
 var listSiteCredentialsQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:ListSiteCredentials
 SELECT
 	%s
 FROM batch_changes_site_credentials
@@ -244,7 +240,6 @@ func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 }
 
 const updateSiteCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:UpdateSiteCredential
 UPDATE
 	batch_changes_site_credentials
 SET

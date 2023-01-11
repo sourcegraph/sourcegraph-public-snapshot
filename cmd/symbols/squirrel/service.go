@@ -3,7 +3,9 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -15,12 +17,12 @@ import (
 )
 
 // How to read a file.
-type ReadFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
+type readFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
 
 // SquirrelService uses tree-sitter and the symbols service to analyze and traverse files to find
 // symbols.
 type SquirrelService struct {
-	readFile            ReadFileFunc
+	readFile            readFileFunc
 	symbolSearch        symbolsTypes.SearchFunc
 	breadcrumbs         Breadcrumbs
 	parser              *sitter.Parser
@@ -30,7 +32,7 @@ type SquirrelService struct {
 }
 
 // Creates a new SquirrelService.
-func New(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
+func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
 	return &SquirrelService{
 		readFile:            readFile,
 		symbolSearch:        symbolSearch,
@@ -159,6 +161,22 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	}
 }
 
+const defaultMaxSquirrelDepth = 100
+
+var maxSquirrelDepth = func() int {
+	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
+	if maxDepth == "" {
+		return defaultMaxSquirrelDepth
+	}
+
+	v, err := strconv.Atoi(maxDepth)
+	if err != nil {
+		panic(fmt.Sprintf("invalid value for SRC_SQUIRREL_MAX_STACK_DEPTH: %s", err))
+	}
+
+	return v
+}()
+
 func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
@@ -172,6 +190,10 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
 
 	squirrel.depth += 1
+	if squirrel.depth > maxSquirrelDepth {
+		panic(errors.New("max squirrel stack depth exceeded"))
+	}
+
 	return func() {
 		squirrel.depth -= 1
 

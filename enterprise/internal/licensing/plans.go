@@ -34,17 +34,6 @@ func (p Plan) isKnown() bool {
 	return false
 }
 
-// MaxExternalServiceCount returns the number of external services that the
-// plan supports. We treat 0 as "unlimited".
-func (p Plan) MaxExternalServiceCount() int {
-	switch p {
-	case team:
-		return 1
-	default:
-		return 0
-	}
-}
-
 // Plan is the pricing plan of the license.
 func (info *Info) Plan() Plan {
 	for _, tag := range info.Tags {
@@ -58,12 +47,12 @@ func (info *Info) Plan() Plan {
 
 		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
 		if tag == "starter" {
-			return oldEnterpriseStarter
+			return PlanOldEnterpriseStarter
 		}
 	}
 
 	// Backcompat: no tags means it is the old "Enterprise" plan.
-	return oldEnterprise
+	return PlanOldEnterprise
 }
 
 // hasUnknownPlan returns an error if the plan is presented in the license tags

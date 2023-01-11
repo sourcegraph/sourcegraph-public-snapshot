@@ -139,7 +139,9 @@ func Watch(f func()) {
 // Cached will return a wrapper around f which caches the response. The value
 // will be recomputed every time the config is updated.
 //
-// IMPORTANT: The first call to wrapped will block on config initialization.
+// IMPORTANT: The first call to wrapped will block on config initialization.  It will also create a
+// long lived goroutine when DefaultClient().Cached is invoked. As a result it's important to NEVER
+// call it inside a function to avoid unbounded goroutines that never return.
 func Cached[T any](f func() T) (wrapped func() T) {
 	g := func() any {
 		return f()
@@ -322,8 +324,13 @@ func (c *client) fetchAndUpdate(logger log.Logger) error {
 	}
 
 	if configChange.Changed {
-		logger.Info("config changed, notifying watchers",
-			log.Int("watchers", len(c.watchers)))
+		if configChange.Old == nil {
+			logger.Debug("config initialized",
+				log.Int("watchers", len(c.watchers)))
+		} else {
+			logger.Info("config changed, notifying watchers",
+				log.Int("watchers", len(c.watchers)))
+		}
 		c.notifyWatchers()
 	} else {
 		logger.Debug("no config changes detected")

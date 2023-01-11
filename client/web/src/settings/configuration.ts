@@ -9,9 +9,9 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
  * @param configuredExtensions
  * @returns A JSON Schema that describes an instance of settings for a particular subject.
  */
-export function mergeSettingsSchemas(
-    configuredExtensions: Pick<ConfiguredExtension<'contributes'>, 'manifest'>[]
-): { allOf: object } {
+export function mergeSettingsSchemas(configuredExtensions: Pick<ConfiguredExtension<'contributes'>, 'manifest'>[]): {
+    allOf: object
+} {
     return {
         allOf: [
             { $ref: settingsSchemaJSON.$id },

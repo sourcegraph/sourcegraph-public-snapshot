@@ -1,6 +1,6 @@
 # Migrations
 
-For each of our Postgres instances, we define a sequence of SQL schema commands that must be applied before the database is in the state the application expects. We also support zero-downtime upgrades between one minor version on Sourcegraph.com, Cloud managed instances, and enterprise instances.
+For each of our Postgres instances, we define a sequence of SQL schema commands that must be applied before the database is in the state the application expects. We define migrations to be backwards compatible with the previous minor version release. This aids in minimizing downtime when using rolling restarts, as new and old services can operate with the same schema without failure. Such deployments are used on Sourcegraph.com, Cloud managed instances, and enterprise instances deployed via Kubernetes.
 
 In development environments, these migrations are applied automatically on application startup. This is a specific choice to keep the response latency small during development. In production environments, a typical upgrade requires that the site-administrator first run a `migrator` service to prepare the database schema for the new version of the application. This is a type of _database-first_ deployment (opposed to _code-first_ deployments), where database migrations are applied prior to the corresponding code change.
 
@@ -11,6 +11,8 @@ Database migrations may be applied arbitrarily long before the new version is de
 Some migrations are difficult to do in a single step or idempotently. For instance, renaming a column, table, or view, or adding a column with a non-nullable constraint will all break existing code that accesses that table or view. In order to do such changes you may need to break your changes into several parts separated by a minor release.
 
 The remainder of this document is formatted as a recipe book of common types of migrations. We encourage any developer to add a recipe here when a specific type of migration is under-documented.
+
+To learn the process of file changes necessary to implement a migration please refer to [the README file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/migrations/README.md).
 
 ### Adding a non-nullable column (without a default)
 

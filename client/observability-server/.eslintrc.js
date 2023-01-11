@@ -8,6 +8,9 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [__dirname + '/tsconfig.json'],
   },
-  rules: {},
+  rules: {
+    'no-console': 'off',
+    'jsdoc/check-indentation': 'off',
+  },
   overrides: baseConfig.overrides,
 }

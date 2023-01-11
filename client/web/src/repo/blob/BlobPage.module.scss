@@ -11,6 +11,10 @@
     @extend .border;
 }
 
+.lfs-text {
+    max-width: 18rem;
+}
+
 .blob {
     flex: 1;
     position: relative;

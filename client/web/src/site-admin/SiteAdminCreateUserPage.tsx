@@ -5,15 +5,13 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
+import { asError, logger } from '@sourcegraph/common'
+import { Button, Link, Alert, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
+import { CreateUserResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
@@ -27,7 +25,7 @@ interface State {
     /**
      * The result of creating the user.
      */
-    createUserResult?: GQL.ICreateUserResult
+    createUserResult?: CreateUserResult['createUser']
 
     // Form
     username: string
@@ -63,7 +61,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     mergeMap(({ username, email }) =>
                         createUser(username, email).pipe(
                             catchError(error => {
-                                console.error(error)
+                                logger.error(error)
                                 this.setState({
                                     createUserResult: undefined,
                                     loading: false,
@@ -81,7 +79,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             errorDescription: undefined,
                             createUserResult,
                         }),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

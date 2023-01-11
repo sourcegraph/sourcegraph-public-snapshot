@@ -5,7 +5,7 @@ import {
     TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
-import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
+import { InsightType } from '../../../../types'
 import {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
@@ -22,23 +22,23 @@ type CreateInsightInput = LineChartSearchInsightInput | PieChartSearchInsightInp
  */
 export function getInsightCreateGqlInput(
     insight: CreationInsightInput,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): CreateInsightInput {
     switch (insight.type) {
         case InsightType.SearchBased:
-            return getSearchInsightCreateInput(insight, dashboard)
+            return getSearchInsightCreateInput(insight, dashboardId)
         case InsightType.CaptureGroup:
-            return getCaptureGroupInsightCreateInput(insight, dashboard)
+            return getCaptureGroupInsightCreateInput(insight, dashboardId)
         case InsightType.Compute:
-            return getComputeInsightCreateInput(insight, dashboard)
+            return getComputeInsightCreateInput(insight, dashboardId)
         case InsightType.LangStats:
-            return getLangStatsInsightCreateInput(insight, dashboard)
+            return getLangStatsInsightCreateInput(insight, dashboardId)
     }
 }
 
 export function getCaptureGroupInsightCreateInput(
     insight: MinimalCaptureGroupInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): LineChartSearchInsightInput {
     const [unit, value] = getStepInterval(insight.step)
 
@@ -57,14 +57,15 @@ export function getCaptureGroupInsightCreateInput(
             seriesDisplayOptions:
                 insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
+                searchContexts: [insight.filters.context],
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
             },
         },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input
@@ -72,7 +73,7 @@ export function getCaptureGroupInsightCreateInput(
 
 export function getSearchInsightCreateInput(
     insight: MinimalSearchBasedInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): LineChartSearchInsightInput {
     const repositories = insight.repositories
 
@@ -88,10 +89,19 @@ export function getSearchInsightCreateInput(
             timeScope: { stepInterval: { unit, value } },
         })),
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input
@@ -99,7 +109,7 @@ export function getSearchInsightCreateInput(
 
 export function getLangStatsInsightCreateInput(
     insight: MinimalLangStatsInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): PieChartSearchInsightInput {
     const input: PieChartSearchInsightInput = {
         // Query do not exist as setting for this type of insight, it's predefined
@@ -113,8 +123,8 @@ export function getLangStatsInsightCreateInput(
         },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input
@@ -122,7 +132,7 @@ export function getLangStatsInsightCreateInput(
 
 export function getComputeInsightCreateInput(
     insight: MinimalComputeInsightData,
-    dashboard: InsightDashboard | null
+    dashboardId: string | null
 ): LineChartSearchInsightInput {
     const input: LineChartSearchInsightInput = {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -137,10 +147,19 @@ export function getComputeInsightCreateInput(
             generatedFromCaptureGroups: true,
         })),
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
-    if (dashboard && !isVirtualDashboard(dashboard)) {
-        input.dashboards = [dashboard.id]
+    if (dashboardId) {
+        input.dashboards = [dashboardId]
     }
 
     return input

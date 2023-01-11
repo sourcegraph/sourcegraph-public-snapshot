@@ -21,17 +21,8 @@ interface FilterCollapseSectionProps extends HTMLAttributes<HTMLButtonElement> {
 }
 
 export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSectionProps>): ReactElement {
-    const {
-        open,
-        title,
-        preview,
-        hasActiveFilter,
-        className,
-        withSeparators,
-        children,
-        onOpenChange,
-        ...attributes
-    } = props
+    const { open, title, preview, hasActiveFilter, className, withSeparators, children, onOpenChange, ...attributes } =
+        props
 
     return (
         <div className={classNames(className, { [styles.rootNoCollapse]: !withSeparators })}>

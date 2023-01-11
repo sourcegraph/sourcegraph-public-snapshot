@@ -2,9 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { deriveInputClassName, InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Label } from '@sourcegraph/wildcard'
+import { Label, LoaderInput } from '@sourcegraph/wildcard'
 
 import { EmailInput } from './SignInSignUpCommon'
 

@@ -125,30 +125,36 @@ func TestNonLocalDefinition(t *testing.T) {
 			// It's a path definition, which is checked separately
 			continue
 		}
-		var wantAnn *annotation
+		var defAnn *annotation
 		for _, ann := range m["def"] {
-			if wantAnn != nil {
+			if defAnn != nil {
 				t.Fatalf("multiple definitions for symbol %s", symbol)
 			}
 
 			annCopy := ann
-			wantAnn = &annCopy
+			defAnn = &annCopy
 		}
-
-		if wantAnn == nil {
-			t.Fatalf("no matching \"def\" annotation for \"ref\" %s", symbol)
-		}
-
-		want := wantAnn.repoCommitPathPoint
 
 		for _, ref := range m["ref"] {
 			squirrel.breadcrumbs = Breadcrumbs{}
 			gotSymbolInfo, err := squirrel.symbolInfo(context.Background(), ref.repoCommitPathPoint)
 			fatalIfErrorLabel(t, err, "symbolInfo")
 
+			if contains(ref.tags, "nodef") {
+				if gotSymbolInfo != nil {
+					t.Fatalf("unexpected definition for %s", ref.symbol)
+				}
+				testCount += 1
+				continue
+			}
+
 			if gotSymbolInfo == nil {
 				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 				t.Fatalf("no symbolInfo for symbol %s", symbol)
+			}
+
+			if defAnn == nil {
+				t.Fatalf("no \"def\" for symbol %q", symbol)
 			}
 
 			if gotSymbolInfo.Definition.Range == nil {
@@ -168,10 +174,11 @@ func TestNonLocalDefinition(t *testing.T) {
 				},
 			}
 
-			if diff := cmp.Diff(wantAnn.repoCommitPathPoint, got); diff != "" {
+			if diff := cmp.Diff(defAnn.repoCommitPathPoint, got); diff != "" {
 				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 
 				t.Errorf("wrong symbolInfo for %q\n", symbol)
+				want := defAnn.repoCommitPathPoint
 				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row, "src"), want.Repo, want.Path, want.Point.Row, want.Point.Column)
 				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row, "src"), got.Repo, got.Path, got.Point.Row, got.Point.Column)
 			}

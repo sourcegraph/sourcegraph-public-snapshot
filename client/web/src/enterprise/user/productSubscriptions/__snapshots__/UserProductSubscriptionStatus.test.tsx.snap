@@ -15,11 +15,11 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
         src="/.assets/img/sourcegraph-mark.svg?v2"
       />
       <div>
-        <h2
+        <h3
           class="h2 font-weight-normal mb-1"
         >
           P
-        </h2>
+        </h3>
         <h3
           class="h3 text-muted font-weight-normal"
         >
@@ -91,11 +91,11 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
         src="/.assets/img/sourcegraph-mark.svg?v2"
       />
       <div>
-        <h2
+        <h3
           class="h2 font-weight-normal mb-1"
         >
           P
-        </h2>
+        </h3>
         <h3
           class="h3 text-muted font-weight-normal"
         >

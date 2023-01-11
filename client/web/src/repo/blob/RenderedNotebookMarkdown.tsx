@@ -18,9 +18,10 @@ export const RenderedNotebookMarkdown: React.FunctionComponent<
     React.PropsWithChildren<RenderedNotebookMarkdownProps>
 > = ({ markdown, className, ...props }) => {
     // Generate fresh block IDs, since we do not store them in Markdown.
-    const blocks = useMemo(() => convertMarkdownToBlocks(markdown).map(block => ({ id: uuid.v4(), ...block })), [
-        markdown,
-    ])
+    const blocks = useMemo(
+        () => convertMarkdownToBlocks(markdown).map(block => ({ id: uuid.v4(), ...block })),
+        [markdown]
+    )
     return (
         <div className={classNames(styles.renderedSearchNotebookMarkdownWrapper, className)}>
             <div className={styles.renderedSearchNotebookMarkdown}>

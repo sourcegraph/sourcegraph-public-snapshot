@@ -33,14 +33,14 @@ func Init() {
 	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
 	go func() {
 		conf.Watch(func() {
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Warn("Check license for SSO (HTTP header)", log.Error(err))
+			newPC, _ := getProviderConfig()
+			if newPC == nil {
 				providers.Update(pkgName, nil)
 				return
 			}
 
-			newPC, _ := getProviderConfig()
-			if newPC == nil {
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Error("Check license for SSO (HTTP header)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return
 			}

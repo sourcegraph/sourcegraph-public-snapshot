@@ -7,7 +7,10 @@ import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
 import com.sourcegraph.config.SettingsConfigurable;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +25,8 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
     private final JBPanelWithEmptyText overlayPanel;
     private final JBPanelWithEmptyText jcefPanel;
     private boolean isBrowserVisible = false;
+    private ConnectionAndAuthState connectionAndAuthState = ConnectionAndAuthState.LOADING;
+    private String errorMessage = null;
 
     public BrowserAndLoadingPanel(Project project) {
         this.project = project;
@@ -29,7 +34,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
             "Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
 
         overlayPanel = new JBPanelWithEmptyText();
-        setState(State.LOADING);
+        setConnectionAndAuthState(ConnectionAndAuthState.LOADING);
 
         // We need to use the add(Component, Object) overload of the add method to ensure that the constraints are
         // properly set.
@@ -37,25 +42,61 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
         add(jcefPanel, Integer.valueOf(2));
     }
 
-    public void setState(State state) {
-        StatusText emptyText = overlayPanel.getEmptyText();
+    public void setBrowserSearchErrorMessage(@Nullable String errorMessage) {
+        this.errorMessage = errorMessage;
+        refreshUI();
+    }
 
-        isBrowserVisible = state == State.AUTHENTICATED || state == State.COULD_CONNECT_BUT_NOT_AUTHENTICATED;
-        if (state == State.LOADING) {
-            emptyText.setText("Loading...");
-        } else if (state == State.COULD_NOT_CONNECT) {
+    public void setConnectionAndAuthState(@NotNull ConnectionAndAuthState state) {
+        this.connectionAndAuthState = state;
+        refreshUI();
+    }
+
+    private void refreshUI() {
+        StatusText emptyText = overlayPanel.getEmptyText();
+        isBrowserVisible = errorMessage == null
+            && (connectionAndAuthState == ConnectionAndAuthState.AUTHENTICATED
+            || connectionAndAuthState == ConnectionAndAuthState.COULD_CONNECT_BUT_NOT_AUTHENTICATED);
+
+        if (connectionAndAuthState == ConnectionAndAuthState.COULD_NOT_CONNECT) {
             emptyText.setText("Could not connect to Sourcegraph.");
             emptyText.appendLine("Make sure your Sourcegraph URL and access token are correct to use search.");
             emptyText.appendLine("Click here to configure your Sourcegraph settings.",
                 new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
                 __ -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class)
             );
+
+        } else if (errorMessage != null) {
+            String wrappedText = WordUtils.wrap("Error: " + errorMessage, 100);
+            String[] lines = wrappedText.split(SystemUtils.LINE_SEPARATOR);
+            emptyText.setText(lines[0]);
+            for (int i = 1; i < lines.length; i++) {
+                if (!lines[i].trim().isEmpty()) {
+                    emptyText.appendLine(lines[i]);
+                }
+            }
+            emptyText.appendLine("");
+            emptyText.appendLine("If you believe this is a bug, please raise this at support@sourcegraph.com,");
+            //noinspection DialogTitleCapitalization
+            emptyText.appendLine("mentioning the above error message and your plugin and Sourcegraph version.");
+            emptyText.appendLine("Sorry for the inconvenience.");
+
+        } else if (connectionAndAuthState == ConnectionAndAuthState.LOADING) {
+            emptyText.setText("Loading...");
         } else {
             // We need to do this because the "COULD_NOT_CONNECT" link is clickable even when the empty text is hidden! :o
             emptyText.setText("");
         }
         revalidate();
         repaint();
+    }
+
+    public ConnectionAndAuthState getConnectionAndAuthState() {
+        return connectionAndAuthState;
+    }
+
+    public boolean hasSearchError() {
+        return errorMessage != null;
     }
 
     public void setBrowser(@NotNull SourcegraphJBCefBrowser browser) {
@@ -77,7 +118,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
         return getBounds().getSize();
     }
 
-    public enum State {
+    public enum ConnectionAndAuthState {
         LOADING,
         AUTHENTICATED,
         COULD_NOT_CONNECT,

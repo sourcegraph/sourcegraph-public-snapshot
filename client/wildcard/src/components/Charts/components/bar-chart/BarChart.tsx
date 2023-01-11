@@ -3,8 +3,8 @@ import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { ScaleBand } from 'd3-scale'
 
+import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
-import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core/components/SvgRoot'
 import { CategoricalLikeChart } from '../../types'
 
 import { BarChartContent } from './BarChartContent'
@@ -16,15 +16,22 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     width: number
     height: number
     stacked?: boolean
+    sortByValue?: boolean
 
     // TODO: Move these specific only to the axis label UI props to the axis components
     // see https://github.com/sourcegraph/sourcegraph/issues/40009
     pixelsPerYTick?: number
     pixelsPerXTick?: number
+    hideXTicks?: boolean
+    minAngleXTick?: number
     maxAngleXTick?: number
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
+
+    onDatumHover?: (datum: Datum) => void
+    getDatumHoverValueLabel?: (datum: Datum) => string
 }
 
 export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
@@ -34,23 +41,30 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         data,
         pixelsPerYTick,
         pixelsPerXTick,
+        hideXTicks,
+        minAngleXTick,
         maxAngleXTick,
         stacked = false,
+        sortByValue,
+        'aria-label': ariaLabel = 'Bar chart',
         getDatumHover,
         getScaleXTicks,
         getTruncatedXTick,
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
+        getDatumHoverValueLabel,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
         onDatumLinkClick,
+        onDatumHover,
         ...attributes
     } = props
 
     const categories = useMemo(
-        () => getGroupedCategories({ data, stacked, getCategory, getDatumName, getDatumValue }),
-        [data, stacked, getCategory, getDatumName, getDatumValue]
+        () => getGroupedCategories({ data, stacked, sortByValue, getCategory, getDatumName, getDatumValue }),
+        [data, stacked, sortByValue, getCategory, getDatumName, getDatumValue]
     )
 
     const xScale = useMemo(
@@ -70,10 +84,10 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const handleBarClick = (event: MouseEvent, datum: Datum): void => {
+    const handleBarClick = (event: MouseEvent, datum: Datum, index: number): void => {
         const link = getDatumLink(datum)
 
-        onDatumLinkClick?.(event, datum)
+        onDatumLinkClick?.(event, datum, index)
 
         if (!event.isDefaultPrevented() && link) {
             window.open(link)
@@ -81,11 +95,21 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     }
 
     return (
-        <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
+        <SvgRoot
+            {...attributes}
+            width={outerWidth}
+            height={outerHeight}
+            role="group"
+            aria-label={ariaLabel}
+            xScale={xScale}
+            yScale={yScale}
+        >
             <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
             <SvgAxisBottom
                 pixelsPerTick={pixelsPerXTick}
+                minRotateAngle={minAngleXTick}
                 maxRotateAngle={maxAngleXTick}
+                hideTicks={hideXTicks}
                 getTruncatedTick={getTruncatedXTick}
                 getScaleTicks={getScaleXTicks}
             />
@@ -107,8 +131,11 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         getDatumName={getDatumName}
                         getDatumValue={getDatumValue}
                         getDatumColor={getDatumColor}
+                        getDatumFadeColor={getDatumFadeColor}
                         getDatumLink={getDatumLink}
                         onBarClick={handleBarClick}
+                        onBarHover={onDatumHover}
+                        getDatumHoverValueLabel={getDatumHoverValueLabel}
                     />
                 )}
             </SvgContent>

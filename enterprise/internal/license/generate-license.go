@@ -3,7 +3,7 @@
 
 // Command generate-license generates a signed Sourcegraph license key.
 //
-// REQUIREMENTS
+// # REQUIREMENTS
 //
 // You must provide a private key to sign the license.
 //
@@ -12,11 +12,11 @@
 //
 // To create a test private key that will NOT generate valid licenses, use:
 //
-//   openssl genrsa -out /tmp/key.pem 2048
+//	openssl genrsa -out /tmp/key.pem 2048
 //
 // EXAMPLE
 //
-//   go run generate-license.go -private-key key.pem -tags=dev -users=100 -expires=8784h
+//	go run generate-license.go -private-key key.pem -tags=dev -users=100 -expires=8784h
 package main
 
 import (
@@ -68,7 +68,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	licenseKey, err := license.GenerateSignedKey(info, privateKey)
+	licenseKey, _, err := license.GenerateSignedKey(info, privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}

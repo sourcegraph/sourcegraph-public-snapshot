@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -31,23 +29,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
+var sanityCheck, _ = strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
+
+var (
+	baseConfig              = env.BaseConfig{}
+	RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
+	CtagsConfig             = types.LoadCtagsConfig(baseConfig)
+)
+
 const addr = ":3184"
 
-type SetupFunc func(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
+type SetupFunc func(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
 func Main(setup SetupFunc) {
 	// Initialization
 	env.HandleHelpFlag()
-	logging.Init()
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -62,29 +68,18 @@ func Main(setup SetupFunc) {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	routines := []goroutine.BackgroundRoutine{}
 
 	// Initialize tracing/metrics
 	logger := log.Scoped("service", "the symbols service")
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-symbols",
-			SampleRate: 5,
-		},
-	}
+	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+		Name:       "codeintel-symbols",
+		SampleRate: 20,
+	}))
 
 	// Allow to do a sanity check of sqlite.
-	sanityCheck, err := strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
-	if err != nil {
-		fmt.Printf("Invalid SANITY_CHECK value: %s\n", err.Error())
-		os.Exit(1)
-	}
 	if sanityCheck {
 		// Ensure we register our database driver before calling
 		// anything that tries to open a SQLite database.
@@ -101,14 +96,13 @@ func Main(setup SetupFunc) {
 	}
 
 	// Initialize main DB connection.
-	sqlDB := mustInitializeFrontendDB(logger, observationContext)
+	sqlDB := mustInitializeFrontendDB(observationCtx)
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient(db, observationContext)
-	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
-	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, db, gitserverClient, repositoryFetcher)
+	gitserverClient := gitserver.NewClient(observationCtx, db)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(observationCtx, gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000)
+	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationCtx, db, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))
 	}
@@ -120,9 +114,10 @@ func Main(setup SetupFunc) {
 
 	// Create HTTP server
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
-	handler = actor.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -135,15 +130,29 @@ func Main(setup SetupFunc) {
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
-func mustInitializeFrontendDB(logger log.Logger, observationContext *observation.Context) *sql.DB {
+func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 
-	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", observationContext)
+	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "symbols")
 	if err != nil {
-		logger.Fatal("failed to connect to database", log.Error(err))
+		observationCtx.Logger.Fatal("failed to connect to database", log.Error(err))
 	}
 
 	return db
+}
+
+func handlePanic(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				err := fmt.Sprintf("%v", rec)
+				http.Error(w, fmt.Sprintf("%v", rec), http.StatusInternalServerError)
+				logger.Error("recovered from panic", log.String("err", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }

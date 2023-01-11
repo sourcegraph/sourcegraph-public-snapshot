@@ -6,7 +6,7 @@ const path = require('path')
 const REPO_ROOT = path.join(__dirname, '../../..')
 const CSS_MODULES_GLOB = path.resolve(__dirname, '../../*/src/**/*.module.scss')
 const JETBRAINS_CSS_MODULES_GLOB = path.resolve(__dirname, '../../jetbrains/webview/**/*.module.scss')
-const TSM_COMMAND = `yarn --silent --ignore-engines --ignore-scripts tsm --logLevel error "{${CSS_MODULES_GLOB},${JETBRAINS_CSS_MODULES_GLOB}}" --includePaths node_modules client`
+const TSM_COMMAND = `yarn tsm --logLevel error "{${CSS_MODULES_GLOB},${JETBRAINS_CSS_MODULES_GLOB}}" --includePaths node_modules client`
 const [BIN, ...ARGS] = TSM_COMMAND.split(' ')
 
 /**

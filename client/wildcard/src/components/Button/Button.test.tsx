@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '../../testing'
 
 import { Button } from './Button'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
@@ -10,7 +10,7 @@ describe('Button', () => {
     })
 
     it('supports rendering as different elements', () => {
-        const { asFragment } = renderWithBrandedContext(<Button as="a">I am a link</Button>)
+        const { asFragment } = renderWithBrandedContext(<Button as="div">I am a div</Button>)
         expect(asFragment()).toMatchSnapshot()
     })
 

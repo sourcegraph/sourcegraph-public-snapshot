@@ -24,7 +24,7 @@ export const WorkspacesPanel: React.FunctionComponent<React.PropsWithChildren<Wo
             maxSize={0.45 * width}
             position="left"
             storageKey={WORKSPACES_LIST_SIZE}
-            ariaLabel="Execution workspaces sidebar"
+            ariaLabel="execution workspaces"
         >
             <Workspaces {...props} />
         </Panel>

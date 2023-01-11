@@ -9,7 +9,8 @@ WORKDIR /repo
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
-RUN cp ./target/release/syntect_server /syntect_server
+
+RUN cp ./target/release/syntect_server /syntax_highlighter
 
 ################################
 # Build http-server-stabilizer #
@@ -17,15 +18,15 @@ RUN cp ./target/release/syntect_server /syntect_server
 FROM golang:1.19-alpine@sha256:70df3b8f9f099da7f60f0b32480015165e3d0b51bfacf9e255b59f3dd6bd2828 as hss
 
 RUN apk add --no-cache git>=2.26.3
-RUN git clone --branch v1.0.5 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
+RUN git clone --branch v1.1.0 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
 WORKDIR /repo
 RUN go build -o /http-server-stabilizer .
 
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e
-COPY --from=ss syntect_server /
+FROM sourcegraph/alpine-3.14:190630_2022-12-22_6988b6221a72@sha256:782f094e3a6397a5f57305efac7b3f0e8c992eece31c98f93c1a518cc6c876e5
+COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
 
 EXPOSE 9238
@@ -52,4 +53,4 @@ ENV ROCKET_KEEP_ALIVE=0
 ENV WORKERS=4
 
 ENV QUIET=true
-CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntect_server -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntect_server"]
+CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntax_highlighter -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntax_highlighter"]

@@ -12,7 +12,6 @@ Site admins can enable search contexts on private Sourcegraph instances in **glo
 ```json
 "experimentalFeatures": {  
   "showSearchContext": true,
-  "showSearchContextManagement": true
 }
 ```
 

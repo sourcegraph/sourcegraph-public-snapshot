@@ -4,10 +4,7 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorLike } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
@@ -19,7 +16,6 @@ import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/compone
 import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
-import { ResolvedRevision } from './backend'
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
 
 import styles from './RepoHeader.module.scss'
@@ -129,23 +125,8 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
      */
     actionButtons: readonly RepoHeaderActionButton[]
 
-    /**
-     * The repository that this header is for.
-     */
-    repo:
-        | GQL.IRepository
-        | {
-              /** The repository's ID, if it has one.
-               */
-              id?: Scalars['ID']
-
-              name: string
-              url: string
-              viewerCanAdminister: boolean
-          }
-
-    /** Information about the revision of the repository. */
-    resolvedRev: ResolvedRevision | ErrorLike | undefined
+    /** The repoName from the URL */
+    repoName: string
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     revision?: string
@@ -162,6 +143,11 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     location: H.Location
     history: H.History
+
+    // This is used for testing purposes only because we're using CSS media
+    // queries to determine the container height and in storybook we can't
+    // control these.
+    forceWrap?: boolean
 }
 
 /**
@@ -171,8 +157,6 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  */
 export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onLifecyclePropsChange,
-    resolvedRev,
-    repo,
     ...props
 }) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
@@ -180,18 +164,19 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
         [setRepoHeaderContributions]
     )
+    const isLargeHook = useBreakpoint('sm')
+    const isLarge = props.forceWrap ? false : isLargeHook
+
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
 
-    const isLarge = useBreakpoint('lg')
-
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
-            repoName: repo.name,
+            repoName: props.repoName,
             encodedRev: props.revision,
         }),
-        [repo.name, props.revision]
+        [props.repoName, props.revision]
     )
 
     const leftActions = useMemo(
@@ -216,7 +201,11 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
+                <Breadcrumbs
+                    breadcrumbs={props.breadcrumbs}
+                    location={props.location}
+                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
+                />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (

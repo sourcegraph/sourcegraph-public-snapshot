@@ -1,0 +1,74 @@
+version: '2.4'
+networks:
+  sourcegraph:
+volumes:
+  executors-e2e:
+    external: true
+services:
+  # Run an external postgres so we can access it from the tester.
+  postgres:
+    container_name: postgres
+    image: '${POSTGRES_IMAGE}'
+    expose:
+      - '5432'
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: 'cat /data/pgdata-12/3.31-reindex.completed && /liveness.sh'
+      timeout: 1s
+      interval: 10s
+      retries: 10
+      start_period: 1h
+    networks:
+      - sourcegraph
+  server:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    container_name: server
+    image: '${SERVER_IMAGE}'
+    environment:
+      DEBUG: t
+      SRC_LOG_LEVEL: dbug
+      SOURCEGRAPH_LICENSE_GENERATION_KEY: '${SOURCEGRAPH_LICENSE_GENERATION_KEY}'
+      SITE_CONFIG_FILE: /e2e/site-config.json
+      PGDATASOURCE: postgres://sg@postgres:5432/sg
+    volumes:
+      - '${DATA}/config:/etc/sourcegraph'
+      - '${DATA}/data:/var/opt/sourcegraph'
+      - executors-e2e:/e2e
+    ports:
+      - '7080:7080'
+    networks:
+      - sourcegraph
+  executor:
+    container_name: executor
+    image: '${EXECUTOR_IMAGE}'
+    # Run as root (required for docker daemon control).
+    user: root
+    # Run with privileged capabilities (required for docker daemon control).
+    privileged: true
+    environment:
+      - DEBUG=t
+      - SRC_LOG_LEVEL=dbug
+      # Note: Must match `executors.frontendURL` in site config
+      - EXECUTOR_FRONTEND_URL=http://server:7080
+      # Note: Must match `executors.accessToken` in site config
+      - EXECUTOR_FRONTEND_PASSWORD=${EXECUTOR_FRONTEND_PASSWORD}
+      - EXECUTOR_QUEUE_NAME=batches
+      # Note: Must match left-hand side of scratch volume mount
+      - EXECUTOR_DOCKER_HOST_MOUNT_PATH=${TMP_DIR}
+      # Note: Must match right-hand side of scratch volume mount
+      - TMPDIR=/scratch
+      # Run as root (required for docker daemon control)
+      - UID=1000
+      - GID=1000
+      # Use the dind container to run docker commands within the executor
+      - DOCKER_HOST=${DOCKER_HOST}
+    volumes:
+      # Mount docker socket
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      # Mount volume for workspaces shared by executor and launched containers
+      - '${TMP_DIR}:/scratch'
+    networks:
+      - sourcegraph

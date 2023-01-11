@@ -73,11 +73,6 @@ const notebookFields = `
 				symbolKind
 			}
 		}
-		... on ComputeBlock {
-			__typename
-			id
-			computeInput
-		}
 	}
 `
 
@@ -150,9 +145,6 @@ func notebookFixture(creatorID int32, namespaceUserID int32, namespaceOrgID int3
 			SymbolContainerName: "container",
 			SymbolKind:          "FUNCTION",
 		}},
-		{ID: "5", Type: notebooks.NotebookComputeBlockType, ComputeInput: &notebooks.NotebookComputeBlockInput{
-			Value: "github.com/sourcegraph/sourcegraph"},
-		},
 	}
 	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: creatorID, UpdaterUserID: creatorID, NamespaceUserID: namespaceUserID, NamespaceOrgID: namespaceOrgID}
 }
@@ -207,7 +199,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -600,7 +592,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -737,7 +729,7 @@ func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
 		t.Fatal(err)
 	}

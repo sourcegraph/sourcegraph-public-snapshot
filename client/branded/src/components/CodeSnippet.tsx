@@ -31,7 +31,7 @@ export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSn
         <pre className={classNames('bg-code rounded border p-3 position-relative', className)}>
             {withCopyButton && (
                 <Button className={styles.copyButton} onClick={() => copy(code)}>
-                    <Icon className="pr-2 pt-2" svgPath={mdiContentCopy} inline={false} aria-label="Copy" />
+                    <Icon className="pr-2 pt-2" svgPath={mdiContentCopy} inline={false} aria-label="Copy snippet" />
                 </Button>
             )}
             <Code dangerouslySetInnerHTML={highlightedInput} />

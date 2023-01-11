@@ -9,7 +9,7 @@ import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 import { createNotebook } from '../backend'
 
 const LOADING = 'loading' as const
@@ -32,7 +32,7 @@ export const CreateNotebookPage: React.FunctionComponent<
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookCreated')
-        return <Redirect to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} />
+        return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', notebookOrError.id)} />
     }
 
     return (

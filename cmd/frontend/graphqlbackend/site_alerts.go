@@ -10,12 +10,12 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -71,7 +71,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 	args := AlertFuncArgs{
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:         backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
+		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
 	}
 
@@ -91,10 +91,7 @@ func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		} else if deploy.Type() != deploy.Dev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
-			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/http_https_configuration)"))
 		}
-
 		return problems
 	})
 
@@ -110,6 +107,8 @@ func init() {
 
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
+
+	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -176,6 +175,26 @@ func init() {
 
 	// Warn if customer is using GitLab on a version < 12.0.
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
+}
+
+func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
+	licenseInfo := hooks.GetLicenseInfo(args.IsSiteAdmin)
+	if licenseInfo == nil {
+		return nil
+	}
+
+	if licenseInfo.CodeScaleCloseToLimit {
+		return []*Alert{{
+			TypeValue:    AlertTypeWarning,
+			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
+		}}
+	} else if licenseInfo.CodeScaleExceededLimit {
+		return []*Alert{{
+			TypeValue:    AlertTypeError,
+			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
+		}}
+	}
+	return nil
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
@@ -372,8 +391,8 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 			log15.Debug("Detected GitLab instance running a version below 12.0.0", "version", chv.Version)
 
 			return []*Alert{{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "Warning: One or more of your code hosts is running a version of GitLab below 12.0. Sourcegraph will no longer support GitLab < 12.0 in the next major version. Please upgrade your GitLab instance(s) before upgrading Sourcegraph to version 4.0.",
+				TypeValue:    AlertTypeError,
+				MessageValue: "One or more of your code hosts is running a version of GitLab below 12.0, which is not supported by Sourcegraph. Please upgrade your GitLab instance(s) to prevent disruption.",
 			}}
 		}
 	}

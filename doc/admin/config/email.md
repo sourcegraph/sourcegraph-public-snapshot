@@ -2,16 +2,18 @@
 
 Sourcegraph uses an SMTP server of your choosing to send emails for:
 
-* [Code Monitoring](../../code_monitoring/index.md) notifications
-* Password reset requests
-* Email verification when built-in authentication is enabled
-* Inviting other users to Sourcegraph itself, or to an organization/team on Sourcegraph
+- [Code Monitoring](../../code_monitoring/index.md) notifications
+- Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
+- Important updates to a user accounts (for example, creation of API keys)
+- For [`builtin` authentication](../auth/index.md#builtin-password-authentication), password resets and email verification
+
+> NOTE: Sourcegraph Cloud customers can take advantage of mananged SMTP servers - [learn more](../../cloud/index.md#managed-smtp).
 
 ## Configuring Sourcegraph to send email via Amazon AWS / SES
 
 To use Amazon SES with Sourcegraph, first [follow these steps to create an SES account for Sourcegraph](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp-software-package.html).
 
-Navigate to your site configuration (e.g. https://sourcegraph.com/site-admin/configuration) and fill in the configuration:
+Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
 ```json
   "email.address": "from@domain.com",
@@ -32,7 +34,7 @@ Please note that the configured `email.address` (the from address) must be a ver
 
 To use Google Workspace with Sourcegraph, you will need to [create an SMTP Relay account](https://support.google.com/a/answer/2956491). Be sure to choose `Require SMTP Authentication` and `Require TLS encryption` in step 7.
 
-Navigate to your site configuration (e.g. https://sourcegraph.com/site-admin/configuration) and fill in the configuration:
+Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
 ```json
   "email.address": "test@domain.com",
@@ -57,7 +59,7 @@ Other providers such as Mailchimp and Sendgrid may also be used with Sourcegraph
 * https://mailchimp.com/developer/transactional/docs/smtp-integration/
 * https://docs.sendgrid.com/for-developers/sending-email/getting-started-smtp
 
-Once you have an SMTP account, simply navigate to your site configuration (e.g. https://sourcegraph.com/site-admin/configuration) and fill in the configuration:
+Once you have an SMTP account, simply navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
 ```json
   "email.address": "from@domain.com",
@@ -84,7 +86,7 @@ A few helpful tips:
 
 (Added in Sourcegraph v3.38)
 
-To verify email sending is working correctly, visit the GraphQL API console at e.g. https://sourcegraph.example.com/api/console and then run the following query replacing `test@example.com` with your personal email address:
+To verify email sending is working correctly, visit the GraphQL API console at e.g. `https://sourcegraph.example.com/api/console` and then run the following query replacing `test@example.com` with your personal email address:
 
 ```graphql
 mutation {

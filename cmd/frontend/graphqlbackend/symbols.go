@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
@@ -120,7 +121,7 @@ func (r symbolResolver) Location() *locationResolver {
 	stat := CreateFileInfo(r.Symbol.Path, false)
 	sr := r.Symbol.Range()
 	return &locationResolver{
-		resource: NewGitTreeEntryResolver(r.db, r.commit, stat),
+		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(r.db), r.commit, stat),
 		lspRange: &sr,
 	}
 }

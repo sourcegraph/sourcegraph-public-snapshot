@@ -1,6 +1,9 @@
 package querybuilder
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -48,10 +51,45 @@ func ParseComputeQuery(q string) (*compute.Query, error) {
 }
 
 // ParametersFromQueryPlan expects a valid query plan and returns all parameters from it, e.g. context:global.
-func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
+func ParametersFromQueryPlan(plan query.Plan) query.Parameters {
 	var parameters []query.Parameter
 	for _, basic := range plan {
 		parameters = append(parameters, basic.Parameters...)
 	}
 	return parameters
+}
+
+func ContainsField(rawQuery, field string) (bool, error) {
+	plan, err := ParseQuery(rawQuery, "literal")
+	if err != nil {
+		return false, errors.Wrap(err, "ParseQuery")
+	}
+	for _, basic := range plan {
+		if basic.Parameters.Exists(field) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// Possible reasons that a scope query is invalid.
+const containsPattern = "the query cannot be used for scoping because it contains a pattern: `%s`."
+const containsDisallowedFilter = "the query cannot be used for scoping because it contains a disallowed filter: `%s`."
+
+// IsValidScopeQuery takes a query plan and returns whether the query is a valid scope query, that is it only contains
+// repo filters or boolean predicates.
+func IsValidScopeQuery(plan searchquery.Plan) (string, bool) {
+	for _, basic := range plan {
+		if basic.Pattern != nil {
+			return fmt.Sprintf(containsPattern, basic.PatternString()), false
+		}
+		for _, parameter := range basic.Parameters {
+			field := strings.ToLower(parameter.Field)
+			// Only allowed filter is repo (including repo:has predicates).
+			if field != searchquery.FieldRepo {
+				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
+			}
+		}
+	}
+	return "", true
 }

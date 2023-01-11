@@ -1,0 +1,3 @@
+name: add_index_on_event_logs_user_id_name
+parents: [1664897165, 1666344635, 1666598990, 1666717223]
+createIndexConcurrently: true

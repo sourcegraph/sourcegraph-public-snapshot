@@ -79,7 +79,6 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 }
 
 var createBatchSpecResolutionJobQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_jobs.go:CreateBatchSpecResolutionJob
 INSERT INTO batch_spec_resolution_jobs (%s)
 VALUES ` + batchSpecResolutionJobInsertColsFmt + `
 RETURNING %s
@@ -142,7 +141,6 @@ func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpec
 }
 
 var getBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_job.go:GetBatchSpecResolutionJob
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 LIMIT 1
@@ -194,7 +192,6 @@ func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchS
 }
 
 var listBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolutionjob_job.go:ListBatchSpecResolutionJobs
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 ORDER BY id ASC

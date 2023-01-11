@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -34,9 +36,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test",
+		input:       "https://about.sourcegraph.com/test", //CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test",
+		output:      "https://about.sourcegraph.com/test", //CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",
@@ -200,42 +202,74 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
+	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	require.NoError(t, err)
+	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	require.NoError(t, err)
+	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+
+	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	require.NoError(t, err)
+	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	require.NoError(t, err)
+	user3, err := db.Users().Create(ctx, NewUser{Username: "c"})
+	require.NoError(t, err)
+	user4, err := db.Users().Create(ctx, NewUser{Username: "d"})
+	require.NoError(t, err)
+
 	now := time.Now()
 	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
+	soPublicArgument := json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 	events := []*Event{
-		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 
-		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 3, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
 
-		makeTestEvent(&Event{UserID: 5, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 6, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 7, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 8, Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
 	}
-
-	for _, e := range events {
-		if err := db.EventLogs().Insert(ctx, e); err != nil {
-			t.Fatal(err)
-		}
-	}
+	err = db.EventLogs().BulkInsert(ctx, events)
+	require.NoError(t, err)
 
 	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
-	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 3, 3, 0, 0)
-	assertUsageValue(t, values.DAUs[2], startDate, 2, 2, 0, 0)
+	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 4, 4, 0, 0)
+	assertUsageValue(t, values.DAUs[2], startDate, 3, 3, 0, 0)
+
+	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}, nil})
+	require.NoError(t, err)
+
+	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
+	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 2, 2, 0, 0)
+	assertUsageValue(t, values.DAUs[2], startDate, 1, 1, 0, 0)
 }
 
 func TestEventLogs_UsersUsageCounts(t *testing.T) {
@@ -403,6 +437,143 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
+	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	require.NoError(t, err)
+	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	require.NoError(t, err)
+	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+
+	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	require.NoError(t, err)
+	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	require.NoError(t, err)
+
+	days := map[time.Time]struct {
+		userIDs []uint32
+		names   []string
+		sources []string
+	}{
+		// Today
+		now: {
+			[]uint32{uint32(sgAdmin.ID)},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		now.Add(-time.Hour): {
+			[]uint32{uint32(soLoganID)},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This week
+		now.Add(-time.Hour * 24 * 3): {
+			[]uint32{uint32(sgAdmin.ID), uint32(user1.ID)},
+			[]string{"ViewRepository", "ViewTree"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		now.Add(-time.Hour * 24 * 4): {
+			[]uint32{uint32(soLoganID), uint32(user1.ID)},
+			[]string{"ViewRepository", "ViewTree"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This month
+		now.Add(-time.Hour * 24 * 6): {
+			[]uint32{uint32(user2.ID)},
+			[]string{"ViewSiteAdminX", "SavedSearchSlackClicked"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+	}
+
+	for day, data := range days {
+		for _, userID := range data.userIDs {
+			for _, name := range data.names {
+				for _, source := range data.sources {
+					for i := 0; i < 5; i++ {
+						e := &Event{
+							UserID: userID,
+							Name:   name,
+							URL:    "http://sourcegraph.com",
+							Source: source,
+							// Jitter current time +/- 30 minutes
+							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						}
+
+						if userID == uint32(soLoganID) {
+							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
+						}
+
+						err := db.EventLogs().Insert(ctx, e)
+						require.NoError(t, err)
+					}
+				}
+			}
+		}
+	}
+
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: false}})
+	require.NoError(t, err)
+
+	expectedSummary := types.SiteUsageSummary{
+		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                     now.Truncate(time.Hour * 24),
+		UniquesMonth:            4,
+		UniquesWeek:             3,
+		UniquesDay:              2,
+		RegisteredUniquesMonth:  4,
+		RegisteredUniquesWeek:   3,
+		RegisteredUniquesDay:    2,
+		IntegrationUniquesMonth: 4,
+		IntegrationUniquesWeek:  3,
+		IntegrationUniquesDay:   2,
+	}
+	assert.Equal(t, expectedSummary, summary)
+
+	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}})
+	require.NoError(t, err)
+
+	expectedSummary = types.SiteUsageSummary{
+		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                     now.Truncate(time.Hour * 24),
+		UniquesMonth:            2,
+		UniquesWeek:             1,
+		UniquesDay:              0,
+		RegisteredUniquesMonth:  2,
+		RegisteredUniquesWeek:   1,
+		RegisteredUniquesDay:    0,
+		IntegrationUniquesMonth: 2,
+		IntegrationUniquesWeek:  1,
+		IntegrationUniquesDay:   0,
+	}
+	assert.Equal(t, expectedSummary, summary)
 }
 
 func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
@@ -1272,20 +1443,22 @@ func makeTestEvent(e *Event) *Event {
 }
 
 func assertUsageValue(t *testing.T, v *types.SiteActivityPeriod, start time.Time, userCount, registeredUserCount, anonymousUserCount, integrationUserCount int) {
+	t.Helper()
+
 	if v.StartTime != start {
-		t.Errorf("got Start %q, want %q", v.StartTime, start)
+		t.Errorf("got StartTime %q, want %q", v.StartTime, start)
 	}
 	if int(v.UserCount) != userCount {
-		t.Errorf("got Count %d, want %d", v.UserCount, userCount)
+		t.Errorf("got UserCount %d, want %d", v.UserCount, userCount)
 	}
 	if int(v.RegisteredUserCount) != registeredUserCount {
-		t.Errorf("got Count %d, want %d", v.RegisteredUserCount, registeredUserCount)
+		t.Errorf("got RegisteredUserCount %d, want %d", v.RegisteredUserCount, registeredUserCount)
 	}
 	if int(v.AnonymousUserCount) != anonymousUserCount {
-		t.Errorf("got Count %d, want %d", v.AnonymousUserCount, anonymousUserCount)
+		t.Errorf("got AnonymousUserCount %d, want %d", v.AnonymousUserCount, anonymousUserCount)
 	}
 	if int(v.IntegrationUserCount) != integrationUserCount {
-		t.Errorf("got Count %d, want %d", v.IntegrationUserCount, integrationUserCount)
+		t.Errorf("got IntegrationUserCount %d, want %d", v.IntegrationUserCount, integrationUserCount)
 	}
 }
 
@@ -1326,4 +1499,19 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	if diff := cmp.Diff(expectedRequests, requests); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func TestEventLogs_IllegalPeriodType(t *testing.T) {
+	t.Run("calcStartDate", func(t *testing.T) {
+		_, err := calcStartDate(time.Now(), PeriodType("hackerman"), 3)
+		if err == nil {
+			t.Error("want err to not be nil")
+		}
+	})
+	t.Run("calcEndDate", func(t *testing.T) {
+		_, err := calcEndDate(time.Now(), PeriodType("hackerman"), 3)
+		if err == nil {
+			t.Error("want err to not be nil")
+		}
+	})
 }

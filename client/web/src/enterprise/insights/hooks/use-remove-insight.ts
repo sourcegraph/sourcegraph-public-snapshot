@@ -1,6 +1,6 @@
 import { useCallback, useContext, useState } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import { ErrorLike, logger } from '@sourcegraph/common'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, Insight, InsightDashboard } from '../core'
@@ -46,7 +46,7 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
                 eventLogger.log('InsightRemovalFromDashboard', { insightType }, { insightType })
             } catch (error) {
                 // TODO [VK] Improve error UI for removing
-                console.error(error)
+                logger.error(error)
                 setError(error)
             }
         },

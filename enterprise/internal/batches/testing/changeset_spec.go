@@ -32,7 +32,7 @@ type TestSpecOpts struct {
 	Title             string
 	Body              string
 	CommitMessage     string
-	CommitDiff        string
+	CommitDiff        []byte
 	CommitAuthorEmail string
 	CommitAuthorName  string
 
@@ -42,7 +42,7 @@ type TestSpecOpts struct {
 	Typ btypes.ChangesetSpecType
 }
 
-var TestChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
+var TestChangsetSpecDiffStat = &diff.Stat{Added: 15, Deleted: 7}
 
 func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 	t.Helper()
@@ -69,11 +69,10 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		Title:             opts.Title,
 		Body:              opts.Body,
 		CommitMessage:     opts.CommitMessage,
-		Diff:              []byte(opts.CommitDiff),
+		Diff:              opts.CommitDiff,
 		CommitAuthorEmail: opts.CommitAuthorEmail,
 		CommitAuthorName:  opts.CommitAuthorName,
 		DiffStatAdded:     TestChangsetSpecDiffStat.Added,
-		DiffStatChanged:   TestChangsetSpecDiffStat.Changed,
 		DiffStatDeleted:   TestChangsetSpecDiffStat.Deleted,
 		Type:              opts.Typ,
 	}

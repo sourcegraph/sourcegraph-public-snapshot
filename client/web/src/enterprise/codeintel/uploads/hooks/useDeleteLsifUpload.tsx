@@ -20,7 +20,7 @@ interface UseDeleteLsifUploadResult {
     deleteError: ApolloError | undefined
 }
 
-const DELETE_LSIF_UPLOAD = gql`
+const DELETE_LSIF_UPLOADS = gql`
     mutation DeleteLsifUpload($id: ID!) {
         deleteLSIFUpload(id: $id) {
             alwaysNil
@@ -30,7 +30,7 @@ const DELETE_LSIF_UPLOAD = gql`
 
 export const useDeleteLsifUpload = (): UseDeleteLsifUploadResult => {
     const [handleDeleteLsifUpload, { error }] = useMutation<DeleteLsifUploadResult, DeleteLsifUploadVariables>(
-        getDocumentNode(DELETE_LSIF_UPLOAD)
+        getDocumentNode(DELETE_LSIF_UPLOADS)
     )
 
     return {

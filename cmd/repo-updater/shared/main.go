@@ -11,14 +11,12 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -27,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,12 +38,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -72,8 +71,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
-	env.Lock()
-	env.HandleHelpFlag()
+
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
@@ -90,10 +89,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
+	observationCtx := observation.NewContext(logger)
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -111,7 +110,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
@@ -132,21 +131,23 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.SetMetrics(m)
 	}
 
-	cf := httpcli.ExternalClientFactory
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	cf := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
 
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		depsSvc := livedependencies.GetService(db)
-		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Logger:                logger,
+		ObservationCtx:        observationCtx,
 		Store:                 store,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -167,14 +168,13 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	syncer := &repos.Syncer{
-		Logger:  logger.Scoped("syncer", "repo syncer"),
 		Sourcer: src,
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:     make(chan repos.Diff),
-		Now:        clock,
-		Registerer: prometheus.DefaultRegisterer,
+		Synced:  make(chan repos.Diff),
+		Now:     clock,
+		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
@@ -200,11 +200,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
-	var purgeTTL time.Duration
-	if envvar.SourcegraphDotComMode() {
-		purgeTTL = 14 * 24 * time.Hour // two weeks
-	}
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", ""), db, purgeTTL)
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
+		db, conf.DefaultClient())
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
@@ -218,19 +215,16 @@ func Main(enterpriseInit EnterpriseInit) {
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	var handler http.Handler
-	{
-		m := repoupdater.NewHandlerMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
+	m := repoupdater.NewHandlerMetrics()
+	m.MustRegister(prometheus.DefaultRegisterer)
 
-		handler = repoupdater.ObservedHandler(
-			logger,
-			m,
-			opentracing.GlobalTracer(),
-		)(server.Handler())
-	}
+	handler := repoupdater.ObservedHandler(
+		logger,
+		m,
+		otel.GetTracerProvider(),
+	)(server.Handler())
 
-	globals.WatchExternalURL(nil)
+	globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
@@ -256,7 +250,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
+		Handler: instrumentation.HTTPMiddleware("",
+			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -350,7 +345,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
 			return
 		}
-		var perSecond = 1.0 // Default value
+		perSecond := 1.0 // Default value
 		perSecondParam := r.FormValue("perSecond")
 		if perSecondParam != "" {
 			perSecond, err = strconv.ParseFloat(perSecondParam, 64)
@@ -402,7 +397,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			infos[i] = providerInfo{
 				ServiceType:        p.ServiceType(),
 				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s/edit", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
 			}
 		}
 
@@ -543,11 +538,10 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		if envvar.SourcegraphDotComMode() {
 			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 			// scheduler
-			opts := database.ListIndexableReposOptions{
-				CloneStatus:    types.CloneStatusNotCloned,
-				IncludePrivate: true,
+			opts := database.ListSourcegraphDotComIndexableReposOptions{
+				CloneStatus: types.CloneStatusNotCloned,
 			}
-			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
+			indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
 			if err != nil {
 				logger.Error("listing indexable repos", log.Error(err))
 				return

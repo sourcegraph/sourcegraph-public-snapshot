@@ -72,3 +72,28 @@ func (r *repoChangesetsStatsResolver) Closed() int32 {
 func (r *repoChangesetsStatsResolver) Total() int32 {
 	return r.stats.Total
 }
+
+type globalChangesetsStatsResolver struct {
+	stats btypes.GlobalChangesetsStats
+}
+
+var _ graphqlbackend.GlobalChangesetsStatsResolver = &globalChangesetsStatsResolver{}
+
+func (r *globalChangesetsStatsResolver) Unpublished() int32 {
+	return r.stats.Unpublished
+}
+func (r *globalChangesetsStatsResolver) Open() int32 {
+	return r.stats.Open
+}
+func (r *globalChangesetsStatsResolver) Draft() int32 {
+	return r.stats.Draft
+}
+func (r *globalChangesetsStatsResolver) Merged() int32 {
+	return r.stats.Merged
+}
+func (r *globalChangesetsStatsResolver) Closed() int32 {
+	return r.stats.Closed
+}
+func (r *globalChangesetsStatsResolver) Total() int32 {
+	return r.stats.Total
+}

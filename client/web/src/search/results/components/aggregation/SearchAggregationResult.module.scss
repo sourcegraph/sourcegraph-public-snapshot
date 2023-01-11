@@ -1,0 +1,58 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card {
+    max-width: 60rem;
+    margin: 1rem auto 0;
+    border: 1px solid var(--border-color);
+}
+
+.chart-container {
+    min-height: 26rem;
+    max-height: 26rem;
+    width: 100%;
+
+    // The full UI aggregation mode has different from sidebar background colors
+    // in different themes and UI search modes (standard, simple) we have to
+    // override default sidebar chart styles in order to fit it in the full UI colors.
+    :global(.theme-dark) & [data-error-layout] rect {
+        fill: var(--gray-09);
+    }
+
+    :global(.theme-light) & [data-error-layout] rect {
+        fill: var(--gray-03);
+    }
+}
+
+.list-result {
+    margin-top: 1.5rem;
+    list-style: none;
+    padding: 0;
+
+    &:empty {
+        display: none;
+    }
+}
+
+.list-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--border-color);
+
+    &:first-child {
+        border-top: 1px solid var(--border-color);
+    }
+}

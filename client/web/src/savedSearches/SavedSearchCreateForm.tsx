@@ -6,6 +6,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -15,8 +16,9 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps, NamespaceProps {
+interface Props extends RouteComponentProps, NamespaceProps, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const

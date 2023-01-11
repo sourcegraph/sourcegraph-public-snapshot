@@ -148,7 +148,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
                     autoFocus={true}
                     spellCheck={false}
                     status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
-                    error={!urlIsValid && url && 'Enter a valid webhook URL.'}
+                    error={!urlIsValid && url ? 'Enter a valid webhook URL.' : undefined}
                 />
             </div>
         </ActionEditor>

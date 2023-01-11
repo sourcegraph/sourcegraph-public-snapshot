@@ -21,5 +21,12 @@ export const CreationUIForm = forwardRef((props, reference) => {
 export const CreationUIPreview = forwardRef((props, reference) => {
     const { as: Component = 'aside', className, ...attributes } = props
 
-    return <Component ref={reference} {...attributes} className={classNames(styles.rootLivePreview, className)} />
+    return (
+        <Component
+            {...attributes}
+            ref={reference}
+            aria-label="Code Insight live preview"
+            className={classNames(styles.rootLivePreview, className)}
+        />
+    )
 }) as ForwardReferenceComponent<'aside', {}>

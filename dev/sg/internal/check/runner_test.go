@@ -3,7 +3,6 @@ package check_test
 import (
 	"bufio"
 	"context"
-	"errors"
 	"io"
 	"os"
 	"strings"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // getOutput also writes data to os.Stdout on testing.Verbose()

@@ -1,8 +1,7 @@
-import { ComponentProps, MouseEvent, ReactElement, useMemo } from 'react'
+import { ComponentProps, MouseEvent, ReactElement, useMemo, useRef } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleBand } from '@visx/scale'
-import classNames from 'classnames'
 import { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { getBrowserName } from '@sourcegraph/common'
@@ -22,10 +21,12 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
     getDatumColor: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarHover: (datum: Datum, category: Category<Datum>) => void
+    onBarHover: (datum: Datum, category: Category<Datum>, node: Element) => void
     onBarLeave: () => void
-    onBarClick: (event: MouseEvent, datum: Datum) => void
+    onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
+    onBarFocus: (datum: Datum, category: Category<Datum>, node: Element) => void
 }
 
 const isSafari = getBrowserName() === 'safari'
@@ -41,12 +42,16 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
         getDatumLink,
         onBarHover,
         onBarLeave,
         onBarClick,
+        onBarFocus,
         ...attributes
     } = props
+
+    const rootRef = useRef<SVGGElement>(null)
 
     const xCategoriesScale = useMemo(
         () =>
@@ -59,59 +64,88 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     )
 
     const handleGroupMouseMove = (event: MouseEvent): void => {
-        const [category, datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
+        const [datum, category] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (category && datum) {
-            onBarHover(category, datum)
+            const datumName = getDatumName(datum)
+            const element = rootRef.current?.querySelector<Element>(`[data-id="${getBarId(category.id, datumName)}"]`)
+
+            if (!element) {
+                return
+            }
+
+            if (!activeSegment?.datum) {
+                onBarHover(datum, category, element)
+                return
+            }
+
+            // Do not call onBarHover every time we mouse move over the same datum
+            if (getDatumName(activeSegment.datum) !== datumName) {
+                onBarHover(datum, category, element)
+            }
         } else {
             onBarLeave()
         }
     }
 
     const handleGroupClick = (event: MouseEvent): void => {
-        const [datum] = getActiveBar({ event, xScale, xCategoriesScale, categories })
+        const [datum, , index] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
-        if (datum) {
-            onBarClick(event, datum)
+        if (datum && index !== null) {
+            onBarClick(event, datum, index)
         }
     }
 
     return (
-        <Group {...attributes} pointerEvents="bounding-rect">
+        <Group
+            {...attributes}
+            innerRef={rootRef}
+            pointerEvents="bounding-rect"
+            aria-label="Bar chart content"
+            role="list"
+        >
             {categories.map(category => (
                 <Group key={category.id} left={xScale(category.id)} height={height}>
-                    {category.data.map(datum => {
+                    {category.data.map((datum, index) => {
                         const isOneDatumCategory = category.data.length === 1
+                        const value = getDatumValue(datum)
+                        const name = getDatumName(datum)
                         const barWidth = isOneDatumCategory ? xScale.bandwidth() : xCategoriesScale.bandwidth()
-                        const barHeight = height - yScale(getDatumValue(datum))
+                        const barHeight = height - yScale(value)
                         const barX = isOneDatumCategory ? 0 : xCategoriesScale(getDatumName(datum))
                         const barY = yScale(getDatumValue(datum))
 
+                        const barColorProps =
+                            activeSegment && activeSegment.category.id !== category.id
+                                ? getDatumFadeColor
+                                    ? { fill: getDatumFadeColor(datum) }
+                                    : // We use css filters to calculate lighten/darken color for non-active bars
+                                      // CSS filters don't work in Safari for SVG elements, so we fall back on opacity
+                                      { className: styles.barFade, opacity: isSafari ? 0.5 : 1 }
+                                : {}
+
+                        const barLabelText = `${name}, Value: ${value}`
+                        const barCategoryLabelText = isOneDatumCategory
+                            ? barLabelText
+                            : `Category: ${category.id}, ${barLabelText}`
+
                         return (
                             <MaybeLink
-                                key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
+                                key={`${category.id}-${name}`}
+                                data-id={getBarId(category.id, name)}
                                 to={getDatumLink(datum)}
-                                onFocus={() => onBarHover(datum, category)}
-                                onClick={event => onBarClick(event, datum)}
+                                onFocus={event => onBarFocus(datum, category, event.target)}
+                                onClick={event => onBarClick(event, datum, index)}
+                                aria-label={barCategoryLabelText}
                             >
                                 <rect
                                     x={barX}
                                     y={barY}
                                     width={barWidth}
                                     height={barHeight}
-                                    fill={getDatumColor(datum)}
                                     rx={2}
-                                    opacity={
-                                        isSafari && activeSegment
-                                            ? activeSegment.category.id === category.id
-                                                ? 1
-                                                : 0.5
-                                            : 1
-                                    }
-                                    className={classNames({
-                                        [styles.barActive]: activeSegment && activeSegment?.category.id === category.id,
-                                        [styles.barFade]: activeSegment && activeSegment?.category.id !== category.id,
-                                    })}
+                                    fill={getDatumColor(datum)}
+                                    {...barColorProps}
                                 />
                             </MaybeLink>
                         )
@@ -123,6 +157,8 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                 width={width}
                 height={height}
                 fill="transparent"
+                opacity={0}
+                aria-hidden={true}
                 onMouseMove={handleGroupMouseMove}
                 onMouseLeave={onBarLeave}
                 onClick={handleGroupClick}
@@ -148,7 +184,9 @@ function scaleBandInvert(scale: ScaleBand<string>): (x: number) => number {
     }
 }
 
-function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | null, category: Category<Datum> | null] {
+type ActiveBarTuple<Datum> = [datum: Datum | null, category: Category<Datum> | null, index: number | null]
+
+function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Datum> {
     const { event, xCategoriesScale, categories, xScale } = input
 
     const targetRectangle = (event.currentTarget as Element).getBoundingClientRect()
@@ -159,13 +197,13 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | n
     const category = categories[categoryPossibleIndex]
 
     if (!category) {
-        return [null, null]
+        return [null, null, null]
     }
 
     const isOneDatumCategory = category.data.length === 1
 
     if (isOneDatumCategory) {
-        return [category.data[0], category]
+        return [category.data[0], category, categoryPossibleIndex]
     }
 
     const invertCategories = scaleBandInvert(xCategoriesScale)
@@ -173,8 +211,16 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | n
     const possibleBarIndex = invertCategories(xCord - categoryWindow)
 
     if (category.data[possibleBarIndex]) {
-        return [category.data[possibleBarIndex], category]
+        return [category.data[possibleBarIndex], category, possibleBarIndex]
     }
 
-    return [null, null]
+    return [null, null, null]
+}
+
+function getBarId(categoryId: string, datumName: string): string {
+    if (categoryId === datumName) {
+        return categoryId
+    }
+
+    return `${categoryId}${datumName}`
 }

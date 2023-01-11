@@ -41,7 +41,7 @@ export function dedupeWhitespace(value: string): string {
 }
 
 /**
- * Checkes whether a given string is quoted.
+ * Checks whether a given string is quoted.
  *
  * @param value string to check against
  */

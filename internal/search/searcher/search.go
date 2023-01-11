@@ -3,9 +3,12 @@ package searcher
 import (
 	"context"
 	"time"
+	"unicode/utf8"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -29,6 +32,8 @@ var textSearchLimiter = mutablelimiter.New(32)
 type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
+
+	PathRegexps []*regexp.Regexp // used for getting file path match ranges
 
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these
@@ -68,10 +73,9 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		fetchTimeout = 500 * time.Millisecond
 	}
 
-	tr.LogFields(
-		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		otlog.Int64("repos_count", int64(len(s.Repos))),
-	)
+	tr.SetAttributes(
+		attribute.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		attribute.Int64("repos_count", int64(len(s.Repos))))
 
 	if len(s.Repos) == 0 {
 		return nil, nil
@@ -107,7 +111,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 
 					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						tr.SetAttributes(
+							attribute.String("repo", string(repo.Name)),
+							attribute.String("error", err.Error()),
+							attribute.Bool("timeout", errcode.IsTimeout(err)),
+							attribute.Bool("temporary", errcode.IsTemporary(err)))
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
@@ -140,6 +148,7 @@ func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 			otlog.Bool("useFullDeadline", s.UseFullDeadline),
 			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
 			otlog.Int("numRepos", len(s.Repos)),
+			otlog.Object("pathRegexps", s.PathRegexps),
 		)
 		fallthrough
 	case job.VerbosityBasic:
@@ -188,26 +197,17 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	// Structural and hybrid search both speak to zoekt so need the endpoints.
-	var indexerEndpoints []string
-	if info.IsStructuralPat || s.Features.HybridSearch {
-		indexerEndpoints, err = search.Indexers().Map.Endpoints()
-		if err != nil {
-			return false, err
-		}
-	}
-
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches),
+			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
 }
 
 // convert converts a set of searcher matches into []result.Match
-func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch) []result.Match {
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, pathRegexps []*regexp.Regexp) []result.Match {
 	matches := make([]result.Match, 0, len(searcherMatches))
 	for _, fm := range searcherMatches {
 		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
@@ -240,6 +240,25 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 			})
 		}
 
+		var pathMatches []result.Range
+		for _, pathRe := range pathRegexps {
+			pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
+			for _, sm := range pathSubmatches {
+				pathMatches = append(pathMatches, result.Range{
+					Start: result.Location{
+						Offset: sm[0],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+					},
+					End: result.Location{
+						Offset: sm[1],
+						Line:   0,
+						Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+					},
+				})
+			}
+		}
+
 		matches = append(matches, &result.FileMatch{
 			File: result.File{
 				Path:     fm.Path,
@@ -248,6 +267,7 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				InputRev: rev,
 			},
 			ChunkMatches: chunkMatches,
+			PathMatches:  pathMatches,
 			LimitHit:     fm.LimitHit,
 		})
 	}

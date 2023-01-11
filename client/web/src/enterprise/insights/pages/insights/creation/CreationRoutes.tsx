@@ -5,7 +5,6 @@ import { Switch, Route, useRouteMatch } from 'react-router'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { useExperimentalFeatures } from '../../../../../stores'
 
 import { InsightCreationPageType } from './InsightCreationPage'
@@ -13,13 +12,7 @@ import { InsightCreationPageType } from './InsightCreationPage'
 const IntroCreationLazyPage = lazyComponent(() => import('./intro/IntroCreationPage'), 'IntroCreationPage')
 const InsightCreationLazyPage = lazyComponent(() => import('./InsightCreationPage'), 'InsightCreationPage')
 
-interface CreationRoutesProps extends TelemetryProps {
-    /**
-     * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organisation dashboard (public)
-     */
-    authenticatedUser: AuthenticatedUser
-}
+interface CreationRoutesProps extends TelemetryProps {}
 
 /**
  * Code insight sub-router for the creation area/routes.

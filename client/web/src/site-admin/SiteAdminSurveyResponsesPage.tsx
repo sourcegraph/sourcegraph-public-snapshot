@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -18,28 +19,63 @@ import {
     H2,
     H3,
     Text,
+    Card,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { SingleValueCard } from '../components/SingleValueCard'
-import { Timestamp } from '../components/time/Timestamp'
 import {
     SurveyResponseAggregateFields,
     SurveyResponseFields,
     UserWithSurveyResponseFields,
+    UserActivePeriod,
 } from '../graphql-operations'
 import {
     fetchAllSurveyResponses,
     fetchAllUsersWithSurveyResponses,
     fetchSurveyResponseAggregates,
 } from '../marketing/backend'
+import { SURVEY_QUESTIONS } from '../marketing/components/SurveyUseCaseForm'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
-import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
+import { ValueLegendItem } from './analytics/components/ValueLegendList'
 
 import styles from './SiteAdminSurveyResponsesPage.module.scss'
+
+const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: '',
+        type: 'radio',
+        id: 'user-activity-filters',
+        values: [
+            {
+                label: 'All users',
+                value: 'all',
+                tooltip: 'Show all users',
+                args: { activePeriod: UserActivePeriod.ALL_TIME },
+            },
+            {
+                label: 'Active today',
+                value: 'today',
+                tooltip: 'Show users active since this morning at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.TODAY },
+            },
+            {
+                label: 'Active this week',
+                value: 'week',
+                tooltip: 'Show users active since Monday at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_WEEK },
+            },
+            {
+                label: 'Active this month',
+                value: 'month',
+                tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_MONTH },
+            },
+        ],
+    },
+]
 
 interface SurveyResponseNodeProps {
     /**
@@ -47,8 +83,6 @@ interface SurveyResponseNodeProps {
      */
     node: SurveyResponseFields
 }
-
-interface SurveyResponseNodeState {}
 
 function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
@@ -60,50 +94,49 @@ const ScoreBadge: React.FunctionComponent<React.PropsWithChildren<{ score: numbe
     </Badge>
 )
 
-class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {
-    public state: SurveyResponseNodeState = {}
-
-    public render(): JSX.Element | null {
-        return (
-            <li className="list-group-item py-2">
-                <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                        <strong>
-                            {this.props.node.user ? (
-                                <Link to={userURL(this.props.node.user.username)}>{this.props.node.user.username}</Link>
-                            ) : this.props.node.email ? (
-                                this.props.node.email
-                            ) : (
-                                'anonymous user'
-                            )}
-                        </strong>
-                        <ScoreBadge score={this.props.node.score} />
-                    </div>
-                    <div>
-                        <Timestamp date={this.props.node.createdAt} />
-                    </div>
-                </div>
-                {(this.props.node.reason || this.props.node.better) && (
-                    <dl className="mt-3">
-                        {this.props.node.reason && this.props.node.reason !== '' && (
-                            <>
-                                <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
-                                <dd>{this.props.node.reason}</dd>
-                            </>
-                        )}
-                        {this.props.node.reason && this.props.node.better && <div className="mt-2" />}
-                        {this.props.node.better && this.props.node.better !== '' && (
-                            <>
-                                <dt>What could Sourcegraph do to provide a better product?</dt>
-                                <dd>{this.props.node.better}</dd>
-                            </>
-                        )}
-                    </dl>
+const SurveyResponseNode: React.FunctionComponent<SurveyResponseNodeProps> = props => (
+    <li className="list-group-item py-2">
+        <div className="d-flex align-items-center justify-content-between">
+            <div>
+                <strong>
+                    {props.node.user ? (
+                        <Link to={userURL(props.node.user.username)}>{props.node.user.username}</Link>
+                    ) : props.node.email ? (
+                        props.node.email
+                    ) : (
+                        'anonymous user'
+                    )}
+                </strong>
+                <ScoreBadge score={props.node.score} />
+            </div>
+            <div>
+                <Timestamp date={props.node.createdAt} />
+            </div>
+        </div>
+        {(props.node.reason || props.node.better) && (
+            <dl className="mt-3">
+                {props.node.otherUseCase && props.node.otherUseCase !== '' && (
+                    <>
+                        <dt>{SURVEY_QUESTIONS.otherUseCase}</dt>
+                        <dd>{props.node.otherUseCase}</dd>
+                    </>
                 )}
-            </li>
-        )
-    }
-}
+                {props.node.reason && props.node.reason !== '' && (
+                    <>
+                        <dt>{SURVEY_QUESTIONS.reason}</dt>
+                        <dd>{props.node.reason}</dd>
+                    </>
+                )}
+                {props.node.better && props.node.better !== '' && (
+                    <>
+                        <dt>{SURVEY_QUESTIONS.better}</dt>
+                        <dd>{props.node.better}</dd>
+                    </>
+                )}
+            </dl>
+        )}
+    </li>
+)
 
 const UserSurveyResponsesHeader: React.FunctionComponent<
     React.PropsWithChildren<{ nodes: UserWithSurveyResponseFields[] }>
@@ -180,20 +213,24 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                                         <Timestamp date={response.createdAt} />
                                         <ScoreBadge score={response.score} />
                                         <br />
-                                        {(response.reason || response.better) && <div className="mt-2" />}
+                                        {(response.otherUseCase || response.reason || response.better) && (
+                                            <div className="mt-2" />
+                                        )}
+                                        {response.otherUseCase && response.otherUseCase !== '' && (
+                                            <>
+                                                <dt>{SURVEY_QUESTIONS.otherUseCase}</dt>
+                                                <dd>{response.otherUseCase}</dd>
+                                            </>
+                                        )}
                                         {response.reason && response.reason !== '' && (
                                             <>
-                                                <dt>
-                                                    What is the most important reason for the score you gave
-                                                    Sourcegraph?
-                                                </dt>
+                                                <dt>{SURVEY_QUESTIONS.reason}</dt>
                                                 <dd>{response.reason}</dd>
                                             </>
                                         )}
-                                        {response.reason && response.better && <div className="mt-2" />}
                                         {response.better && response.better !== '' && (
                                             <>
-                                                <dt>What could Sourcegraph do to provide a better product?</dt>
+                                                <dt>{SURVEY_QUESTIONS.better}</dt>
                                                 <dd>{response.better}</dd>
                                             </>
                                         )}
@@ -235,40 +272,41 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         } else if (this.state.summary.netPromoterScore < 0) {
             npsText = `${npsText}`
         }
-        const npsClass =
+        const npsColor =
             this.state.summary.netPromoterScore > 0
-                ? 'text-success'
+                ? 'var(--success)'
                 : this.state.summary.netPromoterScore < 0
-                ? 'text-danger'
-                : 'text-info'
+                ? 'var(--danger)'
+                : 'var(--info)'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
+        const avgColor = roundAvg > 8 ? 'var(--success)' : roundAvg > 6 ? 'var(--info)' : 'var(--danger)'
         return (
-            <div className="mb-2">
-                <H3>Summary</H3>
-                <div className={styles.container}>
-                    <SingleValueCard
-                        className={styles.item}
-                        value={this.state.summary.last30DaysCount}
-                        title="Number of submissions"
-                        subTitle="Last 30 days"
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? roundAvg : '-'}
-                        title="Average score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${roundAvg} out of 10`}
-                        valueClassName={anyResults ? `text-${scoreToClassSuffix(roundAvg)}` : ''}
-                    />
-                    <SingleValueCard
-                        className={styles.item}
-                        value={anyResults ? npsText : '-'}
-                        title="Net promoter score"
-                        subTitle="Last 30 days"
-                        valueTooltip={`${npsText} (between -100 and +100)`}
-                        valueClassName={anyResults ? npsClass : ''}
-                    />
+            <div className="mb-3">
+                <div className="d-flex">
+                    <H3>Summary</H3>
+                    <Text className="ml-2 text-muted">(Last 30 days)</Text>
                 </div>
+                <Card className="d-flex justify-content-around flex-row p-5">
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={this.state.summary.last30DaysCount}
+                        description="Number of submissions"
+                    />
+                    <ValueLegendItem
+                        className={classNames('flex-1', styles.borderRight)}
+                        value={anyResults ? roundAvg : '-'}
+                        description="Average score"
+                        color={anyResults ? avgColor : undefined}
+                        tooltip={`${roundAvg} out of 10`}
+                    />
+                    <ValueLegendItem
+                        className="flex-1"
+                        value={anyResults ? npsText : '-'}
+                        description="Net promoter score"
+                        color={anyResults ? npsColor : undefined}
+                        tooltip={`${npsText} (between -100 and +100)`}
+                    />
+                </Card>
             </div>
         )
     }

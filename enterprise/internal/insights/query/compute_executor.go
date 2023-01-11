@@ -16,13 +16,13 @@ import (
 )
 
 type ComputeExecutor struct {
-	justInTimeExecutor
+	previewExecutor
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
 func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
-		justInTimeExecutor: justInTimeExecutor{
+		previewExecutor: previewExecutor{
 			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
@@ -78,11 +78,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		})
 
 		for _, group := range grouped {
-			if _, ok := groupedValues[group.Value]; ok {
-				groupedValues[group.Value] += group.Count
-			} else {
-				groupedValues[group.Value] = group.Count
-			}
+			groupedValues[group.Value] += group.Count
 		}
 	}
 

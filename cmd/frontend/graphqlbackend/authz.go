@@ -5,6 +5,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -22,10 +24,15 @@ type AuthzResolver interface {
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
+	AuthzProviderTypes(ctx context.Context) ([]string, error)
+	PermissionsSyncJobs(ctx context.Context, args *PermissionsSyncJobsArgs) (PermissionsSyncJobsConnection, error)
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
 	UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error)
+
+	// Node types
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type RepositoryIDArgs struct {
@@ -56,8 +63,9 @@ type SubRepoPermsArgs struct {
 	Repository      graphql.ID
 	UserPermissions []struct {
 		BindID       string
-		PathIncludes []string
-		PathExcludes []string
+		PathIncludes *[]string
+		PathExcludes *[]string
+		Paths        *[]string
 	}
 }
 
@@ -91,10 +99,10 @@ type BitbucketProjectsPermissionJobResolver interface {
 	InternalJobID() int32
 	State() string
 	FailureMessage() *string
-	QueuedAt() DateTime
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
-	ProcessAfter() *DateTime
+	QueuedAt() gqlutil.DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
+	ProcessAfter() *gqlutil.DateTime
 	NumResets() int32
 	NumFailures() int32
 	ProjectKey() string
@@ -110,7 +118,37 @@ type UserPermissionResolver interface {
 
 type PermissionsInfoResolver interface {
 	Permissions() []string
-	SyncedAt() *DateTime
-	UpdatedAt() DateTime
+	SyncedAt() *gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 	Unrestricted() bool
+}
+
+type PermissionsSyncJobsArgs struct {
+	Status *string
+	First  int32
+}
+
+type PermissionsSyncJobsConnection interface {
+	Nodes() []PermissionsSyncJobResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
+}
+
+type PermissionsSyncJobResolver interface {
+	Node
+
+	JobID() int32
+	Type() string
+	Status() string
+	Message() string
+	CompletedAt() *gqlutil.DateTime
+
+	Providers() ([]PermissionsProviderStateResolver, error)
+}
+
+type PermissionsProviderStateResolver interface {
+	Type() string
+	ID() string
+	Status() string
+	Message() string
 }

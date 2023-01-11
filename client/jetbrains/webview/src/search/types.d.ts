@@ -1,4 +1,4 @@
-import type { SearchPatternType } from '@sourcegraph/search'
+import type { SearchPatternType } from '../graphql-operations'
 
 import type { ActionName } from './java-to-js-bridge'
 import type { Request } from './js-to-java-bridge'
@@ -19,10 +19,11 @@ export interface Theme {
 
 export interface PluginConfig {
     instanceURL: string
-    isGlobbingEnabled: boolean
     accessToken: string | null
-    anonymousUserId: string
+    customRequestHeadersAsString: string | null
+    isGlobbingEnabled: boolean
     pluginVersion: string
+    anonymousUserId: string
 }
 
 export interface Search {

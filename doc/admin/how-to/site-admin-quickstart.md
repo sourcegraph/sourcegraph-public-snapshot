@@ -25,12 +25,6 @@ Regardless of the deployment option you choose, Sourcegraph can be self-hosted l
 ## Updating your instance 
 New versions of Sourcegraph are released monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://about.sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
 
-Regardless of the deployment type you choose, the following update rules apply: 
-- **Update one minor version at a time**, e.g., v3.26 –> v3.27 –> v3.28.
-    - Patches (e.g., vX.X.4 vs. vX.X.5) do not have to be adopted when moving between vX.X versions.
-- **Check the [update notes](../updates/index.md#update-notes) for your deployment type for any required manual actions** before updating.
-- Check [out of band migration status](../migration/index.md) before updating to avoid a necessary rollback while the migration finishes.
-
 To check the current version of your instance, go to **User menu > Site admin > Updates**.
 
 For more details on updating your instance, please refer to the [update docs](../updates/index.md).
@@ -42,6 +36,9 @@ As a Site Admin, you have the ability to control and configure the various aspec
 At the heart of managing your Sourcegraph instance is Site configuration. Site config is a JSON file that defines how the various features and functionality within Sourcegraph are set up and configured. 
 
 To access site config, go to **User menu > Site admin > Site configuration**.
+
+### Admin users configuration 
+If you need to add additional site admins, you can do so on the `/site-admin/users` page, under the actions for an individual user account. Any admin can revoke a user's admin privileges later using the same actions menu. 
 
 ### Connecting to code hosts
 Sourcegraph supports connections to and repository syncing from any Git code host. Once connected, Sourcegraph will clone and index your repos so that users can search and navigate across them. To get started, go to **User menu > Site Admin > Manage code hosts > Add code host**.
@@ -63,7 +60,7 @@ For more info, check out our complete [repository permission documentation.](../
 
 
 ### External services 
-By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and MinIO. 
+By default, Sourcegraph bundles the services it needs to operate into installations. These services include PostgreSQL, Redis, and blobstore. 
 
 Your Sourcegraph instance can also be configured to use existing external services if you wish. For more information on configuring Sourcegraph to use your external services, please reference this [documentation.](../external_services/index.md)
 

@@ -214,19 +214,6 @@ const config: Config = {
             type: 'asset/source',
         })
 
-        config.module.rules.push({
-            test: /\.elm$/,
-            exclude: /elm-stuff/,
-            use: {
-                loader: 'elm-webpack-loader',
-                options: {
-                    cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
-                    report: 'json',
-                    pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
-                },
-            },
-        })
-
         // Node.js polyfills for JetBrains plugin
         config.module.rules.push({
             test: /(?:client\/(?:shared|jetbrains)|node_modules\/https-browserify)\/.*\.(ts|tsx|js|jsx)$/,

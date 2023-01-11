@@ -27,6 +27,7 @@ on:
     - unlabeled
 jobs:
   sync-tracking-issues:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
       - uses: docker://sourcegraph/tracking-issue:latest

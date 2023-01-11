@@ -41,6 +41,7 @@ export async function build(): Promise<void> {
                 path: require.resolve('path-browserify'),
                 http: require.resolve('stream-http'),
                 https: require.resolve('https-browserify'),
+                url: require.resolve('url'),
                 util: require.resolve('util'),
             }),
             buildTimerPlugin,

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	otlog "github.com/opentracing/opentracing-go/log"
 )
 
 // commonAcronyms includes acronyms that malform the expected output of kebabCase
@@ -45,4 +47,34 @@ func kebabCase(s string) string {
 	}
 
 	return buf.String()
+}
+
+// mergeLabels flattens slices of slices of strings.
+func mergeLabels(groups ...[]string) []string {
+	size := 0
+	for _, group := range groups {
+		size += len(group)
+	}
+
+	labels := make([]string, 0, size)
+	for _, group := range groups {
+		labels = append(labels, group...)
+	}
+
+	return labels
+}
+
+// mergeLogFields flattens slices of slices of log fields.
+func mergeLogFields(groups ...[]otlog.Field) []otlog.Field {
+	size := 0
+	for _, group := range groups {
+		size += len(group)
+	}
+
+	logFields := make([]otlog.Field, 0, size)
+	for _, group := range groups {
+		logFields = append(logFields, group...)
+	}
+
+	return logFields
 }

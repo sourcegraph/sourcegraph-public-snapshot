@@ -7,9 +7,12 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -419,6 +422,49 @@ func TestGetAndSaveUser(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Sourcegraph operator actor should be propagated", func(t *testing.T) {
+		ctx := context.Background()
+
+		errNotFound := &errcode.Mock{
+			IsNotFound: true,
+		}
+		usersStore := database.NewMockUserStore()
+		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
+		externalAccountsStore := database.NewMockUserExternalAccountsStore()
+		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
+		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
+			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+			return 1, nil
+		})
+		eventLogsStore := database.NewMockEventLogStore()
+		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
+			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+			return nil
+		})
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(usersStore)
+		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
+		db.AuthzFunc.SetDefaultReturn(database.NewMockAuthzStore())
+		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
+
+		_, _, err := GetAndSaveUser(
+			ctx,
+			db,
+			GetAndSaveUserOp{
+				UserProps: database.NewUser{
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: auth.SourcegraphOperatorProviderType,
+				},
+				ExternalAccountData: extsvc.AccountData{},
+				CreateIfNotExist:    true,
+			},
+		)
+		require.NoError(t, err)
+		mockrequire.Called(t, externalAccountsStore.CreateUserAndSaveFunc)
+	})
 }
 
 type userInfo struct {

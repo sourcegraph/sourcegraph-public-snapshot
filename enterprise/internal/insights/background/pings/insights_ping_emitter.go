@@ -25,8 +25,10 @@ func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights e
 		insightsDb: insights,
 	}
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_pings_emitter", e.emit))
+	return goroutine.NewPeriodicGoroutine(
+		ctx, "insights.pings_emitter", "emits enterprise telemetry pings",
+		interval, goroutine.HandlerFunc(e.emit),
+	)
 }
 
 type InsightsPingEmitter struct {
@@ -39,13 +41,14 @@ func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 	e.logger.Info("Emitting Code Insights Pings")
 
 	type emitter func(ctx context.Context) error
-	var emitters = map[string]emitter{
+	emitters := map[string]emitter{
 		"emitInsightTotalCounts":      e.emitInsightTotalCounts,
 		"emitIntervalCounts":          e.emitIntervalCounts,
 		"emitOrgVisibleInsightCounts": e.emitOrgVisibleInsightCounts,
 		"emitTotalOrgsWithDashboard":  e.emitTotalOrgsWithDashboard,
 		"emitTotalDashboards":         e.emitTotalDashboards,
 		"emitInsightsPerDashboard":    e.emitInsightsPerDashboard,
+		"emitBackfillTime":            e.emitBackfillTime,
 		"emitTotalCountCritical":      e.emitTotalCountCritical,
 	}
 	hasError := false
@@ -199,6 +202,24 @@ func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) erro
 	}
 
 	err = e.SaveEvent(ctx, usagestats.InsightsPerDashboardPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitBackfillTime(ctx context.Context) error {
+	counts, err := e.GetBackfillTime(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetBackfillTime")
+	}
+
+	marshal, err := json.Marshal(counts)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsBackfillTimePingName, marshal)
 	if err != nil {
 		return errors.Wrap(err, "SaveEvent")
 	}

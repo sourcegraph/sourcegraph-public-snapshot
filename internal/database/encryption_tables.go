@@ -26,6 +26,7 @@ var EncryptionConfigs = []EncryptionConfig{
 	userCredentialsEncryptionConfig,
 	batchChangesSiteCredentialsEncryptionConfig,
 	webhooklogsEncryptionConfig,
+	executorSecretsEncryptionConfig,
 }
 
 var externalServicesEncryptionConfig = EncryptionConfig{
@@ -77,6 +78,17 @@ var webhooklogsEncryptionConfig = EncryptionConfig{
 	EncryptedFieldNames: []string{"request", "response"},
 	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
 	Key:                 func() encryption.Key { return keyring.Default().WebhookLogKey },
+	Limit:               5,
+}
+
+var executorSecretsEncryptionConfig = EncryptionConfig{
+	TableName:           "executor_secrets",
+	IDFieldName:         "id",
+	KeyIDFieldName:      "encryption_key_id",
+	EncryptedFieldNames: []string{"value"},
+	UpdateAsBytes:       true,
+	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
+	Key:                 func() encryption.Key { return keyring.Default().ExecutorSecretKey },
 	Limit:               5,
 }
 

@@ -11,12 +11,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -481,7 +483,11 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := (&Options{
+				NumRepos:       tt.numRepos,
+				FileMatchLimit: tt.pattern.FileMatchLimit,
+				GlobalSearch:   tt.globalSearch,
+			}).resultCountFactor()
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
@@ -812,16 +818,16 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
-		revs := make([]string, 0, len(revSpecs))
-		for _, revSpec := range revSpecs {
+		repoRevs := query.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
 			// treat empty list as HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }
@@ -895,6 +901,52 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			got := zoektFileMatchToMultilineMatches(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
+
+func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
+	zoektQueryRegexps := []*regexp.Regexp{regexp.MustCompile("python.*worker|stuff")}
+
+	cases := []struct {
+		name   string
+		input  *zoekt.FileMatch
+		output []result.Range
+	}{
+		{
+			name: "returns single path match range",
+			input: &zoekt.FileMatch{
+				FileName: "internal/python/foo/worker.py",
+			},
+			output: []result.Range{
+				{
+					Start: result.Location{Offset: 9, Line: 0, Column: 9},
+					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+				},
+			},
+		},
+		{
+			name: "returns multiple path match ranges",
+			input: &zoekt.FileMatch{
+				FileName: "internal/python/foo/worker/src/dev/python_stuff.py",
+			},
+			output: []result.Range{
+				{
+					Start: result.Location{Offset: 9, Line: 0, Column: 9},
+					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+				},
+				{
+					Start: result.Location{Offset: 42, Line: 0, Column: 42},
+					End:   result.Location{Offset: 47, Line: 0, Column: 47},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := zoektFileMatchToPathMatchRanges(tc.input, zoektQueryRegexps)
 			require.Equal(t, tc.output, got)
 		})
 	}

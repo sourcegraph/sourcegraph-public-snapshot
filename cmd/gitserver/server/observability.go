@@ -15,24 +15,24 @@ type operations struct {
 	batchLogSingle        *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	batchLogSemaphoreWait := prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "src",
 		Name:      "batch_log_semaphore_wait_duration_seconds",
 		Help:      "Time in seconds spent waiting for the global batch log semaphore",
 		Buckets:   prometheus.DefBuckets,
 	})
-	observationContext.Registerer.MustRegister(batchLogSemaphoreWait)
+	observationCtx.Registerer.MustRegister(batchLogSemaphoreWait)
 
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"gitserver_api",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("gitserver.api.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
@@ -43,7 +43,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	// own opentracing spans. This allows us to more granularly track
 	// the latency for parts of a request without noising up Prometheus.
 	subOp := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name: fmt.Sprintf("gitserver.api.%s", name),
 		})
 	}

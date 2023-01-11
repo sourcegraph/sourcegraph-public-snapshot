@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,8 +37,8 @@ func (o *settingsResolver) Contents() JSONCString {
 	return JSONCString(o.settings.Contents)
 }
 
-func (o *settingsResolver) CreatedAt() DateTime {
-	return DateTime{Time: o.settings.CreatedAt}
+func (o *settingsResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: o.settings.CreatedAt}
 }
 
 func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {

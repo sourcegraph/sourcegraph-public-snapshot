@@ -117,6 +117,10 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/.api/scip/upload") {
+		return true
+	}
+
 	// This is just a redirect to a public download
 	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
 		return true
@@ -124,6 +128,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// Authentication is performed in the webhook handler itself.
 	for _, prefix := range []string{
+		"/.api/webhooks",
 		"/.api/github-webhooks",
 		"/.api/gitlab-webhooks",
 		"/.api/bitbucket-server-webhooks",

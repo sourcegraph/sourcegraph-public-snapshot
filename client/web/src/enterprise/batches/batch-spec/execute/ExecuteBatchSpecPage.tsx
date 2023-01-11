@@ -1,28 +1,26 @@
 import React, { useMemo } from 'react'
 
 import { mdiProgressClock } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'
 import { Duration } from '../../../../components/time/Duration'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
+    BatchSpecSource,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
     Scalars,
@@ -36,7 +34,7 @@ import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
 import { ActionsMenu } from './ActionsMenu'
-import { FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import { FETCH_BATCH_SPEC_EXECUTION, queryWorkspacesList as _queryWorkspacesList } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { ExecutionStat, ExecutionStatsBar } from './ExecutionStatsBar'
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
@@ -45,25 +43,23 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+export interface AuthenticatedExecuteBatchSpecPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchChange: { name: string; namespace: Scalars['ID'] }
     batchSpecID: Scalars['ID']
     authenticatedUser: AuthenticatedUser
     /** FOR TESTING ONLY */
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     React.PropsWithChildren<AuthenticatedExecuteBatchSpecPageProps>
 > = ({ batchChange, batchSpecID, testContextState, ...props }) => {
-    const { data: batchChangeData, error: batchChangeError, loading: batchChangeLoading } = useQuery<
-        GetBatchChangeToEditResult,
-        GetBatchChangeToEditVariables
-    >(GET_BATCH_CHANGE_TO_EDIT, {
+    const {
+        data: batchChangeData,
+        error: batchChangeError,
+        loading: batchChangeLoading,
+    } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(GET_BATCH_CHANGE_TO_EDIT, {
         variables: batchChange,
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -87,6 +83,10 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
         )
     }
 
+    if (data?.node === null) {
+        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    }
+
     if (!data?.node || data.node.__typename !== 'BatchSpec' || !batchChangeData?.batchChange) {
         if (error || batchChangeError) {
             return <HeroPage icon={AlertCircleIcon} title={String(error || batchChangeError)} />
@@ -105,12 +105,9 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     )
 }
 
-interface ExecuteBatchSpecPageContentProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+interface ExecuteBatchSpecPageContentProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 const ExecuteBatchSpecPageContent: React.FunctionComponent<
@@ -131,23 +128,23 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
 > = React.memo(function MemoizedExecuteBatchSpecContent({
     isLightTheme,
     match,
-    settingsCascade,
     telemetryService,
     authenticatedUser,
     batchChange,
     batchSpec,
     errors,
+    queryWorkspacesList,
 }) {
-    const { executionURL, workspaceResolution, source, applyURL } = batchSpec
+    const { executionURL, workspaceResolution, applyURL } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
             { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
             { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-            { key: 'execution', isEnabled: source === BatchSpecSource.REMOTE, handler: { type: 'link' } },
+            { key: 'execution', isEnabled: true, handler: { type: 'link' } },
             { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
         ],
-        [applyURL, source]
+        [applyURL]
     )
 
     return (
@@ -174,15 +171,28 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         {batchSpec.source === BatchSpecSource.REMOTE ? (
                             <BatchSpecStateBadge state={batchSpec.state} />
                         ) : (
-                            <Badge variant="secondary" tooltip="This batch spec was executed with src-cli.">
-                                LOCAL
-                            </Badge>
+                            <>
+                                <VisuallyHidden>This batch spec was executed with src-cli.</VisuallyHidden>
+                                <Badge
+                                    variant="secondary"
+                                    tooltip="This batch spec was executed with src-cli."
+                                    aria-hidden={true}
+                                >
+                                    LOCAL
+                                </Badge>
+                            </>
                         )}
                     </div>
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
-                            <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                            <Icon aria-hidden={true} className={styles.durationIcon} svgPath={mdiProgressClock} />
+                            <Duration
+                                start={batchSpec.startedAt}
+                                end={batchSpec.finishedAt ?? undefined}
+                                labelPrefix={`The batch spec ${
+                                    batchSpec.finishedAt ? 'finished executing in' : 'has been executing for'
+                                }`}
+                            />
                         </ExecutionStat>
                     )}
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
@@ -205,7 +215,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                             <ConfigurationForm
                                 isReadOnly={true}
                                 batchChange={batchChange}
-                                settingsCascade={settingsCascade}
+                                authenticatedUser={authenticatedUser}
                             />
                         </>
                     )}
@@ -229,6 +239,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                             <ExecutionWorkspaces
                                 selectedWorkspaceID={match.params.workspaceID}
                                 isLightTheme={isLightTheme}
+                                queryWorkspacesList={queryWorkspacesList}
                             />
                         </>
                     )}
@@ -238,7 +249,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ExecutionWorkspaces isLightTheme={isLightTheme} />
+                            <ExecutionWorkspaces
+                                isLightTheme={isLightTheme}
+                                queryWorkspacesList={queryWorkspacesList}
+                            />
                         </>
                     )}
                 />
@@ -263,7 +277,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         )}
                         exact={true}
                     />
-                ) : null}
+                ) : (
+                    // If the batch spec is not ready to be previewed, redirect to the spec instead.
+                    <Redirect to={`${match.url}/spec`} />
+                )}
                 <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </div>

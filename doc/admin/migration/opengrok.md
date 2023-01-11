@@ -100,7 +100,7 @@ After you've set Sourcegraph up, it's time to share it with your organization. S
 
 - Create an internal document based on the [Sourcegraph tour](../../getting-started/tour.md), substituting links to and names of your organization's code. This explains how Sourcegraph helps developers perform common tasks better.
 - Encourage installation of the [browser extension](../../integration/browser_extension.md) to get Sourcegraph code navigation and search in your organization's existing code host.
-- Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/google_workspace.md) to everyone in your organization.
+- Roll out the Chrome extension using [Google Workspace automatic installation](../../integration/browser_extension/how-tos/google_workspace.md) to everyone in your organization.
 - Check the access logs for OpenGrok to see what users search for. Try searching for the same things on Sourcegraph, and ensure that you get the expected results. (Note: Sourcegraph's [search query syntax](../../code_search/reference/queries.md) differs from OpenGrok's.)
 - Monitor your Sourcegraph instance's site admin "Analytics" page to see who's using it. Ask them for specific feedback. Also seek feedback from the most frequent users of OpenGrok.
 

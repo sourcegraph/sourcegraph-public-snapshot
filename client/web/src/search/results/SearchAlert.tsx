@@ -1,10 +1,9 @@
 import React, { ReactNode } from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Alert, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -26,7 +25,16 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
     <Alert className="my-2" data-testid="alert-container" variant="info">
         <H3>{alert.title}</H3>
 
-        {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
+        {alert.description && (
+            <Markdown
+                className="mb-3"
+                dangerousInnerHTML={renderMarkdown(alert.description, {
+                    // Disable autolinks so revision specifications are not rendered as email links
+                    // (for example, "sourcegraph@4.0.1")
+                    disableAutolinks: true,
+                })}
+            />
+        )}
 
         {alert.proposedQueries && (
             <>

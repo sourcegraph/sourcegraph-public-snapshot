@@ -8,6 +8,8 @@ import (
 	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +20,7 @@ import (
 
 const sessionKey = "gitlaboauth@0"
 
-func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
 		rawURL = "https://gitlab.com/"
@@ -32,12 +34,12 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
-		OAuth2Config: func(extraScopes ...string) oauth2.Config {
+		OAuth2Config: func() oauth2.Config {
 			return oauth2.Config{
 				RedirectURL:  callbackURL,
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Scopes:       gitlab.RequestedOAuthScopes(p.ApiScope, extraScopes),
+				Scopes:       gitlab.RequestedOAuthScopes(p.ApiScope),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/authorize"}).String(),
 					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/token"}).String(),
@@ -54,7 +56,7 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(db, &sessionIssuerHelper{
+				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					db:          db,
 					CodeHost:    codeHost,
 					clientID:    p.ClientID,

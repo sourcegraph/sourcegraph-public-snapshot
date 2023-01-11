@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -15,15 +16,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -99,13 +98,13 @@ func TestNpmCloneCommand(t *testing.T) {
 				},
 			},
 		},
-		Tarballs: map[string][]byte{
-			exampleNpmVersion:  tgz1,
-			exampleNpmVersion2: tgz2,
+		Tarballs: map[string]io.Reader{
+			exampleNpmVersion:  bytes.NewReader(tgz1),
+			exampleNpmVersion2: bytes.NewReader(tgz2),
 		},
 	}
 
-	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
@@ -237,7 +236,7 @@ var _ fs.FileInfo = &fileInfo{}
 
 func (info *fileInfo) Name() string       { return path.Base(info.path) }
 func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
-func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
+func (info *fileInfo) Mode() fs.FileMode  { return 0o600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
 func (info *fileInfo) Sys() any           { return nil }

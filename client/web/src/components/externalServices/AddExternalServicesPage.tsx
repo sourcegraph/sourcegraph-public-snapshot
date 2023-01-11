@@ -1,10 +1,11 @@
 import React from 'react'
 
+import { mdiInformation } from '@mdi/js'
 import * as H from 'history'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, Button, Link, Alert, H2, H3, Text } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -32,6 +33,9 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
      */
     nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
 
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
+
     /** For testing only. */
     autoFocusForm?: boolean
 }
@@ -51,6 +55,8 @@ export const AddExternalServicesPage: React.FunctionComponent<
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
@@ -73,9 +79,21 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     userID={userID}
                     externalService={externalService}
                     autoFocusForm={autoFocusForm}
+                    externalServicesFromFile={externalServicesFromFile}
+                    allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                 />
             )
         }
+    }
+
+    const licenseInfo = window.context.licenseInfo
+    let allowedCodeHosts: AddExternalServiceOptions[] | null = null
+    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
+        allowedCodeHosts = [
+            codeHostExternalServices.github,
+            codeHostExternalServices.gitlabcom,
+            codeHostExternalServices.bitbucket,
+        ]
     }
 
     return (
@@ -132,11 +150,36 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     </div>
                 </Alert>
             )}
-            {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
-                <div className={styles.addExternalServicesPageCard} key={id}>
-                    <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                </div>
-            ))}
+            {Object.entries(codeHostExternalServices)
+                .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
+                .map(([id, externalService]) => (
+                    <div className={styles.addExternalServicesPageCard} key={id}>
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                    </div>
+                ))}
+            {allowedCodeHosts && (
+                <>
+                    <br />
+                    <Text>
+                        <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
+                        <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
+                        repositories from other code hosts.
+                    </Text>
+                    {Object.entries(codeHostExternalServices)
+                        .filter(externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1]))
+                        .map(([id, externalService]) => (
+                            <div className={styles.addExternalServicesPageCard} key={id}>
+                                <ExternalServiceCard
+                                    to={getAddURL(id)}
+                                    {...externalService}
+                                    enabled={false}
+                                    badge="enterprise"
+                                    tooltip="Upgrade to Sourcegraph Enterprise to add repositories from other code hosts"
+                                />
+                            </div>
+                        ))}
+                </>
+            )}
             {Object.entries(nonCodeHostExternalServices).length > 0 && (
                 <>
                     <br />

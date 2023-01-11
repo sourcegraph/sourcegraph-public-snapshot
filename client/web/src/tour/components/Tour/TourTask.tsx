@@ -1,19 +1,19 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react'
 
-import { mdiCheckCircle, mdiHelpCircleOutline } from '@mdi/js'
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
 import { TourNewTabLink } from './TourNewTabLink'
-import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
 import styles from './Tour.module.scss'
@@ -181,16 +181,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     src={getTourTaskStepActionValue(step, language)}
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
-                            )}
-                            {step.tooltip && (
-                                <Tooltip content={step.tooltip}>
-                                    <Icon
-                                        size="sm"
-                                        className={classNames('ml-1', styles.colorLink)}
-                                        aria-label={step.tooltip}
-                                        svgPath={mdiHelpCircleOutline}
-                                    />
-                                </Tooltip>
                             )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon

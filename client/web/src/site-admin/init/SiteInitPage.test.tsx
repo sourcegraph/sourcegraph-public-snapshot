@@ -1,6 +1,6 @@
 import { createMemoryHistory } from 'history'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteInitPage } from './SiteInitPage'
 

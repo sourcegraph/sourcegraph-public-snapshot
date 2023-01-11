@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,6 +45,7 @@ type MergeRequest struct {
 	TargetBranch           string            `json:"target_branch"`
 	WebURL                 string            `json:"web_url"`
 	WorkInProgress         bool              `json:"work_in_progress"`
+	Draft                  bool              `json:"draft"`
 	Author                 User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
@@ -56,23 +59,36 @@ type MergeRequest struct {
 	ResourceStateEvents []*ResourceStateEvent
 }
 
-// IsWIP returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
-func IsWIP(title string) bool {
+// IsWIPOrDraft returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
+func IsWIPOrDraft(title string) bool {
 	return strings.HasPrefix(title, "Draft:") || strings.HasPrefix(title, "WIP:")
 }
 
-// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
-func SetWIP(title string) string {
-	if IsWIP(title) {
-		return title
+// SetWIPOrDraft ensures the title is prefixed with either "WIP:" or "Draft: " depending on the Gitlab version.
+func SetWIPOrDraft(t string, v *semver.Version) string {
+	// Gitlab >=14.0 requires the prefix of a draft MR to be "Draft:"
+	if v.Major() >= 14 {
+		return setDraft(t)
 	}
-	return "WIP: " + title
+	return setWIP(t)
+}
+
+// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
+func setWIP(title string) string {
+	t := UnsetWIPOrDraft(title)
+	return "WIP: " + t
+}
+
+// SetDraft ensures a "Draft:" prefix on the given title. If a "WIP:" prefix is found, we strip it off.
+func setDraft(title string) string {
+	t := UnsetWIPOrDraft(title)
+	return "Draft: " + t
 }
 
 // UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
 // Depending on the GitLab version, either of them are used so we need to strip them both.
-func UnsetWIP(title string) string {
-	return strings.TrimPrefix(strings.TrimPrefix(title, "WIP: "), "Draft: ")
+func UnsetWIPOrDraft(title string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(title, "Draft: "), "WIP: ")
 }
 
 type DiffRefs struct {

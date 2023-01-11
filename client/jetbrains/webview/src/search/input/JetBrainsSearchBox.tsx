@@ -5,7 +5,6 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -14,6 +13,7 @@ import {
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -57,8 +57,6 @@ export interface JetBrainsSearchBoxProps
     /** Don't show search help button */
     hideHelpButton?: boolean
 
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
-
     /** Set in JSContext only available to the web app. */
     isExternalServicesUserModeAll?: boolean
 
@@ -98,13 +96,12 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
-                            defaultSearchContextSpec={props.defaultSearchContextSpec}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             fetchSearchContexts={props.fetchSearchContexts}
-                            fetchAutoDefinedSearchContexts={props.fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
                             platformContext={props.platformContext}

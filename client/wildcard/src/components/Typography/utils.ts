@@ -11,15 +11,15 @@ export interface TypographyProps {
     as?: React.ElementType
 }
 
-interface GetAlignmentStyleParameters {
+export interface GetAlignmentStyleParameters {
     alignment?: typeof TYPOGRAPHY_ALIGNMENTS[number]
 }
 
-interface GetModeStyleParameters {
+export interface GetModeStyleParameters {
     mode?: typeof TYPOGRAPHY_MODES[number]
 }
 
-interface GetFontWeightStyleParameters {
+export interface GetFontWeightStyleParameters {
     weight?: typeof TYPOGRAPHY_WEIGHTS[number]
 }
 

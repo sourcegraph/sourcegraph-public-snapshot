@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -46,7 +47,7 @@ func TestNullIDResilience(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	sr := New(store.New(db, &observation.TestContext, nil))
+	sr := New(store.New(db, &observation.TestContext, nil), gitserver.NewMockClient())
 
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -64,18 +65,22 @@ func TestNullIDResilience(t *testing.T) {
 		marshalBatchChangesCredentialID(0, true),
 		marshalBulkOperationID(""),
 		marshalBatchSpecWorkspaceID(0),
+		marshalWorkspaceFileRandID(""),
 	}
 
 	for _, id := range ids {
 		var response struct{ Node struct{ ID string } }
 
 		query := `query($id: ID!) { node(id: $id) { id } }`
-		if errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query); len(errs) > 0 {
-			t.Errorf("GraphQL request failed: %#+v", errs[0])
+		errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query)
+
+		if len(errs) != 1 {
+			t.Errorf("expected 1 error, got %d errors", len(errs))
 		}
 
-		if have, want := response.Node.ID, ""; have != want {
-			t.Errorf("node has wrong ID. have=%q, want=%q", have, want)
+		err := errs[0]
+		if !errors.Is(err, ErrIDIsZero{}) {
+			t.Errorf("expected=%#+v, got=%#+v", ErrIDIsZero{}, err)
 		}
 	}
 
@@ -437,7 +442,6 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +565,6 @@ func TestApplyBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -678,7 +681,6 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +714,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	// But third time should work because a different namespace + the same name is okay
-	orgID := bt.InsertTestOrg(t, db, "my-org")
+	orgID := bt.CreateTestOrg(t, db, "my-org").ID
 	namespaceID2 := relay.MarshalID("Org", orgID)
 
 	input2 := map[string]any{
@@ -848,7 +850,6 @@ func TestCreateBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -930,7 +931,6 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1149,11 +1149,11 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 		},
 		{
 			name:          "ApplyBatchChange at limit",
-			numChangesets: 5,
+			numChangesets: 10,
 		},
 		{
 			name:          "ApplyBatchChange over limit",
-			numChangesets: 6,
+			numChangesets: 11,
 		},
 	}
 	for _, test := range tests {
@@ -1212,7 +1212,7 @@ func TestMoveBatchChange(t *testing.T) {
 	userID := user.ID
 
 	orgName := "move-batch-change-test"
-	orgID := bt.InsertTestOrg(t, db, orgName)
+	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
@@ -1239,7 +1239,6 @@ func TestMoveBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1507,7 +1506,6 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1657,7 +1655,6 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1742,7 +1739,6 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1853,7 +1849,6 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1965,7 +1960,6 @@ func TestMergeChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2077,7 +2071,6 @@ func TestCloseChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2211,7 +2204,6 @@ func TestPublishChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2312,7 +2304,6 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2394,7 +2385,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `
@@ -2471,7 +2462,3 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 `
 
 func stringPtr(s string) *string { return &s }
-
-func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-}

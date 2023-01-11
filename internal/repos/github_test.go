@@ -1,11 +1,9 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,11 +14,7 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	gogithub "github.com/google/go-github/v31/github"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -141,51 +135,6 @@ func setUpRcache(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-}
-
-func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
-	setUpRcache(t)
-
-	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
-	gheToken := prepareGheToken(t, fixtureName)
-
-	service := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://ghe.sgdev.org",
-			Token: gheToken,
-		})),
-	}
-
-	factory, save := newClientFactory(t, fixtureName)
-	defer save(t)
-
-	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), service, factory)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	results := make(chan *githubResult)
-	go func() {
-		githubSrc.listPublic(context.Background(), results)
-		close(results)
-	}()
-
-	for result := range results {
-		if result.err != nil {
-			t.Error("unexpected error, expected repository instead")
-		}
-	}
-}
-
-func prepareGheToken(t *testing.T, fixtureName string) string {
-	gheToken := os.Getenv("GHE_TOKEN")
-
-	if update(fixtureName) && gheToken == "" {
-		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
-	}
-	return gheToken
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
@@ -330,6 +279,12 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			schema: &schema.GitHubConnection{
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "gh/{nameWithOwner}",
+			},
+		}, {
+			name: "name-with-owner",
+			schema: &schema.GitHubConnection{
+				Url:                   "https://github.com",
+				RepositoryPathPattern: "{nameWithOwner}",
 			},
 		},
 	}
@@ -769,101 +724,4 @@ type mockDoer struct {
 
 func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
-}
-
-func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
-	ctx := context.Background()
-	now := time.Now()
-
-	baseURL, err := url.Parse(schema.DefaultGitHubURL)
-	require.NoError(t, err)
-
-	wantToken := "app-token"
-	wantTokenExpiresAt := time.Now().Add(10 * time.Minute).UTC()
-
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(_ context.Context, _ []schema.AuthProviders, _ int64, update *database.ExternalServiceUpdate) error {
-		require.NotNil(t, update.Config)
-		want := fmt.Sprintf(`{
-  "token": %q, "repos": []}`, wantToken)
-		assert.Equal(t, want, *update.Config)
-
-		require.NotNil(t, update.TokenExpiresAt)
-		assert.Equal(t, wantTokenExpiresAt, *update.TokenExpiresAt)
-		return nil
-	})
-
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			if r.URL.Path != "/app/installations/1234/access_tokens" {
-				return nil, errors.Errorf("unexpected URL path %q", r.URL.Path)
-			}
-
-			token := gogithub.InstallationToken{
-				Token:     &wantToken,
-				ExpiresAt: &wantTokenExpiresAt,
-			}
-
-			respJSON, err := json.Marshal(token)
-			if err != nil {
-				return nil, errors.Wrap(err, "marshal JSON")
-			}
-
-			return &http.Response{
-				Status:     http.StatusText(http.StatusCreated),
-				StatusCode: http.StatusCreated,
-				Body:       io.NopCloser(bytes.NewReader(respJSON)),
-			}, nil
-		},
-	}
-	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
-
-	tests := []struct {
-		name           string
-		config         string
-		tokenExpiresAt *time.Time
-		wantUpdate     bool
-	}{
-		{
-			name:           "unexpired token",
-			config:         fmt.Sprintf(`{"token": %q}`, wantToken),
-			tokenExpiresAt: &wantTokenExpiresAt,
-		},
-		{
-			name:           "empty token",
-			config:         `{"token": "", "repos": []}`,
-			tokenExpiresAt: &wantTokenExpiresAt,
-			wantUpdate:     true,
-		},
-		{
-			name:           "token without expiration time",
-			config:         `{"token": "bad-token", "repos": []}`,
-			tokenExpiresAt: nil,
-			wantUpdate:     true,
-		},
-		{
-			name:           "expired token",
-			config:         `{"token": "expired-token", "repos": []}`,
-			tokenExpiresAt: &now,
-			wantUpdate:     true,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			svc := &types.ExternalService{
-				ID:             1,
-				Kind:           extsvc.KindGitHub,
-				Config:         extsvc.NewUnencryptedConfig(test.config),
-				TokenExpiresAt: test.tokenExpiresAt,
-			}
-
-			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, logtest.Scoped(t), externalServices, svc, client, 1234)
-			require.NoError(t, err)
-			assert.Equal(t, wantToken, gotToken)
-
-			if test.wantUpdate {
-				mockrequire.Called(t, externalServices.UpdateFunc)
-			}
-		})
-	}
 }

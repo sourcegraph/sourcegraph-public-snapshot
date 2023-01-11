@@ -12,18 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// validateExtensionManifest validates a JSON extension manifest for syntax.
-//
-// TODO(sqs): Also validate it against the JSON Schema.
-func validateExtensionManifest(text string) error {
-	var o any
-	return jsonc.Unmarshal(text, &o)
-}
 
 // getLatestRelease returns the release with the extension manifest as JSON. If there are no
 // releases, it returns a nil manifest. If the manifest has no "url" field itself, a "url" field

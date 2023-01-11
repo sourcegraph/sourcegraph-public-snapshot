@@ -3,8 +3,8 @@ import React, { useMemo, useState } from 'react'
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
@@ -25,11 +25,10 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
 
     // Debt: lift this shared query up to HistorySidebarView.
     const recentRepositoriesResult = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext), [
-            authenticatedUser.id,
-            itemsToLoad,
-            platformContext,
-        ])
+        useMemo(
+            () => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext),
+            [authenticatedUser.id, itemsToLoad, platformContext]
+        )
     )
 
     if (!recentRepositoriesResult) {

@@ -1,0 +1,42 @@
+Renames stdlib x509 package to cacert for update.bash
+
+diff --git a/cmd/gitserver/server/internal/cacert/root_linux.go b/cmd/gitserver/server/internal/cacert/root_linux.go
+index e32989b999..04024be2c9 100644
+--- a/cmd/gitserver/server/internal/cacert/root_linux.go
++++ b/cmd/gitserver/server/internal/cacert/root_linux.go
+@@ -2,7 +2,7 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-package x509
++package cacert
+ 
+ // Possible certificate files; stop after finding one.
+ var certFiles = []string{
+diff --git a/cmd/gitserver/server/internal/cacert/root_unix.go b/cmd/gitserver/server/internal/cacert/root_unix.go
+index aa54f891ca..dd85298ce0 100644
+--- a/cmd/gitserver/server/internal/cacert/root_unix.go
++++ b/cmd/gitserver/server/internal/cacert/root_unix.go
+@@ -2,9 +2,9 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-//go:build aix || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
++//go:build linux
+ 
+-package x509
++package cacert
+ 
+ import (
+ 	"io/fs"
+@@ -25,10 +25,6 @@ const (
+ 	certDirEnv = "SSL_CERT_DIR"
+ )
+ 
+-func (c *Certificate) systemVerify(opts *VerifyOptions) (chains [][]*Certificate, err error) {
+-	return nil, nil
+-}
+-
+ func loadSystemRoots() (*CertPool, error) {
+ 	roots := NewCertPool()
+ 

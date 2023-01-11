@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiChevronDown, mdiChevronRight, mdiOpenInNew } from '@mdi/js'
+import { mdiAlertCircle, mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     EventStatus,
     MonitorActionEvents,
@@ -61,9 +61,9 @@ export const TriggerEvent: React.FunctionComponent<
             <div className="d-flex align-items-center">
                 <Button onClick={toggleExpanded} className={classNames('d-block', styles.expandButton)}>
                     {expanded ? (
-                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse run." />
+                        <Icon svgPath={mdiChevronUp} className="mr-2" aria-label="Collapse run." />
                     ) : (
-                        <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand run." />
+                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Expand run." />
                     )}
 
                     {hasError ? (

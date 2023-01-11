@@ -113,12 +113,16 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_gitserver_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nINSERT INTO gitserver_repos\n(repo_id, shard_id)\nVALUES (NEW.id, '');\nRETURN NULL;\nEND;\n$function$\n"
     },
     {
+      "Name": "func_insert_zoekt_repo",
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_zoekt_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);\n\n  RETURN NULL;\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_lsif_uploads_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE lsif_uploads_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE upload_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_lsif_uploads_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        content_type,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            NEW.content_type,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_lsif_uploads_transition_columns_diff",
@@ -126,7 +130,7 @@
     },
     {
       "Name": "func_lsif_uploads_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            content_type,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                NEW.content_type,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_row_to_configuration_policies_transition_columns",
@@ -189,6 +193,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\n STRICT\nAS $function$\nBEGIN\n    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\nEND;\n$function$\n"
     },
     {
+      "Name": "update_codeintel_path_ranks_updated_at_column",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
       "Name": "versions_insert_row_trigger",
       "Definition": "CREATE OR REPLACE FUNCTION public.versions_insert_row_trigger()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.first_version = NEW.version;\n    RETURN NEW;\nEND $function$\n"
     }
@@ -245,6 +253,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "batch_spec_workspace_files_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -375,6 +392,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeintel_autoindex_queue_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "codeintel_langugage_support_requests_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -394,6 +420,24 @@
     },
     {
       "Name": "codeintel_lockfiles_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_path_rank_inputs_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_ranking_exports_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -475,6 +519,24 @@
     },
     {
       "Name": "executor_heartbeats_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "executor_secret_access_logs_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "executor_secrets_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -654,6 +716,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "namespace_permissions_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "notebooks_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -708,6 +779,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "permissions_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "phabricator_repos_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -740,6 +820,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "roles_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -848,6 +937,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "webhooks_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     }
@@ -1139,7 +1237,7 @@
           "Name": "batch_spec_id",
           "Index": 10,
           "TypeName": "bigint",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1345,6 +1443,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "batch_change_name_is_valid",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (name ~ '^[\\w.-]+$'::text)"
+        },
         {
           "Name": "batch_changes_batch_spec_id_fkey",
           "ConstraintType": "f",
@@ -1908,6 +2013,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_resolution_jobs_pkey ON batch_spec_resolution_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "batch_spec_resolution_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_resolution_jobs_state ON batch_spec_resolution_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -2141,6 +2256,19 @@
           "Comment": ""
         },
         {
+          "Name": "version",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "1",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "worker_hostname",
           "Index": 11,
           "TypeName": "text",
@@ -2276,6 +2404,184 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "batch_spec_workspace_files",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "batch_spec_id",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "content",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "filename",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('batch_spec_workspace_files_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "modified_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "path",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "rand_id",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "size",
+          "Index": 6,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "batch_spec_workspace_files_batch_spec_id_filename_path",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_files_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_files_pkey ON batch_spec_workspace_files USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "batch_spec_workspace_files_rand_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "batch_spec_workspace_files_batch_spec_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "batch_specs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -2740,6 +3046,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX batch_specs_pkey ON batch_specs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "batch_specs_unique_rand_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "batch_specs_rand_id",
@@ -3404,19 +3720,6 @@
           "Comment": ""
         },
         {
-          "Name": "diff_stat_changed",
-          "Index": 8,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "diff_stat_deleted",
           "Index": 9,
           "TypeName": "integer",
@@ -3598,6 +3901,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "changeset_specs_unique_rand_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX changeset_specs_unique_rand_id ON changeset_specs USING btree (rand_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "changeset_specs_batch_spec_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -3665,6 +3978,13 @@
           "RefTableName": "batch_specs",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "changeset_specs_published_valid_values",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (published = 'true'::text OR published = 'false'::text OR published = '\"draft\"'::text OR published IS NULL)"
         },
         {
           "Name": "changeset_specs_repo_id_fkey",
@@ -3781,19 +4101,6 @@
         {
           "Name": "diff_stat_added",
           "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "diff_stat_changed",
-          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -5998,6 +6305,195 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_autoindex_queue",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_autoindex_queue_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "processed_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "rev",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_autoindex_queue_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_autoindex_queue_pkey ON codeintel_autoindex_queue USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_autoindex_queue_repository_id_commit",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_commit_dates",
+      "Comment": "Maps commits within a repository to the commit date as reported by gitserver.",
+      "Columns": [
+        {
+          "Name": "commit_bytea",
+          "Index": 2,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identifies the 40-character commit hash."
+        },
+        {
+          "Name": "committed_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The commit date (may be -infinity if unresolvable)."
+        },
+        {
+          "Name": "repository_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identifies a row in the `repo` table."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_commit_dates_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_commit_dates_pkey ON codeintel_commit_dates USING btree (repository_id, commit_bytea)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repository_id, commit_bytea)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_inference_scripts",
+      "Comment": "Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.",
+      "Columns": [
+        {
+          "Name": "insert_timestamp",
+          "Index": 1,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "script",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_langugage_support_requests",
       "Comment": "",
       "Columns": [
@@ -6430,6 +6926,340 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_path_rank_inputs",
+      "Comment": "Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.",
+      "Columns": [
+        {
+          "Name": "graph_key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_path_rank_inputs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "input_filename",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "payload",
+          "Index": 5,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "precision",
+          "Index": 7,
+          "TypeName": "double precision",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "processed",
+          "Index": 6,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_name",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_graph_key_input_filename_reposit_key ON codeintel_path_rank_inputs USING btree (graph_key, input_filename, repository_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (graph_key, input_filename, repository_name)"
+        },
+        {
+          "Name": "codeintel_path_rank_inputs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_pkey ON codeintel_path_rank_inputs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_path_rank_inputs_graph_key_repository_name_id_process",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_path_ranks",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "graph_key",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "payload",
+          "Index": 2,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "precision",
+          "Index": 3,
+          "TypeName": "double precision",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_path_ranks_repository_id_precision",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, \"precision\")",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_path_ranks_updated_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "update_codeintel_path_ranks_updated_at",
+          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"
+        }
+      ]
+    },
+    {
+      "Name": "codeintel_ranking_exports",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "graph_key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_exports_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "locked_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "object_prefix",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_ranking_exports_graph_key_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_ranking_exports_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_pkey ON codeintel_ranking_exports USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeintel_ranking_exports_upload_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_uploads",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "configuration_policies_audit_logs",
       "Comment": "",
       "Columns": [
@@ -6541,6 +7371,19 @@
       "Name": "critical_and_site_config",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "author_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user."
+        },
         {
           "Name": "contents",
           "Index": 3,
@@ -7509,12 +8352,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "event_logs_name",
+          "Name": "event_logs_name_timestamp",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING btree (name)",
+          "IndexDefinition": "CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, \"timestamp\" DESC)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -7555,6 +8398,26 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_user_id_name",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_user_id_timestamp",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_user_id_timestamp ON event_logs USING btree (user_id, \"timestamp\")",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -7877,6 +8740,315 @@
         }
       ],
       "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "executor_secret_access_logs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "executor_secret_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('executor_secret_access_logs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "machine_user",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "executor_secret_access_logs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secret_access_logs_pkey ON executor_secret_access_logs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "executor_secret_access_logs_executor_secret_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "executor_secrets",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "executor_secret_access_logs_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "user_id_or_machine_user",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (user_id IS NULL AND machine_user \u003c\u003e ''::text OR user_id IS NOT NULL AND machine_user = ''::text)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "executor_secrets",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "creator_id",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "NULL, if the user has been deleted."
+        },
+        {
+          "Name": "encryption_key_id",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('executor_secrets_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace_org_id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "scope",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "value",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "executor_secrets_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_pkey ON executor_secrets USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "executor_secrets_unique_key_global",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "executor_secrets_unique_key_namespace_org",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "executor_secrets_unique_key_namespace_user",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "executor_secrets_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "executor_secrets_namespace_org_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "orgs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "executor_secrets_namespace_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -8484,6 +9656,84 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "repo_sync_errors",
+          "Index": 17,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of times an error occurred syncing a repo during this sync job."
+        },
+        {
+          "Name": "repos_added",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of new repos discovered during this sync job."
+        },
+        {
+          "Name": "repos_deleted",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of repos deleted as a result of this sync job."
+        },
+        {
+          "Name": "repos_modified",
+          "Index": 20,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of existing repos whose metadata has changed during this sync job."
+        },
+        {
+          "Name": "repos_synced",
+          "Index": 16,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of repos synced during this sync job."
+        },
+        {
+          "Name": "repos_unmodified",
+          "Index": 21,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of existing repos whose metadata did not change during this sync job."
         },
         {
           "Name": "started_at",
@@ -9404,6 +10654,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX gitserver_relocator_jobs_pkey ON gitserver_relocator_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "gitserver_relocator_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
@@ -9425,6 +10685,32 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "corrupted_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Timestamp of when repo corruption was detected"
+        },
+        {
+          "Name": "corruption_logs",
+          "Index": 11,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'[]'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Log output of repo corruptions that have been detected - encoded as json"
         },
         {
           "Name": "last_changed",
@@ -9530,6 +10816,16 @@
           "ConstraintDefinition": "PRIMARY KEY (repo_id)"
         },
         {
+          "Name": "gitserver_repo_size_bytes",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repo_size_bytes ON gitserver_repos USING btree (repo_size_bytes)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_cloned_status_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -9550,6 +10846,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "gitserver_repos_last_changed_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_last_changed_idx ON gitserver_repos USING btree (last_changed, repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_last_error_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -9566,6 +10872,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status = 'not_cloned'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "gitserver_repos_not_explicitly_cloned_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status \u003c\u003e 'cloned'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -9979,6 +11295,19 @@
           "TypeName": "text",
           "IsNullable": true,
           "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "trace_id",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -10867,6 +12196,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX lsif_dependency_indexing_jobs_pkey1 ON lsif_dependency_indexing_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_dependency_indexing_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -11167,6 +12506,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_dependency_syncing_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -11609,6 +12958,19 @@
           "Comment": ""
         },
         {
+          "Name": "requested_envvars",
+          "Index": 25,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "root",
           "Index": 13,
           "TypeName": "text",
@@ -11620,6 +12982,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The working directory of the indexer image relative to the repository root."
+        },
+        {
+          "Name": "should_reindex",
+          "Index": 24,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "started_at",
@@ -11988,6 +13363,19 @@
           "Comment": ""
         },
         {
+          "Name": "manager",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The package manager name."
+        },
+        {
           "Name": "name",
           "Index": 3,
           "TypeName": "text",
@@ -12088,19 +13476,6 @@
           "Comment": "The identifier of the upload that references the package."
         },
         {
-          "Name": "filter",
-          "Index": 5,
-          "TypeName": "bytea",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package."
-        },
-        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -12112,6 +13487,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "manager",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The package manager name."
         },
         {
           "Name": "name",
@@ -12356,6 +13744,19 @@
           "Comment": ""
         },
         {
+          "Name": "content_type",
+          "Index": 34,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'application/x-ndjson+lsif'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support."
+        },
+        {
           "Name": "execution_logs",
           "Index": 22,
           "TypeName": "json[]",
@@ -12460,6 +13861,32 @@
           "Comment": ""
         },
         {
+          "Name": "last_reconcile_at",
+          "Index": 33,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_referenced_scan_at",
+          "Index": 31,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this upload was known to be referenced by another (possibly expired) index."
+        },
+        {
           "Name": "last_retention_scan_at",
           "Index": 25,
           "TypeName": "timestamp with time zone",
@@ -12471,6 +13898,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The last time this upload was checked against data retention policies."
+        },
+        {
+          "Name": "last_traversal_scan_at",
+          "Index": 32,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this upload was known to be reachable by a non-expired index."
         },
         {
           "Name": "num_failures",
@@ -12588,6 +14028,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The path for which the index can resolve code intelligence relative to the repository root."
+        },
+        {
+          "Name": "should_reindex",
+          "Index": 35,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "started_at",
@@ -12733,6 +14186,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "lsif_uploads_last_reconcile_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_reconcile_at, id) WHERE state = 'completed'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_uploads_repository_id_commit",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -12810,6 +14273,19 @@
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "content_type",
+          "Index": 17,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'application/x-ndjson+lsif'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -12963,7 +14439,7 @@
         {
           "Name": "upload_size",
           "Index": 10,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -13010,6 +14486,60 @@
         }
       ],
       "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_uploads_reference_counts",
+      "Comment": "A less hot-path reference count for upload records.",
+      "Columns": [
+        {
+          "Name": "reference_count",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of references to the associated upload from other records (via lsif_references)."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the referenced upload."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_uploads_reference_counts_upload_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_uploads_reference_counts_upload_id_key ON lsif_uploads_reference_counts USING btree (upload_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (upload_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "lsif_uploads_reference_counts_upload_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_uploads",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -13070,6 +14600,16 @@
         }
       ],
       "Indexes": [
+        {
+          "Name": "lsif_uploads_visible_at_tip_is_default_branch",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
         {
           "Name": "lsif_uploads_visible_at_tip_repository_id_upload_id",
           "IsPrimaryKey": false,
@@ -13311,6 +14851,136 @@
           "RefTableName": "users",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "namespace_permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "action",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('namespace_permissions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "resource_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "namespace_permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX namespace_permissions_pkey ON namespace_permissions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "unique_resource_permission",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, action, user_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (namespace, resource_id, action, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "action_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "namespace_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (namespace \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "namespace_permissions_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -14621,6 +16291,103 @@
       "Triggers": []
     },
     {
+      "Name": "permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "action",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('permissions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX permissions_pkey ON permissions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "permissions_unique_namespace_action",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "action_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "namespace_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (namespace \u003c\u003e ''::text)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "phabricator_repos",
       "Comment": "",
       "Columns": [
@@ -15726,6 +17493,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "repo_dotcom_indexable_repos_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars \u003e= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\\.fedoraproject\\.org|maven|npm|jdk)'::text)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_fork",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -15863,6 +17640,10 @@
         }
       ],
       "Triggers": [
+        {
+          "Name": "trig_create_zoekt_repo_on_repo_insert",
+          "Definition": "CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()"
+        },
         {
           "Name": "trig_delete_repo_ref_on_external_service_repos",
           "Definition": "CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()"
@@ -16220,6 +18001,183 @@
       "Triggers": []
     },
     {
+      "Name": "role_permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "permission_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "role_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "role_permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX role_permissions_pkey ON role_permissions USING btree (permission_id, role_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (permission_id, role_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "role_permissions_permission_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "permissions",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "role_permissions_role_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "roles",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "roles",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "deleted_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('roles_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The uniquely identifying name of the role."
+        },
+        {
+          "Name": "readonly",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to indicate whether a role is read-only or can be modified."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "roles_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX roles_name ON roles USING btree (name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (name)"
+        },
+        {
+          "Name": "roles_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX roles_pkey ON roles USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "name_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (name \u003c\u003e ''::text)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "saved_searches",
       "Comment": "",
       "Columns": [
@@ -16399,6 +18357,67 @@
       "Triggers": []
     },
     {
+      "Name": "search_context_default",
+      "Comment": "When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.",
+      "Columns": [
+        {
+          "Name": "search_context_id",
+          "Index": 2,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "search_context_default_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX search_context_default_pkey ON search_context_default USING btree (user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "search_context_default_search_context_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "search_contexts",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "search_context_default_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "search_context_repos",
       "Comment": "",
       "Columns": [
@@ -16468,6 +18487,80 @@
           "RefTableName": "search_contexts",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "search_context_stars",
+      "Comment": "When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "search_context_id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "search_context_stars_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX search_context_stars_pkey ON search_context_stars USING btree (search_context_id, user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (search_context_id, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "search_context_stars_search_context_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "search_contexts",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "search_context_stars_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -17046,6 +19139,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "paths",
+          "Index": 7,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Paths that begin with a minus sign (-) are exclusion paths."
         },
         {
           "Name": "repo_id",
@@ -18232,6 +20338,80 @@
       "Triggers": []
     },
     {
+      "Name": "user_roles",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "role_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "user_roles_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_roles_pkey ON user_roles USING btree (user_id, role_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (user_id, role_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "user_roles_role_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "roles",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "user_roles_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "users",
       "Comment": "",
       "Columns": [
@@ -18545,7 +20725,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+          "ConstraintDefinition": "CHECK (username ~ '^\\w(?:\\w|[-.](?=\\w))*-?$'::citext)"
         }
       ],
       "Triggers": [
@@ -18640,6 +20820,19 @@
       "Name": "webhook_build_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 13,
@@ -18872,6 +21065,16 @@
           "IndexDefinition": "CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "webhook_build_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
@@ -18971,6 +21174,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "webhook_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
@@ -19022,6 +21238,304 @@
           "RefTableName": "external_services",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        },
+        {
+          "Name": "webhook_logs_webhook_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "webhooks",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "webhooks",
+      "Comment": "Webhooks registered in Sourcegraph instance.",
+      "Columns": [
+        {
+          "Name": "code_host_kind",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Kind of an external service for which webhooks are registered."
+        },
+        {
+          "Name": "code_host_urn",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "URN of a code host. This column maps to external_service_id column of repo table."
+        },
+        {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_by_user_id",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted)."
+        },
+        {
+          "Name": "encryption_key_id",
+          "Index": 8,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('webhooks_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Descriptive name of a webhook."
+        },
+        {
+          "Name": "secret",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Secret used to decrypt webhook payload (if supported by the code host)."
+        },
+        {
+          "Name": "updated_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_by_user_id",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted)."
+        },
+        {
+          "Name": "uuid",
+          "Index": 9,
+          "TypeName": "uuid",
+          "IsNullable": false,
+          "Default": "gen_random_uuid()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "webhooks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_pkey ON webhooks USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "webhooks_uuid_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_uuid_key ON webhooks USING btree (uuid)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (uuid)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "webhooks_created_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "webhooks_updated_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "zoekt_repos",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "branches",
+          "Index": 2,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'[]'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "index_status",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'not_indexed'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "zoekt_repos_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX zoekt_repos_pkey ON zoekt_repos USING btree (repo_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repo_id)"
+        },
+        {
+          "Name": "zoekt_repos_index_status",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "zoekt_repos_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19030,7 +21544,7 @@
   "Views": [
     {
       "Name": "batch_spec_workspace_execution_jobs_with_rank",
-      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.queued_at,\n    j.user_id,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
+      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.queued_at,\n    j.user_id,\n    j.version,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
     },
     {
       "Name": "batch_spec_workspace_execution_queue",
@@ -19058,15 +21572,15 @@
     },
     {
       "Name": "lsif_indexes_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    u.requested_envvars,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "lsif_uploads_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\n   FROM (lsif_uploads u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "reconciler_changesets",
-      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
     },
     {
       "Name": "site_config",

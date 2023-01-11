@@ -48,10 +48,10 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
 		innerClient: gitserver.NewClient(db),
-		operations:  newOperations(observationContext),
+		operations:  newOperations(observationCtx),
 	}
 }
 
@@ -97,7 +97,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := c.innerClient.ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
+	data, err := c.innerClient.ReadFile(ctx, nil, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get file contents")
 	}

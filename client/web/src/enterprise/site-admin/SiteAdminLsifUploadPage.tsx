@@ -3,9 +3,8 @@ import { FunctionComponent, useEffect, useMemo } from 'react'
 import { RouteComponentProps, Redirect } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -38,7 +37,7 @@ export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<
             ) : !uploadOrError.projectRoot ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
             ) : (
-                <Redirect to={`${uploadOrError.projectRoot.repository.url}/-/code-graph/uploads/${id}`} />
+                <Redirect to={`${uploadOrError.projectRoot.commit.repository.url}/-/code-graph/uploads/${id}`} />
             )}
         </div>
     )

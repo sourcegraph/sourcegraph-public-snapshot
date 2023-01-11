@@ -68,9 +68,8 @@ const batchSpec = (props: Args): BatchSpecFields => ({
     },
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 8,
-        deleted: 10,
+        added: 18,
+        deleted: 18,
     },
     expiresAt: addDays(new Date(), 7).toISOString(),
     id: 'specid',
@@ -242,7 +241,7 @@ export const Create: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -268,7 +267,7 @@ export const Update: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -294,7 +293,7 @@ export const MissingCredentials: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -322,7 +321,7 @@ export const SpecFile: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -350,7 +349,7 @@ export const NoChangesets: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -378,7 +377,7 @@ export const CreateNewStory: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -406,7 +405,7 @@ export const ExceedsLicenseStory: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>

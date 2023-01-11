@@ -18,6 +18,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
@@ -108,6 +109,11 @@ type Params struct {
 
 	// Format defines the response format of the syntax highlighting request.
 	Format gosyntect.HighlightResponseType
+
+	// KeepFinalNewline keeps the final newline of the file content when highlighting.
+	// By default we drop the last newline to match behavior of common code hosts
+	// that don't render another line at the end of the file.
+	KeepFinalNewline bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -304,7 +310,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-/// identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err matches a known error.
 func identifyError(err error) (bool, string) {
 	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
@@ -340,7 +346,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// TODO: It could be worthwhile to log that this language isn't supported or something
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
-	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 
@@ -392,7 +398,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// This matches other online code reading tools such as e.g. GitHub; see
 	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
 	// background.
-	code = strings.TrimSuffix(code, "\n")
+	if !p.KeepFinalNewline {
+		code = strings.TrimSuffix(code, "\n")
+	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)
@@ -426,7 +434,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
-		Tracer:           ot.GetTracer(ctx),
+		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
@@ -453,7 +461,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
-		trace.Log(otlog.Bool("timeout", true))
+		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
@@ -477,7 +485,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis.
-			trace.Log(otlog.Bool(problem, true))
+			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
 			prometheusStatus = problem
 		}
 
@@ -609,15 +617,15 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
 // following transformations:
 //
-// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
-// 	FOO.Sh → FOO.sh
+//	a/b/c/FOO.TXT → a/b/c/FOO.txt
+//	FOO.Sh → FOO.sh
 //
 // The following are left unmodified, as they already have lowercase extensions:
 //
-// 	a/b/c/FOO.txt
-// 	a/b/c/Makefile
-// 	Makefile.am
-// 	FOO.txt
+//	a/b/c/FOO.txt
+//	a/b/c/Makefile
+//	Makefile.am
+//	FOO.txt
 //
 // It expects the filepath uses forward slashes always.
 func normalizeFilepath(p string) string {

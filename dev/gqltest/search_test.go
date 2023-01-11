@@ -103,8 +103,8 @@ type searchClient interface {
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
 
-	UpdateSiteConfiguration(config *schema.SiteConfiguration) error
-	SiteConfiguration() (*schema.SiteConfiguration, error)
+	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
+	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -125,6 +125,11 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 	}
 
 	repo2, err := client.Repository("github.com/sgtest/appdash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.SetFeatureFlag("repository-metadata", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -588,7 +593,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$ runtime(.|\n)*BYTES_TO_GIGABYTES index:only patterntype:regexp type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
@@ -1112,6 +1117,39 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file but not content`,
+				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name: `repo does not contain file, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// appdash.go exists in appdash
+				query:  `-repo:contains.path(reader_util_test.go) file:appdash.go`,
+				counts: counts{File: 1},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// TestHunkNoChunksize exists in go-diff
+				// appdash.go exists in appdash
+				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:appdash.go`,
+				counts: counts{File: 1},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// TestHunkNoChunksize exists in go-diff
+				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:reader_util_test.go`,
+				counts: counts{},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// TestHunkNoChunksize exists in go-diff
+				query:  `-repo:contains.file(reader_util_test.go) TestHunkNoChunksize`,
+				counts: counts{},
+			},
+			{
 				name:   `no repo contains file`,
 				query:  `repo:contains.file(path:noexist.go)`,
 				counts: counts{},
@@ -1137,20 +1175,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `negated repo:contains with another repo:contains`,
+				query:  `-repo:contains.content(does-not-exist-D2E1E74C7279) and repo:contains.content(nextFileFirstLine)`,
+				counts: counts{Repo: 1},
+			},
+			{
 				name:   `and-expression on repo:contains.file`,
 				query:  `repo:contains.file(content:does-not-exist-D2E1E74C7279) and repo:contains.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 0},
 			},
-			{
-				name:   `repo contains file then search common`,
-				query:  `repo:contains.file(path:go.mod) count:100 fmt`,
-				counts: counts{Content: 61},
-			},
-			{
-				name:   `repo contains path`,
-				query:  `repo:contains.path(go.mod) count:100 fmt`,
-				counts: counts{Content: 61},
-			},
+			// Flakey tests see: https://buildkite.com/organizations/sourcegraph/pipelines/sourcegraph/builds/169653/jobs/0182e8df-8be9-4235-8f4d-a3d458354249/raw_log
+			// {
+			// 	name:   `repo contains file then search common`,
+			// 	query:  `repo:contains.file(path:go.mod) count:100 fmt`,
+			// 	counts: counts{Content: 61},
+			// },
+			// {
+			// 	name:   `repo contains path`,
+			// 	query:  `repo:contains.path(go.mod) count:100 fmt`,
+			// 	counts: counts{Content: 61},
+			// },
 			{
 				name:   `repo contains file with matching repo filter`,
 				query:  `repo:go-diff repo:contains.file(path:diff.proto)`,
@@ -1169,12 +1213,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
-				counts: counts{Commit: 9},
+				counts: counts{Commit: 11},
 			},
 			{
 				name:   `commit results with repo filter`,
 				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
-				counts: counts{Commit: 1},
+				counts: counts{Commit: 2},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,
@@ -1187,9 +1231,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `repo does not have commit after`,
+				query:  `repo:go-diff -repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 0},
+			},
+			{
 				name:   `repo has commit after no results`,
 				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo does not has commit after some results`,
+				query:  `repo:go-diff -repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `unscoped repo has commit after no results`,
@@ -1207,6 +1261,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `repo has tag and not nonexistent tag`,
+				query:  `repo:has.tag(testtag) -repo:has.tag(noexist)`,
+				counts: counts{Repo: 1},
+			},
+			{
 				name:   `repo has kvp that does not exist`,
 				query:  `repo:has(noexist:false)`,
 				counts: counts{Repo: 0},
@@ -1214,6 +1273,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `repo has kvp`,
 				query:  `repo:has(testkey:testval)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has kvp and not nonexistent kvp`,
+				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
 			},
 		}
@@ -1323,7 +1387,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name: `file contains content predicate type diff`,
 				// matches .travis.yml and in the last commit that added after_success, but not in previous commits
-				query:  `type:diff repo:go-diff file:contains(after_success)`,
+				query:  `type:diff repo:go-diff file:contains.content(after_success)`,
 				counts: counts{Commit: 1},
 			},
 			{
@@ -1385,20 +1449,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
 	t.Run("search statistics", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
 		var lastResult *gqltestutil.SearchStatsResult
 		// Retry because the configuration update endpoint is eventually consistent
-		err = gqltestutil.Retry(5*time.Second, func() error {
+		err := gqltestutil.Retry(5*time.Second, func() error {
 			// This is a substring that appears in the sgtest/go-diff repository.
 			// It is OK if it starts to appear in other repositories, the test just
 			// checks that it is found in at least 1 Go file.
@@ -1504,8 +1557,11 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultFirstPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
 	}
-	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
-		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	if resultFirstPage.Nodes[0].Spec != "global" {
+		t.Fatalf("expected first page first search context spec to be global, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+	if resultFirstPage.Nodes[1].Spec != "SearchContext9" {
+		t.Fatalf("expected first page second search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[1].Spec)
 	}
 
 	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
@@ -1518,7 +1574,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultSecondPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
 	}
-	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
-		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	if resultSecondPage.Nodes[0].Spec != "SearchContext5" {
+		t.Fatalf("expected second page search context spec to be SearchContext5, got %s", resultSecondPage.Nodes[0].Spec)
 	}
 }

@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiDotsHorizontal, mdiDownload } from '@mdi/js'
+import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
     Position,
     Menu,
@@ -19,41 +20,41 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures } from '../../stores'
 
 import { CreateAction } from './createActions'
-import { useExportSearchResultsQuery } from './useExportSearchResultsQuery'
+import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
 interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query?: string
+    results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
     createCodeMonitorAction: CreateAction | null
     canCreateMonitor: boolean
-    resultsFound: boolean
     allExpanded: boolean
-    extensionsAsCoreFeatures?: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
 }
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
     query = '',
-    patternType,
+    results,
     sourcegraphURL,
     authenticatedUser,
     createActions,
     createCodeMonitorAction,
     canCreateMonitor,
-    resultsFound,
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
 }) => {
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-    const [requestSearchResultsExport] = useExportSearchResultsQuery({ query, patternType, sourcegraphURL })
+    const resultsFound = results ? results.results.length > 0 : false
+    const downloadResults = useCallback(
+        () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
+        [results, sourcegraphURL, query]
+    )
 
     return (
         <Menu>
@@ -66,7 +67,8 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                        Actions
+                        <Icon aria-hidden={true} data-caret={true} className="ml-1" svgPath={mdiChevronDown} />
                     </MenuButton>
                     <MenuList tabIndex={0} position={Position.bottomEnd} aria-label="Search Actions. Open menu">
                         {resultsFound && (
@@ -80,12 +82,10 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                {extensionsAsCoreFeatures && (
-                                    <MenuItem onSelect={requestSearchResultsExport}>
-                                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                                        Export Results
-                                    </MenuItem>
-                                )}
+                                <MenuItem onSelect={downloadResults}>
+                                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                                    Export results
+                                </MenuItem>
                             </>
                         )}
                         <MenuHeader>Search query</MenuHeader>
@@ -121,7 +121,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                             ? { svgPath: createCodeMonitorAction.icon }
                                             : { as: createCodeMonitorAction.icon })}
                                     />
-                                    Create Monitor
+                                    Create monitor
                                 </MenuLink>
                             </Tooltip>
                         )}

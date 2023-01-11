@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -39,7 +40,7 @@ func TestSearchResults(t *testing.T) {
 	db := database.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
+		r, err := newSchemaResolver(db, gitserver.NewClient(db)).Search(ctx, &SearchArgs{Query: query, Version: version})
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
@@ -238,20 +239,16 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			for _, globbing := range []bool{true, false} {
-				globbing := globbing // avoid a reference to the loop variable
-				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
-				actualDynamicFilterStrs := make(map[string]int)
+			actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+			actualDynamicFilterStrs := make(map[string]int)
 
-				for _, filter := range actualDynamicFilters {
-					actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
-				}
+			for _, filter := range actualDynamicFilters {
+				actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
+			}
 
-				expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
-				if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
-					t.Errorf("mismatch (-want, +got):\n%s", diff)
-				}
+			expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
+			if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}
@@ -329,6 +326,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		"V2",
 		&literalPatternType,
 		query,
+		search.Precise,
 		search.Batch,
 		&schema.Settings{},
 		false,
@@ -566,6 +564,7 @@ func TestEvaluateAnd(t *testing.T) {
 				"V2",
 				&literalPatternType,
 				tt.query,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,
@@ -670,6 +669,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				"V2",
 				&literalPatternType,
 				tt.searchQuery,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,

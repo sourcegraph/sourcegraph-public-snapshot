@@ -443,6 +443,12 @@ func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.Eve
 			return
 		}
 
+		v := req.URL.Query().Get("v")
+		if v != searchAPIVersion {
+			http.Error(w, "wrong search api version", http.StatusBadRequest)
+			return
+		}
+
 		match, ok := matches[q]
 		if !ok {
 			t.Logf("unknown query %q", q)

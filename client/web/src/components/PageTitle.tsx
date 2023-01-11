@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 
+import { logger } from '@sourcegraph/common'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 interface PageTitleProps {
@@ -19,7 +20,7 @@ let titleSet = false
 export const PageTitle: React.FunctionComponent<React.PropsWithChildren<PageTitleProps>> = ({ title }) => {
     useEffect(() => {
         if (titleSet) {
-            console.error('more than one PageTitle used at the same time')
+            logger.error('more than one PageTitle used at the same time')
         }
         titleSet = true
         document.title = title ? `${title} - ${getBrandName()}` : getBrandName()

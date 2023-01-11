@@ -143,11 +143,11 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                     },
                 }
 
-                requests.next((event as unknown) as Request<T>)
+                requests.next(event as unknown as Request<T>)
 
                 return () => {
                     // Cancel scheduled stream
-                    cancelledRequests.add((event as unknown) as Request<T>)
+                    cancelledRequests.add(event as unknown as Request<T>)
 
                     // Stop/cancel ongoing/started request stream
                     cancelStream.next(true)
@@ -169,7 +169,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 () => () => {
                     for (const request of localRequestPool.current) {
                         // Cancel scheduled stream
-                        cancelledRequests.add((request as unknown) as Request<T>)
+                        cancelledRequests.add(request as unknown as Request<T>)
                     }
                 },
                 []
@@ -196,12 +196,12 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 }
 
                 localRequestPool.current.push(event)
-                requests.next((event as unknown) as Request<T>)
+                requests.next(event as unknown as Request<T>)
 
                 return {
                     unsubscribe: () => {
                         // Cancel scheduled stream
-                        cancelledRequests.add((event as unknown) as Request<T>)
+                        cancelledRequests.add(event as unknown as Request<T>)
 
                         // Stop/cancel ongoing/started request stream
                         cancelStream.next(true)

@@ -1,91 +1,36 @@
-import React, {
-    useCallback,
-    useRef,
-    useEffect,
-    KeyboardEvent as ReactKeyboardEvent,
-    FormEvent,
-    useMemo,
-    useState,
-} from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-// eslint-disable-next-line no-restricted-imports
-import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
-import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { getDefaultSearchContextSpec, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Icon, Input, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
-
-import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
+import {
+    Badge,
+    Button,
+    Icon,
+    ButtonLink,
+    Link,
+    Text,
+    Tooltip,
+    Combobox,
+    ComboboxInput,
+    ComboboxList,
+    ComboboxOption,
+    ComboboxOptionText,
+    Alert,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import styles from './SearchContextMenu.module.scss'
-
-export const SearchContextMenuItem: React.FunctionComponent<
-    React.PropsWithChildren<
-        {
-            spec: string
-            description: string
-            query: string
-            selected: boolean
-            isDefault: boolean
-            selectSearchContextSpec: (spec: string) => void
-            searchFilter: string
-            onKeyDown: (key: string) => void
-        } & TelemetryProps
-    >
-> = ({
-    spec,
-    description,
-    query,
-    selected,
-    isDefault,
-    selectSearchContextSpec,
-    searchFilter,
-    onKeyDown,
-    telemetryService,
-}) => {
-    const setContext = useCallback(() => {
-        telemetryService.log('SearchContextSelected')
-        selectSearchContextSpec(spec)
-    }, [selectSearchContextSpec, spec, telemetryService])
-
-    const descriptionOrQuery = description.length > 0 ? description : query
-
-    return (
-        <DropdownItem
-            data-testid="search-context-menu-item"
-            className={classNames(styles.item, selected && styles.itemSelected)}
-            onClick={setContext}
-            role="menuitem"
-            data-search-context-spec={spec}
-            data-selected={selected || undefined}
-            onKeyDown={event => onKeyDown(event.key)}
-        >
-            <small
-                data-testid="search-context-menu-item-name"
-                className={classNames('font-weight-medium', styles.itemName)}
-                title={spec}
-            >
-                <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
-            </small>{' '}
-            <Tooltip content={descriptionOrQuery}>
-                <small className={styles.itemDescription}>{descriptionOrQuery}</small>
-            </Tooltip>
-            {isDefault && (
-                <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
-                    Default
-                </Badge>
-            )}
-        </DropdownItem>
-    )
-}
 
 export interface SearchContextMenuProps
     extends Omit<SearchContextInputProps, 'setSelectedSearchContextSpec'>,
@@ -93,9 +38,10 @@ export interface SearchContextMenuProps
         TelemetryProps {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
-    closeMenu: (isEscapeKey?: boolean) => void
+    isSourcegraphDotCom: boolean | null
     selectSearchContextSpec: (spec: string) => void
     className?: string
+    onMenuClose: (isEscapeKey?: boolean) => void
 }
 
 interface PageInfo {
@@ -110,77 +56,32 @@ interface NextPageUpdate {
 
 type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
 
-const searchContextsPerPageToLoad = 15
+const SEARCH_CONTEXTS_PER_PAGE_TO_LOAD = 15
 
-const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
-    document.querySelector(`[data-search-context-spec="${spec}"]`)
-
-export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<SearchContextMenuProps>> = ({
-    authenticatedUser,
-    selectedSearchContextSpec,
-    defaultSearchContextSpec,
-    selectSearchContextSpec,
-    getUserSearchContextNamespaces,
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    closeMenu,
-    showSearchContextManagement,
-    platformContext,
-    telemetryService,
-    className,
-}) => {
-    const inputElement = useRef<HTMLInputElement | null>(null)
-
-    const reset = useCallback(() => {
-        selectSearchContextSpec(defaultSearchContextSpec)
-        closeMenu()
-    }, [closeMenu, defaultSearchContextSpec, selectSearchContextSpec])
-
-    const focusInputElement = (): void => {
-        // Focus the input in the next run-loop to override the browser focusing the first dropdown item
-        // if the user opened the dropdown using a keyboard
-        setTimeout(() => inputElement.current?.focus(), 0)
-    }
-
-    // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
-    // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
-    // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
-    const onResetButtonKeyDown = useCallback((event: ReactKeyboardEvent<HTMLButtonElement>): void => {
-        if (event.key === ' ' || event.key === 'Enter') {
-            event.stopPropagation()
-        }
-    }, [])
-
-    // A keydown event is needed here in addition to the button's click event because
-    // otherwise the keydown event will be propagated to `onMenuKeyDown` and the
-    // click event will not be fired.
-    const onCloseButtonKeyDown = useCallback(
-        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
-            if (event.key === ' ' || event.key === 'Enter') {
-                closeMenu(true)
-            }
-        },
-        [closeMenu]
-    )
-
-    const onMenuKeyDown = useCallback(
-        (event: ReactKeyboardEvent<HTMLDivElement>): void => {
-            if (event.key === 'Escape') {
-                closeMenu(true)
-                event.stopPropagation()
-            }
-        },
-        [closeMenu]
-    )
+export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
+    const {
+        authenticatedUser,
+        selectedSearchContextSpec,
+        selectSearchContextSpec,
+        getUserSearchContextNamespaces,
+        fetchSearchContexts,
+        onMenuClose,
+        showSearchContextManagement,
+        platformContext,
+        telemetryService,
+        isSourcegraphDotCom,
+        className,
+    } = props
 
     const [loadingState, setLoadingState] = useState<LoadingState>('DONE')
     const [searchFilter, setSearchFilter] = useState('')
     const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
 
-    const loadNextPageUpdates = useRef(
-        new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' })
-    )
+    const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
+    const infiniteScrollList = useRef<HTMLUListElement | null>(null)
+
+    const loadNextPageUpdates = useRef(new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' }))
 
     const loadNextPage = useCallback((): void => {
         if (loadingState === 'DONE' && (!lastPageInfo || lastPageInfo.hasNextPage)) {
@@ -201,6 +102,17 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
     )
 
     useEffect(() => {
+        if (!infiniteScrollTrigger.current || !infiniteScrollList.current) {
+            return
+        }
+        const intersectionObserver = new IntersectionObserver(entries => entries[0].isIntersecting && loadNextPage(), {
+            root: infiniteScrollList.current,
+        })
+        intersectionObserver.observe(infiniteScrollTrigger.current)
+        return () => intersectionObserver.disconnect()
+    }, [infiniteScrollTrigger, infiniteScrollList, loadNextPage])
+
+    useEffect(() => {
         const subscription = loadNextPageUpdates.current
             .pipe(
                 tap(({ cursor }) => setLoadingState(!cursor ? 'LOADING' : 'LOADING_NEXT_PAGE')),
@@ -210,11 +122,11 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     combineLatest([
                         of(cursor),
                         fetchSearchContexts({
-                            first: searchContextsPerPageToLoad,
                             query,
+                            platformContext,
+                            first: SEARCH_CONTEXTS_PER_PAGE_TO_LOAD,
                             after: cursor,
                             namespaces: getUserSearchContextNamespaces(authenticatedUser),
-                            platformContext,
                             useMinimalFields: true,
                         }),
                     ])
@@ -248,148 +160,177 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
         platformContext,
     ])
 
-    const autoDefinedSearchContexts = useObservable(
-        useMemo(
-            () =>
-                fetchAutoDefinedSearchContexts({ platformContext, useMinimalFields: true }).pipe(
-                    catchError(error => [asError(error)])
-                ),
-            [fetchAutoDefinedSearchContexts, platformContext]
-        )
-    )
-    const filteredAutoDefinedSearchContexts = useMemo(
-        () =>
-            autoDefinedSearchContexts && !isErrorLike(autoDefinedSearchContexts)
-                ? autoDefinedSearchContexts.filter(context =>
-                      context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-                  )
-                : [],
-        [autoDefinedSearchContexts, searchFilter]
-    )
-
-    // Merge auto-defined contexts and user-defined contexts
-    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts as ISearchContext[]), [
-        filteredAutoDefinedSearchContexts,
-        searchContexts,
-    ])
-
-    const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
-    const infiniteScrollList = useRef<HTMLDivElement | null>(null)
-    useEffect(() => {
-        if (!infiniteScrollTrigger.current || !infiniteScrollList.current) {
-            return
-        }
-        const intersectionObserver = new IntersectionObserver(entries => entries[0].isIntersecting && loadNextPage(), {
-            root: infiniteScrollList.current,
-        })
-        intersectionObserver.observe(infiniteScrollTrigger.current)
-        return () => intersectionObserver.disconnect()
-    }, [infiniteScrollTrigger, infiniteScrollList, loadNextPage])
-
-    useEffect(focusInputElement, [])
-
-    const onInputKeyDown = useCallback(
-        (event: React.KeyboardEvent) => {
-            if (filteredList.length > 0 && event.key === 'ArrowDown') {
-                getSearchContextMenuItem(filteredList[0].spec)?.focus()
-                event.stopPropagation()
-                event.preventDefault()
-            }
+    const handleContextSelect = useCallback(
+        (context: string): void => {
+            selectSearchContextSpec(context)
+            onMenuClose(true)
+            telemetryService.log('SearchContextSelected')
         },
-        [filteredList]
+        [onMenuClose, selectSearchContextSpec, telemetryService]
+    )
+
+    const defaultContextExists = useObservable(
+        useMemo(() => getDefaultSearchContextSpec({ platformContext }).pipe(map(spec => !!spec)), [platformContext])
     )
 
     return (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div onKeyDown={onMenuKeyDown} className={classNames(styles.container, className)}>
+        <Combobox openOnFocus={true} className={classNames(styles.container, className)} onSelect={handleContextSelect}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <Button
-                    onClick={() => closeMenu()}
-                    onKeyDown={onCloseButtonKeyDown}
-                    variant="icon"
-                    className={styles.titleClose}
-                    aria-label="Close"
-                >
+                <Button variant="icon" aria-label="Close" className={styles.titleClose} onClick={() => onMenuClose()}>
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
-            <div className={classNames('d-flex', styles.header)}>
-                <Input
-                    ref={inputElement}
-                    onInput={onSearchFilterChanged}
-                    onKeyDown={onInputKeyDown}
+            <div className={styles.header}>
+                <ComboboxInput
                     type="search"
+                    variant="small"
                     placeholder="Find..."
+                    autoFocus={true}
+                    spellCheck={false}
                     aria-label="Find a context"
                     data-testid="search-context-menu-header-input"
-                    className="w-100"
-                    inputClassName={styles.headerInput}
-                    variant="small"
+                    className={styles.headerInput}
+                    inputClassName={styles.headerInputElement}
+                    onInput={onSearchFilterChanged}
                 />
             </div>
-            <div data-testid="search-context-menu-list" className={styles.list} ref={infiniteScrollList} role="menu">
-                {loadingState !== 'LOADING' &&
-                    filteredList.map((context, index) => (
-                        <SearchContextMenuItem
-                            key={context.id}
-                            spec={context.spec}
-                            description={context.description}
-                            query={context.query}
-                            isDefault={context.spec === defaultSearchContextSpec}
-                            selected={context.spec === selectedSearchContextSpec}
-                            selectSearchContextSpec={selectSearchContextSpec}
-                            searchFilter={searchFilter}
-                            onKeyDown={key => index === 0 && key === 'ArrowUp' && focusInputElement()}
-                            telemetryService={telemetryService}
-                        />
-                    ))}
+            <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
+                {loadingState !== 'LOADING' && (
+                    <>
+                        {defaultContextExists === false && (
+                            <Alert variant="warning" className="mx-2 mt-2">
+                                Your default search context is no longer available.
+                                <br />
+                                <Link to="/contexts">Choose a new default context.</Link>
+                            </Alert>
+                        )}
+                        {searchContexts.map((context, index) => (
+                            <>
+                                {/* Separate starred and unstarred contexts */}
+                                {index > 0 &&
+                                    searchContexts[index - 1].viewerHasStarred &&
+                                    !context.viewerHasStarred && <div className={styles.separator} />}
+                                <SearchContextMenuItem
+                                    key={context.id}
+                                    spec={context.spec}
+                                    description={context.description}
+                                    query={context.query}
+                                    isDefault={context.viewerHasAsDefault}
+                                    selected={context.spec === selectedSearchContextSpec}
+                                    starred={context.viewerHasStarred}
+                                />
+                            </>
+                        ))}
+                    </>
+                )}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
-                    <DropdownItem data-testid="search-context-menu-item" className={styles.item} disabled={true}>
+                    <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>Loading search contexts...</small>
-                    </DropdownItem>
+                    </div>
                 )}
                 {loadingState === 'ERROR' && (
-                    <DropdownItem
-                        data-testid="search-context-menu-item"
-                        className={classNames(styles.item, styles.itemError)}
-                        disabled={true}
-                    >
-                        <small>Error occured while loading search contexts</small>
-                    </DropdownItem>
+                    <div data-testid="search-context-menu-item" className={classNames(styles.item, styles.itemError)}>
+                        <small>Error occurred while loading search contexts</small>
+                    </div>
                 )}
-                {loadingState === 'DONE' && filteredList.length === 0 && (
-                    <DropdownItem data-testid="search-context-menu-item" className={styles.item} disabled={true}>
+                {loadingState === 'DONE' && searchContexts.length === 0 && (
+                    <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>No contexts found</small>
-                    </DropdownItem>
+                    </div>
                 )}
-                {/* Dummy element to prevent a focus error when using the keyboard to open the dropdown */}
-                <DropdownItem className="d-none" />
+
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
-            </div>
-            <div className={styles.footer}>
-                <Button
-                    onClick={reset}
-                    onKeyDown={onResetButtonKeyDown}
-                    className={styles.footerButton}
-                    variant="link"
-                    size="sm"
-                >
-                    Reset
-                </Button>
-                <span className="flex-grow-1" />
-                {showSearchContextManagement && (
-                    <ButtonLink
-                        to="/contexts"
-                        className={styles.footerButton}
-                        onClick={() => closeMenu()}
-                        variant="link"
-                        size="sm"
-                    >
-                        Manage contexts
-                    </ButtonLink>
-                )}
-            </div>
-        </div>
+            </ComboboxList>
+            {(isSourcegraphDotCom || showSearchContextManagement) && (
+                <div className={styles.footer}>
+                    {isSourcegraphDotCom && (
+                        <>
+                            <div className="d-flex col-7 px-0">
+                                <Icon
+                                    className={classNames('text-merged mr-1', styles.footerIcon)}
+                                    size="md"
+                                    aria-hidden={true}
+                                    svgPath={mdiArrowRight}
+                                />
+                                <Text className="mb-0">
+                                    To search across your team's private repositories,{' '}
+                                    <Link
+                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
+                                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                    >
+                                        try Sourcegraph Cloud
+                                    </Link>
+                                    .
+                                </Text>
+                            </div>
+                        </>
+                    )}
+                    {showSearchContextManagement && (
+                        <>
+                            <div className="flex-grow-1" />
+                            <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
+                                Manage contexts
+                            </ButtonLink>
+                        </>
+                    )}
+                </div>
+            )}
+        </Combobox>
+    )
+}
+
+interface SearchContextMenuItemProps {
+    spec: string
+    description: string
+    query: string
+    selected: boolean
+    isDefault: boolean
+    starred: boolean
+}
+
+export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = ({
+    spec,
+    description,
+    query,
+    selected,
+    isDefault,
+    starred,
+}) => {
+    const descriptionOrQuery = description.length > 0 ? description : query
+
+    return (
+        <ComboboxOption
+            value={spec}
+            selected={selected}
+            data-testid="search-context-menu-item"
+            data-search-context-spec={spec}
+            data-selected={selected || undefined}
+            className={classNames(styles.item, selected && styles.itemSelected)}
+        >
+            <Tooltip content={spec}>
+                <small data-testid="search-context-menu-item-name" className={styles.itemName}>
+                    <ComboboxOptionText />
+                </small>
+            </Tooltip>
+            {descriptionOrQuery && <VisuallyHidden>,</VisuallyHidden>}{' '}
+            <Tooltip content={descriptionOrQuery}>
+                <small className={styles.itemDescription}>{descriptionOrQuery}</small>
+            </Tooltip>
+            {isDefault && (
+                <>
+                    <VisuallyHidden>,</VisuallyHidden>
+                    <Badge variant="secondary" className={classNames('text-uppercase ml-1', styles.itemDefault)}>
+                        Default
+                    </Badge>
+                </>
+            )}
+            {starred && (
+                <>
+                    <VisuallyHidden>, Starred</VisuallyHidden>
+                    <Icon svgPath={mdiStar} className={classNames('ml-1', styles.star)} aria-hidden={true} />
+                </>
+            )}
+        </ComboboxOption>
     )
 }

@@ -13,7 +13,11 @@ import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
 
 const additionalProps = {
-    authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
+    authenticatedUser: {
+        id: 'foobar',
+        username: 'alice',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
+    } as AuthenticatedUser,
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
             nodes: mockCodeMonitorNodes,
@@ -28,17 +32,19 @@ const additionalProps = {
     isLightTheme: false,
 }
 
-const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
-    const result: ListCodeMonitors = {
-        nodes: mockCodeMonitorNodes.slice(0, count),
-        pageInfo: {
-            endCursor: `foo${count}`,
-            hasNextPage: count > 10,
-        },
-        totalCount: count,
+const generateMockFetchMonitors =
+    (count: number) =>
+    ({ id, first, after }: ListUserCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
     }
-    return of(result)
-}
 
 describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {

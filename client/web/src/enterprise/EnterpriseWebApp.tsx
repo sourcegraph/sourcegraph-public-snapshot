@@ -6,12 +6,11 @@ import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
-import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
-import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
-import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
-import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
+import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
+import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
+import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
@@ -27,12 +26,6 @@ import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems
 
 export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
-        extensionAreaRoutes={enterpriseExtensionAreaRoutes}
-        extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={window.context.enableLegacyExtensions ? enterpriseExtensionsAreaRoutes : undefined}
-        extensionsAreaHeaderActionButtons={
-            window.context.enableLegacyExtensions ? enterpriseExtensionsAreaHeaderActionButtons : undefined
-        }
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
@@ -40,6 +33,8 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         userAreaRoutes={enterpriseUserAreaRoutes}
         userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
         userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+        orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
+        orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
         orgAreaRoutes={enterpriseOrganizationAreaRoutes}
         orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
         repoContainerRoutes={enterpriseRepoContainerRoutes}
@@ -51,8 +46,12 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         codeIntelligenceEnabled={true}
         codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
         codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
+        useCodeIntel={useCodeIntel}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}
+        notebooksEnabled={true}
+        codeMonitoringEnabled={true}
+        searchAggregationEnabled={true}
     />
 )

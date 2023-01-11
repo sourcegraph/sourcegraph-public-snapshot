@@ -10,12 +10,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -23,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -103,12 +107,11 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 
 func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
 	logger = logger.Scoped("overrideSiteConfig", "")
-	path := os.Getenv("SITE_CONFIG_FILE")
-	if path == "" {
+	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
+	if len(paths) == 0 {
 		return nil
 	}
 	cs := newConfigurationSource(logger, db)
-	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
 		if err != nil {
@@ -120,7 +123,18 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.Write(ctx, raw)
+		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
+		// never have a non nil actor available here to determine the user ID. This is consistent
+		// with the behaviour of global settings as well. See settings.CreateIfUpToDate in
+		// overrideGlobalSettings below.
+		//
+		// A value of 0 will be treated as null when writing to the the database for this column.
+		//
+		// Nevertheless, we still use actor.FromContext() because it makes this code future proof in
+		// case some how this gets used in a non-startup path as well where an actor is available.
+		// In which case we will start populating the authorUserID in the database which is a good
+		// thing.
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, actor.FromContext(ctx).UID, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -131,7 +145,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, updateFunc)
+	go watchUpdate(ctx, logger, updateFunc, paths...)
 	return nil
 }
 
@@ -169,7 +183,7 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 	if err := update(ctx); err != nil {
 		return err
 	}
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
@@ -206,11 +220,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
-			// NOTE: External services loaded from config file do not have namespace specified.
-			// Therefore, we only need to load those from database.
-			NoNamespace: true,
-		})
+		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return errors.Wrap(err, "ExternalServices.List")
 		}
@@ -348,14 +358,14 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
 
-func watchUpdate(ctx context.Context, logger log.Logger, path string, update func(context.Context) error) {
-	logger = logger.Scoped("watch", "")
-	events, err := watchPaths(ctx, path)
+func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) error, paths ...string) {
+	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
+	events, err := watchPaths(ctx, paths...)
 	if err != nil {
 		logger.Error("failed to watch config override files", log.Error(err))
 		return
@@ -368,10 +378,10 @@ func watchUpdate(ctx context.Context, logger log.Logger, path string, update fun
 		}
 
 		if err := update(ctx); err != nil {
-			logger.Error("failed to update configuration from modified config override file", log.Error(err), log.String("file", path))
+			logger.Error("failed to update configuration from modified config override file", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
 		} else {
-			logger.Info("updated configuration from modified config override files", log.String("file", path))
+			logger.Info("updated configuration from modified config override files")
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		}
 	}
@@ -446,19 +456,27 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 	}
 
 	return conftypes.RawUnified{
+		ID:                 site.ID,
 		Site:               site.Contents,
 		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
-	// TODO(slimsag): future: pass lastID through for race prevention
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, authorUserID, false)
+}
+
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	if site.ID != lastID {
+		return errors.New("site config has been modified by another request, write not allowed")
+	}
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
 	if err != nil {
+		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
@@ -468,19 +486,27 @@ var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
 
-	gitservers = endpoint.New(func() string {
-		v := os.Getenv("SRC_GIT_SERVERS")
-		if v == "" {
-			// Detect 'go test' and setup default addresses in that case.
-			p, err := os.Executable()
-			if err == nil && strings.HasSuffix(p, ".test") {
-				return "gitserver:3178"
-			}
-			return "k8s+rpc://gitserver:3178?kind=sts"
-		}
-		return v
-	}())
+	gitserversVal  *endpoint.Map
+	gitserversOnce sync.Once
 )
+
+func gitservers() *endpoint.Map {
+	gitserversOnce.Do(func() {
+		gitserversVal = endpoint.New(func() string {
+			v := os.Getenv("SRC_GIT_SERVERS")
+			if v == "" {
+				// Detect 'go test' and setup default addresses in that case.
+				p, err := os.Executable()
+				if err == nil && strings.HasSuffix(p, ".test") {
+					return "gitserver:3178"
+				}
+				return "k8s+rpc://gitserver:3178?kind=sts"
+			}
+			return v
+		}())
+	})
+	return gitserversVal
+}
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
@@ -496,15 +522,97 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		}
 	})
 
-	addrs, err := gitservers.Endpoints()
+	gitAddrs, err := gitservers().Endpoints()
 	if err != nil {
 		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
 
+	searcherMap := computeSearcherEndpoints()
+	searcherAddrs, err := searcherMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
+	}
+
+	zoektMap := computeIndexedEndpoints()
+	zoektAddrs, err := zoektMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
+	}
+
 	return conftypes.ServiceConnections{
-		GitServers:           addrs,
+		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
+		Searchers:            searcherAddrs,
+		Zoekts:               zoektAddrs,
+		ZoektListTTL:         indexedListTTL,
 	}
+}
+
+var (
+	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+
+	searcherURLsOnce sync.Once
+	searcherURLs     *endpoint.Map
+
+	indexedEndpointsOnce sync.Once
+	indexedEndpoints     *endpoint.Map
+
+	indexedListTTL = func() time.Duration {
+		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+		if ttl == 0 {
+			if envvar.SourcegraphDotComMode() {
+				ttl = 30 * time.Second
+			} else {
+				ttl = 5 * time.Second
+			}
+		}
+		return ttl
+	}()
+)
+
+func computeSearcherEndpoints() *endpoint.Map {
+	searcherURLsOnce.Do(func() {
+		if len(strings.Fields(searcherURL)) == 0 {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
+			searcherURLs = endpoint.New(searcherURL)
+		}
+	})
+	return searcherURLs
+}
+
+func computeIndexedEndpoints() *endpoint.Map {
+	indexedEndpointsOnce.Do(func() {
+		if addr := zoektAddr(os.Environ()); addr != "" {
+			indexedEndpoints = endpoint.New(addr)
+		}
+	})
+	return indexedEndpoints
+}
+
+func zoektAddr(environ []string) string {
+	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		return addr
+	}
+
+	// Backwards compatibility: We used to call this variable ZOEKT_HOST
+	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
+		return addr
+	}
+
+	// Not set, use the default (service discovery on the indexed-search
+	// statefulset)
+	return "k8s+rpc://indexed-search:6070?kind=sts"
+}
+
+func getEnv(environ []string, key string) (string, bool) {
+	key = key + "="
+	for _, env := range environ {
+		if strings.HasPrefix(env, key) {
+			return env[len(key):], true
+		}
+	}
+	return "", false
 }

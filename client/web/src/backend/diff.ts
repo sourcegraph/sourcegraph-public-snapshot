@@ -11,7 +11,6 @@ export const diffStatFields = gql`
     fragment DiffStatFields on DiffStat {
         __typename
         added
-        changed
         deleted
     }
 `
@@ -61,7 +60,6 @@ export const fileDiffFields = gql`
         }
         stat {
             added
-            changed
             deleted
         }
         internalID

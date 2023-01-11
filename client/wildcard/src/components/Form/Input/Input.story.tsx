@@ -2,19 +2,14 @@ import React, { useCallback } from 'react'
 
 import { Meta } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '../../../stories/BrandedStory'
 
 import { Input } from './Input'
 
 const Story: Meta = {
     title: 'wildcard/Input',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Input,
@@ -63,7 +58,7 @@ export const Simple = () => {
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
-                error="a message with error"
+                error="An error message that can contain `code` or other **Markdown** _formatting_. [Learn more](https://docs.sourcegraph.com)"
                 status="error"
                 placeholder="error status input"
             />

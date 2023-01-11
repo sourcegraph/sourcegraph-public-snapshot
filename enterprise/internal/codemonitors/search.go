@@ -109,7 +109,16 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(
+		ctx,
+		"V3",
+		nil,
+		query,
+		search.Precise,
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -123,7 +132,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
+			return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
 		}
 		{
 			// This block is a transitional block that can be removed in a
@@ -180,7 +189,16 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(
+		ctx,
+		"V3",
+		nil,
+		query,
+		search.Precise,
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		return err
 	}
@@ -254,6 +272,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 func hookWithID(
 	ctx context.Context,
 	db database.DB,
+	logger log.Logger,
 	gs commit.GitserverClient,
 	monitorID int64,
 	repoID api.RepoID,
@@ -293,10 +312,18 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
-	// ignore any errors from early cancellation
-	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
-		return err
+		if errors.IsContextError(err) {
+			logger.Warn(
+				"commit search timed out, some commits may have been skipped",
+				log.Error(err),
+				log.String("repo", string(args.Repo)),
+				log.Strings("include", commitHashes),
+				log.Strings("exlcude", lastSearched),
+			)
+		} else {
+			return err
+		}
 	}
 
 	// If the search was successful, store the resolved hashes

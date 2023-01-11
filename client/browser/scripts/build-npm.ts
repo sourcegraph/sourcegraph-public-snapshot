@@ -5,6 +5,8 @@ import { writeFile } from 'mz/fs'
 import * as semver from 'semver'
 import signale from 'signale'
 
+import { copyInlineExtensions } from './tasks'
+
 export const packagePath = path.resolve(__dirname, '..', 'build', 'integration')
 
 /**
@@ -41,4 +43,6 @@ export async function buildNpm(bumpVersion?: boolean): Promise<void> {
     signale.info(`New version is ${packageJson.version}`)
     // Write package.json
     await writeFile(path.join(packagePath, 'package.json'), JSON.stringify(packageJson, null, 2))
+
+    copyInlineExtensions(packagePath)
 }

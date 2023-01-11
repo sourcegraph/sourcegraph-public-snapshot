@@ -16,8 +16,11 @@ env:
   SRC_TRACE_LOG: false
   # Set this to true to show an iTerm link to the file:line where the log message came from
   SRC_LOG_SOURCE_LINK: false
-  SRC_GIT_SERVER_1: 127.0.0.1:3178
-  SRC_GIT_SERVERS: 127.0.0.1:3178
+
+  # Use two gitserver instances in local dev
+  SRC_GIT_SERVER_1: 127.0.0.1:3501
+  SRC_GIT_SERVER_2: 127.0.0.1:3502
+  SRC_GIT_SERVERS: 127.0.0.1:3501 127.0.0.1:3502
 
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
@@ -39,7 +42,6 @@ env:
   GRAFANA_SERVER_URL: http://localhost:3370
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
-  ZOEKT_HOST: localhost:3070
 
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
@@ -47,7 +49,10 @@ env:
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "gitserver", "Host": "127.0.0.1:6068" },
+      { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
+      { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
+      { "Name": "oss-gitserver-0", "Host": "127.0.0.1:3551" },
+      { "Name": "oss-gitserver-1", "Host": "127.0.0.1:3552" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
       { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
@@ -55,16 +60,14 @@ env:
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
+      { "Name": "github-proxy", "Host": "127.0.0.1:6090" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
-      { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
-      { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
-  OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
   SITE_CONFIG_FILE: ./dev/site-config.json
   SITE_CONFIG_ALLOW_EDITS: true
@@ -91,9 +94,8 @@ env:
   NODE_ENV: development
 
   # Required for codeintel uploadstore
-  MINIO_ACCESS_KEY: AKIAIOSFODNN7EXAMPLE
-  MINIO_SECRET_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
+  PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
 
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
@@ -102,18 +104,24 @@ env:
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
-  EXECUTOR_IMAGE_ARCHIVE_PATH: $HOME/.sourcegraph/images
 
   # Disable auto-indexing the CNCF repo group (this only works in Cloud)
   # This setting will be going away soon
   DISABLE_CNCF: notonmybox
 
-  # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
-  CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
+  # Point code insights to the `frontend` database in development
+  CODEINSIGHTS_PGPORT: $PGPORT
+  CODEINSIGHTS_PGHOST: $PGHOST
+  CODEINSIGHTS_PGUSER: $PGUSER
+  CODEINSIGHTS_PGPASSWORD: $PGPASSWORD
+  CODEINSIGHTS_PGDATABASE: $PGDATABASE
+  CODEINSIGHTS_PGSSLMODE: $PGSSLMODE
+  CODEINSIGHTS_PGDATASOURCE: $PGDATASOURCE
+
+  # Disable code insights by default
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
-  ENABLE_STREAMING_REPOS_SYNCER: true
 
   # # OpenTelemetry in dev - use single http/json endpoint
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
@@ -177,20 +185,78 @@ commands:
       - enterprise/internal
       - enterprise/cmd/frontend
 
-  gitserver:
+  gitserver-template: &gitserver_template
     cmd: .bin/gitserver
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
     checkBinary: .bin/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal
       - cmd/gitserver
+      - enterprise/internal
+      - enterprise/cmd/gitserver
+
+  oss-gitserver-template: &oss_gitserver_template
+    cmd: .bin/oss-gitserver
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/oss-gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    checkBinary: .bin/oss-gitserver
+    env: &oss_gitserverenv
+      HOSTNAME: 127.0.0.1:3178
+    watch:
+      - lib
+      - internal
+      - cmd/gitserver
+
+  oss-gitserver-0:
+    <<: *oss_gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+
+  oss-gitserver-1:
+    <<: *oss_gitserver_template
+    env:
+      <<: *oss_gitserverenv
+      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
+
+  # This is only here to stay backwards-compatible with people's custom
+  # `sg.config.overwrite.yaml` files
+  gitserver:
+    <<: *gitserver_template
+
+  gitserver-0:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
+
+  gitserver-1:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
 
   github-proxy:
     cmd: .bin/github-proxy
@@ -200,8 +266,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
-    env:
-      HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal
@@ -249,7 +313,9 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/repo-updater
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -277,7 +343,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/oss-symbols
     env:
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
       - lib
@@ -295,7 +361,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: 'false'
     watch:
@@ -329,12 +395,12 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
@@ -343,7 +409,7 @@ commands:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
-      yarn --no-progress
+      yarn
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
@@ -357,6 +423,13 @@ commands:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-integration-build:
+    description: Build web application for integration tests
+    cmd: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
 
   docsite:
     description: Docsite instance serving the docs
@@ -376,8 +449,11 @@ commands:
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
-      # Pull syntax-highlighter latest insider image, only during install
-      docker pull -q sourcegraph/syntax-highlighter:insiders
+      # Pull syntax-highlighter latest insider image, only during install, but
+      # skip if OFFLINE=true is set.
+      if [[ "$OFFLINE" != "true" ]]; then
+          docker pull -q sourcegraph/syntax-highlighter:insiders
+      fi
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
@@ -396,7 +472,7 @@ commands:
       go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_COMMAND: dev/universal-ctags-dev
 
   zoekt-index-0:
     <<: *zoekt_indexserver_template
@@ -420,19 +496,22 @@ commands:
       env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
-      JAEGER_DISABLED: false
+      JAEGER_DISABLED: true
+      OPENTELEMETRY_DISABLED: false
       GOGC: 25
 
   zoekt-web-0:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen "127.0.0.1:3070"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -indexserver_proxy -listen "127.0.0.1:3070"
 
   zoekt-web-1:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -indexserver_proxy -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/codeintel-worker
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -454,8 +533,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
-      mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
@@ -471,7 +549,18 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ':6092'
+
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
+  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
+  codeintel-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/codeintel-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
+          .bin/executor
+    env:
+      EXECUTOR_USE_FIRECRACKER: true
+      EXECUTOR_QUEUE_NAME: codeintel
 
   batches-executor:
     <<: *executor_template
@@ -480,7 +569,20 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ':6093'
+
+  # This tool rebuilds the batcheshelper image every time the source of it is changed.
+  batcheshelper-builder:
+    # Nothing to run for this, we just want to re-run the install script every time.
+    cmd: exit 0
+    install: ./enterprise/cmd/batcheshelper/build.sh
+    env:
+      IMAGE: sourcegraph/batcheshelper:insiders
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - enterprise/cmd/batcheshelper
+      - lib/batches
+    continueWatchOnExit: true
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -488,14 +590,13 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ':6093'
 
-  minio:
+  blobstore:
     cmd: |
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       docker run --rm \
@@ -503,20 +604,20 @@ commands:
         --cpus=1 \
         --memory=1g \
         -p 0.0.0.0:9000:9000 \
-        -e 'MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE' \
-        -e 'MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' \
-        -v "$MINIO_DISK":/data \
-        $IMAGE server /data >"$MINIO_LOG_FILE" 2>&1
+        -e 'S3PROXY_AUTHORIZATION=none' \
+        -v "$BLOBSTORE_DISK":/data \
+        $IMAGE >"$BLOBSTORE_LOG_FILE" 2>&1
     install: |
-      mkdir -p $MINIO_LOGS
-      mkdir -p $MINIO_DISK
-      CACHE=true ./docker-images/minio/build.sh >$MINIO_LOG_FILE 2>&1
+      mkdir -p $BLOBSTORE_LOGS
+      mkdir -p $BLOBSTORE_DISK
+      chmod u+rwx $BLOBSTORE_LOGS $BLOBSTORE_DISK
+      CACHE=true ./docker-images/blobstore/build.sh >$BLOBSTORE_LOG_FILE 2>&1
     env:
-      MINIO_DISK: $HOME/.sourcegraph-dev/data/minio
-      MINIO_LOGS: $HOME/.sourcegraph-dev/logs/minio
-      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log
-      IMAGE: sourcegraph/minio
-      CONTAINER: minio
+      BLOBSTORE_DISK: $HOME/.sourcegraph-dev/data/blobstore
+      BLOBSTORE_LOGS: $HOME/.sourcegraph-dev/logs/blobstore
+      BLOBSTORE_LOG_FILE: $HOME/.sourcegraph-dev/logs/blobstore/blobstore.log
+      IMAGE: sourcegraph/blobstore
+      CONTAINER: blobstore
 
   redis-postgres:
     # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
@@ -568,7 +669,6 @@ commands:
         -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
         -v "${GRAFANA_DISK}":/var/lib/grafana \
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-        -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
         sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${GRAFANA_DISK}"
@@ -650,7 +750,7 @@ commands:
     cmd: ./dev/postgres_exporter.sh
 
   monitoring-generator:
-    cmd: go generate ./monitoring
+    cmd: (cd monitoring/ && go generate ./... )
     env:
       RELOAD: true
     watch:
@@ -688,7 +788,8 @@ commands:
 
       docker container rm otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
+        -p 8888:8888 \
         -e JAEGER_HOST=$JAEGER_HOST \
         -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
@@ -730,9 +831,10 @@ commandsets:
       - oss-worker
       - oss-repo-updater
       - oss-symbols
-      - gitserver
+      - oss-gitserver-0
+      - oss-gitserver-1
       - searcher
-      - web
+      - oss-web
       - caddy
       - docsite
       - syntax-highlighter
@@ -754,7 +856,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -790,7 +893,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -801,9 +905,10 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
-      - minio
+      - blobstore
       - codeintel-worker
       - codeintel-executor
+      # - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -823,7 +928,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -849,7 +955,8 @@ commandsets:
       - frontend
       - worker
       - repo-updater
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - github-proxy
@@ -870,7 +977,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -882,6 +990,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - batches-executor
+      - batcheshelper-builder
 
   iam:
     requiresDevPrivate: true
@@ -894,7 +1003,8 @@ commandsets:
       - frontend
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - caddy
       - github-proxy
 
@@ -903,6 +1013,7 @@ commandsets:
       - docker
     commands:
       - jaeger
+      - otel-collector
       - prometheus
       - grafana
       - postgres_exporter
@@ -970,9 +1081,6 @@ tests:
       EMAIL: 'joe@sourcegraph.com'
       PASSWORD: '12345'
 
-  web-integration:
-    cmd: yarn test-integration
-
   bext:
     cmd: yarn workspace @sourcegraph/browser test
 
@@ -990,14 +1098,18 @@ tests:
   client:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
-  client-e2e:
+  docsite:
+    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
+    env:
+      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+
+  web-e2e:
     preamble: |
       A Sourcegraph isntance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
-    cmd: |
-      yarn run test-e2e
+    cmd: yarn run test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword
@@ -1005,26 +1117,37 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: 'gcloud'
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
-  client-regression:
+  web-regression:
     preamble: |
       A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
 
-    cmd: |
-      yarn run test-regression
+    cmd: yarn run test-regression
     env:
       SOURCEGRAPH_SUDO_USER: test
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
       TEST_USER_PASSWORD: supersecurepassword
       BROWSER: chrome
 
-  docsite:
-    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
-    env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+  web-integration:
+    preamble: |
+      A web application should be built for these tests to work, most
+      commonly with: `sg run web-integration-build`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration
+
+  web-integration:debug:
+    preamble: |
+      A Sourcegraph instance must be already running for these tests to work, most
+      commonly with: `sg start web-standalone`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration:debug

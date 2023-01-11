@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -115,7 +116,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := HTTPMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			handler := HTTPMiddleware(logtest.Scoped(t), http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 				got := FromContext(r.Context())
 				// Compare string representation
 				if diff := cmp.Diff(tt.wantActor.String(), got.String()); diff != "" {

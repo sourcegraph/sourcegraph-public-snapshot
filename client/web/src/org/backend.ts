@@ -124,7 +124,6 @@ export const GET_ORG_FEATURE_FLAG_VALUE = gql`
         organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
     }
 `
-export const ORG_CODE_FEATURE_FLAG_NAME = 'org-code'
 export const ORG_CODE_FEATURE_FLAG_EMAIL_INVITE = 'org-email-invites'
 export const GITHUB_APP_FEATURE_FLAG_NAME = 'github-app-cloud'
 export const ORG_DELETION_FEATURE_FLAG_NAME = 'org-deletion'

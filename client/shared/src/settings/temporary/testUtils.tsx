@@ -16,7 +16,7 @@ export const MockTemporarySettings: React.FunctionComponent<
     const mockClient = createMockClient(
         null,
         gql`
-            query {
+            query TemporarySettings {
                 temporarySettings {
                     contents
                 }

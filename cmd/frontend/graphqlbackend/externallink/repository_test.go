@@ -136,7 +136,7 @@ func TestFileOrDir(t *testing.T) {
 			db := database.NewMockDB()
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			links, err := FileOrDir(context.Background(), db, repo, rev, path, isDir)
+			links, err := FileOrDir(context.Background(), db, gitserver.NewClient(db), repo, rev, path, isDir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -164,12 +164,10 @@ func TestFileOrDir(t *testing.T) {
 		db := database.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
-			return "mybranch", "", nil
-		}
-		defer gitserver.ResetMocks()
+		gsClient := gitserver.NewMockClient()
+		gsClient.GetDefaultBranchFunc.SetDefaultReturn("mybranch", "", nil)
 
-		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), db, gsClient, &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,7 +189,7 @@ func TestFileOrDir(t *testing.T) {
 		db := database.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), db, gitserver.NewClient(db), &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}

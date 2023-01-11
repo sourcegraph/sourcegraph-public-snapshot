@@ -114,7 +114,12 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm noValidate={true} onSubmit={handleSubmit} onReset={handleFormReset}>
+            <CreationUIForm
+                aria-label="Group results Insight creation form"
+                noValidate={true}
+                onSubmit={handleSubmit}
+                onReset={handleFormReset}
+            >
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
@@ -132,13 +137,13 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup
                     innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
-                    error={series.meta.touched && series.meta.error}
+                    error={(series.meta.touched && series.meta.error) || undefined}
                     subtitle={
                         licensed
                             ? 'Add any number of data series to your chart'
@@ -153,8 +158,8 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>
-                                    Do not include the <Code weight="bold">repo:</Code> filter as it will be added
-                                    automatically, if needed{' '}
+                                    Do not include <Code>context:</Code> <Code>repo:</Code> or <Code>rev:</Code>{' '}
+                                    filters; if needed, <Code>repo:</Code> will be added automatically.
                                 </li>
                                 <li>
                                     You can use <Code weight="bold">before:</Code> and <Code weight="bold">after:</Code>{' '}
@@ -167,13 +172,13 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
                     <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="chart settings group" title="Chart settings">
                     <Input
@@ -186,7 +191,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 {children({
                     submitting: formAPI.submitting,

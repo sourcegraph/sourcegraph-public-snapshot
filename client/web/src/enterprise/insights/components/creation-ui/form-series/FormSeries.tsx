@@ -69,7 +69,7 @@ export const FormSeries: FC<FormSeriesProps> = props => {
                     line && (
                         <SeriesCard
                             key={line.id}
-                            disabled={index >= 10}
+                            disabled={!licensed ? index >= 10 : false}
                             onEdit={() => editRequest(line.id)}
                             onRemove={() => deleteSeries(line.id)}
                             className={styles.formSeriesItem}

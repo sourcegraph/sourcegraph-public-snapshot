@@ -26,6 +26,90 @@ The GraphQL schema also needs to know about this new function and what it return
 newQuery(someArg: String!): Boolean!
 ```
 
+### Resolvers hierarchy
+
+GraphQL queries can be deeply nested. This means that a GraphQL request text specifies which fields of the schema should be returned. On the back-end this is reflected by a hierarchy of resolvers that stem from `schemaResolver`. Each method represents a nesting layer and returns the resolver for the nested structure.
+
+```go
+// cmd/frontend/graphqlbackend/graphqlbackend.go
+func (r *schemaResolver) Repository(ctx context.Context, args *struct {
+		Name     *string
+		CloneURL *string
+	}) (*RepositoryResolver, error) { ... }
+
+// cmd/frontend/graphqlbackend/repository.go
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) { ... }
+
+// cmd/frontend/graphqlbackend/git_commit.go
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
+```
+
+The above hierarchy of resolvers can implement queries like the following:
+
+```graphql
+  {
+    repository(name: "github.com/gorilla/mux") {
+      commit(rev: "abc") {
+        oid
+      }
+    }
+  }
+```
+
+### Unions
+
+Some GraphQL queries dispatch on the type of the nested entity:
+
+```graphql
+  {
+    organizationFeatureFlagOverrides {
+      namespace {
+        id
+      },
+      targetFlag {
+        ... on FeatureFlagBoolean {
+          name
+        },
+        ... on FeatureFlagRollout {
+          name
+        }
+      },
+      value
+    }
+  }
+```
+
+In the case above `targetFlag` can be considered either as a `FeatureFlagBoolean` or a `FeatureFlagRollout`, and in both cases a `name` should be returned. This is the way this is implemented on the back end:
+
+```go
+// cmd/frontend/graphqlbackend/feature_flags.go
+func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) { ... }
+
+func (f *FeatureFlagResolver) ToFeatureFlagBoolean() (*FeatureFlagBooleanResolver, bool) { ... }
+func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolver, bool) { ... }
+```
+
+Each type that composes a union has a corresponding method on the resolver with the prefix `To` that returns a resolver and a `bool` indicating whether an instance of the type is being returned.
+
+The relevant bit of the GraphQL schema uses a `union`:
+
+```graphql
+"""
+A feature flag is either a static boolean feature flag or a rollout feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean { ... }
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout { ... }
+```
+
 ## UI
 
 The UI needs to know about the GraphQL query as well. `graphql-operations.ts` files are generated from strings tagged with `gql` in the TypeScript files. These `graphql-operations.ts` files (which are excluded from the repository) are where the TypeScript functions, argument values, and return types are defined.

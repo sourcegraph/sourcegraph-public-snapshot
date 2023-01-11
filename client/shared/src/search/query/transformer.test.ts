@@ -51,12 +51,12 @@ describe('omitFilter', () => {
 
     test('omit context filter from the end of the query', () => {
         const query = 'bar context:foo'
-        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar ')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar')
     })
 
     test('omit context filter from the middle of the query', () => {
         const query = 'bar context:foo bar1'
-        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar  bar1')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toMatchInlineSnapshot('bar bar1')
     })
 })
 

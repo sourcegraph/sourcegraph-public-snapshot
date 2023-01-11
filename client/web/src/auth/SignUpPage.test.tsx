@@ -1,8 +1,8 @@
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -18,11 +18,15 @@ describe('SignUpPage', () => {
             displayName: 'Builtin username-password authentication',
             isBuiltin: true,
             serviceType: 'builtin',
+            authenticationURL: '',
+            serviceID: '',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
+            authenticationURL: '/.auth/github/login?pc=f00bar',
+            serviceID: 'https://github.com',
         },
     ]
 
@@ -91,7 +95,7 @@ describe('SignUpPage', () => {
         const mockUser = {
             id: 'userID',
             username: 'username',
-            email: 'user@me.com',
+            emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
             siteAdmin: true,
         } as AuthenticatedUser
 

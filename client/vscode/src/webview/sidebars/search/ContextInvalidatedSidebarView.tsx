@@ -10,8 +10,9 @@ export const ContextInvalidatedSidebarView: React.FunctionComponent<
     React.PropsWithChildren<ContextInvalidatedSidebarViewProps>
 > = ({ extensionCoreAPI }) => (
     <div>
-        <H5 className="mt-3 mb-2">Your Sourcegraph instance URL has changed.</H5>
-        <Text>Please reload VS Code to use to Sourcegraph extension.</Text>
+        <H5 className="mt-3 mb-2">New URL detected</H5>
+        <Text>Your Sourcegraph instance URL has changed.</Text>
+        <Text>Please reload VS Code to use the Sourcegraph extension.</Text>
         <Button
             variant="primary"
             className="font-weight-normal w-100 my-1 border-0"

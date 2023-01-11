@@ -29,12 +29,12 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	// We'll search for collaborators in 25 of the user's most-starred repositories.
 	const maxReposToScan = 25
 	db := r.db
-	pickedRepos, err := backend.NewRepos(r.logger, db).List(ctx, database.ReposListOptions{
+	gsClient := gitserver.NewClient(db)
+	pickedRepos, err := backend.NewRepos(r.logger, db, gsClient).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
-		UserID:                 a.UID,
-		IncludeUserPublicRepos: false,
-		NoForks:                true,
-		NoArchived:             true,
+		UserID:     a.UID,
+		NoForks:    true,
+		NoArchived: true,
 		OrderBy: database.RepoListOrderBy{{
 			Field:      "stars",
 			Descending: true,
@@ -46,7 +46,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, gitserver.NewClient(db).Commits)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, gsClient.Commits)
 
 	authUserEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
@@ -72,7 +72,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
 }
 
-type GitCommitsFunc func(context.Context, api.RepoName, gitserver.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+type GitCommitsFunc func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.CommitsOptions) ([]*gitdomain.Commit, error)
 
 func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
 	var (
@@ -85,11 +85,11 @@ func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo,
 		goroutine.Go(func() {
 			defer wg.Done()
 
-			recentCommits, err := gitCommits(ctx, repo.Name, gitserver.CommitsOptions{
+			recentCommits, err := gitCommits(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true, // Don't try to fetch missing commits.
 				NameOnly:         true, // Don't fetch detailed info like commit diffs.
-			}, authz.DefaultSubRepoPermsChecker)
+			})
 			if err != nil {
 				log15.Error("InvitableCollaborators: failed to get recent committers", "err", err)
 				return

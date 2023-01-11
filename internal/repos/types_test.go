@@ -5,19 +5,14 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -162,57 +157,4 @@ type MockExternalServicesLister struct {
 
 func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
-}
-
-func TestGrantedScopes(t *testing.T) {
-	logger := logtest.Scoped(t)
-	rcache.SetupForTest(t)
-	cache := rcache.New("TestGrantedScopes")
-	ctx := context.Background()
-
-	want := []string{"repo"}
-	github.MockGetAuthenticatedOAuthScopes = func(ctx context.Context) ([]string, error) {
-		return want, nil
-	}
-
-	t.Run("Test external service with user namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceUserID: 123}
-		// Run twice to use cache
-		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)
-			if err != nil {
-				t.Fatal(i, err)
-			}
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Fatal(i, diff)
-			}
-		}
-	})
-
-	t.Run("Test external service with org namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceOrgID: 42}
-		// Run twice to use cache
-		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)
-			if err != nil {
-				t.Fatal(i, err)
-			}
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Fatal(i, diff)
-			}
-		}
-	})
-
-}
-
-func TestHashToken(t *testing.T) {
-	// Sanity check output of hash function
-	h, err := hashToken("token")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := "47a1037c"
-	if want != h {
-		t.Fatalf("Want %q, got %q", want, h)
-	}
 }

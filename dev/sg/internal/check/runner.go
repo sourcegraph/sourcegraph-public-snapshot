@@ -430,7 +430,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					}
 
 					// Write the terminal summary to an indented block
-					var style = output.CombineStyles(output.StyleBold, output.StyleFailure)
+					style := output.CombineStyles(output.StyleBold, output.StyleFailure)
 					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
 					block.Writef("%s\n", check.cachedCheckErr)
 					if check.cachedCheckOutput != "" {
@@ -456,7 +456,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						annotationSummary += fmt.Sprintf("\n\n%s", suggestion)
 					}
 
-					if r.GenerateAnnotations {
+					if r.GenerateAnnotations && !check.LegacyAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)
 					}
 				}

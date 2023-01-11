@@ -13,9 +13,3 @@
     margin-top: auto;
     margin-bottom: auto;
 }
-
-:global(.graphiql-container) .toolbar-button {
-    margin-left: var(--toolbar-spacer);
-    margin-right: var(--toolbar-spacer);
-    color: var(--body-color);
-}

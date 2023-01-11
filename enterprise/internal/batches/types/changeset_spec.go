@@ -65,7 +65,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 			return nil, err
 		}
 		c.Type = ChangesetSpecTypeBranch
-		c.Diff = []byte(diff)
+		c.Diff = diff
 		c.HeadRef = spec.HeadRef
 		c.BaseRev = spec.BaseRev
 		c.BaseRef = spec.BaseRef
@@ -92,7 +92,6 @@ type ChangesetSpec struct {
 	Type ChangesetSpecType
 
 	DiffStatAdded   int32
-	DiffStatChanged int32
 	DiffStatDeleted int32
 
 	BatchSpecID int64
@@ -148,9 +147,8 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 		stats.Changed += stat.Changed
 	}
 
-	cs.DiffStatAdded = stats.Added
-	cs.DiffStatDeleted = stats.Deleted
-	cs.DiffStatChanged = stats.Changed
+	cs.DiffStatAdded = stats.Added + stats.Changed
+	cs.DiffStatDeleted = stats.Deleted + stats.Changed
 
 	return nil
 }
@@ -170,7 +168,6 @@ func (cs *ChangesetSpec) DiffStat() diff.Stat {
 	return diff.Stat{
 		Added:   cs.DiffStatAdded,
 		Deleted: cs.DiffStatDeleted,
-		Changed: cs.DiffStatChanged,
 	}
 }
 

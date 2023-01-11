@@ -5,9 +5,8 @@ package group
 
 import (
 	"context"
+	"runtime/debug"
 	"sync"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -114,6 +113,9 @@ type Errorable[T any] interface {
 type group struct {
 	wg      sync.WaitGroup
 	limiter Limiter // nil limiter means unlimited (default)
+
+	recoverMux   sync.Mutex
+	recoveredErr error
 }
 
 func (g *group) Go(f func()) {
@@ -140,7 +142,7 @@ func (g *group) start(f func()) {
 	g.wg.Add(1)
 	go func() {
 		defer g.wg.Done()
-		defer recoverPanic()
+		defer g.recoverPanic()
 
 		f()
 	}()
@@ -148,6 +150,11 @@ func (g *group) start(f func()) {
 
 func (g *group) Wait() {
 	g.wg.Wait()
+
+	// Propagate panic from child goroutine
+	if g.recoveredErr != nil {
+		panic(g.recoveredErr)
+	}
 }
 
 func (g *group) WithMaxConcurrency(limit int) Group {
@@ -170,6 +177,22 @@ func (g *group) WithContext(ctx context.Context) ContextGroup {
 		errorGroup: &errorGroup{
 			group: g,
 		},
+	}
+}
+
+func (g *group) recoverPanic() {
+	if val := recover(); val != nil {
+		g.recoverMux.Lock()
+		defer g.recoverMux.Unlock()
+
+		var err error
+		if valErr, ok := val.(error); ok {
+			err = valErr
+		} else {
+			err = errors.Errorf("%#v", val)
+		}
+
+		g.recoveredErr = errors.Wrapf(err, "recovered from panic in child goroutine with stacktrace:\n%s", debug.Stack())
 	}
 }
 
@@ -301,14 +324,4 @@ func (g *contextGroup) WithConcurrencyLimiter(limiter Limiter) ContextGroup {
 func (g *contextGroup) WithFirstError() ContextGroup {
 	g.errorGroup.onlyFirst = true
 	return g
-}
-
-func recoverPanic() {
-	if val := recover(); val != nil {
-		if err, ok := val.(error); ok {
-			log.Scoped("internal", "group").Error("recovered from panic", log.Error(err))
-		} else {
-			log.Scoped("internal", "group").Error("recovered from panic", log.Error(errors.Errorf("%#v", val)))
-		}
-	}
 }

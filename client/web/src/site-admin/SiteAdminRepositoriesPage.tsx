@@ -1,15 +1,30 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip, Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    Code,
+    Container,
+    H4,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+    Tooltip,
+    ErrorAlert,
+    LinkOrSpan,
+} from '@sourcegraph/wildcard'
 
-import { TerminalLine } from '../auth/Terminal'
+import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -18,7 +33,10 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
+    RepositoryOrderBy,
     RepositoryStatsResult,
+    ExternalServiceIDsAndNamesVariables,
+    ExternalServiceIDsAndNamesResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
@@ -27,7 +45,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
-import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
@@ -37,7 +55,7 @@ interface RepositoryNodeProps {
 
 const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
-        className="repository-node list-group-item py-2"
+        className="repository-node list-group-item px-0 py-2"
         data-test-repository={node.name}
         data-test-cloned={node.mirrorInfo.cloned}
     >
@@ -66,9 +84,14 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
-                    <TerminalLine className={styles.alertContent}>
-                        {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                    </TerminalLine>
+                    <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
+        {node.mirrorInfo.isCorrupted && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="danger">
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}
@@ -78,6 +101,49 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 const FILTERS: FilteredConnectionFilter[] = [
+    {
+        id: 'order',
+        label: 'Order',
+        type: 'select',
+        values: [
+            {
+                label: 'Name (A-Z)',
+                value: 'name-asc',
+                tooltip: 'Order repositories by name in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: false,
+                },
+            },
+            {
+                label: 'Name (Z-A)',
+                value: 'name-desc',
+                tooltip: 'Order repositories by name in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (largest first)',
+                value: 'size-desc',
+                tooltip: 'Order repositories by size in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (smallest first)',
+                value: 'size-asc',
+                tooltip: 'Order repositories by size in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: false,
+                },
+            },
+        ],
+    },
     {
         id: 'status',
         label: 'Status',
@@ -108,6 +174,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 args: { cloneStatus: 'NOT_CLONED' },
             },
             {
+                label: 'Indexed',
+                value: 'indexed',
+                tooltip: 'Show only repositories that have already been indexed',
+                args: { notIndexed: false },
+            },
+            {
                 label: 'Needs index',
                 value: 'needs-index',
                 tooltip: 'Show only repositories that need to be indexed',
@@ -132,25 +204,28 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     telemetryService,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('SiteAdminRepos')
+        telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     useEffect(() => {
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, error => logger.error(error))
         return () => {
             refreshSiteFlags()
                 .toPromise()
-                .then(null, error => console.error(error))
+                .then(null, error => logger.error(error))
         }
     }, [])
 
-    const { data, loading, error, startPolling, stopPolling } = useQuery<
-        RepositoryStatsResult,
-        RepositoryStatsVariables
-    >(REPOSITORY_STATS, {})
+    const {
+        data,
+        loading: repoStatsLoading,
+        error: repoStatsError,
+        startPolling,
+        stopPolling,
+    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -177,7 +252,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 description: 'Not cloned',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that haven not been cloned yet.',
+                tooltip: 'The number of repositories that have not been cloned yet.',
+                filter: { name: 'status', value: 'not-cloned' },
             },
             {
                 value: data.repositoryStats.cloning,
@@ -185,6 +261,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
+                filter: { name: 'status', value: 'cloning' },
             },
             {
                 value: data.repositoryStats.cloned,
@@ -192,6 +269,15 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
+                filter: { name: 'status', value: 'cloned' },
+            },
+            {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
+                filter: { name: 'status', value: 'indexed' },
             },
             {
                 value: data.repositoryStats.failedFetch,
@@ -199,9 +285,52 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+                filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
     }, [data])
+
+    const {
+        loading: extSvcLoading,
+        data: extSvcs,
+        error: extSvcError,
+    } = useQuery<ExternalServiceIDsAndNamesResult, ExternalServiceIDsAndNamesVariables>(
+        EXTERNAL_SERVICE_IDS_AND_NAMES,
+        {}
+    )
+
+    const filters = useMemo(() => {
+        if (!extSvcs) {
+            return FILTERS
+        }
+
+        const values = [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all repositories',
+                args: {},
+            },
+        ]
+
+        for (const extSvc of extSvcs.externalServices.nodes) {
+            values.push({
+                label: extSvc.displayName,
+                value: extSvc.id,
+                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                args: { externalService: extSvc.id },
+            })
+        }
+
+        const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
+        filtersWithExternalServices.push({
+            id: 'codeHost',
+            label: 'Code Host',
+            type: 'select',
+            values,
+        })
+        return filtersWithExternalServices
+    }, [extSvcs])
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
@@ -209,6 +338,11 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         []
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
+
+    const licenseInfo = window.context.licenseInfo
+
+    const error = repoStatsError || extSvcError
+    const loading = repoStatsLoading || extSvcLoading
 
     return (
         <div className="site-admin-repositories-page">
@@ -219,31 +353,53 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     statuses are displayed below.
                 </Alert>
             )}
-            <H2>Repositories</H2>
-            <Text>
-                Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
-                    code hosts
-                </Link>
-                .
-            </Text>
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GiB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+
             <Container className="mb-3">
-                {error && !loading && (
-                    <Alert variant="warning" as="p">
-                        {error.message}
-                    </Alert>
-                )}
+                {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                     className="mb-0"
-                    listClassName="list-group list-group-flush mt-3"
+                    listClassName="list-group list-group-flush mb-0"
+                    summaryClassName="mt-2"
+                    withCenteredSummary={true}
                     noun="repository"
                     pluralNoun="repositories"
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
-                    inputClassName="flex-1"
-                    filters={FILTERS}
+                    inputClassName="ml-2 flex-1"
+                    filters={filters}
                     history={history}
                     location={location}
                 />

@@ -22,9 +22,15 @@ func NewFakeSourcer(err error, src Source) Sourcer {
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
-	svc   *types.ExternalService
-	repos []*types.Repo
-	err   error
+	svc           *types.ExternalService
+	repos         []*types.Repo
+	err           error
+	connectionErr error
+
+	// ListRepos will send on this channel if it's not nil and wait on the channel
+	// again before quitting. This can help with testing certain concurrent situation
+	// in tests.
+	lockChan chan struct{}
 }
 
 // NewFakeSource returns an instance of FakeSource with the given urn, error
@@ -33,9 +39,29 @@ func NewFakeSource(svc *types.ExternalService, err error, rs ...*types.Repo) *Fa
 	return &FakeSource{svc: svc, err: err, repos: rs}
 }
 
+// InitLockChan creates a non nil lock channel and returns it
+func (s *FakeSource) InitLockChan() chan struct{} {
+	s.lockChan = make(chan struct{})
+	return s.lockChan
+}
+
+func (s *FakeSource) Unavailable() *FakeSource {
+	s.connectionErr = errors.New("fake source unavailable")
+	return s
+}
+
+func (s *FakeSource) CheckConnection(ctx context.Context) error {
+	return s.connectionErr
+}
+
 // ListRepos returns the Repos that FakeSource was instantiated with
 // as well as the error, if any.
-func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	if s.lockChan != nil {
+		s.lockChan <- struct{}{}
+		<-s.lockChan
+	}
+
 	if s.err != nil {
 		results <- SourceResult{Source: s, Err: s.err}
 		return
@@ -46,7 +72,7 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	}
 }
 
-func (s FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
+func (s *FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
 	for _, r := range s.repos {
 		if strings.HasSuffix(string(r.Name), name) {
 			return r, s.err
@@ -61,6 +87,6 @@ func (s FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, erro
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s FakeSource) ExternalServices() types.ExternalServices {
+func (s *FakeSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }

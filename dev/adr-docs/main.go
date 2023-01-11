@@ -13,7 +13,7 @@ type templateData struct {
 	ADRs []adr.ArchitectureDecisionRecord
 }
 
-//go:generate go run .
+//go:generate sh -c "TZ=Etc/UTC go run ."
 func main() {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {

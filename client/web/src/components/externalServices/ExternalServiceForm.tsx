@@ -3,16 +3,16 @@ import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, H4, Text, Input } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, H4, Text, Input, ErrorAlert, ErrorMessage, Form } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
@@ -27,6 +27,8 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: AddExternalServiceInput) => void
     autoFocus?: boolean
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 }
 
 /**
@@ -47,6 +49,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     submitName,
     onSubmit,
     onChange,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     autoFocus = true,
 }) => {
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -62,6 +66,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
         },
         [input, onChange]
     )
+    const disabled = externalServicesFromFile && !allowEditExternalServicesWithFile
+
     return (
         <Form className="external-service-form" onSubmit={onSubmit}>
             {error && <ErrorAlert error={error} />}
@@ -71,6 +77,10 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     <ErrorMessage error={warning} />
                 </Alert>
             )}
+
+            {disabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
+
             {hideDisplayNameField || (
                 <div className="form-group">
                     <Input
@@ -82,13 +92,12 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         spellCheck={false}
                         value={input.displayName}
                         onChange={onDisplayNameChange}
-                        disabled={loading}
+                        disabled={loading || disabled}
                         label="Display name:"
                         className="mb-0"
                     />
                 </div>
             )}
-
             <div className="form-group">
                 <DynamicallyImportedMonacoSettingsEditor
                     // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
@@ -99,6 +108,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     canEdit={false}
                     loading={loading}
                     height={350}
+                    readOnly={disabled}
                     isLightTheme={isLightTheme}
                     onChange={onConfigChange}
                     history={history}
@@ -120,7 +130,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     'mb-3',
                     mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
                 )}
-                disabled={loading}
+                disabled={loading || disabled}
                 variant="primary"
             >
                 {loading && <LoadingSpinner />}

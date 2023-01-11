@@ -26,17 +26,24 @@ func newTest(t *testing.T) *httptestutil.Client {
 	rateLimitStore, _ := memstore.New(1024)
 	rateLimiter := graphqlbackend.NewRateLimiteWatcher(logger, rateLimitStore)
 
-	return httptestutil.NewTest(NewHandler(database.NewMockDB(),
+	db := database.NewMockDB()
+
+	return httptestutil.NewTest(NewHandler(db,
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
 		&Handlers{
-			GitHubWebhook:             enterpriseServices.GitHubWebhook,
-			GitLabWebhook:             enterpriseServices.GitLabWebhook,
-			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
-			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
-			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
+			BatchesGitHubWebhook:          enterpriseServices.BatchesGitHubWebhook,
+			BatchesGitLabWebhook:          enterpriseServices.BatchesGitLabWebhook,
+			GitHubSyncWebhook:             enterpriseServices.ReposGithubWebhook,
+			GitLabSyncWebhook:             enterpriseServices.ReposGitLabWebhook,
+			BitbucketServerSyncWebhook:    enterpriseServices.ReposBitbucketServerWebhook,
+			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
+			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
+			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
+			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
+			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
 		},
 	))
 }

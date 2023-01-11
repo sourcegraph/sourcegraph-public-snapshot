@@ -124,11 +124,12 @@ client/vscode
 #### Desktop and Web Version
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
-1. Install dependencies via `yarn` for the Sourcegraph repository
-1. Run `yarn generate` at the root directory to generate the required schemas
-1. Make your changes to the files within the `client/vscode` directory with VS Code
-1. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks from the `root` directory
-1. Select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu in the `Run and Debug` sidebar view to see your changes
+2. Install dependencies via `yarn` for the Sourcegraph repository
+3. Run `yarn generate` at the root directory to generate the required schemas
+4. Make your changes to the files within the `client/vscode` directory with VS Code
+5. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks from the `root` directory
+6. To see your changes, open the `Run and Debug` sidebar view in VS Code, and
+   select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu.
 
 ### Integration Tests
 
@@ -200,9 +201,9 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 #### Release Steps
 
 1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
-2. Run `yarn --cwd client/vscode release:$RELEASE_TYPE` in the root directory
+2. Run `yarn workspace @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
    - $RELEASE_TYPE: major, minor, patch, pre
-     - Example: `yarn --cwd client/vscode release:patch`
+     - Example: `yarn workspace @sourcegraph/vscode run release:patch`
    - This command will:
      - Update the package.json file with the next version number
      - Update the changelog format by listing everything under `Unreleased` to the updated version number

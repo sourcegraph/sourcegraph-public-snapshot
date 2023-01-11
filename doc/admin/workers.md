@@ -16,23 +16,33 @@ This job periodically checks for records with NULL attributes that need to be ba
 
 #### `codeintel-upload-janitor`
 
-This job will eventually (and partially) replace `codeintel-janitor`.
+This job periodically removes expired and unreachable code navigation data and reconciles data between the frontend and codeintel-db database instances.
 
 #### `codeintel-upload-expirer`
 
-This job will eventually (and partially) replace `codeintel-janitor`
+This job periodically matches code navigation data against data retention policies.
 
 #### `codeintel-commitgraph-updater`
 
-This job will eventually replace `codeintel-commitgraph`.
+This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
 
-#### `codeintel-documents-indexer`
-
-This job periodically indexes file contents at a syntactic level to build an index of search-based code navigation.
+**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
 
 #### `codeintel-autoindexing-scheduler`
 
-This job will eventually replace `codeintel-auto-indexing`.
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
+
+#### `codeintel-autoindexing-dependency-scheduler`
+
+This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
+
+#### `codeintel-autoindexing-janitor`
+
+This job periodically removes stale autoindexing records.
+
+#### `codeintel-metrics-reporter`
+
+This job periodically emits metrics to be scraped by Prometheus about code intelligence background jobs.
 
 #### `codeintel-policies-repository-matcher`
 
@@ -42,28 +52,20 @@ This job periodically updates an index of policy repository patterns to matching
 
 This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
 
-#### `codeintel-commitgraph`
-
-This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
-
-**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details
-
-#### `codeintel-janitor`
-
-This job periodically removes expired and unreachable code navigation data and reconciles data between the frontend and codeintel-db database instances.
-
-#### `codeintel-auto-indexing`
-
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
-
 #### `insights-job`
 
-This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
-1. Commit indexer
-2. Background query executor
-3. Historical data recorder
-4. Data clean up jobs
-5. Settings file insight definition migrations
+This job contains most of the background processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+
+1. Insight enqueuer
+2. Insight backfiller
+3. Insight license checker
+4. Insight backfill checker
+5. Data clean up jobs
+
+#### `insights-query-runner-job`
+
+This job is responsible for processing and running record and snapshot points for Code Insights. Such points are filled by running global searches. 
+This job was split from the other Code Insights background processes so that it could benefit from horizontal scaling. 
 
 #### `webhook-log-janitor`
 
@@ -118,6 +120,14 @@ This job periodically cleans up the `repo_statistics` table by rolling up all ro
 #### `record-encrypter`
 
 This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
+
+#### `zoekt-repos-updater`
+
+This job periodically fetches the list of indexed repositories from Zoekt shards and updates the indexing status accordingly in the `zoekt_repos` table.
+
+#### `auth-sourcegraph-operator-cleaner`
+
+This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
 
 ## Deploying workers
 

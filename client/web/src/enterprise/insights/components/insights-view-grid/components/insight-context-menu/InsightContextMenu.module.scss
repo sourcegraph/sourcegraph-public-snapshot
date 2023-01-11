@@ -1,5 +1,11 @@
 .button {
     cursor: pointer;
+    fill: var(--text-muted);
+
+    &:hover,
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
+    }
 }
 
 .button-icon {
@@ -11,5 +17,5 @@
 }
 
 .item[data-reach-menu-item] {
-    text-align: right;
+    padding: 0.25rem 0.75rem;
 }

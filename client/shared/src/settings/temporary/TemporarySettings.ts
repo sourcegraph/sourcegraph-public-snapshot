@@ -1,12 +1,13 @@
 import { Optional } from 'utility-types'
 
-// eslint-disable-next-line no-restricted-imports
-import { TourListState } from '@sourcegraph/web/src/tour/components/Tour/useTour'
 import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
 
-import { SectionID, NoResultsSectionID, SidebarTabID } from './searchSidebar'
+import { DiffMode } from './diffMode'
+import { RecentSearch } from './recentSearches'
+import { SectionID, NoResultsSectionID } from './searchSidebar'
+import { TourListState } from './tourState'
 
 /**
  * Schema for temporary settings.
@@ -15,13 +16,14 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
-    'search.sidebar.selectedTab': SidebarTabID | null // Used only when coreWorkflowImprovements.enabled is set
+    'search.sidebar.collapsed': boolean // Used only on non-mobile sizes and when coreWorkflowImprovements.enabled is set
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
+    'insights.lastVisitedDashboardId': string | null
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
@@ -33,9 +35,7 @@ export interface TemporarySettingsSchema {
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
-    'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
-    'coreWorkflowImprovements.enabled': boolean
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {
         lastCachedTimestamp: string
@@ -43,6 +43,15 @@ export interface TemporarySettingsSchema {
         filePath: string
         author: string
     }
+    'search.results.collapseSmartSearch': boolean
+    'search.input.recentSearches': RecentSearch[]
+    'search.input.usedInlineHistory': boolean
+    // TODO #41002: Remove this temporary setting.
+    // This temporary setting is now turned on by default with no UI to toggle it off.
+    'coreWorkflowImprovements.enabled_deprecated': boolean
+    'batches.minSavedPerChangeset': number
+    'search.notebooks.minSavedPerView': number
+    'repo.commitPage.diffMode': DiffMode
 }
 
 /**

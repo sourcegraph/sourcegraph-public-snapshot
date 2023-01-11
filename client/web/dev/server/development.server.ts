@@ -91,9 +91,10 @@ async function startWebpackDevelopmentServer({
         proxy: [proxyConfig],
         // Disable default DevServer compression. We need more fine grained compression to support streaming search.
         compress: false,
-        onBeforeSetupMiddleware: developmentServer => {
+        setupMiddlewares: (middlewares, developmentServer) => {
             // Re-enable gzip compression using our own `compression` filter.
-            developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+            developmentServer.app!.use(compression({ filter: shouldCompressResponse }))
+            return middlewares
         },
     }
 
@@ -124,7 +125,7 @@ async function startEsbuildDevelopmentServer({
     const manifest = getManifest()
     const htmlPage = getHTMLPage(manifest)
 
-    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
+    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTP_PORT }, app => {
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
             response.send(htmlPage)

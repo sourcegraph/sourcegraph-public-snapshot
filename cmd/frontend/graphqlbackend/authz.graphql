@@ -132,6 +132,28 @@ extend type Query {
     usersWithPendingPermissions: [String!]!
 
     """
+    INTERNAL ONLY: Returns a list of the types of authz providers that have been configured and will be used for
+    determining which repositories the user has access to.
+    """
+    authzProviderTypes: [String!]!
+
+    """
+    EXPERIMENTAL: Returns a list of recent permissions sync jobs for a given set of parameters.
+
+    This endpoint currently only reports recently completed sync jobs, with an expiry configurable by 'authz.syncJobsRecordsTTL'.
+    """
+    permissionsSyncJobs(
+        """
+        Only returns jobs with this status.
+        """
+        status: PermissionsSyncJobStatus
+        """
+        Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
+        """
+        first: Int = 100
+    ): PermissionsSyncJobsConnection!
+
+    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(
@@ -229,13 +251,22 @@ input UserSubRepoPermission {
     """
     bindID: String!
     """
+    DEPRECATED
     An array of paths that the user is allowed to access, in glob format.
     """
-    pathIncludes: [String!]!
+    pathIncludes: [String!] @deprecated(reason: "use paths instead.")
     """
+    DEPRECATED
     An array of paths that the user is not allowed to access, in glob format.
     """
-    pathExcludes: [String!]!
+    pathExcludes: [String!] @deprecated(reason: "use paths instead.")
+    """
+    An array of paths in glob format. Paths starting with a minus (-)
+    (i.e. "-/dev/private") prevent access, otherwise paths grant access.
+    The last applicable path takes precedence.
+    When paths is set, pathIncludes and pathExcludes are ignored.
+    """
+    paths: [String!]
 }
 
 """
@@ -279,6 +310,98 @@ input FetchPermissionsOptions {
     sync should be invalidated.
     """
     invalidateCaches: Boolean
+}
+
+"""
+Permission sync jobs.
+"""
+type PermissionsSyncJobsConnection {
+    """
+    Permission sync jobs.
+    """
+    nodes: [PermissionsSyncJob!]!
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Status types of permissions sync jobs.
+"""
+enum PermissionsSyncJobStatus {
+    ERROR
+    SUCCESS
+}
+
+"""
+State of a permission sync job.
+"""
+type PermissionsSyncJob implements Node {
+    """
+    Unique node ID.
+    """
+    id: ID!
+    """
+    Type of the sync job.
+    """
+    type: String!
+    """
+    ID of the entity worked on in this sync job.
+    """
+    jobID: Int!
+    """
+    Completion time of the sync job.
+    """
+    completedAt: DateTime
+    """
+    Status of the sync job.
+    """
+    status: PermissionsSyncJobStatus!
+    """
+    Message describing the status of the sync job - for example, the contents of any
+    errors.
+    """
+    message: String!
+    """
+    Per-provider states.
+    """
+    providers: [PermissionsProviderState!]!
+}
+
+"""
+Status types of permissions providers.
+"""
+enum PermissionsProviderStatus {
+    ERROR
+    SUCCESS
+}
+
+"""
+State of a permissions provider during a sync job.
+"""
+type PermissionsProviderState {
+    """
+    Type of the provider.
+    """
+    type: String!
+    """
+    ID representing the provider.
+    """
+    id: String!
+    """
+    Type of the sync job.
+    """
+    status: PermissionsProviderStatus!
+    """
+    Message describing the status of the provider during a sync job - for example, the
+    contents of any errors and during which operation they occured.
+    """
+    message: String!
 }
 
 """

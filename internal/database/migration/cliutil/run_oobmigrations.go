@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,20 +22,29 @@ import (
 )
 
 func RunOutOfBandMigrations(
-	logger log.Logger,
 	commandName string,
 	runnerFactory RunnerFactory,
 	outFactory OutputFactory,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 ) *cli.Command {
-	idFlag := &cli.IntFlag{
+	idsFlag := &cli.IntSliceFlag{
 		Name:     "id",
 		Usage:    "The target migration to run. If not supplied, all migrations are run.",
 		Required: false,
 	}
+	applyReverseFlag := &cli.BoolFlag{
+		Name:     "apply-reverse",
+		Usage:    "If set, run the out of band migration in reverse.",
+		Required: false,
+	}
+	disableAnimation := &cli.BoolFlag{
+		Name:     "disable-animation",
+		Usage:    "If set, progress bar animations are not displayed.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		r, err := runnerFactory(ctx, schemas.SchemaNames)
+		r, err := runnerFactory(schemas.SchemaNames)
 		if err != nil {
 			return err
 		}
@@ -43,17 +54,15 @@ func RunOutOfBandMigrations(
 		}
 		registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
-		var ids []int
-		if id := idFlag.Get(cmd); id != 0 {
-			ids = append(ids, id)
-		}
 		if err := runOutOfBandMigrations(
 			ctx,
 			db,
-			false,
+			false, // dry-run
+			!applyReverseFlag.Get(cmd),
+			!disableAnimation.Get(cmd),
 			registerMigrators,
 			out,
-			ids,
+			idsFlag.Get(cmd),
 		); err != nil {
 			return err
 		}
@@ -63,11 +72,13 @@ func RunOutOfBandMigrations(
 
 	return &cli.Command{
 		Name:        "run-out-of-band-migrations",
-		Usage:       "Run incomplete out of band migrations (experimental).",
+		Usage:       "Run incomplete out of band migrations.",
 		Description: "",
 		Action:      action,
 		Flags: []cli.Flag{
-			idFlag,
+			idsFlag,
+			applyReverseFlag,
+			disableAnimation,
 		},
 	}
 }
@@ -76,10 +87,19 @@ func runOutOfBandMigrations(
 	ctx context.Context,
 	db database.DB,
 	dryRun bool,
+	up bool,
+	animateProgress bool,
 	registerMigrations oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 	ids []int,
 ) (err error) {
+	if len(ids) != 0 {
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+		if dryRun {
+			return nil
+		}
+	}
+
 	store := oobmigration.NewStoreWithDB(db)
 	runner := outOfBandMigrationRunnerWithStore(store)
 	if err := runner.SynchronizeMetadata(ctx); err != nil {
@@ -101,31 +121,26 @@ func runOutOfBandMigrations(
 	}
 	sort.Ints(ids)
 
-	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 	if dryRun {
 		return nil
 	}
 
+	if err := runner.UpdateDirection(ctx, ids, !up); err != nil {
+		return err
+	}
+
 	go runner.StartPartial(ids)
 	defer runner.Stop()
-
-	bars := make([]output.ProgressBar, 0, len(ids))
-	for _, id := range ids {
-		bars = append(bars, output.ProgressBar{
-			Label: fmt.Sprintf("Migration #%d", id),
-			Max:   1.0,
-		})
-	}
-	progress := out.Progress(bars, nil)
 	defer func() {
-		progress.Destroy()
-
 		if err == nil {
 			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
 		} else {
 			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Out of band migrations failed: %s", err))
 		}
 	}()
+
+	updateMigrationProgress, cleanup := makeOutOfBandMigrationProgressUpdater(out, ids, animateProgress)
+	defer cleanup()
 
 	ticker := time.NewTicker(time.Second).C
 	for {
@@ -136,12 +151,16 @@ func runOutOfBandMigrations(
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
 		for i, m := range migrations {
-			progress.SetValue(i, m.Progress)
+			updateMigrationProgress(i, m)
 		}
 
 		complete := true
 		for _, m := range migrations {
 			if !m.Complete() {
+				if m.ApplyReverse && m.NonDestructive {
+					continue
+				}
+
 				complete = false
 			}
 		}
@@ -154,6 +173,48 @@ func runOutOfBandMigrations(
 			return ctx.Err()
 		case <-ticker:
 		}
+	}
+}
+
+// makeOutOfBandMigrationProgressUpdater returns a two functions: `update` should be called
+// when the updates to the progress of an out-of-band migration are made and should be reflected
+// in the output; and `cleanup` should be called on defer when the progress object should be
+// disposed.
+func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animateProgress bool) (
+	update func(i int, m oobmigration.Migration),
+	cleanup func(),
+) {
+	if !animateProgress || shouldDisableProgressAnimation() {
+		update = func(i int, m oobmigration.Migration) {
+			out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
+		}
+		return update, func() {}
+	}
+
+	bars := make([]output.ProgressBar, 0, len(ids))
+	for _, id := range ids {
+		bars = append(bars, output.ProgressBar{
+			Label: fmt.Sprintf("Migration #%d", id),
+			Max:   1.0,
+		})
+	}
+
+	progress := out.Progress(bars, nil)
+	return func(i int, m oobmigration.Migration) { progress.SetValue(i, m.Progress) }, progress.Destroy
+}
+
+// shouldDisableProgressAnimation determines if progress bars should be avoided because the log level
+// will create output that interferes with a stable canvas. In effect, this adds the -disable-animation
+// flag when SRC_LOG_LEVEL is info or debug.
+func shouldDisableProgressAnimation() bool {
+	switch log.Level(os.Getenv(log.EnvLogLevel)) {
+	case log.LevelDebug:
+		return true
+	case log.LevelInfo:
+		return true
+
+	default:
+		return false
 	}
 }
 
@@ -185,5 +246,5 @@ func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*base
 		return nil, err
 	}
 
-	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
+	return basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), shareableStore, sql.TxOptions{})), nil
 }

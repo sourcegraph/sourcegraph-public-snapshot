@@ -2,7 +2,7 @@
 
 .grid {
     display: grid;
-    grid-template-columns: max-content max-content 1fr max-content max-content;
+    grid-template-columns: max-content max-content 1fr max-content;
     column-gap: 1rem;
     row-gap: 1rem;
 
@@ -48,7 +48,7 @@
         margin-bottom: 0;
     }
 
-    grid-column: 4 / 5;
+    grid-column: 3 / 4;
     align-self: end;
 
     @media (--sm-breakpoint-down) {
@@ -58,7 +58,7 @@
 }
 
 .error-button {
-    grid-column: 5 / 6;
+    grid-column: 4 / 5;
     align-self: end;
 
     @media (--sm-breakpoint-down) {

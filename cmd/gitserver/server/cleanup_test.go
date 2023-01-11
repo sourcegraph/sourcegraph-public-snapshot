@@ -21,11 +21,13 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +50,7 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	for _, name := range []string{"a", "b/d", "c"} {
 		p := path.Join(root, name, ".git")
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		cmd := exec.Command("git", "--bare", "init", p)
@@ -67,21 +69,24 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-		DB:     database.NewMockDB(),
+	logger, capturedLogs := logtest.Captured(t)
+	s := &Server{
+		ReposDir:       root,
+		Logger:         logger,
+		ObservationCtx: observation.TestContextTB(t),
+		DB:             database.NewMockDB(),
 	}
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-INSERT INTO repo(id, name) VALUES (1, 'a'), (2, 'b/d'), (3, 'c');
+INSERT INTO repo(id, name, private) VALUES (1, 'a', false), (2, 'b/d', false), (3, 'c', true);
 UPDATE gitserver_repos SET shard_id = 1;
 UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(actor.WithInternalActor(context.Background()), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), api.RepoID(i))
@@ -117,6 +122,13 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 	if d := cmp.Diff(want, got); d != "" {
 		t.Fatalf("mismatch for (-want +got):\n%s", d)
 	}
+
+	logs := capturedLogs()
+	for _, cl := range logs {
+		if cl.Level == "error" {
+			t.Errorf("test run has collected an errorneous log: %s", cl.Message)
+		}
+	}
 }
 
 func TestCleanupInactive(t *testing.T) {
@@ -132,12 +144,14 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-		DB:     database.NewMockDB(),
+	s := &Server{
+		ReposDir:       root,
+		Logger:         logtest.Scoped(t),
+		ObservationCtx: observation.TestContextTB(t),
+		DB:             database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -164,13 +178,15 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		s := &Server{ReposDir: root,
-			Logger: logtest.Scoped(t),
-			DB:     database.NewMockDB(),
+		s := &Server{
+			ReposDir:       root,
+			Logger:         logtest.Scoped(t),
+			ObservationCtx: observation.TestContextTB(t),
+			DB:             database.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
-		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
+		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
 
 		if _, err := os.Stat(repoA); err != nil {
 			t.Error("expected repoA not to be removed")
@@ -195,13 +211,15 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		s := &Server{ReposDir: root,
-			Logger: logtest.Scoped(t),
-			DB:     database.NewMockDB(),
+		s := &Server{
+			ReposDir:       root,
+			Logger:         logtest.Scoped(t),
+			ObservationCtx: observation.TestContextTB(t),
+			DB:             database.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
-		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}})
+		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}})
 
 		if _, err := os.Stat(repoA); err != nil {
 			t.Error("expected repoA not to be removed")
@@ -226,13 +244,15 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		s := &Server{ReposDir: root,
-			Logger: logtest.Scoped(t),
-			DB:     database.NewMockDB(),
+		s := &Server{
+			ReposDir:       root,
+			Logger:         logtest.Scoped(t),
+			ObservationCtx: observation.TestContextTB(t),
+			DB:             database.NewMockDB(),
 		}
 		s.testSetup(t)
 		wrongShardReposDeleteLimit = -1
-		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
+		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}})
 
 		if _, err := os.Stat(repoA); os.IsNotExist(err) {
 			t.Error("expected repoA not to be removed")
@@ -293,12 +313,14 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Handler must be invoked for Server side-effects.
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-		DB:     database.NewMockDB(),
+	s := &Server{
+		ReposDir:       root,
+		Logger:         logtest.Scoped(t),
+		ObservationCtx: observation.TestContextTB(t),
+		DB:             database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -411,6 +433,7 @@ func TestCleanupExpired(t *testing.T) {
 
 	s := &Server{
 		Logger:           logtest.Scoped(t),
+		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -419,7 +442,7 @@ func TestCleanupExpired(t *testing.T) {
 		DB: database.NewMockDB(),
 	}
 	s.testSetup(t)
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -503,8 +526,9 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		remote := path.Join(root, "remote", ".git")
 
 		return &Server{
-			Logger:   logtest.Scoped(t),
-			ReposDir: root,
+			Logger:         logtest.Scoped(t),
+			ObservationCtx: observation.TestContextTB(t),
+			ReposDir:       root,
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return remote, nil
 			},
@@ -524,7 +548,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		s.testSetup(t)
 		s.DB = mockDB
 
-		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 		// nothing should happen if test env not declared to true
 		if _, err := os.Stat(repoExists); err != nil {
@@ -544,7 +568,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		s.testSetup(t)
 		s.DB = mockDB
 
-		s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+		s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 		if _, err := os.Stat(repoNotExists); err == nil {
 			t.Fatal("repo not existing in DB was not removed")
@@ -684,9 +708,9 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 	s.testSetup(t)
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	isRemoved := func(path string) bool {
 		_, err := os.Stat(path)
@@ -708,7 +732,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -770,7 +794,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -824,10 +848,11 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:   logger,
-		ReposDir: root,
-		DB:       db,
-		ctx:      ctx,
+		Logger:         logger,
+		ObservationCtx: observation.TestContextTB(t),
+		ReposDir:       root,
+		DB:             db,
+		ctx:            ctx,
 	}
 
 	// Remove everything but github.com/foo/survivor
@@ -890,9 +915,10 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: root,
-		DB:       db,
+		Logger:         logtest.Scoped(t),
+		ObservationCtx: observation.TestContextTB(t),
+		ReposDir:       root,
+		DB:             db,
 	}
 
 	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
@@ -935,10 +961,11 @@ func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 	root := t.TempDir()
 	mkFiles(t, root, "github.com/foo/baz/.git/HEAD")
 	s := &Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: root,
-		DB:       db,
-		ctx:      ctx,
+		Logger:         logtest.Scoped(t),
+		ObservationCtx: observation.TestContextTB(t),
+		ReposDir:       root,
+		DB:             db,
+		ctx:            ctx,
 	}
 
 	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), false); err != nil {
@@ -966,6 +993,7 @@ func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
 		Logger:             logtest.Scoped(t),
+		ObservationCtx:     observation.TestContextTB(t),
 		DesiredPercentFree: 10,
 		DB:                 database.NewMockDB(),
 	}
@@ -1038,7 +1066,7 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 
 func writeFile(t *testing.T, path string, content []byte) {
 	t.Helper()
-	err := os.WriteFile(path, content, 0666)
+	err := os.WriteFile(path, content, 0o666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1108,13 +1136,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -1146,10 +1174,11 @@ func TestFreeUpSpace(t *testing.T) {
 		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		s := Server{
-			Logger:    logtest.Scoped(t),
-			ReposDir:  rd,
-			DiskSizer: &fakeDiskSizer{},
-			DB:        db,
+			Logger:         logtest.Scoped(t),
+			ObservationCtx: observation.TestContextTB(t),
+			ReposDir:       rd,
+			DiskSizer:      &fakeDiskSizer{},
+			DB:             db,
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)
@@ -1175,13 +1204,13 @@ func TestFreeUpSpace(t *testing.T) {
 
 func makeFakeRepo(d string, sizeBytes int) error {
 	gd := filepath.Join(d, ".git")
-	if err := os.MkdirAll(gd, 0700); err != nil {
+	if err := os.MkdirAll(gd, 0o700); err != nil {
 		return errors.Wrap(err, "creating .git dir and any parents")
 	}
-	if err := os.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "HEAD"), nil, 0o666); err != nil {
 		return errors.Wrap(err, "creating HEAD file")
 	}
-	if err := os.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0o666); err != nil {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil
@@ -1514,7 +1543,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 		"ghe.sgdev.org/sourcegraph/gorilla-sessions",
 	} {
 		p := path.Join(root, name, ".git")
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		cmd := exec.Command("git", "--bare", "init", p)
@@ -1525,7 +1554,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(logger, t)
 	s.DB = database.NewDB(logger, db)
@@ -1542,7 +1571,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos(gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
+	s.cleanupRepos(context.Background(), gitserver.GitServerAddresses{Addresses: []string{"gitserver-0"}})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)

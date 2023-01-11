@@ -30,7 +30,7 @@ Treat adding new data to pings as having a very high bar. Would you be willing t
     - Will it be needed forever, or only for a short time? If only for a  short time, what is the criteria and estimated timeline for removing the  data point(s)?
     - Have you considered alternatives? E.g., collecting this data from Sourcegraph.com, or adding a report for admins that we can request from some number of friendly customers?    
 
-    These RFCs are great examples: [Adding code host versions to Pings](https://docs.google.com/document/d/1Z68vV1SvCmRW5Hz5v4SkI8oUW4pgLmq5199RmLYToeU/edit#heading=h.trqab8y0kufp) and [Adding Sourcegraph Extensions Usage Metrics to Pings](https://docs.google.com/document/d/1HKgwTyG-IcRM81xLAmussWV4EdK95uy7GjKFIG8vgU4/edit#heading=h.trqab8y0kufp).
+    This RFCs is a great example: [Adding code host versions to Pings](https://docs.google.com/document/d/1Z68vV1SvCmRW5Hz5v4SkI8oUW4pgLmq5199RmLYToeU/edit#heading=h.trqab8y0kufp).
 1. When the RFC is approved, use the [life of a ping documentation](https://docs.sourcegraph.com/dev/background-information/architecture/life-of-a-ping) with help of [an example PR](https://github.com/sourcegraph/sourcegraph/pull/15389) to implement the change. At least one member of the BizOps team must approve the resulting PR before it can be merged. DO NOT merge your PR yet. Steps 3, 4, and 5 must be completed before merging.
     - Ensure a CHANGELOG entry is added, and that the two sources of truth for ping data are updated along with your PR:
       - Pings documentation: https://docs.sourcegraph.com/admin/pings
@@ -78,3 +78,7 @@ resource.labels.container_name="frontend"
 "[COMPANY]" AND "updatecheck"
 ```
 6. Locally: To see non-critical pings locally, you will need to update your site configuration such that `disableNonCriticalTelemetry` is set to false. It is set to `true` by default. For Sourcegraph employees you should change this in your `dev-private` repo under `enterprise/dev/site-config.json`. 
+
+## Adding critical telemetry
+
+Background: [This function](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?L371) collects the data points to be sent back to Sourcegraph for ingestion. Everything in [this IF statement](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?L424) is captured if the instance is set to allow non-critical telemetry; everything outside of it is collected if the instance does not allow non-critical telemetry. 

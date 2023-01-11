@@ -1,0 +1,27 @@
+.grid {
+    display: grid;
+    grid-template-columns: max-content max-content 1fr max-content;
+    column-gap: 1rem;
+    row-gap: 1rem;
+
+    > * {
+        grid-row: 1 / 2;
+    }
+}
+
+.icon {
+    fill: var(--danger) !important;
+}
+
+.icon.enabled {
+    fill: var(--light-text) !important;
+}
+
+.errors {
+    grid-column: 1 / 2;
+}
+
+.button {
+    grid-column: 4 / 5;
+    align-self: end;
+}

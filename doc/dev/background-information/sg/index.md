@@ -191,6 +191,13 @@ further, you *can* develop Sourcegraph with no connectivity by setting the
 OFFLINE=true sg start
 ```
 
+Ensure that the `sourcegraph/syntax-highlighter:insiders` image is already available locally. If not, pull it with the following command before going offline to ensure that offline mode works seamlessly:
+
+```bash
+docker pull -q sourcegraph/syntax-highlighter:insiders
+```
+
+
 ## Contributing to `sg`
 
 Want to hack on `sg`? Great! Here's how:

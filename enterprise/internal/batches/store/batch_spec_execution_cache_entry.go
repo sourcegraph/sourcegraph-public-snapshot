@@ -81,7 +81,6 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 }
 
 var createBatchSpecExecutionCacheEntryQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
 ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique
@@ -96,6 +95,8 @@ RETURNING %s
 type ListBatchSpecExecutionCacheEntriesOpts struct {
 	Keys   []string
 	UserID int32
+	// If true, explicitly return all entires.
+	All bool
 }
 
 // ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
@@ -105,11 +106,11 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if opts.UserID == 0 {
+	if !opts.All && opts.UserID == 0 {
 		return nil, errors.New("cannot query cache entries without specifying UserID")
 	}
 
-	if len(opts.Keys) == 0 {
+	if !opts.All && len(opts.Keys) == 0 {
 		return nil, errors.New("cannot query cache entries without specifying Keys")
 	}
 
@@ -129,19 +130,22 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 }
 
 var listBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:ListBatchSpecExecutionCacheEntries
 SELECT %s FROM batch_spec_execution_cache_entries
 WHERE %s
 `
 
 func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEntriesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)),
 		// Only consider records that are in the current cache version.
 		sqlf.Sprintf("batch_spec_execution_cache_entries.version = %s", btypes.CurrentCacheVersion),
-		sqlf.Sprintf("batch_spec_execution_cache_entries.user_id = %s", opts.UserID),
 	}
 
+	if opts.UserID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_execution_cache_entries.user_id = %s", opts.UserID))
+	}
+	if len(opts.Keys) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)))
+	}
 	return sqlf.Sprintf(
 		listBatchSpecExecutionCacheEntriesQueryFmtstr,
 		sqlf.Join(BatchSpecExecutionCacheEntryColums.ToSqlf(), ", "),
@@ -150,7 +154,6 @@ func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEn
 }
 
 const markUsedBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntries
 UPDATE
 	batch_spec_execution_cache_entries
 SET last_used_at = %s
@@ -178,7 +181,6 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids 
 // maxCacheSize again. Also, cache entries from older cache versions are always
 // deleted.
 const cleanBatchSpecExecutionEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
 WITH total_size AS (
   SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries
 ),

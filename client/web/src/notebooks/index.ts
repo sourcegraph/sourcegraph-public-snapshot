@@ -1,11 +1,11 @@
-import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 
-import { FetchFileParameters, HighlightRange } from '@sourcegraph/search-ui'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { IHighlightLineRange, SymbolKind } from '@sourcegraph/shared/src/schema'
+import { HighlightRange } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+
+import { HighlightLineRange, SymbolKind } from '../graphql-operations'
 
 // When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
@@ -39,16 +39,12 @@ export interface FileBlockInput {
     repositoryName: string
     revision: string
     filePath: string
-    lineRange: IHighlightLineRange | null
+    lineRange: HighlightLineRange | null
     initialQueryInput?: string
 }
 
 export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[] | Error>> {
     type: 'file'
-}
-
-export interface ComputeBlock extends BaseBlock<string, string> {
-    type: 'compute'
 }
 
 export interface SymbolBlockInput {
@@ -66,7 +62,7 @@ export interface SymbolBlockOutput {
     symbolFoundAtLatestRevision: boolean
     effectiveRevision: string
     symbolRange: UIRangeSpec['range']
-    highlightLineRange: IHighlightLineRange
+    highlightLineRange: HighlightLineRange
     highlightedLines: string[]
     highlightSymbolRange: HighlightRange
 }
@@ -75,27 +71,24 @@ export interface SymbolBlock extends BaseBlock<SymbolBlockInput, Observable<Symb
     type: 'symbol'
 }
 
-export type Block = QueryBlock | MarkdownBlock | FileBlock | ComputeBlock | SymbolBlock
+export type Block = QueryBlock | MarkdownBlock | FileBlock | SymbolBlock
 
 export type BlockInput =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
-    | Pick<ComputeBlock, 'type' | 'input'>
     | Pick<SymbolBlock, 'type' | 'input'>
 
 export type BlockInit =
     | Omit<FileBlock, 'output'>
     | Omit<MarkdownBlock, 'output'>
     | Omit<QueryBlock, 'output'>
-    | Omit<ComputeBlock, 'output'>
     | Omit<SymbolBlock, 'output'>
 
 export type SerializableBlock =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
-    | Pick<ComputeBlock, 'type' | 'input'>
     | Pick<SymbolBlock, 'type' | 'input' | 'output'>
 
 export type BlockDirection = 'up' | 'down'
@@ -103,7 +96,7 @@ export type BlockDirection = 'up' | 'down'
 export interface BlockProps<T extends Block = Block> {
     isReadOnly: boolean
     isSelected: boolean
-    isOtherBlockSelected: boolean
+    showMenu: boolean
     id: T['id']
     input: T['input']
     output: T['output']
@@ -112,9 +105,13 @@ export interface BlockProps<T extends Block = Block> {
     onBlockInputChange(id: string, blockInput: BlockInput): void
     onMoveBlock(id: string, direction: BlockDirection): void
     onDuplicateBlock(id: string): void
+    onNewBlock(id: string): void
 }
 
 export interface BlockDependencies {
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+}
+
+export interface NotebookProps {
+    notebooksEnabled: boolean
 }

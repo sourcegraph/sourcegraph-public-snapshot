@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { mdiSourceFork, mdiAccountQuestion } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Badge, Icon, BadgeProps, Tooltip } from '@sourcegraph/wildcard'
@@ -28,13 +29,13 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
         variant={variant !== undefined ? variant : deleted ? 'danger' : 'secondary'}
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
-        aria-label={`${deleted ? 'Deleted ' : ''}Branch: `}
+        aria-label={deleted ? 'Deleted' : ''}
     >
         {!forkTarget || forkTarget.namespace === null ? (
             name
         ) : (
             <>
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceFork} />
+                <Icon aria-label="fork" className="mr-1" svgPath={mdiSourceFork} />
                 <BranchNamespace target={forkTarget} />
                 {name}
             </>
@@ -54,8 +55,9 @@ export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<Branch
     headRef,
 }) => (
     <div className="d-block d-sm-inline-block">
+        <VisuallyHidden>Request to merge commit into</VisuallyHidden>
         <Branch name={baseRef} />
-        <Icon as="span" inline={false} className="p-1" aria-label="Update with">
+        <Icon as="span" inline={false} className="p-1" aria-label="from">
             &larr;
         </Icon>
         <Branch name={headRef} forkTarget={forkTarget} />

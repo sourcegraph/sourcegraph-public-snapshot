@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import React, { useEffect, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -38,11 +39,10 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
         if (isLightTheme === undefined) {
             extensionCoreAPI.getEditorTheme
                 .then(theme => {
-                    console.log(theme)
                     setIsLightTheme(theme === 'Light')
                 })
                 .catch(error => {
-                    console.log(error)
+                    console.error(error)
                     setIsLightTheme(false)
                 })
         }
@@ -51,6 +51,12 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
         await extensionCoreAPI.openLink(url)
+    }
+
+    const onLogoutClick = async (): Promise<void> => {
+        if (authenticatedUser) {
+            await extensionCoreAPI.removeAccessToken()
+        }
     }
 
     return (
@@ -69,7 +75,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
                 <i className="codicon codicon-bug" slot="start" />
-                Report issue
+                Report an issue
             </Button>
             <Button
                 as={VSCodeButton}
@@ -90,7 +96,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                     slot="start"
                     src={isLightTheme ? VSCE_SG_LOGOMARK_DARK : VSCE_SG_LOGOMARK_LIGHT}
                 />
-                Create an account
+                Create new account
             </Button>
             <Button
                 as={VSCodeButton}
@@ -110,7 +116,20 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <Text className="ml-2">Connected to {new URL(instanceURL).hostname}</Text>
+                        <div className="mt-1">
+                            <Text className="ml-2 small">
+                                Click button below to sign out of {new URL(instanceURL).hostname}. VS Code will be
+                                reloaded upon sign out.
+                            </Text>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="font-weight-normal w-100 my-1 border-0 small"
+                                onClick={() => onLogoutClick()}
+                            >
+                                Sign out
+                            </Button>
+                        </div>
                     )}
                 </div>
             )}

@@ -10,8 +10,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -62,7 +64,7 @@ var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforc
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
 	// only allow site admins to see it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 
@@ -145,7 +147,7 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 	return strptr(info.LastError), nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
+func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
@@ -155,7 +157,73 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime
 		return nil, nil
 	}
 
-	return &DateTime{Time: info.LastFetched}, nil
+	return &gqlutil.DateTime{Time: info.LastFetched}, nil
+}
+
+func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if info.CorruptedAt.IsZero() {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *repositoryMirrorInfoResolver) CorruptionLogs(ctx context.Context) ([]*corruptionLogResolver, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	logs := make([]*corruptionLogResolver, 0, len(info.CorruptionLogs))
+	for _, l := range info.CorruptionLogs {
+		logs = append(logs, &corruptionLogResolver{log: l})
+	}
+
+	return logs, nil
+}
+
+type corruptionLogResolver struct {
+	log types.RepoCorruptionLog
+}
+
+func (r *corruptionLogResolver) Timestamp() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: r.log.Timestamp}, nil
+}
+
+func (r *corruptionLogResolver) Reason() (string, error) {
+	return r.log.Reason, nil
+}
+
+func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return BigInt(info.RepoSizeBytes), err
+}
+
+func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: This is a query that reveals internal details of the
+	// instance that only the admin should be able to see.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if info.ShardID == "" {
+		return nil, nil
+	}
+
+	return &info.ShardID, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
@@ -177,8 +245,8 @@ func (r *updateScheduleResolver) IntervalSeconds() int32 {
 	return int32(r.schedule.IntervalSeconds)
 }
 
-func (r *updateScheduleResolver) Due() DateTime {
-	return DateTime{Time: r.schedule.Due}
+func (r *updateScheduleResolver) Due() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.schedule.Due}
 }
 
 func (r *updateScheduleResolver) Index() int32 {
@@ -222,7 +290,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 }) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -230,6 +298,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
+	gsClient := gitserver.NewClient(r.db)
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
@@ -237,7 +306,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.logger, r.db).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.db, gsClient).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +316,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	}
 
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.NewClient(r.db).IsRepoCloneable(ctx, repo.Name); err != nil {
+	if err := gsClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
@@ -268,7 +337,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

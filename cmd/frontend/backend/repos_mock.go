@@ -14,12 +14,12 @@ import (
 )
 
 type MockRepos struct {
-	Get          func(v0 context.Context, id api.RepoID) (*types.Repo, error)
-	GetByName    func(v0 context.Context, name api.RepoName) (*types.Repo, error)
-	List         func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
-	ResolveRev   func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetInventory func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	Get                      func(v0 context.Context, id api.RepoID) (*types.Repo, error)
+	GetByName                func(v0 context.Context, name api.RepoName) (*types.Repo, error)
+	List                     func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
+	ResolveRev               func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	GetInventory             func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	DeleteRepositoryFromDisk func(v0 context.Context, name api.RepoID) error
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -79,6 +79,15 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *b
 	return
 }
 
+func (s *MockRepos) MockDeleteRepositoryFromDisk(t *testing.T, wantRepo api.RepoID) (called *bool) {
+	called = new(bool)
+	s.DeleteRepositoryFromDisk = func(_ context.Context, repo api.RepoID) error {
+		*called = repo == wantRepo
+		return nil
+	}
+	return
+}
+
 func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
@@ -108,9 +117,5 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 
 func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *gitdomain.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
-		*called = true
-		return commit, nil
-	}
 	return
 }

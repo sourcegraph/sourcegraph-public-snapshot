@@ -27,9 +27,9 @@ export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<Bra
     setPolicy,
     disabled = false,
 }) => {
-    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(
-        updates: { [P in K]: CodeIntelligenceConfigurationPolicyFields[P] }
-    ): void => {
+    const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
+        [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
+    }): void => {
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 

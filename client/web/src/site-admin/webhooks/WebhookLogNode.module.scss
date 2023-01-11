@@ -13,6 +13,11 @@
     // background runs all the way to the next border.
     margin-bottom: -0.5rem;
 
+    .message-panel-container {
+        padding-top: calc(var(--spacer) * 0.5);
+        display: grid;
+    }
+
     @media (--sm-breakpoint-down) {
         padding: 0 !important;
         background: transparent;

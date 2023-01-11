@@ -18,8 +18,13 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
-- [Migrations](migration/index.md)
-- [Upgrading PostgreSQL](postgres.md)
+> NOTE: The Sourcegraph 4.0 [`migrator`](./how-to/manual_database_migrations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
+
+- [Upgrade Sourcegraph](updates/index.md)
+  - [Single-minor-version "standard" upgrades](updates/index.md#standard-upgrades)
+  - [Multi-version upgrades](updates/index.md#multi-version-upgrades)
+- [Migration guides](migration/index.md)
+- [Upgrading PostgreSQL](postgres.md#upgrading-postgresql)
 
 ## [Configuration](config/index.md)
 
@@ -36,14 +41,21 @@ Administration is usually handled by site administrators are the admins responsi
 - [Repository permissions](repo/permissions.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
+- [Configure incoming webhooks](config/webhooks.md)
 
 For deployment configuration, please refer to the relevant [installation guide](deploy/index.md).
 
 ## [Observability](observability.md)
 
 - [Monitoring guide](how-to/monitoring-guide.md)
-- [Metrics and dashboards](./observability/metrics.md)
-- [Alerting](./observability/alerting.md)
+- [Metrics and dashboards](observability/metrics.md)
+- [Alerting](observability/alerting.md)
+- [Tracing](observability/tracing.md)
+- [Logs](observability/logs.md)
+- [Outbound request log](observability/outbound-request-log.md)
+- [OpenTelemetry](observability/opentelemetry.md)
+- [Health checks](observability/health_checks.md)
+- [Troubleshooting guide](observability/troubleshooting.md)
 
 ## Features
 
@@ -55,7 +67,7 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)
 - [Search](search.md)
-- [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
+- [Audit logs](audit_log.md)
 

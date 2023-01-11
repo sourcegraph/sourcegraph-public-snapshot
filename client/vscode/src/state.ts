@@ -1,8 +1,8 @@
 import { cloneDeep } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
 
-import { SearchQueryState } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { SearchQueryState } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
@@ -51,7 +51,10 @@ export interface ContextInvalidatedState {
 /**
  * Subset of SearchQueryState that's necessary and clone-able (`postMessage`) for the VS Code extension.
  */
-export type VSCEQueryState = Pick<SearchQueryState, 'queryState' | 'searchCaseSensitivity' | 'searchPatternType'> | null
+export type VSCEQueryState = Pick<
+    SearchQueryState,
+    'queryState' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> | null
 
 interface CommonContext {
     authenticatedUser: AuthenticatedUser | null

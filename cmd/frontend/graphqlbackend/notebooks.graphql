@@ -232,23 +232,9 @@ type SymbolBlock {
 }
 
 """
-Compute block runs compute queries in a notebook.
-"""
-type ComputeBlock {
-    """
-    ID of the block.
-    """
-    id: String!
-    """
-    An value encoding compute inputs.
-    """
-    computeInput: String!
-}
-
-"""
 Notebook blocks are a union of distinct block types: Markdown, Query, File, Symbol, and Compute.
 """
-union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock | SymbolBlock | ComputeBlock
+union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock | SymbolBlock
 
 """
 A notebook with an array of blocks.
@@ -426,7 +412,6 @@ enum NotebookBlockType {
     QUERY
     FILE
     SYMBOL
-    COMPUTE
 }
 
 """
@@ -458,10 +443,6 @@ input CreateNotebookBlockInput {
     Symbol input.
     """
     symbolInput: CreateSymbolBlockInput
-    """
-    Compute input.
-    """
-    computeInput: String
 }
 
 """

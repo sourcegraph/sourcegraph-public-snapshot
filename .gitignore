@@ -1,6 +1,9 @@
 # Temporary directory for whatever you want
 .tmp/
 
+# Bazel
+bazel-*
+
 # Vim
 *.swp
 
@@ -71,6 +74,7 @@ yarn-error.log
 /ui/assets/styles/
 /ui/assets/*.br
 /ui/assets/*.gz
+/ui/assets/stats-*
 
 *.json.actual
 
@@ -107,8 +111,7 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/schema.ts
-client/shared/src/schema/*
+client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
 /dist
@@ -117,13 +120,9 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
-elm-stuff
 
 # Extensions
 /client/extension-api/dist
-
-# Compute Component
-/client/web/src/search/results/components/compute/public/dist
 
 # Direnv
 .envrc
@@ -172,9 +171,24 @@ annotations/
 # Buildkite analytics files
 test-reports/
 
+# CI linter cache (used only in CI)
+.golangci-lint-cache
+
 # go workspace files shouldn't be committed
 go.work
 go.work.sum
 
 # binary
 /sg
+
+# New Yarn without using Zero-Installs (https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored)
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# SCIP
+index.scip

@@ -16,7 +16,7 @@ import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
 import styles from './RevisionsPopover.module.scss'
 
 export interface RevisionsPopoverProps {
-    repo: Scalars['ID']
+    repoId: Scalars['ID']
     repoName: string
     defaultBranch: string
 
@@ -133,7 +133,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 currentRev={props.currentRev}
                                 getPathFromRevision={getPathFromRevision}
                                 defaultBranch={props.defaultBranch}
-                                repo={props.repo}
+                                repo={props.repoId}
                                 repoName={props.repoName}
                                 onSelect={props.onSelect}
                                 showSpeculativeResults={
@@ -148,7 +148,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 currentRev={props.currentRev}
                                 getPathFromRevision={getPathFromRevision}
                                 defaultBranch={props.defaultBranch}
-                                repo={props.repo}
+                                repo={props.repoId}
                                 currentCommitID={props.currentCommitID}
                                 onSelect={props.onSelect}
                                 tabLabel={tab.description}

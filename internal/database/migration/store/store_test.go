@@ -51,15 +51,15 @@ func TestEnsureSchemaTable(t *testing.T) {
 
 func TestBackfillSchemaVersions(t *testing.T) {
 	t.Run("frontend", func(t *testing.T) {
-		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395787, 1528395834)) // squashed root
-		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395787, 1528395834)) // squashed root
-		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395787, 1528395840)) // non-squashed migration
+		testViaMigrationLogs(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395834, backfillRange(1528395684, 1528395834)) // squashed root
+		testViaGolangMigrate(t, "frontend", 1528395840, backfillRange(1528395684, 1528395840)) // non-squashed migration
 	})
 
 	t.Run("codeintel", func(t *testing.T) {
-		testViaMigrationLogs(t, "codeintel", 1000000015, backfillRange(1000000005, 1000000015)) // squashed root
-		testViaGolangMigrate(t, "codeintel", 1000000015, backfillRange(1000000005, 1000000015)) // squashed root
-		testViaGolangMigrate(t, "codeintel", 1000000020, backfillRange(1000000005, 1000000020)) // non-squashed migration
+		testViaMigrationLogs(t, "codeintel", 1000000015, backfillRange(1000000000, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000015, backfillRange(1000000000, 1000000015)) // squashed root
+		testViaGolangMigrate(t, "codeintel", 1000000020, backfillRange(1000000000, 1000000020)) // non-squashed migration
 	})
 
 	t.Run("codeinsights", func(t *testing.T) {
@@ -340,7 +340,8 @@ func TestWrappedUp(t *testing.T) {
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
-		}, {
+		},
+		{
 			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
@@ -388,7 +389,7 @@ func TestWrappedUp(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: relation"
 
 		definition := definition.Definition{
 			ID: 17,
@@ -521,7 +522,7 @@ func TestWrappedDown(t *testing.T) {
 	})
 
 	t.Run("query failure", func(t *testing.T) {
-		expectedErrorMessage := "SQL Error"
+		expectedErrorMessage := "ERROR: syntax error at or near"
 
 		definition := definition.Definition{
 			ID: 13,
@@ -712,7 +713,7 @@ func testStore(db *sql.DB) *Store {
 }
 
 func testStoreWithName(db *sql.DB, name string) *Store {
-	return NewWithDB(db, name, NewOperations(&observation.TestContext))
+	return NewWithDB(&observation.TestContext, db, name)
 }
 
 func strPtr(v string) *string {

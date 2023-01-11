@@ -17,11 +17,11 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -77,7 +78,7 @@ type Factory struct {
 	common []Opt
 }
 
-// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
 // between caching values for a useful amount of time versus growing the cache
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
@@ -102,13 +103,18 @@ var (
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-func NewExternalClientFactory() *Factory {
+// and middleware pre-set for communicating with external services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewExternalClientFactory(middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+		redisLoggerMiddleware(),
+	}
+	mw = append(mw, middleware...)
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -143,12 +149,16 @@ var (
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-func NewInternalClientFactory(subsystem string) *Factory {
+// and middleware pre-set for communicating with internal services. Additional
+// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
+func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+	mw := []Middleware{
+		ContextErrorMiddleware,
+	}
+	mw = append(mw, middleware...)
+
 	return NewFactory(
-		NewMiddleware(
-			ContextErrorMiddleware,
-		),
+		NewMiddleware(mw...),
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
@@ -162,7 +172,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 	)
 }
 
-// InternalDoer is a shared client for external communication. This is a
+// InternalDoer is a shared client for internal communication. This is a
 // convenience for existing uses of http.DefaultClient.
 var InternalDoer, _ = InternalClientFactory.Doer()
 
@@ -234,8 +244,8 @@ func HeadersMiddleware(headers ...string) Middleware {
 }
 
 // ContextErrorMiddleware wraps a Doer with context.Context error
-// handling.  It checks if the request context is done, and if so,
-// returns its error. Otherwise it returns the error from the inner
+// handling. It checks if the request context is done, and if so,
+// returns its error. Otherwise, it returns the error from the inner
 // Doer call.
 func ContextErrorMiddleware(cli Doer) Doer {
 	return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -273,6 +283,71 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 	})
 }
 
+// requestContextKey is used to denote keys to fields that should be logged by the logging
+// middleware. They should be set to the request context associated with a response.
+type requestContextKey int
+
+const (
+	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// a request undergoes retries via NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iota
+
+	// redisLoggingMiddlewareErrorKey is the key to any errors that occurred when logging
+	// a request to Redis via redisLoggerMiddleware
+	redisLoggingMiddlewareErrorKey
+)
+
+// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// debug level. The provided logger is given the 'httpcli' subscope.
+//
+// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
+func NewLoggingMiddleware(logger log.Logger) Middleware {
+	logger = logger.Scoped("httpcli", "http client")
+
+	return func(d Doer) Doer {
+		return DoerFunc(func(r *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := d.Do(r)
+
+			// Gather fields about this request.
+			fields := append(make([]log.Field, 0, 5), // preallocate some space
+				log.String("host", r.URL.Host),
+				log.String("path", r.URL.Path),
+				log.Duration("duration", time.Since(start)))
+			if err != nil {
+				fields = append(fields, log.Error(err))
+			}
+			// Check incoming request context, unless a response is available, in which
+			// case we check the request associated with the response in case it is not
+			// the same as the original request (e.g. due to retries)
+			ctx := r.Context()
+			if resp != nil {
+				ctx = resp.Request.Context()
+				fields = append(fields, log.Int("code", resp.StatusCode))
+			}
+			// Gather fields from request context. When adding fields set into context,
+			// make sure to test that the fields get propagated and picked up correctly
+			// in TestLoggingMiddleware.
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+				// Get fields from NewRetryPolicy
+				fields = append(fields, log.Object("retry",
+					log.Int("attempts", attempt.Index),
+					log.Error(attempt.Error)))
+			}
+			if redisErr, ok := ctx.Value(redisLoggingMiddlewareErrorKey).(error); ok {
+				// Get fields from redisLoggerMiddleware
+				fields = append(fields, log.NamedError("redisLoggerErr", redisErr))
+			}
+
+			// Log results with link to trace if present
+			trace.Logger(ctx, logger).
+				Debug("request", fields...)
+
+			return resp, err
+		})
+	}
+}
+
 //
 // Common Opts
 //
@@ -290,7 +365,7 @@ func ExternalTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-// NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
+// NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
@@ -427,6 +502,12 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				span.LogFields(fields...)
 			}
 
+			// Update request context with latest retry for logging middleware
+			if shouldTraceLog {
+				*a.Request = *a.Request.WithContext(
+					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
+			}
+
 			if retry {
 				metricRetry.Inc()
 			}
@@ -435,14 +516,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				return
 			}
 
-			log15.Error(
-				"retrying HTTP request failed",
-				"attempt", a.Index,
-				"method", a.Request.Method,
-				"url", a.Request.URL,
-				"status", status,
-				"err", a.Error,
-			)
 		}()
 
 		if a.Response != nil {
@@ -488,7 +561,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			return true
 		}
 
-		if status == 0 || status == 429 || (status >= 500 && status != 501) {
+		if status == 0 || status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented) {
 			return true
 		}
 
@@ -654,4 +727,35 @@ func RequestClientTransportOpt(cli *http.Client) error {
 	}
 
 	return nil
+}
+
+// IsRiskyHeader returns true if the request or response header is likely to contain private data.
+func IsRiskyHeader(name string, values []string) bool {
+	return isRiskyHeaderName(name) || containsRiskyHeaderValue(values)
+}
+
+// isRiskyHeaderName returns true if the request or response header is likely to contain private data
+// based on its name.
+func isRiskyHeaderName(name string) bool {
+	riskyHeaderKeys := []string{"auth", "cookie", "token"}
+	for _, riskyKey := range riskyHeaderKeys {
+		if strings.Contains(strings.ToLower(name), riskyKey) {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsRiskyHeaderValue returns true if the values array of a request or response header
+// looks like it's likely to contain private data.
+func containsRiskyHeaderValue(values []string) bool {
+	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
+	for _, value := range values {
+		for _, riskyValue := range riskyHeaderValues {
+			if strings.Contains(strings.ToLower(value), riskyValue) {
+				return true
+			}
+		}
+	}
+	return false
 }

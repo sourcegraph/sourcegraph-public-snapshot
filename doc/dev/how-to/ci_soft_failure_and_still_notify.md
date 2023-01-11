@@ -26,9 +26,9 @@ Let's use as an example the following:
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/jetbrains -s build"),
+		bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
 +   bk.SoftFail(1, 2),
 	)
 }
@@ -56,9 +56,9 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 +       Branches: []string{"main"},
 +     },
 +   }),
-    bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+    bk.Cmd("yarn --immutable --network-timeout 60000"),
     bk.Cmd("yarn generate"),
-    bk.Cmd("yarn --cwd client/jetbrains -s build"),
+    bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
 +   bk.SoftFail(1, 2),
 +   
 	)
@@ -84,9 +84,9 @@ unc addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 -       Branches: []string{"main"},
       },
     }),
--   bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+-   bk.Cmd("yarn --immutable --network-timeout 60000"),
 -   bk.Cmd("yarn generate"),
--   bk.Cmd("yarn --cwd client/jetbrains -s build"),
+-   bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
 +   bk.Cmd("please-fail-lol"),
 -   bk.SoftFail(1, 2),
 +   bk.SoftFail(127), // 127 is the exit code when a command isn't found, see the line above.

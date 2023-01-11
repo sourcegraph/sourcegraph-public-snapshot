@@ -3,11 +3,12 @@ import { useContext, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeInsightsBackendContext, Insight, InsightDashboard, isSearchBasedInsight } from '../core'
+import { useCodeInsightsState } from '../../../stores'
+import { CodeInsightsBackendContext, CustomInsightDashboard, Insight, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
     getTooltipMessage,
-} from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
+} from '../pages/dashboards/dashboard-view/utils/get-dashboard-permissions'
 
 interface DashboardMenuItem {
     disabled?: boolean
@@ -26,10 +27,10 @@ export interface UseUiFeatures {
                 tooltip?: string
             }
         }
-        getContextActionsPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
-        getAddRemoveInsightsPermission: (
-            dashboard?: InsightDashboard
-        ) => {
+        getContextActionsPermissions: (
+            dashboard?: CustomInsightDashboard
+        ) => Record<DashboardMenuItemKey, DashboardMenuItem>
+        getAddRemoveInsightsPermission: (dashboard?: CustomInsightDashboard) => {
             disabled: boolean
             tooltip: string | undefined
         }
@@ -42,15 +43,15 @@ export interface UseUiFeatures {
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { UIFeatures, getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
-    const { licensed, insightsLimit } = UIFeatures
+    const { getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
+    const { licensed, insightsLimit } = useCodeInsightsState()
 
     return useMemo(
         () => ({
             licensed,
             dashboard: {
                 createPermissions: { submit: { disabled: !licensed } },
-                getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
+                getAddRemoveInsightsPermission: (dashboard?: CustomInsightDashboard) => {
                     const permissions = getDashboardPermissions(dashboard)
 
                     if (!licensed) {
@@ -65,7 +66,7 @@ export function useUiFeatures(): UseUiFeatures {
                         tooltip: getTooltipMessage(permissions),
                     }
                 },
-                getContextActionsPermissions: (dashboard?: InsightDashboard) => {
+                getContextActionsPermissions: (dashboard?: CustomInsightDashboard) => {
                     const permissions = getDashboardPermissions(dashboard)
 
                     return {

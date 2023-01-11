@@ -125,7 +125,6 @@ func (l *Locker) selectAdvisoryLock(ctx context.Context, key int32) (bool, error
 }
 
 const selectAdvisoryLockQuery = `
--- source: internal/database/locker/locker.go:selectAdvisoryLock
 SELECT pg_advisory_xact_lock(%s, %s)
 `
 
@@ -143,6 +142,5 @@ func (l *Locker) selectTryAdvisoryLock(ctx context.Context, key int32) (bool, er
 }
 
 const selectTryAdvisoryLockQuery = `
--- source: internal/database/locker/locker.go:selectTryAdvisoryLock
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `

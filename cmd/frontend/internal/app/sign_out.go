@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -47,6 +48,8 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
 			log15.Error("serveSignOutHandler", "err", err)
 		}
+
+		auth.SetSignoutCookie(w)
 
 		if ssoSignOutHandler != nil {
 			ssoSignOutHandler(w, r)

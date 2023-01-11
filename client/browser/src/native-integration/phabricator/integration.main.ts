@@ -69,7 +69,7 @@ async function init(): Promise<void> {
         },
         {
             id: 'sourcegraph-styles-css-modules',
-            cssURL: sourcegraphURL + '/.assets/extension/css/style.bundle.css',
+            cssURL: sourcegraphURL + '/.assets/extension/css/inject.bundle.css',
         },
     ]
     await Promise.all(styleSheets.map(appendHeadStyles))

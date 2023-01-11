@@ -1,0 +1,20 @@
+.simple-action-item {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover:not(&--active) {
+        background-color: var(--color-bg-2);
+    }
+
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+}
+
+.margin {
+    margin: 0.375rem 0.25rem;
+}

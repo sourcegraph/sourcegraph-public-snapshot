@@ -32,7 +32,13 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
     React.PropsWithChildren<UserFacingCodeIntelligenceBadgeContentProps>
 > = ({
     repoName,
-    indexerSupportMetadata: { allIndexers, indexerNames, uploadsByIndexerName, indexesByIndexerName },
+    indexerSupportMetadata: {
+        allIndexers,
+        indexerNames,
+        uploadsByIndexerName,
+        indexesByIndexerName,
+        availableIndexers,
+    },
     onClose,
     now,
     useRequestedLanguageSupportQuery,
@@ -61,24 +67,29 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
         <Unsupported />
     ) : (
         <ul className={styles.list}>
-            {indexerNames.map((name, index) => (
-                <li key={`indexer-${name}`}>
-                    {index > 0 && <MenuDivider />}
-                    <IndexerSummary
-                        repoName={repoName}
-                        summary={{
-                            name,
-                            uploads: uploadsByIndexerName.get(name) || [],
-                            indexes: indexesByIndexerName.get(name) || [],
-                            indexer: allIndexers.find(candidate => candidate.name === name),
-                        }}
-                        className={className}
-                        now={now}
-                        useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
-                        useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
-                    />
-                </li>
-            ))}
+            {indexerNames.map((name, index) => {
+                const indexer = allIndexers.find(candidate => candidate.name === name)
+                const additionalIndexer = availableIndexers[indexer?.name || '']?.roots || []
+                return (
+                    <li key={`indexer-${name}`}>
+                        {index > 0 && <MenuDivider />}
+                        <IndexerSummary
+                            repoName={repoName}
+                            summary={{
+                                name,
+                                uploads: uploadsByIndexerName.get(name) || [],
+                                indexes: indexesByIndexerName.get(name) || [],
+                                indexer,
+                                additionalIndexer,
+                            }}
+                            className={className}
+                            now={now}
+                            useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
+                            useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
+                        />
+                    </li>
+                )
+            })}
         </ul>
     )
 }

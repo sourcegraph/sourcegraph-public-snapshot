@@ -6,7 +6,6 @@ exports[`ActionItem Renders contributed action items 1`] = `
   <li>
     <span
       class="actionItem"
-      data-state="closed"
     >
        Action A
     </span>

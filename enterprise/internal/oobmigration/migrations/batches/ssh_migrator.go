@@ -37,13 +37,12 @@ func (m *SSHMigrator) Interval() time.Duration { return time.Second * 5 }
 
 // Progress returns the percentage (ranged [0, 1]) of external services without a marker
 // indicating that this migration has been applied to that row.
-func (m *SSHMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *SSHMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(sshMigratorProgressQuery, "batches", "batches")))
 	return progress, err
 }
 
 const sshMigratorProgressQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float)
@@ -214,7 +213,6 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 }
 
 const sshMigratorSelectQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 SELECT
 	id,
 	credential,
@@ -229,7 +227,6 @@ FOR UPDATE
 `
 
 const sshMigratorUpdateQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 UPDATE user_credentials
 SET
 	updated_at = NOW(),
@@ -240,7 +237,6 @@ WHERE id = %s
 `
 
 const sshMigratorUpdateFlagonlyQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 UPDATE user_credentials
 SET ssh_migration_applied = %s
 WHERE id = %s

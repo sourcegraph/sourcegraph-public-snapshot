@@ -141,10 +141,8 @@ var settingsFieldMergeDepths = map[string]int{
 	"SearchScopes":           1,
 	"SearchSavedQueries":     1,
 	"SearchRepositoryGroups": 1,
-	"InsightsDashboards":     1,
-	"InsightsAllRepos":       1,
-	"Quicklinks":             1,
 	"Motd":                   1,
+	"Notices":                1,
 	"Extensions":             1,
 	"ExperimentalFeatures":   1,
 }
@@ -215,7 +213,7 @@ func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
 	return right
 }
 
-func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
+func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
 	user, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -228,5 +226,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db).ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
 }

@@ -3,7 +3,6 @@ import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { LsifIndexesForRepoResult, LsifIndexesForRepoVariables, LsifIndexFields } from '../../../../graphql-operations'
 
@@ -38,11 +37,11 @@ const LSIF_INDEX_FOR_REPOSITORY = gql`
 `
 
 export const queryLsifIndexListByRepository = (
-    { query, state, first, after }: GQL.ILsifIndexesOnRepositoryArguments,
+    { query, state, first, after }: Partial<LsifIndexesForRepoVariables>,
     repository: string,
     client: ApolloClient<object>
 ): Observable<IndexConnection> => {
-    const variables = {
+    const variables: LsifIndexesForRepoVariables = {
         repository,
         query: query ?? null,
         state: state ?? null,

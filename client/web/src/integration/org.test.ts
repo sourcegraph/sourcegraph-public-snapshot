@@ -26,7 +26,6 @@ describe('Organizations', () => {
         viewerCanAdminister: true,
         viewerIsMember: false,
         viewerPendingInvitation: null,
-        viewerNeedsCodeHostUpdate: false,
     })
 
     let driver: Driver
@@ -63,8 +62,15 @@ describe('Organizations', () => {
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
+                            final: '',
                             subjects: [
                                 {
+                                    __typename: 'Org',
+                                    id: '123',
+                                    settingsURL: '#',
+                                    name: 'testorg',
+                                    displayName: 'Test org',
+                                    viewerCanAdminister: true,
                                     latestSettings: {
                                         id: settingsID,
                                         contents: JSON.stringify({}),
@@ -130,8 +136,15 @@ describe('Organizations', () => {
                     SettingsCascade: () => ({
                         settingsSubject: {
                             settingsCascade: {
+                                final: '',
                                 subjects: [
                                     {
+                                        __typename: 'Org',
+                                        id: '123',
+                                        settingsURL: '#',
+                                        name: 'testorg',
+                                        displayName: 'Test org',
+                                        viewerCanAdminister: true,
                                         latestSettings: {
                                             id: settingsID,
                                             contents: JSON.stringify({}),
@@ -147,11 +160,6 @@ describe('Organizations', () => {
                                 empty: emptyResponse,
                             },
                         },
-                    }),
-                    GetStartedInfo: () => ({
-                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
                     }),
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
@@ -192,22 +200,22 @@ describe('Organizations', () => {
                     Organization: () => ({
                         organization: testOrg,
                     }),
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 2,
                                 nodes: [testMember, testMember2],
+                                pageInfo: {
+                                    endCursor: null,
+                                    hasNextPage: false,
+                                },
                             },
                         },
                     }),
                     RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
-                    }),
-                    GetStartedInfo: () => ({
-                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
                     }),
                 }
                 testContext.overrideGraphQL(graphQlResults)
@@ -230,12 +238,17 @@ describe('Organizations', () => {
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({
                     ...graphQlResults,
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 1,
                                 nodes: [testMember2],
+                            },
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
                             },
                         },
                     }),

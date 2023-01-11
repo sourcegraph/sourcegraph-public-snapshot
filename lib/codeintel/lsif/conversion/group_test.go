@@ -292,10 +292,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 	}
 
-	actualBundleData, err := groupBundleData(context.Background(), state)
-	if err != nil {
-		t.Fatalf("unexpected error converting correlation state to types: %s", err)
-	}
+	actualBundleData := groupBundleData(context.Background(), state)
 
 	expectedMetaData := precise.MetaData{
 		NumResultChunks: 1,

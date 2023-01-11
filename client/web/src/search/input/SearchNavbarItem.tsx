@@ -3,24 +3,22 @@ import React, { useCallback } from 'react'
 import * as H from 'history'
 import shallow from 'zustand/shallow'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Form } from '@sourcegraph/wildcard'
 
-import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
-import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+
+import { useRecentSearches } from './useRecentSearches'
 
 interface Props
-    extends ActivationProps,
-        SettingsCascadeProps,
+    extends SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -32,7 +30,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const selectQueryState = ({
@@ -41,44 +38,35 @@ const selectQueryState = ({
     submitSearch,
     searchCaseSensitivity,
     searchPatternType,
+    searchMode,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType })
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode })
 
 /**
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const autoFocus = props.isSearchAutoFocusRequired ?? true
-    // This uses the same logic as in Layout.tsx until we have a better solution
-    // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
-        selectQueryState,
-        shallow
-    )
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
+    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
+        useNavbarQueryState(selectQueryState, shallow)
+
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
-    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
+    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
                 history: props.history,
                 source: 'nav',
-                activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(
@@ -96,24 +84,27 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         >
             <SearchBox
                 {...props}
+                autoFocus={false}
                 editorComponent={editorComponent}
-                applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
-                showSearchContext={showSearchContext}
-                showSearchContextManagement={showSearchContextManagement}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
+                showSearchContext={props.searchContextsEnabled}
+                showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}
                 setPatternType={setSearchPatternType}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                autoFocus={autoFocus}
-                hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                hideHelpButton={false}
+                showSearchHistory={true}
+                recentSearches={recentSearches}
             />
         </Form>
     )

@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
@@ -64,7 +63,6 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 // 1. Webhook insights are not enqueued (not yet supported.)
 // 2. Duplicate insights are deduplicated / do not submit multiple jobs.
 // 3. Jobs are scheduled not to all run at the same time.
-//
 func Test_discoverAndEnqueueInsights(t *testing.T) {
 	// Setup the setting store and job enqueuer mocks.
 	ctx := context.Background()
@@ -85,7 +83,6 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
 	dataSeriesStore := store.NewMockDataSeriesStore()
-	featureStore := database.NewMockFeatureFlagStore()
 
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
 		{
@@ -102,7 +99,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore, featureStore); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,10 +113,10 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "SeriesID": "series1",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "record",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -134,10 +131,10 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "SeriesID": "series2",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "record",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -152,10 +149,10 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "SeriesID": "series1",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "snapshot",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,
@@ -170,10 +167,10 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
     "SeriesID": "series2",
     "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
     "RecordTime": null,
-    "Cost": 500,
-    "Priority": 10,
     "PersistMode": "snapshot",
     "DependentFrames": null,
+    "Cost": 500,
+    "Priority": 10,
     "ID": 0,
     "State": "queued",
     "FailureMessage": null,

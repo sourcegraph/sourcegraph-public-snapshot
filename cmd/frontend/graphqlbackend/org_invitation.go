@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // organizationInvitationResolver implements the GraphQL type OrganizationInvitation.
@@ -66,13 +67,15 @@ func (r *organizationInvitationResolver) RecipientEmail() (*string, error) {
 	}
 	return &r.v.RecipientEmail, nil
 }
-func (r *organizationInvitationResolver) CreatedAt() DateTime { return DateTime{Time: r.v.CreatedAt} }
-func (r *organizationInvitationResolver) NotifiedAt() *DateTime {
-	return DateTimeOrNil(r.v.NotifiedAt)
+func (r *organizationInvitationResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.v.CreatedAt}
+}
+func (r *organizationInvitationResolver) NotifiedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.NotifiedAt)
 }
 
-func (r *organizationInvitationResolver) RespondedAt() *DateTime {
-	return DateTimeOrNil(r.v.RespondedAt)
+func (r *organizationInvitationResolver) RespondedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.RespondedAt)
 }
 
 func (r *organizationInvitationResolver) ResponseType() *string {
@@ -106,12 +109,12 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 	return nil, nil
 }
 
-func (r *organizationInvitationResolver) RevokedAt() *DateTime {
-	return DateTimeOrNil(r.v.RevokedAt)
+func (r *organizationInvitationResolver) RevokedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.RevokedAt)
 }
 
-func (r *organizationInvitationResolver) ExpiresAt() *DateTime {
-	return DateTimeOrNil(r.v.ExpiresAt)
+func (r *organizationInvitationResolver) ExpiresAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.ExpiresAt)
 }
 
 func (r *organizationInvitationResolver) IsVerifiedEmail() *bool {

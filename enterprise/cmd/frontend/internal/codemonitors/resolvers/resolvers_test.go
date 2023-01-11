@@ -207,7 +207,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 		}
 
 		_, err = r.UpdateCodeMonitor(ctx, args)
-		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or as an admin (must be site admin)")
+		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or site admin")
 	})
 }
 
@@ -273,7 +273,6 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
-// nolint:unused
 func graphqlUserID(id int32) graphql.ID {
 	return relay.MarshalID("User", id)
 }
@@ -375,7 +374,7 @@ func TestQueryMonitor(t *testing.T) {
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil, nil, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
 	require.NoError(t, err)
 
 	t.Run("query by user", func(t *testing.T) {
@@ -702,7 +701,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil, nil, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchemaWithCodeMonitorsResolver(db, r)
 	require.NoError(t, err)
 	updateInput := map[string]any{
 		"monitorID": string(relay.MarshalID(MonitorKind, 1)),

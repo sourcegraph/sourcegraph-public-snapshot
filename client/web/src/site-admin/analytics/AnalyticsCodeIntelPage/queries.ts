@@ -1,15 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment CodeIntelStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
             uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
             totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
@@ -24,10 +26,10 @@ export const CODEINTEL_STATISTICS = gql`
                 }
                 codeIntel(dateRange: $dateRange, grouping: $grouping) {
                     referenceClicks {
-                        ...AnalyticsStatItemFragment
+                        ...CodeIntelStatItemFragment
                     }
                     definitionClicks {
-                        ...AnalyticsStatItemFragment
+                        ...CodeIntelStatItemFragment
                     }
                     inAppEvents {
                         summary {
@@ -54,6 +56,19 @@ export const CODEINTEL_STATISTICS = gql`
                             totalCount
                         }
                     }
+                }
+                codeIntelByLanguage(dateRange: $dateRange) {
+                    language
+                    precision
+                    count
+                }
+                codeIntelTopRepositories(dateRange: $dateRange) {
+                    name
+                    language
+                    kind
+                    precision
+                    events
+                    hasPrecise
                 }
             }
         }

@@ -17,6 +17,7 @@ const repoDefaults: RepositoryFields = {
     defaultBranch: null,
     viewerCanAdminister: false,
     externalURLs: [],
+    externalRepository: { serviceType: 'github', serviceID: 'https://github.com/' },
     id: 'repoid',
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
@@ -26,7 +27,6 @@ const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
     of({
         batchChangesDiffStat: {
             added: 247,
-            changed: 1896,
             deleted: 990,
         },
         changesetsStats: {
@@ -43,7 +43,6 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
     of({
         batchChangesDiffStat: {
             added: 0,
-            changed: 0,
             deleted: 0,
         },
         changesetsStats: {
@@ -56,14 +55,16 @@ const queryEmptyRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
         },
     })
 
-const queryRepoBatchChanges = (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges => () =>
-    of({
-        batchChanges: {
-            totalCount: Object.values(nodes).length,
-            nodes: Object.values(nodes),
-            pageInfo: { endCursor: null, hasNextPage: false },
-        },
-    })
+const queryRepoBatchChanges =
+    (nodes: RepoBatchChange[]): typeof _queryRepoBatchChanges =>
+    () =>
+        of({
+            batchChanges: {
+                totalCount: Object.values(nodes).length,
+                nodes: Object.values(nodes),
+                pageInfo: { endCursor: null, hasNextPage: false },
+            },
+        })
 
 const queryList = queryRepoBatchChanges(NODES)
 const queryNone = queryRepoBatchChanges([])

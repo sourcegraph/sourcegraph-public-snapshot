@@ -4,14 +4,15 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
-	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize)
+func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
+	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize, numRoutines)
 }
 
-func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
-	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize)
+func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
+	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize, numRoutines)
 }
 
 type locationsCountMigrator struct {
@@ -23,7 +24,7 @@ type locationsCountMigrator struct {
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
 // the given table with a schema version of 1 and populates that record's (new) num_locations
 // column. Updated records will have a schema version of 2.
-func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize int) *migrator {
+func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize, numRoutines int) *migrator {
 	driver := &locationsCountMigrator{
 		id:         id,
 		interval:   interval,
@@ -34,6 +35,7 @@ func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Dur
 		tableName:     tableName,
 		targetVersion: 2,
 		batchSize:     batchSize,
+		numRoutines:   numRoutines,
 		fields: []fieldSpec{
 			{name: "scheme", postgresType: "text not null", primaryKey: true},
 			{name: "identifier", postgresType: "text not null", primaryKey: true},
@@ -48,7 +50,7 @@ func (m *locationsCountMigrator) Interval() time.Duration { return m.interval }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *locationsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 
@@ -65,7 +67,7 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
 }
 
 // MigrateRowDown sets num_locations back to zero to undo the migration up direction.
-func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *locationsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 

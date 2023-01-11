@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 
 import { AnalyticsDateRange } from '../../../graphql-operations'
@@ -10,10 +12,13 @@ import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
 
+export const MIN_PER_ITEM_SAVED_KEY = 'minPerItemSaved'
+
 interface TimeSavedCalculatorGroupItem {
     label: string
     value: number
     minPerItem: number
+    onMinPerItemChange?: (minPerItem: number) => void
     description: string
     percentage?: number
     hoursSaved?: number
@@ -23,6 +28,7 @@ interface TimeSavedCalculatorGroupProps {
     page: string
     color: string
     value: number
+    itemsLabel?: string
     label: string
     description: string
     dateRange: AnalyticsDateRange
@@ -42,6 +48,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     items,
     color,
     value,
+    itemsLabel = 'Events',
     description,
     label,
     dateRange,
@@ -58,13 +65,15 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
         setMemoizedItems(calculateHoursSaved(items))
     }, [items])
 
-    const totalSavedHours = useMemo(() => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0), [
-        memoizedItems,
-    ])
+    const totalSavedHours = useMemo(
+        () => memoizedItems.reduce((sum, item) => sum + item.hoursSaved, 0),
+        [memoizedItems]
+    )
 
     const updateMinPerItem = (index: number, minPerItem: number): void => {
         const updatedItems = [...memoizedItems]
         updatedItems[index] = { ...memoizedItems[index], minPerItem }
+        updatedItems[index].onMinPerItemChange?.(minPerItem)
 
         setMemoizedItems(calculateHoursSaved(updatedItems))
     }
@@ -171,7 +180,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                     </Text>
                 ) : (
                     <Text as="span" alignment="center" className="text-muted">
-                        Events
+                        {itemsLabel}
                     </Text>
                 )}
                 <Text as="span" className="text-nowrap text-muted">
@@ -195,6 +204,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                     className={classNames(styles.calculatorInput, 'mb-1')}
                                     onChange={event => {
                                         updatePercentage(index, Number(event.target.value))
+
                                         if (!percentageInputChangeLogs[index]) {
                                             setPercentageInputChangeLogs({
                                                 ...percentageInputChangeLogs,
@@ -243,38 +253,36 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     )
 }
 
-interface TimeSavedCalculator {
+export interface TimeSavedCalculatorProps {
     page: string
     color: string
     label: string
     value: number
-    minPerItem: number
+    defaultMinPerItem: number
     description: string
     percentage?: number
     dateRange: AnalyticsDateRange
+    temporarySettingsKey: keyof TemporarySettingsSchema
 }
 
-export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> = ({
+export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorProps> = ({
     page,
     color,
     label,
     value,
-    minPerItem,
+    defaultMinPerItem,
     description,
     percentage,
     dateRange,
+    temporarySettingsKey,
 }) => {
-    const [minPerItemSaved, setMinPerItemSaved] = useState(minPerItem)
+    const [minPerItemSavedSetting, setMinPerItemSaved] = useTemporarySetting(temporarySettingsKey, defaultMinPerItem)
+    const minPerItemSaved = Number(minPerItemSavedSetting) || defaultMinPerItem
     const [inputChangeLogged, setInputChangeLogged] = useState(false)
-    const hoursSaved = useMemo(() => (minPerItemSaved * value * (percentage ?? 100)) / (60 * 100), [
-        value,
-        minPerItemSaved,
-        percentage,
-    ])
-
-    useEffect(() => {
-        setMinPerItemSaved(minPerItem)
-    }, [minPerItem])
+    const hoursSaved = useMemo(
+        () => (minPerItemSaved * value * (percentage ?? 100)) / (60 * 100),
+        [value, minPerItemSaved, percentage]
+    )
 
     const projectedHoursSaved = useMemo(() => {
         if (dateRange === AnalyticsDateRange.LAST_WEEK) {
@@ -288,6 +296,9 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> =
         }
         return hoursSaved
     }, [hoursSaved, dateRange])
+
+    const stringMinPerItemSaved = minPerItemSaved.toString()
+    localStorage.setItem(MIN_PER_ITEM_SAVED_KEY, stringMinPerItemSaved)
 
     return (
         <Card className="mb-3 p-4">

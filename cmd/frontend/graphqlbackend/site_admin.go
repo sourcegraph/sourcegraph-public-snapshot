@@ -8,10 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -36,7 +36,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	Hard  *bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -154,7 +154,7 @@ func (r *schemaResolver) hardDelete(ctx context.Context, org graphql.ID) (*Empty
 	}
 
 	//🚨 SECURITY: Only org members can hard delete orgs.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -177,11 +177,11 @@ func (r *schemaResolver) hardDelete(ctx context.Context, org graphql.ID) (*Empty
 func (r *schemaResolver) softDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
 	// For Cloud, orgs can only be hard deleted.
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("soft deleting organization in not supported on Sourcegraph.com")
+		return nil, errors.New("soft deleting organization is not supported on Sourcegraph.com")
 	}
 
 	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +254,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	eventName := database.SecurityEventNameRoleChangeDenied
 	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
 
-	if err = backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -280,7 +280,7 @@ func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *stru
 	UserIDs []graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	if len(args.UserIDs) == 0 {

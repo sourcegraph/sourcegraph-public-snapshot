@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -150,7 +152,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
 			c := NewClient(db)
-			commits, err := c.Commits(ctx, repo, CommitsOptions{}, nil)
+			commits, err := c.Commits(ctx, nil, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
 			}
@@ -160,7 +162,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				baseCommit = commits[len(commits)-1]
 			}
 
-			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo}, checker)
+			iter, err := c.Diff(ctx, checker, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
 			if err != nil {
 				t.Fatalf("error fetching diff: %s", err)
 			}
@@ -204,7 +206,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient(db).Diff(ctx, DiffOptions{Base: input}, nil)
+				i, err := NewClient(db).Diff(ctx, nil, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -223,28 +225,23 @@ func TestDiff(t *testing.T) {
 			{opts: DiffOptions{Base: "foo", Head: "bar"}, want: "foo...bar"},
 		} {
 			t.Run("rangeSpec: "+tc.want, func(t *testing.T) {
-				c := NewClient(db)
-				Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+				c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 					// The range spec is the sixth argument.
 					if args[5] != tc.want {
 						t.Errorf("unexpected rangeSpec: have: %s; want: %s", args[5], tc.want)
 					}
 					return nil, nil
-				}
-				t.Cleanup(ResetMocks)
-				_, _ = c.Diff(ctx, tc.opts, nil)
+				})
+				_, _ = c.Diff(ctx, nil, tc.opts)
 			})
 		}
 	})
 
 	t.Run("ExecReader error", func(t *testing.T) {
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return nil, errors.New("ExecReader error")
-		}
-		t.Cleanup(ResetMocks)
-
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
+		})
+		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
 		}
@@ -319,13 +316,11 @@ index 9bd8209..d2acfa9 100644
 			"README.md",
 		}
 
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		t.Cleanup(ResetMocks)
+		})
 
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
+		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
 		if i == nil {
 			t.Error("unexpected nil iterator")
 		}
@@ -364,18 +359,15 @@ index 51a59ef1c..493090958 100644
 -this is my file content
 +this is my file contnent
 `
-	db := database.NewMockDB()
-	client := NewClient(db)
 	t.Run("basic", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -384,12 +376,11 @@ index 51a59ef1c..493090958 100644
 		}
 	})
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
 		fileName := "foo"
@@ -403,7 +394,8 @@ index 51a59ef1c..493090958 100644
 			}
 			return authz.Read, nil
 		})
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
+		usePermissionsForFilePermissionsFunc(checker)
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -491,6 +483,7 @@ func TestRepository_BlameFile(t *testing.T) {
 			}
 			return authz.None, nil
 		})
+		usePermissionsForFilePermissionsFunc(checker)
 		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
 
 		// Sub-repo permissions
@@ -714,6 +707,7 @@ func runFileListingTest(t *testing.T,
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -851,6 +845,7 @@ func TestListDirectoryChildren(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -1158,6 +1153,7 @@ func TestStat(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -1225,7 +1221,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				resolveRevisionOptions := ResolveRevisionOptions{
 					NoEnsureRevision: test.noEnsureRevision,
 				}
-				commit, err := client.GetCommit(ctx, testRepo, test.id, resolveRevisionOptions, checker)
+				commit, err := client.GetCommit(ctx, checker, testRepo, test.id, resolveRevisionOptions)
 				if err != nil {
 					if test.revisionNotFoundError {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1242,7 +1238,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, testRepo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 
@@ -1387,7 +1383,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 				}
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
+				got, err := client.HasCommitAfter(ctx, nil, repo, tc.after, tc.revspec)
 				if err != nil || got != tc.want {
 					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
 				}
@@ -1407,7 +1403,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
 				checker := getTestSubRepoPermsChecker("file2")
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err := client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -1417,7 +1413,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
-				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err = client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -1468,7 +1464,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			}
 
 			repo := MakeGitRepository(t, gitCommands...)
-			gotCommit, err := client.FirstEverCommit(ctx, repo, nil)
+			gotCommit, err := client.FirstEverCommit(ctx, nil, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1482,7 +1478,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
 	t.Run("empty repo", func(t *testing.T) {
 		repo := MakeGitRepository(t)
-		_, err := client.FirstEverCommit(ctx, repo, nil)
+		_, err := client.FirstEverCommit(ctx, nil, repo)
 		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
 		if err.Error() != wantErr {
 			t.Errorf("expected :%s, got :%s", wantErr, err)
@@ -1503,12 +1499,12 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 
 			repo := MakeGitRepository(t, gitCommands...)
 			// Try to get first commit when user doesn't have permission to view
-			_, err := client.FirstEverCommit(ctx, repo, checkerWithoutAccessFirstCommit)
+			_, err := client.FirstEverCommit(ctx, checkerWithoutAccessFirstCommit, repo)
 			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
 			}
 			// Try to get first commit when user does have permission to view, should succeed
-			gotCommit, err := client.FirstEverCommit(ctx, repo, checkerWithAccessFirstCommit)
+			gotCommit, err := client.FirstEverCommit(ctx, checkerWithAccessFirstCommit, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1521,7 +1517,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 				UID:      1,
 				Internal: true,
 			})
-			gotCommit, err = client.FirstEverCommit(newCtx, repo, checkerWithoutAccessFirstCommit)
+			gotCommit, err = client.FirstEverCommit(newCtx, checkerWithoutAccessFirstCommit, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1545,7 +1541,7 @@ func TestCommitExists(t *testing.T) {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
 
-			exists, err := client.CommitExists(ctx, repo, commitID, checker)
+			exists, err := client.CommitExists(ctx, checker, repo, commitID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1553,7 +1549,7 @@ func TestCommitExists(t *testing.T) {
 				t.Fatal("Should exist")
 			}
 
-			exists, err = client.CommitExists(ctx, repo, nonExistentCommitID, checker)
+			exists, err = client.CommitExists(ctx, checker, repo, nonExistentCommitID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1621,10 +1617,10 @@ func TestRepository_Commits(t *testing.T) {
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -1709,7 +1705,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := NewClient(database.NewMockDB()).Commits(ctx, repo, test.opt, checker)
+			commits, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1805,7 +1801,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := client.Commits(ctx, test.repo, test.opt, checker)
+			commits, err := client.Commits(ctx, checker, test.repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1885,9 +1881,32 @@ func TestRepository_Commits_options(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
+		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
+		// repos a success case.
+		subRepo := ""
+		if checker != nil {
+			subRepo = " sub repo enabled"
+		}
+		t.Run("empty repo"+subRepo, func(t *testing.T) {
+			repo := MakeGitRepository(t)
+			before := ""
+			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
+			_, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			if err == nil {
+				t.Error("expected error, got nil")
+			}
+			wantErr := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
+			if subRepo != "" {
+				wantErr += " --name-only"
+			}
+			wantErr += `] failed (output: ""): exit status 128`
+			if err.Error() != wantErr {
+				t.Errorf("expected:%v got:%v", wantErr, err.Error())
+			}
+		})
 	}
 	runCommitsTests(nil)
 	checker := getTestSubRepoPermsChecker()
@@ -1921,7 +1940,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	tests := map[string]struct {
 		opt         CommitsOptions
 		wantCommits []*gitdomain.Commit
-		wantTotal   uint
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
@@ -1929,7 +1947,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "doesnt-exist",
 			},
 			wantCommits: nil,
-			wantTotal:   0,
 		},
 		"git cmd Path 1": {
 			opt: CommitsOptions{
@@ -1937,7 +1954,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
-			wantTotal:   1,
 		},
 	}
 
@@ -1945,7 +1961,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
 	}
@@ -2204,7 +2220,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		refDescriptions, err := client.RefDescriptions(ctx, repo, nil)
+		refDescriptions, err := client.RefDescriptions(ctx, nil, repo)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2220,7 +2236,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		refDescriptions, err := client.RefDescriptions(ctx, repo, checker)
+		refDescriptions, err := client.RefDescriptions(ctx, checker, repo)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2247,7 +2263,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, nil)
+		commits, err := client.CommitsUniqueToBranch(ctx, nil, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2264,7 +2280,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, checker)
+		commits, err := client.CommitsUniqueToBranch(ctx, checker, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2291,7 +2307,7 @@ func TestCommitDate(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
+		_, date, commitExists, err := client.CommitDate(ctx, nil, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -2305,7 +2321,7 @@ func TestCommitDate(t *testing.T) {
 
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file1")
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
+		_, date, commitExists, err := client.CommitDate(ctx, checker, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -2318,24 +2334,16 @@ func TestCommitDate(t *testing.T) {
 	})
 }
 
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
+func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
 	client := NewClient(db).(*clientImplementor)
-	commits, err := client.Commits(ctx, repo, opt, checker)
+	commits, err := client.Commits(ctx, checker, repo, opt)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
 		return
 	}
 
-	total, err := client.commitCount(ctx, repo, opt)
-	if err != nil {
-		t.Errorf("%s: commitCount(): %s", label, err)
-		return
-	}
-	if total != wantTotal {
-		t.Errorf("%s: got %d total commits, want %d", label, total, wantTotal)
-	}
 	if len(commits) != len(wantCommits) {
 		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
 	}
@@ -2372,6 +2380,7 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 		}
 		return authz.Read, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	return checker
 }
 
@@ -2557,11 +2566,12 @@ func TestRead(t *testing.T) {
 
 	for name, test := range tests {
 		checker := authz.NewMockSubRepoPermissionChecker()
+		usePermissionsForFilePermissionsFunc(checker)
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, nil)
+			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
@@ -2574,7 +2584,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, checker)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2584,7 +2594,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, checker)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -2614,7 +2624,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			rc, err := client.NewFileReader(ctx, repo, commitID, test.file, checker)
+			rc, err := client.NewFileReader(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)
 			}
@@ -2628,7 +2638,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, repo, commitID, file, checker)
+	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
@@ -2816,4 +2826,477 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
 		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
+	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
+	})
+}
+
+func TestLFSSmudge(t *testing.T) {
+	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
+
+	// TODO enforce on CI once CI has git-lfs
+	if _, err := exec.LookPath("git-lfs"); err != nil {
+		t.Skip("git-lfs not installed")
+	}
+
+	ctx := context.Background()
+	ClientMocks.LocalGitserver = true
+	t.Cleanup(func() {
+		ResetClientMocks()
+	})
+
+	files := map[string]string{
+		"in-lfs.txt":       "I am in LFS\n",
+		"in-git-small.txt": "I am small and in git\n",
+		"in-git-large.txt": strings.Repeat("I am large and in git\n", 10),
+	}
+
+	var gitCmds []string
+	for path, content := range files {
+		gitCmds = append(gitCmds, fmt.Sprintf(`echo -n -e %q > %s`, content, path))
+	}
+	gitCmds = append(gitCmds,
+		`git lfs install --local`,
+		`git lfs track in-lfs.txt`,
+		`git add .`,
+		`git commit -m "lfs"`,
+	)
+
+	// We ensure we test against a bare repo because a lot of LFS stuff only
+	// seems to work under the assumption of a working copy.
+	repo := MakeBareGitRepository(t, gitCmds...)
+
+	c := NewClient(database.NewMockDB())
+	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that LFSSmudge always returns the file contents
+	for path, content := range files {
+		r, err := c.LFSSmudge(ctx, nil, repo, head, path)
+		if err != nil {
+			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
+		}
+		b, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatalf("failed to read output of lfs-smudge on %q: %v", path, err)
+		}
+		if err := r.Close(); err != nil {
+			t.Fatalf("failed to close reader for lfs-smudge on %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Make sure we correctly added contents to git instead of LFS
+	for path, content := range files {
+		if path == "in-lfs.txt" {
+			continue
+		}
+		b, err := c.ReadFile(ctx, nil, repo, head, path)
+		if err != nil {
+			t.Fatalf("failed to read file %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Check that we have a pointer for LFS in git.
+	want := `version https://git-lfs.github.com/spec/v1
+oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
+size 12
+`
+	b, err := c.ReadFile(ctx, nil, repo, head, "in-lfs.txt")
+	if err != nil {
+		t.Fatalf("failed to read file in-lfs.txt: %v", err)
+	}
+	if d := cmp.Diff(want, string(b)); d != "" {
+		t.Fatalf("unexpected LFS pointer (-want, +got):\n%s", d)
+	}
+}
+
+// testGitBlameOutput is produced by running
+//
+//	git blame -w --porcelain release.sh
+//
+// `sourcegraph/src-cli`
+const testGitBlameOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1592827635
+author-tz +0200
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1592827635
+committer-tz +0200
+summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+	#!/usr/bin/env bash
+3f61310114082d6179c23f75950b88d1842fe2de 2 2
+
+3f61310114082d6179c23f75950b88d1842fe2de 3 3
+	set -euf -o pipefail
+3f61310114082d6179c23f75950b88d1842fe2de 4 4
+
+fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
+author Adam Harvey
+author-mail <aharvey@sourcegraph.com>
+author-time 1602630694
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1602630694
+committer-tz -0700
+summary release: add a prompt about DEVELOPMENT.md (#349)
+previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
+filename release.sh
+	read -p 'Have you read DEVELOPMENT.md? [y/N] ' -n 1 -r
+fbb98e0b7ff0752798463d9f49d922858a4188f6 6 6
+	echo
+fbb98e0b7ff0752798463d9f49d922858a4188f6 7 7
+	case "$REPLY" in
+fbb98e0b7ff0752798463d9f49d922858a4188f6 8 8
+	  Y | y) ;;
+fbb98e0b7ff0752798463d9f49d922858a4188f6 9 9
+	  *)
+fbb98e0b7ff0752798463d9f49d922858a4188f6 10 10
+	    echo 'Please read the Releasing section of DEVELOPMENT.md before running this script.'
+fbb98e0b7ff0752798463d9f49d922858a4188f6 11 11
+	    exit 1
+fbb98e0b7ff0752798463d9f49d922858a4188f6 12 12
+	    ;;
+fbb98e0b7ff0752798463d9f49d922858a4188f6 13 13
+	esac
+fbb98e0b7ff0752798463d9f49d922858a4188f6 14 14
+
+8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
+author Adam Harvey
+author-mail <adam@adamharvey.name>
+author-time 1660860583
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1660860583
+committer-tz +0000
+summary release.sh: allow -rc.X suffixes (#829)
+previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
+filename release.sh
+	if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
+3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
+	  echo "\$VERSION is not in MAJOR.MINOR.PATCH format"
+3f61310114082d6179c23f75950b88d1842fe2de 7 17
+	  exit 1
+3f61310114082d6179c23f75950b88d1842fe2de 8 18
+	fi
+3f61310114082d6179c23f75950b88d1842fe2de 9 19
+
+67b7b725a7ff913da520b997d71c840230351e30 10 20 1
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1600334460
+author-tz +0200
+committer Thorsten Ball
+committer-mail <mrnugget@gmail.com>
+committer-time 1600334460
+committer-tz +0200
+summary Fix goreleaser GitHub action setup and release script
+previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
+filename release.sh
+	# Create a new tag and push it, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
+3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
+	git tag "${VERSION}" -a -m "release v${VERSION}"
+67b7b725a7ff913da520b997d71c840230351e30 12 22 2
+	# We use --atomic so that we push the tag and the commit if the commit was or wasn't pushed before
+67b7b725a7ff913da520b997d71c840230351e30 13 23
+	git push --atomic origin main "${VERSION}"
+`
+
+var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
+author Adam Harvey
+author-mail <adam@adamharvey.name>
+author-time 1660860583
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1660860583
+committer-tz +0000
+summary release.sh: allow -rc.X suffixes (#829)
+previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
+filename release.sh
+fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
+author Adam Harvey
+author-mail <aharvey@sourcegraph.com>
+author-time 1602630694
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1602630694
+committer-tz -0700
+summary release: add a prompt about DEVELOPMENT.md (#349)
+previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
+filename release.sh
+67b7b725a7ff913da520b997d71c840230351e30 10 20 1
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1600334460
+author-tz +0200
+committer Thorsten Ball
+committer-mail <mrnugget@gmail.com>
+committer-time 1600334460
+committer-tz +0200
+summary Fix goreleaser GitHub action setup and release script
+previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
+filename release.sh
+67b7b725a7ff913da520b997d71c840230351e30 12 22 2
+previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1592827635
+author-tz +0200
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1592827635
+committer-tz +0200
+summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+`
+
+// This test-data includes the boundary keyword, which is not present in the previous one.
+var testGitBlameOutputIncremental2 = `bbca6551549492486ca1b0f8dee45553dd6aa6d7 16 16 1
+author French Ben
+author-mail <frenchben@docker.com>
+author-time 1517407262
+author-tz +0100
+committer French Ben
+committer-mail <frenchben@docker.com>
+committer-time 1517407262
+committer-tz +0100
+summary Update error output to be clean
+previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
+filename format.go
+bbca6551549492486ca1b0f8dee45553dd6aa6d7 25 25 2
+previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
+filename format.go
+2c87fda17de1def6ea288141b8e7600b888e535b 15 15 1
+author David Tolnay
+author-mail <dtolnay@gmail.com>
+author-time 1478451741
+author-tz -0800
+committer David Tolnay
+committer-mail <dtolnay@gmail.com>
+committer-time 1478451741
+committer-tz -0800
+summary Singular message for a single error
+previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
+filename format.go
+2c87fda17de1def6ea288141b8e7600b888e535b 17 17 2
+previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 1 1 14
+author Mitchell Hashimoto
+author-mail <mitchell.hashimoto@gmail.com>
+author-time 1418673320
+author-tz -0800
+committer Mitchell Hashimoto
+committer-mail <mitchell.hashimoto@gmail.com>
+committer-time 1418673320
+committer-tz -0800
+summary Initial commit
+boundary
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
+filename format.go
+`
+
+var testGitBlameOutputHunks = []*Hunk{
+	{
+		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
+		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		Author: gitdomain.Signature{
+			Name:  "Thorsten Ball",
+			Email: "mrnugget@gmail.com",
+			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		},
+		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
+		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
+		Author: gitdomain.Signature{
+			Name:  "Adam Harvey",
+			Email: "aharvey@sourcegraph.com",
+			Date:  MustParseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
+		},
+		Message:  "release: add a prompt about DEVELOPMENT.md (#349)",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
+		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
+		Author: gitdomain.Signature{
+			Name:  "Adam Harvey",
+			Email: "adam@adamharvey.name",
+			Date:  MustParseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
+		},
+		Message:  "release.sh: allow -rc.X suffixes (#829)",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
+		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		Author: gitdomain.Signature{
+			Name:  "Thorsten Ball",
+			Email: "mrnugget@gmail.com",
+			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		},
+		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
+		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
+		Author: gitdomain.Signature{
+			Name:  "Thorsten Ball",
+			Email: "mrnugget@gmail.com",
+			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
+		},
+		Message:  "Fix goreleaser GitHub action setup and release script",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
+		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		Author: gitdomain.Signature{
+			Name:  "Thorsten Ball",
+			Email: "mrnugget@gmail.com",
+			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		},
+		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
+		Filename: "release.sh",
+	},
+	{
+		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
+		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
+		Author: gitdomain.Signature{
+			Name:  "Thorsten Ball",
+			Email: "mrnugget@gmail.com",
+			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
+		},
+		Message:  "Fix goreleaser GitHub action setup and release script",
+		Filename: "release.sh",
+	},
+}
+
+func TestParseGitBlameOutput(t *testing.T) {
+	hunks, err := parseGitBlameOutput(testGitBlameOutput)
+	if err != nil {
+		t.Fatalf("parseGitBlameOutput failed: %s", err)
+	}
+
+	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
+		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+	}
+}
+
+func TestStreamBlameFile(t *testing.T) {
+	t.Run("NOK unauthorized", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
+			UID: 1,
+		})
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		// User doesn't have access to this file
+		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+			return authz.None, nil
+		})
+		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		if hr != nil {
+			t.Fatalf("expected nil HunkReader")
+		}
+		if err == nil {
+			t.Fatalf("expected an error to be returned")
+		}
+		if !errcode.IsUnauthorized(err) {
+			t.Fatalf("expected err to be an authorization error, got %v", err)
+		}
+	})
+}
+
+func TestBlameHunkReader(t *testing.T) {
+	t.Run("OK matching hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
+		reader := newBlameHunkReader(context.Background(), rc)
+
+		hunks := []*Hunk{}
+		for {
+			hunk, done, err := reader.Read()
+			if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			if done {
+				break
+			}
+			hunks = append(hunks, hunk...)
+		}
+
+		sortFn := func(x []*Hunk) func(i, j int) bool {
+			return func(i, j int) bool {
+				return x[i].Author.Date.After(x[j].Author.Date)
+			}
+		}
+
+		// We're not giving back bytes, as the output of --incremental only gives back annotations.
+		expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
+		for _, h := range testGitBlameOutputHunks {
+			dup := *h
+			dup.EndByte = 0
+			dup.StartByte = 0
+			expectedHunks = append(expectedHunks, &dup)
+		}
+
+		// Sort expected hunks by the most recent first, as --incremental does.
+		sort.SliceStable(expectedHunks, sortFn(expectedHunks))
+
+		if d := cmp.Diff(expectedHunks, hunks); d != "" {
+			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+		}
+	})
+
+	t.Run("OK parsing hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
+		reader := newBlameHunkReader(context.Background(), rc)
+
+		for {
+			_, done, err := reader.Read()
+			if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			if done {
+				break
+			}
+		}
+	})
 }

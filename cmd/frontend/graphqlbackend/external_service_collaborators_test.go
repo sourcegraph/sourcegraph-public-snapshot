@@ -202,14 +202,14 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 			authUserEmails:   emails(),
 			want: autogold.Want("popular personal email domains last", []*invitableCollaboratorResolver{
 				{
-					email: "sqs@sourcegraph.com",
+					email: "stephen@sourcegraph.com",
 				},
-				{email: "stephen@sourcegraph.com"},
 				{email: "beyang@sourcegraph.com"},
+				{email: "sqs@sourcegraph.com"},
+				{email: "steve@gmail.com"},
 				{email: "rando@gmail.com"},
 				{email: "kimbo@gmail.com"},
 				{email: "george@gmail.com"},
-				{email: "steve@gmail.com"},
 			}),
 		},
 	}

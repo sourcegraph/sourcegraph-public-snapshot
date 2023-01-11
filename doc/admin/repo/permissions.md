@@ -289,7 +289,7 @@ Background permissions syncing enables:
 
 The two types of sync, [user-centric and repository-centric](#background-permissions-syncing), means that **each user or repository** can be in one of two states:
 
-- **Complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been presisted to Sourcegraph for the user (or vice versa for repositories).
+- **Complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been persisted to Sourcegraph for the user (or vice versa for repositories).
 - **Incremental sync** means a user has *not* yet completed a recent user-centric permissions sync, but has been recently granted some permissions from a repository-centric sync (or vice versa for repositories).
   - For example, if a user has *not* had a user-centric permissions sync, but has been granted permissions from one or more repository-centric syncs, the user will have only completed an incremental sync. In this state, a user might not have access to all repositories they should have access to, but will incrementally receive more access as repository-centric syncs complete.
   - It is possible to be in an incremental sync state where a user or repository has effectively completed a complete sync, and all access rules are aligned with what is in the code host - for example, if a user completed a complete sync and a single repository is added, the user will be granted access to that repository through incremental sync, so the user will have full access to everything the user should have access to despite being in an incremental sync state.
@@ -432,6 +432,7 @@ As soon as a new user is created on Sourcegraph, pending permissions (`repo_pend
 The [`user_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-user-pending-permissions) has a `bind_id` column which is an ID of the user of the external code host, for example a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab.
 
 User pending permission is a composite entity comprising:
+
 - `service_type` (e.g. `github`, `gitlab`, `bitbucketServer`)
 - `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`)
 - `permission` (access level, e.g. "read")
@@ -444,7 +445,7 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 
 #### Repo pending permissions
 
-[`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
+[`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://github.com/sourcegraph/sourcegraph/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-150f6343be1e4395dbf2188cd35b4dd793459fabfe319c1bfcceb92e05847572)).
 
 ## Explicit permissions API
 

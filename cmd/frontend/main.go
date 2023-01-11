@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 // Note: All frontend code should be added to shared.Main, not here. See that
@@ -16,7 +17,10 @@ func main() {
 	// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
 	authz.SetProviders(true, []authz.Provider{})
 
-	shared.Main(func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services {
+	env.Lock()
+	env.HandleHelpFlag()
+
+	shared.Main(func(_ database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
 		return enterprise.DefaultServices()
 	})
 }

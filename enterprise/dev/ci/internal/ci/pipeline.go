@@ -76,10 +76,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.43.0"
+	const minimumUpgradeableVersion = "4.3.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
+
+	if op, err := exposeBuildMetadata(c); err == nil {
+		ops.Merge(operations.NewNamedSet("Metadata", op))
+	}
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -93,6 +97,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
+			CreateBundleSizeDiff:       true,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -217,11 +222,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case runtype.ExecutorPatchNoTest:
+		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildExecutor(c, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c, c.MessageFlags.SkipHashCompare),
+			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
+			buildExecutorBinary(c),
+			wait,
+			publishFinalDockerImage(c, executorVMImage),
+			publishExecutorVM(c, true),
 			publishExecutorDockerMirror(c),
+			publishExecutorBinary(c),
 		)
 
 	default:
@@ -240,9 +252,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease)
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
+			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+			imageBuildOps.Append(buildExecutorBinary(c))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
@@ -261,6 +274,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
+			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 		}))
 
 		// Integration tests
@@ -270,6 +284,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
+			executorsE2E(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			clusterQA(c.candidateImageTag()),
@@ -286,7 +301,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-			publishOps.Append(publishExecutor(c, skipHashCompare))
+			publishOps.Append(publishExecutorVM(c, skipHashCompare))
+			publishOps.Append(publishExecutorBinary(c))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
@@ -301,8 +317,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
-		Env:   env,
-		Steps: []any{},
+		Env: env,
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,

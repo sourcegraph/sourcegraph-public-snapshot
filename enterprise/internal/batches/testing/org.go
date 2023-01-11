@@ -4,19 +4,24 @@ import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func InsertTestOrg(t *testing.T, db database.DB, name string) (orgID int32) {
+func CreateTestOrg(t *testing.T, db database.DB, name string, userIDs ...int32) *types.Org {
 	t.Helper()
+	ctx := context.Background()
 
-	q := sqlf.Sprintf("INSERT INTO orgs (name) VALUES (%s) RETURNING id", name)
-	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&orgID)
-	if err != nil {
-		t.Fatal(err)
+	org, err := database.OrgsWith(db).Create(ctx, name, nil)
+	require.NoError(t, err)
+
+	orgMembersStore := database.OrgMembersWith(db)
+	for _, userID := range userIDs {
+		_, err := orgMembersStore.Create(ctx, org.ID, userID)
+		require.NoError(t, err)
 	}
 
-	return orgID
+	return org
 }

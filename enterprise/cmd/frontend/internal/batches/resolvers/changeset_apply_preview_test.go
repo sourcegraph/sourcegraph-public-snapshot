@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -14,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -112,7 +110,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +276,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
@@ -351,7 +349,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// The set up on this is pretty similar to the previous test case, but
 		// with the extra step of then modifying the relevant changeset to make
 		// it look like it's been published.
-		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// Apply the batch spec so we have an existing batch change.
 		svc := service.New(bstore)
@@ -378,15 +376,11 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		}
 
 		// Now we need a fresh batch spec.
-		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
 
 		// We need to modify the changeset spec to not have a published field.
 		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
-		published, err := json.Marshal(newFx.specPublished.Published)
-		if err != nil {
-			t.Fatal(err)
-		}
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, published, newFx.specPublished.ID)
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, nil, newFx.specPublished.ID)
 		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}

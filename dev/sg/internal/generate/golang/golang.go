@@ -16,12 +16,12 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -173,7 +173,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 // For debugging
 const showTimings = false
 
-func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, _ *std.Output, _ io.Writer) (err error) {
 	var (
 		done     = 0.0
 		total    = float64(len(pkgPaths))
@@ -214,28 +214,23 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 	}
 
 	var (
-		m   sync.Mutex
-		g   = errors.Group{}
-		sem = semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
+		m sync.Mutex
+		g = group.New().WithContext(ctx).WithMaxConcurrency(runtime.GOMAXPROCS(0))
 	)
 
 	for _, pkgPath := range pkgPaths {
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return err
-		}
-
 		// Do not capture loop variable in goroutine below
 		pkgPath := pkgPath
 
-		g.Go(func() error {
-			defer sem.Release(1)
-
+		g.Go(func(ctx context.Context) error {
+			file := filepath.Base(pkgPath) // *.go
+			directory := filepath.Dir(pkgPath)
 			if verbosity == VerboseOutput {
-				progress.Writef("Generating %s...", pkgPath)
+				progress.Writef("Generating %s (%s)...", directory, file)
 			}
 
 			start := time.Now()
-			if err := root.Run(run.Cmd(ctx, "go", "generate", pkgPath)).Wait(); err != nil {
+			if err := root.Run(run.Cmd(ctx, "go", "generate", file), directory).Wait(); err != nil {
 				return err
 			}
 			duration := time.Since(start)

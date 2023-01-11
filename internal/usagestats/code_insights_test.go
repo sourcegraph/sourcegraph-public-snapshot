@@ -107,6 +107,9 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		WeeklyStandaloneInsightUniqueDashboardClicks: &zeroInt,
 		WeeklyStandaloneInsightPageViews:             &zeroInt,
 		WeeklyStandaloneEditClicks:                   &zeroInt,
+		WeeklyGroupResultsOpenSection:                &zeroInt,
+		WeeklyGroupResultsCollapseSection:            &zeroInt,
+		WeeklyGroupResultsInfoIconHover:              &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{
@@ -114,8 +117,13 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	}
 
 	want.WeeklyAggregatedUsage = wantedWeeklyUsage
-	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
-	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
+
+	want.WeeklyGroupResultsExpandedViewOpen = []types.GroupResultExpandedViewPing{}
+	want.WeeklyGroupResultsExpandedViewCollapse = []types.GroupResultExpandedViewPing{}
+	want.WeeklyGroupResultsChartBarHover = []types.GroupResultPing{}
+	want.WeeklyGroupResultsChartBarClick = []types.GroupResultPing{}
+	want.WeeklyGroupResultsAggregationModeClicked = []types.GroupResultPing{}
+	want.WeeklyGroupResultsAggregationModeDisabledHover = []types.GroupResultPing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
@@ -156,16 +164,15 @@ func TestWithCreationPings(t *testing.T) {
 		"ViewCodeInsightsCreationPage":              {Name: "ViewCodeInsightsCreationPage", UniqueCount: 2, TotalCount: 3},
 	}
 
-	results, err := GetCreationViewUsage(ctx, db, func() time.Time {
-		return now
-	})
+	stats := &types.CodeInsightsUsageStatistics{}
+	err = getCreationViewUsage(ctx, db, stats, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// convert into map so we can reliably test for equality
 	got := make(map[types.PingName]types.AggregatedPingStats)
-	for _, v := range results {
+	for _, v := range stats.WeeklyAggregatedUsage {
 		got[v.Name] = v
 	}
 

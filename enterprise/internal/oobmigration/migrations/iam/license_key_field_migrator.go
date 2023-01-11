@@ -32,13 +32,12 @@ func NewLicenseKeyFieldsMigrator(store *basestore.Store, batchSize int) *license
 func (m *licenseKeyFieldsMigrator) ID() int                 { return 16 }
 func (m *licenseKeyFieldsMigrator) Interval() time.Duration { return time.Second * 5 }
 
-func (m *licenseKeyFieldsMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *licenseKeyFieldsMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorProgressQuery)))
 	return progress, err
 }
 
 const licenseKeyFieldsMigratorProgressQuery = `
--- source: enterprise/internal/productsubscription/license_key_field_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		cast(c1.count as float) / cast(c2.count as float)
@@ -140,7 +139,6 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 }
 
 const licenseKeyFieldsMigratorSelectQuery = `
--- source: enterprise/internal/productsubscription/license_key_field_migrator.go:Up
 SELECT
 	id,
 	license_key
@@ -151,7 +149,6 @@ FOR UPDATE SKIP LOCKED
 `
 
 const licenseKeyFieldsMigratorUpdateQuery = `
--- source: enterprise/internal/productsubscription/license_key_field_migrator.go:Up
 UPDATE product_licenses
 SET
 	license_version    = updates.license_version::integer,

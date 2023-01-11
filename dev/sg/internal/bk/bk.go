@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -44,26 +45,22 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 		return tok, nil
 	}
 
-	sec, err := secrets.FromContext(ctx)
+	store, err := secrets.FromContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	bkSecrets := buildkiteSecrets{}
-	err = sec.Get("buildkite", &bkSecrets)
-	if errors.Is(err, secrets.ErrSecretNotFound) {
-		str, err := getTokenFromUser(out)
-		if err != nil {
-			return "", nil
-		}
-		if err := sec.PutAndSave("buildkite", buildkiteSecrets{Token: str}); err != nil {
-			return "", err
-		}
-		return str, nil
-	}
+
+	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "sourcegraph-local-dev",
+		Name:    "SG_BUILDKITE_TOKEN",
+	}, func(_ context.Context) (string, error) {
+		return getTokenFromUser(out)
+	})
+
 	if err != nil {
 		return "", err
 	}
-	return bkSecrets.Token, nil
+	return token, nil
 }
 
 // getTokenFromUser prompts the user for a slack OAuth token.
@@ -94,6 +91,7 @@ func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	config, err := buildkite.NewTokenConfig(token, false)
 	if err != nil {
 		return nil, errors.Newf("failed to init buildkite config: %w", err)
@@ -165,6 +163,19 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	}
 
 	return artifacts, nil
+}
+
+// DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
+func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
+	url := artifact.DownloadURL
+	if url == nil {
+		return errors.New("unable to download artifact, nil download url")
+	}
+	_, err := c.bk.Artifacts.DownloadArtifactByURL(*url, w)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetJobAnnotationByBuildNumber retrieves all annotations that are present on a build and maps them to the job ID that the

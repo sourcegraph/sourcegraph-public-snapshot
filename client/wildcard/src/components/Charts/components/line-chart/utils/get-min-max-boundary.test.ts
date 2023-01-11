@@ -18,11 +18,13 @@ const testSeriesWithData: SeriesWithData<Datum>[] = [
         getYValue,
         data: [
             {
+                id: 'a.1',
                 y: 1,
                 x: new Date(2022, 2, 4),
                 datum: { x: new Date(2022, 2, 4), value: 1 },
             },
             {
+                id: 'a.2',
                 y: 2,
                 x: new Date(2022, 2, 6),
                 datum: { x: new Date(2022, 2, 6), value: 2 },
@@ -37,16 +39,19 @@ const testSeriesWithData: SeriesWithData<Datum>[] = [
         getYValue,
         data: [
             {
+                id: 'c.1',
                 y: 3,
                 x: new Date(2022, 2, 3),
                 datum: { x: new Date(2022, 2, 3), value: 3 },
             },
             {
+                id: 'c.2',
                 y: 3,
                 x: new Date(2022, 2, 4),
                 datum: { x: new Date(2022, 2, 4), value: 3 },
             },
             {
+                id: 'c.3',
                 y: 3,
                 x: new Date(2022, 2, 5),
                 datum: { x: new Date(2022, 2, 5), value: 3 },

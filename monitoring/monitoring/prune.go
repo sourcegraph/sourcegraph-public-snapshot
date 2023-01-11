@@ -6,17 +6,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir string) error {
+func pruneAssets(logger log.Logger, filelist []string, grafanaDir, promDir string) error {
 	// Prune Grafana assets
 	if grafanaDir != "" {
-		logger.Info("Pruning Grafana assets", "dir", grafanaDir)
+		logger.Info("Pruning Grafana assets", log.String("dir", grafanaDir))
 		err := filepath.Walk(grafanaDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.New("path", path)
+			plog := logger.With(log.String("path", path))
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
 				return nil
@@ -32,7 +32,7 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 					return nil
 				}
 			}
-			logger.Info("Removing dangling Grafana asset", path)
+			logger.Info("Removing dangling Grafana asset", log.String("path", path))
 			return os.Remove(path)
 		})
 		if err != nil {
@@ -42,9 +42,9 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 
 	// Prune Prometheus assets
 	if promDir != "" {
-		logger.Info("Pruning Prometheus assets", "dir", promDir)
+		logger.Info("Pruning Prometheus assets", log.String("dir", promDir))
 		err := filepath.Walk(promDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.New("path", path)
+			plog := logger.With(log.String("path", path))
 			if err != nil {
 				plog.Debug("Unable to access file, ignoring")
 				return nil
@@ -61,7 +61,7 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 					return nil
 				}
 			}
-			logger.Info("Removing dangling Prometheus asset", path)
+			logger.Info("Removing dangling Prometheus asset", log.String("path", path))
 			return os.Remove(path)
 		})
 		if err != nil {

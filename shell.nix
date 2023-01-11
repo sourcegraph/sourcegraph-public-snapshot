@@ -1,4 +1,4 @@
-# Experimental support for developing in nix. Please reach out to @keegan if
+# Experimental support for developing in nix. Please reach out to @keegan or @noah if
 # you encounter any issues.
 #
 # Things it does differently:
@@ -8,38 +8,14 @@
 #
 # Status: everything works on linux. Go1.17 is currently broken on
 # darwin. https://github.com/NixOS/nixpkgs/commit/9675a865c9c3eeec36c06361f7215e109925654c
-
+{ pkgs }:
 let
-  # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-  ctags-overlay = (self: super: {
-    universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220403.0";
-      src = super.fetchFromGitHub {
-        owner = "universal-ctags";
-        repo = "ctags";
-        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
-        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
-      };
-      # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
-      doCheck = false;
-      checkFlags = [ ];
-    });
-  });
-  # Pin a specific version of nixpkgs to ensure we get the same packages.
-  pkgs = import
-    (fetchTarball {
-      url =
-        "https://github.com/NixOS/nixpkgs/archive/6f38b43c8c84c800f93465b2241156419fd4fd52.tar.gz";
-      sha256 = "0xw3y3jx1bcnwsc0imacbp5m8f51b66s9h8kk8qnfbckwv67dhgd";
-    })
-    { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
   # like zoekt expects.
   universal-ctags = pkgs.writeScriptBin "universal-ctags" ''
     #!${pkgs.stdenv.shell}
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
-
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -63,6 +39,7 @@ pkgs.mkShell {
 
     # Lots of our tooling and go tests rely on git et al.
     git
+    git-lfs
     parallel
     nssTools
 
@@ -77,6 +54,8 @@ pkgs.mkShell {
     (yarn.override { nodejs = nodejs-16_x; })
     nodePackages.typescript
 
+    # Rust utils for syntax-highlighter service,
+    # currently not pinned to the same versions.
     cargo
     rustc
     rustfmt
@@ -89,6 +68,7 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  # Fix for using Delve https://github.com/sourcegraph/sourcegraph/pull/35885
   hardeningDisable = [ "fortify" ];
 
   # By explicitly setting this environment variable we avoid starting up

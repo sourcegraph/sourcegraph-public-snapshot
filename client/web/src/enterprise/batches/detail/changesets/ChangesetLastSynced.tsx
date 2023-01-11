@@ -81,7 +81,7 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
                     </span>
                 </Tooltip>
             ) : (
-                <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
+                <>{`Last synced ${formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.`}</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <Tooltip content={lastUpdatedAt.message}>

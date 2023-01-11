@@ -5,7 +5,7 @@
       "name": "Attach to Process (from list)",
       "type": "go",
       "request": "attach",
-      "mode": "local",
+      "mode": "local"
     },
     {
       "name": "Launch VS Code Extension",
@@ -15,11 +15,11 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview",
-        "--disable-extension=sourcegraph.sourcegraph",
+        "--disable-extension=sourcegraph.sourcegraph"
       ],
       "stopOnEntry": false,
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/vscode/dist/node/*.js"],
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/node/*.js"]
     },
     {
       "name": "Launch VS Code Web Extension",
@@ -31,10 +31,10 @@
         "--disable-extension=kandalatj.sourcegraph-preview",
         "--disable-extension=sourcegraph.sourcegraph",
         "--extensionDevelopmentKind=web",
-        "--disable-web-security",
+        "--disable-web-security"
       ],
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"],
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"]
     },
     {
       "type": "node",
@@ -46,8 +46,8 @@
       "skipFiles": ["<node_internals>/**"],
       "env": {
         "TS_NODE_LOG_ERROR": "true",
-        "E2E_BROWSER": "chrome",
-      },
+        "E2E_BROWSER": "chrome"
+      }
     },
     {
       "type": "node",
@@ -56,7 +56,7 @@
       "program": "${workspaceFolder}/node_modules/jest/bin/jest",
       "args": [
         "--color",
-        "--runInBand",
+        "--runInBand"
         // "path/to/test/file",
         // "-t",
         // "test name",
@@ -66,10 +66,10 @@
       "internalConsoleOptions": "neverOpen",
       "skipFiles": [
         "**/async_hooks.js",
-        "**/inspector_async_hook.js",
+        "**/inspector_async_hook.js"
         // "**/node_modules/rxjs",
       ],
-      "smartStep": false,
+      "smartStep": false
     },
     {
       "type": "node",
@@ -80,9 +80,9 @@
       "args": ["webpack"],
       "env": {
         // prettier-ignore
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}",
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
       },
-      "internalConsoleOptions": "openOnSessionStart",
+      "internalConsoleOptions": "openOnSessionStart"
     },
     {
       "name": "Webapp Chrome",
@@ -91,7 +91,7 @@
       "port": 9222,
       "webRoot": "${workspaceRoot}/web",
       "url": "http://localhost:3080/*",
-      "sourceMaps": true,
+      "sourceMaps": true
     },
     {
       "name": "Attach to gitserver",
@@ -103,7 +103,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to indexer",
@@ -115,7 +115,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to query-runner",
@@ -127,7 +127,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to repo-updater",
@@ -139,7 +139,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to searcher",
@@ -151,7 +151,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to symbols",
@@ -163,7 +163,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to github-proxy",
@@ -175,7 +175,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
+      "args": []
     },
     {
       "name": "Attach to frontend",
@@ -187,7 +187,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": [],
-    },
-  ],
+      "args": []
+    }
+  ]
 }

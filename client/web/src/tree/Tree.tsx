@@ -8,10 +8,8 @@ import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
@@ -21,9 +19,8 @@ import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
 
-interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+interface Props extends AbsoluteRepo, TelemetryProps {
     history: H.History
-    location: H.Location
     scrollRootSelector?: string
 
     /** The tree entry that is currently active, or '' if none (which means the root). */
@@ -326,7 +323,6 @@ export class Tree extends React.PureComponent<Props, State> {
                     activeNode={this.state.activeNode}
                     activePath={this.props.activePath}
                     depth={0}
-                    location={this.props.location}
                     repoID={this.props.repoID}
                     repoName={this.props.repoName}
                     revision={this.props.revision}
@@ -344,8 +340,6 @@ export class Tree extends React.PureComponent<Props, State> {
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
                     sizeKey={this.props.sizeKey}
-                    extensionsController={this.props.extensionsController}
-                    isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
                     enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
@@ -363,9 +357,11 @@ export class Tree extends React.PureComponent<Props, State> {
 
     private selectNode = (node: TreeNode): void => {
         if (node) {
-            const root = (this.props.scrollRootSelector
-                ? document.querySelector(this.props.scrollRootSelector)
-                : document.querySelector('.tree-container')) as HTMLElement
+            const root = (
+                this.props.scrollRootSelector
+                    ? document.querySelector(this.props.scrollRootSelector)
+                    : document.querySelector('.tree-container')
+            ) as HTMLElement
             const element = getDomElement(node.path)
             if (element) {
                 scrollIntoView(element, root)

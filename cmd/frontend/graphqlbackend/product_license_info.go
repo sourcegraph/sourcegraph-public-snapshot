@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // GetConfiguredProductLicenseInfo is called to obtain the product subscription info when creating
@@ -13,6 +15,10 @@ import (
 // use.
 var GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
 	return nil, nil // OSS builds have no license
+}
+
+var IsFreePlan = func(*ProductLicenseInfo) bool {
+	return true
 }
 
 // ProductLicenseInfo implements the GraphQL type ProductLicenseInfo.
@@ -32,6 +38,6 @@ func (r ProductLicenseInfo) UserCount() int32 {
 	return int32(r.UserCountValue)
 }
 
-func (r ProductLicenseInfo) ExpiresAt() DateTime {
-	return DateTime{Time: r.ExpiresAtValue}
+func (r ProductLicenseInfo) ExpiresAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.ExpiresAtValue}
 }

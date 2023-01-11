@@ -5,18 +5,17 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert, Icon, Text } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
-import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
+import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -27,6 +26,7 @@ interface SignInPageProps {
         SourcegraphContext,
         'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
+    isSourcegraphDotCom: boolean
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
@@ -40,10 +40,21 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         return <Navigate to={returnTo} replace={true} />
     }
 
-    const [[builtInAuthProvider], thirdPartyAuthProviders] = partition(
+    const [[builtInAuthProvider], nonBuiltinAuthProviders] = partition(
         props.context.authProviders,
         provider => provider.isBuiltin
     )
+
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the Sourcegraph Operator authentication provider by default because it is
+        // not useful to customer users and may even cause confusion.
+        if (provider.serviceType === 'sourcegraph-operator') {
+            return new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+        return true
+    }
+
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
@@ -52,7 +63,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
+                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
                 <div
                     className={classNames(
                         'test-signin-form rounded p-4 my-3',
@@ -73,12 +84,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <Button
-                                href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                display="block"
-                                variant="secondary"
-                                as="a"
-                            >
+                            <Button to={provider.authenticationURL} display="block" variant="secondary" as={AnchorLink}>
                                 {provider.serviceType === 'github' && (
                                     <>
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
@@ -96,7 +102,19 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
+                        New to Sourcegraph?{' '}
+                        {props.isSourcegraphDotCom ? (
+                            <Link
+                                to="https://signup.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            >
+                                Sign up
+                            </Link>
+                        ) : (
+                            <Link to="/sign-up">Sign up</Link>
+                        )}
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

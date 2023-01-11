@@ -4,19 +4,15 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import {
-    SearchPatternType,
-    getUserSearchContextNamespaces,
-    fetchAutoDefinedSearchContexts,
-    QueryState,
-} from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchHomeState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -41,6 +37,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.standard)
+    const [searchMode, setSearchMode] = useState(SearchMode.SmartSearch)
 
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
@@ -56,6 +53,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
             .streamSearch(userQueryState.query, {
                 caseSensitive,
                 patternType,
+                searchMode,
                 version: LATEST_VERSION,
                 trace: undefined,
             })
@@ -70,6 +68,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                 queryState: { query: userQueryState.query },
                 searchCaseSensitivity: caseSensitive,
                 searchPatternType: patternType,
+                searchMode,
             })
             .catch(error => {
                 // TODO surface error to users
@@ -119,6 +118,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
         userQueryState.query,
         caseSensitive,
         patternType,
+        searchMode,
         instanceURL,
         context.selectedSearchContextSpec,
         platformContext.telemetryService,
@@ -168,6 +168,8 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         setCaseSensitivity={setCaseSensitivity}
                         patternType={patternType}
                         setPatternType={setPatternType}
+                        searchMode={searchMode}
+                        setSearchMode={setSearchMode}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         structuralSearchDisabled={false}
                         queryState={userQueryState}
@@ -177,11 +179,9 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         searchContextsEnabled={true}
                         showSearchContext={true}
                         showSearchContextManagement={false}
-                        defaultSearchContextSpec="global"
                         setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                         selectedSearchContextSpec={context.selectedSearchContextSpec}
                         fetchSearchContexts={fetchSearchContexts}
-                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                         getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                         fetchStreamSuggestions={fetchStreamSuggestions}
                         settingsCascade={settingsCascade}

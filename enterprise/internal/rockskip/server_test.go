@@ -114,7 +114,7 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
-	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1)
+	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
 	fatalIfError(err, "NewService")
 
 	verifyBlobs := func() {

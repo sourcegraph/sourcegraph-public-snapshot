@@ -25,8 +25,6 @@ var DevAndTesting = conftypes.RawUnified{
 			"allowSignup": true
 		}
 	],
-
-	"search.index.enabled": true
 }`,
 }
 
@@ -46,7 +44,6 @@ var DockerContainer = conftypes.RawUnified{
 	],
 
 	"disablePublicRepoRedirects": true,
-	"search.index.enabled": true
 }`,
 }
 
@@ -71,8 +68,6 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 			"allowSignup": false
 		}
 	],
-
-	"search.index.enabled": true
 }`,
 }
 

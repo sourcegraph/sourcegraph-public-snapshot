@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -96,6 +97,7 @@ type ExecRequest struct {
 
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
+	Stdin          []byte      `json:"stdin,omitempty"`
 	Opt            *RemoteOpts `json:"opt"`
 	NoTimeout      bool        `json:"noTimeout"`
 }
@@ -114,6 +116,13 @@ func (req BatchLogRequest) LogFields() []log.Field {
 	return []log.Field{
 		log.Int("numRepoCommits", len(req.RepoCommits)),
 		log.String("format", req.Format),
+	}
+}
+
+func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(req.RepoCommits)),
+		attribute.String("format", req.Format),
 	}
 }
 
@@ -180,6 +189,16 @@ type RepoUpdateResponse struct {
 	Error string `json:",omitempty"`
 }
 
+// RepoCloneRequest is a request to clone a repository asynchronously.
+type RepoCloneRequest struct {
+	Repo api.RepoName `json:"repo"`
+}
+
+// RepoCloneResponse returns an error if the repo clone request failed.
+type RepoCloneResponse struct {
+	Error string `json:",omitempty"`
+}
+
 type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 
@@ -238,6 +257,29 @@ type RepoCloneProgressResponse struct {
 // CreateCommitFromPatchRequest is the request information needed for creating
 // the simulated staging area git object for a repo.
 type CreateCommitFromPatchRequest struct {
+	// Repo is the repository to get information about.
+	Repo api.RepoName
+	// BaseCommit is the revision that the staging area object is based on
+	BaseCommit api.CommitID
+	// Patch is the diff contents to be used to create the staging area revision
+	Patch []byte
+	// TargetRef is the ref that will be created for this patch
+	TargetRef string
+	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	UniqueRef bool
+	// CommitInfo is the information that will be used when creating the commit from a patch
+	CommitInfo PatchCommitInfo
+	// Push specifies whether the target ref will be pushed to the code host: if
+	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	Push *PushConfig
+	// GitApplyArgs are the arguments that will be passed to `git apply` along
+	// with `--cached`.
+	GitApplyArgs []string
+}
+
+// V1CreateCommitFromPatchRequest is the request information needed for creating
+// the simulated staging area git object for a repo.
+type V1CreateCommitFromPatchRequest struct {
 	// Repo is the repository to get information about.
 	Repo api.RepoName
 	// BaseCommit is the revision that the staging area object is based on

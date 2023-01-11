@@ -30,10 +30,6 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
         telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
     }
 
-    const selfVsCloudDocumentsLinkOnClick = (): void => {
-        telemetryService.log('SelfVsCloudDocsLink', { page }, { page })
-    }
-
     const helpGettingStartedCTAOnClick = (): void => {
         telemetryService.log('HelpGettingStartedCTA', { page }, { page })
     }
@@ -56,15 +52,6 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
                             {...linkProps}
                         >
                             Learn how to install
-                        </Link>
-                    </li>
-                    <li>
-                        <Link
-                            onClick={selfVsCloudDocumentsLinkOnClick}
-                            to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
-                            {...linkProps}
-                        >
-                            Self-hosted vs. cloud features
                         </Link>
                     </li>
                 </ul>

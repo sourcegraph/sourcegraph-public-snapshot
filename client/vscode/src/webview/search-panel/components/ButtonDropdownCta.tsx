@@ -2,11 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-// eslint-disable-next-line no-restricted-imports
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -70,19 +68,17 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
     }
 
     return (
-        <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
-            <Button
-                as={DropdownToggle}
+        <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
+            <PopoverTrigger
+                as={Button}
                 variant="secondary"
                 outline={true}
                 size="sm"
                 className={classNames('text-decoration-none', className, styles.toggle)}
-                nav={true}
-                caret={false}
             >
                 {button}
-            </Button>
-            <DropdownMenu right={true} className={styles.container}>
+            </PopoverTrigger>
+            <PopoverContent className={styles.container} position={Position.bottomEnd}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">
                         <div className={styles.icon}>{icon}</div>
@@ -97,7 +93,7 @@ export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<
                 <VSCodeButton type="button" onClick={onClick} autofocus={true}>
                     Sign up for Sourcegraph
                 </VSCodeButton>
-            </DropdownMenu>
-        </ButtonDropdown>
+            </PopoverContent>
+        </Popover>
     )
 }

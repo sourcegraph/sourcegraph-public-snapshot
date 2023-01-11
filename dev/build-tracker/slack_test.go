@@ -2,13 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
@@ -19,6 +21,61 @@ func newJob(name string, exit int) *Job {
 		Name:       &name,
 		ExitStatus: &exit,
 	}}
+
+}
+
+func TestLargeAmountOfFailures(t *testing.T) {
+	num := 160000
+	commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
+	url := "http://www.google.com"
+	pipelineID := "sourcegraph"
+	msg := "Large amount of failures test"
+	build := Build{
+		Build: buildkite.Build{
+			Message: &msg,
+			WebURL:  &url,
+			Creator: &buildkite.Creator{
+				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			},
+			Pipeline: &buildkite.Pipeline{
+				ID:   &pipelineID,
+				Name: &pipelineID,
+			},
+			Author: &buildkite.Author{
+				Name:  "William Bezuidenhout",
+				Email: "william.bezuidenhout@sourcegraph.com",
+			},
+			Number: &num,
+			URL:    &url,
+			Commit: &commit,
+		},
+		Pipeline: &Pipeline{buildkite.Pipeline{
+			Name: &pipelineID,
+		}},
+		Jobs: map[string]Job{},
+	}
+	for i := 1; i <= 30; i++ {
+		job := *newJob(fmt.Sprintf("%d fake step", i), i)
+		build.Jobs[job.name()] = job
+	}
+
+	flag.Parse()
+	if !*RunSlackIntegrationTest {
+		t.Skip("Slack Integration test not enabled")
+	}
+	logger := logtest.NoOp(t)
+
+	conf, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := NewNotificationClient(logger, conf.SlackToken, conf.GithubToken, DefaultChannel)
+
+	err = client.sendFailedBuild(&build)
+	if err != nil {
+		t.Fatalf("failed to send build: %s", err)
+	}
 }
 
 func TestSlackMention(t *testing.T) {

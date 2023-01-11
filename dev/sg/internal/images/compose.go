@@ -29,14 +29,14 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 
 		std.Out.WriteNoticef("Checking %q", path)
 
-		composeFile, err := os.ReadFile(path)
-		if err != nil {
+		composeFile, innerErr := os.ReadFile(path)
+		if innerErr != nil {
 			return errors.Wrapf(err, "couldn't read %s", path)
 		}
 
 		checked++
-		newComposeFile, err := updateComposeFile(composeFile, creds, pinTag)
-		if err != nil {
+		newComposeFile, innerErr := updateComposeFile(composeFile, creds, pinTag)
+		if innerErr != nil {
 			return err
 		}
 		if newComposeFile == nil {

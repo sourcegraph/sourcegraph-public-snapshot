@@ -5,16 +5,20 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, ErrorLike } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitRefConnectionFields, GitRefFields, GitRefType, TreePageRepositoryFields } from '../../graphql-operations'
 import { queryGitBranches } from '../branches/RepositoryBranchesOverviewPage'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
+
+interface RepositoryBranchesTabProps {
+    repo?: TreePageRepositoryFields
+    location?: H.Location
+    history?: H.History
+}
 
 interface Props {
     repo: TreePageRepositoryFields
@@ -28,15 +32,15 @@ interface OverviewTabProps {
 }
 
 interface Data {
-    defaultBranch: GQL.IGitRef | null
-    activeBranches: GQL.IGitRef[]
+    defaultBranch: GitRefFields | null
+    activeBranches: GitRefFields[]
     hasMoreActiveBranches: boolean
 }
 
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<RepositoryBranchesTabProps>> = ({
     repo,
     history,
     location,
@@ -69,11 +73,12 @@ export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChild
                     </Button>
                 </li>
             </ul>
-            {showAll ? (
-                <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
-            ) : (
-                <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
-            )}
+            {repo &&
+                (showAll ? (
+                    <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
+                ) : (
+                    <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
+                ))}
         </div>
     )
 }

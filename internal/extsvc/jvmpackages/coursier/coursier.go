@@ -12,6 +12,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -187,7 +188,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.AddEvent("TODO Domain Owner", attribute.String("stdout", stdout.String()), attribute.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

@@ -57,10 +57,12 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 		return
 	}
 
-	// If there is only one auth provider configured, the single auth provider is SAML, and it's an
-	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
-	// anyway; there's no point in showing them a signin screen with just a single signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !isAPIRequest {
+	// If there is only one auth provider configured, the single auth provider is SAML, it's an
+	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
+	//
+	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
+	ps := providers.Providers()
+	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
@@ -249,11 +251,11 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 // login flows.
 //
 // SAML overloads the term "RelayState".
-// * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
-//   the RelayState.
-// * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
-//   is the desired post-login redirect URL in plain text.
+//   - In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
+//     back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//     the RelayState.
+//   - In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
+//     is the desired post-login redirect URL in plain text.
 type relayState struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`

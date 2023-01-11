@@ -7,10 +7,10 @@ import { DecoratorFn, Parameters } from '@storybook/react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { isChromatic } from '@sourcegraph/wildcard/src/stories'
 
 import { withChromaticThemes } from './decorators/withChromaticThemes'
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
-import { isChromatic } from './utils/isChromatic'
 
 const withConsoleDecorator: DecoratorFn = (storyFunc, context): ReactElement => withConsole()(storyFunc)(context)
 
@@ -46,6 +46,12 @@ export const parameters: Parameters = {
 configureActions({ depth: 100, limit: 20 })
 
 setLinkComponent(AnchorLink)
+
+// Default to light theme for Chromatic and "Open canvas in new tab" button.
+// addon-dark-mode will override this if it's running.
+if (!document.body.classList.contains('theme-dark')) {
+    document.body.classList.add('theme-light')
+}
 
 // Default to light theme for Chromatic and "Open canvas in new tab" button.
 // addon-dark-mode will override this if it's running.

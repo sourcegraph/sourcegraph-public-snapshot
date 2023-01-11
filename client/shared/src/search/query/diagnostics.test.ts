@@ -607,7 +607,7 @@ describe('getDiagnostics()', () => {
 
     describe('structural search and type: filter', () => {
         test('detects type: filter in structural search', () => {
-            expect(parseAndDiagnose('type:symbol test', SearchPatternType.structural)).toMatchInlineSnapshot(`
+            expect(parseAndDiagnose('type:symbol test lang:go', SearchPatternType.structural)).toMatchInlineSnapshot(`
                 [
                   {
                     "severity": "error",
@@ -619,7 +619,7 @@ describe('getDiagnostics()', () => {
                   }
                 ]
             `)
-            expect(parseAndDiagnose('type:symbol test patterntype:structural', SearchPatternType.standard))
+            expect(parseAndDiagnose('type:symbol test lang:go patterntype:structural', SearchPatternType.standard))
                 .toMatchInlineSnapshot(`
                 [
                   {
@@ -641,6 +641,23 @@ describe('getDiagnostics()', () => {
             expect(
                 parseAndDiagnose('type:symbol test patterntype:literal', SearchPatternType.structural)
             ).toMatchInlineSnapshot('[]')
+        })
+    })
+
+    describe('structural search without lang: filter', () => {
+        test('detects structural search without lang filter', () => {
+            expect(parseAndDiagnose('repo:foo bar', SearchPatternType.structural)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": "warning",
+                    "message": "Add a \`lang\` filter when using structural search. Structural search may miss results without a \`lang\` filter because it only guesses the language of files searched.",
+                    "range": {
+                      "start": 9,
+                      "end": 12
+                    }
+                  }
+                ]
+            `)
         })
     })
 })

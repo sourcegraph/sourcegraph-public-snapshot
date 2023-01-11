@@ -25,7 +25,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
+import { InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -146,10 +146,6 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
-
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
@@ -182,7 +178,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    {licensed ? 'Use this template' : 'Explore template'}
+                    Use this template
                 </Button>
             )}
         </Card>

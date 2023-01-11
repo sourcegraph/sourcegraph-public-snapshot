@@ -19,7 +19,12 @@ func stringHumanPattern(nodes []Node) string {
 			if n.Annotation.Labels.IsSet(Regexp) {
 				v = fmt.Sprintf("/%s/", v)
 			}
-			if n.Annotation.Labels.IsSet(IsAlias) {
+			if _, _, ok := ScanBalancedPattern([]byte(v)); !ok && !n.Annotation.Labels.IsSet(IsAlias) && n.Annotation.Labels.IsSet(Literal) {
+				v = fmt.Sprintf(`content:%s`, strconv.Quote(v))
+				if n.Negated {
+					v = "-" + v
+				}
+			} else if n.Annotation.Labels.IsSet(IsAlias) {
 				v = fmt.Sprintf("content:%s", v)
 				if n.Negated {
 					v = "-" + v

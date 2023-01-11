@@ -14,7 +14,7 @@
     "dbaeumer.vscode-eslint",
     "foxundermoon.shell-format",
     "timonwong.shellcheck",
-    "felixfbecker.css-stacking-contexts",
+    "felixfbecker.css-stacking-contexts"
   ],
-  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"]
 }

@@ -90,7 +90,6 @@ func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectK
 	// if so, cancel the existing jobs and enqueue a new one.
 	// this doesn't apply to running jobs.
 	err = tx.Exec(ctx, sqlf.Sprintf(`--sql
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
 UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'canceled' WHERE project_key = %s AND external_service_id = %s AND state = 'queued'
 `, projectKey, externalServiceID))
 	if err != nil && err != sql.ErrNoRows {
@@ -98,7 +97,6 @@ UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'canceled' WHERE
 	}
 
 	err = tx.QueryRow(ctx, sqlf.Sprintf(`--sql
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
 INSERT INTO
 	explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, permissions, unrestricted)
 VALUES (%s, %s, %s, %s) RETURNING id
@@ -204,7 +202,6 @@ func listWorkerJobsQuery(opt ListJobsOptions) *sqlf.Query {
 	var where []*sqlf.Query
 
 	q := `
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 %%s

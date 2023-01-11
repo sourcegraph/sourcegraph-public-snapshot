@@ -1,13 +1,5 @@
 # Analytics
 
-<aside class="experimental">
-<p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
-</p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
-
 The analytics section helps Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to internal leaders. Introduced in version 3.42, the section includes analytics breakdowns for our most common features such as Batch Changes, Search Notebooks and search, while also providing basic user-level analytics. 
 
 ## Data Visualizations

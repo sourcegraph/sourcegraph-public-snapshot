@@ -231,8 +231,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "commit diff changed on published changeset",
-			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
-			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
+			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: []byte("testDiff")},
+			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: []byte("newTestDiff")},
 			changeset: bt.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
@@ -257,8 +257,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "commit diff changed on merge changeset",
-			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
-			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
+			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: []byte("testDiff")},
+			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: []byte("newTestDiff")},
 			changeset: bt.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalState:    btypes.ChangesetExternalStateMerged,

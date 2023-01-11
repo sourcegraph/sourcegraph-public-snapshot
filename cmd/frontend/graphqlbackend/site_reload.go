@@ -6,9 +6,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +20,7 @@ var canReloadSite = processrestart.CanRestart()
 func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Reloading the site is an interruptive action, so only admins
 	// may do it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

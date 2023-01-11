@@ -89,7 +89,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, bstore.DatabaseDB(), []int{})
 	})
 	t.Run("In batch change with deleted org namespace", func(t *testing.T) {
-		orgID := bt.InsertTestOrg(t, db, "deleted-org")
+		orgID := bt.CreateTestOrg(t, db, "deleted-org").ID
 		if err := database.OrgsWith(bstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}

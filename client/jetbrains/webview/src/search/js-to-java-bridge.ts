@@ -64,6 +64,11 @@ interface GetThemeRequest {
     action: 'getTheme'
 }
 
+interface IndicateSearchError {
+    action: 'indicateSearchError'
+    arguments: { errorMessage: string; timeAsISOString: string }
+}
+
 export interface SaveLastSearchRequest {
     action: 'saveLastSearch'
     arguments: Search
@@ -88,6 +93,7 @@ export type Request =
     | OpenRequest
     | GetConfigRequest
     | GetThemeRequest
+    | IndicateSearchError
     | SaveLastSearchRequest
     | LoadLastSearchRequest
     | ClearPreviewRequest
@@ -103,10 +109,11 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
             instanceURL: 'https://sourcegraph.com/',
-            isGlobbingEnabled: false,
             accessToken: null,
-            anonymousUserId: 'no-user-id',
+            customRequestHeadersAsString: null,
+            isGlobbingEnabled: false,
             pluginVersion: '0.0.0',
+            anonymousUserId: 'no-user-id',
         }
     }
 }
@@ -120,6 +127,18 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
             isDarkTheme: false,
             intelliJTheme: {},
         }
+    }
+}
+
+export async function onSearchError(errorMessage: string): Promise<void> {
+    try {
+        lastPreviewUpdateCallSendDateTime = new Date()
+        await callJava({
+            action: 'indicateSearchError',
+            arguments: { errorMessage, timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+        })
+    } catch (error) {
+        console.error(`Failed to indicate search error: ${(error as Error).message}`)
     }
 }
 
@@ -271,11 +290,15 @@ async function createPreviewContentForContentMatch(
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
-    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
+
+    const lineNumberAtLineMatchIndex = match.lineMatches ? match.lineMatches[lineMatchIndex].lineNumber : 0
+    const offsetAndLengthsAtLineMatchIndex = match.lineMatches ? match.lineMatches[lineMatchIndex].offsetAndLengths : []
+
+    const characterCountUntilLine = getCharacterCountUntilLine(content, lineNumberAtLineMatchIndex)
     const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
         content,
-        match.lineMatches[lineMatchIndex].lineNumber,
-        match.lineMatches[lineMatchIndex].offsetAndLengths,
+        lineNumberAtLineMatchIndex,
+        offsetAndLengthsAtLineMatchIndex,
         characterCountUntilLine
     )
 
@@ -287,7 +310,7 @@ async function createPreviewContentForContentMatch(
         commit: match.commit,
         path: match.path,
         content: encodeContent(content),
-        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+        lineNumber: lineNumberAtLineMatchIndex,
         absoluteOffsetAndLengths,
     }
 }

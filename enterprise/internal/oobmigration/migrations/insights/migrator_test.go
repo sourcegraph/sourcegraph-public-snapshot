@@ -25,12 +25,16 @@ func TestInsightsMigrator(t *testing.T) {
 		t.Skip()
 	}
 
+	// We can still run this test even if a dev has disabled code insights in
+	// their env.
+	t.Setenv("DISABLE_CODE_INSIGHTS", "")
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 	insightsDB := dbtest.NewInsightsDB(logger, t)
 	frontendStore := basestore.NewWithHandle(frontendDB.Handle())
-	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(insightsDB, sql.TxOptions{}))
+	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, insightsDB, sql.TxOptions{}))
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -115,7 +119,7 @@ func TestInsightsMigrator(t *testing.T) {
 
 	i := 0
 	for {
-		progress, err := migrator.Progress(ctx)
+		progress, err := migrator.Progress(ctx, false)
 		if err != nil {
 			t.Fatalf("unexpected error checking progress: %s", err)
 		}

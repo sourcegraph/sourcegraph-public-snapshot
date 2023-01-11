@@ -7,7 +7,6 @@ import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import {
     aggregateStreamingSearch,
     emptyAggregateResults,
@@ -113,6 +112,10 @@ export class Notebook {
         }
     }
 
+    public getBlockIndex(id: string): number {
+        return this.blockOrder.indexOf(id)
+    }
+
     public getBlocks(): Block[] {
         return this.blockOrder.map(blockId => {
             const block = this.blocks.get(blockId)
@@ -151,25 +154,17 @@ export class Notebook {
                 })
                 break
             case 'query': {
-                const { extensionHostAPI } = this.dependencies
                 // Removes comments
                 const query = block.input.query.replace(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearch(
-                        extensionHostAPI !== null
-                            ? transformSearchQuery({
-                                  query,
-                                  extensionHostAPIPromise: extensionHostAPI,
-                              })
-                            : of(query),
-                        {
-                            version: LATEST_VERSION,
-                            patternType: SearchPatternType.standard,
-                            caseSensitive: false,
-                            trace: undefined,
-                        }
-                    ).pipe(startWith(emptyAggregateResults)),
+                    output: aggregateStreamingSearch(of(query), {
+                        version: LATEST_VERSION,
+                        patternType: SearchPatternType.standard,
+                        caseSensitive: false,
+                        trace: undefined,
+                        chunkMatches: true,
+                    }).pipe(startWith(emptyAggregateResults)),
                 })
                 break
             }
@@ -219,9 +214,10 @@ export class Notebook {
                             endLine: range.end.line + lineContext,
                         }
                         const highlightSymbolRange = {
-                            line: range.start.line - 1,
-                            character: range.start.character - 1,
-                            highlightLength: range.end.character - range.start.character,
+                            startLine: range.start.line - 1,
+                            startCharacter: range.start.character - 1,
+                            endLine: range.end.line - 1,
+                            endCharacter: range.end.character - 1,
                         }
                         return this.dependencies
                             .fetchHighlightedFileLineRanges({
@@ -247,8 +243,6 @@ export class Notebook {
                 this.blocks.set(block.id, { ...block, output })
                 break
             }
-            case 'compute':
-                this.blocks.set(block.id, { ...block, output: null })
         }
     }
 
@@ -271,8 +265,6 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'symbol') {
                 observables.push(block.output.pipe(mapTo(DONE)))
-            } else if (block.type === 'compute') {
-                // Noop: Compute block does not currently emit an output observable.
             }
         }
         // We store output observables and join them into a single observable,

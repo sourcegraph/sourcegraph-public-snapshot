@@ -16,6 +16,7 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,12 +24,11 @@ import (
 )
 
 type s3Store struct {
-	bucket                       string
-	manageBucket                 bool
-	client                       s3API
-	uploader                     s3Uploader
-	bucketLifecycleConfiguration *s3types.BucketLifecycleConfiguration
-	operations                   *Operations
+	bucket       string
+	manageBucket bool
+	client       s3API
+	uploader     s3Uploader
+	operations   *Operations
 }
 
 var _ Store = &s3Store{}
@@ -36,6 +36,7 @@ var _ Store = &s3Store{}
 type S3Config struct {
 	Region          string
 	Endpoint        string
+	UsePathStyle    bool
 	AccessKeyID     string
 	SecretAccessKey string
 	SessionToken    string
@@ -48,20 +49,19 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 		return nil, err
 	}
 
-	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.Backend, config.S3))
+	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.S3))
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
-	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, s3BucketLifecycleConfiguration(config.Backend, config.TTL), operations), nil
+	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, operations *Operations) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, operations *Operations) *s3Store {
 	return &s3Store{
-		bucket:                       bucket,
-		manageBucket:                 manageBucket,
-		client:                       client,
-		uploader:                     uploader,
-		operations:                   operations,
-		bucketLifecycleConfiguration: lifecycleConfiguration,
+		bucket:       bucket,
+		manageBucket: manageBucket,
+		client:       client,
+		uploader:     uploader,
+		operations:   operations,
 	}
 }
 
@@ -72,10 +72,6 @@ func (s *s3Store) Init(ctx context.Context) error {
 
 	if err := s.create(ctx); err != nil {
 		return errors.Wrap(err, "failed to create bucket")
-	}
-
-	if err := s.update(ctx); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
 	return nil
@@ -272,6 +268,57 @@ func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
 	return errors.Wrap(err, "failed to delete object")
 }
 
+func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var toDelete []s3types.ObjectIdentifier
+	flush := func() {
+		_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: &s.bucket,
+			Delete: &s3types.Delete{
+				Objects: toDelete,
+			},
+		})
+		if err != nil {
+			s.operations.ExpireObjects.Logger.Error("Failed to delete objects in S3 bucket",
+				sglog.Error(err),
+				sglog.String("bucket", s.bucket))
+			return // try again at next flush
+		}
+		toDelete = toDelete[:0]
+	}
+	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			s.operations.ExpireObjects.Error("Failed to paginate S3 bucket", sglog.Error(err))
+			break // we'll try again later
+		}
+		for _, object := range page.Contents {
+			if time.Since(*object.LastModified) >= maxAge {
+				toDelete = append(toDelete,
+					s3types.ObjectIdentifier{
+						Key: object.Key,
+					})
+				if len(toDelete) >= 1000 {
+					flush()
+				}
+			}
+		}
+	}
+	if len(toDelete) > 0 {
+		flush()
+	}
+	return nil
+}
+
 func (s *s3Store) create(ctx context.Context) error {
 	_, err := s.client.CreateBucket(ctx, &s3.CreateBucketInput{
 		Bucket: aws.String(s.bucket),
@@ -281,16 +328,6 @@ func (s *s3Store) create(ctx context.Context) error {
 		return nil
 	}
 
-	return err
-}
-
-func (s *s3Store) update(ctx context.Context) error {
-	configureRequest := &s3.PutBucketLifecycleConfigurationInput{
-		Bucket:                 aws.String(s.bucket),
-		LifecycleConfiguration: s.bucketLifecycleConfiguration,
-	}
-
-	_, err := s.client.PutBucketLifecycleConfiguration(ctx, configureRequest)
 	return err
 }
 
@@ -336,12 +373,13 @@ func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)
 }
 
-func s3ClientOptions(backend string, config S3Config) func(o *s3.Options) {
+func s3ClientOptions(config S3Config) func(o *s3.Options) {
 	return func(o *s3.Options) {
-		if backend == "minio" {
+		if config.Endpoint != "" {
 			o.EndpointResolver = s3.EndpointResolverFromURL(config.Endpoint)
-			o.UsePathStyle = true
 		}
+
+		o.UsePathStyle = config.UsePathStyle
 	}
 }
 
@@ -355,29 +393,4 @@ func writeToPipe(fn func(w io.Writer) error) io.Reader {
 
 func isConnectionResetError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "read: connection reset by peer")
-}
-
-func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3types.BucketLifecycleConfiguration {
-	days := int32(ttl / (time.Hour * 24))
-
-	rules := []s3types.LifecycleRule{
-		{
-			ID:         aws.String("Expiration Rule"),
-			Status:     s3types.ExpirationStatusEnabled,
-			Filter:     &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-			Expiration: &s3types.LifecycleExpiration{Days: days},
-		},
-	}
-
-	// This rule doesn't work on minio, so we have to skip it there.
-	if backend != "minio" {
-		rules = append(rules, s3types.LifecycleRule{
-			ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
-			Status:                         s3types.ExpirationStatusEnabled,
-			Filter:                         &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-			AbortIncompleteMultipartUpload: &s3types.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
-		})
-	}
-
-	return &s3types.BucketLifecycleConfiguration{Rules: rules}
 }

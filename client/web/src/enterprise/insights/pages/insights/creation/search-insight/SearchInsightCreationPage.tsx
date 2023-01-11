@@ -1,6 +1,5 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
-import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -32,6 +31,8 @@ export interface InsightCreateEvent {
 }
 
 export interface SearchInsightCreationPageProps extends TelemetryProps {
+    backUrl: string
+
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -52,7 +53,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
 }
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -65,27 +66,21 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            try {
-                const insight = getSanitizedSearchInsight(values)
+            const insight = getSanitizedSearchInsight(values)
 
-                await onInsightCreateRequest({ insight })
+            await onInsightCreateRequest({ insight })
 
-                telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
-                telemetryService.log(
-                    'InsightAddition',
-                    { insightType: CodeInsightTrackType.SearchBasedInsight },
-                    { insightType: CodeInsightTrackType.SearchBasedInsight }
-                )
+            telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
+            telemetryService.log(
+                'InsightAddition',
+                { insightType: CodeInsightTrackType.SearchBasedInsight },
+                { insightType: CodeInsightTrackType.SearchBasedInsight }
+            )
 
-                // Clear initial values if user successfully created search insight
-                setLocalStorageFormValues(undefined)
+            // Clear initial values if user successfully created search insight
+            setLocalStorageFormValues(undefined)
 
-                onSuccessfulCreation()
-            } catch (error) {
-                return { [FORM_ERROR]: asError(error) }
-            }
-
-            return
+            onSuccessfulCreation()
         },
         [onInsightCreateRequest, telemetryService, setLocalStorageFormValues, onSuccessfulCreation]
     )
@@ -102,7 +97,7 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
 
     return (
         <CodeInsightsPage className={styles.creationPage}>
-            <PageTitle title="Create insight - Code Insights" />
+            <PageTitle title="Create track changes insight - Code Insights" />
 
             {loading && (
                 // loading state for 1 click creation insight values resolve operation
@@ -119,7 +114,11 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
                     <>
                         <PageHeader
                             className="mb-5"
-                            path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
+                            path={[
+                                { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                                { text: 'Create', to: backUrl },
+                                { text: 'Track changes insight' },
+                            ]}
                             description={
                                 <span className="text-muted">
                                     Search-based code insights analyze your code based on any search query.{' '}

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -107,12 +108,6 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
 			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
 		}
-	case graphqlbackend.NotebookComputeBlockType:
-		if inputBlock.ComputeInput == nil {
-			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
-		}
-		block.Type = notebooks.NotebookComputeBlockType
-		block.ComputeInput = &notebooks.NotebookComputeBlockInput{Value: *inputBlock.ComputeInput}
 	default:
 		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
 	}
@@ -450,12 +445,12 @@ func (r *notebookResolver) Public(ctx context.Context) bool {
 	return r.notebook.Public
 }
 
-func (r *notebookResolver) UpdatedAt(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.notebook.UpdatedAt}
+func (r *notebookResolver) UpdatedAt(ctx context.Context) gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.notebook.UpdatedAt}
 }
 
-func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.notebook.CreatedAt}
+func (r *notebookResolver) CreatedAt(ctx context.Context) gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.notebook.CreatedAt}
 }
 
 func (r *notebookResolver) ViewerCanManage(ctx context.Context) (bool, error) {
@@ -514,13 +509,6 @@ func (r *notebookBlockResolver) ToFileBlock() (graphqlbackend.FileBlockResolver,
 func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResolver, bool) {
 	if r.block.Type == notebooks.NotebookSymbolBlockType {
 		return &symbolBlockResolver{r.block}, true
-	}
-	return nil, false
-}
-
-func (r *notebookBlockResolver) ToComputeBlock() (graphqlbackend.ComputeBlockResolver, bool) {
-	if r.block.Type == notebooks.NotebookComputeBlockType {
-		return &computeBlockResolver{r.block}, true
 	}
 	return nil, false
 }
@@ -642,17 +630,4 @@ func (r *symbolBlockInputResolver) SymbolContainerName() string {
 
 func (r *symbolBlockInputResolver) SymbolKind() string {
 	return r.input.SymbolKind
-}
-
-type computeBlockResolver struct {
-	// block.type == NotebookComputeBlockType
-	block notebooks.NotebookBlock
-}
-
-func (r *computeBlockResolver) ID() string {
-	return r.block.ID
-}
-
-func (r *computeBlockResolver) ComputeInput() string {
-	return r.block.ComputeInput.Value
 }

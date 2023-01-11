@@ -3,11 +3,6 @@
 .wildcard-tabs {
     --opacity-transition: 0.3s;
     --scroll-gradient-color: var(--body-bg);
-
-    @mixin scroll-gradient($to) {
-        background: linear-gradient(to $to, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
-    }
-
     --small-size-font: 0.75rem;
     --medium-size-font: 0.875rem;
     --large-size-font: 1rem;
@@ -100,14 +95,14 @@
             }
         }
 
+        // Drawing gradient color changes on scroll
         &::before {
             left: 0;
-            @include scroll-gradient(right);
+            background: linear-gradient(to right, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
         }
-
         &::after {
             right: 0;
-            @include scroll-gradient(left);
+            background: linear-gradient(to left, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
         }
 
         &-obscured-left::before {

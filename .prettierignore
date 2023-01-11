@@ -1,12 +1,13 @@
 .bin/
 *.bundle.*
+bazel-*
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
 **/coverage
 internal/database/schema*.md
 internal/database/schema*.json
-internal/database/migration/shared/upgradedata/stitched-migration-graph.json
+internal/database/migration/shared/data/**/*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -15,8 +16,7 @@ vendor/
 .nyc_output/
 out/
 dist/
-client/shared/src/graphqlschema.ts
-client/shared/src/schema/
+client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
 .github/*
@@ -39,3 +39,4 @@ client/jetbrains/.idea
 client/jetbrains/.gradle
 .browserslistrc
 code-intel-extensions.json
+.direnv

@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"errors"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -70,7 +70,6 @@ func siteConfig(ctx context.Context, store *basestore.Store) (siteConfig schema.
 }
 
 const siteConfigQuery = `
--- source: cmd/migrator/shared/conf.go:siteConfig
 SELECT c.contents
 FROM critical_and_site_config c
 WHERE c.type = 'site'

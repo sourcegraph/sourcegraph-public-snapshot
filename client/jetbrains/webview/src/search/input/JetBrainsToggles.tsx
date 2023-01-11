@@ -3,26 +3,24 @@
 
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import LightningBoltIcon from 'mdi-react/LightningBoltIcon'
-import RegexIcon from 'mdi-react/RegexIcon'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
 import {
     CaseSensitivityProps,
     SearchContextProps,
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
     SubmitSearchProps,
-} from '@sourcegraph/search'
-import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+} from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import styles from './JetBrainsToggles.module.scss'
 
@@ -94,7 +92,6 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
-                activation: undefined,
             })
         },
         [caseSensitive, patternType, submitSearch]
@@ -152,10 +149,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Expert mode"
                         isActive={false}
                         onToggle={toggleExpertMode}
-                        icon={LightningBoltIcon}
+                        iconSvgPath={mdiLightningBolt}
                         interactive={props.interactive}
                         className={classNames(styles.toggle, 'test-expert-mode-toggle')}
-                        activeClassName="test-expert-mode-toggle--active"
                         disableOn={[]}
                     />
                 </>
@@ -165,10 +161,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Case sensitivity"
                         isActive={caseSensitive}
                         onToggle={toggleCaseSensitivity}
-                        icon={FormatLetterCaseIcon}
+                        iconSvgPath={mdiFormatLetterCase}
                         interactive={props.interactive}
                         className={classNames(styles.toggle, 'test-case-sensitivity-toggle')}
-                        activeClassName="test-case-sensitivity-toggle--active"
                         disableOn={[
                             {
                                 condition:
@@ -179,8 +174,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                                 condition:
                                     findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
                                     undefined,
-                                reason:
-                                    'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
+                                reason: 'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
                             },
                             {
                                 condition: patternType === SearchPatternType.structural,
@@ -192,10 +186,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Regular expression"
                         isActive={patternType === SearchPatternType.regexp}
                         onToggle={toggleRegexp}
-                        icon={RegexIcon}
+                        iconSvgPath={mdiRegex}
                         interactive={props.interactive}
                         className={classNames(styles.toggle, 'test-regexp-toggle')}
-                        activeClassName="test-regexp-toggle--active"
                         disableOn={[
                             {
                                 condition:
@@ -209,10 +202,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         <QueryInputToggle
                             title="Structural search"
                             className={classNames(styles.toggle, 'test-structural-search-toggle')}
-                            activeClassName="test-structural-search-toggle--active"
                             isActive={patternType === SearchPatternType.structural}
                             onToggle={toggleStructuralSearch}
-                            icon={CodeBracketsIcon}
+                            iconSvgPath={mdiCodeBrackets}
                             interactive={props.interactive}
                             disableOn={[
                                 {
@@ -229,10 +221,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                             title="Expert mode"
                             isActive={true}
                             onToggle={toggleExpertMode}
-                            icon={LightningBoltIcon}
+                            iconSvgPath={mdiLightningBolt}
                             interactive={props.interactive}
                             className="test-expert-mode-toggle"
-                            activeClassName="test-expert-mode-toggle--active"
                             disableOn={[]}
                         />
                     )}

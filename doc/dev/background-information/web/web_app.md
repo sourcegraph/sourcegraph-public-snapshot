@@ -73,7 +73,7 @@ To use it locally, use `yarn storybook` command to start the Storybook developme
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
@@ -148,3 +148,14 @@ You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to r
 ### E2E tests
 
 See [testing.md](../../how-to/testing.md).
+
+## Logging
+
+`console` methods are banned in browser environments via [the `no-console` ESLint rule](https://eslint.org/docs/latest/rules/no-console) to:
+
+1. Avoid leaving `console.*` added for debugging purposes during development.
+2. Have more control over logging pipelines. E.g.,
+    - Forward errors to the error monitoring services.
+    - Dynamically change logging level depending on the environment.
+
+Use [the `logger` service](https://sourcegraph.sourcegraph.com/search?q=context:sourcegraph+export+const+logger:+Logger+%3D&patternType=standard) that wraps console methods where we want to preserve console output in non-development environments. E.g., logging helpful information during an integration test execution. Feel free to disable the `no-console` ESLint rule for node.js environments via [the `overrides` configuration key](https://eslint.org/docs/latest/user-guide/configuring/configuration-files#configuration-based-on-glob-patterns). Check out [the Unified logger service RFC](https://docs.google.com/document/d/1PolGRDS9XfKj-IJEBi7BTbVZeUsQfM-3qpjLsLlB-yw/edit) for more context.

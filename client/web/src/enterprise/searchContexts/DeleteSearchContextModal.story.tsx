@@ -2,7 +2,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
@@ -12,7 +12,7 @@ import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 const searchContext = {
     __typename: 'SearchContext',
     id: '1',
-} as ISearchContext
+} as SearchContextFields
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

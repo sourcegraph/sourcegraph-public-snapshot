@@ -5,6 +5,13 @@ import (
 	texttemplate "text/template"
 )
 
+// InternalAPIMessage describes an email message to be sent via the 'internal.send-email'
+// endpoint.
+type InternalAPIMessage struct {
+	Source string
+	Message
+}
+
 // Message describes an email message to be sent.
 type Message struct {
 	FromName   string   // email "From" address proper name
@@ -19,9 +26,14 @@ type Message struct {
 
 // Templates contains the text and HTML templates for an email.
 type Templates struct {
-	Subject string // text/template subject template
-	Text    string // text/template text body template
-	HTML    string //  html/template HTML body template
+	// Subject is the text/template template for the email subject. Required.
+	Subject string
+	// HTML is the html/template template for the email HTML body. Required.
+	HTML string
+	// Text is the text/template template for the email plain-text body. Recommended for
+	// static templates, but if it's not provided, one will automatically be generated
+	// from the HTML template.
+	Text string
 }
 
 // ParsedTemplates contains parsed text and HTML email templates.

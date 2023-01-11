@@ -472,7 +472,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 		t.Fatalf("lastVerificationSentAt: want nil but got %v", emails[0].LastVerificationSentAt)
 	}
 
-	if err = db.UserEmails().SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
+	if err = db.UserEmails().SetLastVerification(ctx, user.ID, addr, "c", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -514,7 +514,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	_, err = db.UserEmails().GetLatestVerificationSentEmail(ctx, addr)
 	if err == nil || !errcode.IsNotFound(err) {
 		t.Fatalf("err: want a not found error but got %v", err)
-	} else if err = db.UserEmails().SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
+	} else if err = db.UserEmails().SetLastVerification(ctx, user.ID, addr, "c", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -535,7 +535,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
-	} else if err = db.UserEmails().SetLastVerification(ctx, user2.ID, addr, "c"); err != nil {
+	} else if err = db.UserEmails().SetLastVerification(ctx, user2.ID, addr, "c", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 

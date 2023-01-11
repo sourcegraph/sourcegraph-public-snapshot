@@ -8,25 +8,25 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,12 +42,15 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
+	logger := sglog.Scoped("batches.Service", "batch changes service")
 	svc := &Service{
-		logger:     sglog.Scoped("NewWithClock", ""),
-		store:      store,
-		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
+		logger: logger,
+		store:  store,
+		sourcer: sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		clock:      clock,
-		operations: newOperations(store.ObservationContext()),
+		operations: newOperations(store.ObservationCtx()),
 	}
 
 	return svc
@@ -93,18 +96,18 @@ var (
 )
 
 // newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationContext.
-func newOperations(observationContext *observation.Context) *operations {
+// TODO: We should create one per observationCtx.
+func newOperations(observationCtx *observation.Context) *operations {
 	operationsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
 		op := func(name string) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("batches.service.%s", name),
 				MetricLabelValues: []string{name},
 				Metrics:           m,
@@ -154,71 +157,41 @@ type CreateEmptyBatchChangeOpts struct {
 	Name string
 }
 
-// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
+// CreateEmptyBatchChange creates a new batch change without an applied spec. It enforces
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Construct and parse the batch spec YAML of just the provided name to validate the
-	// pattern of the name is okay
-	rawSpec, err := yaml.Marshal(struct {
-		Name string `yaml:"name"`
-	}{Name: opts.Name})
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling name")
-	}
-	// TODO: Should name require a minimum length?
-	spec, err := batcheslib.ParseBatchSpec(rawSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	actor := actor.FromContext(ctx)
-	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-
-	batchSpec := &btypes.BatchSpec{
-		RawSpec:         string(rawSpec),
-		Spec:            spec,
-		NamespaceUserID: opts.NamespaceUserID,
-		NamespaceOrgID:  opts.NamespaceOrgID,
-		UserID:          actor.UID,
-		CreatedFromRaw:  true,
-	}
-
-	// The combination of name + namespace must be unique
+	// The combination of name + namespace must be unique.
 	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
 	// be considered unique?
-	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
-	if err != nil {
+	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		Name:            opts.Name,
+	})
+	if err != nil && err != store.ErrNoResults {
 		return nil, err
-	}
-	if batchChange != nil {
+	} else if batchChange != nil {
 		return nil, ErrNameNotUnique
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
-		return nil, err
-	}
+	actor := actor.FromContext(ctx)
 
 	batchChange = &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
+		// Note: No batch spec id, meaning it's a draft batch change.
 	}
-	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
@@ -243,51 +216,17 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	// Construct and parse the batch spec YAML of just the provided name to validate the
-	// pattern of the name is okay
-	rawSpec, err := yaml.Marshal(struct {
-		Name string `yaml:"name"`
-	}{Name: opts.Name})
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling name")
-	}
-
-	spec, err := batcheslib.ParseBatchSpec(rawSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	actor := actor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-
-	batchSpec := &btypes.BatchSpec{
-		RawSpec:         string(rawSpec),
-		Spec:            spec,
-		NamespaceUserID: opts.NamespaceUserID,
-		NamespaceOrgID:  opts.NamespaceOrgID,
-		UserID:          actor.UID,
-		CreatedFromRaw:  true,
-	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
-		return nil, err
-	}
+	actor := actor.FromContext(ctx)
 
 	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
 	}
 
-	err = tx.UpsertBatchChange(ctx, batchChange)
+	err = s.store.UpsertBatchChange(ctx, batchChange)
 
 	if err != nil {
 		return nil, err
@@ -410,7 +349,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		return nil, err
 	}
 
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
@@ -437,8 +377,11 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 			return nil, err
 		}
 
-		// 🚨 SECURITY: Only the Author of the batch change can create a batchSpec from raw assigned to it.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, tx.DatabaseDB(), batchChange.CreatorID); err != nil {
+		// 🚨 SECURITY: Check whether the current user has access to the
+		// namespace of the batch change. Note that this may be different to the
+		// user-controlled namespace options — we need to check before changing
+		// anything in the database!
+		if err := s.CheckNamespaceAccess(ctx, batchChange.NamespaceUserID, batchChange.NamespaceOrgID); err != nil {
 			return nil, err
 		}
 	}
@@ -462,23 +405,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	// Temporarily prevent mounts for server-side processing.
-	if hasMount(opts.spec) {
-		return errors.New("mounts are not allowed for server-side processing")
-	}
-
-	// The global env is always mocked to be empty for executors, so we just
-	// want to throw a validation error here for now.
-	var errs error
-	for i, step := range opts.spec.Spec.Steps {
-		if !step.Env.IsStatic() {
-			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
-		}
-	}
-	if errs != nil {
-		return errs
-	}
-
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -496,15 +422,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	})
 }
 
-func hasMount(spec *btypes.BatchSpec) bool {
-	for _, step := range spec.Spec.Steps {
-		if len(step.Mount) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 type ErrBatchSpecResolutionErrored struct {
 	failureMessage *string
 }
@@ -520,6 +437,7 @@ var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, wo
 
 type ExecuteBatchSpecOpts struct {
 	BatchSpecRandID string
+	NoCache         *bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -565,20 +483,40 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return batchSpec, nil
+		// Continue below the switch statement.
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+
+	// If the batch spec nocache flag doesn't match what's been provided in the API,
+	// update the batch spec state in the db.
+	if opts.NoCache != nil && batchSpec.NoCache != *opts.NoCache {
+		batchSpec.NoCache = *opts.NoCache
+		if err := tx.UpdateBatchSpec(ctx, batchSpec); err != nil {
+			return nil, err
+		}
+	}
+
+	// Disable caching if requested.
+	if batchSpec.NoCache {
+		err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return batchSpec, nil
 }
 
 var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")
@@ -649,6 +587,14 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
+	// Also validate that the batch spec only uses known templating variables and
+	// functions. If we get an error here that it's invalid, we also want to surface that
+	// error to the UI.
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
 	// Make sure the user has access.
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
 	if err != nil {
@@ -692,6 +638,11 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
@@ -894,7 +845,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -934,7 +885,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 
@@ -976,7 +927,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return err
 	}
 
@@ -1014,7 +965,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1065,7 +1016,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1097,11 +1048,27 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
 }
 
+// CanAdministerInNamespace checks whether the current user can administer a
+// batch change in the given namespace. This essentially wraps
+// CheckNamespaceAccess and returns false, nil if a valid user is logged in but
+// they simply don't have access, whereas CheckNamespaceAccess will return an
+// error in that case.
+func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
+	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
+	if err != nil && (err == auth.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
+		// These errors indicate that the viewer is valid, but that they simply
+		// don't have access to administer this batch change. We don't want to
+		// propagate that error to the caller.
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
+		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
+		return auth.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}
@@ -1126,14 +1093,11 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	ctx, _, endObservation := s.operations.fetchUsernameForBitbucketServerToken.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return "", err
-	}
-	css, err = css.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
@@ -1160,7 +1124,7 @@ var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -1168,14 +1132,11 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return err
-	}
-	css, err = css.WithAuthenticator(a)
 	if err != nil {
 		return err
 	}
@@ -1206,7 +1167,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return bulkGroupID, err
 	}
 
@@ -1570,7 +1531,6 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		IDs:          opts.Changesets,
 		EnforceAuthz: true,
 	})
-
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -17,14 +17,19 @@ import (
 // NewLicenseCheckJob will periodically check for the existence of a Code Insights license and ensure the correct set of insights is frozen.
 func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 15
+	logger := log.Scoped("CodeInsightsLicenseCheckJob", "")
 
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_license_check", func(ctx context.Context) (err error) {
-			return checkAndEnforceLicense(ctx, insightsdb)
-		}))
+	return goroutine.NewPeriodicGoroutine(
+		ctx, "insights.license_check", "checks for code insights license and freezes insights when missing",
+		interval, goroutine.HandlerFunc(
+			func(ctx context.Context) (err error) {
+				return checkAndEnforceLicense(ctx, insightsdb, logger)
+			},
+		),
+	)
 }
 
-func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB) (err error) {
+func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB, logger log.Logger) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
 	dashboardStore := store.NewDashboardStore(insightsdb)
 	insightTx, err := insightStore.Transact(ctx)
@@ -43,7 +48,7 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB) (err
 		return nil
 	}
 
-	log15.Info("No license found for Code Insights. Freezing insights for limited access mode", "error", licenseError.Error())
+	logger.Info("No license found for Code Insights. Freezing insights for limited access mode", log.Error(licenseError))
 
 	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := insightTx.GetUnfrozenInsightCount(ctx)
 	if err != nil {

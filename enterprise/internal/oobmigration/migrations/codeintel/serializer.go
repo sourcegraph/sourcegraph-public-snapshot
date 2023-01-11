@@ -117,6 +117,12 @@ func (s *serializer) UnmarshalLegacyDocumentData(data []byte) (document Document
 	return document, err
 }
 
+// UnmarshalResultChunkData is the inverse of MarshalResultChunkData.
+func (s *serializer) UnmarshalResultChunkData(data []byte) (resultChunk ResultChunkData, err error) {
+	err = s.decode(data, &resultChunk)
+	return resultChunk, err
+}
+
 // UnmarshalLocations is the inverse of MarshalLocations.
 func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, err error) {
 	err = s.decode(data, &locations)

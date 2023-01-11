@@ -81,8 +81,7 @@ const LOG4J_FIXED_VERSIONS: Template = {
         series: [
             {
                 name: 'Vulnerable',
-                query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
+                query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
@@ -818,14 +817,12 @@ const GO_STATIC_CHECK_SA6005: Template = {
         series: [
             {
                 name: 'SA6005',
-                query:
-                    'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
+                query: 'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'SA6005 - fixed',
-                query:
-                    'if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) or if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) patternType:structural archived:no',
+                query: 'if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) or if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -859,14 +856,12 @@ const GO_STATIC_CHECK_S1003: Template = {
         series: [
             {
                 name: 'S1003',
-                query:
-                    'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
+                query: 'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'S1003 - fixed',
-                query:
-                    'strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) patternType:structural archived:no',
+                query: 'strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -883,8 +878,7 @@ const GO_STATIC_CHECK_S1004: Template = {
         series: [
             {
                 name: 'S1004',
-                query:
-                    'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
+                query: 'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
@@ -906,8 +900,7 @@ const GO_STATIC_CHECK_S1005: Template = {
         series: [
             {
                 name: 'S1005',
-                query:
-                    'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
+                query: 'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
@@ -998,14 +991,12 @@ const GO_STATIC_CHECK_S1019: Template = {
         series: [
             {
                 name: 'S10019',
-                query:
-                    'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
+                query: 'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'S1019 - fixed',
-                query:
-                    'make(chan int) or make(map[:[[1]]]:[[1]]) or make(:[1], :[2]) patternType:structural archived:no',
+                query: 'make(chan int) or make(map[:[[1]]]:[[1]]) or make(:[1], :[2]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1022,8 +1013,7 @@ const GO_STATIC_CHECK_S1020: Template = {
         series: [
             {
                 name: 'S1020',
-                query:
-                    'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
+                query: 'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
@@ -1045,8 +1035,7 @@ const GO_STATIC_CHECK_S1023: Template = {
         series: [
             {
                 name: 'S1023',
-                query:
-                    'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
+                query: 'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
@@ -1156,8 +1145,7 @@ const GO_STATIC_CHECK_S1032: Template = {
         series: [
             {
                 name: 'S1032',
-                query:
-                    'sort.Float64s(:[1]) or sort.Strings(:[1]) or sort.Ints(:[1]) patternType:structural archived:no',
+                query: 'sort.Float64s(:[1]) or sort.Strings(:[1]) or sort.Ints(:[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -1174,14 +1162,12 @@ const GO_STATIC_CHECK_S1035: Template = {
         series: [
             {
                 name: 'S1035',
-                query:
-                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'S1035 - fixed',
-                query:
-                    'headers.Set(:[1]) or headers.Get(:[1]) or headers.Del(:[1]) or headers.Add(:[1], :[1]) patternType:structural archived:no',
+                query: 'headers.Set(:[1]) or headers.Get(:[1]) or headers.Del(:[1]) or headers.Add(:[1], :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -1200,8 +1186,7 @@ const GO_STATIC_CHECK_S1037: Template = {
         series: [
             {
                 name: 'S1035',
-                query:
-                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                query: 'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {

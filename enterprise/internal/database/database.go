@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -14,6 +17,7 @@ type EnterpriseDB interface {
 	database.DB
 	CodeMonitors() CodeMonitorStore
 	Perms() PermsStore
+	SubRepoPerms() SubRepoPermsStore
 }
 
 func NewEnterpriseDB(db database.DB) EnterpriseDB {
@@ -39,6 +43,10 @@ func (edb *enterpriseDB) Perms() PermsStore {
 	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now}
 }
 
+func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {
+	return SubRepoPermsWith(basestore.NewWithHandle(edb.Handle()))
+}
+
 type InsightsDB interface {
 	dbutil.DB
 	basestore.ShareableStore
@@ -47,8 +55,8 @@ type InsightsDB interface {
 	Done(error) error
 }
 
-func NewInsightsDB(inner *sql.DB) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+func NewInsightsDB(inner *sql.DB, logger log.Logger) InsightsDB {
+	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
@@ -72,14 +80,13 @@ func (d *insightsDB) Done(err error) error {
 }
 
 func (d *insightsDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *insightsDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
-
+	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *insightsDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }

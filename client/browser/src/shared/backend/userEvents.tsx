@@ -1,8 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { EventSource } from '../../graphql-operations'
+import { EventSource, logEventResult } from '../../graphql-operations'
 
 /**
  * Log a raw user action on the associated Sourcegraph instance
@@ -11,7 +10,7 @@ export const logEvent = (
     event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
-    requestGraphQL<GQL.IMutation>({
+    requestGraphQL<logEventResult>({
         request: gql`
             mutation logEvent(
                 $name: String!

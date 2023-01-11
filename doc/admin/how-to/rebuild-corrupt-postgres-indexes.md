@@ -50,6 +50,22 @@ Then we rebuild the database indexes.
 reindex (verbose) database sg;
 ```
 
+
+In docker, you can fix the indexes while the server is running. It is not required to stop the single server image.
+The only risk here is that connections and every other process might be slow.
+
+Using the following commands you can re-index the database: 
+
+```sql
+reindex (verbose) system sourcegraph;
+```
+
+Then we rebuild the database indexes.
+
+```sql
+reindex (verbose) database sourcegraph;
+```
+
 If any duplicate errors are reported, we must delete some rows by adapting and running the [duplicate deletion query](#duplicate-deletion-query) for each of the errors found.
 
 After deleting duplicates, just re-run the above statement. Repeat the process until there are no errors.

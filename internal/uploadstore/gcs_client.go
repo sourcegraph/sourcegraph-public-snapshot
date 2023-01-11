@@ -9,6 +9,8 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -71,10 +73,6 @@ func (s *gcsStore) Init(ctx context.Context) error {
 		}
 
 		return errors.Wrap(err, "failed to get bucket attributes")
-	}
-
-	if err := s.update(ctx, bucket); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
 	return nil
@@ -160,33 +158,40 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
 }
 
-func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
-	return bucket.Create(ctx, s.config.ProjectID, &storage.BucketAttrs{
-		Lifecycle: s.lifecycle(),
-	})
-}
+func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
 
-func (s *gcsStore) update(ctx context.Context, bucket gcsBucketHandle) error {
-	lifecycle := s.lifecycle()
+	bucket := s.client.Bucket(s.bucket)
+	it := bucket.Objects(ctx, &storage.Query{Prefix: prefix})
+	for {
+		objAttrs, err := it.Next()
+		if err != nil && err != iterator.Done {
+			s.operations.ExpireObjects.Logger.Error("Failed to iterate GCS bucket", sglog.Error(err))
+			break // we'll try again later
+		}
+		if err == iterator.Done {
+			break
+		}
 
-	return bucket.Update(ctx, storage.BucketAttrsToUpdate{
-		Lifecycle: &lifecycle,
-	})
-}
-
-func (s *gcsStore) lifecycle() storage.Lifecycle {
-	return storage.Lifecycle{
-		Rules: []storage.LifecycleRule{
-			{
-				Action: storage.LifecycleAction{
-					Type: "Delete",
-				},
-				Condition: storage.LifecycleCondition{
-					AgeInDays: int64(s.ttl / (time.Hour * 24)),
-				},
-			},
-		},
+		if time.Since(objAttrs.Created) >= maxAge {
+			if err := bucket.Object(objAttrs.Name).Delete(ctx); err != nil {
+				s.operations.ExpireObjects.Logger.Error("Failed to delete expired GCS object",
+					sglog.Error(err),
+					sglog.String("bucket", s.bucket),
+					sglog.String("object", objAttrs.Name))
+				continue
+			}
+		}
 	}
+	return nil
+}
+
+func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
+	return bucket.Create(ctx, s.config.ProjectID, nil)
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {

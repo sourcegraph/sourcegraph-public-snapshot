@@ -3,9 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -17,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // InitBackgroundJobs starts all jobs required to run batches. Currently, it is called from
@@ -35,14 +31,10 @@ func InitBackgroundJobs(
 	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("batches.background", "batches background jobs"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	bstore := store.New(db, observationContext, key)
+	observationCtx := observation.NewContext(log.Scoped("batches.background", "batches background jobs"))
+	bstore := store.New(db, observationCtx, key)
 
-	syncRegistry := syncer.NewSyncRegistry(ctx, bstore, cf, observationContext)
+	syncRegistry := syncer.NewSyncRegistry(ctx, observationCtx, bstore, cf)
 
 	go goroutine.MonitorBackgroundRoutines(ctx, syncRegistry)
 

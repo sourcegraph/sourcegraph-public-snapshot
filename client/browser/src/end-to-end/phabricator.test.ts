@@ -78,7 +78,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Activate the repo and wait for it to clone
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
-    const buttonLabel = ((await (await activateButton!.getProperty('textContent')).jsonValue()) as string).trim()
+    const buttonLabel = (await (await activateButton!.getProperty('textContent')).jsonValue()).trim()
     // Don't click if it says "Deactivate Repository"
     if (buttonLabel === 'Activate Repository') {
         await activateButton!.click()
@@ -137,7 +137,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  */
 async function init(driver: Driver): Promise<void> {
     if (restConfig.testUserPassword) {
-        await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+        await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
     }
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({

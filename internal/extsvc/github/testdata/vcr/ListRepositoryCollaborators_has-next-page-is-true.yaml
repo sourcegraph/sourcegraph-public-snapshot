@@ -1,0 +1,75 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph-vcr/private-repo-1/collaborators?page=1&per_page=100&affiliation=direct
+    method: GET
+  response:
+    body: '[{"id":1,"node_id":"1"},{"id":2,"node_id":"2"},{"id":3,"node_id":"3"},{"id":4,"node_id":"4"},{"id":5,"node_id":"5"},{"id":6,"node_id":"6"},{"id":7,"node_id":"7"},{"id":8,"node_id":"8"},{"id":9,"node_id":"9"},{"id":10,"node_id":"10"},{"id":11,"node_id":"11"},{"id":12,"node_id":"12"},{"id":13,"node_id":"13"},{"id":14,"node_id":"14"},{"id":15,"node_id":"15"},{"id":16,"node_id":"16"},{"id":17,"node_id":"17"},{"id":18,"node_id":"18"},{"id":19,"node_id":"19"},{"id":20,"node_id":"20"},{"id":21,"node_id":"21"},{"id":22,"node_id":"22"},{"id":23,"node_id":"23"},{"id":24,"node_id":"24"},{"id":25,"node_id":"25"},{"id":26,"node_id":"26"},{"id":27,"node_id":"27"},{"id":28,"node_id":"28"},{"id":29,"node_id":"29"},{"id":30,"node_id":"30"},{"id":31,"node_id":"31"},{"id":32,"node_id":"32"},{"id":33,"node_id":"33"},{"id":34,"node_id":"34"},{"id":35,"node_id":"35"},{"id":36,"node_id":"36"},{"id":37,"node_id":"37"},{"id":38,"node_id":"38"},{"id":39,"node_id":"39"},{"id":40,"node_id":"40"},{"id":41,"node_id":"41"},{"id":42,"node_id":"42"},{"id":43,"node_id":"43"},{"id":44,"node_id":"44"},{"id":45,"node_id":"45"},{"id":46,"node_id":"46"},{"id":47,"node_id":"47"},{"id":48,"node_id":"48"},{"id":49,"node_id":"49"},{"id":50,"node_id":"50"},{"id":51,"node_id":"51"},{"id":52,"node_id":"52"},{"id":53,"node_id":"53"},{"id":54,"node_id":"54"},{"id":55,"node_id":"55"},{"id":56,"node_id":"56"},{"id":57,"node_id":"57"},{"id":58,"node_id":"58"},{"id":59,"node_id":"59"},{"id":60,"node_id":"60"},{"id":61,"node_id":"61"},{"id":62,"node_id":"62"},{"id":63,"node_id":"63"},{"id":64,"node_id":"64"},{"id":65,"node_id":"65"},{"id":66,"node_id":"66"},{"id":67,"node_id":"67"},{"id":68,"node_id":"68"},{"id":69,"node_id":"69"},{"id":70,"node_id":"70"},{"id":71,"node_id":"71"},{"id":72,"node_id":"72"},{"id":73,"node_id":"73"},{"id":74,"node_id":"74"},{"id":75,"node_id":"75"},{"id":76,"node_id":"76"},{"id":77,"node_id":"77"},{"id":78,"node_id":"78"},{"id":79,"node_id":"79"},{"id":80,"node_id":"80"},{"id":81,"node_id":"81"},{"id":82,"node_id":"82"},{"id":83,"node_id":"83"},{"id":84,"node_id":"84"},{"id":85,"node_id":"85"},{"id":86,"node_id":"86"},{"id":87,"node_id":"87"},{"id":88,"node_id":"88"},{"id":89,"node_id":"89"},{"id":90,"node_id":"90"},{"id":91,"node_id":"91"},{"id":92,"node_id":"92"},{"id":93,"node_id":"93"},{"id":94,"node_id":"94"},{"id":95,"node_id":"95"},{"id":96,"node_id":"96"},{"id":97,"node_id":"97"},{"id":98,"node_id":"98"},{"id":99,"node_id":"99"},{"id":100,"node_id":"100"}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 26 Aug 2021 17:04:20 GMT
+      Etag:
+      - W/"004e6fa8f639ea15fbd52f99573c2d6d2ae208032340ba0e6fa7506835be9734"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Link:
+      - <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - CEFE:2DE9:C643:25CAC:6127C993
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4974"
+      X-Ratelimit-Reset:
+      - "1630000235"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "26"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

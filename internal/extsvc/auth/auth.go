@@ -4,7 +4,10 @@
 package auth
 
 import (
+	"context"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // Authenticator instances mutate an outbound request to add whatever headers or
@@ -25,6 +28,21 @@ type Authenticator interface {
 	// Hash uniquely identifies the authenticator for use in internal caching.
 	// This value must use a cryptographic hash (for example, SHA-256).
 	Hash() string
+}
+
+type AuthenticatorWithRefresh interface {
+	// Must implement the base Authenticator interface
+	Authenticator
+
+	// NeedsRefresh returns true if the Authenticator is no longer valid and
+	// needs to be refreshed, such as checking if an OAuth token is close to
+	// expiry or already expired.
+	NeedsRefresh() bool
+
+	// Refresh refreshes the Authenticator. This should be an in-place mutation,
+	// and if any storage updates should happen after refreshing, that is done
+	// here as well.
+	Refresh(context.Context, httpcli.Doer) error
 }
 
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by

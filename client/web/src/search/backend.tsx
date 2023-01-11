@@ -3,9 +3,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     EventLogsDataResult,
@@ -17,12 +15,13 @@ import {
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
     Scalars,
-    InvitableCollaboratorsResult,
-    InvitableCollaboratorsVariables,
+    SavedSearchFields,
+    ReposByQueryResult,
+    SavedSearchResult,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
-    return queryGraphQL(
+    return queryGraphQL<ReposByQueryResult>(
         gql`
             query ReposByQuery($query: String!) {
                 search(query: $query) {
@@ -62,26 +61,26 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
-    return queryGraphQL(gql`
-        query savedSearches {
-            savedSearches {
+export const savedSearchesQuery = gql`
+    query SavedSearches($namespace: ID!, $first: Int, $last: Int, $after: String, $before: String) {
+        savedSearches(namespace: $namespace, first: $first, last: $last, after: $after, before: $before) {
+            nodes {
                 ...SavedSearchFields
             }
-        }
-        ${savedSearchFragment}
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.savedSearches) {
-                throw createAggregateError(errors)
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                endCursor
+                startCursor
             }
-            return data.savedSearches
-        })
-    )
-}
+        }
+    }
+    ${savedSearchFragment}
+`
 
-export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch> {
-    return queryGraphQL(
+export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
+    return queryGraphQL<SavedSearchResult>(
         gql`
             query SavedSearch($id: ID!) {
                 node(id: $id) {
@@ -102,7 +101,7 @@ export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.ISavedSearch)
+        map(data => data.node as SavedSearchFields)
     )
 }
 
@@ -253,14 +252,12 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
 
     return result.pipe(
         map(dataOrThrowErrors),
-        map(
-            (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node || data.node.__typename !== 'User') {
-                    throw new Error('User not found')
-                }
-                return data.node.eventLogs
+        map((data: EventLogsDataResult): EventLogResult => {
+            if (!data.node || data.node.__typename !== 'User') {
+                throw new Error('User not found')
             }
-        )
+            return data.node.eventLogs
+        })
     )
 }
 
@@ -270,34 +267,4 @@ export function fetchRecentSearches(userId: Scalars['ID'], first: number): Obser
 
 export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
-}
-
-export function fetchCollaborators(userId: Scalars['ID']): Observable<InvitableCollaborator[]> {
-    if (!userId) {
-        return of([])
-    }
-
-    const result = requestGraphQL<InvitableCollaboratorsResult, InvitableCollaboratorsVariables>(
-        gql`
-            query InvitableCollaborators {
-                currentUser {
-                    invitableCollaborators {
-                        name
-                        email
-                        displayName
-                        avatarURL
-                    }
-                }
-            }
-        `,
-        {}
-    )
-
-    return result.pipe(
-        map(dataOrThrowErrors),
-        map(
-            (data: InvitableCollaboratorsResult): InvitableCollaborator[] =>
-                data.currentUser?.invitableCollaborators ?? []
-        )
-    )
 }

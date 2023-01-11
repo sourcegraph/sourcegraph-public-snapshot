@@ -4,6 +4,8 @@ Postgres database migrations can be _privileged_ or _unprivileged_. The vast maj
 
 If your Sourcegraph instance does not connect to the database with a superuser, then privileged migrations will fail. There are currently two methods to apply privileged migrations by hand to allow the installation or update of your Sourcegraph instance to proceed.
 
+Note that these flags affect the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`.
+
 ## Option 1: `--unprivileged-only`
 
 Add the optional flag `--unprivileged-only` when [running the migrator](manual_database_migrations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will halt with an error message similar to the following.
@@ -35,6 +37,8 @@ COMMIT;
 ```
 
 Manually apply the provided SQL with superuser access in the target schema. Then re-invoke the migrator with the suggested flag (e.g., `-privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=`). This value is unique to the set of privileged migration definitions and ensures that you have followed the instructions specific to this installation or upgrade.
+
+The migrator may print multiple such error messages for different schemas that contain privileged migrations. In this case, multiple `-privileged-hash` flags are expected on the same re-invocation of the migrator.
 
 Re-running the migrator should then succeed, skipping each of the migrations which were just manually applied.
 

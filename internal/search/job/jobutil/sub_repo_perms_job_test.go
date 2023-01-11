@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,6 +36,11 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			}
 		}
 		return authz.Read, nil
+	})
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return checker.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
 	})
 
 	type args struct {
@@ -193,7 +199,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			matches, err := applySubRepoFiltering(ctx, logtest.Scoped(t), checker, tt.args.matches)
+			matches, err := applySubRepoFiltering(ctx, checker, logtest.Scoped(t), tt.args.matches)
 			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
 				t.Fatal(diff)
 			}

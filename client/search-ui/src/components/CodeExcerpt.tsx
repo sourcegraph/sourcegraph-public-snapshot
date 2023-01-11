@@ -5,28 +5,19 @@ import classNames from 'classnames'
 import { range } from 'lodash'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'
-import { catchError, filter } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { asError, ErrorLike, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
 
-export interface FetchFileParameters {
-    repoName: string
-    commitID: string
-    filePath: string
-    disableTimeout?: boolean
-    ranges: GQL.IHighlightLineRange[]
-    format?: HighlightResponseFormat
+export interface Shape {
+    top?: number
+    left?: number
+    bottom?: number
+    right?: number
 }
 
 interface Props extends Repo {
@@ -46,60 +37,31 @@ interface Props extends Repo {
     fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
-    viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    visibilityOffset?: Shape
     onCopy?: () => void
 }
 
 export interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number where this highlight range begins
      */
-    line: number
+    startLine: number
     /**
-     * The 0-based character offset to start highlighting at
+     * The 0-based character offset from the beginning of startLine where this highlight range begins
      */
-    character: number
+    startCharacter: number
     /**
-     * The number of characters to highlight
+     * The 0-based line number where this highlight range ends
      */
-    highlightLength: number
-}
-
-const domFunctions: DOMFunctions = {
-    getCodeElementFromTarget: target => {
-        const row = target.closest('tr')
-        if (!row) {
-            return null
-        }
-        return row.cells[1]
-    },
-    getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
-        const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
-        if (!lineElement) {
-            return null
-        }
-        const row = lineElement.closest('tr')
-        if (!row) {
-            return null
-        }
-        return row.cells[1]
-    },
-    getLineNumberFromCodeElement: codeCell => {
-        const row = codeCell.closest('tr')
-        if (!row) {
-            throw new Error('Could not find closest row for codeCell')
-        }
-        const numberCell = row.cells[0]
-        if (!numberCell || !numberCell.dataset.line) {
-            throw new Error('Could not find line number')
-        }
-        return parseInt(numberCell.dataset.line, 10)
-    },
+    endLine: number
+    /**
+     * The 0-based character offset from the beginning of endLine where this highlight range ends
+     */
+    endCharacter: number
 }
 
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
-const visibilitySensorOffset = { bottom: -500 }
+const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
 
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
@@ -111,8 +73,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     startLine,
     endLine,
     highlightRanges,
-    viewerUpdates,
-    hoverifier,
+    visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
 }) => {
@@ -163,51 +124,35 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Highlight the search matches
     useLayoutEffect(() => {
         if (tableContainerElement) {
-            const visibleRows = tableContainerElement.querySelectorAll('table tr')
+            const visibleRows = tableContainerElement.querySelectorAll<HTMLTableRowElement>('table tr')
             for (const highlight of highlightRanges) {
-                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and startLine is the 0-indexed
+                // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
+                // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
                 // line number of the first visible line in the excerpt. So, subtract startLine
-                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - startLine]
-                if (tableRow) {
-                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                // from highlight.startLine to get the correct 0-based index in visibleRows that holds the HTML row
+                // where highlighting should begin. Subtract startLine from highlight.endLine to get the correct 0-based
+                // index in visibleRows that holds the HTML row where highlighting should end.
+                const startRowIndex = highlight.startLine - startLine
+                const endRowIndex = highlight.endLine - startLine
+                const startRow = visibleRows[startRowIndex]
+                const endRow = visibleRows[endRowIndex]
+                if (startRow && endRow) {
+                    highlightNodeMultiline(
+                        visibleRows,
+                        startRow,
+                        endRow,
+                        startRowIndex,
+                        endRowIndex,
+                        highlight.startCharacter,
+                        highlight.endCharacter
+                    )
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement, blobLinesOrError])
-
-    // Hook up the hover tooltips
-    useEffect(() => {
-        let hoverifierSubscription: Subscription | null
-
-        const subscription = viewerUpdates?.subscribe(({ viewerId, ...hoverContext }) => {
-            if (hoverifier) {
-                if (hoverifierSubscription) {
-                    hoverifierSubscription.unsubscribe()
-                }
-
-                hoverifierSubscription = hoverifier.hoverify({
-                    positionEvents: tableContainerElements.pipe(
-                        filter(isDefined),
-                        findPositionsFromEvents({ domFunctions })
-                    ),
-                    resolveContext: () => hoverContext,
-                    dom: domFunctions,
-                })
-            }
-        })
-
-        return () => {
-            subscription?.unsubscribe()
-            hoverifierSubscription?.unsubscribe()
-        }
-    }, [hoverifier, tableContainerElements, viewerUpdates])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
+        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
             <Code
                 data-testid="code-excerpt"
                 onCopy={onCopy}

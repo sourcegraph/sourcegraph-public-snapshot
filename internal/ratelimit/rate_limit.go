@@ -10,9 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DefaultRegistry is the default global rate limit registry, which holds rate
@@ -137,6 +136,12 @@ func (i *InstrumentedLimiter) Wait(ctx context.Context) error {
 // canceled, or the expected wait time exceeds the Context's Deadline.
 // The burst limit is ignored if the rate limit is Inf.
 func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
+	if i.Limit() == 0 && i.Burst() == 0 {
+		// We're not allowing anything through the limiter, return a custom error so that
+		// we can handle it correctly.
+		return ErrBlockAll
+	}
+
 	start := time.Now()
 	err := i.Limiter.WaitN(ctx, n)
 	d := time.Since(start)
@@ -144,17 +149,8 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 	if err != nil {
 		failedLabel = "true"
 	}
-	urn := i.urn
 
-	// On sourcegraph.com the cardinality of code hosts is too high, so instead just
-	// group by kind
-	if envvar.SourcegraphDotComMode() {
-		if kind, _ := extsvc.DecodeURN(urn); kind != "" {
-			urn = kind
-		}
-	}
-
-	metricWaitDuration.WithLabelValues(urn, failedLabel).Observe(d.Seconds())
+	metricWaitDuration.WithLabelValues(i.urn, failedLabel).Observe(d.Seconds())
 	return err
 }
 
@@ -167,6 +163,9 @@ func (i *InstrumentedLimiter) SetBurst(newBurst int) {
 func (i *InstrumentedLimiter) SetLimit(newLimit rate.Limit) {
 	i.Limiter.SetLimitAt(time.Now(), newLimit)
 }
+
+// ErrBlockAll indicates that the limiter is set to block all requests
+var ErrBlockAll = errors.New("ratelimit: limit and burst are zero")
 
 var metricWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_internal_rate_limit_wait_duration",

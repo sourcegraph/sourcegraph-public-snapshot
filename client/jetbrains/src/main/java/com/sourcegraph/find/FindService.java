@@ -8,6 +8,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.util.ui.UIUtil;
+import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
+import com.sourcegraph.find.browser.JavaToJSBridge;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -43,6 +45,15 @@ public class FindService implements Disposable {
         if (popup != null) {
             if (!popup.isVisible()) {
                 popup.show();
+
+                // Retry auth and search if the popup is in a possible connection error state
+                if (mainPanel.browserHasSearchError()
+                    || mainPanel.getConnectionAndAuthState() == BrowserAndLoadingPanel.ConnectionAndAuthState.COULD_NOT_CONNECT) {
+                    JavaToJSBridge bridge = mainPanel.getJavaToJSBridge();
+                    if (bridge != null) {
+                        bridge.callJS("retrySearch", null);
+                    }
+                }
             }
         } else {
             popup = new FindPopupDialog(project, mainPanel);
@@ -76,6 +87,7 @@ public class FindService implements Disposable {
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
+                // This must run on EDT (Event Dispatch Thread) because it may interact with the editor.
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
                         mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();

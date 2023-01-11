@@ -3,9 +3,8 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
-import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -13,7 +12,6 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
@@ -47,28 +45,6 @@ describe('Search contexts', () => {
             user: {
                 experimentalFeatures: {
                     showSearchContext: true,
-                    showSearchContextManagement: true,
-                },
-            },
-        }),
-        UserRepositories: () => ({
-            node: {
-                __typename: 'User',
-                repositories: {
-                    totalCount: 1,
-                    nodes: [
-                        {
-                            id: '1',
-                            name: 'repo',
-                            viewerCanAdminister: false,
-                            createdAt: '',
-                            url: '',
-                            isPrivate: false,
-                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null, lastError: null },
-                            externalRepository: { serviceType: '', serviceID: '' },
-                        },
-                    ],
-                    pageInfo: { hasNextPage: false },
                 },
             },
         }),
@@ -79,8 +55,6 @@ describe('Search contexts', () => {
 
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
-
-    const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
 
     test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
@@ -97,28 +71,41 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
     })
 
-    test('Missing context filter should default to global context', async () => {
-        // Initialize localStorage to a valid context, that should not be used
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
+    test('Missing context filter should default to global context, even if another default is set', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            DefaultSearchContextSpec: () => ({
+                defaultSearchContext: {
+                    __typename: 'SearchContext',
+                    spec: 'ctx-1',
+                },
+            }),
+        })
+
         // Visit the search page with a query without a context filter
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
+            waitUntil: 'networkidle0',
+        })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
-        await clearLocalStorage()
     })
 
     withSearchQueryInput(editorName => {
-        test(`Unavailable search context should remain in the query and disable the search context dropdown (${editorName})`, async () => {
+        test(`Unavailable search context should remain in the query and disable the search context dropdown with default context (${editorName})`, async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
                 ...createViewerSettingsGraphQLOverride({
                     user: {
                         experimentalFeatures: {
                             showSearchContext: true,
-                            showSearchContextManagement: true,
                             ...enableEditor(editorName).experimentalFeatures,
                         },
+                    },
+                }),
+                DefaultSearchContextSpec: () => ({
+                    defaultSearchContext: {
+                        __typename: 'SearchContext',
+                        spec: 'ctx-1',
                     },
                 }),
             })
@@ -131,20 +118,22 @@ describe('Search contexts', () => {
             const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
             expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:ctx-1')
         })
     })
 
-    test('Reset unavailable search context from localStorage if query is not present', async () => {
-        // First initialize localStorage on the page
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
-        // Visit the page again with localStorage initialized
+    test('Reset unavailable search context from default if query is not present', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            DefaultSearchContextSpec: () => ({
+                defaultSearchContext: null,
+            }),
+        })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
-        await clearLocalStorage()
     })
 
     test('Create static search context', async () => {
@@ -165,6 +154,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: searchContext.query,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -238,6 +229,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: searchContext.query,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -314,6 +307,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -338,6 +333,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [
                         {
@@ -409,6 +406,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [],
                 },
@@ -427,7 +426,6 @@ describe('Search contexts', () => {
     test('Delete search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
             DeleteSearchContext: () => ({
                 deleteSearchContext: {
                     alwaysNil: '',
@@ -449,6 +447,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [
                         {
@@ -481,9 +481,6 @@ describe('Search contexts', () => {
 
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
-            }),
             ListSearchContexts: ({ after }) => {
                 const searchContexts = range(0, searchContextsCount).map(index => ({
                     __typename: 'SearchContext',
@@ -494,11 +491,13 @@ describe('Search contexts', () => {
                     public: true,
                     autoDefined: false,
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     description: '',
                     repositories: [],
                     query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
-                })) as ISearchContext[]
+                })) as SearchContextMinimalFields[]
 
                 if (after === null) {
                     return {
@@ -561,9 +560,6 @@ describe('Search contexts', () => {
             IsSearchContextAvailable: () => ({
                 isSearchContextAvailable: true,
             }),
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
-            }),
             ListSearchContexts: () => {
                 const nodes = range(0, 2).map(index => ({
                     __typename: 'SearchContext',
@@ -574,11 +570,13 @@ describe('Search contexts', () => {
                     public: true,
                     autoDefined: false,
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     description: '',
                     repositories: [],
                     query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
-                })) as ISearchContext[]
+                })) as SearchContextMinimalFields[]
 
                 return {
                     searchContexts: {
@@ -605,7 +603,9 @@ describe('Search contexts', () => {
             // A search will be submitted on context click, wait for the navigation
             driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
             // Click second context item in the dropdown
-            driver.page.click('[data-testid="search-context-menu-item-name"][title="ctx-1"]'),
+            driver.page.click(
+                '[data-testid="search-context-menu-item"]:nth-child(2) [data-testid="search-context-menu-item-name"]'
+            ),
         ])
 
         await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })

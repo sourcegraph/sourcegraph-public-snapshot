@@ -2,10 +2,10 @@ import { ReactElement, useMemo } from 'react'
 
 import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from '@mdi/js'
 
-import { SymbolKind } from '@sourcegraph/shared/src/schema'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
+import { SymbolKind } from '../../graphql-operations'
 import { parseFileBlockInput } from '../serialize'
 
 interface CommandPaletteOption {

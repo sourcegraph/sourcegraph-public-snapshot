@@ -14,13 +14,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -45,7 +45,7 @@ var _ AffiliatedRepositorySource = &GitLabSource{}
 var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -54,7 +54,7 @@ func NewGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(ctx, logger, db, svc, &c, cf)
+	return newGitLabSource(logger, svc, &c, cf)
 }
 
 var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -67,7 +67,7 @@ var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -104,8 +104,7 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 		return nil, err
 	}
 
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, tokenRefresher)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
@@ -162,6 +161,10 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 	return s.client.ValidateToken(ctx)
 }
 
+func (s GitLabSource) CheckConnection(ctx context.Context) error {
+	return checkConnection(s.config.Url)
+}
+
 // ListRepos returns all GitLab repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) {
@@ -207,7 +210,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Stars:        proj.StarCount,
-		Private:      proj.Visibility == "private",
+		Private:      proj.Visibility == "private" || proj.Visibility == "internal",
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
@@ -218,7 +221,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	}
 }
 
-// remoteURL returns the GitLab projects's Git remote URL
+// remoteURL returns the GitLab project's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
 // if you need to get an authenticated clone url use repos.CloneURL
@@ -249,6 +252,11 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 		go func() {
 			defer wg.Done()
 			for p := range projch {
+				if err := ctx.Err(); err != nil {
+					ch <- batch{err: err}
+					return
+				}
+
 				proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 					ID:                p.Id,
 					PathWithNamespace: p.Name,
@@ -267,7 +275,8 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
 
-				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
+				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
+				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -319,8 +328,8 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				url = *nextPageURL
 
-				// 0-duration sleep unless nearing rate limit exhaustion
-				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
+				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
+				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

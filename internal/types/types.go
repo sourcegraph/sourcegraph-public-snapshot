@@ -10,7 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -554,26 +557,37 @@ type GitserverRepo struct {
 	LastChanged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	UpdatedAt     time.Time
+	// Time when corruption of repo was detected
+	CorruptedAt time.Time
+	UpdatedAt   time.Time
+	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
+	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
+	CorruptionLogs []RepoCorruptionLog
+}
+
+// RepoCorruptionLog represents a corruption event that has been detected on a repo.
+type RepoCorruptionLog struct {
+	// When the corruption event was detected
+	Timestamp time.Time `json:"time"`
+	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
+	Reason string `json:"reason"`
 }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          *extsvc.EncryptableConfig
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 type ExternalServiceRepo struct {
@@ -587,16 +601,25 @@ type ExternalServiceRepo struct {
 
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
-	ID                int64
+	ID                int64 // TODO: Why is this an int64, it's a 32 bit int in the database
 	State             string
 	FailureMessage    string
 	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
-	NumResets         int
+	NumResets         int // TODO: This is a 32 bit int in the database
 	ExternalServiceID int64
 	NumFailures       int
+	Cancel            bool
+
+	// Counters that show progress of a running job
+	ReposSynced     int32
+	RepoSyncErrors  int32
+	ReposAdded      int32
+	ReposDeleted    int32
+	ReposModified   int32
+	ReposUnmodified int32
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -607,9 +630,6 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
-
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -680,27 +700,10 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-func (e *ExternalService) ToAPIService(ctx context.Context) (api.ExternalService, error) {
-	rawConfig, err := e.Config.Decrypt(ctx)
-	if err != nil {
-		return api.ExternalService{}, err
-	}
-
-	return api.ExternalService{
-		ID:              e.ID,
-		Kind:            e.Kind,
-		DisplayName:     e.DisplayName,
-		Config:          rawConfig,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		DeletedAt:       e.DeletedAt,
-		LastSyncAt:      e.LastSyncAt,
-		NextSyncAt:      e.NextSyncAt,
-		NamespaceUserID: e.NamespaceUserID,
-		NamespaceOrgID:  e.NamespaceOrgID,
-		Unrestricted:    e.Unrestricted,
-		CloudDefault:    e.CloudDefault,
-	}, nil
+// SupportsRepoExclusion returns true when given external service supports repo
+// exclusion.
+func (e *ExternalService) SupportsRepoExclusion() bool {
+	return extsvc.SupportsRepoExclusion(e.Kind)
 }
 
 // ExternalServices is a utility type with convenience methods for operating on
@@ -800,6 +803,33 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+}
+
+type Role struct {
+	ID        int32
+	Name      string
+	ReadOnly  bool
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
+type Permission struct {
+	ID        int32
+	Namespace string
+	Action    string
+	CreatedAt time.Time
+}
+
+type RolePermission struct {
+	RoleID       int32
+	PermissionID int32
+	CreatedAt    time.Time
+}
+
+type UserRole struct {
+	RoleID    int32
+	UserID    int32
+	CreatedAt time.Time
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -932,9 +962,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatChangedSum int32
 	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatDeletedSum int32
@@ -947,9 +974,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatChangedSum int32
 	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatDeletedSum int32
@@ -1304,6 +1328,36 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+}
+
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1411,31 +1465,60 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
-	WeeklyInsightsPageViews                      *int32
-	WeeklyStandaloneInsightPageViews             *int32
-	WeeklyStandaloneDashboardClicks              *int32
-	WeeklyStandaloneEditClicks                   *int32
-	WeeklyInsightsGetStartedPageViews            *int32
-	WeeklyInsightsUniquePageViews                *int32
-	WeeklyInsightsGetStartedUniquePageViews      *int32
-	WeeklyStandaloneInsightUniquePageViews       *int32
-	WeeklyStandaloneInsightUniqueDashboardClicks *int32
-	WeeklyStandaloneInsightUniqueEditClicks      *int32
-	WeeklyInsightConfigureClick                  *int32
-	WeeklyInsightAddMoreClick                    *int32
-	WeekStart                                    time.Time
-	WeeklyInsightCreators                        *int32
-	WeeklyFirstTimeInsightCreators               *int32
-	WeeklyAggregatedUsage                        []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab                []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab            []InsightGetStartedTabClickPing
-	InsightTimeIntervals                         []InsightTimeIntervalPing
-	InsightOrgVisible                            []OrgVisibleInsightPing
-	InsightTotalCounts                           InsightTotalCounts
-	TotalOrgsWithDashboard                       *int32
-	TotalDashboardCount                          *int32
-	InsightsPerDashboard                         InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
+	WeeklyInsightsPageViews                        *int32
+	WeeklyStandaloneInsightPageViews               *int32
+	WeeklyStandaloneDashboardClicks                *int32
+	WeeklyStandaloneEditClicks                     *int32
+	WeeklyInsightsGetStartedPageViews              *int32
+	WeeklyInsightsUniquePageViews                  *int32
+	WeeklyInsightsGetStartedUniquePageViews        *int32
+	WeeklyStandaloneInsightUniquePageViews         *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
+	WeeklyStandaloneInsightUniqueEditClicks        *int32
+	WeeklyInsightConfigureClick                    *int32
+	WeeklyInsightAddMoreClick                      *int32
+	WeekStart                                      time.Time
+	WeeklyInsightCreators                          *int32
+	WeeklyFirstTimeInsightCreators                 *int32
+	WeeklyAggregatedUsage                          []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
+	InsightTimeIntervals                           []InsightTimeIntervalPing
+	InsightOrgVisible                              []OrgVisibleInsightPing
+	InsightTotalCounts                             InsightTotalCounts
+	TotalOrgsWithDashboard                         *int32
+	TotalDashboardCount                            *int32
+	InsightsPerDashboard                           InsightsPerDashboardPing
+	WeeklyGroupResultsOpenSection                  *int32
+	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsInfoIconHover                *int32
+	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
+	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
+	WeeklyGroupResultsChartBarHover                []GroupResultPing
+	WeeklyGroupResultsChartBarClick                []GroupResultPing
+	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklyGroupResultsSearches                     []GroupResultSearchPing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
+}
+
+type GroupResultPing struct {
+	AggregationMode *string
+	UIMode          *string
+	Count           *int32
+	BarIndex        *int32
+}
+
+type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
+}
+
+type GroupResultSearchPing struct {
+	Name            PingName
+	AggregationMode *string
+	Count           *int32
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1508,6 +1591,14 @@ type InsightsPerDashboardPing struct {
 	Median float32
 }
 
+type InsightsBackfillTimePing struct {
+	AllRepos   bool
+	P99Seconds int
+	P90Seconds int
+	P50Seconds int
+	Count      int
+}
+
 type CodeMonitoringUsageStatistics struct {
 	CodeMonitoringPageViews                       *int32
 	CreateCodeMonitorPageViews                    *int32
@@ -1556,7 +1647,6 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
-	NotebookAddedComputeBlocksCount  *int32
 }
 
 // Secret represents the secrets table
@@ -1607,6 +1697,15 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	AutoDefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1616,4 +1715,74 @@ type SearchContext struct {
 type SearchContextRepositoryRevisions struct {
 	Repo      MinimalRepo
 	Revisions []string
+}
+
+type EncryptableSecret = encryption.Encryptable
+
+// NewUnencryptedSecret creates an EncryptableSecret that *may* be encrypted in
+// the future, but the current value has not yet been encrypted.
+func NewUnencryptedSecret(value string) *EncryptableSecret {
+	return encryption.NewUnencrypted(value)
+}
+
+// NewEncryptedSecret creates an EncryptableSecret that has come from an
+// encrypted source. In this case you need to provide the keyID and key in order
+// to be able to decrypt it.
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+// Webhook defines the information we need to handle incoming webhooks from a
+// code host.
+type Webhook struct {
+	// The primary key, used for sorting and pagination.
+	ID int32
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
+	CodeHostKind string
+	CodeHostURN  extsvc.CodeHostBaseURL
+	// Secret can be in one of three states:
+	//
+	// 1. nil, no secret provided.
+	// 2. Provided but not encrypted.
+	// 3. Provided and encrypted.
+	//
+	// For 2 and 3 you interact with it in the same way and just assume that it IS
+	// encrypted. All the methods on EncryptableSecret will just pass around the raw
+	// value and encryption / decryption methods are noops.
+	Secret          *EncryptableSecret
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserID int32
+	UpdatedByUserID int32
+}
+
+type OutboundRequestLogItem struct {
+	ID                 string              `json:"id"`
+	StartedAt          time.Time           `json:"startedAt"`
+	Method             string              `json:"method"` // The request method (GET, POST, etc.)
+	URL                string              `json:"url"`
+	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestBody        string              `json:"requestBody"`
+	StatusCode         int32               `json:"statusCode"` // The response status code
+	ResponseHeaders    map[string][]string `json:"responseHeaders"`
+	Duration           float64             `json:"duration"`
+	ErrorMessage       string              `json:"errorMessage"`
+	CreationStackFrame string              `json:"creationStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+}
+
+type SlowRequest struct {
+	Index     string         `json:"index"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
 }

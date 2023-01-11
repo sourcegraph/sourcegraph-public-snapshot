@@ -11,6 +11,7 @@ import {
     LsifIndexFields,
     LsifUploadFields,
     LSIFUploadsWithRepositoryNamespaceFields,
+    InferredAvailableIndexersFields,
     PreciseSupportFields,
     PreciseSupportLevel,
     RequestedLanguageSupportResult,
@@ -18,7 +19,6 @@ import {
     RequestLanguageSupportResult,
     RequestLanguageSupportVariables,
     SearchBasedCodeIntelSupportFields,
-    SearchBasedSupportLevel,
 } from '../../../../graphql-operations'
 
 import { codeIntelStatusQuery, requestedLanguageSupportQuery, requestLanguageSupportQuery } from './queries'
@@ -37,6 +37,7 @@ export interface UseCodeIntelStatusPayload {
     lastIndexScan?: string
     lastUploadRetentionScan?: string
     activeUploads: LsifUploadFields[]
+    availableIndexers: InferredAvailableIndexersFields[]
     recentUploads: LSIFUploadsWithRepositoryNamespaceFields[]
     recentIndexes: LSIFIndexesWithRepositoryNamespaceFields[]
     preciseSupport?: (PreciseSupportFields & { confidence?: InferedPreciseSupportLevel })[]
@@ -44,14 +45,15 @@ export interface UseCodeIntelStatusPayload {
 }
 
 export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters): UseCodeIntelStatusResult => {
-    const { data: rawData, error, loading } = useQuery<CodeIntelStatusResult, CodeIntelStatusVariables>(
-        codeIntelStatusQuery,
-        {
-            variables,
-            notifyOnNetworkStatusChange: false,
-            fetchPolicy: 'no-cache',
-        }
-    )
+    const {
+        data: rawData,
+        error,
+        loading,
+    } = useQuery<CodeIntelStatusResult, CodeIntelStatusVariables>(codeIntelStatusQuery, {
+        variables,
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+    })
 
     const repo = rawData?.repository
     const path = repo?.commit?.path
@@ -62,6 +64,7 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
 
     const summary = repo.codeIntelSummary
     const common: Omit<UseCodeIntelStatusPayload, 'preciseSupport' | 'searchBasedSupport'> = {
+        availableIndexers: summary.availableIndexers,
         lastIndexScan: summary.lastIndexScan || undefined,
         lastUploadRetentionScan: summary.lastUploadRetentionScan || undefined,
         activeUploads: lsif?.lsifUploads || [],
@@ -121,10 +124,11 @@ export interface UseRequestedLanguageSupportResult {
 export const useRequestedLanguageSupportQuery = ({
     variables,
 }: UseRequestedLanguageSupportParameters): UseRequestedLanguageSupportResult => {
-    const { data: rawData, error, loading } = useQuery<
-        RequestedLanguageSupportResult,
-        RequestedLanguageSupportVariables
-    >(requestedLanguageSupportQuery, {
+    const {
+        data: rawData,
+        error,
+        loading,
+    } = useQuery<RequestedLanguageSupportResult, RequestedLanguageSupportVariables>(requestedLanguageSupportQuery, {
         variables,
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
@@ -156,25 +160,30 @@ export const useRequestLanguageSupportQuery = ({
 
 export interface IndexerSupportMetadata {
     allIndexers: { name: string; url: string }[]
+    availableIndexers: Record<string, { roots: string[]; url: string }>
     indexerNames: string[]
     uploadsByIndexerName: Map<string, LsifUploadFields[]>
     indexesByIndexerName: Map<string, LsifIndexFields[]>
 }
 
 export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): IndexerSupportMetadata {
-    const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
-    const uploadsByIndexerName = groupBy<LsifUploadFields, string>(allUploads, getIndexerName)
-    const allIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
-    const indexesByIndexerName = groupBy<LsifIndexFields, string>(allIndexes, getIndexerName)
+    const recentUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
+    const uploadsByIndexerName = groupBy<LsifUploadFields, string>(recentUploads, getIndexerName)
+    const recentIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
+    const indexesByIndexerName = groupBy<LsifIndexFields, string>(recentIndexes, getIndexerName)
+    const availableIndexers = data.availableIndexers.reduce<Record<string, { roots: string[]; url: string }>>(
+        (acc, { index, roots, url }) => ({ ...acc, [index]: { roots, url } }),
+        {}
+    )
 
     const nativelySupportedIndexers = (data.preciseSupport || [])
         .filter(support => support.supportLevel === PreciseSupportLevel.NATIVE)
         .map(support => support.indexers?.[0])
         .filter(isDefined)
 
-    const allIndexers = [
+    const allRecentIndexers = [
         ...groupBy(
-            [...allUploads, ...allIndexes]
+            [...recentUploads, ...recentIndexes]
                 .map(index => index.indexer || undefined)
                 .filter(isDefined)
                 .concat(nativelySupportedIndexers),
@@ -182,18 +191,17 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
         ).values(),
     ].map(indexers => indexers[0])
 
-    const languages = [
-        ...new Set(
-            data.searchBasedSupport
-                ?.filter(support => support.supportLevel === SearchBasedSupportLevel.BASIC)
-                .map(support => support.language)
-        ),
+    const allIndexers = [...allRecentIndexers, ...data.availableIndexers.map(({ index: name, url }) => ({ name, url }))]
+    const indexerNames = [
+        ...new Set([
+            ...allRecentIndexers.map(indexer => indexer.name),
+            ...data.availableIndexers.map(({ index: name }) => name),
+        ]),
     ].sort()
-    const fakeIndexerNames = languages.map(name => `lsif-${name.toLowerCase()}`)
-    const indexerNames = [...new Set(allIndexers.map(indexer => indexer.name).concat(fakeIndexerNames))].sort()
 
     return {
         allIndexers,
+        availableIndexers,
         indexerNames,
         uploadsByIndexerName,
         indexesByIndexerName,

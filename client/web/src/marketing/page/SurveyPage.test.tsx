@@ -3,8 +3,8 @@ import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { Route } from 'react-router'
 
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
@@ -56,7 +56,7 @@ describe('SurveyPage', () => {
             expect(otherUseCaseInput).toBeVisible()
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
 
-            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
+            const reasonInput = renderResult.getByLabelText('How can we make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 

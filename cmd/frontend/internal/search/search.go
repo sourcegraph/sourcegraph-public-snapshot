@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -70,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -92,10 +93,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if err != nil {
 		return err
 	}
-	tr.TagFields(
-		otlog.String("query", args.Query),
-		otlog.String("version", args.Version),
-		otlog.String("pattern_type", args.PatternType),
+	tr.SetAttributes(
+		attribute.String("query", args.Query),
+		attribute.String("version", args.Version),
+		attribute.String("pattern_type", args.PatternType),
+		attribute.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -103,7 +105,16 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		return err
 	}
 
-	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(
+		ctx,
+		args.Version,
+		strPtr(args.PatternType),
+		args.Query,
+		search.Mode(args.SearchMode),
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
@@ -131,36 +142,40 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
-	var wgLogLatency sync.WaitGroup
-	defer wgLogLatency.Wait()
 	logLatency := func() {
-		wgLogLatency.Add(1)
-		go func() {
-			defer wgLogLatency.Done()
-			metricLatency.WithLabelValues(string(GuessSource(r))).
-				Observe(time.Since(start).Seconds())
-
-			graphqlbackend.LogSearchLatency(ctx, h.db, inputs, int32(time.Since(start).Milliseconds()))
-		}()
+		metricLatency.WithLabelValues(string(GuessSource(r))).
+			Observe(time.Since(start).Seconds())
 	}
 
-	eventHandler := newEventHandler(
-		ctx,
-		h.logger,
-		h.db,
-		eventWriter,
-		progress,
-		h.flushTickerInternal,
-		h.pingTickerInterval,
-		displayLimit,
-		args.EnableChunkMatches,
-		logLatency,
-	)
-	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
-	// Clean up streams before writing to eventWriter again.
-	batchedStream.Done()
-	eventHandler.Done()
+	// HACK: We awkwardly call an inline function here so that we can defer the
+	// cleanups. Defers are guaranteed to run even when unrolling a panic, so
+	// we can guarantee that the goroutines spawned by `newEventHandler` are
+	// cleaned up when this function exits. This is necessary because otherwise
+	// the background goroutines might try to write to the http response, which
+	// is no longer valid, which will cause a panic of its own that crashes the
+	// process because they are running in a goroutine that does not have a
+	// panic handler. We cannot add a panic handler because the goroutines are
+	// spawned by the go runtime.
+	alert, err := func() (*search.Alert, error) {
+		eventHandler := newEventHandler(
+			ctx,
+			h.logger,
+			h.db,
+			eventWriter,
+			progress,
+			h.flushTickerInternal,
+			h.pingTickerInterval,
+			displayLimit,
+			args.EnableChunkMatches,
+			logLatency,
+		)
+		defer eventHandler.Done()
+
+		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
+		defer batchedStream.Done()
+
+		return h.searchClient.Execute(ctx, batchedStream, inputs)
+	}()
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
@@ -205,6 +220,7 @@ type args struct {
 	PatternType        string
 	Display            int
 	EnableChunkMatches bool
+	SearchMode         int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -245,6 +261,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
 	}
 
+	searchMode := get("sm", "0")
+	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
+		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
+	}
+
 	decorationLimit := get("dl", "0")
 	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
 		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
@@ -263,27 +284,6 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
-}
-
-// withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
-	// FIXME: Use contextLines to constrain hunks.
-	_ = contextLines
-	if _, ok := internalResult.(*result.FileMatch); !ok {
-		return eventMatch
-	}
-
-	event, ok := eventMatch.(*streamhttp.EventContentMatch)
-	if !ok {
-		return eventMatch
-	}
-
-	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
-	}
-
-	// TODO(team/search-product): support additional decoration for terminal clients #24617.
-	return eventMatch
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
@@ -312,6 +312,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
@@ -324,6 +325,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 
 	if fm.InputRev != nil {
 		pathEvent.Branches = []string{*fm.InputRev}
+	}
+
+	if fm.Debug != nil {
+		pathEvent.Debug = *fm.Debug
 	}
 
 	return pathEvent
@@ -388,6 +393,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
@@ -402,6 +408,10 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	if r, ok := repoCache[fm.Repo.ID]; ok {
 		contentEvent.RepoStars = r.Stars
 		contentEvent.RepoLastFetched = r.LastFetched
+	}
+
+	if fm.Debug != nil {
+		contentEvent.Debug = *fm.Debug
 	}
 
 	return contentEvent
@@ -453,21 +463,12 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:         streamhttp.RepoMatchType,
-		RepositoryID: int32(rm.ID),
-		Repository:   string(rm.Name),
-		Branches:     branches,
-	}
-
-	if len(rm.DescriptionMatches) > 0 {
-		dms := make([]streamhttp.Range, 0, len(rm.DescriptionMatches))
-		for _, matchRange := range rm.DescriptionMatches {
-			dms = append(dms, streamhttp.Range{
-				Start: fromLocation(matchRange.Start),
-				End:   fromLocation(matchRange.End),
-			})
-		}
-		repoEvent.DescriptionMatches = dms
+		Type:               streamhttp.RepoMatchType,
+		RepositoryID:       int32(rm.ID),
+		Repository:         string(rm.Name),
+		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
+		Branches:           branches,
+		DescriptionMatches: fromRanges(rm.DescriptionMatches),
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
@@ -491,18 +492,20 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	commitEvent := &streamhttp.EventCommitMatch{
-		Type:         streamhttp.CommitMatchType,
-		Label:        commit.Label(),
-		URL:          commit.URL().String(),
-		Detail:       commit.Detail(),
-		Repository:   string(commit.Repo.Name),
-		RepositoryID: int32(commit.Repo.ID),
-		OID:          string(commit.Commit.ID),
-		Message:      string(commit.Commit.Message),
-		AuthorName:   commit.Commit.Author.Name,
-		AuthorDate:   commit.Commit.Author.Date,
-		Content:      hls.Value,
-		Ranges:       ranges,
+		Type:          streamhttp.CommitMatchType,
+		Label:         commit.Label(),
+		URL:           commit.URL().String(),
+		Detail:        commit.Detail(),
+		Repository:    string(commit.Repo.Name),
+		RepositoryID:  int32(commit.Repo.ID),
+		OID:           string(commit.Commit.ID),
+		Message:       string(commit.Commit.Message),
+		AuthorName:    commit.Commit.Author.Name,
+		AuthorDate:    commit.Commit.Author.Date,
+		CommitterName: commit.Commit.Committer.Name,
+		CommitterDate: commit.Commit.Committer.Date,
+		Content:       hls.Value,
+		Ranges:        ranges,
 	}
 
 	if r, ok := repoCache[commit.Repo.ID]; ok {

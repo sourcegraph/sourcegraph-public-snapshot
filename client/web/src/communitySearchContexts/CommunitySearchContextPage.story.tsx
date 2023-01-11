@@ -5,10 +5,8 @@ import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -25,7 +23,7 @@ import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './C
 import { temporal } from './Temporal'
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+    useExperimentalFeatures.setState({ showSearchContext: true })
     return <Story />
 }
 
@@ -56,7 +54,6 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
 const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
-    email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
     session: { canSignOut: true },
@@ -68,23 +65,24 @@ const authUser: AuthenticatedUser = {
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-        ] as GQL.IOrg[],
+        ] as AuthenticatedUser['organizations']['nodes'],
     },
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
+    latestSettings: null,
 }
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextFields['repositories'] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example2',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
     {
@@ -92,12 +90,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example1',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
 ]
 
-const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
+const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
     of({
         __typename: 'SearchContext',
         id: '1',
@@ -111,6 +109,8 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const commonProps = () =>
@@ -129,13 +129,11 @@ const commonProps = () =>
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,

@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -10,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,13 +48,13 @@ type OAuthProviderOp struct {
 	DB database.DB
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
 
 		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, tokenRefresher),
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		db:             op.DB,
@@ -107,15 +107,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
-	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, tokenRefresher)
-	return listProjects(ctx, client)
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
+	token := &auth.OAuthBearerToken{
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		NeedsRefreshBuffer: 5,
+	}
+	client := p.clientProvider.NewClient(token)
 	return listProjects(ctx, client)
 }
 

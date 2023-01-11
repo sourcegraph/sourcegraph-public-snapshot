@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,10 +35,10 @@ type ParseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(observationCtx *observation.Context, gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
-		operations:          newOperations(observationContext),
+		operations:          newOperations(observationCtx),
 		maxTotalPathsLength: maxTotalPathsLength,
 		maxFileSize:         maxFileSize,
 	}
@@ -148,11 +149,11 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request P
 		}
 
 		data := make([]byte, int(tarHeader.Size))
-		traceLog.Log(log.Event("reading tar file contents"))
+		traceLog.AddEvent("readTar", attribute.String("event", "reading tar file contents"))
 		if _, err := io.ReadFull(tarReader, data); err != nil {
 			return err
 		}
-		traceLog.Log(log.Int("n", int(tarHeader.Size)))
+		traceLog.AddEvent("readTar", attribute.Int64("size", tarHeader.Size))
 		callback(ParseRequest{Path: tarHeader.Name, Data: data})
 	}
 }

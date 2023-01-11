@@ -20,6 +20,7 @@ type EventContentMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string           `json:"path"`
+	PathMatches     []Range          `json:"pathMatches,omitempty"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
 	RepoStars       int              `json:"repoStars,omitempty"`
@@ -29,6 +30,7 @@ type EventContentMatch struct {
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Debug           string           `json:"debug,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -42,12 +44,14 @@ type EventPathMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"path"`
+	PathMatches     []Range    `json:"pathMatches,omitempty"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Debug           string     `json:"debug,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -95,6 +99,7 @@ type EventRepoMatch struct {
 
 	RepositoryID       int32              `json:"repositoryID"`
 	Repository         string             `json:"repository"`
+	RepositoryMatches  []Range            `json:"repositoryMatches,omitempty"`
 	Branches           []string           `json:"branches,omitempty"`
 	RepoStars          int                `json:"repoStars,omitempty"`
 	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`
@@ -151,6 +156,8 @@ type EventCommitMatch struct {
 	Message         string     `json:"message"`
 	AuthorName      string     `json:"authorName"`
 	AuthorDate      time.Time  `json:"authorDate"`
+	CommitterName   string     `json:"committerName"`
+	CommitterDate   time.Time  `json:"committerDate"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Content         string     `json:"content"`
@@ -173,16 +180,22 @@ type EventFilter struct {
 // EventAlert is GQL.SearchAlert. It replaces when sent to match existing
 // behaviour.
 type EventAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description,omitempty"`
-	Kind            string          `json:"kind,omitempty"`
-	ProposedQueries []ProposedQuery `json:"proposedQueries"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description,omitempty"`
+	Kind            string             `json:"kind,omitempty"`
+	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
-// ProposedQuery is a suggested query to run when we emit an alert.
-type ProposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
+// QueryDescription describes queries emitted in alerts.
+type QueryDescription struct {
+	Description string       `json:"description,omitempty"`
+	Query       string       `json:"query"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+}
+
+type Annotation struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // EventError emulates a JavaScript error with a message property

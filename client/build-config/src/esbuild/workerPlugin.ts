@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { packageResolutionPlugin, RXJS_RESOLUTIONS } from '@sourcegraph/build-config'
+import { packageResolutionPlugin, RXJS_RESOLUTIONS } from './packageResolutionPlugin'
 
 async function buildWorker(
     workerPath: string,

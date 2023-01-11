@@ -31,10 +31,10 @@ export const useHandleSubmitFeedback = ({
     )
 
     const handleSubmitFeedback = useCallback(
-        async (text: string, rating: number) => {
+        async (text: string) => {
             const { data, errors } = await submitFeedback({
                 variables: {
-                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: routeMatch },
+                    input: { feedback: `${textPrefix}${text}`, currentPath: routeMatch },
                 },
             })
 

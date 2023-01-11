@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -148,8 +147,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			db := database.NewMockDB()
-			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), db, svc, cf)
+			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -209,9 +207,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
 
-			ctx := context.Background()
-			db := database.NewMockDB()
-			s, err := newGitLabSource(ctx, logtest.Scoped(t), db, &svc, test.schema, nil)
+			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -231,9 +227,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src Source
 
-		ctx := context.Background()
-		db := database.NewMockDB()
-		src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -258,9 +252,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				var src Source
 
-				ctx := context.Background()
-				db := database.NewMockDB()
-				src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

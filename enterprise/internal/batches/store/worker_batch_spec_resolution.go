@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -16,7 +17,7 @@ import (
 const batchSpecResolutionMaxNumRetries = 0
 const batchSpecResolutionMaxNumResets = 60
 
-var batchSpecResolutionWorkerOpts = dbworkerstore.Options{
+var batchSpecResolutionWorkerOpts = dbworkerstore.Options[*types.BatchSpecResolutionJob]{
 	Name:              "batch_changes_batch_spec_resolution_worker_store",
 	TableName:         "batch_spec_resolution_jobs",
 	ColumnExpressions: batchSpecResolutionJobColums.ToSqlf(),
@@ -32,6 +33,6 @@ var batchSpecResolutionWorkerOpts = dbworkerstore.Options{
 	MaxNumRetries: batchSpecResolutionMaxNumRetries,
 }
 
-func NewBatchSpecResolutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(handle, batchSpecResolutionWorkerOpts, observationContext)
+func NewBatchSpecResolutionWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*types.BatchSpecResolutionJob] {
+	return dbworkerstore.New(observationCtx, handle, batchSpecResolutionWorkerOpts)
 }

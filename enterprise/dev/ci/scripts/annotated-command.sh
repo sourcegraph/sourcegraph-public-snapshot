@@ -30,6 +30,11 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
   shift 1
   # shellcheck disable=SC2124
   annotate_opts="$@"
+  auto_type=false
+  if [[ "$annotate_opts" == *"-t auto"* ]]; then
+    auto_type=true
+    annotate_opts=${annotate_opts/"-t auto"/}
+  fi
 
   echo "~~~ Uploading annotations"
   echo "include_names=$include_names, annotate_opts=$annotate_opts"
@@ -41,15 +46,42 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
     echo "handling $file"
     name=$(basename "$file")
     annotate_file_opts=$annotate_opts
+    human_level=""
 
     case "$name" in
       # Append markdown annotations as markdown, and remove the suffix from the name
       *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
     esac
 
+    if [ "$auto_type" = "true" ]; then
+      case "$name" in
+        WARN_*)
+          annotate_file_opts="$annotate_file_opts -t warning"
+          human_level="⚠️ "
+          ;;
+        ERROR_*)
+          annotate_file_opts="$annotate_file_opts -t error"
+          human_level="❌"
+          ;;
+        INFO_*)
+          annotate_file_opts="$annotate_file_opts -t info"
+          human_level="ℹ️ "
+          ;;
+        SUCCESS_*)
+          annotate_file_opts="$annotate_file_opts -t success"
+          human_level="✅"
+          ;;
+        *) 
+          annotate_file_opts="$annotate_file_opts -t error"
+          human_level="❌"
+          ;;
+      esac
+    fi
+
     if [ "$include_names" = "true" ]; then
       # Set the name of the file as the title of this annotation section
-      annotate_file_opts="-s '$name' $annotate_file_opts"
+      human_name=$(echo "$name" | sed -E -e "s/(WARN_)|(ERROR_)|(INFO_)|(SUCCESS_)//")
+      annotate_file_opts="-s '$human_level $human_name' $annotate_file_opts"
     fi
 
     # Generate annotation from file contents

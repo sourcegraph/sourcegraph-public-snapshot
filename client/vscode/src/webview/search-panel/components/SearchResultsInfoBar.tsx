@@ -3,10 +3,10 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiBookmarkOutline, mdiLink } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'

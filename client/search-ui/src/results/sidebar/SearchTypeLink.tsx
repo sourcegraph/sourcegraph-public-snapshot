@@ -9,14 +9,14 @@ import {
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
     EditorHint,
-} from '@sourcegraph/search'
+} from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { Button, Link, createLinkUrl } from '@sourcegraph/wildcard'
 
-import styles from './SearchSidebarSection.module.scss'
+import styles from './SearchFilterSection.module.scss'
 
 export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string

@@ -5,29 +5,32 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, error)
+var MockStatusMessages func(context.Context) ([]StatusMessage, error)
 
-// FetchStatusMessages fetches repo related status messages. When fetching
-// external service sync errors we'll fetch any external services owned by the
-// user. In addition, if the user is a site admin we'll also fetch site level
-// external services.
-func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]StatusMessage, error) {
+// FetchStatusMessages fetches repo related status messages.
+func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx, u)
-	}
-	if u == nil {
-		return nil, errors.New("nil user")
+		return MockStatusMessages(ctx)
 	}
 	var messages []StatusMessage
 
+	if conf.Get().DisableAutoGitUpdates {
+		messages = append(messages, StatusMessage{
+			GitUpdatesDisabled: &GitUpdatesDisabled{
+				Message: "Repositories will not be cloned or updated.",
+			},
+		})
+	}
+
 	// We first fetch affiliated sync errors since this will also find all the
 	// external services the user cares about.
-	externalServiceSyncErrors, err := db.ExternalServices().GetAffiliatedSyncErrors(ctx, u)
+	externalServiceSyncErrors, err := db.ExternalServices().GetLatestSyncErrors(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
@@ -36,11 +39,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 		return messages, nil
 	}
 
-	extsvcIDs := make([]int64, 0, len(externalServiceSyncErrors))
-
 	for id, failure := range externalServiceSyncErrors {
-		extsvcIDs = append(extsvcIDs, id)
-
 		if failure != "" {
 			messages = append(messages, StatusMessage{
 				ExternalServiceSyncError: &ExternalServiceSyncError{
@@ -51,58 +50,17 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 		}
 	}
 
-	// If the user is not a site-admin we can't rely on the stats table for
-	// counts and need to query the repo/gitserver_repos tables. But since the
-	// COUNTs aren't cheap, we filter down and use limit=1 to check whether >=1
-	// repos with the given parameters exist.
-	if !u.SiteAdmin {
-		opts := database.ReposListOptions{
-			NoCloned:           true,
-			ExternalServiceIDs: extsvcIDs,
-			LimitOffset: &database.LimitOffset{
-				Limit: 1,
-			},
-		}
-		notCloned, err := db.Repos().ListMinimalRepos(ctx, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "listing not-cloned repos")
-		}
-		if len(notCloned) > 0 {
-			messages = append(messages, StatusMessage{
-				Cloning: &CloningProgress{
-					Message: "Some repositories cloning...",
-				},
-			})
-		}
-
-		// Look for any repository that we could not sync
-		opts = database.ReposListOptions{
-			FailedFetch:        true,
-			ExternalServiceIDs: extsvcIDs,
-			LimitOffset: &database.LimitOffset{
-				Limit: 1,
-			},
-		}
-		failedSync, err := db.Repos().ListMinimalRepos(ctx, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "counting repo sync failures")
-		}
-		if len(failedSync) > 0 {
-			messages = append(messages, StatusMessage{
-				SyncError: &SyncError{
-					Message: "Some repositories could not be synced",
-				},
-			})
-		}
-		return messages, nil
-	}
-
-	// If the user is a site-admin we assume they can see all repositories
-	// (since authz was only enforced for admins in the old sourcegraph-dot-com
-	// Cloud v1 model).
 	stats, err := db.RepoStatistics().GetRepoStatistics(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading repo statistics")
+	}
+
+	if stats.FailedFetch > 0 {
+		messages = append(messages, StatusMessage{
+			SyncError: &SyncError{
+				Message: fmt.Sprintf("%d %s failed last attempt to sync content from code host", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
+			},
+		})
 	}
 
 	if uncloned := stats.NotCloned + stats.Cloning; uncloned > 0 {
@@ -120,12 +78,23 @@ func FetchStatusMessages(ctx context.Context, db database.DB, u *types.User) ([]
 		})
 	}
 
-	if stats.FailedFetch > 0 {
-		messages = append(messages, StatusMessage{
-			SyncError: &SyncError{
-				Message: fmt.Sprintf("%d %s could not be synced", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
-			},
-		})
+	// On Sourcegraph.com we don't index all repositories, which makes
+	// determining the index status a bit more complicated than for other
+	// instances.
+	// So for now we don't return the indexing message on sourcegraph.com.
+	if !envvar.SourcegraphDotComMode() {
+		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "loading repo statistics")
+		}
+		if zoektRepoStats.NotIndexed > 0 {
+			messages = append(messages, StatusMessage{
+				Indexing: &IndexingProgress{
+					NotIndexed: zoektRepoStats.NotIndexed,
+					Indexed:    zoektRepoStats.Indexed,
+				},
+			})
+		}
 	}
 
 	return messages, nil
@@ -138,11 +107,11 @@ func pluralize(count int, singularNoun, pluralNoun string) string {
 	return pluralNoun
 }
 
-type CloningProgress struct {
+type GitUpdatesDisabled struct {
 	Message string
 }
 
-type IndexingProgress struct {
+type CloningProgress struct {
 	Message string
 }
 
@@ -155,14 +124,15 @@ type SyncError struct {
 	Message string
 }
 
-type IndexingError struct {
-	Message string
+type IndexingProgress struct {
+	NotIndexed int
+	Indexed    int
 }
 
 type StatusMessage struct {
+	GitUpdatesDisabled       *GitUpdatesDisabled       `json:"git_updates_disabled"`
 	Cloning                  *CloningProgress          `json:"cloning"`
-	Indexing                 *IndexingProgress         `json:"indexing"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
-	IndexingError            *IndexingError            `json:"indexing_error"`
+	Indexing                 *IndexingProgress         `json:"indexing"`
 }

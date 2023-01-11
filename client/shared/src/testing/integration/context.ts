@@ -14,10 +14,8 @@ import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
-import { asError, keyExistsIn } from '@sourcegraph/common'
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
-// eslint-disable-next-line no-restricted-imports
-import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
+import { logger, asError, keyExistsIn } from '@sourcegraph/common'
+import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getConfig } from '../config'
 import { recordCoverage } from '../coverage'
@@ -98,8 +96,12 @@ export interface IntegrationTestOptions {
     /**
      * Test specific JS context object override. It's used in order to override
      * standard JSContext object for some particulars test.
+     *
+     * The `SourcegraphContext` type from `client/web/src/jscontext` should be used here
+     * but it creates a circular dependency between packages. So until it's resolved the
+     * generic `object` type is used here.
      */
-    customContext?: Partial<SourcegraphContext>
+    customContext?: object
 }
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
@@ -208,7 +210,7 @@ export const createSharedIntegrationTestContext = async <
                 if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
                     response.sendStatus(404)
                 } else {
-                    console.error(error)
+                    logger.error(error)
                     response.status(500).send(asError(error).message)
                 }
             }
@@ -249,8 +251,8 @@ export const createSharedIntegrationTestContext = async <
         }
 
         try {
-            const result = handler(variables as any)
-            const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+            const { errors, ...data } = handler(variables as any)
+            const graphQlResult: GraphQLResult<any> = { data, errors }
             response.json(graphQlResult)
         } catch (error) {
             if (!(error instanceof IntegrationTestGraphQlError)) {
@@ -318,11 +320,11 @@ export const createSharedIntegrationTestContext = async <
                         try {
                             localStorage.clear()
                         } catch (error) {
-                            console.error('Failed to clear localStorage!', error)
+                            logger.error('Failed to clear localStorage!', error)
                         }
                     }),
                     DISPOSE_ACTION_TIMEOUT,
-                    () => console.warn('Failed to clear localStorage!')
+                    () => logger.warn('Failed to clear localStorage!')
                 )
             }
 

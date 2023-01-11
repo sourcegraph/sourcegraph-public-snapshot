@@ -1,12 +1,11 @@
 import * as React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
-import { Timestamp } from '../../../../components/time/Timestamp'
+import { ProductLicenseFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'
 import { ProductLicenseInfoDescription } from '../../../productSubscription/ProductLicenseInfoDescription'
@@ -19,9 +18,7 @@ export const siteAdminProductLicenseFragment = gql`
             id
             name
             account {
-                id
-                username
-                displayName
+                ...ProductLicenseSubscriptionAccount
             }
             activeLicense {
                 id
@@ -30,17 +27,27 @@ export const siteAdminProductLicenseFragment = gql`
         }
         licenseKey
         info {
-            productNameWithBrand
-            tags
-            userCount
-            expiresAt
+            ...ProductLicenseInfoFields
         }
         createdAt
+    }
+
+    fragment ProductLicenseInfoFields on ProductLicenseInfo {
+        productNameWithBrand
+        tags
+        userCount
+        expiresAt
+    }
+
+    fragment ProductLicenseSubscriptionAccount on User {
+        id
+        username
+        displayName
     }
 `
 
 export interface SiteAdminProductLicenseNodeProps {
-    node: GQL.IProductLicense
+    node: ProductLicenseFields
     showSubscription: boolean
 }
 

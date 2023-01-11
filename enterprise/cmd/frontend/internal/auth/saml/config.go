@@ -73,17 +73,23 @@ func Init() {
 	logger := log.Scoped(pkgName, "SAML config watch")
 	go func() {
 		conf.Watch(func() {
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Warn("Check license for SSO (SAML)", log.Error(err))
+
+			ps := getProviders()
+			if len(ps) == 0 {
 				providers.Update(pkgName, nil)
 				return
 			}
 
-			ps := getProviders()
+			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+				logger.Error("Check license for SSO (SAML)", log.Error(err))
+				providers.Update(pkgName, nil)
+				return
+			}
+
 			for _, p := range ps {
 				go func(p providers.Provider) {
 					if err := p.Refresh(context.Background()); err != nil {
-						log15.Error("Error prefetching SAML service provider metadata.", "error", err)
+						logger.Error("Error prefetching SAML service provider metadata.", log.Error(err))
 					}
 				}(p)
 			}

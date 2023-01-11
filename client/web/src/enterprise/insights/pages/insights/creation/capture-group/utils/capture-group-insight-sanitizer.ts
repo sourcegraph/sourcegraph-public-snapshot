@@ -4,8 +4,8 @@ import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedRepositories } from '../../../../../components'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CaptureGroupFormFields } from '../types'
 
 export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {

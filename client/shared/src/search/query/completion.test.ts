@@ -15,8 +15,10 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
 
-const createFetcher = (matches: SearchMatch[]): FetchSuggestions => (_token, type) =>
-    Promise.resolve(matches.filter(isSearchMatchOfType(type)))
+const createFetcher =
+    (matches: SearchMatch[]): FetchSuggestions =>
+    (_token, type) =>
+        Promise.resolve(matches.filter(isSearchMatchOfType(type)))
 
 // Using async as a short way to create functions that return promises
 /* eslint-disable @typescript-eslint/require-await */
@@ -383,6 +385,9 @@ describe('getCompletionItems()', () => {
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -404,7 +409,10 @@ describe('getCompletionItems()', () => {
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
               "has.commit.after(\${1:1 month ago}) ",
-              "has.description(\${1}) "
+              "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) "
             ]
         `)
     })

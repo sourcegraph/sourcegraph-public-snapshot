@@ -11,13 +11,55 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var orgnamesForTests = []struct {
+	name      string
+	wantValid bool
+}{
+	{"nick", true},
+	{"n1ck", true},
+	{"Nick2", true},
+	{"N-S", true},
+	{"nick-s", true},
+	{"renfred-xh", true},
+	{"renfred-x-h", true},
+	{"deadmau5", true},
+	{"deadmau-5", true},
+	{"3blindmice", true},
+	{"nick.com", true},
+	{"nick.com.uk", true},
+	{"nick.com-put-er", true},
+	{"nick-", true},
+	{"777", true},
+	{"7-7", true},
+	{"long-butnotquitelongenoughtoreachlimit", true},
+
+	{".nick", false},
+	{"-nick", false},
+	{"nick.", false},
+	{"nick--s", false},
+	{"nick--sny", false},
+	{"nick..sny", false},
+	{"nick.-sny", false},
+	{"_", false},
+	{"_nick", false},
+	{"ke$ha", false},
+	{"ni%k", false},
+	{"#nick", false},
+	{"@nick", false},
+	{"", false},
+	{"nick s", false},
+	{" ", false},
+	{"-", false},
+	{"--", false},
+	{"-s", false},
+	{"レンフレッド", false},
+	{"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", false},
+}
 
 func TestOrgs_ValidNames(t *testing.T) {
 	t.Parallel()
@@ -25,7 +67,7 @@ func TestOrgs_ValidNames(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	for _, test := range usernamesForTests {
+	for _, test := range orgnamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := db.Orgs().Create(ctx, test.name, nil); err != nil {
@@ -194,74 +236,6 @@ func TestOrgs_GetByID(t *testing.T) {
 	createOrgMember(ctx, db, user.ID, org2.ID)
 
 	orgs, err := db.Orgs().GetByUserID(ctx, user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(orgs) != 1 {
-		t.Errorf("got %d orgs, want 0", len(orgs))
-	}
-	if orgs[0].Name != org2.Name {
-		t.Errorf("got %q org Name, want %q", orgs[0].Name, org2.Name)
-	}
-}
-
-func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
-	createOrg := func(ctx context.Context, db DB, name string, displayName string) *types.Org {
-		org, err := db.Orgs().Create(ctx, name, &displayName)
-		if err != nil {
-			t.Fatal(err)
-			return nil
-		}
-		return org
-	}
-
-	createUser := func(ctx context.Context, db DB, name string) *types.User {
-		user, err := db.Users().Create(ctx, NewUser{
-			Username: name,
-		})
-		if err != nil {
-			t.Fatal(err)
-			return nil
-		}
-		return user
-	}
-
-	createOrgMember := func(ctx context.Context, db DB, userID int32, orgID int32) {
-		_, err := db.OrgMembers().Create(ctx, orgID, userID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	org1 := createOrg(ctx, db, "org1", "org1")
-	org2 := createOrg(ctx, db, "org2", "org2")
-
-	user := createUser(ctx, db, "user")
-	createOrgMember(ctx, db, user.ID, org1.ID)
-	createOrgMember(ctx, db, user.ID, org2.ID)
-
-	service := &types.ExternalService{
-		Kind:           extsvc.KindGitHub,
-		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
-		NamespaceOrgID: org2.ID,
-	}
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-	if err := db.ExternalServices().Create(ctx, confGet, service); err != nil {
-		t.Fatal(err)
-	}
-	repo := typestest.MakeGithubRepo(service)
-	if err := db.Repos().Create(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	orgs, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

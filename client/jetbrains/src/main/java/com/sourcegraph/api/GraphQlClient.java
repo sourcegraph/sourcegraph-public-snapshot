@@ -22,8 +22,8 @@ import java.nio.charset.StandardCharsets;
 
 public class GraphQlClient {
     @NotNull
-    public static GraphQlResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
-        HttpPost request = createRequest(instanceUrl, accessToken, query, variables);
+    public static GraphQlResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String customRequestHeaders, @NotNull String query, @NotNull JsonObject variables) throws IOException {
+        HttpPost request = createRequest(instanceUrl, accessToken, customRequestHeaders, query, variables);
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             CloseableHttpResponse httpResponse = client.execute(request);
             GraphQlResponse response = new GraphQlResponse(getStatusCode(httpResponse), getResponseBody(httpResponse));
@@ -43,13 +43,24 @@ public class GraphQlClient {
     }
 
     @NotNull
-    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) {
+    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String customRequestHeadersAsString, @NotNull String query, @NotNull JsonObject variables) {
+        String[] pairs = customRequestHeadersAsString != null ? customRequestHeadersAsString.split(",") : new String[0];
         HttpPost request = new HttpPost(getGraphQLApiURI(instanceUrl));
 
         request.setHeader("Content-Type", "application/json");
         request.setHeader("X-Sourcegraph-Should-Trace", "false");
         if (accessToken != null) {
             request.setHeader("Authorization", "token " + accessToken);
+        }
+        // Do some checks to make sure the string and its parts are well-formed, but fail silently in each case
+        if (pairs.length % 2 == 0) {
+            for (int i = 0; i < pairs.length; i += 2) {
+                String headerName = pairs[i].trim();
+                String headerValue = pairs[i + 1].trim();
+                if (headerName.matches("[\\w-]+")) {
+                    request.setHeader(headerName, headerValue);
+                }
+            }
         }
 
         JsonObject body = new JsonObject();

@@ -2,9 +2,8 @@ import { FunctionComponent, useCallback, useMemo } from 'react'
 
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
-import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Text, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import {
@@ -28,13 +27,14 @@ export interface InsightCreateEvent {
 }
 
 interface ComputeInsightCreationPageProps extends TelemetryProps {
+    backUrl: string
     onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -54,26 +54,20 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
 
     const handleSubmit = useCallback(
         async (values: CreateComputeInsightFormFields): Promise<SubmissionErrors> => {
-            try {
-                const insight = getSanitizedComputeInsight(values)
+            const insight = getSanitizedComputeInsight(values)
 
-                await onInsightCreateRequest({ insight })
+            await onInsightCreateRequest({ insight })
 
-                // Clear initial values if user successfully created search insight
-                setInitialFormValues(undefined)
-                telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
-                telemetryService.log(
-                    'InsightAddition',
-                    { insightType: CodeInsightTrackType.ComputeInsight },
-                    { insightType: CodeInsightTrackType.ComputeInsight }
-                )
+            // Clear initial values if user successfully created search insight
+            setInitialFormValues(undefined)
+            telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
+            telemetryService.log(
+                'InsightAddition',
+                { insightType: CodeInsightTrackType.ComputeInsight },
+                { insightType: CodeInsightTrackType.ComputeInsight }
+            )
 
-                onSuccessfulCreation()
-            } catch (error) {
-                return { [FORM_ERROR]: asError(error) }
-            }
-
-            return
+            onSuccessfulCreation()
         },
         [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
     )
@@ -88,16 +82,15 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
 
     return (
         <CodeInsightsPage className="col-11">
-            <PageTitle title="Create compute insight - Code Insights" />
+            <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader
                 className="mb-5"
-                path={[{ icon: BarChartIcon }, { text: 'Create code insight' }]}
-                description={
-                    <Text>
-                        Type: <b>Group results</b> | <Link to="/insights/create">Change type</Link>
-                    </Text>
-                }
+                path={[
+                    { icon: BarChartIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                    { text: 'Create', to: backUrl },
+                    { text: 'Group results insight' },
+                ]}
             />
 
             <ComputeInsightCreationContent

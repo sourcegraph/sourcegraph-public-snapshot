@@ -10,20 +10,25 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 
 type batchChangeResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	batchChange *btypes.BatchChange
 
@@ -32,9 +37,9 @@ type batchChangeResolver struct {
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
 
-	batchSpecOnce sync.Once
-	batchSpec     *btypes.BatchSpec
-	batchSpecErr  error
+	canAdministerOnce sync.Once
+	canAdminister     bool
+	canAdministerErr  error
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -76,10 +81,6 @@ func (r *batchChangeResolver) State() string {
 	return state.ToGraphQL()
 }
 
-func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return r.Creator(ctx)
-}
-
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
 	if errcode.IsNotFound(err) {
@@ -101,30 +102,20 @@ func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.
 	return user, err
 }
 
-func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
+func (r *batchChangeResolver) LastAppliedAt() *gqlutil.DateTime {
 	if r.batchChange.LastAppliedAt.IsZero() {
 		return nil
 	}
 
-	return &graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
-}
-
-func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.computeBatchSpec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), spec.UserID)
-	if errcode.IsNotFound(err) {
-		return nil, nil
-	}
-
-	return user, err
+	return &gqlutil.DateTime{Time: r.batchChange.LastAppliedAt}
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+	r.canAdministerOnce.Do(func() {
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
+	})
+	return r.canAdminister, r.canAdministerErr
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -163,29 +154,19 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 	return r.namespace, r.namespaceErr
 }
 
-func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.BatchSpec, error) {
-	r.batchSpecOnce.Do(func() {
-		r.batchSpec, r.batchSpecErr = r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-			ID: r.batchChange.BatchSpecID,
-		})
-	})
-
-	return r.batchSpec, r.batchSpecErr
+func (r *batchChangeResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchChange.CreatedAt}
 }
 
-func (r *batchChangeResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchChange.CreatedAt}
+func (r *batchChangeResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchChange.UpdatedAt}
 }
 
-func (r *batchChangeResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchChange.UpdatedAt}
-}
-
-func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
+func (r *batchChangeResolver) ClosedAt() *gqlutil.DateTime {
 	if !r.batchChange.Closed() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.batchChange.ClosedAt}
+	return &gqlutil.DateTime{Time: r.batchChange.ClosedAt}
 }
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
@@ -206,9 +187,10 @@ func (r *batchChangeResolver) Changesets(
 	}
 	opts.BatchChangeID = r.batchChange.ID
 	return &changesetsConnectionResolver{
-		store:    r.store,
-		opts:     opts,
-		optsSafe: safe,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		opts:            opts,
+		optsSafe:        safe,
 	}, nil
 }
 
@@ -282,9 +264,17 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	batchSpec, err := r.computeBatchSpec(ctx)
+	if r.batchChange.BatchSpecID == 0 {
+		return nil, nil
+	}
+
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+		ID: r.batchChange.BatchSpecID,
+	})
 	if err != nil {
-		// This spec should always exist, so fail hard on not found errors as well.
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -316,9 +306,10 @@ func (r *batchChangeResolver) BulkOperations(
 	}
 
 	return &bulkOperationConnectionResolver{
-		store:         r.store,
-		batchChangeID: r.batchChange.ID,
-		opts:          opts,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		batchChangeID:   r.batchChange.ID,
+		opts:            opts,
 	}, nil
 }
 
@@ -342,7 +333,7 @@ func (r *batchChangeResolver) BatchSpecs(
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
 	}
 

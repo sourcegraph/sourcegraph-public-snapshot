@@ -2,8 +2,9 @@ package linters
 
 import (
 	"context"
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"

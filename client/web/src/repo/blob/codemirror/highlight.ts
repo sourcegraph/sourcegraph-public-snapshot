@@ -1,15 +1,19 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
-import { Occurrence, SyntaxKind } from '../../../lsif/lsif-typed'
+import { logger } from '@sourcegraph/common'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+
 import { BlobInfo } from '../Blob'
+
+import { positionToOffset } from './utils'
 
 /**
  * This data structure combines the syntax highlighting data received from the
  * server with a lineIndex map (implemented as array), for fast lookup by line
  * number, with minimal additional impact on memory (e.g. garbage collection).
  */
-interface HighlightIndex {
+export interface HighlightIndex {
     occurrences: Occurrence[]
     lineIndex: (number | undefined)[]
 }
@@ -19,7 +23,7 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(info: BlobInfo): HighlightIndex {
+export function createHighlightTable(info: BlobInfo): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
     if (!info.lsif) {
@@ -34,7 +38,7 @@ function createHighlightTable(info: BlobInfo): HighlightIndex {
             const current = occurrences[index]
 
             if (previousEndline !== current.range.start.line) {
-                // Only use the current index if there isn't already an occurence on
+                // Only use the current index if there isn't already an occurrence on
                 // the current line.
                 lineIndex[current.range.start.line] = index
             }
@@ -48,7 +52,7 @@ function createHighlightTable(info: BlobInfo): HighlightIndex {
 
         return { occurrences, lineIndex }
     } catch (error) {
-        console.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
+        logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         return { occurrences: [], lineIndex }
     }
 }
@@ -93,10 +97,13 @@ class SyntaxHighlightManager implements PluginValue {
             if (startIndex !== undefined) {
                 // Iterate over the rendered line (numbers) and get the
                 // corresponding occurrences from the highlighting table.
+                const textDocument = view.state.doc
+
                 for (let index = startIndex; index < occurrences.length; index++) {
                     const occurrence = occurrences[index]
+                    const occurrenceStartLine = occurrence.range.start.line + 1
 
-                    if (occurrence.range.start.line > toLine.number) {
+                    if (occurrenceStartLine > toLine.number) {
                         break
                     }
 
@@ -105,14 +112,22 @@ class SyntaxHighlightManager implements PluginValue {
                     }
 
                     // Fetch new line information if necessary
-                    if (line.number !== occurrence.range.start.line + 1) {
-                        line = view.state.doc.line(occurrence.range.start.line + 1)
+                    if (line.number !== occurrenceStartLine) {
+                        // If the next occurrence doesn't map to a valid
+                        // document position, stop
+                        if (occurrenceStartLine > textDocument.lines) {
+                            break
+                        }
+                        line = textDocument.line(occurrenceStartLine)
                     }
 
-                    const from = line.from + occurrence.range.start.character
+                    const from = Math.min(line.from + occurrence.range.start.character, line.to)
+                    // Should the range end be not a valid position in the
+                    // document we fall back to the end of the current line
                     const to = occurrence.range.isSingleLine()
-                        ? line.from + occurrence.range.end.character
-                        : view.state.doc.line(occurrence.range.end.line + 1).from + occurrence.range.end.character
+                        ? Math.min(line.from + occurrence.range.end.character, line.to)
+                        : positionToOffset(textDocument, occurrence.range.end) ?? line.to
+
                     const decoration =
                         this.decorationCache[occurrence.kind] ||
                         (this.decorationCache[occurrence.kind] = Decoration.mark({
@@ -122,7 +137,7 @@ class SyntaxHighlightManager implements PluginValue {
                 }
             }
         } catch (error) {
-            console.error('Failed to compute decorations from SCIP occurrences', error)
+            logger.error('Failed to compute decorations from SCIP occurrences', error)
         }
         return builder.finish()
     }

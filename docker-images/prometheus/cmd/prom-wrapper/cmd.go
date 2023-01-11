@@ -5,16 +5,14 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/log"
 )
 
-func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {
-	log.Info(fmt.Sprintf("running: %+v", cmd.Args))
+func runCmd(logger log.Logger, errs chan<- error, cmd *exec.Cmd) {
+	logger = logger.With(log.Strings("cmd", append([]string{cmd.Path}, cmd.Args...)))
+	logger.Info("running cmd")
 	if err := cmd.Run(); err != nil {
-		err := errors.Errorf("command %+v exited: %w", cmd.Args, err)
-		log.Error(err.Error())
+		logger.Error("command exited", log.Error(err))
 		errs <- err
 	}
 }

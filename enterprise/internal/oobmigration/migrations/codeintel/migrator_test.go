@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
@@ -22,6 +23,7 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		tableName:     "t_test",
 		targetVersion: 2,
 		batchSize:     200,
+		numRoutines:   1,
 		fields: []fieldSpec{
 			{name: "a", postgresType: "integer not null", primaryKey: true},
 			{name: "b", postgresType: "integer not null", readOnly: true},
@@ -29,8 +31,8 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		},
 	})
 
-	assertProgress := func(expectedProgress float64) {
-		if progress, err := migrator.Progress(context.Background()); err != nil {
+	assertProgress := func(expectedProgress float64, applyReverse bool) {
+		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
 			t.Fatalf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
 			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
@@ -87,37 +89,37 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 		}
 	}
 
-	assertProgress(0)
+	assertProgress(0, false)
 
 	// process dump 43 (updates bounds)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1.0 / 3.0)
+	assertProgress(1.0/3.0, false)
 
 	// process dump 44 (updates bounds)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(2.0 / 3.0)
+	assertProgress(2.0/3.0, false)
 
 	// process dump 45 (deletes schema version record with no data)
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	assertProgress(1.0)
+	assertProgress(1.0, false)
 
 	// reverse migration of first of remaining two dumps
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.5)
+	assertProgress(0.5, true)
 
 	// reverse migration of second of remaining two dumps
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
-	assertProgress(0.0)
+	assertProgress(0.0, true)
 }
 
 type testMigrationDriver struct{}
@@ -125,7 +127,7 @@ type testMigrationDriver struct{}
 func (m *testMigrationDriver) ID() int                 { return 10 }
 func (m *testMigrationDriver) Interval() time.Duration { return time.Second }
 
-func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
@@ -134,7 +136,7 @@ func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	return []any{a, b + c}, nil
 }
 
-func (m *testMigrationDriver) MigrateRowDown(scanner scanner) ([]any, error) {
+func (m *testMigrationDriver) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err

@@ -50,6 +50,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     organizations: {
         nodes: [
             {
+                __typename: 'Org',
                 id: '0',
                 name: 'acme',
                 displayName: 'Acme Corp',
@@ -57,6 +58,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
                 settingsURL: '/organizations/acme/settings',
             },
             {
+                __typename: 'Org',
                 id: '1',
                 name: 'beta',
                 displayName: 'Beta Inc',
@@ -73,10 +75,10 @@ const commonProps = (props: Args): UserNavItemProps => ({
     onThemePreferenceChange,
     showDotComMarketing: props.showDotComMarketing,
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
-    showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
     showKeyboardShortcutsHelp: () => undefined,
+    showFeedbackModal: () => undefined,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{
@@ -122,7 +124,6 @@ export const WithAvatar: Story = args => {
                             {...props}
                             {...webProps}
                             menuButtonRef={menuButtonRef}
-                            showRepositorySection={true}
                             authenticatedUser={{
                                 ...props.authenticatedUser,
                                 avatarURL:

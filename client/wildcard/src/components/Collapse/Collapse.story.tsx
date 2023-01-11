@@ -3,10 +3,8 @@ import { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H2 } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
 import { Input } from '../Form'
 import { Icon } from '../Icon'
@@ -14,7 +12,7 @@ import { Icon } from '../Icon'
 import { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
@@ -90,6 +88,31 @@ export const Simple: Story = () => {
                             />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
+                            <Input placeholder="testing this one" />
+                        </CollapsePanel>
+                    </>
+                )}
+            </Collapse>
+
+            <H2 className="my-3">Without forced CollapsePanel rendering</H2>
+            <Collapse>
+                {({ isOpen }) => (
+                    <>
+                        <CollapseHeader
+                            as={Button}
+                            aria-label={isOpen ? 'Expand' : 'Collapse'}
+                            outline={true}
+                            variant="secondary"
+                            className="w-50"
+                        >
+                            Collapsable
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                className="mr-1"
+                            />
+                        </CollapseHeader>
+                        <CollapsePanel forcedRender={false} className="w-50">
                             <Input placeholder="testing this one" />
                         </CollapsePanel>
                     </>

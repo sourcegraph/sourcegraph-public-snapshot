@@ -3,13 +3,12 @@ package batches
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type schedulerJob struct{}
@@ -26,7 +25,7 @@ func (j *schedulerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *schedulerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *schedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()

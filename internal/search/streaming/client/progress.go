@@ -58,6 +58,7 @@ func (p *ProgressAggregator) currentStats() api.ProgressStats {
 	return api.ProgressStats{
 		MatchCount:          p.MatchCount,
 		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
+		BackendsMissing:     p.Stats.BackendsMissing,
 		ExcludedArchived:    p.Stats.ExcludedArchived,
 		ExcludedForks:       p.Stats.ExcludedForks,
 		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedout),

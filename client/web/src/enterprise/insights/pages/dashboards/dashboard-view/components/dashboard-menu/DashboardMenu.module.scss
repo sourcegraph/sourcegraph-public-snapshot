@@ -1,0 +1,40 @@
+.trigger-button {
+    padding: 0.25rem;
+    fill: var(--icon-color);
+
+    &:hover,
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
+    }
+}
+
+.menu-list[data-reach-menu-items] {
+    font-size: inherit;
+    overflow: hidden;
+    padding: 0.25rem 0;
+}
+
+.menu-item[data-reach-menu-item] {
+    // Override default Bootstrap button style
+    display: block;
+    padding: 0.25rem 0.75rem;
+    width: 100%;
+    border-radius: 0;
+    transition: unset;
+    font-weight: unset;
+
+    &[data-selected] {
+        background-color: var(--link-color);
+        color: var(--light-text);
+    }
+}
+
+.menu-item {
+    &--danger {
+        color: var(--danger);
+    }
+
+    &--link[data-reach-menu-item] {
+        text-decoration: none;
+    }
+}

@@ -19,10 +19,10 @@ import (
 // handler implements a http.Handler that wraps a VersionCache to provide two
 // endpoints:
 //
-// - GET /.*:        this looks up the given branch and returns the latest
-//                   version, if any.
-// - POST /webhooks: this triggers an update of the version cache if given a
-//                   valid GitHub webhook.
+//   - GET /.*: this looks up the given branch and returns the latest
+//     version, if any.
+//   - POST /webhooks: this triggers an update of the version cache if given a
+//     valid GitHub webhook.
 //
 // The routing relies on a previous handler having injected a gorilla.Mux
 // variable called "rest" that includes the path to route.
@@ -71,7 +71,13 @@ func NewHandler(logger log.Logger) http.Handler {
 
 		// Otherwise, let's build a new release cache and start a fresh updater.
 		rc := config.NewReleaseCache(logger)
-		handler.updater = goroutine.NewPeriodicGoroutine(ctx, config.interval, rc)
+		handler.updater = goroutine.NewPeriodicGoroutine(
+			ctx,
+			"srccli.github-release-cache",
+			"caches src-cli versions polled periodically",
+			config.interval,
+			rc,
+		)
 		go goroutine.MonitorBackgroundRoutines(ctx, handler.updater)
 
 		handler.rc = rc

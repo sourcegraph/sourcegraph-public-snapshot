@@ -14,20 +14,20 @@ type operations struct {
 	countCommits *prometheus.CounterVec
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	worker := observationContext.Operation(observation.Op{
+func newOperations(observationCtx *observation.Context) *operations {
+	worker := observationCtx.Operation(observation.Op{
 		Name: "CommitIndexer.Run",
 		Metrics: metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"insights_commit_indexer",
 			metrics.WithCountHelp("Total number of commit indexer executions"),
 		),
 	})
 
-	getCommits := observationContext.Operation(observation.Op{
+	getCommits := observationCtx.Operation(observation.Op{
 		Name: "CommitIndexer.GetCommits",
 		Metrics: metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"insights_commit_indexer_fetch",
 			metrics.WithCountHelp("Time for the commit indexer to fetch commits from gitserver."),
 		),

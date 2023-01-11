@@ -69,6 +69,8 @@ type BatchSpecWorkspaceExecutionJob struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	Version int
 }
 
 func (j *BatchSpecWorkspaceExecutionJob) RecordID() int { return int(j.ID) }

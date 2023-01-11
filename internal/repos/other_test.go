@@ -46,45 +46,45 @@ func TestSrcExpose(t *testing.T) {
 		want: []*types.Repo{},
 	}, {
 		name: "minimal",
-		body: `{"Items":[{"uri": "foo"},{"uri":"bar/baz"}]}`,
+		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git"},{"uri":"/repos/bar/baz", "clonePath":"/repos/bar/baz/.git"}]}`,
 		want: []*types.Repo{{
-			URI:  "foo",
-			Name: "foo",
+			URI:  "/repos/foo",
+			Name: "/repos/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
-				ID:          "foo",
+				ID:          "/repos/foo",
 			},
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
 		}, {
-			URI:  "bar/baz",
-			Name: "bar/baz",
+			URI:  "/repos/bar/baz",
+			Name: "/repos/bar/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
-				ID:          "bar/baz",
+				ID:          "/repos/bar/baz",
 			},
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/bar/baz/.git",
+					CloneURL: s.URL + "/repos/bar/baz/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/bar/baz/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
 		}},
 	}, {
 		name: "override",
-		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi"}]}`,
+		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi", "clonePath":"/repos/foo/.git"}]}`,
 		want: []*types.Repo{{
 			URI:         "/repos/foo",
 			Name:        "foo",
-			Description: "hi",
+			Description: "",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
@@ -99,42 +99,23 @@ func TestSrcExpose(t *testing.T) {
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
 		}},
 	}, {
-		name: "bare",
-		body: `{"Items":[{"uri": "/repos/bare.git", "name": "bare.git"}]}`,
-		want: []*types.Repo{{
-			URI:  "/repos/bare.git",
-			Name: "bare",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceID:   s.URL,
-				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/bare.git",
-			},
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/bare.git",
-				},
-			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bare.git"},
-		}},
-	}, {
 		name: "immutable",
-		body: `{"Items":[{"uri": "foo", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
+		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
 		want: []*types.Repo{{
-			URI:  "foo",
-			Name: "foo",
+			URI:  "/repos/foo",
+			Name: "/repos/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
-				ID:          "foo",
+				ID:          "/repos/foo",
 			},
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
 		}},
 	}}
 
@@ -143,7 +124,7 @@ func TestSrcExpose(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q}`, s.URL)),
-	}, nil)
+	}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

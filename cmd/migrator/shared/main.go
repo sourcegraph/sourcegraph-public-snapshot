@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	ossmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -31,22 +28,17 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 })
 
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations := store.NewOperations(observationContext)
+	observationCtx := observation.NewContext(logger)
 
 	outputFactory := func() *output.Output { return out }
 
-	newRunnerWithSchemas := func(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 		if err != nil {
 			return nil, err
 		}
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+			return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 		}
 		r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
 		if err != nil {
@@ -55,14 +47,20 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 
 		return cliutil.NewShim(r), nil
 	}
-	newRunner := func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
-		return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
+	newRunner := func(schemaNames []string) (cliutil.Runner, error) {
+		return newRunnerWithSchemas(schemaNames, schemas.Schemas)
 	}
 
 	registerMigrators := composeRegisterMigratorsFuncs(
 		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		registerEnterpriseMigrators,
 	)
+
+	schemaFactories := []cliutil.ExpectedSchemaFactory{
+		cliutil.GitHubExpectedSchemaFactory,
+		cliutil.GCSExpectedSchemaFactory,
+		cliutil.LocalExpectedSchemaFactory,
+	}
 
 	command := &cli.App{
 		Name:   appName,
@@ -74,14 +72,15 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
-			cliutil.AddLog(logger, appName, newRunner, outputFactory),
-			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory, registerMigrators),
-			cliutil.RunOutOfBandMigrations(logger, appName, newRunner, outputFactory, registerMigrators),
+			cliutil.Drift(appName, newRunner, outputFactory, schemaFactories...),
+			cliutil.AddLog(appName, newRunner, outputFactory),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}
 
-	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator %s", version.Version()))
 
 	args := os.Args
 	if len(args) == 1 {

@@ -19,22 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Message describes an email message to be sent.
-type Message struct {
-	FromName   string   // email "From" address proper name
-	To         []string // email "To" recipients
-	ReplyTo    *string  // optional "ReplyTo" address
-	MessageID  *string  // optional "Message-ID" header
-	References []string // optional "References" header list
-
-	Template txtypes.Templates // unparsed subject/body templates
-	Data     any               // template data
-}
+// Message describes an email message to be sent, aliased in this package for convenience.
+type Message = txtypes.Message
 
 var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_email_send",
 	Help: "Number of emails sent.",
-}, []string{"success"})
+}, []string{"success", "email_source"})
 
 // render returns the rendered message contents without sending email.
 func render(message Message) (*email.Email, error) {
@@ -76,21 +67,24 @@ func render(message Message) (*email.Email, error) {
 	return &m, nil
 }
 
-// Send sends a transactional email.
+// Send sends a transactional email if SMTP is configured. All services within the frontend
+// should use this directly to send emails.  Source is used to categorize metrics, and
+// should indicate the product feature that is sending this email.
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
-// instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func Send(ctx context.Context, message Message) (err error) {
+// instead.
+//
+// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
+// the email should be verified or not, and conduct the appropriate checks before sending.
+// This helps reduce the chance that we damage email sender reputations when attempting to
+// send emails to nonexistent email addresses.
+func Send(ctx context.Context, source string, message Message) (err error) {
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
 	if disableSilently {
 		return nil
 	}
-
-	defer func() {
-		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
-	}()
 
 	conf := conf.Get()
 	if conf.EmailAddress == "" {
@@ -100,13 +94,15 @@ func Send(ctx context.Context, message Message) (err error) {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
 
+	// Previous errors are configuration errors, do not track as error. Subsequent errors
+	// are delivery errors.
+	defer func() {
+		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
+	}()
+
 	m, err := render(message)
 	if err != nil {
 		return errors.Wrap(err, "render")
-	}
-	raw, err := m.Bytes()
-	if err != nil {
-		return errors.Wrap(err, "get bytes")
 	}
 
 	// Disable Mandrill features, because they make the emails look sketchy.
@@ -121,6 +117,18 @@ func Send(ctx context.Context, message Message) (err error) {
 		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
 	}
 
+	// Apply header configuration to message
+	for _, header := range conf.EmailSmtp.AdditionalHeaders {
+		m.Headers.Add(header.Key, header.Value)
+	}
+
+	// Generate message data
+	raw, err := m.Bytes()
+	if err != nil {
+		return errors.Wrap(err, "get bytes")
+	}
+
+	// Set up client
 	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
 	if err != nil {
 		return errors.Wrap(err, "new SMTP client")

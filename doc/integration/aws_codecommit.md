@@ -1,3 +1,7 @@
+---
+ignoreDisconnectedPageCheck: true
+---
+
 # AWS CodeCommit integration with Sourcegraph
 
 You can use Sourcegraph with Git repositories hosted on [AWS CodeCommit](https://aws.amazon.com/codecommit/).

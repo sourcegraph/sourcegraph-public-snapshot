@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
@@ -244,10 +245,11 @@ func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error
 		cmd.Stdin = bytes.NewReader(content)
 	}
 	cmd.Stdout = b
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
-	if err = StartAndWaitForCompletion(cmd); err != nil {
-		return err
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(err, "failed with stdout %s", stderrBuf.String())
 	}
-
 	return nil
 }

@@ -12,15 +12,10 @@ const { createProxyMiddleware } = require('http-proxy-middleware')
 const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
-// The `DevServerPlugin` should be exposed after the `webpack-dev-server@4` goes out of the beta stage.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const DevServerPlugin = require('webpack-dev-server/lib/utils/DevServerPlugin')
 
 const {
-  graphQlSchema,
   graphQlOperations,
   schema,
-  watchGraphQlSchema,
   watchGraphQlOperations,
   watchSchema,
   cssModulesTypings,
@@ -114,9 +109,10 @@ async function webpackDevelopmentServer() {
     port: DEV_SERVER_LISTEN_ADDR.port,
     // Disable default DevServer compression. We need more fine grained compression to support streaming search.
     compress: false,
-    onBeforeSetupMiddleware: developmentServer => {
+    setupMiddlewares: (middlewares, developmentServer) => {
       // Re-enable gzip compression using our own `compression` filter.
       developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+      return middlewares
     },
     client: {
       overlay: false,
@@ -134,12 +130,6 @@ async function webpackDevelopmentServer() {
     },
     proxy: proxyConfig,
     webSocketServer: 'ws',
-  }
-
-  // Based on the update: https://github.com/webpack/webpack-dev-server/pull/2844
-  if (!webpackConfig.plugins.find(plugin => plugin.constructor === DevServerPlugin)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
   const compiler = createWebApplicationCompiler()
@@ -182,10 +172,10 @@ const esbuildDevelopmentProxy = () =>
 const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentProxy
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
+const generate = gulp.parallel(schema, graphQlOperations, cssModulesTypings)
 
 // Watches code generation only, rebuilds on file changes
-const watchGenerators = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
+const watchGenerators = gulp.parallel(watchSchema, watchGraphQlOperations, watchCSSModulesTypings)
 
 /**
  * Builds everything.

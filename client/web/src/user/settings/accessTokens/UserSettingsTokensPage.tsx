@@ -153,7 +153,7 @@ const queryAccessTokens = (variables: AccessTokensVariables): Observable<AccessT
                 throw new Error('User not found')
             }
             if (data.node.__typename !== 'User') {
-                throw new Error(`Mode is a ${data.node.__typename}, not a User`)
+                throw new Error(`Node is a ${data.node.__typename}, not a User`)
             }
             return data.node.accessTokens
         })

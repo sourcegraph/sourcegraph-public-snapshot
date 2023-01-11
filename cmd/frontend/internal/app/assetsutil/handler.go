@@ -2,25 +2,22 @@
 package assetsutil
 
 import (
-	"log"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 
 	"github.com/shurcooL/httpgzip"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
-// Mount mounts the static asset handler.
-func Mount(mux *http.ServeMux) {
-	const urlPathPrefix = "/.assets"
-
+// Creates the static asset handler. The handler should be wrapped into a middleware
+// that enables cross-origin requests to allow the loading of the Phabricator native extension assets.
+func NewAssetHandler(mux *http.ServeMux) http.Handler {
 	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{DisableDirListing: true})
-	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
 		// circumstances that couldn't be reproduced
 		if filepath.Ext(r.URL.Path) == ".svg" {
@@ -60,17 +57,7 @@ func Mount(mux *http.ServeMux) {
 		}
 
 		fs.ServeHTTP(w, r)
-	})))
-}
-
-var assetsRoot = env.Get("ASSETS_ROOT", "/.assets", "URL to web assets")
-
-func init() {
-	var err error
-	baseURL, err = url.Parse(assetsRoot)
-	if err != nil {
-		log.Fatalln("Parsing ASSETS_ROOT failed:", err)
-	}
+	})
 }
 
 func isPhabricatorAsset(path string) bool {

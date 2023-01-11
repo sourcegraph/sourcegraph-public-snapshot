@@ -425,6 +425,9 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
+	if errors.Is(err, unsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

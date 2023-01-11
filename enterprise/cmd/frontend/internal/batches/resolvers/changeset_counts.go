@@ -1,16 +1,16 @@
 package resolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type changesetCountsResolver struct {
 	counts *state.ChangesetCounts
 }
 
-func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.counts.Time}
+func (r *changesetCountsResolver) Date() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.counts.Time}
 }
 func (r *changesetCountsResolver) Total() int32                { return r.counts.Total }
 func (r *changesetCountsResolver) Merged() int32               { return r.counts.Merged }

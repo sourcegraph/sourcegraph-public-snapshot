@@ -22,11 +22,11 @@ func TestResolver_Insights(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	resolver := newWithClock(insightsDB, postgres, clock)
 
-	insightsConnection, err := resolver.Insights(ctx, nil)
+	insightsConnection, err := resolver.InsightViews(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

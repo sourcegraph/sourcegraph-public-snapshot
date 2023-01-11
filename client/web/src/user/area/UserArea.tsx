@@ -4,8 +4,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,12 +44,11 @@ export const UserAreaGQLFragment = gql`
         avatarURL
         viewerCanAdminister
         builtinAuth
-        tags @include(if: $siteAdmin)
     }
 `
 
 export const USER_AREA_USER_PROFILE = gql`
-    query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+    query UserAreaUserProfile($username: String!) {
         user(username: $username) {
             ...UserAreaUserFields
         }
@@ -66,12 +63,10 @@ export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
-        ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
-        ActivationProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps {
@@ -93,12 +88,10 @@ interface UserAreaProps
  * Properties passed to all page components in the user area.
  */
 export interface UserAreaRouteContext
-    extends ExtensionsControllerProps,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
-        ActivationProps,
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -139,7 +132,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
-            variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
+            variables: { username },
         }
     )
 
@@ -160,7 +153,11 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     const user = data?.user ?? previousData?.user
 
     if (loading && !user) {
-        return null
+        return (
+            <div className="w-100 text-center">
+                <LoadingSpinner className="m-2" />
+            </div>
+        )
     }
 
     if (error) {

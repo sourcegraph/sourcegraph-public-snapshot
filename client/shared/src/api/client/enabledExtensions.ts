@@ -1,18 +1,10 @@
 import { isEqual, once } from 'lodash'
-import { combineLatest, from, Observable, of, throwError } from 'rxjs'
-import { fromFetch } from 'rxjs/fetch'
+import { combineLatest, from, Observable, throwError } from 'rxjs'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
-import { checkOk } from '@sourcegraph/http-client'
+import { asError } from '@sourcegraph/common'
 
-import {
-    ConfiguredExtension,
-    ConfiguredExtensionManifestDefaultFields,
-    extensionIDsFromSettings,
-    isExtensionEnabled,
-} from '../../extensions/extension'
-import { ExtensionManifest } from '../../extensions/extensionManifest'
+import { ConfiguredExtension, extensionIDsFromSettings, isExtensionEnabled } from '../../extensions/extension'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
 import { PlatformContext } from '../../platform/context'
@@ -39,37 +31,16 @@ function viewerConfiguredExtensions({
 }
 
 /**
- * The manifest of an extension sideloaded during local development.
- *
- * Doesn't include {@link ExtensionManifest#url}, as this is added when
- * publishing an extension to the registry.
- * Instead, the bundle URL is computed from the manifest's `main` field.
+ * List of extensions migrated to the core workflow.
  */
-interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
-    name: string
-    main: string
-}
-
-export const getConfiguredSideloadedExtension = (
-    baseUrl: string
-): Observable<ConfiguredExtension<ConfiguredExtensionManifestDefaultFields | 'publisher'>> =>
-    fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
-        map(
-            (response: SideloadedExtensionManifest): ConfiguredExtension => ({
-                id: response.name,
-                manifest: {
-                    ...response,
-                    url: `${baseUrl}/${response.main.replace('dist/', '')}`,
-                },
-            })
-        )
-    )
-
-/**
- * List of extensions migrated to the core workflow. These extensions should not be activated if
- * `extensionsAsCoreFeatures` experimental feature is enabled.
- */
-export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
+export const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set([
+    'sourcegraph/git-extras',
+    'sourcegraph/search-export',
+    'sourcegraph/open-in-editor',
+    'sourcegraph/open-in-vscode',
+    'dymka/open-in-webstorm',
+    'sourcegraph/open-in-atom',
+])
 
 /**
  * Returns an Observable of extensions enabled for the user.
@@ -79,53 +50,41 @@ export const getEnabledExtensions = once(
     (
         context: Pick<
             PlatformContext,
-            | 'settings'
-            | 'getGraphQLClient'
-            | 'sideloadedExtensionURL'
-            | 'getScriptURLForExtension'
-            | 'clientApplication'
+            'settings' | 'getGraphQLClient' | 'getScriptURLForExtension' | 'clientApplication'
         >
-    ): Observable<ConfiguredExtension[]> => {
-        const sideloadedExtension = from(context.sideloadedExtensionURL).pipe(
-            switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
-            catchError(error => {
-                console.error('Error sideloading extension', error)
-                return of(null)
-            })
-        )
+    ): Observable<ConfiguredExtension[]> =>
+        combineLatest([viewerConfiguredExtensions(context), context.settings]).pipe(
+            map(([configuredExtensions, settings]) => {
+                const enableGoImportsSearchQueryTransform =
+                    isSettingsValid(settings) &&
+                    settings.final.experimentalFeatures?.enableGoImportsSearchQueryTransform
 
-        return combineLatest([viewerConfiguredExtensions(context), sideloadedExtension, context.settings]).pipe(
-            map(([configuredExtensions, sideloadedExtension, settings]) => {
-                const extensionsAsCoreFeatures =
-                    isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
-
-                let enabled = configuredExtensions.filter(extension => {
+                return configuredExtensions.filter(extension => {
+                    const extensionsAsCoreFeatureMigratedExtension = MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(
+                        extension.id
+                    )
                     // Ignore extensions migrated to the core workflow if the experimental feature is enabled
+                    if (context.clientApplication === 'sourcegraph' && extensionsAsCoreFeatureMigratedExtension) {
+                        return false
+                    }
+
+                    // Go import search query transform is enabled by default but can be disabled by the setting
+                    const enableGoImportsSearchQueryTransformMigratedExtension =
+                        (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) &&
+                        extension.id === 'go-imports-search'
+                    // Ignore loading the go-imports-search extension when the migrated go imports search is enabled
                     if (
                         context.clientApplication === 'sourcegraph' &&
-                        extensionsAsCoreFeatures &&
-                        MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                        enableGoImportsSearchQueryTransformMigratedExtension
                     ) {
                         return false
                     }
 
                     return isExtensionEnabled(settings.final, extension.id)
                 })
-                if (sideloadedExtension) {
-                    if (!isErrorLike(sideloadedExtension.manifest) && sideloadedExtension.manifest?.publisher) {
-                        // Disable extension with the same ID while this extension is sideloaded
-                        const constructedID = `${sideloadedExtension.manifest.publisher}/${sideloadedExtension.id}`
-                        enabled = enabled.filter(extension => extension.id !== constructedID)
-                    }
-
-                    enabled.push(sideloadedExtension)
-                }
-
-                return enabled
             }),
             distinctUntilChanged((a, b) => areExtensionsSame(a, b)),
             publishReplay(1),
             refCount()
         )
-    }
 )

@@ -38,7 +38,7 @@ func TestLicenseKeyFieldsMigrator(t *testing.T) {
 
 	// Ensure there is no progress before migration
 	migrator := NewLicenseKeyFieldsMigrator(store, 500)
-	progress, err := migrator.Progress(ctx)
+	progress, err := migrator.Progress(ctx, false)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, progress)
 
@@ -46,7 +46,7 @@ func TestLicenseKeyFieldsMigrator(t *testing.T) {
 	err = migrator.Up(ctx)
 	require.NoError(t, err)
 
-	progress, err = migrator.Progress(ctx)
+	progress, err = migrator.Progress(ctx, false)
 	require.NoError(t, err)
 	require.Equal(t, 1.0, progress)
 

@@ -1,14 +1,20 @@
-import { escapeRegExp } from 'lodash'
-import { Observable } from 'rxjs'
+import { Location } from 'history'
+import { escapeRegExp, memoize } from 'lodash'
+import { from, Observable, of } from 'rxjs'
+import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
-import { replaceRange } from '@sourcegraph/common'
+import { memoizeObservable } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+
+export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -42,6 +48,23 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return undefined
 }
 
+export function parseSearchURLSearchMode(query: string): SearchMode {
+    const defaultSearchMode = SearchMode.Precise
+    const searchParameters = new URLSearchParams(query)
+    const searchModeStr = searchParameters.get('sm')
+    if (!searchModeStr) {
+        return defaultSearchMode
+    }
+
+    const searchMode = parseInt(searchModeStr, 10)
+    switch (searchMode) {
+        case SearchMode.Precise:
+        case SearchMode.SmartSearch:
+            return searchMode
+    }
+    return defaultSearchMode
+}
+
 function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -57,6 +80,7 @@ export interface ParsedSearchURL {
     query: string | undefined
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
+    searchMode: SearchMode
 }
 
 /**
@@ -65,6 +89,7 @@ export interface ParsedSearchURL {
  * - the canonical, user-visible query (with `patternType` and `case` filters excluded),
  * - the effective pattern type, and
  * - the effective case sensitivity of the query.
+ * - the search mode that defines general search behavior
  *
  * @param urlSearchQuery a URL's query string.
  */
@@ -75,11 +100,12 @@ export function parseSearchURL(
     let queryInput = parseSearchURLQuery(urlSearchQuery) || ''
     let patternTypeInput = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+    const searchMode = parseSearchURLSearchMode(urlSearchQuery)
 
     const globalPatternType = findFilter(queryInput, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        queryInput = replaceRange(queryInput, globalPatternType.range)
+        queryInput = omitFilter(queryInput, globalPatternType)
         patternTypeInput = globalPatternType.value.value as SearchPatternType
     }
 
@@ -93,7 +119,7 @@ export function parseSearchURL(
     const globalCase = findFilter(query, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        query = replaceRange(query, globalCase.range)
+        query = omitFilter(query, globalCase)
 
         if (discreteValueAliases.yes.includes(globalCase.value.value)) {
             caseSensitive = true
@@ -111,6 +137,7 @@ export function parseSearchURL(
         query,
         patternType,
         caseSensitive,
+        searchMode,
     }
 }
 
@@ -178,14 +205,92 @@ export function literalSearchCompatibility({ queryInput, patternTypeInput }: Que
     }
 }
 
-export interface HomePanelsProps {
-    /** Function that returns current time (for stability in visual tests). */
-    now?: () => Date
-}
-
 export interface SearchStreamingProps {
     streamSearch: (
         queryObservable: Observable<string>,
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
+}
+
+interface ParsedSearchURLAndContext extends ParsedSearchURL {
+    /**
+     * Search context extracted from query.
+     */
+    searchContextSpec: string | undefined
+    /**
+     * Cleaned up query (if search contexts are enabled and URL query contains a
+     * search context, this property contains the query without the context
+     * filter)
+     */
+    processedQuery: string
+}
+
+/**
+ * getQueryStateFromLocation listens to history changes (via the location
+ * observable) and extracts search query information while also handling and
+ * validating search context information.
+ * It returns an observable that emits the parsed query information, the
+ * extracted search context (if any) and a processed version of the query
+ * (without context filter).
+ */
+export function getQueryStateFromLocation({
+    location,
+    showSearchContext,
+    isSearchContextAvailable,
+}: {
+    location: Observable<Location>
+    /**
+     * Whether or not the search context should be shown or not.
+     * This is enabled on enterprise instances
+     */
+    showSearchContext: boolean
+    /**
+     * Resolves to true if the provided search context exists for the user.
+     */
+    isSearchContextAvailable: (searchContextSpec: string) => Promise<boolean>
+}): Observable<ParsedSearchURLAndContext> {
+    // Memoized function to extract the `context:...` filter from a given
+    // search query (avoids reparsing the query)
+    const memoizedGetGlobalSearchContextSpec = memoize((query: string) => getGlobalSearchContextFilter(query))
+
+    const memoizedIsSearchContextAvailable = memoizeObservable(
+        (spec: string) =>
+            spec
+                ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
+                  // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
+                  // user selects a search context from the dropdown.
+                  // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
+                  from(isSearchContextAvailable(spec)).pipe(startWith(true), distinctUntilChanged())
+                : of(false),
+        spec => spec ?? ''
+    )
+
+    // This subscription handles updating the global query state store from
+    // the URL.
+    // Extract information from URL and validate search context if
+    // available.
+    return location.pipe(
+        switchMap((location): Observable<{ parsedSearchURL: ParsedSearchURL; isSearchContextAvailable: boolean }> => {
+            const parsedSearchURL = parseSearchURL(location.search)
+            if (parsedSearchURL.query !== undefined) {
+                return memoizedIsSearchContextAvailable(
+                    memoizedGetGlobalSearchContextSpec(parsedSearchURL.query)?.spec ?? ''
+                ).pipe(map(isSearchContextAvailable => ({ parsedSearchURL, isSearchContextAvailable })))
+            }
+            return of({ parsedSearchURL, isSearchContextAvailable: false })
+        }),
+        map(locationAndContextInformation => {
+            const { parsedSearchURL, isSearchContextAvailable } = locationAndContextInformation
+            const query = parsedSearchURL.query ?? ''
+            const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)
+            const cleanQuery =
+                // If a global search context spec is available to the user, we omit it from the
+                // query and move it to the search contexts dropdown
+                globalSearchContextSpec && isSearchContextAvailable && showSearchContext
+                    ? omitFilter(query, globalSearchContextSpec.filter)
+                    : query
+
+            return { ...parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec, processedQuery: cleanQuery }
+        })
+    )
 }

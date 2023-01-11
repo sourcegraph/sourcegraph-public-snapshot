@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { Notices } from './Notices'
 
@@ -25,7 +25,7 @@ describe('Notices', () => {
     test('no notices', () =>
         expect(
             renderWithBrandedContext(
-                <Notices location="home" settingsCascade={{ subjects: [], final: { notices: null } }} />
+                <Notices location="home" settingsCascade={{ subjects: [], final: { notices: undefined } }} />
             ).asFragment()
         ).toMatchSnapshot())
 })

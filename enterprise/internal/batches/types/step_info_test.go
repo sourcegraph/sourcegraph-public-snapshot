@@ -138,7 +138,7 @@ func TestParseLogLines(t *testing.T) {
 	time3 := timeutil.Now().Add(-5 * 60 * time.Second)
 	zero := 0
 	nonZero := 1
-	diff := `all-must-change`
+	diff := []byte(`all-must-change`)
 
 	tcs := []struct {
 		name  string
@@ -364,7 +364,8 @@ func TestParseLogLines(t *testing.T) {
 					Environment:     make(map[string]string),
 					OutputVariables: map[string]any{"test": 1},
 					ExitCode:        &zero,
-					Diff:            &diff,
+					Diff:            diff,
+					DiffFound:       true,
 				},
 			},
 		},
@@ -461,7 +462,8 @@ func TestParseLogLines(t *testing.T) {
 					OutputVariables: map[string]any{"test": 1},
 					OutputLines:     []string{"stdout: log1", "stdout: log2", "stderr: log3"},
 					ExitCode:        &zero,
-					Diff:            &diff,
+					Diff:            diff,
+					DiffFound:       true,
 				},
 				2: {
 					StartedAt:   time1,

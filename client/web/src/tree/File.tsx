@@ -6,16 +6,15 @@ import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import { NavLink } from 'react-router-dom'
-import { FileDecoration } from 'sourcegraph'
+import { NavLink, useLocation } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { InlineSymbolsResult } from '../graphql-operations'
-import { PrefetchableFile } from '../repo/blob/PrefetchableFile'
+import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -30,7 +29,6 @@ import {
     TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
-import { FileDecorator } from './FileDecorator'
 import { useTreeRootContext } from './TreeContext'
 import { TreeLayerProps } from './TreeLayer'
 import { TreeEntryInfo, getTreeItemOffset } from './util'
@@ -38,8 +36,7 @@ import { TreeEntryInfo, getTreeItemOffset } from './util'
 import styles from './File.module.scss'
 import treeStyles from './Tree.module.scss'
 
-interface FileProps extends ThemeProps {
-    fileDecorations?: FileDecoration[]
+interface FileProps {
     entryInfo: TreeEntryInfo
     depth: number
     index: number
@@ -52,9 +49,6 @@ interface FileProps extends ThemeProps {
     customIconPath?: string
     enableMergedFileSymbolSidebar: boolean
     isGoUpTreeLink?: boolean
-
-    // For core workflow inline symbols redesign
-    location: H.Location
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
@@ -66,28 +60,17 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         entryInfo,
         linkRowClick,
         noopRowClick,
-        fileDecorations,
-        isLightTheme,
         depth,
         index,
-        location,
         enableMergedFileSymbolSidebar,
         customIconPath,
     } = props
 
-    const { commitID, repoName } = useTreeRootContext()
+    const { revision, repoName } = useTreeRootContext()
     const isSidebarFilePrefetchEnabled = useExperimentalFeatures(
         features => features.enableSidebarFilePrefetch ?? false
     )
-
-    const renderedFileDecorations = (
-        <FileDecorator
-            // If component is not specified, or it is 'sidebar', render it.
-            fileDecorations={fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-            isLightTheme={isLightTheme}
-            isActive={isActive}
-        />
-    )
+    const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const offsetStyle = getTreeItemOffset(depth)
 
@@ -112,7 +95,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     <TreeRowLabel className="test-file-decorable-name">
                                         {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
-                                    {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContentsLink>
                         ) : (
@@ -124,15 +106,20 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     <TreeRowLabel className="test-file-decorable-name">
                                         {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
-                                    {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContents>
                         )
                     ) : (
                         <PrefetchableFile
                             isPrefetchEnabled={isSidebarFilePrefetchEnabled && !isActive && !isGoUpTreeLink}
+                            prefetch={params =>
+                                fetchBlob({
+                                    ...params,
+                                    format: prefetchBlobFormat,
+                                })
+                            }
                             isSelected={isSelected}
-                            revision={commitID}
+                            revision={revision}
                             repoName={repoName}
                             filePath={entryInfo.path}
                             as={TreeLayerRowContentsLink}
@@ -155,22 +142,19 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                     />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">{entryInfo.name}</TreeRowLabel>
-                                {renderedFileDecorations}
                             </TreeLayerRowContentsText>
                         </PrefetchableFile>
                     )}
                     {index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
-                            variant="warning"
+                            variant="note"
                             style={getTreeItemOffset(depth + 1)}
-                            error="Too many entries. Use search to find a specific file."
+                            error="Full list of files is too long to display. Use search to find specific file."
                         />
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {enableMergedFileSymbolSidebar && isActive && (
-                <Symbols activePath={entryInfo.path} location={location} style={offsetStyle} />
-            )}
+            {enableMergedFileSymbolSidebar && isActive && <Symbols activePath={entryInfo.path} style={offsetStyle} />}
         </>
     )
 }
@@ -222,10 +206,11 @@ export const SYMBOLS_QUERY = gql`
 `
 
 interface SymbolsProps
-    extends Pick<TreeLayerProps, 'activePath' | 'location'>,
+    extends Pick<TreeLayerProps, 'activePath'>,
         Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
 
-const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, location, style }) => {
+const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) => {
+    const location = useLocation()
     const { repoID, revision } = useTreeRootContext()
     const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
         variables: {
@@ -246,6 +231,8 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, location, 
             isEqual(currentLocation.position, symbolLocation.position)
         )
     }
+
+    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
     if (loading) {
         return (
@@ -281,7 +268,11 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, location, 
                                 className={classNames('test-symbol-link', styles.link)}
                                 activeClassName={styles.linkActive}
                             >
-                                <SymbolTag kind={symbol.kind} className="mr-1 test-symbol-icon" />
+                                <SymbolKind
+                                    kind={symbol.kind}
+                                    className="mr-1 test-symbol-icon"
+                                    symbolKindTags={symbolKindTags}
+                                />
                                 <span className={classNames('test-symbol-name')}>{symbol.name}</span>
                             </NavLink>
                         </li>

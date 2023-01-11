@@ -24,10 +24,10 @@ type SqliteConfig struct {
 	MaxConcurrentlyIndexing int
 }
 
-func LoadSqliteConfig(baseConfig env.BaseConfig) SqliteConfig {
+func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
 	return SqliteConfig{
-		Ctags:                   LoadCtagsConfig(baseConfig),
-		RepositoryFetcher:       LoadRepositoryFetcherConfig(baseConfig),
+		Ctags:                   ctags,
+		RepositoryFetcher:       repositoryFetcher,
 		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),

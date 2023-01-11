@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -34,23 +35,26 @@ func (j *syncingJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if envvar.SourcegraphDotComMode() {
 		// If we're on sourcegraph.com we don't want to run this
 		return nil, nil
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), database.NewDB(logger, db), cf)
+	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerCF := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
+	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
 
-	store := database.NewDB(logger, db).ExternalServices()
-	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
-		versions, err := loadVersions(ctx, logger, store, sourcer)
+	store := db.ExternalServices()
+	handler := goroutine.HandlerFunc(func(ctx context.Context) error {
+		versions, err := loadVersions(ctx, observationCtx.Logger, store, sourcer)
 		if err != nil {
 			return err
 		}
@@ -59,7 +63,7 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 
 	return []goroutine.BackgroundRoutine{
 		// Pass a fresh context, see docs for shared.Job
-		goroutine.NewPeriodicGoroutine(context.Background(), syncInterval, handler),
+		goroutine.NewPeriodicGoroutine(context.Background(), "repomgmt.version-syncer", "sync versions of external services", syncInterval, handler),
 	}, nil
 }
 
@@ -110,6 +114,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 		versions = append(versions, &Version{
 			ExternalServiceKind: svc.Kind,
 			Version:             v,
+			Key:                 svc.URN(),
 		})
 	}
 

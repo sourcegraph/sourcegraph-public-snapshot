@@ -3,10 +3,9 @@ import path from 'path'
 
 import html from 'tagged-template-noop'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { SearchUIGraphQlOperations } from '@sourcegraph/search-ui'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import {
     createSharedIntegrationTestContext,
@@ -20,10 +19,11 @@ import { SourcegraphContext } from '../jscontext'
 import { isHotReloadEnabled } from './environment'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'
+import { TemporarySettingsContext } from './temporarySettingsContext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
-        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations & SearchUIGraphQlOperations,
+        WebGraphQlOperations & SharedGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     > {
     /**
@@ -37,6 +37,11 @@ export interface WebIntegrationTestContext
      * @param overrides The array of events to return.
      */
     overrideSearchStreamEvents: (overrides: SearchEvent[]) => void
+
+    /**
+     * Configures initial values for temporary settings.
+     */
+    overrideInitialTemporarySettings: (overrides: TemporarySettings) => void
 }
 
 const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
@@ -73,6 +78,9 @@ export const createWebIntegrationTestContext = async ({
 
     sharedTestContext.overrideGraphQL(commonWebGraphQlResults)
     let jsContext = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
+
+    const tempSettings = new TemporarySettingsContext()
+    sharedTestContext.overrideGraphQL(tempSettings.getGraphQLOverrides())
 
     if (!config.disableAppAssetsMocking) {
         // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
@@ -126,6 +134,9 @@ export const createWebIntegrationTestContext = async ({
         },
         overrideSearchStreamEvents: overrides => {
             searchStreamEventOverrides = overrides
+        },
+        overrideInitialTemporarySettings: overrides => {
+            tempSettings.overrideInitialTemporarySettings(overrides)
         },
     }
 }

@@ -3,9 +3,6 @@ import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-
 import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
@@ -15,6 +12,7 @@ import {
     BatchChangeFields,
     BatchSpecState,
     BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
@@ -69,7 +67,7 @@ const batchChangeDefaults: BatchChangeFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -89,6 +87,16 @@ const batchChangeDefaults: BatchChangeFields = {
             nodes: [],
             pageInfo: { hasNextPage: false },
             totalCount: 0,
+        },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 0,
+            nodes: [],
+        },
+        files: null,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
         },
     },
     batchSpecs: {
@@ -155,7 +163,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: '123',
@@ -203,7 +210,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: null,
@@ -273,9 +279,6 @@ export const Overview: Story = args => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -314,9 +317,6 @@ export const NoOpenChangesets: Story = () => {
                     namespaceID="n123"
                     batchChangeName="c123"
                     fetchBatchChangeByNamespace={fetchBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>

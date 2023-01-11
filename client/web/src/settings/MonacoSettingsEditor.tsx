@@ -322,8 +322,7 @@ function registerRedactedHover(editor: typeof monaco): monaco.IDisposable {
                 return {
                     contents: [
                         {
-                            value:
-                                "**This field is redacted.** To update, replace with a new value. Otherwise, don't modify this field.",
+                            value: "**This field is redacted.** To update, replace with a new value. Otherwise, don't modify this field.",
                         },
                     ],
                 }
@@ -337,9 +336,7 @@ function registerRedactedHover(editor: typeof monaco): monaco.IDisposable {
  * A helper function that modifies site configuration to configure specific
  * common things, such as syncing GitHub repositories.
  */
-export type ConfigInsertionFunction = (
-    configJSON: string
-) => {
+export type ConfigInsertionFunction = (configJSON: string) => {
     /** The edits to make to the input configuration to insert the new configuration. */
     edits: jsonc.Edit[]
 

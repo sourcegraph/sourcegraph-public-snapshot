@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,13 +77,9 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 	}
 
 	// Construct changeset source.
-	b.css, err = b.sourcer.ForRepo(ctx, b.tx, b.repo)
+	b.css, err = b.sourcer.ForUser(ctx, b.tx, job.UserID, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")
-	}
-	b.css, err = sources.WithAuthenticatorForUser(ctx, b.tx, b.css, job.UserID, b.repo)
-	if err != nil {
-		return errors.Wrap(err, "authenticating ChangesetSource")
 	}
 
 	log15.Info("processing changeset job", "type", job.JobType)
@@ -187,7 +184,7 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -222,7 +219,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)

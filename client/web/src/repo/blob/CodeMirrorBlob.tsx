@@ -2,30 +2,39 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
-import { search, searchKeymap } from '@codemirror/search'
-import { Compartment, EditorState, Extension } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { openSearchPanel } from '@codemirror/search'
+import { Compartment, EditorState, Extension, Line } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
-import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
-
-import { blameDecorationType, BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { blobPropsFacet } from './codemirror'
 import {
-    enableExtensionsDecorationsColumnView as enableColumnView,
-    showTextDocumentDecorations,
-} from './codemirror/decorations'
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
+import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/wildcard'
+
+import { useExperimentalFeatures } from '../../stores'
+
+import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { blobPropsFacet } from './codemirror'
+import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
-import { hovercardRanges } from './codemirror/hovercard'
-import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
+import { pin, updatePin } from './codemirror/hovercard'
+import { selectableLineNumbers, SelectedLineRange, selectLines, shouldScrollIntoView } from './codemirror/linenumbers'
+import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
+import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
+import { tokensAsLinks } from './codemirror/tokens-as-links'
+import { isValidLineRange } from './codemirror/utils'
+import { setBlobEditView } from './use-blob-store'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -35,26 +44,38 @@ const staticExtensions: Extension = [
         // triggering the in-document search (see below) work when Mod-f is
         // pressed
         tabindex: '0',
+        // CodeMirror defaults to role="textbox" which does not produce the
+        // desired screenreader behavior we want for this component.
+        // See https://github.com/sourcegraph/sourcegraph/issues/43375
+        role: 'generic',
     }),
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
             backgroundColor: 'var(--code-bg)',
         },
-        '.selected-line': {
-            backgroundColor: 'var(--code-selection-bg)',
+        '.cm-scroller': {
+            fontFamily: 'var(--code-font-family)',
+            fontSize: 'var(--code-font-size)',
+            lineHeight: '1rem',
         },
         '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
         },
+        '.cm-line': {
+            paddingLeft: '1rem',
+        },
+        '.selected-line': {
+            backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.selected-line:focus': {
+            boxShadow: 'none',
+        },
+        '.highlighted-line': {
+            backgroundColor: 'var(--code-selection-bg)',
+        },
     }),
-    // Note that these only work out-of-the-box because the editor is
-    // *focusable* but read-only (see EditorState.readOnly above).
-    search({ top: true }),
-    keymap.of(searchKeymap),
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
@@ -62,32 +83,12 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame information
+// Compartment to update blame decorations
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
-
-// See CodeMirrorQueryInput for a detailed comment about the pattern that's used
-// below. The CodeMirror search bar uses a similar pattern to support global
-// shortcuts (including Mod-k) while the search bar is focused.
-const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'onHandleFuzzyFinder'>>(
-    { onHandleFuzzyFinder: () => {} },
-    callbacks => [
-        keymap.of([
-            {
-                key: 'Mod-k',
-                run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
-                        return true
-                    }
-                    return false
-                },
-            },
-        ]),
-    ]
-)
+// Compartment for line wrapping.
+const wrapCodeCompartment = new Compartment()
 
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -97,16 +98,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ariaLabel,
         role,
         extensionsController,
-        settingsCascade,
         location,
         history,
-        blameDecorations: blameTextDocumentDecorations,
+        isBlameVisible,
+        blameHunks,
+        enableLinkDrivenCodeNavigation,
+        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
-        disableStatusBar,
-        disableDecorations,
-        onHandleFuzzyFinder,
+        navigateToLineOnAnyClick,
+
+        overrideBrowserSearchKeybinding,
+        'data-testid': dataTestId,
     } = props
+
+    const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
@@ -117,28 +123,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
-    const settings = useMemo(
-        () => [
-            wrapCode ? EditorView.lineWrapping : [],
-            EditorView.darkTheme.of(isLightTheme === false),
-            enableColumnView.of(enableExtensionsDecorationsColumnView),
-        ],
-        [wrapCode, isLightTheme, enableExtensionsDecorationsColumnView]
-    )
+    const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
+    const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
     const blameDecorations = useMemo(
         () =>
-            blameTextDocumentDecorations
-                ? [
-                      // Force column view if blameDecorations is set
-                      enableColumnView.of(true),
-                      showTextDocumentDecorations.of([[blameDecorationType, blameTextDocumentDecorations]]),
-                  ]
-                : [],
-
-        [blameTextDocumentDecorations]
+            createBlameDecorationsExtension(
+                !!isBlameVisible,
+                blameHunks?.current,
+                blameHunks?.firstCommitDate,
+                isLightTheme
+            ),
+        [isBlameVisible, blameHunks, isLightTheme]
     )
+
+    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -148,66 +147,96 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange) => {
-        const parameters = new URLSearchParams(locationRef.current.search)
-        let query: string | undefined
+    const customHistoryAction = props.nav
+    const onSelection = useCallback(
+        (range: SelectedLineRange) => {
+            const parameters = new URLSearchParams(locationRef.current.search)
+            parameters.delete('popover')
 
-        if (range?.line !== range?.endLine && range?.endLine) {
-            query = toPositionOrRangeQueryParameter({
-                range: {
-                    start: { line: range.line },
-                    end: { line: range.endLine },
-                },
-            })
-        } else if (range?.line) {
-            query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
-        }
+            let query: string | undefined
 
-        updateBrowserHistoryIfChanged(
-            historyRef.current,
-            locationRef.current,
-            addLineRangeQueryParameter(parameters, query)
-        )
-    }, [])
+            if (range?.line !== range?.endLine && range?.endLine) {
+                query = toPositionOrRangeQueryParameter({
+                    range: {
+                        start: { line: range.line },
+                        end: { line: range.endLine },
+                    },
+                })
+            } else if (range?.line) {
+                query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
+            }
 
+            const newSearchParameters = addLineRangeQueryParameter(parameters, query)
+            if (customHistoryAction) {
+                customHistoryAction(
+                    historyRef.current.createHref({
+                        ...locationRef.current,
+                        search: formatSearchParameters(newSearchParameters),
+                    })
+                )
+            } else {
+                updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+            }
+        },
+        [customHistoryAction]
+    )
     const extensions = useMemo(
         () => [
+            // Log uncaught errors that happen in callbacks that we pass to
+            // CodeMirror. Without this exception sink, exceptions get silently
+            // ignored making it difficult to debug issues caused by uncaught
+            // exceptions.
+            // eslint-disable-next-line no-console
+            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
-            callbacksField,
-            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
+            selectableLineNumbers({
+                onSelection,
+                initialSelection: position.line !== undefined ? position : null,
+                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                enableSelectionDrivenCodeNavigation,
+            }),
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
-            pinnedRangeField.init(() => (hasPin ? position : null)),
-            extensionsController !== null
+            pin.init(() => (hasPin ? position : null)),
+            extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      disableStatusBar,
-                      disableDecorations,
+                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            settingsCompartment.of(settings),
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
+            settingsCompartment.of(themeSettings),
+            wrapCodeCompartment.of(wrapCodeSettings),
+            search({
+                // useFileSearch is not a dependency because the search
+                // extension manages its own state. This is just the initial
+                // value
+                overrideBrowserFindInPageShortcut: useFileSearch,
+                onOverrideBrowserFindInPageToggle: setUseFileSearch,
+            }),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
-        // further below. However they are still needed here because we need to
+        // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
+        [onSelection, blobInfo, extensionsController]
     )
 
+    const editorRef = useRef<EditorView>()
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
+    editorRef.current = editor
 
-    useEffect(() => {
-        if (editor) {
-            setCallbacks(editor, { onHandleFuzzyFinder })
-        }
-    }, [editor, onHandleFuzzyFinder])
+    // Sync editor store with global Zustand store API
+    useEffect(() => setBlobEditView(editor ?? null), [editor])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -215,12 +244,26 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            editor.setState(
-                EditorState.create({
-                    doc: blobInfo.content,
-                    extensions,
-                })
-            )
+            const state = EditorState.create({ doc: blobInfo.content, extensions })
+            editor.setState(state)
+
+            if (!enableSelectionDrivenCodeNavigation) {
+                return
+            }
+
+            // Sync editor selection with the URL so that triggering
+            // `history.goBack/goForward()` works similar to the "Go back"
+            // command in VS Code.
+            const { range } = selectionFromLocation(editor, historyRef.current.location)
+            if (range) {
+                selectRange(editor, range)
+                // Automatically focus the content DOM to enable keyboard
+                // navigation. Without this automatic focus, users need to click
+                // on the blob view with the mouse.
+                // NOTE: this focus statment does not seem to have an effect
+                // when using macOS VoiceOver.
+                editor.contentDOM.focus({ preventScroll: true })
+            }
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -237,8 +280,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
 
-    // Update blame information
-    useEffect(() => {
+    // Update blame decorations
+    useLayoutEffect(() => {
         if (editor) {
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
         }
@@ -247,15 +290,33 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blameDecorations])
 
-    // Update settings
+    // Update theme
     useEffect(() => {
         if (editor) {
-            editor.dispatch({ effects: settingsCompartment.reconfigure(settings) })
+            editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [settings])
+    }, [themeSettings])
+
+    // Update line wrapping
+    useEffect(() => {
+        if (editor) {
+            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings)]
+            const firstLine = firstVisibleLine(editor)
+            if (firstLine) {
+                // Avoid jumpy scrollbar when enabling line wrapping by forcing the
+                // scroll bar to preserve the top line number that's visible.
+                // Details https://github.com/sourcegraph/sourcegraph/issues/41413
+                effects.push(EditorView.scrollIntoView(firstLine.from, { y: 'start' }))
+            }
+            editor.dispatch({ effects })
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wrapCodeSettings])
 
     // Update selected lines when URL changes
     useEffect(() => {
@@ -271,14 +332,34 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
             // Only update range if position is valid inside the document.
-            updatePinnedRangeField(editor, hasPin ? position : null)
+            updatePin(editor, hasPin ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
 
-    return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+    const openSearch = useCallback(() => {
+        if (editorRef.current) {
+            openSearchPanel(editorRef.current)
+        }
+    }, [])
+
+    return (
+        <>
+            <div
+                ref={setContainer}
+                aria-label={ariaLabel}
+                role={role}
+                data-testid={dataTestId}
+                className={`${className} overflow-hidden test-editor`}
+                data-editor="codemirror6"
+            />
+            {overrideBrowserSearchKeybinding && useFileSearch && (
+                <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
+            )}
+        </>
+    )
 }
 
 /**
@@ -303,60 +384,23 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
     }, [blobInfo])
 }
 
-/**
- * Field used by the CodeMirror blob view to provide hovercard range information
- * for pinned cards. Since we have to use the editor's current state to compute
- * the final position we are using a field instead of a compartment to provide
- * this information.
- */
-const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrPositionOrRange | null>(null, field =>
-    hovercardRanges.computeN([field], state => {
-        const position = state.field(field)
-        if (!position) {
-            return []
-        }
-
-        if (!position.line || !position.character) {
-            return []
-        }
-        const startLine = state.doc.line(position.line)
-
-        const startPosition = {
-            line: position.line,
-            character: position.character,
-        }
-        const from = uiPositionToOffset(state.doc, startPosition, startLine)
-
-        let endPosition: UIPositionSpec['position']
-        let to: number
-
-        if (position.endLine && position.endCharacter) {
-            endPosition = {
-                line: position.endLine,
-                character: position.endCharacter,
+// Returns the first line that is visible in the editor. We can't directly use
+// the viewport for this functionality because the viewport includes lines that
+// are rendered but not visible.
+function firstVisibleLine(view: EditorView): Line | undefined {
+    for (const { from, to } of view.visibleRanges) {
+        for (let pos = from; pos < to; ) {
+            const line = view.state.doc.lineAt(pos)
+            // This may be an inefficient way to detect the first visible line
+            // but it appears to work correctly and this is unlikely to be a
+            // performance bottleneck since we should only use need to compute
+            // this for infrequently used code-paths like when enabling/disabling
+            // line wrapping, or when lazy syntax highlighting gets loaded.
+            if (!shouldScrollIntoView(view, { line: line.number + 1 })) {
+                return line
             }
-            to = uiPositionToOffset(state.doc, endPosition)
-        } else {
-            // To determine the end position we have to find the word at the
-            // start position
-            const word = state.wordAt(from)
-            if (!word) {
-                return []
-            }
-            to = word.to
-            endPosition = offsetToUIPosition(state.doc, word.to)
+            pos = line.to + 1
         }
-
-        return [
-            {
-                to,
-                from,
-                range: {
-                    start: startPosition,
-                    end: endPosition,
-                },
-                pinned: true,
-            },
-        ]
-    })
-)
+    }
+    return undefined
+}

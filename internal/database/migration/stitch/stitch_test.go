@@ -22,6 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
+
 // Notable versions:
 //
 // v3.29.0 -> oldest supported
@@ -246,7 +251,7 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 		db := dbtest.NewRawDB(logger, t)
 		migrationsTableName := "testing"
 
-		store := connections.NewStoreShim(store.NewWithDB(db, migrationsTableName, store.NewOperations(&observation.TestContext)))
+		store := connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTableName))
 		if err := store.EnsureSchemaTable(ctx); err != nil {
 			t.Fatalf("failed to prepare store: %s", err)
 		}

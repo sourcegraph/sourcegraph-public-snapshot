@@ -7,8 +7,6 @@ import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
-import { maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
-
 import styles from './CloudSignUpPage.module.scss'
 
 interface ExternalsAuthProps {
@@ -63,17 +61,17 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
     // for other auth providers such SAML, OpenID, Okta, Azure AD, etc.
 
     const githubProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
+        provider.authenticationURL.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
     )
     const gitlabProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
+        provider.authenticationURL.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
     return (
         <>
             {githubProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
+                    to={githubProvider.authenticationURL}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -88,7 +86,7 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
 
             {gitlabProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
+                    to={gitlabProvider.authenticationURL}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',

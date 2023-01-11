@@ -6,11 +6,9 @@ import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Checkbox, Container, Icon, PageHeader, Code, Label, Input } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader, Code, Label, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -137,15 +135,15 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
      *
      * @param key The key of saved query fields that a change of this input should update
      */
-    const createInputChangeHandler = (
-        key: keyof SavedSearchFields
-    ): React.FormEventHandler<HTMLInputElement> => event => {
-        const { value, checked, type } = event.currentTarget
-        setValues(values => ({
-            ...values,
-            [key]: type === 'checkbox' ? checked : value,
-        }))
-    }
+    const createInputChangeHandler =
+        (key: keyof SavedSearchFields): React.FormEventHandler<HTMLInputElement> =>
+        event => {
+            const { value, checked, type } = event.currentTarget
+            setValues(values => ({
+                ...values,
+                [key]: type === 'checkbox' ? checked : value,
+            }))
+        }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()

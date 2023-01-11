@@ -4,10 +4,10 @@ import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
@@ -214,7 +214,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }
 
     const viewFilesCommitElement = node.tree && (
-        <div className="d-flex justify-content-between">
+        <div className="d-flex justify-content-between align-items-start">
             <Tooltip content="Browse files in the repository at this point in history">
                 <Button
                     className="align-center d-inline-flex"
@@ -244,7 +244,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 key={node.id}
                 className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
             >
-                <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                <div
+                    className={classNames('w-100 d-flex justify-content-between align-items-center flex-wrap-reverse')}
+                >
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
                         <Timestamp
@@ -321,7 +323,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </>
                 ) : (
                     <div>
-                        <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                        <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
                             <Link to={node.canonicalURL}>{oidElement}</Link>

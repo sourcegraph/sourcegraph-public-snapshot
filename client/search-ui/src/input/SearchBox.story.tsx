@@ -1,15 +1,15 @@
 import { Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { H1, H2 } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
@@ -37,15 +37,15 @@ const defaultProps: SearchBoxProps = {
     setPatternType: () => {},
     caseSensitive: false,
     setCaseSensitivity: () => {},
+    searchMode: SearchMode.Precise,
+    setSearchMode: () => {},
     searchContextsEnabled: true,
     showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
-    defaultSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     authenticatedUser: null,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,

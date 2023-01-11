@@ -1,10 +1,14 @@
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { GitObjectType, LSIFIndexState } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { LsifUploadFields, LSIFUploadState, AuditLogOperation } from '../../../../graphql-operations'
+import {
+    LsifUploadFields,
+    LSIFUploadState,
+    AuditLogOperation,
+    GitObjectType,
+    LSIFIndexState,
+} from '../../../../graphql-operations'
 
 import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
@@ -291,7 +295,7 @@ FailedUpload.args = {
             uploadedAt: '2020-06-13T12:20:30+00:00',
             startedAt: null,
             finishedAt: '2020-06-13T12:20:31+00:00',
-            failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
+            failure: 'Upload failed to complete: object store error:\n * XBlobstoreStorageFull etc etc',
         }),
 }
 

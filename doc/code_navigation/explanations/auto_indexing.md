@@ -13,17 +13,15 @@ img.screenshot {
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers.
 </p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 With Sourcegraph deployments supporting [executors](../../admin/executors.md), your repository contents can be automatically analyzed to produce a code graph index file. Once [auto-indexing is enabled](../how-to/enable_auto_indexing.md) and [auto-indexing policies are configured](../how-to/configure_auto_indexing.md), repositories will be periodically cloned into an executor sandbox, analyzed, and the resulting index file will be uploaded back to the Sourcegraph instance.
 
 ## Language support
 
-Auto-indexing is currently available for Go, TypeScript, JavaScript and Python repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on how to setup cross-dependency navigation depending on what language ecosystem you use.
+Auto-indexing is currently available for Go, TypeScript, JavaScript, Python, Ruby and JVM repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on how to setup cross-dependency navigation depending on what language ecosystem you use.
 
 ## Lifecycle of an indexing job
 

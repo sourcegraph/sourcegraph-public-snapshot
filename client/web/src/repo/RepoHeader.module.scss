@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .repo-header {
     flex: none;
     padding: 0;
@@ -32,4 +34,10 @@
 
 .spacer {
     flex: 1 1 0;
+}
+
+.breadcrumb-wrap {
+    @media (--md-breakpoint-up) {
+        flex-wrap: nowrap !important;
+    }
 }

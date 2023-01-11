@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -198,7 +197,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			t.Fatal("Cannot parse Maven dependency")
 		}
 		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
-		require.NoError(t, err)
+		require.NotNil(t, err)
 	})
 }
 
@@ -325,7 +324,7 @@ func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
 	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
 }
 
-func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
+func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
 	u := vcs.URL{
 		URL: url.URL{Path: examplePackageURL},
 	}
@@ -335,13 +334,13 @@ func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bare
 	assert.Nil(t, cmd.Run())
 }
 
-func (s vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
+func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
 	t.Helper()
 
 	require.Equal(t, want, depsSource.downloadCount)
 }
 
-func (s vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
+func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
 	t.Helper()
 
 	cmd := exec.Command("git", "show-ref", "--head", "--dereference")

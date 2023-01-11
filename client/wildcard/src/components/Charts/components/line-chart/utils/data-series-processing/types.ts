@@ -21,12 +21,14 @@ export type SeriesWithData<Datum> = StackedSeries<Datum> | IndependentSeries<Dat
 export type SeriesDatum<Datum> = StandardSeriesDatum<Datum> | StackedSeriesDatum<Datum>
 
 export interface StandardSeriesDatum<Datum> {
+    id: string
     datum: Datum
     y: number | null
     x: Date
 }
 
 export interface StackedSeriesDatum<Datum> {
+    id: string
     datum: Datum
     y1: number | null
     y0: number | null

@@ -4,8 +4,10 @@ import (
 	"archive/tar"
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -19,10 +21,7 @@ import (
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"file_without_extension": `
@@ -93,10 +92,7 @@ func foo(go string) {}
 }
 
 func TestMatcherLookupByExtension(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	t.Parallel()
 
@@ -188,10 +184,7 @@ func foo(go.txt) {}
 // Tests that structural search correctly infers the Go matcher from the .go
 // file extension.
 func TestInferredMatcher(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"main.go": `
@@ -288,10 +281,7 @@ func TestRecordMetrics(t *testing.T) {
 // instead (currently) expects a list of patterns that represent a set of file
 // paths to search.
 func TestIncludePatterns(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"a/b/c":         "",
@@ -340,10 +330,7 @@ func TestIncludePatterns(t *testing.T) {
 }
 
 func TestRule(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"file.go": "func foo(success) {} func bar(fail) {}",
@@ -388,10 +375,7 @@ func TestRule(t *testing.T) {
 }
 
 func TestStructuralLimits(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"test1.go": `
@@ -445,10 +429,7 @@ func bar() {
 }
 
 func TestMatchCountForMultilineMatches(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"main.go": `
@@ -491,10 +472,7 @@ func bar() {
 }
 
 func TestMultilineMatches(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"main.go": `
@@ -688,10 +666,7 @@ func Test_chunkRanges(t *testing.T) {
 }
 
 func TestTarInput(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
+	maybeSkipComby(t)
 
 	input := map[string]string{
 		"main.go": `
@@ -747,4 +722,17 @@ func bar() {
 		}}
 		require.Equal(t, expected, matches)
 	})
+}
+
+func maybeSkipComby(t *testing.T) {
+	t.Helper()
+	if os.Getenv("CI") != "" {
+		return
+	}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		t.Skip("Skipping due to limitations in comby and M1")
+	}
+	if _, err := exec.LookPath("comby"); err != nil {
+		t.Skipf("skipping comby test when not on CI: %v", err)
+	}
 }

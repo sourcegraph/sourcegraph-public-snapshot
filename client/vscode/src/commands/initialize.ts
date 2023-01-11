@@ -4,7 +4,6 @@ import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
-import { VSCE_COMMANDS_PARAMS } from '../common/links'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
 import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
@@ -39,7 +38,7 @@ export function initializeCodeSharingCommands(
             }
             const uri = `${instanceUrl}/search?q=context:global+${encodeURIComponent(
                 selectedQuery
-            )}&patternType=literal${vsceUtms}`
+            )}&patternType=literal`
             await vscode.env.openExternal(vscode.Uri.parse(uri))
         })
     )
@@ -57,8 +56,15 @@ export function initializeCodeSharingCommands(
     }
 }
 
-export const vsceUtms = '&' + VSCE_COMMANDS_PARAMS
-
+/**
+ * Generates a link to a blob on a Sourcegraph instance.
+ *
+ * @param uri - The VSCode URI of the blob.
+ * @param startLine - The zero-based line value.
+ * @param startChar - The zero-based character value.
+ * @param endLine - The zero-based line value.
+ * @param endChar - The zero-based character value.
+ */
 export function generateSourcegraphBlobLink(
     uri: vscode.Uri,
     startLine: number,
@@ -72,8 +78,9 @@ export function generateSourcegraphBlobLink(
     // Using SourcegraphUri.parse to properly decode repo revision
     const decodedUri = SourcegraphUri.parse(uri.toString())
     const finalUri = new URL(decodedUri.uri)
-    finalUri.search = `L${encodeURIComponent(String(startLine))}:${encodeURIComponent(
-        String(startChar)
-    )}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(String(endChar))}${vsceUtms}`
+    // Sourcegraph expects 1-based line and character values
+    finalUri.search = `L${encodeURIComponent(String(startLine + 1))}:${encodeURIComponent(
+        String(startChar + 1)
+    )}-${encodeURIComponent(String(endLine + 1))}:${encodeURIComponent(String(endChar + 1))}`
     return finalUri.href.replace(finalUri.protocol, instanceUrl.protocol)
 }

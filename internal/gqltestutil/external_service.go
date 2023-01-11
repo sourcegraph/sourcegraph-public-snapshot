@@ -88,34 +88,48 @@ mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
 	return resp.Data.UpdateExternalService.ID, nil
 }
 
+// CheckExternalService checks whether the external service exists.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) CheckExternalService(id string) error {
+	const query = `
+query CheckExternalService($id: ID!) {
+	node(id: $id) {
+		... on ExternalService {
+			id
+		}
+	}
+}
+`
+	variables := map[string]any{"id": id}
+	var resp struct {
+		Data struct {
+			Node struct {
+				ID string `json:"id"`
+			} `json:"node"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
+}
+
 // DeleteExternalService deletes the external service by given GraphQL node ID.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) DeleteExternalService(id string, async bool) error {
 	const query = `
-mutation DeleteExternalService($externalService: ID!) {
-	 deleteExternalService(externalService: $externalService) {
-		alwaysNil
-	}
-}
-`
-	const asyncQuery = `
 mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
-	 deleteExternalService(externalService: $externalService, async: $async) {
+	deleteExternalService(externalService: $externalService, async: $async) {
 		alwaysNil
 	}
 }
 `
-	variables := map[string]any{
-		"externalService": id,
-	}
-	q := query
-	if async {
-		q = asyncQuery
-		variables["async"] = true
-	}
+	variables := map[string]any{"externalService": id, "async": async}
 
-	err := c.GraphQL("", q, variables, nil)
+	err := c.GraphQL("", query, variables, nil)
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}

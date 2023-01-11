@@ -139,7 +139,7 @@ func opsUpdateImage(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 	dockerCredentials := &credentials.Credentials{
-		ServerURL: "https://index.docker.io/v1/",
+		ServerURL: "https://registry.hub.docker.com/v2",
 		Username:  opsUpdateImagesContainerRegistryUsernameFlag,
 		Secret:    opsUpdateImagesContainerRegistryPasswordFlag,
 	}

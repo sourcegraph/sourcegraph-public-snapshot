@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
+    private final JavaToJSBridge javaToJSBridge;
+
     public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler) {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
@@ -19,7 +21,7 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
         String initJSCode = "window.initializeSourcegraph();";
         JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
         Disposer.register(this, jsToJavaBridge);
-        JavaToJSBridge javaToJSBridge = new JavaToJSBridge(this);
+        javaToJSBridge = new JavaToJSBridge(this);
 
         requestHandler.getProject().getService(SettingsChangeListener.class).setJavaToJSBridge(javaToJSBridge);
 
@@ -28,5 +30,10 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
                 javaToJSBridge.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
             }
         });
+    }
+
+    @NotNull
+    public JavaToJSBridge getJavaToJSBridge() {
+        return javaToJSBridge;
     }
 }

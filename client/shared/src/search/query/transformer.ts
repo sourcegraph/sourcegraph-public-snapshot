@@ -12,8 +12,13 @@ export function appendContextFilter(query: string, searchContextSpec: string | u
         : query
 }
 
+/**
+ * Deletes the filter from a given query string by the filter's range.
+ */
 export function omitFilter(query: string, filter: Filter): string {
-    return replaceRange(query, filter.range).trimStart()
+    const { start, end } = filter.range
+
+    return `${query.slice(0, start).trimEnd()} ${query.slice(end).trimStart()}`.trim()
 }
 
 const succeedScan = (query: string): Token[] => {

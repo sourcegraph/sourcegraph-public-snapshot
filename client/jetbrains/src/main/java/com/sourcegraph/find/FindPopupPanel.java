@@ -19,6 +19,7 @@ import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.Icons;
 import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
+import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.find.browser.SourcegraphJBCefBrowser;
 import org.jdesktop.swingx.util.OS;
 import org.jetbrains.annotations.NotNull;
@@ -124,10 +125,24 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         return previewPanel;
     }
 
+    @Nullable
+    public JavaToJSBridge getJavaToJSBridge() {
+        return browser != null ? browser.getJavaToJSBridge() : null;
+    }
+
+    public BrowserAndLoadingPanel.ConnectionAndAuthState getConnectionAndAuthState() {
+        return browserAndLoadingPanel.getConnectionAndAuthState();
+    }
+
+    public boolean browserHasSearchError() {
+        return browserAndLoadingPanel.hasSearchError();
+    }
+
     public void indicateAuthenticationStatus(boolean wasServerAccessSuccessful, boolean authenticated) {
-        browserAndLoadingPanel.setState(wasServerAccessSuccessful
-            ? (authenticated ? BrowserAndLoadingPanel.State.AUTHENTICATED : BrowserAndLoadingPanel.State.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
-            : BrowserAndLoadingPanel.State.COULD_NOT_CONNECT);
+        browserAndLoadingPanel.setConnectionAndAuthState(wasServerAccessSuccessful
+            ? (authenticated ? BrowserAndLoadingPanel.ConnectionAndAuthState.AUTHENTICATED
+            : BrowserAndLoadingPanel.ConnectionAndAuthState.COULD_CONNECT_BUT_NOT_AUTHENTICATED)
+            : BrowserAndLoadingPanel.ConnectionAndAuthState.COULD_NOT_CONNECT);
 
         if (wasServerAccessSuccessful) {
             previewPanel.setState(PreviewPanel.State.PREVIEW_AVAILABLE);
@@ -139,8 +154,19 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         }
     }
 
+    public void indicateSearchError(@NotNull String errorMessage, @NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(errorMessage);
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
+    }
+
     public void indicateLoadingIfInTime(@NotNull Date date) {
         if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.LOADING);
             footerPanel.setPreviewContent(null);
@@ -150,6 +176,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     public void setPreviewContentIfInTime(@NotNull PreviewContent previewContent) {
         if (lastPreviewUpdate.before(previewContent.getReceivedDateTime())) {
             this.lastPreviewUpdate = previewContent.getReceivedDateTime();
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(null);
             selectionMetadataPanel.setSelectionMetadataLabel(previewContent);
             previewPanel.setContent(previewContent);
             footerPanel.setPreviewContent(previewContent);
@@ -159,6 +186,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     public void clearPreviewContentIfInTime(@NotNull Date date) {
         if (lastPreviewUpdate.before(date)) {
             this.lastPreviewUpdate = date;
+            browserAndLoadingPanel.setBrowserSearchErrorMessage(null);
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
             footerPanel.setPreviewContent(null);

@@ -29,22 +29,12 @@ func TestNewGitHubAppSetupHandler(t *testing.T) {
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-	orgMembers := database.NewMockOrgMemberStore()
-	orgs := database.NewMockOrgStore()
-	orgs.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.Org, error) {
-		return &types.Org{
-			ID:   id,
-			Name: "abc-org",
-		}, nil
-	})
+
 	externalServices := database.NewMockExternalServiceStore()
-	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	apiURL, err := url.Parse("https://github.com")
 	require.NoError(t, err)
@@ -97,14 +87,13 @@ func TestNewGitHubAppSetupHandler(t *testing.T) {
 		h.ServeHTTP(resp, badReq)
 
 		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "Invalid setup action 'incorrect'", resp.Body.String())
+		assert.Equal(t, `Invalid setup action "incorrect"`, resp.Body.String())
 	})
 
 	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
 	req = req.WithContext(ctx)
 
 	t.Run("create new", func(t *testing.T) {
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
 		externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, svcs ...*types.ExternalService) error {
 			require.Len(t, svcs, 1)
 
@@ -112,14 +101,12 @@ func TestNewGitHubAppSetupHandler(t *testing.T) {
 			assert.Equal(t, extsvc.KindGitHub, svc.Kind)
 			assert.Equal(t, "GitHub (abc-org)", svc.DisplayName)
 
-			wantConfig := extsvc.NewUnencryptedConfig(`
-{
+			wantConfig := extsvc.NewUnencryptedConfig(`{
   "url": "https://github.com",
   "repos": [],
   "githubAppInstallationID": "21994992",
   "pending": false
-}
-`)
+} `)
 			assert.Equal(t, wantConfig, svc.Config)
 			return nil
 		})

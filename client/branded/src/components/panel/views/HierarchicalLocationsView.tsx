@@ -9,12 +9,14 @@ import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, t
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
+
+import { hierarchicalLocationViewHasResultContext } from '../TabbedPanelContent'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
@@ -139,6 +141,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             // noop
                                         })
                                 }
+                                hierarchicalLocationViewHasResultContext.next(hasResults)
                             }),
                             endWith({ isLoading: false })
                         )

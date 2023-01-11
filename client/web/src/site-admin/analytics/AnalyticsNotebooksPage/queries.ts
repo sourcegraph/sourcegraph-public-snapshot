@@ -1,15 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment NotebooksStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
             uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
             totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
@@ -20,15 +22,16 @@ export const NOTEBOOKS_STATISTICS = gql`
             analytics {
                 notebooks(dateRange: $dateRange, grouping: $grouping) {
                     creations {
-                        ...AnalyticsStatItemFragment
+                        ...NotebooksStatItemFragment
                     }
                     views {
-                        ...AnalyticsStatItemFragment
+                        ...NotebooksStatItemFragment
                     }
                     blockRuns {
                         summary {
                             totalCount
                             totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                 }

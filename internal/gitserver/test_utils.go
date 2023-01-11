@@ -55,6 +55,22 @@ func MakeGitRepository(t *testing.T, cmds ...string) api.RepoName {
 	return repo
 }
 
+// MakeBareGitRepository calls initGitRepository to create a new Git
+// repository and returns a handle to a bare clone of it.
+func MakeBareGitRepository(t *testing.T, cmds ...string) api.RepoName {
+	t.Helper()
+	dir := InitGitRepository(t, cmds...)
+	repo := api.RepoName(filepath.Base(dir) + "-bare")
+	bareDir := filepath.Join(filepath.Dir(dir), string(repo), ".git")
+	if err := os.Mkdir(filepath.Dir(bareDir), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := exec.Command("git", "clone", "--bare", dir, bareDir).Output(); err != nil {
+		t.Fatal(err)
+	}
+	return repo
+}
+
 // InitGitRepository initializes a new Git repository and runs commands in a new
 // temporary directory (returned as dir).
 // It also sets ClientMocks.LocalGitCommandReposDir for successful run of local git commands.

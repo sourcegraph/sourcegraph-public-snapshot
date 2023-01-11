@@ -35,7 +35,7 @@ The following details should always be supplied.
   - frontend
   - precise-code-intel-worker
   - codeintel-db
-  - minio
+  - blobstore (or `minio` in versions of Sourcegraph before v3.4.2)
 
 If the customer is running a custom patch or an insiders version, we need the docker image tags and SHAs of the following containers:
 
@@ -53,12 +53,6 @@ $ src version
 Current version: 3.26.0
 Recommended Version: 3.26.1
 ```
-
-#### Extension details
-
-The following details should be supplied if the user administrates their own [extension registry](../../admin/extensions/index.md).
-
-- The manifest of relevant language extensions (e.g. _sourcegraph/go_, _sourcegraph/typescript_) viewable from the `/extensions/{extension name}/-/manifest` page on their instance. As an example, see the [Go language extension manifest](https://sourcegraph.com/extensions/sourcegraph/go/-/manifest) on Sourcegraph.com (generally, the value of `gitHead` is enough).
 
 #### Settings
 

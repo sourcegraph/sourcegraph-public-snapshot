@@ -7,10 +7,11 @@
     "rootDir": ".",
     "outDir": "out",
     "paths": {
-      "*": ["../shared/src/types/*", "*"],
+      "*": ["./src/types/*", "*"],
     },
   },
   "include": ["**/*", ".*"],
+  "exclude": ["out", "node_modules"],
   "references": [
     {
       "path": "../common",

@@ -19,7 +19,6 @@ export interface CustomInsightDashboard {
     id: string
     type: InsightsDashboardType.Custom
     title: string
-    insightIds: string[]
     owners: InsightsDashboardOwner[]
 }
 

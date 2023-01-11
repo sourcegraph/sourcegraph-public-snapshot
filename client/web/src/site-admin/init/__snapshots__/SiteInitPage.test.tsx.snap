@@ -83,7 +83,7 @@ exports[`SiteInitPage normal 1`] = `
                   id="username"
                   maxlength="255"
                   name="username"
-                  pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                  pattern="^\\\\w(?:\\\\w|[.-](?=\\\\w))*-?$"
                   placeholder=" "
                   required=""
                   spellcheck="false"
@@ -134,8 +134,8 @@ exports[`SiteInitPage normal 1`] = `
             class="form-group mb-0"
           >
             <button
+              aria-disabled="true"
               class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
-              disabled=""
               type="submit"
             >
               Create admin account & continue

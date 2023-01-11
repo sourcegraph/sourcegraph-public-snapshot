@@ -1,0 +1,78 @@
+.container {
+    flex: 1;
+    position: relative;
+
+    .spacer {
+        margin: 0.75rem;
+    }
+}
+
+.root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    border-radius: 8px;
+    z-index: 100;
+
+    &:focus-within {
+        background-color: var(--color-bg-1);
+        box-shadow: var(--box-shadow);
+
+        .suggestions {
+            display: block;
+        }
+    }
+}
+
+.focus-container {
+    display: flex;
+    background-color: var(--color-bg-1);
+    border-radius: 4px;
+    margin: 0.75rem;
+    border: 1px solid var(--border-color-2);
+    padding: 0 0.25rem;
+    min-height: 32px;
+    align-items: center;
+
+    &:focus-within {
+        outline: 2px solid rgba(163, 208, 255, 1);
+        outline-offset: 0;
+        border-color: var(--border-active-color);
+
+        .hide-when-focused {
+            display: none;
+        }
+
+        .show-when-focused {
+            display: block;
+        }
+    }
+
+    .global-shortcut {
+        display: block;
+        align-self: center;
+        border: 1px solid var(--border-color-2);
+        width: 1.5rem;
+    }
+
+    button {
+        display: none;
+        align-self: flex-start;
+        padding: 0.125rem 0.25rem;
+        margin: 0.125rem;
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+
+        &:focus {
+            outline: 2px solid rgba(163, 208, 255, 1);
+            outline-offset: 0;
+        }
+    }
+}
+
+.suggestions {
+    position: relative;
+    display: none;
+}

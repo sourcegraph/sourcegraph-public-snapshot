@@ -61,7 +61,6 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
     <svg
       aria-label="From 0 repositories"
       class="mdi-icon iconInline ml-1"
-      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -101,7 +100,6 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     <svg
       aria-label="From 1 repository"
       class="mdi-icon iconInline ml-1"
-      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -141,7 +139,6 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     <svg
       aria-label="From 500 repositories"
       class="mdi-icon iconInline ml-1"
-      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -181,7 +178,6 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     <svg
       aria-label="From 8.9k repositories"
       class="mdi-icon iconInline ml-1"
-      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"
@@ -221,7 +217,6 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
     <svg
       aria-label="From 500 repositories"
       class="mdi-icon iconInline ml-1"
-      data-state="closed"
       fill="currentColor"
       height="24"
       role="img"

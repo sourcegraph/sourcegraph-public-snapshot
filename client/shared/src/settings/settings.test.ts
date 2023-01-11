@@ -8,28 +8,29 @@ import {
     Settings,
     SettingsCascade,
     SettingsSubject,
-    SubjectSettingsContents,
 } from './settings'
 
-const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_ORG: SettingsSubject = {
     __typename: 'Org',
     name: 'n',
     displayName: 'n',
     id: 'a',
     viewerCanAdminister: true,
     latestSettings: { id: 1, contents: '{"a":1}' },
+    settingsURL: null,
 }
 
-const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_USER: SettingsSubject = {
     __typename: 'User',
     username: 'n',
     displayName: 'n',
     id: 'b',
     viewerCanAdminister: true,
     latestSettings: { id: 2, contents: '{"b":2}' },
+    settingsURL: null,
 }
 
-const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContents = {
+const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject = {
     ...FIXTURE_USER,
     id: 'c',
     latestSettings: { id: 3, contents: '.' },
@@ -72,9 +73,7 @@ describe('gqlToCascade', () => {
 describe('mergeSettings', () => {
     test('handles an empty array', () => expect(mergeSettings([])).toBe(null))
     test('merges multiple values', () =>
-        expect(
-            mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])
-        ).toEqual({
+        expect(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])).toEqual({
             a: 3,
             b: 2,
         }))
@@ -122,19 +121,19 @@ describe('mergeSettings', () => {
                     b?: { [key: string]: { [key: string]: string }[] }
                 } & Settings
             >([
-                { quicklinks: [{ name: 'main repo', value: '/github.com/org/main-repo' }] },
-                { quicklinks: [{ name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' }] },
+                { quicklinks: [{ name: 'main repo', url: '/github.com/org/main-repo' }] },
+                { quicklinks: [{ name: 'About Sourcegraph', url: 'https://docs.internal/about-sourcegraph' }] },
                 {
                     quicklinks: [
-                        { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+                        { name: 'mycorp extensions', url: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
                     ],
                 },
             ])
         ).toEqual({
             quicklinks: [
-                { name: 'main repo', value: '/github.com/org/main-repo' },
-                { name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' },
-                { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+                { name: 'main repo', url: '/github.com/org/main-repo' },
+                { name: 'About Sourcegraph', url: 'https://docs.internal/about-sourcegraph' },
+                { name: 'mycorp extensions', url: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
             ],
         }))
     test('merges search.repositoryGroups property', () =>
@@ -229,6 +228,7 @@ describe('mergeSettings', () => {
                 {
                     'search.savedQueries': [
                         {
+                            key: '1',
                             description: 'global saved query',
                             query: 'type:diff global',
                             notify: true,
@@ -238,6 +238,7 @@ describe('mergeSettings', () => {
                 {
                     'search.savedQueries': [
                         {
+                            key: '2',
                             description: 'org saved query',
                             query: 'type:diff org',
                             notify: true,
@@ -247,6 +248,7 @@ describe('mergeSettings', () => {
                 {
                     'search.savedQueries': [
                         {
+                            key: '3',
                             description: 'user saved query',
                             query: 'type:diff user',
                             notify: true,
@@ -257,16 +259,19 @@ describe('mergeSettings', () => {
         ).toEqual({
             'search.savedQueries': [
                 {
+                    key: '1',
                     description: 'global saved query',
                     query: 'type:diff global',
                     notify: true,
                 },
                 {
+                    key: '2',
                     description: 'org saved query',
                     query: 'type:diff org',
                     notify: true,
                 },
                 {
+                    key: '3',
                     description: 'user saved query',
                     query: 'type:diff user',
                     notify: true,

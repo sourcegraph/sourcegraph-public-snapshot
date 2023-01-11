@@ -3,7 +3,7 @@ package oneclickexport
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path"
 	"time"
 
@@ -50,7 +50,7 @@ func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir st
 	}
 
 	outputFile := path.Join(dir, "db-external-services.txt")
-	err = ioutil.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0644)
 	if err != nil {
 		d.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
@@ -66,18 +66,16 @@ type RedactedExternalService struct {
 	DisplayName string
 	// This is the redacted config which is the only difference between this type and
 	// types.ExternalService
-	Config          json.RawMessage
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool
-	CloudDefault    bool
-	HasWebhooks     *bool
-	TokenExpiresAt  *time.Time
+	Config         json.RawMessage
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool
+	CloudDefault   bool
+	HasWebhooks    *bool
+	TokenExpiresAt *time.Time
 }
 
 func convertExtSvcToRedacted(ctx context.Context, extSvc *types.ExternalService) (*RedactedExternalService, error) {
@@ -86,21 +84,19 @@ func convertExtSvcToRedacted(ctx context.Context, extSvc *types.ExternalService)
 		return nil, err
 	}
 	return &RedactedExternalService{
-		ID:              extSvc.ID,
-		Kind:            extSvc.Kind,
-		DisplayName:     extSvc.DisplayName,
-		Config:          json.RawMessage(config),
-		CreatedAt:       extSvc.CreatedAt,
-		UpdatedAt:       extSvc.UpdatedAt,
-		DeletedAt:       extSvc.DeletedAt,
-		LastSyncAt:      extSvc.LastSyncAt,
-		NextSyncAt:      extSvc.NextSyncAt,
-		NamespaceUserID: extSvc.NamespaceUserID,
-		NamespaceOrgID:  extSvc.NamespaceOrgID,
-		Unrestricted:    extSvc.Unrestricted,
-		CloudDefault:    extSvc.CloudDefault,
-		HasWebhooks:     extSvc.HasWebhooks,
-		TokenExpiresAt:  extSvc.TokenExpiresAt,
+		ID:             extSvc.ID,
+		Kind:           extSvc.Kind,
+		DisplayName:    extSvc.DisplayName,
+		Config:         json.RawMessage(config),
+		CreatedAt:      extSvc.CreatedAt,
+		UpdatedAt:      extSvc.UpdatedAt,
+		DeletedAt:      extSvc.DeletedAt,
+		LastSyncAt:     extSvc.LastSyncAt,
+		NextSyncAt:     extSvc.NextSyncAt,
+		Unrestricted:   extSvc.Unrestricted,
+		CloudDefault:   extSvc.CloudDefault,
+		HasWebhooks:    extSvc.HasWebhooks,
+		TokenExpiresAt: extSvc.TokenExpiresAt,
 	}, nil
 }
 
@@ -129,7 +125,7 @@ func (e ExtSvcReposQueryProcessor) Process(ctx context.Context, payload Limit, d
 	}
 
 	outputFile := path.Join(dir, "db-external-service-repos.txt")
-	err = ioutil.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0644)
 	if err != nil {
 		e.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}

@@ -37,7 +37,6 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { HoverAlert } from 'sourcegraph'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import {
@@ -47,7 +46,6 @@ import {
     Hoverifier,
     HoverState,
     MaybeLoadingResult,
-    DiffPart,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -60,25 +58,23 @@ import {
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
-import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
-import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -97,6 +93,7 @@ import {
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
@@ -107,7 +104,6 @@ import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } fr
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
-import { featureFlags } from '../../util/featureFlags'
 import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
@@ -117,10 +113,9 @@ import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
-import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import { initializeExtensions, renderCommandPalette } from './extensions'
+import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -169,7 +164,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
 /** Information for adding code navigation to code views on arbitrary code hosts. */
-export interface CodeHost extends ApplyLinkPreviewOptions {
+export interface CodeHost {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
      * Use {@link CodeHost#name} if you need a human-readable name for the code host to display in the UI.
@@ -224,11 +219,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
-
-    /**
-     * Resolve {@link ContentView}s from the DOM.
-     */
-    contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
      * Resolves {@link NativeTooltip}s from the DOM.
@@ -287,6 +277,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Called before injecting the code intelligence to the code host.
+     */
+    prepareCodeHost?: (requestGraphQL: BrowserPlatformContext['requestGraphQL']) => Promise<boolean>
 }
 
 /**
@@ -327,11 +322,10 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
+        'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
-    showGlobalDebug?: boolean
 }
 
 export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
@@ -343,13 +337,6 @@ export const getExistingOrCreateOverlayMount = (codeHostName: string, container:
         container.append(mount)
     }
 
-    return mount
-}
-
-export const createGlobalDebugMount = (): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.dataset.globalDebug = 'true'
-    document.body.append(mount)
     return mount
 }
 
@@ -424,7 +411,7 @@ function initCodeIntelligence({
                         ...hoverAlerts,
                         repoSyncErrors.pipe(
                             distinctUntilChanged(),
-                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            map(showAlert => (showAlert ? createRepoNotFoundHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
                         ),
                     ]),
@@ -709,7 +696,7 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
 }
 
 const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<UserSettingsURLResult>({
         request: gql`
             query UserSettingsURL {
                 currentUser {
@@ -825,7 +812,6 @@ export async function handleCodeHost({
     codeHost,
     extensionsController,
     platformContext,
-    showGlobalDebug,
     telemetryService,
     render,
     minimalUI,
@@ -880,13 +866,14 @@ export async function handleCodeHost({
 
     if (isGithubCodeHost(codeHost)) {
         // TODO: add tests in codeHost.test.tsx
-        const { searchEnhancement, enhanceSearchPage } = codeHost
+        const { searchEnhancement } = codeHost
         if (searchEnhancement) {
             subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
         }
-        if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL))
-        }
+        // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+        // if (codeHost.enhanceSearchPage) {
+        //     subscriptions.add(enhanceSearchPage(sourcegraphURL))
+        // }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -935,14 +922,6 @@ export async function handleCodeHost({
                 })
             )
         )
-    }
-
-    // Render extension debug menu
-    // This renders to document.body, which we can assume is never removed,
-    // so we don't need to subscribe to mutations.
-    if (showGlobalDebug && extensionsController !== null) {
-        const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     const signInCloses = new Subject<void>()
@@ -1275,7 +1254,6 @@ export async function handleCodeHost({
                         // For diffs, both editors are created (for head and base)
                         // but only one of them is passed into
                         // the `scope` of the CodeViewToolbar component.
-                        // Both are used to listen for text decorations.
                         const [headEditor, baseEditor] = await Promise.all([
                             initializeModelAndViewerForFileInfo(diffOrFileInfo.head),
                             initializeModelAndViewerForFileInfo(diffOrFileInfo.base),
@@ -1336,64 +1314,6 @@ export async function handleCodeHost({
                         target.closest('.sourcegraph-extension-element') !== null
                             ? null
                             : codeViewEvent.dom.getCodeElementFromTarget(target),
-                }
-
-                const applyDecorationsForFileInfo = (editor: CodeEditorWithPartialModel, diffPart?: DiffPart): void => {
-                    let decorationsByLine: DecorationMapByLine = new Map()
-                    let previousIsLightTheme = true
-                    const update = (decorations?: TextDocumentDecoration[] | null, isLightTheme?: boolean): void => {
-                        try {
-                            decorationsByLine = applyDecorations(
-                                domFunctions,
-                                element,
-                                decorations ?? [],
-                                decorationsByLine,
-                                isLightTheme ?? true,
-                                previousIsLightTheme,
-                                diffPart
-                            )
-                            previousIsLightTheme = isLightTheme ?? true
-                        } catch (error) {
-                            console.error('Could not apply decorations to code view', codeViewEvent.element, error)
-                        }
-                    }
-
-                    codeViewEvent.subscriptions.add(
-                        combineLatest([
-                            from(extensionsController.extHostAPI).pipe(
-                                switchMap(extensionHostAPI =>
-                                    wrapRemoteObservable(
-                                        extensionHostAPI.getTextDecorations({
-                                            viewerId: editor.viewerId,
-                                        })
-                                    )
-                                )
-                            ),
-                            codeHost.isLightTheme ?? of(true),
-                        ])
-                            // Make sure extensions get cleaned up un unsubscription
-                            .pipe(finalize(update))
-                            // The nested subscribe cannot be replaced with a switchMap()
-                            // We manage the subscription correctly.
-                            // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) =>
-                                update(flattenDecorations(decorations), isLightTheme)
-                            )
-                    )
-                }
-
-                // Apply decorations coming from extensions
-                if (!minimalUI) {
-                    if ('blob' in diffOrFileInfoWithEditor) {
-                        applyDecorationsForFileInfo(diffOrFileInfoWithEditor.blob.editor)
-                    } else {
-                        if (diffOrFileInfoWithEditor.head) {
-                            applyDecorationsForFileInfo(diffOrFileInfoWithEditor.head.editor, 'head')
-                        }
-                        if (diffOrFileInfoWithEditor.base) {
-                            applyDecorationsForFileInfo(diffOrFileInfoWithEditor.base.editor, 'base')
-                        }
-                    }
                 }
 
                 // Add hover code navigation
@@ -1473,21 +1393,8 @@ export async function handleCodeHost({
         })
     )
 
-    // Show link previews on content views (feature-flagged).
-    subscriptions.add(
-        handleContentViews(
-            from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
-                switchMap(enabled => (enabled ? mutations : []))
-            ),
-            { extensionsController },
-            codeHost
-        )
-    )
-
     return subscriptions
 }
-
-const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [
     bitbucketServerCodeHost,
@@ -1562,8 +1469,7 @@ export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    isExtension: boolean,
-    showGlobalDebug = SHOW_DEBUG()
+    isExtension: boolean
 ): Subscription {
     const subscriptions = new Subscription()
     const { platformContext, extensionsController } = initializeExtensions(
@@ -1576,6 +1482,8 @@ export function injectCodeIntelligenceToCodeHost(
     if (extensionsController !== null) {
         subscriptions.add(extensionsController)
     }
+
+    const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1617,20 +1525,19 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
-        extensionDisabled.subscribe(async disableExtension => {
+        combineLatest([codeHostReady, extensionDisabled]).subscribe(async ([isCodeHostReady, disableExtension]) => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else if (extensionsController !== null) {
+            } else if (isCodeHostReady && extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,
                     extensionsController,
                     platformContext,
-                    showGlobalDebug,
                     telemetryService,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,

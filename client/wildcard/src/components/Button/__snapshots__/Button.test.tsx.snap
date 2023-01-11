@@ -134,10 +134,10 @@ exports[`Button renders a simple button correctly 1`] = `
 
 exports[`Button supports rendering as different elements 1`] = `
 <DocumentFragment>
-  <a
+  <div
     class="btn"
   >
-    I am a link
-  </a>
+    I am a div
+  </div>
 </DocumentFragment>
 `;

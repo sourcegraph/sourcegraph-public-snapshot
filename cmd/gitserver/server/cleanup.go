@@ -67,12 +67,12 @@ var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
 	// likely evolve into some form of site config value in the future.
-	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
 	// sg maintenance and git gc must not be enabled at the same time. However, both
 	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 	// SRC_ENABLE_SG_MAINTENANCE.
-	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 	if enableGCAuto && !enableSGMaintenance {
 		return gitGCModeJanitorAutoGC
@@ -172,14 +172,15 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
+func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitServerAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
 		janitorTimer.Observe(time.Since(janitorStart).Seconds())
 	}()
 	defer janitorRunning.Set(0)
-	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
+
+	logger := s.Logger.Scoped("cleanup", "repositories cleanup operation")
 
 	knownGitServerShard := false
 	for _, addr := range gitServerAddrs.Addresses {
@@ -225,12 +226,19 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
+		if err != nil {
+			s.Logger.Error("failed to get server address for repo", log.String("repoName", string(name)))
+			// We bail out here because it would mean that the hostname doesn't match below and
+			// it would remove repos if the DB is down for example
+			return
+		}
+
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
 
 			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				s.Logger.Info(
+				logger.Info(
 					"removing repo cloned on the wrong shard",
 					log.String("dir", string(dir)),
 					log.String("target-shard", addr),
@@ -247,28 +255,15 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 	}
 
 	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
-		var reason string
-
-		// We treat repositories missing HEAD to be corrupt. Both our cloning
-		// and fetching ensure there is a HEAD file.
-		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-			reason = "missing-head"
-		} else if err != nil {
+		corrupt, reason, err := checkRepoDirCorrupt(dir)
+		if !corrupt || err != nil {
 			return false, err
 		}
 
-		// We have seen repository corruption fail in such a way that the git
-		// config is missing the bare repo option but everything else looks
-		// like it works. This leads to failing fetches, so treat non-bare
-		// repos as corrupt. Since we often fetch with ensureRevision, this
-		// leads to most commands failing against the repository. It is safer
-		// to remove now than try a safe reclone.
-		if reason == "" && gitIsNonBareBestEffort(dir) {
-			reason = "non-bare"
-		}
-
-		if reason == "" {
-			return false, nil
+		err = s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason))
+		if err != nil {
+			repoName := string(s.name(dir))
+			logger.Warn("failed to log repo corruption", log.String("repo", repoName), log.Error(err))
 		}
 
 		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
@@ -328,7 +323,13 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
+			// We don't log the corruption here, since the corruption *should* have already been
+			// logged when this config setting was set in the repo.
+			// When the repo is recloned, the corrupted_at status should be cleared, which means
+			// the repo is not considered corrupted anymore.
+			//
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
@@ -363,19 +364,19 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
-		subCleanupLogger := cleanupLogger.With(
+		recloneLogger := logger.With(
 			log.String("repo", string(repo)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
 
-		subCleanupLogger.Info("re-cloning expired repo")
+		recloneLogger.Info("re-cloning expired repo")
 
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
 		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			subCleanupLogger.Warn("setting backed off re-clone time failed", log.Error(err))
+			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
 		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
@@ -390,12 +391,12 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if _, err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if _, err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
@@ -408,7 +409,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 				return nil
 			}
 
-			_, err := removeFileOlderThan(path, time.Hour)
+			_, err := removeFileOlderThan(logger, path, time.Hour)
 			return err
 		}); err != nil {
 			multi = errors.Append(multi, err)
@@ -418,17 +419,17 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		// call for a 5GB bare repository takes less than 1 min. The lock is only held
 		// during a short period during this time. A 1-hour grace period is very
 		// conservative.
-		if _, err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(logger, gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
 		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
 		// time git gc uses internally.
 		gcPIDMaxAge := 24 * time.Hour
-		if foundStale, err := removeFileOlderThan(gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
+		if foundStale, err := removeFileOlderThan(logger, gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
 			multi = errors.Append(multi, err)
 		} else if foundStale {
-			cleanupLogger.Warn(
+			logger.Warn(
 				"removeStaleLocks found a stale gc.pid lockfile and removed it. This should not happen and points to a problem with garbage collection. Monitor the repo for possible corruption and verify if this error reoccurs",
 				log.String("path", string(gitDir)),
 				log.Duration("age", gcPIDMaxAge))
@@ -524,7 +525,10 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
-				cleanupLogger.Error("error running cleanup command", log.String("name", cfn.Name), log.String("repo", string(gitDir)), log.Error(err))
+				logger.Error("error running cleanup command",
+					log.String("name", cfn.Name),
+					log.String("repo", string(gitDir)),
+					log.Error(err))
 			}
 			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
@@ -534,18 +538,18 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		return filepath.SkipDir
 	})
 	if err != nil {
-		cleanupLogger.Error("error iterating over repositories", log.Error(err))
+		logger.Error("error iterating over repositories", log.Error(err))
 	}
 
 	if b, err := json.Marshal(stats); err != nil {
-		cleanupLogger.Error("failed to marshal periodic stats", log.Error(err))
+		logger.Error("failed to marshal periodic stats", log.Error(err))
 	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
-		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
+		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	err = s.setRepoSizes(context.Background(), repoToSize)
+	err = s.setRepoSizes(ctx, repoToSize)
 	if err != nil {
-		cleanupLogger.Error("setting repo sizes", log.Error(err))
+		logger.Error("setting repo sizes", log.Error(err))
 	}
 
 	if s.DiskSizer == nil {
@@ -553,17 +557,39 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 	}
 	b, err := s.howManyBytesToFree()
 	if err != nil {
-		cleanupLogger.Error("ensuring free disk space", log.Error(err))
+		logger.Error("ensuring free disk space", log.Error(err))
 	}
 	if err := s.freeUpSpace(b); err != nil {
-		cleanupLogger.Error("error freeing up space", log.Error(err))
+		logger.Error("error freeing up space", log.Error(err))
 	}
+}
+
+func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
+	// We treat repositories missing HEAD to be corrupt. Both our cloning
+	// and fetching ensure there is a HEAD file.
+	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+		return true, "missing-head", nil
+	} else if err != nil {
+		return false, "", err
+	}
+
+	// We have seen repository corruption fail in such a way that the git
+	// config is missing the bare repo option but everything else looks
+	// like it works. This leads to failing fetches, so treat non-bare
+	// repos as corrupt. Since we often fetch with ensureRevision, this
+	// leads to most commands failing against the repository. It is safer
+	// to remove now than try a safe reclone.
+	if gitIsNonBareBestEffort(dir) {
+		return true, "non-bare", nil
+	}
+
+	return false, "", nil
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos
 // with actual sizes, but only up to 10,000 in one run.
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
-	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
+	logger := s.Logger.Scoped("setRepoSizes", "setRepoSizes does cleanup of database entries")
 
 	reposNumber := len(repoToSize)
 	if reposNumber == 0 {
@@ -1016,14 +1042,14 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
+func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
-		return
+		return false
 	}
 
-	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
-
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
+	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
+	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
+		log.String("stderr", stderr))
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
@@ -1031,6 +1057,8 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if err != nil {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
+
+	return true
 }
 
 // stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
@@ -1093,12 +1121,12 @@ repository should be recloned.`
 )
 
 // writeSGMLog writes a log file with the format
-// 		<header>
 //
-// 		<sgmLogPrefix>=<int>
+//	<header>
 //
-// 		<error message>
+//	<sgmLogPrefix>=<int>
 //
+//	<error message>
 func writeSGMLog(dir GitDir, m []byte) error {
 	return os.WriteFile(
 		dir.Path(sgmLog),
@@ -1453,7 +1481,7 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
 // file is missing, no error is returned. The first argument indicates whether a
 // stale file was present.
-func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
+func removeFileOlderThan(logger log.Logger, path string, maxAge time.Duration) (bool, error) {
 	fi, err := os.Stat(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -1466,8 +1494,6 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 	if age < maxAge {
 		return false, nil
 	}
-
-	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
 
 	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
 	err = os.Remove(path)

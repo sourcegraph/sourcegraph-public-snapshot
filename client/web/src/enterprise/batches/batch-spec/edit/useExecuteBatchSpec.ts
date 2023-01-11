@@ -22,7 +22,7 @@ interface UseExecuteBatchSpecResult {
  *
  * @param batchSpecID The current batch spec ID.
  */
-export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatchSpecResult => {
+export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boolean): UseExecuteBatchSpecResult => {
     const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
         EXECUTE_BATCH_SPEC
     )
@@ -35,7 +35,12 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatc
             return
         }
 
-        submitBatchSpec({ variables: { batchSpec: batchSpecID } })
+        submitBatchSpec({
+            variables: {
+                batchSpec: batchSpecID,
+                noCache: noCache === undefined ? null : noCache,
+            },
+        })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
                     history.replace(
@@ -44,7 +49,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatc
                 }
             })
             .catch(setExecutionError)
-    }, [submitBatchSpec, history, batchSpecID])
+    }, [submitBatchSpec, noCache, history, batchSpecID])
 
     return {
         executeBatchSpec,

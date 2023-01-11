@@ -1,7 +1,8 @@
 import { screen } from '@testing-library/react'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { getFullQuery, Toggles } from './Toggles'
 
@@ -45,6 +46,8 @@ describe('Toggles', () => {
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />
@@ -61,6 +64,8 @@ describe('Toggles', () => {
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />
@@ -76,6 +81,8 @@ describe('Toggles', () => {
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />

@@ -4,16 +4,15 @@ import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import { Subscription } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
-import { EditorAction } from '../site-admin/configHelpers'
 
+import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
-
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -134,21 +133,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         return (
             <div className={this.props.className || ''}>
                 {this.props.actions && (
-                    <div className={adminConfigurationStyles.actionGroups}>
-                        <div className={adminConfigurationStyles.actions}>
-                            {this.props.actions.map(({ id, label }) => (
-                                <Button
-                                    key={id}
-                                    className={adminConfigurationStyles.action}
-                                    onClick={() => this.runAction(id, this.configEditor)}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {label}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
+                    <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
@@ -236,12 +221,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         }
     }
 
-    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
-        if (editor) {
-            const action = editor.getAction(id)
+    private runAction(id: string): void {
+        if (this.configEditor) {
+            const action = this.configEditor.getAction(id)
             action.run().then(
                 () => undefined,
-                error => console.error(error)
+                error => logger.error(error)
             )
         } else {
             alert('Wait for editor to load before running action.')

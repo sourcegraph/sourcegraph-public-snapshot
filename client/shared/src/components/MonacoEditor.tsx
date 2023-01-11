@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '../keyboardShortcuts'
+import { Shortcut } from '../react-shortcuts'
 import { ThemeProps } from '../theme'
 import { isInputElement } from '../util/dom'
 

@@ -5,6 +5,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,15 +23,18 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(conns []*types.PerforceConnection, db database.DB) (ps []authz.Provider, problems []string, warnings []string) {
+func NewAuthzProviders(conns []*types.PerforceConnection, db database.DB) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	for _, c := range conns {
-		p := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
-		if p != nil {
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
+		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
+			problems = append(problems, err.Error())
+		} else if p != nil {
 			ps = append(ps, p)
 		}
 	}
 
-	return ps, problems, warnings
+	return ps, problems, warnings, invalidConnections
 }
 
 func newAuthzProvider(
@@ -38,10 +43,15 @@ func newAuthzProvider(
 	host, user, password string,
 	depots []string,
 	db database.DB,
-) authz.Provider {
+) (authz.Provider, error) {
 	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
-		return nil
+		return nil, nil
+	}
+
+	logger := log.Scoped("authz", "parse providers from config")
+	if err := licensing.Check(licensing.FeatureACLs); err != nil {
+		return nil, err
 	}
 
 	var depotIDs []extsvc.RepoID
@@ -57,7 +67,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(log.Scoped("authzProvider", ""), urn, host, user, password, depotIDs, db)
+	return NewProvider(logger, urn, host, user, password, depotIDs, db), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

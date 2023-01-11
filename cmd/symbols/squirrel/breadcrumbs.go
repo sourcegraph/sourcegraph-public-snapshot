@@ -28,10 +28,11 @@ type Breadcrumbs []Breadcrumb
 
 // Prints breadcrumbs like this:
 //
-//             v some breadcrumb
-//               vvv other breadcrumb
+//	v some breadcrumb
+//	  vvv other breadcrumb
+//
 // 78 | func f(f Foo) {
-func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile ReadFileFunc) {
+func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
 	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
 	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
 	for _, breadcrumb := range *bs {
@@ -123,13 +124,16 @@ func itermSource(absPath string, line int, msg string) string {
 	return ""
 }
 
-func (bs *Breadcrumbs) prettyPrint(readFile ReadFileFunc) {
+func (bs *Breadcrumbs) prettyPrint(readFile readFileFunc) {
+	fmt.Println(" ")
+	fmt.Println(bracket(bs.prettyString(readFile)))
+	fmt.Println(" ")
+}
+
+func (bs *Breadcrumbs) prettyString(readFile readFileFunc) string {
 	sb := &strings.Builder{}
 	bs.pretty(sb, readFile)
-
-	fmt.Println(" ")
-	fmt.Println(bracket(sb.String()))
-	fmt.Println(" ")
+	return sb.String()
 }
 
 // Returns breadcrumbs that have one of the given messages.

@@ -51,15 +51,72 @@ developers to explore code by
 
 <div class="cta-group">
 <a class="btn btn-primary" href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references">★ Try it on public code!</a>
-<a class="btn" href="#code-intelligence-for-your-code">Enable it for your code</a>
+<a class="btn" href="#code-navigation-for-your-code">Enable it for your code</a>
 <a class="btn" href="references/precise_examples">Examples</a>
 <a class="btn" href="references/indexers">🗂 Indexers</a>
 </div>
 
 Code navigation is made up of multiple features that build on top of each other:
 
-- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
-- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
+- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search.
+- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide precise code navigation features and accurate cross-repository navigation. We currently have precise support the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
+<table>
+   <thead>
+      <tr>
+        <th>Language</th>
+        <th>Indexer</th>
+        <th>Status</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr>
+        <td>Go</td>
+        <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>TypeScript/JavaScript</td>
+        <td><a href="https://github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>C/C++</td>
+        <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td>🟡 Partially available</td>
+      </tr>
+      <tr>
+         <td>Java</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Scala</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Kotlin</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Rust</td>
+        <td><a href="https://github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
+        <td>🟢 GA</td>
+      </tr>
+     <tr>
+        <td>Python</td>
+        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td>🟢 GA</td>
+      </tr>
+     <tr>
+        <td>Ruby</td>
+        <td><a href="https://github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
+        <td>🟡 Partially available</td>
+      </tr>
+   </tbody>
+</table>
+
 - [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
 - <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 
@@ -67,24 +124,24 @@ Code navigation is made up of multiple features that build on top of each other:
 
 Here's how you go from search-based code navigation to **automatically-updating, precise code navigation across multiple repositories and dependencies**:
 
-1. Navigate code with [search-based code navigation](explanations/search_based_code_navigation.md) and [Sourcegraph extensions](../../../extensions/index.md).
-
-    Included in a standard Sourcegraph installation and works out of the box on the instances connected to the Internet.
-    To see how to enable code navigation on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
+1. Navigate code with [search-based code navigation](explanations/search_based_code_navigation.md).
 1. Start using [precise code navigation](explanations/precise_code_navigation.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
-    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
     - [Index a Python repository](https://github.com/sourcegraph/scip-python)
+    - [Index a Ruby repository](https://github.com/sourcegraph/scip-ruby)
+    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
+
 
 1. _Optional_: automate the uploading of indexes by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
 1. Get **automatic precise code navigation** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code navigation for them.
 1. Setup **auto-dependency indexing** to navigate and search through the dependencies used by your code:
     - **Go**: Enable [auto-indexing](explanations/auto_indexing.md) and Sourcegraph will start indexing your dependencies.
-    - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
     - **JavaScript, TypeScript**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [npm dependencies code host](../../integration/npm.md).
+    - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
+    
 
 Once setup, code navigation is available for use across popular development tools:
 
@@ -102,26 +159,25 @@ Once setup, code navigation is available for use across popular development tool
 - [Code navigation features](explanations/features.md)
 - <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing](explanations/auto_indexing.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
+- [Auto-indexing](explanations/auto_indexing.md)
+- [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 
 ## [How-tos](how-to/index.md)
 
 - General
   - [Configure data retention policies](how-to/configure_data_retention.md)
-  - [Enable code navigation on the air-gapped instances](how-to/enable_code_intel_on_air_gapped_instances.md)
 
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)
   - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
   - [Index a C++ repository](how-to/index_a_cpp_repository.md)
   - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
-- Automate uploading LSIF data
-  - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
-  - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
-  - <span class="badge badge-beta">Beta</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
-  - <span class="badge badge-beta">Beta</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
+- Automate uploading code graph data
+  - [Add code graph data to many repositories](how-to/adding_lsif_to_many_repos.md)
+  - [Adding code graph data to CI workflows](how-to/adding_lsif_to_workflows.md)
+  - [Enable auto-indexing](how-to/enable_auto_indexing.md)
+  - [Configure auto-indexing](how-to/configure_auto_indexing.md)
 
 ## [References](references/index.md)
 
@@ -130,6 +186,6 @@ Once setup, code navigation is available for use across popular development tool
 - [FAQ](references/faq.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [Environment variables](references/envvars.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)
+- [Auto-indexing configuration](references/auto_indexing_configuration.md)
 
 

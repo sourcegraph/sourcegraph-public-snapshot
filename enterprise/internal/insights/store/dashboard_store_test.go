@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -17,12 +18,12 @@ import (
 
 func TestGetDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
-		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashbord for org 1');`)
+		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashboard for org 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +164,7 @@ func TestGetDashboard(t *testing.T) {
 
 func TestCreateDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)
@@ -212,7 +213,7 @@ func TestCreateDashboard(t *testing.T) {
 
 func TestUpdateDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)
@@ -284,7 +285,7 @@ func TestUpdateDashboard(t *testing.T) {
 
 func TestDeleteDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -344,7 +345,7 @@ func TestDeleteDashboard(t *testing.T) {
 
 func TestRestoreDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -406,7 +407,7 @@ func TestRestoreDashboard(t *testing.T) {
 
 func TestAddViewsToDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -463,13 +464,18 @@ func TestAddViewsToDashboard(t *testing.T) {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
 		got := dashboards[0]
+		unsorted := got.InsightIDs
+		sort.Slice(unsorted, func(i, j int) bool {
+			return unsorted[i] < unsorted[j]
+		})
+		got.InsightIDs = unsorted
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
 
 func TestRemoveViewsFromDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -494,7 +500,8 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		Dashboard: types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}},
 		Grants:    []DashboardGrant{GlobalDashboardGrant()},
 		UserID:    []int{1},
-		OrgID:     []int{1}})
+		OrgID:     []int{1},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +509,8 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		Dashboard: types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}},
 		Grants:    []DashboardGrant{GlobalDashboardGrant()},
 		UserID:    []int{1},
-		OrgID:     []int{1}})
+		OrgID:     []int{1},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +569,7 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 
 func TestHasDashboardPermission(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)

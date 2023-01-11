@@ -1,13 +1,12 @@
 import * as comlink from 'comlink'
-import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { isErrorLike } from '@sourcegraph/common'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
-import { Settings, SettingsCascade } from '../../settings/settings'
+import { SettingsCascade } from '../../settings/settings'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -27,10 +26,16 @@ import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
-    mainAPI: comlink.Remote<MainThreadAPI>,
-    mainThreadAPIInitializations: Observable<boolean>
+    mainAPI: comlink.Remote<MainThreadAPI> | null,
+    mainThreadAPIInitializations: Observable<boolean> | null
 ): ExtensionHostState {
-    const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations)
+    // We make the mainAPI nullable in which case no extension will ever be activated. This is
+    // used only for the noop controller.
+    let activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
+    let activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]> = of([])
+    if (mainAPI !== null && mainThreadAPIInitializations !== null) {
+        ;({ activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations))
+    }
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
@@ -57,15 +62,8 @@ export function createExtensionHostState(
             readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
         >([]),
 
-        fileDecorationProviders: new BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>([]),
-
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
-
-            'experimentalFeatures.enableExtensionsDecorationsColumnView':
-                !isErrorLike(initData.initialSettings.final) &&
-                (initData.initialSettings.final as Settings).experimentalFeatures
-                    ?.enableExtensionsDecorationsColumnView === true,
 
             // Arbitrary, undocumented versioning for extensions that need different behavior for different
             // Sourcegraph versions.
@@ -101,10 +99,6 @@ export function createExtensionHostState(
         globalPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>([]),
         directoryViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>([]),
 
-        linkPreviewProviders: new BehaviorSubject<
-            readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
-        >([]),
-
         activeExtensions,
         activeLoggers: new Set<string>(),
     }
@@ -131,9 +125,6 @@ export interface ExtensionHostState {
     locationProviders: BehaviorSubject<
         readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
     >
-
-    // Decorations
-    fileDecorationProviders: BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>
 
     // Context + Contributions
     context: BehaviorSubject<Context>
@@ -163,11 +154,6 @@ export interface ExtensionHostState {
     homepageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>
     globalPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>
     directoryViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>
-
-    // Content
-    linkPreviewProviders: BehaviorSubject<
-        readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
-    >
 
     // Extensions
     activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]>

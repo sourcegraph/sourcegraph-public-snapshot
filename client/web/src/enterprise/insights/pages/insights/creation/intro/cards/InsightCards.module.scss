@@ -61,18 +61,3 @@
         background-color: transparent;
     }
 }
-
-.images {
-    display: flex;
-    height: 10rem;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    width: 6rem;
-    margin: auto;
-}
-
-.image {
-    object-fit: contain;
-    width: 1.75rem;
-}

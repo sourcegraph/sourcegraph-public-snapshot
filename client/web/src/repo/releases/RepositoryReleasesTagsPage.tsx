@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect } from 'react'
 
 import * as H from 'history'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
+
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields } from '../../graphql-operations'
+import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields, RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 
-import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
-
-interface Props extends RepositoryReleasesAreaPageProps {
+interface Props {
+    repo: RepositoryFields | undefined
     history: H.History
     location: H.Location
     queryGitReferences?: (args: {
@@ -35,10 +36,19 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     }, [])
 
     const queryTags = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
-            queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG }),
-        [repo.id, queryGitReferences]
+        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> => {
+            if (!repo?.id) {
+                return of()
+            }
+
+            return queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG })
+        },
+        [repo?.id, queryGitReferences]
     )
+
+    if (!repo) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className="repository-releases-page">

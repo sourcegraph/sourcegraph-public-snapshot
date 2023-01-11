@@ -1,0 +1,12 @@
+.git-commit-node {
+    padding-left: 0;
+    padding-right: 0;
+
+    &-message-subject {
+        opacity: 0.9;
+    }
+
+    :global(.btn) {
+        opacity: 0.85;
+    }
+}

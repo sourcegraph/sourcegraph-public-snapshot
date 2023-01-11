@@ -11,7 +11,7 @@ export const Standalone404Insight: FunctionComponent = () => (
         <H2 className="mb-3">Insight not found</H2>
         <Text>Insight may not exist or you may not have permission to view it.</Text>
 
-        <Button as={Link} to="/insights/dashboards/all" variant="primary" className={styles.redirectButton}>
+        <Button as={Link} to="/insights/all" variant="primary" className={styles.redirectButton}>
             Go to 'All insights'
         </Button>
     </div>
