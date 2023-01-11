@@ -31,9 +31,9 @@ CREATE TYPE time_unit AS ENUM (
 );
 
 CREATE TABLE archived_insight_series_recording_times (
-    insight_series_id integer not null,
-    recording_time timestamp with time zone not null,
-    snapshot boolean not null
+    insight_series_id integer NOT NULL,
+    recording_time timestamp with time zone NOT NULL,
+    snapshot boolean NOT NULL
 );
 
 CREATE TABLE archived_series_points (

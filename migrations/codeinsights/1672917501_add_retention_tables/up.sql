@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS archived_series_points (
 ); -- any new column added to series_points should be added here too. we add a foreign key constraint for deletion.
 
 CREATE TABLE IF NOT EXISTS archived_insight_series_recording_times (
-    insight_series_id integer,
-    recording_time timestamp with time zone,
-    snapshot boolean,
+    insight_series_id integer not null,
+    recording_time timestamp with time zone not null,
+    snapshot boolean not null,
     UNIQUE (insight_series_id, recording_time),
     CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series (id) ON DELETE CASCADE
 ); -- this structure should be kept the same as insight_series_recording_times.
