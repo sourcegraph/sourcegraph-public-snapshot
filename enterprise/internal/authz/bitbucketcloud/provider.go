@@ -174,7 +174,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		users = append(users, bbCloudRepo.Owner)
 	}
 
-	userIDs := make([]extsvc.AccountID, 0, len(users))
+	userIDs := make([]extsvc.AccountID, len(users))
 	for i, user := range users {
 		userIDs[i] = extsvc.AccountID(user.UUID)
 	}
