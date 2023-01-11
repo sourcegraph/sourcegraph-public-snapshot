@@ -35,7 +35,7 @@ Then, deploy the updated version of Sourcegraph to your Kubernetes cluster
 **Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
+$ kustomize build $PATH_TO_OVERLAY -o new/generated-cluster.yaml
 ```
 
 **Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
@@ -111,7 +111,7 @@ You can rollback by resetting your `release` branch to the old state and proceed
 **Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
+$ kustomize build $PATH_TO_OVERLAY -o new/generated-cluster.yaml
 ```
 
 **Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
