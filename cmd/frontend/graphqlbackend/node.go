@@ -218,6 +218,11 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
+	n, ok := r.Node.(*SiteConfigurationChangeResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
 	n, ok := r.Node.(resolverstubs.LSIFUploadResolver)
 	return n, ok
