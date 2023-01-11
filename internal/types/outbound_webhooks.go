@@ -23,3 +23,12 @@ type OutboundWebhookEventType struct {
 	EventType         string  `json:"event_type"`
 	Scope             *string `json:"scope"`
 }
+
+// NewEventType returns an OutboundWebhookEventType for the given event type and scope.
+func (w OutboundWebhook) NewEventType(eventType string, scope *string) OutboundWebhookEventType {
+	return OutboundWebhookEventType{
+		OutboundWebhookID: w.ID,
+		EventType:         eventType,
+		Scope:             scope,
+	}
+}

@@ -427,10 +427,7 @@ func newTestWebhook(t *testing.T, user *types.User, scopes ...ScopedEventType) *
 	}
 
 	for _, scope := range scopes {
-		webhook.EventTypes = append(webhook.EventTypes, types.OutboundWebhookEventType{
-			EventType: scope.EventType,
-			Scope:     scope.Scope,
-		})
+		webhook.EventTypes = append(webhook.EventTypes, webhook.NewEventType(scope.EventType, scope.Scope))
 	}
 
 	return webhook
