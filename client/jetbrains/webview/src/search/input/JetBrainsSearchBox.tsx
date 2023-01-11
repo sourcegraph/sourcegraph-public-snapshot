@@ -5,8 +5,8 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { IEditor, LazyQueryInput } from '@sourcegraph/search-ui/src/input/LazyQueryInput'
-import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
+import { IEditor, LazyQueryInput } from '@sourcegraph/branded'
+import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'

@@ -14,7 +14,7 @@ import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
 const config: Meta = {
-    title: 'search-ui/input/SearchBox',
+    title: 'branded/search-ui/input/SearchBox',
     parameters: {
         chromatic: { viewports: [575, 700], disableSnapshot: false },
     },

@@ -15,13 +15,7 @@
     "strict": true,
     "jsx": "react-jsx",
   },
-  "references": [
-    { "path": "../shared" },
-    { "path": "../common" },
-    { "path": "../branded" },
-    { "path": "../search-ui" },
-    { "path": "../wildcard" },
-  ],
+  "references": [{ "path": "../shared" }, { "path": "../common" }, { "path": "../branded" }, { "path": "../wildcard" }],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }

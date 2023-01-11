@@ -4,7 +4,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

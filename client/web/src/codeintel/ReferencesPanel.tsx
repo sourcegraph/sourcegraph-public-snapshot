@@ -8,6 +8,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'

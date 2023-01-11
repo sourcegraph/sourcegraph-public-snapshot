@@ -5,8 +5,8 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
+import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
