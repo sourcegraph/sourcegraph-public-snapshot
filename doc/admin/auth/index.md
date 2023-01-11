@@ -313,9 +313,11 @@ You can use the following filters to control how users can create accounts and s
 ## Bitbucket Cloud
 [Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
+
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
 - Permissions: 
   - `Account`: `Read`
+
 After the consumer is created, you will need the Key and the Secret, which can be found by expanding OAuth consumer in the list.
 Then add the following lines to your site configuration:
 ```json
@@ -327,7 +329,7 @@ Then add the following lines to your site configuration:
         "displayName": "Bitbucket Cloud",
         "clientKey": "replace-with-the-oauth-consumer-key",
         "clientSecret": "replace-with-the-oauth-consumer-secret",
-        "allowSignup": false, // If not set, it defaults to true allowing any Bitbucket Cloud user with access to your instance to sign up.
+        "allowSignup": false // If not set, it defaults to true allowing any Bitbucket Cloud user with access to your instance to sign up.
       }
     ]
 ```
