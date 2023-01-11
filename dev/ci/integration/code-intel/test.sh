@@ -26,12 +26,13 @@ popd || exit 1
 
 pushd dev/codeintel-qa || exit 1
 
-echo '--- downloading test data from GCS'
+echo "--- :brain: Running the test suite"
+echo '--- :zero: downloading test data from GCS'
 go run ./cmd/download
-echo '--- integration test ./dev/codeintel-qa/cmd/upload'
-go build ./cmd/upload
-./upload --timeout=5m -verbose
-echo '--- integration test ./dev/codeintel-qa/cmd/query'
-go build ./cmd/query
-./query -verbose
+echo '--- :one: clearing existing state'
+go run ./cmd/clear
+echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
+go run ./cmd/upload --timeout=5m -verbose
+echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
+go run ./cmd/query -verbose
 popd || exit 1

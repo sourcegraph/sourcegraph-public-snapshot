@@ -24,7 +24,7 @@ go build -o init-sg ./internal/cmd/init-sg/...
 echo "--- :horse: Running init-sg addRepos"
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
-pushd dev/codeintel-qa
+pushd dev/codeintel-qa || exit 1
 
 echo "--- :brain: Running the test suite"
 echo '--- :zero: downloading test data from GCS'
