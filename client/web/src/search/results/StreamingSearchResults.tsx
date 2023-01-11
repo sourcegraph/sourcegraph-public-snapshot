@@ -24,6 +24,7 @@ import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
@@ -54,7 +55,8 @@ export interface StreamingSearchResultsProps
         TelemetryProps,
         ThemeProps,
         CodeInsightsProps,
-        SearchAggregationProps {
+        SearchAggregationProps,
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -72,12 +74,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         extensionsController,
         searchAggregationEnabled,
+        codeMonitoringEnabled,
     } = props
 
     const history = useHistory()
     // Feature flags
-    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const prefetchBlobFormat = usePrefetchBlobFormat()
@@ -377,7 +378,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
                         enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
-                        enableCodeMonitoring={enableCodeMonitoring}
+                        enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
                         className={styles.infobar}
                         allExpanded={allExpanded}
@@ -437,7 +438,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             {...props}
                             results={results}
                             allExpanded={allExpanded}
-                            showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}

@@ -62,7 +62,7 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
             <InsightCardHeader
                 title={
                     <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        to={`${window.location.origin}/insights/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >

@@ -368,7 +368,7 @@ func (f *Features) String() string {
 // in their search query that affect which repos should be searched.
 // When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
-	RepoFilters         []string
+	RepoFilters         []query.ParsedRepoFilter
 	MinusRepoFilters    []string
 	DescriptionPatterns []string
 
@@ -407,7 +407,7 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 
 	if len(op.RepoFilters) > 0 {
-		add(trace.Strings("repoFilters", op.RepoFilters))
+		add(trace.Printf("repoFilters", "%v", op.RepoFilters))
 	}
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))

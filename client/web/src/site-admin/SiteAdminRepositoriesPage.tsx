@@ -21,6 +21,7 @@ import {
     Text,
     Tooltip,
     ErrorAlert,
+    LinkOrSpan,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
@@ -84,6 +85,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
                     <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
+        {node.mirrorInfo.isCorrupted && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="danger">
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}

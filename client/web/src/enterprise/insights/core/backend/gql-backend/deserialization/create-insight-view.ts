@@ -25,9 +25,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         id: insight.id,
         title: insight.presentation.title,
         isFrozen: insight.isFrozen,
+        dashboards: insight.dashboards?.nodes ?? [],
         dashboardReferenceCount: insight.dashboardReferenceCount,
         seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
-        dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
     }
@@ -77,8 +77,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         context: appliedFilters.searchContexts?.[0] ?? '',
                         seriesDisplayOptions,
                     },
-                    appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
-                    defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
                 }
             }
 

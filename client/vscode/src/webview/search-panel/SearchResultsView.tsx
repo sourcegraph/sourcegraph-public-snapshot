@@ -355,7 +355,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 
@@ -405,7 +404,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // for search examples. Fix on VSCE.
                             isSourcegraphDotCom={false}
                             searchContextsEnabled={true}
-                            showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}

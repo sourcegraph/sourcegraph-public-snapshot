@@ -16,5 +16,6 @@
     { "path": "../http-client" },
     { "path": "../common" },
     { "path": "../observability-client" },
+    { "path": "../wildcard" },
   ],
 }

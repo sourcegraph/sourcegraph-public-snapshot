@@ -19,5 +19,6 @@
     { "path": "../common" },
     { "path": "../codeintellify" },
     { "path": "../client-api" },
+    { "path": "../wildcard" },
   ],
 }

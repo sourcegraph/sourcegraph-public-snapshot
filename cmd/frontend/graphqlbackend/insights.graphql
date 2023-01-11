@@ -1,24 +1,4 @@
 """
-A list of insights.
-"""
-type InsightConnection {
-    """
-    A list of insights.
-    """
-    nodes: [Insight!]!
-
-    """
-    The total number of insights in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
 An insight about code.
 """
 type Insight {
@@ -367,6 +347,11 @@ type InsightViewConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int
 }
 
 """

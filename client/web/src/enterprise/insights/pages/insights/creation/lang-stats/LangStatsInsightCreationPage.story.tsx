@@ -59,6 +59,7 @@ export const LangStatsInsightCreationPage: Story = () => {
     return (
         <MockedTestProvider addTypename={true} mocks={[LANG_STATS_MOCK]}>
             <LangStatsInsightCreationPageComponent
+                backUrl="/insights/create"
                 onInsightCreateRequest={async () => {
                     await delay(1000)
                     throw new Error('Network error')
