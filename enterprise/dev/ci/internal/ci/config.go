@@ -65,6 +65,7 @@ func NewConfig(now time.Time) Config {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+			"APP_NIGHTLY":     os.Getenv("APP_NIGHTLY"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))

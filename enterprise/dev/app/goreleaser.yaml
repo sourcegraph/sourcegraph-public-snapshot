@@ -1,0 +1,112 @@
+project_name: sourcegraph
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: build_linux
+    goos:
+      - linux
+    goarch:
+      - amd64
+    main: &gomain ./enterprise/cmd/sourcegraph
+    ldflags: &ldflags
+      - -X github.com/sourcegraph/sourcegraph/internal/version.version={{.Version}}
+      - -X github.com/sourcegraph/sourcegraph/internal/version.timestamp={{.Timestamp}}
+      - -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program
+    flags: &goflags
+      - -trimpath
+      - -v
+
+  - id: build_macos
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CC=o64-clang
+      - CXX=o64-clang++
+    main: *gomain
+    ldflags: *ldflags
+    flags: *goflags
+
+  # TODO(sqs): Windows builds are broken due to compilation errors in: github.com/sourcegraph/mountinfo, github.com/coreos/go-iptables, github.com/sourcegraph/zoekt
+  #
+  # - id: build_windows
+  #   goos:
+  #     - windows
+  #   goarch:
+  #     - amd64
+  #   env:
+  #     - CC=x86_64-w64-mingw32-gcc
+  #     - CXX=x86_64-w64-mingw32-g++
+  #   main: *gomain
+  #   ldflags: *ldflags
+  #   flags: *goflags
+
+universal_binaries:
+  - id: build_macos
+
+archives:
+  - id: zip_archives
+    builds: ['build_linux', 'build_macos']
+    format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  skip: true
+
+release:
+  github:
+    owner: sourcegraph
+    # TODO(sqs): use just sourcegraph/sourcegraph?
+    name: sourcegraph-app
+  draft: true
+  prerelease: auto
+
+blobs:
+  # Our Buildkite GCP service account has write access to this bucket:
+  #
+  #   gsutil acl ch -u buildkite@sourcegraph-ci.iam.gserviceaccount.com:W gs://sourcegraph-app-releases
+  - provider: gs
+    bucket: sourcegraph-app-releases
+    folder: "{{.Version}}"
+    ids:
+      - build_linux
+      - build_macos
+      - zip_archives
+      - linux_packages
+
+nfpms:
+  - id: linux_packages
+    builds: ['build_linux']
+    formats:
+      - deb
+      - rpm
+    vendor: "sourcegraph"
+    homepage: "https://github.com/sourcegraph/sourcegraph"
+    maintainer: "dev@sourcegraph.com"
+    description: "Code intelligence and search"
+    license: "Sourcegraph Enterprise License (portions licensed under Apache 2)"
+
+brews:
+  - homepage: "https://github.com/sourcegraph/sourcegraph"
+    description: "Code intelligence and search"
+    license: "Sourcegraph Enterprise License (portions licensed under Apache 2)"
+    tap:
+      owner: sourcegraph
+      # TODO(sqs): use just sourcegraph/homebrew-sourcegraph
+      name: homebrew-sourcegraph-app
+    install: |
+      bin.install "sourcegraph"
+    test: |
+      system "#{bin}/sourcegraph --help"
+    dependencies:
+      - name: git
+      - name: redis
+
+# TODO(sqs): add back `dockers`, `scoop`, `snapcraft` as needed
