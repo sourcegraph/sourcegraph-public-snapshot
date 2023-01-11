@@ -258,11 +258,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source === 'blob' && (
                     <>
-                        <ToggleBlameAction />
+                        <ToggleBlameAction actionType="nav" source="actionItemsBar" />
                         {window.context.isAuthenticatedUser && (
                             <OpenInEditorActionItem
                                 platformContext={props.platformContext}
                                 externalServiceType={props.repo?.externalRepository?.serviceType}
+                                actionType="nav"
+                                source="actionItemsBar"
                             />
                         )}
                     </>

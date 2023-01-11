@@ -49,11 +49,13 @@ import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
+import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -102,6 +104,7 @@ interface BlobPageProps
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']
     repoUrl?: string
+    repoServiceType?: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
@@ -358,6 +361,36 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
+            {!window.context.enableLegacyExtensions ? (
+                <>
+                    {window.context.isAuthenticatedUser && (
+                        <RepoHeaderContributionPortal
+                            position="right"
+                            priority={112}
+                            id="open-in-editor-action"
+                            repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                        >
+                            {({ actionType }) => (
+                                <OpenInEditorActionItem
+                                    platformContext={props.platformContext}
+                                    externalServiceType={props.repoServiceType}
+                                    actionType={actionType}
+                                    source="repoHeader"
+                                />
+                            )}
+                        </RepoHeaderContributionPortal>
+                    )}
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={111}
+                        id="toggle-blame-action"
+                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                    >
+                        {({ actionType }) => <ToggleBlameAction actionType={actionType} source="repoHeader" />}
+                    </RepoHeaderContributionPortal>
+                </>
+            ) : null}
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -383,6 +416,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
             )}
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
