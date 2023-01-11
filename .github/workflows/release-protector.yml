@@ -14,22 +14,29 @@ jobs:
         id: check-date-and-labels
         run: |
           has_label="${{contains(github.event.pull_request.labels.*.name, 'i-acknowledge-this-goes-into-the-release')}}"
+
+          # When to start the freeze period, at 00:00 on that day
+          freeze_day=19 
+          # When to stop the freeze period, at 23:59 on that day
+          release_day=21 
           today=$(date +'%Y%m%d%H%M')
+
           current_month=$(date +'%B')
           current_year=$(date +'%Y')
-          release_date=$(date -d "${current_month} 21, ${current_year}" +'%Y%m%d0000')
-          release_date_human=$(date -d "${current_month} 21, ${current_year}" +'%Y-%m-%d-00:00')
+          freeze_date=$(date -d "${current_month} ${freeze_day}, ${current_year}" +'%Y%m%d0000')
+          freeze_date_human=$(date -d "${current_month} ${freeze_day}, ${current_year}" +'%Y-%m-%d-00:00')
+          release_date=$(date -d "${current_month} ${release_day}, ${current_year}" +'%Y%m%d2359')
 
-          if [ "$today" -gt "$release_date" ]; then
-            if [ "$has_label" = "true" ]; then
+          if [ "${today}" -ge "${freeze_date}" ] && [ "${today}" -lt "${release_date}" ]; then
+            if [ "${has_label}" = "true" ]; then
               echo "✅ Label 'i-acknowledge-this-goes-into-the-release' is present"
               exit 0
-            else 
+            else
               echo "❌ Label 'i-acknowledge-this-goes-into-the-release' is absent"
-              echo "👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the release'"
+              echo "👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the-release'"
               exit 1
             fi
           else
-            echo "📅 Not enabled, we're not yet on $release_date_human and release code freeze has not started yet." 
+            echo "📅 Not enabled, we're not yet on ${freeze_date_human} and release code freeze has not started yet." 
             exit 0
           fi
