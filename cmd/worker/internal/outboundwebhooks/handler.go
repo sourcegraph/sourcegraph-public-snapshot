@@ -36,7 +36,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job *types.Outb
 
 	webhooks, err := h.store.List(ctx, database.OutboundWebhookListOpts{
 		OutboundWebhookCountOpts: database.OutboundWebhookCountOpts{
-			ScopedEventTypes: []database.ScopedEventType{{
+			EventTypes: []database.FilterEventType{{
 				EventType: job.EventType,
 				Scope:     job.Scope,
 			}},
