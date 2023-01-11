@@ -148,8 +148,8 @@ with moved_rows as (
 	WHERE series_id = %s AND time < %s
 	RETURNING * 
 )
-INSERT INTO archived_series_points
-SELECT * from moved_rows
+INSERT INTO archived_series_points (series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture)
+SELECT series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture from moved_rows
 ON CONFLICT DO NOTHING
 `
 
@@ -163,7 +163,7 @@ WITH moved_rows AS (
 	WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s
 	RETURNING * 
 )
-INSERT INTO archived_series_points (series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture)
-SELECT series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture from moved_rows
+INSERT INTO archived_insight_series_recording_times
+SELECT * FROM moved_rows
 ON CONFLICT DO NOTHING
 `
