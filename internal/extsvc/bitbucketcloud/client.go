@@ -45,6 +45,7 @@ type Client interface {
 	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
+	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
 }
 
 // client access a Bitbucket Cloud via the REST API 2.0.
