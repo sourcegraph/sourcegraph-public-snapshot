@@ -1102,6 +1102,9 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 			numSamples := 30
 			if d.args.SeriesDisplayOptions.NumSamples != nil {
 				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
+				if numSamples > 90 {
+					numSamples = 90
+				}
 			}
 			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
