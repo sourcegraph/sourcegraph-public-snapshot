@@ -40,7 +40,7 @@ go run ./cmd/download
 Alternatively, generate them by running the following command (this takes much longer):
 
 ```
-./scripts/clone-and-index.sh
+go run ./cmd/clone-and-index
 ```
 
 If there is previous upload or index state on the target instance, they can be cleared by running the following command:
@@ -68,7 +68,7 @@ If there is a change to an indexer that needs to be tested, the indexes can be r
 Generate indexes by running the following command:
 
 ```
-./scripts/clone-and-index.sh
+go run ./cmd/clone-and-index
 ```
 
 Upload the generated indexes to GCS by running the following command:
@@ -83,4 +83,4 @@ Or if you just want to test an indexer change locally, you can:
 rm -rf testdata/indexes/
 ```
 
-Then rerun the testing steps described above (starting at `clone-and-index.sh`)
+Then run the `clone-and-index` step described above.
