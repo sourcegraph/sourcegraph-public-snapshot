@@ -12,11 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+const janitorFrequency = 1 * time.Hour
+
 // makeJanitor creates a background goroutine to expunge old outbound webhook
 // jobs and logs from the database.
 func makeJanitor(observationCtx *observation.Context, store database.OutboundWebhookJobStore) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), "outbound-webhooks.janitor", "cleans up stale outbound webhook jobs",
-		1*time.Hour, goroutine.HandlerFunc(func(ctx context.Context) error {
+		janitorFrequency, goroutine.HandlerFunc(func(ctx context.Context) error {
 			err := store.DeleteBefore(ctx, time.Now().Add(-1*calculateRetention(observationCtx.Logger, conf.Get())))
 			if err != nil {
 				observationCtx.Logger.Error("outbound webhook janitor error", log.Error(err))
