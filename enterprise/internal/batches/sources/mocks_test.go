@@ -3616,6 +3616,10 @@ type MockBitbucketCloudClient struct {
 	// GetPullRequestStatusesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetPullRequestStatuses.
 	GetPullRequestStatusesFunc *BitbucketCloudClientGetPullRequestStatusesFunc
+	// ListExplicitUserPermsForRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListExplicitUserPermsForRepo.
+	ListExplicitUserPermsForRepoFunc *BitbucketCloudClientListExplicitUserPermsForRepoFunc
 	// MergePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method MergePullRequest.
 	MergePullRequestFunc *BitbucketCloudClientMergePullRequestFunc
@@ -3685,6 +3689,11 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 				return
 			},
 		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, string) (r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+				return
+			},
+		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: func(context.Context, *bitbucketcloud.Repo, int64, bitbucketcloud.MergePullRequestOpts) (r0 *bitbucketcloud.PullRequest, r1 error) {
 				return
@@ -3701,7 +3710,7 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
 				return
 			},
 		},
@@ -3767,6 +3776,11 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 				panic("unexpected invocation of MockBitbucketCloudClient.GetPullRequestStatuses")
 			},
 		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+				panic("unexpected invocation of MockBitbucketCloudClient.ListExplicitUserPermsForRepo")
+			},
+		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: func(context.Context, *bitbucketcloud.Repo, int64, bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.MergePullRequest")
@@ -3783,7 +3797,7 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.Repos")
 			},
 		},
@@ -3831,6 +3845,9 @@ func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketClou
 		},
 		GetPullRequestStatusesFunc: &BitbucketCloudClientGetPullRequestStatusesFunc{
 			defaultHook: i.GetPullRequestStatuses,
+		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: i.ListExplicitUserPermsForRepo,
 		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: i.MergePullRequest,
@@ -4866,6 +4883,127 @@ func (c BitbucketCloudClientGetPullRequestStatusesFuncCall) Results() []interfac
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// BitbucketCloudClientListExplicitUserPermsForRepoFunc describes the
+// behavior when the ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance is invoked.
+type BitbucketCloudClientListExplicitUserPermsForRepoFunc struct {
+	defaultHook func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)
+	history     []BitbucketCloudClientListExplicitUserPermsForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// ListExplicitUserPermsForRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBitbucketCloudClient) ListExplicitUserPermsForRepo(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string, v3 string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.ListExplicitUserPermsForRepoFunc.nextHook()(v0, v1, v2, v3)
+	m.ListExplicitUserPermsForRepoFunc.appendCall(BitbucketCloudClientListExplicitUserPermsForRepoFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance is invoked and the hook queue is empty.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) SetDefaultReturn(r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) PushReturn(r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string, string) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) appendCall(r0 BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketCloudClientListExplicitUserPermsForRepoFuncCall objects
+// describing the invocations of this function.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) History() []BitbucketCloudClientListExplicitUserPermsForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketCloudClientListExplicitUserPermsForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketCloudClientListExplicitUserPermsForRepoFuncCall is an object
+// that describes an invocation of method ListExplicitUserPermsForRepo on an
+// instance of MockBitbucketCloudClient.
+type BitbucketCloudClientListExplicitUserPermsForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *bitbucketcloud.PageToken
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*bitbucketcloud.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *bitbucketcloud.PageToken
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // BitbucketCloudClientMergePullRequestFunc describes the behavior when the
 // MergePullRequest method of the parent MockBitbucketCloudClient instance
 // is invoked.
@@ -5200,24 +5338,24 @@ func (c BitbucketCloudClientRepoFuncCall) Results() []interface{} {
 // BitbucketCloudClientReposFunc describes the behavior when the Repos
 // method of the parent MockBitbucketCloudClient instance is invoked.
 type BitbucketCloudClientReposFunc struct {
-	defaultHook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
-	hooks       []func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	defaultHook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
 	history     []BitbucketCloudClientReposFuncCall
 	mutex       sync.Mutex
 }
 
 // Repos delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
-	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2)
-	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string, v3 *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2, v3)
+	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Repos method of the
 // parent MockBitbucketCloudClient instance is invoked and the hook queue is
 // empty.
-func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.defaultHook = hook
 }
 
@@ -5225,7 +5363,7 @@ func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context
 // Repos method of the parent MockBitbucketCloudClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5234,19 +5372,19 @@ func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bit
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *BitbucketCloudClientReposFunc) SetDefaultReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *BitbucketCloudClientReposFunc) PushReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5288,6 +5426,9 @@ type BitbucketCloudClientReposFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *bitbucketcloud.ReposOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*bitbucketcloud.Repo
@@ -5302,7 +5443,7 @@ type BitbucketCloudClientReposFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BitbucketCloudClientReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

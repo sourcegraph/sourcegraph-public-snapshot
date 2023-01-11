@@ -131,7 +131,7 @@ func TestClient_Repos(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			repos, next, err := cli.Repos(tc.ctx, tc.page, tc.account)
+			repos, next, err := cli.Repos(tc.ctx, tc.page, tc.account, nil)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
