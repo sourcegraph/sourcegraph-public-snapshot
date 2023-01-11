@@ -2,7 +2,6 @@ import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings, SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
@@ -131,7 +130,7 @@ export const percySnapshotWithVariants = async (
     await percySnapshot(page, `${name} - light theme`)
 }
 
-type Editor = NonNullable<SettingsExperimentalFeatures['editor']>
+type Editor = 'monaco' | 'codemirror6'
 
 export interface EditorAPI {
     name: Editor
@@ -294,18 +293,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         }
         return api
     },
-}
-
-/**
- * Creates the necessary user settings mock for enabling the specified editor.
- * The caller is responsible for mocking the response with the returned object.
- */
-export function enableEditor(editor: Editor): Partial<Settings> {
-    return {
-        experimentalFeatures: {
-            editor,
-        },
-    }
 }
 
 /**
