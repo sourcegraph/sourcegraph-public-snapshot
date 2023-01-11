@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+	rexec "github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -117,7 +119,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd)
 
-	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+	if output, err := runWith(ctx, rexec.Wrap(ctx, log.NoOp(), cmd), false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
@@ -130,7 +132,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"P4PASSWD="+password,
 		)
 		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		if output, err := runWith(ctx, rexec.Wrap(ctx, log.NoOp(), cmd), false, nil); err != nil {
 			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}
@@ -195,7 +197,7 @@ func p4trust(ctx context.Context, host string) error {
 		"P4PORT="+host,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, rexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -220,7 +222,7 @@ func p4ping(ctx context.Context, host, username, password string) error {
 		"P4PASSWD="+password,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, rexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr

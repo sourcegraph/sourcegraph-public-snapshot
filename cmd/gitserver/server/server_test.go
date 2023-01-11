@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rexec "github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -221,7 +222,7 @@ func TestExecRequest(t *testing.T) {
 			m := runCommandMock
 			runCommandMock = nil
 			defer func() { runCommandMock = m }()
-			return runCommand(ctx, cmd)
+			return runCommand(ctx, rexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
@@ -1591,7 +1592,7 @@ func TestRunCommandGraceful(t *testing.T) {
 		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		cmd := exec.Command("sleep", "0.1")
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, rexec.Wrap(ctx, logger, cmd))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1610,7 +1611,7 @@ func TestRunCommandGraceful(t *testing.T) {
 		var stdOut bytes.Buffer
 		cmd.Stdout = &stdOut
 
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, rexec.Wrap(ctx, logger, cmd))
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 		assert.Equal(t, 0, exitStatus)
 		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
@@ -1625,7 +1626,8 @@ func TestRunCommandGraceful(t *testing.T) {
 
 		cmd := exec.Command("testdata/signaltest_noexit.sh")
 
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, rexec.Wrap(ctx, logger, cmd))
+
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 		assert.Equal(t, -1, exitStatus)
 	})
