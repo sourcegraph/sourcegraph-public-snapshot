@@ -11,20 +11,20 @@ export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 
 echo '--- initializing Sourcegraph instance'
 
-pushd internal/cmd/init-sg || exit 1
+pushd internal/cmd/init-sg
 go build -o "${root_dir}/init-sg"
-popd || exit 1
+popd
 
-pushd dev/ci/integration/code-intel || exit 1
+pushd dev/ci/integration/code-intel
 "${root_dir}/init-sg" initSG
 # Disable `-x` to avoid printing secrets
 set +x
 # shellcheck disable=SC1091
 source /root/.sg_envrc
 "${root_dir}/init-sg" addRepos -config repos.json
-popd || exit 1
+popd
 
-pushd dev/codeintel-qa || exit 1
+pushd dev/codeintel-qa
 
 echo "--- :brain: Running the test suite"
 echo '--- :zero: downloading test data from GCS'
@@ -35,4 +35,4 @@ echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
 go run ./cmd/upload --timeout=5m -verbose
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 go run ./cmd/query -verbose
-popd || exit 1
+popd

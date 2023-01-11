@@ -24,7 +24,7 @@ go build -o init-sg ./internal/cmd/init-sg/...
 echo "--- :horse: Running init-sg addRepos"
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
-pushd dev/codeintel-qa || exit 1
+pushd dev/codeintel-qa
 
 echo "--- :brain: Running the test suite"
 echo '--- :zero: downloading test data from GCS'
@@ -35,4 +35,4 @@ echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
 go run ./cmd/upload --timeout=5m
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 go run ./cmd/query -check-query-result=false # make queries but do not assert against expected locations
-popd || exit 1
+popd
