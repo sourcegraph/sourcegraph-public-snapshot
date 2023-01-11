@@ -41,6 +41,7 @@ export class CodeIntelTooltip implements Tooltip {
         private readonly view: EditorView,
         private readonly occurrence: Occurrence,
         private readonly hover: HoverResult,
+        // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
         readonly pinned: boolean
     ) {
         const range = rangeToCmSelection(view.state, occurrence.range)
