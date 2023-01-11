@@ -174,7 +174,7 @@ func TestOutboundWebhooks(t *testing.T) {
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
 									{EventType: "foo", Scope: stringPtr(FilterEventTypeNoScope)},
-									{EventType: "quux"},
+									{EventType: "quux", Scope: stringPtr(FilterEventTypeNoScope)},
 								},
 							},
 						},
