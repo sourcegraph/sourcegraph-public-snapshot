@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -173,6 +174,65 @@ func (p *PatternInfo) String() string {
 	return fmt.Sprintf("PatternInfo{%s}", strings.Join(args, ","))
 }
 
+func (r *Request) ToProto() *proto.SearchRequest {
+	return &proto.SearchRequest{
+		Repo:      string(r.Repo),
+		RepoId:    int32(r.RepoID),
+		CommitOid: string(r.Commit),
+		Branch:    r.Branch,
+		Indexed:   r.Indexed,
+		PatternInfo: &proto.PatternInfo{
+			Pattern:                      r.PatternInfo.Pattern,
+			IsNegated:                    r.PatternInfo.IsNegated,
+			IsRegexp:                     r.PatternInfo.IsRegExp,
+			IsStructural:                 r.PatternInfo.IsStructuralPat,
+			IsWordMatch:                  r.PatternInfo.IsWordMatch,
+			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
+			ExcludePattern:               r.PatternInfo.ExcludePattern,
+			IncludePatterns:              r.PatternInfo.IncludePatterns,
+			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
+			Limit:                        int32(r.PatternInfo.Limit),
+			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
+			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
+			CombyRule:                    r.PatternInfo.CombyRule,
+			Languages:                    r.PatternInfo.Languages,
+			Select:                       r.PatternInfo.Select,
+		},
+		FetchTimeout: r.FetchTimeout,
+		FeatHybrid:   r.FeatHybrid,
+	}
+}
+
+func (r *Request) FromProto(req *proto.SearchRequest) {
+	*r = Request{
+		Repo:   api.RepoName(req.Repo),
+		RepoID: api.RepoID(req.RepoId),
+		URL:    "",
+		Commit: api.CommitID(req.CommitOid),
+		Branch: req.Branch,
+		PatternInfo: PatternInfo{
+			Pattern:                      req.PatternInfo.Pattern,
+			IsNegated:                    req.PatternInfo.IsNegated,
+			IsRegExp:                     req.PatternInfo.IsRegexp,
+			IsStructuralPat:              req.PatternInfo.IsStructural,
+			IsWordMatch:                  req.PatternInfo.IsWordMatch,
+			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
+			ExcludePattern:               req.PatternInfo.ExcludePattern,
+			IncludePatterns:              req.PatternInfo.IncludePatterns,
+			PathPatternsAreCaseSensitive: req.PatternInfo.PathPatternsAreCaseSensitive,
+			Limit:                        int(req.PatternInfo.Limit),
+			PatternMatchesContent:        req.PatternInfo.PatternMatchesContent,
+			PatternMatchesPath:           req.PatternInfo.PatternMatchesPath,
+			Languages:                    req.PatternInfo.Languages,
+			CombyRule:                    req.PatternInfo.CombyRule,
+			Select:                       req.PatternInfo.Select,
+		},
+		FetchTimeout: req.FetchTimeout,
+		Indexed:      req.Indexed,
+		FeatHybrid:   req.FeatHybrid,
+	}
+}
+
 // Response represents the response from a Search request.
 type Response struct {
 	Matches []FileMatch
@@ -192,6 +252,30 @@ type FileMatch struct {
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool
+}
+
+func (fm *FileMatch) ToProto() *proto.FileMatch {
+	chunkMatches := make([]*proto.ChunkMatch, len(fm.ChunkMatches))
+	for i, cm := range fm.ChunkMatches {
+		chunkMatches[i] = cm.ToProto()
+	}
+	return &proto.FileMatch{
+		Path:         fm.Path,
+		ChunkMatches: chunkMatches,
+		LimitHit:     fm.LimitHit,
+	}
+}
+
+func (fm *FileMatch) FromProto(pm *proto.FileMatch) {
+	chunkMatches := make([]ChunkMatch, len(pm.ChunkMatches))
+	for i, cm := range pm.ChunkMatches {
+		chunkMatches[i].FromProto(cm)
+	}
+	*fm = FileMatch{
+		Path:         pm.Path,
+		ChunkMatches: chunkMatches,
+		LimitHit:     pm.LimitHit,
+	}
 }
 
 func (fm FileMatch) MatchCount() int {
@@ -239,9 +323,49 @@ func (cm ChunkMatch) MatchedContent() []string {
 	return res
 }
 
+func (cm *ChunkMatch) ToProto() *proto.ChunkMatch {
+	ranges := make([]*proto.Range, len(cm.Ranges))
+	for i, r := range cm.Ranges {
+		ranges[i] = r.ToProto()
+	}
+	return &proto.ChunkMatch{
+		Content:      cm.Content,
+		ContentStart: cm.ContentStart.ToProto(),
+		Ranges:       ranges,
+	}
+}
+
+func (cm *ChunkMatch) FromProto(pm *proto.ChunkMatch) {
+	var contentStart Location
+	contentStart.FromProto(pm.ContentStart)
+
+	ranges := make([]Range, len(pm.Ranges))
+	for i, r := range pm.Ranges {
+		ranges[i].FromProto(r)
+	}
+
+	*cm = ChunkMatch{
+		Content:      pm.Content,
+		ContentStart: contentStart,
+		Ranges:       ranges,
+	}
+}
+
 type Range struct {
 	Start Location
 	End   Location
+}
+
+func (r *Range) ToProto() *proto.Range {
+	return &proto.Range{
+		Start: r.Start.ToProto(),
+		End:   r.End.ToProto(),
+	}
+}
+
+func (r *Range) FromProto(pr *proto.Range) {
+	r.Start.FromProto(pr.Start)
+	r.End.FromProto(pr.End)
 }
 
 type Location struct {
@@ -254,4 +378,20 @@ type Location struct {
 
 	// Column is the rune offset from the beginning of the last line.
 	Column int32
+}
+
+func (l *Location) ToProto() *proto.Location {
+	return &proto.Location{
+		Offset: l.Offset,
+		Line:   l.Line,
+		Column: l.Column,
+	}
+}
+
+func (l *Location) FromProto(pl *proto.Location) {
+	*l = Location{
+		Offset: pl.Offset,
+		Line:   pl.Line,
+		Column: pl.Column,
+	}
 }
