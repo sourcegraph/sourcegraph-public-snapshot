@@ -73,17 +73,18 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        file(path: $filePath, startLine: $startLine, endLine: $endLine) {
+                        blob(path: $filePath, startLine: $startLine, endLine: $endLine) {
                             ...BlobFileFields
                         }
                     }
                 }
             }
 
-            fragment BlobFileFields on File2 {
+            fragment BlobFileFields on GitBlob {
                 __typename
                 content
                 richHTML
+                totalLines
                 highlight(disableTimeout: $disableTimeout, format: $format) {
                     aborted
                     html @include(if: $html)
@@ -108,7 +109,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 throw new Error('Commit not found')
             }
 
-            return data.repository.commit.file
+            return data.repository.commit.blob
         })
     )
 }, fetchBlobCacheKey)
