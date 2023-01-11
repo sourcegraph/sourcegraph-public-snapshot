@@ -91,15 +91,12 @@ func downloadAll(ctx context.Context, bucket *storage.BucketHandle, paths []stri
 func downloadIndex(ctx context.Context, bucket *storage.BucketHandle, indexesDir, name string) (err error) {
 	targetFile := filepath.Join(indexesDir, strings.TrimSuffix(name, ".gz"))
 
-	if _, err := os.Stat(targetFile); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else {
+	if ok, err := internal.FileExists(targetFile); err != nil {
+		return err
+	} else if ok {
 		fmt.Printf("Index %q already downloaded\n", name)
 		return nil
 	}
-
 	fmt.Printf("Downloading %q\n", name)
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)

@@ -112,24 +112,21 @@ func clone(ctx context.Context, org, name string) error {
 	}
 	reposDir := filepath.Join(repoRoot, relativeReposDir)
 
+	if ok, err := internal.FileExists(filepath.Join(reposDir, name)); err != nil {
+		return err
+	} else if ok {
+		fmt.Printf("Repository %q already cloned\n", name)
+		return nil
+	}
+	fmt.Printf("Cloning %q\n", name)
+
 	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
 		return err
 	}
 
-	if _, err := os.Stat(filepath.Join(reposDir, name)); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else {
-		fmt.Printf("Repository %q already cloned\n", name)
-		return nil
-	}
-
-	fmt.Printf("Cloning %q\n", name)
 	if err := run.Bash(ctx, "git", "clone", fmt.Sprintf("https://github.com/%s/%s.git", org, name)).Dir(reposDir).Run().Wait(); err != nil {
 		return err
 	}
-
 	fmt.Printf("Finished cloning %q\n", name)
 	return nil
 }
@@ -200,15 +197,12 @@ func indexGoWithLSIF(ctx context.Context, reposDir, targetFile, name, revision s
 }
 
 func indexGeneric(ctx context.Context, reposDir, targetFile, name, revision string, index func(repoCopyDir string) error) error {
-	if _, err := os.Stat(targetFile); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else {
+	if ok, err := internal.FileExists(targetFile); err != nil {
+		return err
+	} else if ok {
 		fmt.Printf("Index for %s@%s already exists\n", name, revision)
 		return nil
 	}
-
 	fmt.Printf("Indexing %s@%s\n", name, revision)
 
 	tempDir, err := os.MkdirTemp("", "codeintel-qa")
