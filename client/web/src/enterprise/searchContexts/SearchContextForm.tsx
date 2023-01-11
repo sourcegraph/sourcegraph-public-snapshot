@@ -6,7 +6,7 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
@@ -145,7 +145,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
         props
     const history = useHistory()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -445,8 +444,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             }
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
-                            <LazyMonacoQueryInput
-                                editorComponent={editorComponent}
+                            <LazyQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}

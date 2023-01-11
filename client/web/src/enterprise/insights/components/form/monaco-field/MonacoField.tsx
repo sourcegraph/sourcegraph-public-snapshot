@@ -2,9 +2,8 @@ import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperati
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import * as Monaco from 'monaco-editor'
 
-import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryChangeSource } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
@@ -43,17 +42,6 @@ export const MonacoFocusContainer = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'div'>
 
-const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
-    ...DEFAULT_MONACO_OPTIONS,
-    wordWrap: 'on',
-    fixedOverflowWidgets: false,
-    lineHeight: 21,
-    scrollbar: {
-        vertical: 'auto',
-        horizontal: 'hidden',
-    },
-}
-
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
     value: string
     patternType?: SearchPatternType
@@ -84,15 +72,13 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-    const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
+    const monacoOptions = useMemo(() => ({ readOnly: disabled }), [disabled])
 
     return (
-        <LazyMonacoQueryInput
+        <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
-            editorComponent={editorComponent}
             queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
@@ -101,14 +87,12 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             patternType={patternType}
             caseSensitive={false}
             globbing={true}
-            height="auto"
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}
             editorOptions={monacoOptions}
-            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
             autoFocus={autoFocus}
             onBlur={onBlur}
             applySuggestionsOnEnter={applySuggestionsOnEnter}

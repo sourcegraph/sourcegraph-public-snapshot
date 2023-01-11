@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { noop } from 'lodash'
 
-import { PlainQueryInput } from './LazyMonacoQueryInput'
+import { PlainQueryInput } from './LazyQueryInput'
 
 describe('PlainQueryInput', () => {
     test('empty', () =>
