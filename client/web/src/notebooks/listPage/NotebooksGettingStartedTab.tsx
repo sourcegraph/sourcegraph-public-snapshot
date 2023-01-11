@@ -12,6 +12,7 @@ import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
@@ -131,7 +132,9 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                        onClick={() =>
+                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NotebooksGettingStarted' })
+                        }
                     >
                         try Sourcegraph Cloud
                     </Link>

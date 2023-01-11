@@ -73,7 +73,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <div className="mt-3">
                         <Link
                             to={buildCloudTrialURL(props.authenticatedUser)}
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeAboveSearch' })}
                         >
                             Search private code
                         </Link>

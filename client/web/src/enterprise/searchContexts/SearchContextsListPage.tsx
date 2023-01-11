@@ -47,7 +47,9 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                     className="mt-2"
                                     as={Link}
                                     variant="secondary"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
+                                    }
                                 >
                                     Search private code
                                 </Button>
