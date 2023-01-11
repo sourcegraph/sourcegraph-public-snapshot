@@ -37,7 +37,7 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                     <td>{displayName}</td>
                 </tr>
                 <tr>
-                    <th className={styles.tableHeader}>Synced repositories</th>
+                    <th className={styles.tableHeader}>Repositories</th>
                     <td>
                         <Tooltip content="Click to see the list of repositories">
                             <Link to={`/site-admin/repositories?codeHost=${encodeURIComponent(codeHostID)}`}>
@@ -46,9 +46,8 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         </Tooltip>
                         {syncInProgress && (
                             <>
-                                {' (Code host sync in progress...'}
-                                <LoadingSpinner inline={true} />
-                                )
+                                {' (Syncing list of repositories from code host...'}
+                                <LoadingSpinner inline={true} />)
                             </>
                         )}
                     </td>

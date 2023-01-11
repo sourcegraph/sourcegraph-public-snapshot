@@ -45,11 +45,7 @@ interface Props extends TelemetryProps {
 }
 
 const NotFoundPage: FC<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested code host page was not found."
-    />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested code host was not found." />
 )
 
 export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => {
