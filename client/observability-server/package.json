@@ -13,6 +13,14 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@sourcegraph/build-config": "workspace:*"
+    "@sourcegraph/build-config": "workspace:*",
+    "envalid": "^7.3.1",
+    "glob": "^7.1.6",
+    "libhoney": "^3.1.1",
+    "node-fetch": "^2.6.7",
+    "signale": "^1.4.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.20"
   }
 }

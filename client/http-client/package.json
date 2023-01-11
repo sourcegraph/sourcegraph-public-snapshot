@@ -10,8 +10,23 @@
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "test": "jest"
   },
+  "devDependencies": {
+    "graphql": "^15.4.0",
+    "node-fetch": "^2.6.7",
+    "sinon": "^9.0.2",
+    "@types/react": "18.0.8",
+    "@types/react-dom": "18.0.2"
+  },
   "dependencies": {
     "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/shared": "workspace:*"
+    "@sourcegraph/shared": "workspace:*",
+    "@apollo/client": "^3.5.0",
+    "apollo3-cache-persist": "^0.12.1",
+    "delay": "^4.4.1",
+    "lodash": "^4.17.20",
+    "react": "18.1.0",
+    "react-dom": "18.1.0",
+    "rxjs": "^6.6.3",
+    "utility-types": "^3.10.0"
   }
 }

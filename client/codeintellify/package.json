@@ -14,6 +14,9 @@
     "@sourcegraph/extension-api-types": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*"
+    "@sourcegraph/common": "workspace:*",
+    "lodash": "^4.17.20",
+    "rxjs": "^6.6.3",
+    "ts-key-enum": "^2.0.7"
   }
 }

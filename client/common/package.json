@@ -11,6 +11,21 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@sourcegraph/extension-api-types": "workspace:*"
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "expect": "^27.5.1",
+    "graphql": "^15.4.0",
+    "mockdate": "^3.0.2",
+    "jest-fetch-mock": "^3.0.3"
+  },
+  "dependencies": {
+    "delay": "^4.4.1",
+    "highlight.js": "^10.5.0",
+    "highlightjs-graphql": "^1.0.2",
+    "jsonc-parser": "^3.0.0",
+    "lodash": "^4.17.20",
+    "marked": "4.0.16",
+    "rxjs": "^6.6.3",
+    "sanitize-html": "^2.0.0",
+    "utility-types": "^3.10.0"
   }
 }

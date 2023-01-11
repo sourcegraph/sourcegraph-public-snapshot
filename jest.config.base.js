@@ -77,7 +77,6 @@ const config = {
   ],
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
-    require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
     path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
   ],

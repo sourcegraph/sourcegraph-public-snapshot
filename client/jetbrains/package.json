@@ -26,7 +26,18 @@
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/storybook": "workspace:*",
-    "@sourcegraph/eslint-plugin-wildcard": "workspace:*"
+    "@sourcegraph/eslint-plugin-wildcard": "workspace:*",
+    "buffer": "^6.0.3",
+    "esbuild": "^0.16.10",
+    "express": "^4.17.1",
+    "jsdom": "^16.7.0",
+    "process": "^0.11.10",
+    "shelljs": "^0.8.4",
+    "storybook-dark-mode": "^2.0.4",
+    "ts-node": "^10.7.0",
+    "@types/react": "18.0.8",
+    "@types/react-dom": "18.0.2",
+    "@storybook/react": "^6.5.14"
   },
   "dependencies": {
     "@sourcegraph/branded": "workspace:*",
@@ -34,6 +45,17 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/search-ui": "workspace:*"
+    "@sourcegraph/search-ui": "workspace:*",
+    "@mdi/js": "^6.7.96",
+    "date-fns": "^2.16.1",
+    "https-browserify": "^1.0.0",
+    "js-base64": "^3.7.2",
+    "mdi-react": "^8.1.0",
+    "path-browserify": "^1.0.1",
+    "react": "18.1.0",
+    "react-dom": "18.1.0",
+    "rxjs": "^6.6.3",
+    "stream-http": "^3.2.0",
+    "url": "^0.11.0"
   }
 }
