@@ -33,10 +33,11 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Do not assume user email is verified on creation if email delivery is
 	// enabled and we are allowed to reset passwords (which will become the primary
 	// mechanism for verifying this newly created email).
-	var verificationCode string
-	if email != "" {
+	needsEmailVerification := email != "" && conf.CanSendEmail()
+	var emailVerificationCode string
+	if needsEmailVerification {
 		var err error
-		verificationCode, err = backend.MakeEmailVerificationCode()
+		emailVerificationCode, err = backend.MakeEmailVerificationCode()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate email verification code")
 		}
@@ -49,15 +50,15 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		Email: email,
 
 		// In order to mark an email as unverified, we must generate a verification code.
-		EmailIsVerified:       verificationCode == "",
-		EmailVerificationCode: verificationCode,
+		EmailIsVerified:       !needsEmailVerification,
+		EmailVerificationCode: emailVerificationCode,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	logger := r.logger.Scoped("createUser", "create user handler").With(
-		log.Bool("requireVerification", email != ""),
+		log.Bool("needsEmailVerification", needsEmailVerification),
 		log.Int32("user.id", user.ID),
 	)
 	logger.Debug("user created")
@@ -71,7 +72,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 			log.Error(err))
 	}
 
-	return &createUserResult{db: r.db, user: user, emailWasProvided: email != ""}, nil
+	return &createUserResult{db: r.db, user: user, needsEmailVerification: needsEmailVerification}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
@@ -80,8 +81,8 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 type createUserResult struct {
 	db database.DB
 
-	user             *types.User
-	emailWasProvided bool
+	user                   *types.User
+	needsEmailVerification bool
 }
 
 func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
@@ -91,8 +92,9 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	var ru string
-	if conf.CanSendEmail() && r.emailWasProvided {
+	if conf.CanSendEmail() && r.needsEmailVerification {
+		// HandleSetPasswordEmail will send a special password reset email that also
+		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
 		if err != nil {
 			return nil, err
@@ -104,6 +106,6 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 	if err != nil {
 		return nil, err
 	}
-	ru = globals.ExternalURL().ResolveReference(resetURL).String()
+	ru := globals.ExternalURL().ResolveReference(resetURL).String()
 	return &ru, nil
 }
