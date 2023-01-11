@@ -3,7 +3,7 @@ import React, { FC } from 'react'
 import classNames from 'classnames'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from '../../site-admin/WebhookInformation.module.scss'
 
@@ -16,10 +16,11 @@ interface ExternalServiceInformationProps {
     displayName: string
     codeHostID: string
     reposNumber: number
+    syncInProgress: boolean
 }
 
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
-    const { icon, kind, displayName, codeHostID, reposNumber } = props
+    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress } = props
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -43,6 +44,13 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                                 {reposNumber}
                             </Link>
                         </Tooltip>
+                        {syncInProgress && (
+                            <>
+                                {' (Code host sync in progress...'}
+                                <LoadingSpinner inline={true} />
+                                )
+                            </>
+                        )}
                     </td>
                 </tr>
             </tbody>

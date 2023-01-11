@@ -69,6 +69,12 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
 
+    const [syncInProgress, setSyncInProgress] = useState<boolean>(false)
+    // Callback used in ExternalServiceSyncJobsList to update the state in current component.
+    const updateSyncInProgress = useCallback((updatedSyncInProgress: boolean) => {
+        setSyncInProgress(updatedSyncInProgress)
+    }, [])
+
     const {
         data: externalServiceData,
         error: fetchError,
@@ -81,6 +87,12 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
 
     const externalService =
         externalServiceData?.node?.__typename === 'ExternalService' ? externalServiceData.node : undefined
+
+    const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
+    // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
+    const updateNumberOfRepos = useCallback((updatedNumberOfRepos: number) => {
+        setNumberOfRepos(updatedNumberOfRepos)
+    }, [])
 
     const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
         useSyncExternalService()
@@ -97,8 +109,6 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
 
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
-    const combinedError = fetchError
-    const combinedLoading = fetchLoading
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
@@ -148,10 +158,6 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
         }
     }
 
-    if (!externalService) {
-        return <NotFoundPage />
-    }
-
     return (
         <div>
             {externalService ? (
@@ -159,8 +165,8 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
             ) : (
                 <PageTitle title="Code host" />
             )}
-            {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
-
+            {fetchError !== undefined && !fetchLoading && <ErrorAlert className="mb-3" error={fetchError} />}
+            {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
             {externalService && (
                 <Container className="mb-3">
                     <PageHeader
@@ -240,7 +246,8 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                         <ExternalServiceInformation
                             displayName={externalService.displayName}
                             codeHostID={externalService.id}
-                            reposNumber={externalService.repoCount}
+                            reposNumber={numberOfRepos}
+                            syncInProgress={syncInProgress}
                             {...externalServiceCategory}
                         />
                     )}
@@ -250,7 +257,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                             value={externalService.config}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             canEdit={false}
-                            loading={combinedLoading}
+                            loading={fetchLoading}
                             height={350}
                             readOnly={true}
                             isLightTheme={isLightTheme}
@@ -272,6 +279,8 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />
                     <ExternalServiceSyncJobsList
                         queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                        updateSyncInProgress={updateSyncInProgress}
+                        updateNumberOfRepos={updateNumberOfRepos}
                         externalServiceID={externalService.id}
                         updates={syncJobUpdates}
                     />
