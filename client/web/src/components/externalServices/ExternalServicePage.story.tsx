@@ -17,12 +17,6 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/External services/ExternalServicePage',
-    parameters: {
-        chromatic: {
-            // Delay screenshot taking, so Monaco has some time to get syntax highlighting prepared.
-            delay: 2000,
-        },
-    },
     decorators: [decorator],
 }
 
@@ -37,11 +31,12 @@ const externalService = {
     displayName: 'GitHub.com',
     webhookURL: null,
     lastSyncError: null,
-    repoCount: 0,
+    repoCount: 1337,
     lastSyncAt: null,
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
+    hasConnectionCheck: true,
     namespace: {
         id: 'userid',
         namespaceName: 'johndoe',
@@ -126,17 +121,17 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ViewConfig: Story = () => (
+export const ExternalServiceWithRepos: Story = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider link={newFetchMock(externalService)}>
                 <ExternalServicePage
                     {...webProps}
+                    routingPrefix="/site-admin"
                     queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
+                    afterDeleteRoute="/site-admin/after-delete"
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
-                    autoFocusForm={false}
                     externalServicesFromFile={false}
                     allowEditExternalServicesWithFile={false}
                 />
@@ -145,71 +140,4 @@ export const ViewConfig: Story = () => (
     </WebStory>
 )
 
-ViewConfig.storyName = 'View external service config'
-
-export const ConfigWithInvalidUrl: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
-                <ExternalServicePage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
-
-export const ConfigWithWarning: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServicePage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={false}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-ConfigWithWarning.storyName = 'External service config with warning after update'
-
-export const EditingDisabled: Story = () => (
-    <WebStory>
-        {webProps => (
-            <MockedTestProvider
-                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
-            >
-                <ExternalServicePage
-                    {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    externalServiceID="service123"
-                    autoFocusForm={false}
-                    externalServicesFromFile={true}
-                    allowEditExternalServicesWithFile={false}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-EditingDisabled.storyName = 'External service config EXTSVC_CONFIG_FIlE set'
+ExternalServiceWithRepos.storyName = 'External service with synced repos'

@@ -21,6 +21,9 @@ export interface HighlightedLinkProps {
     icon?: JSX.Element
     textSuffix?: JSX.Element
     onClick?: () => void
+    // Fuzzy finding score, used to sort aggregated results across different
+    // fuzzy finder tabs.
+    score?: number
 }
 
 export function offsetSum(props: HighlightedLinkProps): number {

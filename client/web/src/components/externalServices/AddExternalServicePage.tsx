@@ -20,7 +20,6 @@ interface Props extends ThemeProps, TelemetryProps {
     history: H.History
     externalService: AddExternalServiceOptions
     routingPrefix: string
-    afterCreateRoute: string
     userID?: Scalars['ID']
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
@@ -33,7 +32,6 @@ interface Props extends ThemeProps, TelemetryProps {
  * Page for adding a single external service.
  */
 export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    afterCreateRoute,
     externalService,
     history,
     isLightTheme,
@@ -93,9 +91,9 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe({ error: error => logger.error(error) })
-            history.push(afterCreateRoute)
+            history.push(`${routingPrefix}/external-services/${createdExternalService.id}`)
         }
-    }, [afterCreateRoute, createdExternalService, history])
+    }, [createdExternalService, routingPrefix, history])
 
     return (
         <>
@@ -108,7 +106,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                             {...externalService}
                             title={createdExternalService.displayName}
                             shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdExternalService.id}`}
+                            to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
                         />
                     </div>
                     <Alert variant="warning">

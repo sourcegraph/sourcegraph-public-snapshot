@@ -3596,10 +3596,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mdi/js@npm:^6.7.96":
-  version: 6.7.96
-  resolution: "@mdi/js@npm:6.7.96"
-  checksum: 8c8f6acb8fd3f856a92ffe2405e258ee5aa84cf541fda1c0a564c9c8bbf935cf2b6a6100cf97d41e9ada1ccb59e4b138d4c712e075f759d7595e21ef1cff84b5
+"@mdi/js@npm:7.1.96":
+  version: 7.1.96
+  resolution: "@mdi/js@npm:7.1.96"
+  checksum: cd3102a0120c06b4af7a153e30ee964807746ce55f84a35479d382841d0ab1a10f986059e0c6af0c240444393679b7330d306d0688e1193a23fc03bb8cee0b82
   languageName: node
   linkType: hard
 
@@ -5465,12 +5465,6 @@ __metadata:
   checksum: f6bb3e0cddab5464e32138d7fba7581752eefc4a47a9652be5a81b8170becd50332bb741568912ca9a504236674abb4226b217b06cab86d364b44edee86a533f
   languageName: node
   linkType: hard
-
-"@sourcegraph/search-ui@workspace:client/search-ui":
-  version: 0.0.0-use.local
-  resolution: "@sourcegraph/search-ui@workspace:client/search-ui"
-  languageName: unknown
-  linkType: soft
 
 "@sourcegraph/shared@workspace:client/shared":
   version: 0.0.0-use.local
@@ -27467,7 +27461,7 @@ __metadata:
     "@jest/types": ^28.1.0
     "@lezer/highlight": ^1.0.0
     "@lhci/cli": 0.8.1
-    "@mdi/js": ^6.7.96
+    "@mdi/js": 7.1.96
     "@mermaid-js/mermaid-cli": ^8.13.10
     "@microsoft/fetch-event-source": ^2.0.1
     "@octokit/rest": ^16.36.0
@@ -27765,6 +27759,7 @@ __metadata:
     react-sticky-box: 1.0.2
     react-visibility-sensor: ^5.1.1
     recharts: ^1.8.5
+    regenerator-runtime: ^0.13.7
     regexpp: ^3.1.0
     resize-observer-polyfill: ^1.5.1
     rimraf: ^3.0.2

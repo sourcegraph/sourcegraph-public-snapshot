@@ -330,14 +330,17 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 	return stats, nil
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
+type AncestorsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Path        *string
 	Follow      bool
 	After       *string
 	AfterCursor *string
-}) (*gitCommitConnectionResolver, error) {
+	Before      *string
+}
+
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -348,6 +351,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		follow:          args.Follow,
 		after:           args.After,
 		afterCursor:     args.AfterCursor,
+		before:          args.Before,
 		repo:            r.repoResolver,
 	}, nil
 }

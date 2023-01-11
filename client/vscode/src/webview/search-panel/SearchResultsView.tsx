@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
@@ -355,7 +355,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 
@@ -405,7 +404,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // for search examples. Fix on VSCE.
                             isSourcegraphDotCom={false}
                             searchContextsEnabled={true}
-                            showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}

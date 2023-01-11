@@ -123,12 +123,6 @@ type InsightResolver interface {
 	ID() string
 }
 
-type InsightConnectionResolver interface {
-	Nodes(ctx context.Context) ([]InsightResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
 type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
@@ -189,6 +183,7 @@ type DeleteInsightsDashboardArgs struct {
 
 type InsightViewConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightViewResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 

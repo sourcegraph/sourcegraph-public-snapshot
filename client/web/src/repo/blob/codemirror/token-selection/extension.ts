@@ -1,15 +1,14 @@
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 
-import { isInteractiveOccurrence, occurrenceAtMouseEvent } from '../occurrence-utils'
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
 import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
-import { hoveredOccurrenceField, hoverExtension, setHoveredOccurrenceEffect } from './hover'
+import { hoverExtension } from './hover'
 import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
-import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, warmupOccurrence } from './selections'
+import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme } from './selections'
 
 const LONG_CLICK_DURATION = 500
 
@@ -99,21 +98,6 @@ export function tokenSelectionExtension(): Extension {
                 // Without the line below, Cmd+Click gets unpredicable behavior
                 // where it sporadically opens goto-def links in a new tab.
                 event.preventDefault()
-            },
-            mousemove(event, view) {
-                events.mousemove = event
-                const atEvent = occurrenceAtMouseEvent(view, event)
-                const hoveredOccurrence = atEvent ? atEvent.occurrence : null
-                if (hoveredOccurrence !== view.state.field(hoveredOccurrenceField)) {
-                    view.dispatch({ effects: setHoveredOccurrenceEffect.of(hoveredOccurrence) })
-                    // Only pre-fetch/warmup codeintel for interactive tokens.
-                    // Users can still trigger code intel actions for
-                    // non-interactive tokens, the result just won't be
-                    // pre-fetched.
-                    if (hoveredOccurrence && isInteractiveOccurrence(hoveredOccurrence)) {
-                        warmupOccurrence(view, hoveredOccurrence)
-                    }
-                }
             },
         }),
     ]

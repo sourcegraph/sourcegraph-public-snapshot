@@ -362,6 +362,33 @@ CREATE SEQUENCE insights_background_jobs_id_seq
 
 ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
 
+CREATE TABLE insights_data_retention_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    series_id integer NOT NULL
+);
+
+CREATE SEQUENCE insights_data_retention_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insights_data_retention_jobs_id_seq OWNED BY insights_data_retention_jobs.id;
+
 CREATE VIEW insights_jobs_backfill_in_progress AS
  SELECT jobs.id,
     jobs.state,
@@ -550,6 +577,8 @@ ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insigh
 
 ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('insights_background_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY insights_data_retention_jobs ALTER COLUMN id SET DEFAULT nextval('insights_data_retention_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterator_id_seq'::regclass);
@@ -599,6 +628,9 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insights_background_jobs
     ADD CONSTRAINT insights_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY insights_data_retention_jobs
+    ADD CONSTRAINT insights_data_retention_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);

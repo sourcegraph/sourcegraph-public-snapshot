@@ -14,9 +14,11 @@ import { HistorySidebarProps } from '../HistorySidebarView'
 import styles from '../../search/SearchSidebarView.module.scss'
 
 const savedSearchQuery = gql`
-    query SavedSearches {
-        savedSearches {
-            ...SavedSearchFields
+    query SavedSearches($namespace: ID!) {
+        savedSearches(namespace: $namespace, first: 15) {
+            nodes {
+                ...SavedSearchFields
+            }
         }
     }
     fragment SavedSearchFields on SavedSearch {
@@ -35,10 +37,10 @@ const savedSearchQuery = gql`
 `
 
 export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
+    authenticatedUser,
     platformContext,
     extensionCoreAPI,
 }) => {
-    const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
 
     const savedSearchesResult = useObservable(
@@ -47,7 +49,7 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                 platformContext
                     .requestGraphQL<SavedSearchesResult, SavedSearchesVariables>({
                         request: savedSearchQuery,
-                        variables: {},
+                        variables: { namespace: authenticatedUser.id },
                         mightContainPrivateInfo: true,
                     })
                     .pipe(
@@ -56,11 +58,11 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                             return [null]
                         })
                     ),
-            [platformContext]
+            [platformContext, authenticatedUser.id]
         )
     )
 
-    const savedSearches = savedSearchesResult?.data?.savedSearches
+    const savedSearches = savedSearchesResult?.data?.savedSearches?.nodes
 
     if (!savedSearches || savedSearches.length === 0) {
         return null
@@ -97,21 +99,19 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
 
             {!collapsed && savedSearches && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
-                    {savedSearches
-                        .filter((search, index) => index < itemsToLoad)
-                        .map(search => (
-                            <div key={search.id}>
-                                <small className={styles.sidebarSectionListItem}>
-                                    <Button
-                                        variant="link"
-                                        className="p-0 text-left text-decoration-none"
-                                        onClick={() => onSavedSearchClick(search.query)}
-                                    >
-                                        {search.description}
-                                    </Button>
-                                </small>
-                            </div>
-                        ))}
+                    {savedSearches.map(search => (
+                        <div key={search.id}>
+                            <small className={styles.sidebarSectionListItem}>
+                                <Button
+                                    variant="link"
+                                    className="p-0 text-left text-decoration-none"
+                                    onClick={() => onSavedSearchClick(search.query)}
+                                >
+                                    {search.description}
+                                </Button>
+                            </small>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

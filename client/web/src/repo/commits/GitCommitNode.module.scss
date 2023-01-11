@@ -20,6 +20,11 @@
 
     &--compact .byline {
         min-width: 25%;
+
+        @media (--md-breakpoint-up) {
+            width: 25%;
+        }
+
         flex: none;
         padding-right: 1.5rem;
         overflow: hidden;

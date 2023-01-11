@@ -2,7 +2,7 @@ import { mdiSourceRepository } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
-import { CopyPathAction } from '@sourcegraph/search-ui'
+import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
@@ -21,7 +21,7 @@ import repoRevisionContainerStyles from './RepoRevisionContainer.module.scss'
 const mockUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
 

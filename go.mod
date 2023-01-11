@@ -223,6 +223,7 @@ require (
 	github.com/google/go-github/v47 v47.1.0
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	github.com/sourcegraph/conc v0.1.0
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/xanzy/go-gitlab v0.76.0
@@ -231,7 +232,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221215115743-749454dff73d
+	github.com/sourcegraph/zoekt v0.0.0-20230111101438-d541ae2d078d
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

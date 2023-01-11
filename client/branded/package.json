@@ -8,5 +8,7 @@
     "lint:js": "yarn run -T eslint --cache '**/*.[jt]s?(x)'",
     "lint:css": "yarn run -T stylelint 'src/**/*.scss' --quiet",
     "test": "yarn run -T jest"
-  }
+  },
+  "sideEffects": false,
+  "main": "./src/index.ts"
 }

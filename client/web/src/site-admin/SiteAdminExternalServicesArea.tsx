@@ -21,11 +21,14 @@ const ExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/ExternalServicesPage'),
     'ExternalServicesPage'
 )
+const ExternalServiceEditPage = lazyComponent(
+    () => import('../components/externalServices/ExternalServiceEditPage'),
+    'ExternalServiceEditPage'
+)
 const ExternalServicePage = lazyComponent(
     () => import('../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
 )
-
 const AddExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/AddExternalServicesPage'),
     'AddExternalServicesPage'
@@ -85,7 +88,6 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                         {...outerProps}
                         {...props}
                         routingPrefix="/site-admin"
-                        afterCreateRoute="/site-admin/repositories?repositoriesUpdated"
                         codeHostExternalServices={codeHostExternalServices}
                         nonCodeHostExternalServices={nonCodeHostExternalServices}
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
@@ -100,8 +102,23 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                     <ExternalServicePage
                         {...outerProps}
                         {...props}
+                        routingPrefix="/site-admin"
+                        afterDeleteRoute="/site-admin/external-services"
                         externalServiceID={match.params.id}
-                        afterUpdateRoute="/site-admin/repositories?repositoriesUpdated"
+                        externalServicesFromFile={data?.site?.externalServicesFromFile}
+                        allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
+                    />
+                )}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/:id/edit`}
+                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
+                    <ExternalServiceEditPage
+                        {...outerProps}
+                        {...props}
+                        routingPrefix="/site-admin"
+                        externalServiceID={match.params.id}
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
                         allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
                     />

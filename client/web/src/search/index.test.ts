@@ -1,5 +1,5 @@
 import { createBrowserHistory, History, Location } from 'history'
-import { of, Subscription, Observable } from 'rxjs'
+import { Subscription, Observable } from 'rxjs'
 import { first, startWith, tap, last } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
@@ -190,7 +190,7 @@ describe('updateQueryStateFromURL', () => {
     }
 
     const isSearchContextAvailable = () => Promise.resolve(true)
-    const showSearchContext = of(false)
+    const showSearchContext = false
 
     describe('search context', () => {
         it('should extract the search context from the query', () => {
@@ -216,7 +216,7 @@ describe('updateQueryStateFromURL', () => {
             return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 isSearchContextAvailable: () => Promise.resolve(true),
-                showSearchContext: of(true),
+                showSearchContext: true,
             })
                 .pipe(
                     last(),
@@ -232,7 +232,7 @@ describe('updateQueryStateFromURL', () => {
 
             return getQueryStateFromLocation({
                 location: location.pipe(first()),
-                showSearchContext: of(true),
+                showSearchContext: true,
                 isSearchContextAvailable: () => Promise.resolve(false),
             })
                 .pipe(
@@ -249,7 +249,7 @@ describe('updateQueryStateFromURL', () => {
 
             return getQueryStateFromLocation({
                 location: location.pipe(first()),
-                showSearchContext: of(false),
+                showSearchContext: false,
                 isSearchContextAvailable: () => Promise.resolve(true),
             })
                 .pipe(

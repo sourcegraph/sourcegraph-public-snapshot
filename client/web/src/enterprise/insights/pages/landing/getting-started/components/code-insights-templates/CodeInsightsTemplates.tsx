@@ -3,7 +3,7 @@ import React, { MouseEvent, useContext, useState } from 'react'
 import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,

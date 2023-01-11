@@ -37,11 +37,12 @@ export const externalServiceFragment = gql`
         warning
         lastSyncError
         repoCount
-        webhookURL
         lastSyncAt
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
+        hasConnectionCheck
     }
 `
 
@@ -102,16 +103,6 @@ export function updateExternalService(
         .toPromise()
 }
 
-export const FETCH_EXTERNAL_SERVICE = gql`
-    query ExternalService($id: ID!) {
-        node(id: $id) {
-            __typename
-            ...ExternalServiceFields
-        }
-    }
-    ${externalServiceFragment}
-`
-
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(
         gql`
@@ -135,14 +126,8 @@ export const EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID = gql`
                 hasConnectionCheck
                 checkConnection {
                     __typename
-                    ... on ExternalServiceAvailable {
-                        lastCheckedAt
-                    }
                     ... on ExternalServiceUnavailable {
                         suspectedReason
-                    }
-                    ... on ExternalServiceAvailabilityUnknown {
-                        implementationNote
                     }
                 }
             }
@@ -160,7 +145,53 @@ export const useExternalServiceCheckConnectionByIdLazyQuery = (
         }
     )
 
-export const listExternalServiceFragment = gql`
+const EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT = gql`
+    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
+        __typename
+        id
+        state
+        startedAt
+        finishedAt
+        failureMessage
+        reposSynced
+        repoSyncErrors
+        reposAdded
+        reposDeleted
+        reposModified
+        reposUnmodified
+    }
+`
+
+const EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT}
+    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ExternalServiceSyncJobListFields
+        }
+    }
+`
+
+export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
+    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
+        node(id: $externalService) {
+            __typename
+            ... on ExternalService {
+                syncJobs(first: $first) {
+                    ...ExternalServiceSyncJobConnectionFields
+                }
+            }
+        }
+    }
+`
+
+const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
+    ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
         kind
@@ -175,8 +206,22 @@ export const listExternalServiceFragment = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        syncJobs(first: 1) {
+            ...ExternalServiceSyncJobConnectionFields
+        }
     }
 `
+
+export const FETCH_EXTERNAL_SERVICE = gql`
+    query ExternalService($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...ListExternalServiceFields
+        }
+    }
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
+`
+
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String) {
         externalServices(first: $first, after: $after) {
@@ -191,7 +236,7 @@ export const EXTERNAL_SERVICES = gql`
         }
     }
 
-    ${listExternalServiceFragment}
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
 `
 
 export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
@@ -246,45 +291,6 @@ export function useCancelExternalServiceSync(): MutationTuple<
         CANCEL_EXTERNAL_SERVICE_SYNC
     )
 }
-
-export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
-    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
-        node(id: $externalService) {
-            __typename
-            ... on ExternalService {
-                syncJobs(first: $first) {
-                    ...ExternalServiceSyncJobConnectionFields
-                }
-            }
-        }
-    }
-
-    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
-        totalCount
-        pageInfo {
-            endCursor
-            hasNextPage
-        }
-        nodes {
-            ...ExternalServiceSyncJobListFields
-        }
-    }
-
-    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
-        __typename
-        id
-        state
-        startedAt
-        finishedAt
-        failureMessage
-        reposSynced
-        repoSyncErrors
-        reposAdded
-        reposDeleted
-        reposModified
-        reposUnmodified
-    }
-`
 
 export function queryExternalServiceSyncJobs(
     variables: ExternalServiceSyncJobsVariables
