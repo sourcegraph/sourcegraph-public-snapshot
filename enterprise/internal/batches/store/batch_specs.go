@@ -256,10 +256,6 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if opts.ID == 0 && opts.RandID == "" {
-		return nil, errors.New("missing ID or RandID")
-	}
-
 	q := getBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec

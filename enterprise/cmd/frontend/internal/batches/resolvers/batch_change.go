@@ -264,10 +264,6 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	if r.batchChange.BatchSpecID == 0 {
-		return nil, nil
-	}
-
 	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		ID: r.batchChange.BatchSpecID,
 	})
