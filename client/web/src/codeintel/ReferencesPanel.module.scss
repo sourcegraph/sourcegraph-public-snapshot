@@ -111,6 +111,7 @@
 
     &--active-icon {
         width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         height: calc(100% - 1px);
         position: absolute;
         right: 0;
