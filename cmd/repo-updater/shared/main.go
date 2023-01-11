@@ -397,7 +397,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			infos[i] = providerInfo{
 				ServiceType:        p.ServiceType(),
 				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s/edit", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
 			}
 		}
 
