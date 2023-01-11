@@ -60,7 +60,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 					repoName: repoName,
 					commit:   commit,
 				}
-			}(repoName, commit, fmt.Sprintf("%s.%d.%s.dump", repoName, i, commit))
+			}(repoName, commit, fmt.Sprintf("%s.%d.%s.dump", strings.Replace(repoName, "/", ".", 1), i, commit))
 		}
 	}
 
