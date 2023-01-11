@@ -656,7 +656,7 @@ type Mutation {
     a format that is readable by the previous Sourcegraph instance. Recently introduced migrations
     should be applied in reverse prior to downgrading the instance.
     """
-    SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
+    setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
@@ -4696,11 +4696,14 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
-
         """
         Skip the first N commits of the repo before returning the number of commits as set in the field "first".
         """
         afterCursor: String
+        """
+        Return commits older than the specified date.
+        """
+        before: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
