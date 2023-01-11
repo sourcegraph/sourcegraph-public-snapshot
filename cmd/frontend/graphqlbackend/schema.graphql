@@ -4662,10 +4662,12 @@ type GitCommit implements Node {
         path: String!
         """
         Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
         """
         startLine: Int
         """
-        Return blob content ending at line "endLine". A value < 0 will set endLine to the end of the file.
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
         """
         endLine: Int
     ): GitBlob
@@ -4677,10 +4679,12 @@ type GitCommit implements Node {
         path: String!
         """
         Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
         """
         startLine: Int
         """
-        Return blob content ending at line "endLine". A value < 0 will set endLine to the end of the file.
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
         """
         endLine: Int
     ): File2

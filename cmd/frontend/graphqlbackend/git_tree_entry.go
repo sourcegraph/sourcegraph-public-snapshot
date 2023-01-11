@@ -147,7 +147,6 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 }
 
 func pageContent(content []string, startLine, endLine *int32) string {
-	// TODO: double check there is no off by 1 errors
 	totalContentLength := len(content)
 	startCursor := 0
 	endCursor := totalContentLength
@@ -198,10 +197,17 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
+	if (r.startLine != nil || r.endLine != nil) && args.Format != "HTML_PLAINTEXT" {
+		return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +
+			"set startLine or endLine with other formats")
+	}
+
 	content, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
