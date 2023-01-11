@@ -19,7 +19,6 @@ Foreign-key constraints:
  series_id             | text                     |           | not null | 
  time                  | timestamp with time zone |           | not null | 
  value                 | double precision         |           | not null | 
- metadata_id           | integer                  |           |          | 
  repo_id               | integer                  |           |          | 
  repo_name_id          | integer                  |           |          | 
  original_repo_name_id | integer                  |           |          | 

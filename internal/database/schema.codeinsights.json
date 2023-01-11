@@ -258,7 +258,7 @@
       "Columns": [
         {
           "Name": "capture",
-          "Index": 8,
+          "Index": 7,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -270,21 +270,8 @@
           "Comment": ""
         },
         {
-          "Name": "metadata_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "original_repo_name_id",
-          "Index": 7,
+          "Index": 6,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -297,7 +284,7 @@
         },
         {
           "Name": "repo_id",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -310,7 +297,7 @@
         },
         {
           "Name": "repo_name_id",
-          "Index": 6,
+          "Index": 5,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",

@@ -40,7 +40,6 @@ CREATE TABLE archived_series_points (
     series_id text NOT NULL,
     "time" timestamp with time zone NOT NULL,
     value double precision NOT NULL,
-    metadata_id integer,
     repo_id integer,
     repo_name_id integer,
     original_repo_name_id integer,

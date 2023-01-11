@@ -156,9 +156,9 @@ const archiveOldRecordingTimesSql = `
 WITH moved_rows AS (
 	DELETE FROM insight_series_recording_times
 	WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s
-	RETURNING *
+	RETURNING * 
 )
-INSERT INTO archived_insight_series_recording_times 
-SELECT * FROM moved_rows
+INSERT INTO archived_series_points (series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture)
+SELECT series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture from moved_rows
 ON CONFLICT DO NOTHING
 `
