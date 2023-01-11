@@ -62,11 +62,7 @@ func TestOutboundWebhookJobs(t *testing.T) {
 						assert.Equal(t, job.EventType, "foo")
 						assert.Equal(t, tc.scope, job.Scope)
 
-						have, err := job.Payload.Decrypt(ctx)
-						require.NoError(t, err)
-						assert.Equal(t, payload, []byte(have))
-
-						assertOutboundWebhookJobFieldsEncrypted(t, ctx, store, job)
+						assertOutboundWebhookJobFieldsEncrypted(t, ctx, store, job, payload)
 
 						*tc.target = job
 					})
@@ -140,15 +136,16 @@ func assertEqualOutboundWebhookJobs(t *testing.T, ctx context.Context, want, hav
 	assert.Equal(t, valueOf(want.Payload), valueOf(have.Payload))
 }
 
-func assertOutboundWebhookJobFieldsEncrypted(t *testing.T, ctx context.Context, store basestore.ShareableStore, job *types.OutboundWebhookJob) {
+func assertOutboundWebhookJobFieldsEncrypted(t *testing.T, ctx context.Context, store basestore.ShareableStore, job *types.OutboundWebhookJob, payload []byte) {
 	t.Helper()
 
 	if store.(*outboundWebhookJobStore).key == nil {
 		return
 	}
 
-	payload, err := job.Payload.Decrypt(ctx)
+	decryptPayload, err := job.Payload.Decrypt(ctx)
 	require.NoError(t, err)
+	assert.Equal(t, payload, []byte(decryptPayload))
 
 	row := store.Handle().QueryRowContext(
 		ctx,
@@ -158,7 +155,7 @@ func assertOutboundWebhookJobFieldsEncrypted(t *testing.T, ctx context.Context, 
 	var dbPayload string
 	err = row.Scan(&dbPayload)
 	assert.NoError(t, err)
-	assert.NotEqual(t, dbPayload, payload)
+	assert.NotEqual(t, dbPayload, decryptPayload)
 }
 
 func listOutboundWebhookJobs(t *testing.T, ctx context.Context, store OutboundWebhookJobStore) []*types.OutboundWebhookJob {
