@@ -27,3 +27,19 @@ type User struct {
 	IsStaff   bool   `json:"is_staff"`
 	AccountID string `json:"account_id"`
 }
+
+type UserEmail struct {
+	Email       string `json:"email"`
+	IsConfirmed bool   `json:"is_confirmed"`
+	IsPrimary   bool   `json:"is_primary"`
+}
+
+func (c *client) CurrentUserEmails(ctx context.Context, pageToken *PageToken) (emails []*UserEmail, next *PageToken, err error) {
+	if pageToken.HasMore() {
+		next, err = c.reqPage(ctx, pageToken.Next, &emails)
+		return
+	}
+
+	next, err = c.page(ctx, "/2.0/user/emails", nil, pageToken, &emails)
+	return
+}
