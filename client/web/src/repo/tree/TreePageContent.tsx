@@ -459,6 +459,7 @@ const CONTRIBUTORS_QUERY = gql`
                 username
                 url
                 displayName
+                avatarURL
             }
         }
         count
@@ -585,7 +586,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     return (
         <li className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
             <div className={contributorsStyles.person}>
-                <UserAvatar inline={true} className="mr-2" user={node.person} />
+                <UserAvatar inline={true} className="mr-2" user={node.person.user ? node.person.user : node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={contributorsStyles.commits}>
