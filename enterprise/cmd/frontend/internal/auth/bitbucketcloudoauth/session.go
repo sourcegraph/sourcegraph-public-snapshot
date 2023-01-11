@@ -51,8 +51,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		s.client = bbClient
 	}
 
-	// Since the user account does not yet exist at this point, we do not
-	// care about token refreshing.
+	// The token used here is fresh from Bitbucket OAuth. It should be valid
+	// for 1 hour, so we don't bother with setting up token refreshing yet.
+	// If account creation/linking succeeds, the token will be stored in the
+	// database with the refresh token, and refreshing can happen from that point.
 	auther := &esauth.OAuthBearerToken{Token: token.AccessToken}
 	s.client = s.client.WithAuthenticator(auther)
 	bbUser, err := s.client.CurrentUser(ctx)
@@ -103,7 +105,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// existing account we return early and don't attempt to create a new account.
 	if s.allowSignup {
 		attempts = append(attempts, attemptConfig{
-			email:            emails[0].Email,
+			email:            verifiedEmails[0],
 			createIfNotExist: true,
 		})
 	}
