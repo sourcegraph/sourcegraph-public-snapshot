@@ -2,13 +2,13 @@
 
 .hidden-external-changeset-node {
     &__information {
-        @media (--sm-breakpoint-down) {
+        @media (--md-breakpoint-down) {
             grid-column: 3 / -1;
         }
     }
     &__status,
     &__information {
-        @media (--xs-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             grid-column: 1 / -1;
         }
     }

@@ -2,7 +2,7 @@
 
 .external-changeset-close-node {
     &__statuses {
-        @media (--xs-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             // Use up remaining width of the row.
             grid-column: 1 / -1;
         }
@@ -13,7 +13,7 @@
     }
 
     &__show-details {
-        @media (--xs-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }

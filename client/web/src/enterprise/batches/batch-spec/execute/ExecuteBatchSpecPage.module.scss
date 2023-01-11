@@ -14,7 +14,7 @@
 }
 
 .state-badge {
-    @media (--md-breakpoint-down) {
+    @media (--sm-breakpoint-down) {
         flex-basis: 100%;
     }
 }
