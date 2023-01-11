@@ -25,15 +25,7 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
-	// Default should match what is shown in the schema not to be confusing
-	maximumSampleSize := 30
-	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
-		maximumSampleSize = configured
-	}
-	if maximumSampleSize > 90 {
-		logger.Info("code insights maximum sample size was set over allowed maximum, setting to 90", log.Int("disallowed maximum setting", maximumSampleSize))
-		maximumSampleSize = 90
-	}
+	maximumSampleSize := getMaximumSampleSize(logger, conf.Get().InsightsMaximumSampleSize)
 
 	// All the retention operations need to be completed in the same transaction
 	tx, err := h.insightsStore.Transact(ctx)
@@ -63,6 +55,18 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 
 	return nil
+}
+
+func getMaximumSampleSize(logger log.Logger, configured int) int {
+	// Default should match what is shown in the schema not to be confusing
+	maximumSampleSize := 30
+	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
+		maximumSampleSize = configured
+	}
+	if maximumSampleSize > 90 {
+		logger.Info("code insights maximum sample size was set over allowed maximum, setting to 90", log.Int("disallowed maximum setting", maximumSampleSize))
+		maximumSampleSize = 90
+	}
 }
 
 // NewWorker returns a worker that will find what data to prune and separate for a series.
