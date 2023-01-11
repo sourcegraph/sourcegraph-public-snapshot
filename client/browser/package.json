@@ -65,6 +65,7 @@
     "@storybook/react": "^6.5.14"
   },
   "dependencies": {
+    "sourcegraph": "workspace:*",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
