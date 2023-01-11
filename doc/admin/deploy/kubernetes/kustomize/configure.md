@@ -151,16 +151,18 @@ components:
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
 
-### Rancher Kubernetes Engine
+### Trident
 
 If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
 
-Copy the `storage-class/rke` component to `config/storage-class` and make the necessary adjustments before adding the configured component to your overlay as a component:
+Add one of the available `storage-class/trident/$FSTYPE` components to your overlay as a component based on your fsType:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
-- ../../config/rke
+- ../../components/storage-class/trident/ext3
+- ../../components/storage-class/trident/ext4
+- ../../components/storage-class/trident/xfs
 ```
 
 ### Other cloud providers
@@ -173,7 +175,7 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables inside the kustomize.env config file for your overlay. Replace them with the correct values according to the instruction provided by your cloud provider:
+Update the following variables inside the overlay.config config file for your overlay. Replace them with the correct values according to the instruction provided by your cloud provider:
 
 ```
 DEPLOY_SOURCEGRAPH_STORAGECLASS_NAME=STORAGECLASS_NAME
@@ -269,8 +271,8 @@ secretGenerator:
 - name: sourcegraph-frontend-tls
   behavior: create
   files:
-  - config/tls.crt
-  - config/tls.key
+  - env/tls.crt
+  - env/tls.key
 ...
 ```
 
@@ -293,7 +295,7 @@ data:
 
 Step 3: Configure the TLS settings on your Ingress using variables
 
-Add the following variables to your kustomize.env file:
+Add the following variables to your overlay.config file:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
@@ -302,7 +304,7 @@ Add the following variables to your kustomize.env file:
 Example:
 
 ```yaml
-# new/overlays/$OVERLAY_NAME/configs/kustomize.env
+# new/overlays/$OVERLAY_NAME/config/overlay.config
 TLS_HOST=sourcegraph.company.com
 TLS_INGRESS_CLASS_NAME=example-ingress-class-name
 TLS_CLUSTER_ISSUER=letsencrypt
@@ -318,7 +320,7 @@ components:
 
 #### Let’s Encrypt
 
-Alternatively, you may consider configuring [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster, and then configure frontend ingress using the same steps listed above, but replace `TLS_CLUSTER_ISSUER=letsencrypt` in your kustomize.env file.
+Alternatively, you may consider configuring [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster, and then configure frontend ingress using the same steps listed above, but replace `TLS_CLUSTER_ISSUER=letsencrypt` in your overlay.config file.
 
 ## Network rule
 
@@ -333,7 +335,6 @@ Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least 
 ```bash
 gcloud compute --project=$PROJECT firewall-rules create sourcegraph-frontend-http --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:30080
 ```
-
 
 - Add the nodeport component to change the type of the `sourcegraph-frontend` service from `ClusterIP` to `NodePort` with the `nodeport` component:
 
@@ -372,7 +373,7 @@ Learn more about [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC
 
 ### Rancher Kubernetes Engine
 
-If your [Rancher Kubernetes Engine (RKE)](https://rancher.com/docs/rke/latest/en/) cluster is configured to use [NodePort](https://docs.ranchermanager.rancher.io/v2.0-v2.4/how-to-guides/new-user-guides/migrate-from-v1.6-v2.x/expose-services#nodeport), use the [nodeport component](https://github.com/sourcegraph/deploy-sourcegraph/tree/main/new/components/nodeport) to change the port type for `sourcegraph-frontend` service from `ClusterIP` to `NodePort` to use `nodePort: 30080`:
+If your [Rancher Kubernetes Engine (RKE)](https://rancher.com/docs/rke/latest/en/) cluster is configured to use [NodePort](https://docs.ranchermanager.rancher.io/v2.0-v2.4/how-to-guides/new-user-guides/migrate-from-v1.6-v2.x/expose-services#nodeport), use the [nodeport/custom component](https://github.com/sourcegraph/deploy-sourcegraph/tree/main/new/components/nodeport) to change the port type for `sourcegraph-frontend` service from `ClusterIP` to `NodePort` to use `nodePort: 30080`:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -380,13 +381,7 @@ components:
 - ../../components/nodeport
 ```
 
-If you need to update the nodePort value:
-1. create a copy of the [nodeport component](https://github.com/sourcegraph/deploy-sourcegraph/tree/main/new/components/nodeport) in the ../config directory
-2. update the value in the new config/nodeport/kustomization.yaml file
-3. use the new component in your overlay instead
-
-> NOTE: Check with your upstream admin for the the correct nodePort value.
-
+> NOTE: Check with your upstream admin for the correct nodePort value.
 
 ## NetworkPolicy
 
@@ -412,10 +407,10 @@ components:
 
 We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcegraph databases, see [this guide](../../postgres.md).
 
-Simply add the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to point them to your existing PostgreSQL instance inside the `new/overlays/$OVERLAY_NAME/configs/frontend.env file`:
+Simply add the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to point them to your existing PostgreSQL instance inside the `new/overlays/$OVERLAY_NAME/env/frontend.env file`:
 
 ```sh
-# new/overlays/$OVERLAY_NAME/configs/frontend.env
+# new/overlays/$OVERLAY_NAME/env/frontend.env
 ...
 PGHOST=NEW_PGHOST
 PGPORT=NEW_PGPORT
@@ -481,13 +476,13 @@ Step 1: Add the following component to your overlay:
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
-- .../config/redis
+- .../components/redis
 ```
 
-Step 2: Define the variables inside the `configs/frontend.env` file that is located within your overlay directory:
+Step 2: Define the variables inside the `env/frontend.env` file that is located within your overlay directory:
 
 ```sh
-# new/overlays/$OVERLAY_NAME/configs/frontend.env
+# new/overlays/$OVERLAY_NAME/env/frontend.env
 REDIS_CACHE_ENDPOINT=<REDIS_CACHE_DSN>
 REDIS_STORE_ENDPOINT=<REDIS_STORE_DSN>
 ```
@@ -525,10 +520,10 @@ Once you have a license key, add it to your [site configuration](https://docs.so
 
 ## Environment variables
 
-Update the environment variables for frontend inside the `configs/frontend.env` file that is located within your overlay directory. For example:
+Update the environment variables for frontend inside the `env/frontend.env` file that is located within your overlay directory. For example:
 
 ```sh
-# new/overlays/$OVERLAY_NAME/configs/frontend.env
+# new/overlays/$OVERLAY_NAME/env/frontend.env
 PGHOST=NEW_PGHOST
 REDIS_STORE_ENDPOINT=NEW_EDIS_STORE_DSN
 NEW_ENV_VAR=NEW_VALUE
@@ -553,6 +548,22 @@ patchesStrategicMerge:
 ```
 
 This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
+
+## Private registry
+
+To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, use the `private-registry` component:
+
+```yaml
+# new/overlays/$OVERLAY_NAME/kustomization.yaml
+components:
+- .../components/private-registry
+```
+
+Set the `DEPLOY_SOURCEGRAPH_PRIVATE_REGISTRY` variable in your overlay.config:
+
+```yaml
+DEPLOY_SOURCEGRAPH_PRIVATE_REGISTRY=your.private.registry.com
+```
 
 ## Outbound Traffic
 
