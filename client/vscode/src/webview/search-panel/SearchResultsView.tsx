@@ -355,7 +355,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 

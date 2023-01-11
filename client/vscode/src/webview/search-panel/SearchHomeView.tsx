@@ -192,7 +192,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                         containerClassName={styles.searchBoxContainer}
                         autoFocus={true}
-                        editorComponent="monaco"
                     />
                 </form>
 

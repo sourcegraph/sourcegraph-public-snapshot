@@ -274,7 +274,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             className=""
                             containerClassName=""
                             autoFocus={true}
-                            editorComponent="monaco"
                             hideHelpButton={true}
                         />
                     </form>
