@@ -180,6 +180,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// addVsceIntegrationTests,
 		)
 
+	case runtype.AppSnapshotRelease:
+		// If this is an App snapshot build, release a snapshot.
+		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
+
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch

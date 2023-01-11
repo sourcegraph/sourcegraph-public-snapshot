@@ -18,9 +18,10 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
-	ReleaseNightly // release branch nightly healthcheck builds
-	BextNightly    // browser extension nightly build
-	VsceNightly    // vs code extension nightly build
+	ReleaseNightly     // release branch nightly healthcheck builds
+	BextNightly        // browser extension nightly build
+	VsceNightly        // vs code extension nightly build
+	AppSnapshotRelease // app snapshot build
 
 	// Release branches
 
@@ -107,6 +108,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			BranchExact: true,
 		}
 
+	case AppSnapshotRelease:
+		return &RunTypeMatcher{
+			Branch:      "app/release-snapshot",
+			BranchExact: true,
+		}
+
 	case TaggedRelease:
 		return &RunTypeMatcher{
 			TagPrefix: "v",
@@ -175,6 +182,8 @@ func (t RunType) String() string {
 		return "Browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
+	case AppSnapshotRelease:
+		return "App snapshot release"
 	case TaggedRelease:
 		return "Tagged release"
 	case ReleaseBranch:
