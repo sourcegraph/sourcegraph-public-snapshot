@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 import { delay, repeatWhen } from 'rxjs/operators'
 
-import { H3 } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceSyncJobConnectionFields,
@@ -42,7 +42,7 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
 
     return (
         <>
-            <H3 className="mt-3">Recent sync jobs</H3>
+            <H2 className="mt-3">Recent sync jobs</H2>
             <FilteredConnection<
                 ExternalServiceSyncJobListFields,
                 Omit<ExternalServiceSyncJobNodeProps, 'node'>,
