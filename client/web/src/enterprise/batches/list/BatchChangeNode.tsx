@@ -103,7 +103,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             case BatchSpecState.COMPLETED:
                 // If it hasn't been applied, we take you to the preview page. Otherwise,
                 // we just take you to the details page.
-                return node.currentSpec?.id === latestExecution.id
+                return node.currentSpec.id === latestExecution.id
                     ? node.url
                     : `${node.url}/executions/${latestExecution.id}/preview`
             default:
@@ -118,7 +118,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                 <BatchChangeStatePill
                     state={node.state}
                     latestExecutionState={node.batchSpecs.nodes[0]?.state}
-                    currentSpecID={node.currentSpec?.id}
+                    currentSpecID={node.currentSpec.id}
                     latestSpecID={latestExecution?.id}
                     className={styles.batchChangeNodePill}
                 />

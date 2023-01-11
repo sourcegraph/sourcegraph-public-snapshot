@@ -1237,7 +1237,7 @@
           "Name": "batch_spec_id",
           "Index": 10,
           "TypeName": "bigint",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,

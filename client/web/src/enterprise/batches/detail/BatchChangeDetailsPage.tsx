@@ -146,13 +146,13 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
+            {batchChange.viewerCanAdminister && (
                 <MissingCredentialsAlert
                     authenticatedUser={authenticatedUser}
                     viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
                 />
             )}
-            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
+            {batchChange.viewerCanAdminister && (
                 <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             )}
             <ActiveExecutionNotice
@@ -169,12 +169,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice history={history} location={location} />
-            {batchChange.currentSpec && (
-                <WebhookAlert
-                    batchChangeID={batchChange.id}
-                    codeHostsWithoutWebhooks={batchChange.currentSpec.codeHostsWithoutWebhooks}
-                />
-            )}
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

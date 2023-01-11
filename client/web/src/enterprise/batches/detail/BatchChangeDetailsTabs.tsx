@@ -93,7 +93,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
-    const isBatchSpecLocallyCreated = batchChange.currentSpec?.source === BatchSpecSource.LOCAL
+    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
     const shouldDisplayExecutionsTab =
         isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
@@ -246,11 +246,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 history={history}
                                 location={location}
                                 batchChangeID={batchChange.id}
-                                currentSpecID={batchChange.currentSpec?.id}
+                                currentSpecID={batchChange.currentSpec.id}
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
-                    ) : batchChange.currentSpec ? (
+                    ) : (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -265,8 +265,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </div>
                             <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
-                    ) : (
-                        <>No spec yet</>
                     )}
                 </TabPanel>
                 <TabPanel>

@@ -51,7 +51,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  closed_at         | timestamp with time zone |           |          | 
- batch_spec_id     | bigint                   |           |          | 
+ batch_spec_id     | bigint                   |           | not null | 
  last_applier_id   | bigint                   |           |          | 
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
