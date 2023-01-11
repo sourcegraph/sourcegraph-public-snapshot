@@ -85,12 +85,14 @@ interface ComboboxInputProps extends ReachComboboxInputProps, Omit<InputProps, '
  * in order to get access to its ref value and share across all over other compound combobox
  * wrappers (for example: use input ref as Popover target in the {@link ComboboxPopover} component)
  */
-export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>((props, ref) => {
+export const ComboboxInput = forwardRef((props, ref) => {
+    const { as: Component = Input, ...attributes } = props
+
     const { setInputRef } = useContext(ComboboxContext)
     const mergedRef = useMergeRefs([ref, setInputRef])
 
-    return <ReachComboboxInput {...props} ref={mergedRef} as={Input} />
-})
+    return <ReachComboboxInput ref={mergedRef} as={Component} {...attributes} />
+}) as ForwardReferenceComponent<'input', ComboboxInputProps>
 
 interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -112,7 +114,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
         <ReachComboboxPopover
             ref={ref}
             // We use our own Popover logic here since our version is more sophisticated and advanced
-            // compared to reach-ui Popover logic. (it support content size changes, different render
+            // compared to reach-ui Popover logic. (it supports content size changes, different render
             // strategies and so on, see Popover doc for more details)
             as={PopoverContent}
             isOpen={true}
@@ -123,7 +125,8 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             position={Position.bottomStart}
-            // We don't need to handle any focus management around popover, Combobox reach internal logic will handle it
+            // We don't need to handle any focus management around popover, Reach-ui combobox internal
+            // logic will handle it
             focusLocked={false}
             // Returning target to focus Popover logic breaks combobox box flow with outside clicks
             returnTargetFocus={false}
