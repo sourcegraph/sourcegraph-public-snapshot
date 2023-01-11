@@ -56,6 +56,7 @@ All notable changes to Sourcegraph are documented in this file.
 - User and organization auto-defined search contexts have been permanently removed along with the `autoDefinedSearchContexts` GraphQL query. The only auto-defined context now is the `global` context. [#46083](https://github.com/sourcegraph/sourcegraph/pull/46083)
 - The settings `experimentalFeatures.showSearchContext`, `experimentalFeatures.showSearchNotebook`, and `experimentalFeatures.codeMonitoring` have been removed and these features are now permanently enabled when available. [#46086](https://github.com/sourcegraph/sourcegraph/pull/46086)
 - The legacy panels on the homepage (recent searches, etc) which were turned off by default but could still be re-enabled by setting `experimentalFeatures.showEnterpriseHomePanels` to true, are permanently removed now. [#45705](https://github.com/sourcegraph/sourcegraph/pull/45705)
+- The `site { monitoringStatistics { alerts } }` GraphQL query has been deprecated and will no longer return any data. The query will be removed entirely in a future release. [#46299](https://github.com/sourcegraph/sourcegraph/pull/46299)
 - The Monaco version of the search query input and the corresponding feature flag (`experimentalFeatures.editor`) have been permanently removed. [#46249](https://github.com/sourcegraph/sourcegraph/pull/46249)
 
 ## 4.3.1
