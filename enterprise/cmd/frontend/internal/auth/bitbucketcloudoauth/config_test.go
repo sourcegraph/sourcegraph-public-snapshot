@@ -44,6 +44,7 @@ func TestParseConfig(t *testing.T) {
 						DisplayName:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
 					},
 				}},
 			}}},
@@ -55,6 +56,7 @@ func TestParseConfig(t *testing.T) {
 						DisplayName:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
 					},
 					Provider: provider("https://bitbucket.org/", oauth2.Config{
 						ClientID:     "myclientid",
@@ -78,6 +80,7 @@ func TestParseConfig(t *testing.T) {
 						DisplayName:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
 					},
 				}, {
 					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
@@ -86,6 +89,7 @@ func TestParseConfig(t *testing.T) {
 						DisplayName:  "Bitbucket Cloud Duplicate",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
 					},
 				}},
 			}}},
@@ -97,6 +101,7 @@ func TestParseConfig(t *testing.T) {
 						DisplayName:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
 					},
 					Provider: provider("https://bitbucket.org/", oauth2.Config{
 						ClientID:     "myclientid",

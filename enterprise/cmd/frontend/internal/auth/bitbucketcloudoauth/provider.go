@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/dghubble/gologin"
 	"github.com/dghubble/gologin/bitbucket"
@@ -48,7 +49,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 			return oauth2.Config{
 				ClientID:     p.ClientKey,
 				ClientSecret: p.ClientSecret,
-				Scopes:       requestedScopes(),
+				Scopes:       requestedScopes(p.ApiScope),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  parsedURL.ResolveReference(&url.URL{Path: "/site/oauth2/authorize"}).String(),
 					TokenURL: parsedURL.ResolveReference(&url.URL{Path: "/site/oauth2/access_token"}).String(),
@@ -106,8 +107,6 @@ func validateClientKeyOrSecret(clientKeyOrSecret string) (valid bool) {
 	return clientKeySecretValidator.MatchString(clientKeyOrSecret)
 }
 
-func requestedScopes() []string {
-	scopes := []string{"account", "email"}
-
-	return scopes
+func requestedScopes(apiScopes string) []string {
+	return strings.Split(apiScopes, ",")
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
@@ -60,6 +61,7 @@ func ProvidersFromConfig(
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
+			extsvc.KindBitbucketCloud,
 			extsvc.KindPerforce,
 		},
 		LimitOffset: &database.LimitOffset{
@@ -72,6 +74,7 @@ func ProvidersFromConfig(
 		gitLabConns          []*types.GitLabConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
+		bitbucketCloudConns  []*types.BitbucketCloudConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
@@ -115,6 +118,11 @@ func ProvidersFromConfig(
 				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
 					URN:                       svc.URN(),
 					BitbucketServerConnection: c,
+				})
+			case *schema.BitbucketCloudConnection:
+				bitbucketCloudConns = append(bitbucketCloudConns, &types.BitbucketCloudConnection{
+					URN:                      svc.URN(),
+					BitbucketCloudConnection: c,
 				})
 			case *schema.PerforceConnection:
 				perforceConns = append(perforceConns, &types.PerforceConnection{
@@ -168,6 +176,14 @@ func ProvidersFromConfig(
 		seriousProblems = append(seriousProblems, pfProblems...)
 		warnings = append(warnings, pfWarnings...)
 		invalidConnections = append(invalidConnections, pfInvalidConnections...)
+	}
+
+	if len(bitbucketCloudConns) > 0 {
+		bbcloudProviders, bbcloudProblems, bbcloudWarnings, bbcloudInvalidConnections := bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders)
+		providers = append(providers, bbcloudProviders...)
+		seriousProblems = append(seriousProblems, bbcloudProblems...)
+		warnings = append(warnings, bbcloudWarnings...)
+		invalidConnections = append(invalidConnections, bbcloudInvalidConnections...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
