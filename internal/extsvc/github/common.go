@@ -1473,12 +1473,16 @@ var (
 	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
 
-func getGithubProxyURL() *url.URL {
+func getGithubProxyURL() (*url.URL, bool) {
+	if githubProxyRawURL == "" {
+		return nil, false
+	}
 	url, err := url.Parse(githubProxyRawURL)
 	if err != nil {
 		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+		return nil, false
 	}
-	return url
+	return url, true
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
@@ -1573,14 +1577,25 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return getGithubProxyURL()
+		u, ok := getGithubProxyURL()
+		if ok {
+			return u
+		}
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
+	if hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
+		return true
+	}
+
+	if u, ok := getGithubProxyURL(); ok {
+		return apiURL.String() == u.String()
+	}
+
+	return false
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}

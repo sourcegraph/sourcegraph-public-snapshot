@@ -74,7 +74,6 @@ npm_translate_lock(
         "//:client/jetbrains/package.json",
         "//:client/observability-client/package.json",
         "//:client/observability-server/package.json",
-        "//:client/search-ui/package.json",
         "//:client/shared/package.json",
         "//:client/storybook/package.json",
         "//:client/template-parser/package.json",

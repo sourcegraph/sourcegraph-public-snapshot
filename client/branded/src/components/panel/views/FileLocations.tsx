@@ -9,7 +9,6 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxj
 
 import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FileContentSearchResult } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { Badged } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -18,6 +17,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
+
+import { FileContentSearchResult } from '../../../search-ui'
 
 import styles from './FileLocations.module.scss'
 

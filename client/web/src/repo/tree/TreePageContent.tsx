@@ -263,6 +263,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             return null
         })()
         if (!readmeEntry) {
+            setReadmeInfo(undefined)
             return
         }
 
@@ -357,7 +358,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>
             {readmeInfo && (
                 <ReadmePreviewCard
-                    key={readmeInfo.blob.richHTML}
                     readmeHTML={readmeInfo.blob.richHTML}
                     readmeURL={readmeInfo.entry.url}
                     location={props.location}

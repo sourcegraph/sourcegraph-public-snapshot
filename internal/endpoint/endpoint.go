@@ -13,8 +13,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// EmptyError is returned when looking up an endpoint on an empty map.
+type EmptyError struct {
+	URLSpec string
+}
+
+func (e *EmptyError) Error() string {
+	return fmt.Sprintf("endpoint.Map(%s) is empty", e.URLSpec)
+}
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to
 // watch the endpoints for a service and update the map when they change. It
@@ -106,7 +114,12 @@ func (m *Map) Get(key string) (string, error) {
 		return "", m.err
 	}
 
-	return m.hm.Lookup(key), nil
+	v := m.hm.Lookup(key)
+	if v == "" {
+		return "", &EmptyError{URLSpec: m.urlspec}
+	}
+
+	return v, nil
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
@@ -118,6 +131,16 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// LookupN can fail if n > len(nodes), but the client code will have a
+	// race. So double check while we hold the lock.
+	nodes := len(m.hm.Nodes())
+	if nodes == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
+	}
+	if n > nodes {
+		n = nodes
 	}
 
 	return m.hm.LookupN(key, n), nil
@@ -135,6 +158,11 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 	defer m.mu.RUnlock()
 	if m.err != nil {
 		return nil, m.err
+	}
+
+	// If we are doing a lookup ensure we are not empty.
+	if len(keys) > 0 && len(m.hm.Nodes()) == 0 {
+		return nil, &EmptyError{URLSpec: m.urlspec}
 	}
 
 	vals := make([]string, len(keys))
@@ -186,28 +214,17 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			log.Error(eps.Error),
 		)
 
-		switch {
-		case eps.Error != nil:
-			m.mu.Lock()
-			m.err = eps.Error
-			m.mu.Unlock()
-		case len(eps.Endpoints) > 0:
-			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
+		metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
-			hm := newConsistentHash(eps.Endpoints)
-			m.mu.Lock()
-			m.hm = hm
-			m.err = nil
-			m.mu.Unlock()
-		default:
-			m.mu.Lock()
-			m.err = errors.Errorf(
-				"no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)",
-				eps.Service,
-				eps.Service,
-			)
-			m.mu.Unlock()
+		var hm *rendezvous.Rendezvous
+		if eps.Error == nil {
+			hm = newConsistentHash(eps.Endpoints)
 		}
+
+		m.mu.Lock()
+		m.hm = hm
+		m.err = eps.Error
+		m.mu.Unlock()
 
 		select {
 		case <-ready:
