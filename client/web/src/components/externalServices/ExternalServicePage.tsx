@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import * as H from 'history'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -9,15 +10,11 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
-import {
-    ExternalServiceFields,
-    Scalars,
-    ExternalServiceResult,
-    ExternalServiceVariables,
-} from '../../graphql-operations'
+import { Scalars, ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
+import { HeroPage } from '../HeroPage'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 
@@ -47,8 +44,13 @@ interface Props extends TelemetryProps {
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
 }
 
-const getExternalService = (queryResult?: ExternalServiceResult): ExternalServiceFields | null =>
-    queryResult?.node?.__typename === 'ExternalService' ? queryResult.node : null
+const NotFoundPage: FC<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage
+        icon={MapSearchIcon}
+        title="404: Not Found"
+        subtitle="Sorry, the requested code host page was not found."
+    />
+)
 
 export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => {
     const {
@@ -67,22 +69,18 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
         telemetryService.logViewEvent('SiteAdminExternalService')
     }, [telemetryService])
 
-    const [externalService, setExternalService] = useState<ExternalServiceFields>()
+    const {
+        data: externalServiceData,
+        error: fetchError,
+        loading: fetchLoading,
+    } = useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
+        variables: { id: externalServiceID },
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+    })
 
-    const { error: fetchError, loading: fetchLoading } = useQuery<ExternalServiceResult, ExternalServiceVariables>(
-        FETCH_EXTERNAL_SERVICE,
-        {
-            variables: { id: externalServiceID },
-            notifyOnNetworkStatusChange: false,
-            fetchPolicy: 'no-cache',
-            onCompleted: result => {
-                const data = getExternalService(result)
-                if (data) {
-                    setExternalService(data)
-                }
-            },
-        }
-    )
+    const externalService =
+        externalServiceData?.node?.__typename === 'ExternalService' ? externalServiceData.node : undefined
 
     const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
         useSyncExternalService()
@@ -148,6 +146,10 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                 />
             )
         }
+    }
+
+    if (!externalService) {
+        return <NotFoundPage />
     }
 
     return (
