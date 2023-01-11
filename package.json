@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.20.0"
+    "pnpm": "^7.24.2"
   },
   "scripts": {
     "deduplicate": "pnpm-deduplicate",
@@ -484,7 +484,7 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "packageManager": "pnpm@7.20.0",
+  "packageManager": "pnpm@7.24.2",
   "resolutions": {
     "@types/webpack": "5",
     "history": "4.5.1",
