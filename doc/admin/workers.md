@@ -120,7 +120,7 @@ This job runs queries against the database pertaining to generate `gitserver` me
 
 #### `outbound-webhook-sender`
 
-This job dispatches HTTP requests for outbound webhooks.
+This job dispatches HTTP requests for outbound webhooks and periodically removes old logs entries for them.
 
 #### `repo-statistics-compactor`
 
