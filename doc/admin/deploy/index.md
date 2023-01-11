@@ -77,12 +77,6 @@ Both paths require extensive Kubernetes knowledge to set up and maintain. For te
 
 ## Reference repositories
 
-| **Deployment type**       | **Link to reference repository**                         |
-|---------------------------|----------------------------------------------------------|
-| Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
-| Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
-| Kubernetes                | https://github.com/deploy-sourcegraph                    |
-
 Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy for each supported deployment type. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
 For more information, please read [our docs on setting up your own copy of the reference repository](repositories.md) for deploying purpose, and then follow the installation and configuration docs for your specific deployment type.
