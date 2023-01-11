@@ -28,9 +28,7 @@ build() {
   [[ ${os} == windows ]] && ext=".exe"
   binary=".bin/$(basename ${pkg})-${os}-${arch}-dist${ext}"
   echo "--- go build for ${os}/${arch}"
-  (ENTERPRISE=1 \
-    DEV_WEB_BUILDER="esbuild yarn run build-web" \
-    GOOS="${os}" \
+  (GOOS="${os}" \
     GOARCH="${arch}" \
     go build -trimpath \
     -ldflags "${ldflags[*]}" \
@@ -117,6 +115,7 @@ done
 
 [ ${#target_platforms[@]} -eq 0 ] && target_platforms=("${native_platform}")
 
+ENTERPRISE=1 DEV_WEB_BUILDER=esbuild yarn run build-web
 for platform in "${target_platforms[@]}"; do
   build "${platform}" &
 done
