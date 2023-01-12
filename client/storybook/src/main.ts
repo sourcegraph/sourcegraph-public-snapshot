@@ -20,6 +20,7 @@ import {
     getStatoscopePlugin,
     getTerserPlugin,
     NODE_MODULES_PATH,
+    resolveWithSymlink,
     ROOT_PATH,
     STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
@@ -171,7 +172,7 @@ const config: Config = {
             ...getBabelLoader(),
         })
 
-        const storybookPath = path.resolve(NODE_MODULES_PATH, '@storybook')
+        const storybookPath = resolveWithSymlink(NODE_MODULES_PATH, '@storybook')
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.

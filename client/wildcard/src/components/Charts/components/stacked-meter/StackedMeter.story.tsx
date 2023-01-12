@@ -1,18 +1,13 @@
 import { Meta, Story } from '@storybook/react'
 import ParentSize from '@visx/responsive/lib/components/ParentSizeModern'
 
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
+import { BrandedStory } from '../../../../stories'
 
 import { StackedMeter } from '.'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         chromatic: { disableSnapshots: false, enableDarkMode: true },
     },

@@ -67,9 +67,9 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
                 {},
                 ExternalServiceSyncJobConnectionFields
             >
-                className="mb-0"
-                listClassName="list-group list-group-flush mb-0"
+                className="mb-0 mt-1"
                 noun="sync job"
+                listClassName="list-group-flush"
                 pluralNoun="sync jobs"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceSyncJobNode}

@@ -126,7 +126,7 @@ const USE_NEW_QUERY = gql`
 `
 ```
 
-`yarn generate` or simply saving while your local instance of Sourcegraph is running will generate new `graphql-operations.ts` files with the appropriate functions and types defined.
+`pnpm generate` or simply saving while your local instance of Sourcegraph is running will generate new `graphql-operations.ts` files with the appropriate functions and types defined.
 
 You can now use this function in your TypeScript code. As an example of how to do this, you could perhaps look at [this](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/user/settings/codeHosts/UserAddCodeHostsPage%5C.tsx+GET_ORG_FEATURE_FLAG_VALUE&patternType=literal). Also, refer to [Working with GraphQL](../background-information/web/graphql.md)
 

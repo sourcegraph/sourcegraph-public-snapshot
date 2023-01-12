@@ -45,10 +45,10 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                             </Link>
                         </Tooltip>
                         {syncInProgress && (
-                            <>
-                                {' (Syncing list of repositories from code host...'}
-                                <LoadingSpinner inline={true} />)
-                            </>
+                            <span className="text-muted font-italic ml-2">
+                                Syncing list of repositories from code host...
+                                <LoadingSpinner inline={true} />
+                            </span>
                         )}
                     </td>
                 </tr>

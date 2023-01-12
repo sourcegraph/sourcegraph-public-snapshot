@@ -65,7 +65,7 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*
 	metadata := &scip.Metadata{
 		Version:              0,
 		ToolInfo:             &scip.ToolInfo{Name: indexerName},
-		ProjectRoot:          root,
+		ProjectRoot:          groupedBundleData.ProjectRoot,
 		TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 	}
 
