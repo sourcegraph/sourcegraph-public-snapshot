@@ -6772,7 +6772,7 @@ A pre-defined periods to get site analytics.
 """
 enum AnalyticsDateRange {
     """
-    Last 3 month's date range.
+    Last 3 months date range.
     """
     LAST_THREE_MONTHS
     """
