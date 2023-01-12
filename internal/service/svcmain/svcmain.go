@@ -50,7 +50,20 @@ func Main(services []service.Service, config Config) {
 // DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
 // is deprecated.
 func DeprecatedSingleServiceMain(svc service.Service, config Config) {
-	run([]service.Service{svc}, config)
+	liblog := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	},
+		// Experimental: DevX is observing how sampling affects the errors signal.
+		log.NewSentrySinkWith(
+			log.SentrySink{
+				ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+			},
+		),
+	)
+	logger := log.Scoped("sourcegraph", "Sourcegraph")
+	run(liblog, logger, []service.Service{svc}, config)
 }
 
 func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Service, config Config) {
