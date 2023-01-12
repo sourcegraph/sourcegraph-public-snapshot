@@ -2,11 +2,11 @@
  * Configuration for the release tool. All fields should align exactly with those in
  * `src/config.ts`. To learn more about the release tool:
  *
- *     yarn run release help
+ *     pnpm run release help
  *
  * A quick sanity-check can be performed to make sure configuration is loaded correctly:
  *
- *     yarn run release _test:config
+ *     pnpm run release _test:config
  */
 {
     // Captain information

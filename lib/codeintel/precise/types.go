@@ -234,6 +234,7 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
+	ProjectRoot       string
 	Meta              MetaData
 	Documents         chan KeyedDocumentData
 	ResultChunks      chan IndexedResultChunkData

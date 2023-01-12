@@ -368,7 +368,7 @@ func TestHandleSCIP(t *testing.T) {
 				_, _ = hash.Write(payload)
 
 				foundDocument1 = true
-				expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
+				expectedHash := "TTQ+xW2zU2O1b+MEGtkYLhjB3dbHRpHM3CXoS6pqqvI="
 				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(hash.Sum(nil))); diff != "" {
 					t.Errorf("unexpected hash (-want +got):\n%s", diff)
 				}
