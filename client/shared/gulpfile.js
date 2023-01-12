@@ -7,29 +7,7 @@ const { readFile } = require('mz/fs')
 
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
-const { graphQlSchema: _graphQlSchema } = require('./dev/generateGraphQlSchema')
 const { generateSchema } = require('./dev/generateSchema')
-
-const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
-
-/**
- * Generates the TypeScript types for the GraphQL schema.
- * These are used by older code, new code should rely on the new query-specific generated types.
- *
- * @returns {Promise<void>}
- */
-async function graphQlSchema() {
-  await _graphQlSchema(__dirname + '/src/schema.ts')
-}
-
-/**
- * Generates the legacy graphql.ts types on file changes.
- */
-async function watchGraphQlSchema() {
-  await new Promise((resolve, reject) => {
-    gulp.watch(GRAPHQL_SCHEMA_GLOB, graphQlSchema).on('error', reject)
-  })
-}
 
 /**
  * Determine whether to regenerate GraphQL operations based on the given
@@ -71,6 +49,13 @@ async function shouldRegenerateGraphQlOperations(type, name) {
  * Generates the new query-specific types on file changes.
  */
 function watchGraphQlOperations() {
+  if (process.env.DEV_WEB_BUILDER_UNSAFE_FAST) {
+    // Setting the env var DEV_WEB_BUILDER_UNSAFE_FAST skips various operations in frontend dev.
+    // It's not safe, but if you know what you're doing, go ahead and use it. (CI will catch any
+    // issues you forgot about.)
+    return
+  }
+
   // Although graphql-codegen has watching capabilities, they don't appear to
   // use chokidar correctly and rely on polling. Instead, let's get gulp to
   // watch for us, since we know it'll do it more efficiently, and then we can
@@ -100,16 +85,6 @@ async function graphQlOperations() {
 }
 
 /**
- * Allow json-schema-ref-parser to resolve the v7 draft of JSON Schema
- * using a local copy of the spec, enabling developers to run/develop Sourcegraph offline
- */
-const draftV7resolver = {
-  order: 1,
-  read: () => readFile(path.join(__dirname, '../../schema/json-schema-draft-07.schema.json')),
-  canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
-}
-
-/**
  * Generates the TypeScript types for the JSON schemas.
  *
  * @returns {Promise<void>}
@@ -129,8 +104,6 @@ function watchSchema() {
 module.exports = {
   watchSchema,
   schema,
-  graphQlSchema,
-  watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
   cssModulesTypings,

@@ -7,7 +7,7 @@ import signale from 'signale'
 
 import { STATIC_ASSETS_PATH, buildMonaco } from '@sourcegraph/build-config'
 
-import { HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
+import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
 
 import { BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
@@ -20,7 +20,9 @@ export const esbuildDevelopmentServer = async (
 
     // One-time build (these files only change when the monaco-editor npm package is changed, which
     // is rare enough to ignore here).
-    await buildMonaco(STATIC_ASSETS_PATH)
+    if (!ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS) {
+        await buildMonaco(STATIC_ASSETS_PATH)
+    }
 
     // Start esbuild's server on a random local port.
     const {
@@ -37,10 +39,12 @@ export const esbuildDevelopmentServer = async (
         createProxyMiddleware({
             target: { protocol: 'http:', host: esbuildHost, port: esbuildPort },
             pathRewrite: { [`^${assetPathPrefix}`]: '' },
-            onProxyRes: (proxyResponse, request) => {
+            onProxyRes: (proxyResponse, request, response) => {
                 // Cache chunks because their filename includes a hash of the content.
                 const isCacheableChunk = path.basename(request.url).startsWith('chunk-')
-                proxyResponse.headers['Cache-Control'] = isCacheableChunk ? 'max-age=3600' : 'no-cache'
+                if (isCacheableChunk) {
+                    response.setHeader('Cache-Control', 'max-age=3600')
+                }
             },
             logLevel: 'error',
         })

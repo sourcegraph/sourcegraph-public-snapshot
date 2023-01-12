@@ -102,7 +102,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
     }
 
     private queryAuthProviders = (args: {}): Observable<AuthProvidersResult['site']['authProviders']> =>
-        queryGraphQL(
+        queryGraphQL<AuthProvidersResult>(
             gql`
                 query AuthProviders {
                     site {

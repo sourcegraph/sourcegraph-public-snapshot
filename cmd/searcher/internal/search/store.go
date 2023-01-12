@@ -136,7 +136,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	var cacheHit bool
 	start := time.Now()
@@ -235,7 +235,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch") //nolint:staticcheck // OT is deprecated
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)

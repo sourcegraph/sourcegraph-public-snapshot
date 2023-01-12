@@ -108,6 +108,7 @@ Clarification and discussion about key concepts, architecture, and development s
   - [How to write and run tests](how-to/testing.md)
     - [Testing Go code](background-information/languages/testing_go_code.md)
     - [Testing web code](background-information/testing_web_code.md)
+- [Building p4-fusion](background-information/build_p4_fusion.md)
 
 ### [Languages](background-information/languages/index.md)
 

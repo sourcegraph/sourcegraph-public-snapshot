@@ -1,10 +1,11 @@
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
-import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
+
+import type { NotificationType as NotificationTypeType } from '../codeintel/legacy-extensions/api'
 
 import { NotificationItem } from './NotificationItem'
 

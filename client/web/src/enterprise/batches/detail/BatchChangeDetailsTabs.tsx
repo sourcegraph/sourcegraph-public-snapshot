@@ -4,8 +4,6 @@ import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiM
 import * as H from 'history'
 import { useHistory, useLocation } from 'react-router'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -59,11 +57,7 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
     ][tabIndex]
 
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
-export interface BatchChangeDetailsProps
-    extends ThemeProps,
-        ExtensionsControllerProps,
-        PlatformContextProps,
-        TelemetryProps {
+export interface BatchChangeDetailsProps extends ThemeProps, TelemetryProps {
     history: H.History
     location: H.Location
     /** The name of the tab that should be initially open */
@@ -82,15 +76,12 @@ interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsC
 
 export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeDetailsTabsProps>> = ({
     batchChange,
-    extensionsController,
     isLightTheme,
-    platformContext,
     settingsCascade,
     initialTab = TabName.Changesets,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
-    telemetryService,
 }) => {
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
@@ -239,14 +230,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         refetchBatchChange={refetchBatchChange}
                         history={history}
                         location={location}
-                        isLightTheme={isLightTheme}
-                        extensionsController={extensionsController}
-                        platformContext={platformContext}
-                        telemetryService={telemetryService}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
-                        settingsCascade={settingsCascade}
                         isExecutionEnabled={isExecutionEnabled}
                     />
                 </TabPanel>
@@ -274,7 +260,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 />
                                 <BatchSpecDownloadButton
                                     name={batchChange.name}
-                                    isLightTheme={isLightTheme}
                                     originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
@@ -291,14 +276,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         history={history}
                         location={location}
-                        isLightTheme={isLightTheme}
-                        extensionsController={extensionsController}
-                        platformContext={platformContext}
-                        telemetryService={telemetryService}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
-                        settingsCascade={settingsCascade}
                         isExecutionEnabled={isExecutionEnabled}
                     />
                 </TabPanel>

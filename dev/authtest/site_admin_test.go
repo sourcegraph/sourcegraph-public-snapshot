@@ -171,10 +171,10 @@ mutation {
 	}
 }`,
 			}, {
-				name: "SetMigrationDirection",
+				name: "setMigrationDirection",
 				query: `
 mutation {
-	SetMigrationDirection(id: "TWlncmF0aW9uOjE=", applyReverse: false) {
+	setMigrationDirection(id: "TWlncmF0aW9uOjE=", applyReverse: false) {
 		alwaysNil
 	}
 }`,

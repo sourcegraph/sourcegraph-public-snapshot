@@ -1,9 +1,9 @@
 const { TextEncoder } = require('util')
 
 const { Crypto } = require('@peculiar/webcrypto')
-const JSDOMEnvironment = require('jest-environment-jsdom')
+const { TestEnvironment } = require('jest-environment-jsdom')
 
-module.exports = class JSDOMEnvironmentGlobal extends JSDOMEnvironment {
+module.exports = class TestEnvironmentGlobal extends TestEnvironment {
   constructor(config, options) {
     super(config, options)
 

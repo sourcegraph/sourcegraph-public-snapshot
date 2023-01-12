@@ -34,8 +34,15 @@ describe('Settings', () => {
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
+                            final: '',
                             subjects: [
                                 {
+                                    __typename: 'User',
+                                    id: '123',
+                                    settingsURL: '#',
+                                    viewerCanAdminister: true,
+                                    username: 'testuser',
+                                    displayName: 'Test User',
                                     latestSettings: {
                                         id: settingsID,
                                         contents: JSON.stringify({}),

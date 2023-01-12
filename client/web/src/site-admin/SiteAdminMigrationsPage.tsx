@@ -7,6 +7,7 @@ import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
 import { parse as _parseVersion, SemVer } from 'semver'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -26,7 +27,6 @@ import {
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {

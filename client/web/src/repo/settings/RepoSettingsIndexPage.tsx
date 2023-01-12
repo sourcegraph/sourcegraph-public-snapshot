@@ -7,6 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import {
@@ -25,13 +26,13 @@ import {
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     reindexResult,
     reindexVariables,
     RepositoryTextSearchIndexRepository,
     Scalars,
     SettingsAreaRepositoryFields,
+    RepositoryTextSearchIndexResult,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -45,7 +46,7 @@ type RepositoryTextSearchIndex = RepositoryTextSearchIndexRepository['textSearch
  * Fetches a repository's text search index information.
  */
 function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndex> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryTextSearchIndexResult>(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
                 node(id: $id) {

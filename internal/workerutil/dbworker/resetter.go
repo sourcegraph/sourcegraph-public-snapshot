@@ -47,7 +47,7 @@ type ResetterMetrics struct {
 // standard naming convention. The base metric name should be the same metric
 // name provided to a `worker` ex. my_job_queue. Do not provide prefix "src" or
 // postfix "_record...".
-func NewResetterMetrics(observationCtx *observation.Context, metricNameRoot string) *ResetterMetrics {
+func NewResetterMetrics(observationCtx *observation.Context, metricNameRoot string) ResetterMetrics {
 	resets := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_" + metricNameRoot + "_record_resets_total",
 		Help: "The number of stalled record resets.",
@@ -67,7 +67,7 @@ func NewResetterMetrics(observationCtx *observation.Context, metricNameRoot stri
 	})
 	observationCtx.Registerer.MustRegister(resetErrors)
 
-	return &ResetterMetrics{
+	return ResetterMetrics{
 		RecordResets:        resets,
 		RecordResetFailures: resetFailures,
 		Errors:              resetErrors,

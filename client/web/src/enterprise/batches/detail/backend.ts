@@ -80,6 +80,7 @@ const bulkOperationFragment = gql`
                         url
                     }
                     repository {
+                        id
                         name
                         url
                     }
@@ -172,6 +173,7 @@ const batchChangeFragment = gql`
                     name
                     binary
                     byteSize
+                    url
                 }
             }
             source

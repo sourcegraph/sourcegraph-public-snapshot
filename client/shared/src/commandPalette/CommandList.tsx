@@ -261,10 +261,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                         ) : query.length > 0 ? (
                             <li className={this.props.noResultsClassName}>No matching commands</li>
                         ) : (
-                            <EmptyCommandList
-                                settingsCascade={this.state.settingsCascade}
-                                sourcegraphURL={this.props.platformContext.sourcegraphURL}
-                            />
+                            <EmptyCommandList settingsCascade={this.state.settingsCascade} />
                         )}
                     </ul>
                 </div>

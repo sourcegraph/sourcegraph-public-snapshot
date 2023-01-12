@@ -1,4 +1,4 @@
-import { WorkspaceRoot } from 'sourcegraph'
+import type { WorkspaceRoot } from '../../codeintel/legacy-extensions/api'
 
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 

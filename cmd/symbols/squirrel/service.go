@@ -17,12 +17,12 @@ import (
 )
 
 // How to read a file.
-type ReadFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
+type readFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
 
 // SquirrelService uses tree-sitter and the symbols service to analyze and traverse files to find
 // symbols.
 type SquirrelService struct {
-	readFile            ReadFileFunc
+	readFile            readFileFunc
 	symbolSearch        symbolsTypes.SearchFunc
 	breadcrumbs         Breadcrumbs
 	parser              *sitter.Parser
@@ -32,7 +32,7 @@ type SquirrelService struct {
 }
 
 // Creates a new SquirrelService.
-func New(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
+func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
 	return &SquirrelService{
 		readFile:            readFile,
 		symbolSearch:        symbolSearch,

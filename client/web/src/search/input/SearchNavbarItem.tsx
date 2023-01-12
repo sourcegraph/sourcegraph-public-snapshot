@@ -3,9 +3,9 @@ import React, { useCallback } from 'react'
 import * as H from 'history'
 import shallow from 'zustand/shallow'
 
-import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/branded'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -51,8 +51,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -86,9 +84,8 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 autoFocus={false}
-                editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
-                showSearchContext={showSearchContext}
+                showSearchContext={props.searchContextsEnabled}
                 showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}

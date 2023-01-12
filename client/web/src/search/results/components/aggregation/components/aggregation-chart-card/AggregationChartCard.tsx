@@ -1,6 +1,7 @@
 import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
 
 import { mdiPlay } from '@mdi/js'
+import { useDebouncedCallback } from 'use-debounce'
 
 import { pluralize } from '@sourcegraph/common'
 import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
@@ -76,8 +77,8 @@ interface AggregationChartCardProps extends HTMLAttributes<HTMLDivElement> {
     mode?: SearchAggregationMode | null
     size?: 'sm' | 'md'
     showLoading?: boolean
+    onBarHover: () => void
     onBarLinkClick?: (query: string, barIndex: number) => void
-    onBarHover?: () => void
     onExtendTimeout: () => void
 }
 
@@ -95,6 +96,8 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         onBarHover,
         onExtendTimeout,
     } = props
+
+    const onBarHoverDebounced = useDebouncedCallback(onBarHover, 300)
 
     if (loading) {
         return (
@@ -155,6 +158,10 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
         onBarLinkClick?.(getLink(datum), index)
     }
 
+    const handleMouseLeave = (): void => {
+        onBarHoverDebounced.cancel()
+    }
+
     return (
         <AggregationContent className={className}>
             <Suspense>
@@ -169,7 +176,8 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     getDatumName={getName}
                     getDatumLink={getLink}
                     onDatumLinkClick={handleDatumLinkClick}
-                    onDatumHover={onBarHover}
+                    onDatumHover={onBarHoverDebounced}
+                    onMouseLeave={handleMouseLeave}
                     className={styles.chart}
                 />
 

@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const TokenHeaderName = "X-Gitlab-Token"
+
 // EventCommon contains fields that are common to all webhook event types.
 type EventCommon struct {
 	ObjectKind string               `json:"object_kind"`
@@ -22,6 +24,14 @@ type PipelineEvent struct {
 	User         gitlab.User          `json:"user"`
 	Pipeline     gitlab.Pipeline      `json:"object_attributes"`
 	MergeRequest *gitlab.MergeRequest `json:"merge_request"`
+}
+
+// PushEvent represents a push to a repository.
+// https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#push-events
+type PushEvent struct {
+	Repository struct {
+		GitSSHURL string `json:"git_ssh_url,omitempty"`
+	} `json:"repository"`
 }
 
 var ErrObjectKindUnknown = errors.New("unknown object kind")
@@ -59,6 +69,8 @@ func UnmarshalEvent(data []byte) (any, error) {
 		typedEvent = &mergeRequestEvent{}
 	case "pipeline":
 		typedEvent = &PipelineEvent{}
+	case "push":
+		typedEvent = &PushEvent{}
 	default:
 		return nil, errors.Wrapf(ErrObjectKindUnknown, "kind: %s", event.ObjectKind)
 	}

@@ -6,6 +6,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,7 +16,6 @@ import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegr
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'
 import { Duration } from '../../../../components/time/Duration'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,

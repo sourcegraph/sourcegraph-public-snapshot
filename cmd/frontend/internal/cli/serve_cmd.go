@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -162,14 +161,13 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
-	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
+	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d))) //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
@@ -232,6 +230,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
+	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
@@ -300,7 +299,10 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
-			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
+			GitHubSyncWebhook:               enterprise.ReposGithubWebhook,
+			GitLabSyncWebhook:               enterprise.ReposGitLabWebhook,
+			BitbucketServerSyncWebhook:      enterprise.ReposBitbucketServerWebhook,
+			BitbucketCloudSyncWebhook:       enterprise.ReposBitbucketCloudWebhook,
 			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
 			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
 			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,

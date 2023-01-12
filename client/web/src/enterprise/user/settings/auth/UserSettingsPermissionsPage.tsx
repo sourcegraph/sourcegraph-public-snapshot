@@ -2,10 +2,10 @@ import React, { useEffect, useMemo } from 'react'
 
 import * as H from 'history'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
-import { Timestamp } from '../../../../components/time/Timestamp'
 import { UserSettingsAreaUserFields } from '../../../../graphql-operations'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { eventLogger } from '../../../../tracking/eventLogger'

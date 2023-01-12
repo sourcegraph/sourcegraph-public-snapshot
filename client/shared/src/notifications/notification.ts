@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
-import { NotificationType, Progress } from 'sourcegraph'
+
+import type { NotificationType, Progress } from '../codeintel/legacy-extensions/api'
 
 /**
  * A notification message to display to the user.

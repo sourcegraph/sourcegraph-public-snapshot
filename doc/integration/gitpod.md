@@ -1,10 +1,10 @@
 # Sourcegraph extensions on Gitpod
 
-You can use our Sourcegraph IDEs extensions in your [Gitpod](https://gitpod.io/) workspace.
+You can use our Sourcegraph IDE extensions in your [Gitpod](https://gitpod.io/) workspace.
 
 ### Installation guide
 
-Our IDEs extensions work with the following IDEs supported by Gitpod.
+Our IDE extensions work with the following IDEs supported by Gitpod.
 
 #### Gitpod VS Code Desktop
 

@@ -130,21 +130,24 @@ async function goToDefinition(
 ): Promise<DefinitionResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
     const definition = await api.getDefinition(params).toPromise()
+    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
+
     if (definition.length === 0) {
         return {
             handler: position => showTemporaryTooltip(view, 'No definition found', position, 2000, { arrow: true }),
             locations: [],
         }
     }
-    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
+
     for (const location of definition) {
         if (location.uri === params.textDocument.uri && location.range && location.range) {
-            const requestPosition = new Position(params.position.line, params.position.character)
             const {
                 start: { line: startLine, character: startCharacter },
                 end: { line: endLine, character: endCharacter },
             } = location.range
             const resultRange = Range.fromNumbers(startLine, startCharacter, endLine, endCharacter)
+            const requestPosition = new Position(params.position.line, params.position.character)
+
             if (resultRange.contains(requestPosition)) {
                 const refPanelURL = locationToURL(locationFrom, 'references')
                 return {
@@ -162,10 +165,12 @@ async function goToDefinition(
             }
         }
     }
+
     if (definition.length === 1) {
         const destination = definition[0]
         const hrefTo = locationToURL(destination)
         const { range, uri } = definition[0]
+
         if (hrefTo && range) {
             return {
                 locations: definition,
@@ -188,7 +193,7 @@ async function goToDefinition(
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This
                     // happens when the user repeatedly triggers goto-def, which
-                    // is easy to do when the the definition URL is close to
+                    // is easy to do when the definition URL is close to
                     // where the action got triggered.
                     const shouldPushHistory = history.location.state?.previousURL !== hrefFrom
                     if (hrefFrom && shouldPushHistory && history.createHref(history.location) !== hrefFrom) {
@@ -208,6 +213,7 @@ async function goToDefinition(
     // implement a component to resolve ambiguous results inside the blob
     // view similar to how VS Code "Peek definition" works like.
     const refPanelURL = locationToURL(locationFrom, 'def')
+
     return {
         locations: definition,
         url: refPanelURL,

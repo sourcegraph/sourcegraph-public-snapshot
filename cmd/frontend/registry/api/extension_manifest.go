@@ -60,25 +60,3 @@ func jsonValueWithFields(jsoncStr string, fields []string) graphqlbackend.JSONVa
 	}
 	return graphqlbackend.JSONValue{Value: o}
 }
-
-func (r *extensionManifest) Description() (*string, error) {
-	parsed, err := r.parse()
-	if parsed == nil || err != nil {
-		return nil, err
-	}
-	if parsed.Description == "" {
-		return nil, nil
-	}
-	return &parsed.Description, nil
-}
-
-func (r *extensionManifest) BundleURL() (*string, error) {
-	parsed, err := r.parse()
-	if parsed == nil || err != nil {
-		return nil, err
-	}
-	if parsed.Url == "" {
-		return nil, nil
-	}
-	return &parsed.Url, nil
-}

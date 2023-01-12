@@ -235,7 +235,7 @@ function addDaysAndRoundToEndOfDay(amount: number): number {
 function generateProductLicenseForSubscription(
     args: GenerateProductLicenseForSubscriptionVariables
 ): Observable<GenerateProductLicenseForSubscriptionResult['dotcom']['generateProductLicenseForSubscription']> {
-    return mutateGraphQL(
+    return mutateGraphQL<GenerateProductLicenseForSubscriptionResult>(
         gql`
             mutation GenerateProductLicenseForSubscription(
                 $productSubscriptionID: ID!

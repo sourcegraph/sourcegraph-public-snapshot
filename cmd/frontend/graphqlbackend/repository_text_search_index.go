@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sync"
 	"time"
 

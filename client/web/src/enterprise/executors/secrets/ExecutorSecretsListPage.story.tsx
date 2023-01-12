@@ -3,11 +3,14 @@ import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { ExecutorSecretScope } from '@sourcegraph/search'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { GlobalExecutorSecretsResult, UserExecutorSecretsResult } from '../../../graphql-operations'
+import {
+    GlobalExecutorSecretsResult,
+    ExecutorSecretScope,
+    UserExecutorSecretsResult,
+} from '../../../graphql-operations'
 
 import { GLOBAL_EXECUTOR_SECRETS, USER_EXECUTOR_SECRETS } from './backend'
 import { GlobalExecutorSecretsListPage, UserExecutorSecretsListPage } from './ExecutorSecretsListPage'

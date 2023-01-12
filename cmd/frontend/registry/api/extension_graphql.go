@@ -65,7 +65,3 @@ func registryExtensionByID(ctx context.Context, db database.DB, id graphql.ID) (
 		return nil, errors.New("invalid registry extension ID")
 	}
 }
-
-// RegistryPublisherByID looks up and returns the registry publisher by GraphQL ID. If there is no
-// local registry, it is not implemented.
-var RegistryPublisherByID func(context.Context, graphql.ID) (graphqlbackend.RegistryPublisher, error)

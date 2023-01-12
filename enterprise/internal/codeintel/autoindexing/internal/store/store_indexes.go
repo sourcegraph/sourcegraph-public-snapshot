@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -128,10 +129,9 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(
-		log.Int("totalCount", totalCount),
-		log.Int("numIndexes", len(indexes)),
-	)
+	trace.AddEvent("scanIndexesWithCount",
+		attribute.Int("totalCount", totalCount),
+		attribute.Int("numIndexes", len(indexes)))
 
 	return indexes, totalCount, nil
 }
@@ -524,10 +524,9 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 	for _, numDeleted := range repositories {
 		count += numDeleted
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("scanCounts",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	return repositories, nil
 }
@@ -726,7 +725,7 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 	if err != nil {
 		return nil, err
 	}
-	logger.Log(log.Int("numIndexes", len(indexes)))
+	logger.AddEvent("scanIndexes", attribute.Int("numIndexes", len(indexes)))
 
 	groupedIndexes := make([]shared.IndexesWithRepositoryNamespace, 1, len(indexes)+1)
 	for _, index := range indexes {

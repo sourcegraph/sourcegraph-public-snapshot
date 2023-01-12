@@ -78,11 +78,16 @@ git clone https://github.com/<you/private-repository>.git
 ```bash
 git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
 ```
+- Fetch all from the reference repository.
+
+```bash
+git fetch --all
+```
 
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
 ```bash
-  export SOURCEGRAPH_VERSION="v4.3.0"
+  export SOURCEGRAPH_VERSION="v4.3.1"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
 

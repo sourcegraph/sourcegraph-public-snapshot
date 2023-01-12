@@ -5,15 +5,13 @@ import { EMPTY, of } from 'rxjs'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { BrandedStory } from '../BrandedStory'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { TabbedPanelContent } from './TabbedPanelContent'
 import { panels, panelProps, panelActions, panelMenus, CODE_EDITOR_FIXTURE } from './TabbedPanelContent.fixtures'
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+    <BrandedStory initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
         {() => <div className="p-4">{story()}</div>}
     </BrandedStory>
 )

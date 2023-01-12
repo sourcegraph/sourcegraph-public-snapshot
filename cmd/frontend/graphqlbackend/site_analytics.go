@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type siteAnalyticsResolver struct {
@@ -19,10 +18,6 @@ type siteAnalyticsResolver struct {
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
-	}
-
-	if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-disabled", false) {
-		return nil, errors.New("'admin-analytics-disabled' feature flag is enabled")
 	}
 
 	cache := !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-cache-disabled", false)

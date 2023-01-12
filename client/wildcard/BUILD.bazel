@@ -1,4 +1,6 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//dev:defs.bzl", "sass_library")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
 
 sass_library(
     name = "global-style-vars",
@@ -6,4 +8,19 @@ sass_library(
         "src/global-styles/breakpoints.scss",
     ],
     visibility = ["//visibility:public"],
+)
+
+module_style_typings(
+    name = "module_style_typings",
+    deps = [
+        ":wildcard",
+        "//:node_modules/@reach/dialog",
+        "//:node_modules/@reach/tabs",
+    ],
+)
+
+js_library(
+    name = "wildcard",
+    srcs = glob(["src/**/*.scss"]),
+    visibility = ["//client:__subpackages__"],
 )

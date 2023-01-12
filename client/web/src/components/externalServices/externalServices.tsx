@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Edit, JSONPath, ModificationOptions, modify } from 'jsonc-parser'
+import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -13,6 +13,7 @@ import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
+import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link, Code, Text } from '@sourcegraph/wildcard'
 
@@ -33,7 +34,12 @@ import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
-import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
+import {
+    ExternalRepositoryFields,
+    ExternalServiceFields,
+    ExternalServiceKind,
+    ExternalServiceSyncJobState,
+} from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
 /**
@@ -1036,6 +1042,15 @@ const GITOLITE: AddExternalServiceOptions = {
                 return { edits, selectText: value }
             },
         },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: (config: string) => {
+                const value = { name: '<name>' }
+                const edits = modify(config, ['exclude', -1], value, defaultModificationOptions)
+                return { edits, selectText: '<name>' }
+            },
+        },
     ],
 }
 const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
@@ -1494,4 +1509,45 @@ export const externalRepoIcon = (
 ): React.ComponentType<{ className?: string }> | undefined => {
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined
+}
+
+export const EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES = new Set<ExternalServiceSyncJobState>([
+    ExternalServiceSyncJobState.QUEUED,
+    ExternalServiceSyncJobState.PROCESSING,
+    ExternalServiceSyncJobState.CANCELING,
+])
+
+export const resolveExternalServiceCategory = (
+    externalService?: ExternalServiceFields
+): AddExternalServiceOptions | undefined => {
+    let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
+    if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
+        const parsedConfig: unknown = parseJSONC(externalService.config)
+        const url =
+            typeof parsedConfig === 'object' &&
+            parsedConfig !== null &&
+            hasProperty('url')(parsedConfig) &&
+            typeof parsedConfig.url === 'string' &&
+            isValidURL(parsedConfig.url)
+                ? new URL(parsedConfig.url)
+                : undefined
+        // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
+        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
+            externalServiceCategory = codeHostExternalServices.ghe
+        }
+        // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
+        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+            externalServiceCategory = codeHostExternalServices.gitlab
+        }
+    }
+    return externalServiceCategory
+}
+
+export function isValidURL(url: string): boolean {
+    try {
+        new URL(url)
+        return true
+    } catch {
+        return false
+    }
 }

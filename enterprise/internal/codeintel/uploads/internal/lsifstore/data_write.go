@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -98,7 +99,7 @@ func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	); err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("numDocumentRecords", int(count)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numDocumentRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
@@ -169,7 +170,7 @@ func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	); err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("numResultChunkRecords", int(count)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
@@ -258,7 +259,7 @@ func (s *store) writeMonikers(ctx context.Context, bundleID int, tableName strin
 	); err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("numRecords", int(count)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows

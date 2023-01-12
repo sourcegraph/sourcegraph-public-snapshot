@@ -9,8 +9,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -178,7 +178,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 // Done calls into the inner Store Done method.
 func (s *store) Done(err error) error {
 	tr := s.txtrace
-	tr.LogFields(otlog.String("event", "Store.Done"))
+	tr.SetAttributes(attribute.String("event", "Store.Done"))
 	logger := trace.Logger(s.txctx, s.Logger)
 
 	defer func(began time.Time) {
@@ -215,9 +215,9 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
-	tr.LogFields(
-		otlog.Int("len(ids)", len(ids)),
-		otlog.Int64("external_service_id", svc.ID),
+	tr.SetAttributes(
+		attribute.Int("len(ids)", len(ids)),
+		attribute.Int64("external_service_id", svc.ID),
 	)
 	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)))
 
@@ -266,9 +266,9 @@ WHERE external_service_id = %s AND repo_id != ALL(%s)
 
 func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
-	tr.LogFields(
-		otlog.Int32("id", int32(id)),
-		otlog.Int64("external_service_id", svc.ID),
+	tr.SetAttributes(
+		attribute.Int64("id", int64(id)),
+		attribute.Int64("external_service_id", svc.ID),
 	)
 	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)))
 
@@ -322,10 +322,10 @@ WHERE id = %s AND NOT EXISTS (
 
 func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
-	tr.LogFields(
-		otlog.String("name", string(r.Name)),
-		otlog.Int64("external_service_id", svc.ID),
-		otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	tr.SetAttributes(
+		attribute.String("name", string(r.Name)),
+		attribute.Int64("external_service_id", svc.ID),
+		attribute.String("external_repo_spec", r.ExternalRepo.String()),
 	)
 	logger := trace.Logger(ctx, s.Logger).With(
 		log.Int("externalServiceID", int(svc.ID)),
@@ -430,9 +430,9 @@ WHERE
 
 func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateRepo")
-	tr.LogFields(
-		otlog.String("name", string(r.Name)),
-		otlog.Int32("id", int32(r.ID)),
+	tr.SetAttributes(
+		attribute.String("name", string(r.Name)),
+		attribute.Int64("id", int64(r.ID)),
 	)
 	logger := trace.Logger(ctx, s.Logger).With(
 		log.Int32("id", int32(r.ID)),
@@ -483,10 +483,10 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 
 func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
-	tr.LogFields(
-		otlog.String("name", string(r.Name)),
-		otlog.Int64("external_service_id", svc.ID),
-		otlog.String("external_repo_spec", r.ExternalRepo.String()),
+	tr.SetAttributes(
+		attribute.String("name", string(r.Name)),
+		attribute.Int64("external_service_id", svc.ID),
+		attribute.String("external_repo_spec", r.ExternalRepo.String()),
 	)
 	logger := trace.Logger(ctx, s.Logger).With(
 		log.Int("externalServiceID", int(svc.ID)),

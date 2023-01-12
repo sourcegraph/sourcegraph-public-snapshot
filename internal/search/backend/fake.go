@@ -53,10 +53,10 @@ func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q, opt *zoekt.Lis
 	}
 
 	list := &zoekt.RepoList{}
-	if opt != nil && opt.Minimal {
-		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos))
+	if opt != nil && opt.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		for _, r := range ss.Repos {
-			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{
+			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 				HasSymbols: r.Repository.HasSymbols,
 				Branches:   r.Repository.Branches,
 			}

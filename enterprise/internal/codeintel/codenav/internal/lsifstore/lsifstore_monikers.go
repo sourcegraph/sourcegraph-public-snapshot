@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -42,9 +43,9 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 	}
 
 	if documentData.SCIPData != nil {
-		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 		occurrences := types.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-		trace.Log(log.Int("numIntersectingOccurrences", len(occurrences)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 		// Make lookup map of symbol information by name
 		symbolMap := map[string]*scip.SymbolInformation{}
@@ -94,14 +95,14 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 
 			monikerData = append(monikerData, occurrenceMonikers)
 		}
-		trace.Log(log.Int("numMonikers", len(monikerData)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
 
 		return monikerData, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingRanges", len(ranges)))
 
 	monikerData := make([][]precise.MonikerData, 0, len(ranges))
 	for _, r := range ranges {
@@ -111,11 +112,11 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 				batch = append(batch, moniker)
 			}
 		}
-		trace.Log(log.Int("numMonikersForRange", len(batch)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikersForRange", len(batch)))
 
 		monikerData = append(monikerData, batch)
 	}
-	trace.Log(log.Int("numMonikers", len(monikerData)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
 
 	return monikerData, nil
 }
@@ -233,10 +234,9 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	for _, monikerLocations := range locationData {
 		totalCount += len(monikerLocations.Locations)
 	}
-	trace.Log(
-		log.Int("numDumps", len(locationData)),
-		log.Int("totalCount", totalCount),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numDumps", len(locationData)),
+		attribute.Int("totalCount", totalCount))
 
 	max := totalCount
 	if totalCount > limit {
@@ -263,7 +263,7 @@ outer:
 			}
 		}
 	}
-	trace.Log(log.Int("numLocations", len(locations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	return locations, totalCount, nil
 }

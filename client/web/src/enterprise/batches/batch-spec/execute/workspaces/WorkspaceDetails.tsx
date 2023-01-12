@@ -19,7 +19,6 @@ import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
     LoadingSpinner,
@@ -48,9 +47,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
-import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { FileDiffNode, FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
@@ -61,6 +59,7 @@ import {
     HiddenBatchSpecWorkspaceFields,
     Scalars,
     VisibleBatchSpecWorkspaceFields,
+    FileDiffFields,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -77,7 +76,7 @@ import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
 
-export interface WorkspaceDetailsProps extends ThemeProps {
+export interface WorkspaceDetailsProps {
     id: Scalars['ID']
     /** Handler to deselect the current workspace, i.e. close the details panel. */
     deselectWorkspace?: () => void
@@ -229,7 +228,6 @@ interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'>
 }
 
 const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<VisibleWorkspaceDetailsProps>> = ({
-    isLightTheme,
     workspace,
     deselectWorkspace,
     queryBatchSpecWorkspaceStepFileDiffs,
@@ -293,7 +291,6 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                         <React.Fragment key={changesetSpec.id}>
                             <ChangesetSpecNode
                                 node={changesetSpec}
-                                isLightTheme={isLightTheme}
                                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                             />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
@@ -308,7 +305,6 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                         step={step}
                         cachedResultFound={workspace.cachedResultFound}
                         workspaceID={workspace.id}
-                        isLightTheme={isLightTheme}
                         queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
                     />
                     {index !== workspace.steps.length - 1 && <hr className="my-2" />}
@@ -365,14 +361,13 @@ const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: n
     </>
 )
 
-interface ChangesetSpecNodeProps extends ThemeProps {
+interface ChangesetSpecNodeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
 const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<ChangesetSpecNodeProps>> = ({
     node,
-    isLightTheme,
     queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
 }) => {
     const history = useHistory()
@@ -456,7 +451,6 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             <CollapsePanel>
                                 <ChangesetSpecFileDiffConnection
                                     history={history}
-                                    isLightTheme={isLightTheme}
                                     location={history.location}
                                     spec={node.id}
                                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
@@ -481,7 +475,7 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     }
 }
 
-interface WorkspaceStepProps extends ThemeProps {
+interface WorkspaceStepProps {
     cachedResultFound: boolean
     step: BatchSpecWorkspaceStepFields
     workspaceID: Scalars['ID']
@@ -491,7 +485,6 @@ interface WorkspaceStepProps extends ThemeProps {
 
 const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
-    isLightTheme,
     workspaceID,
     cachedResultFound,
     queryBatchSpecWorkspaceStepFileDiffs,
@@ -611,7 +604,6 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         )}
                                         {step.startedAt && (
                                             <WorkspaceStepFileDiffConnection
-                                                isLightTheme={isLightTheme}
                                                 step={step}
                                                 workspaceID={workspaceID}
                                                 queryBatchSpecWorkspaceStepFileDiffs={
@@ -672,7 +664,7 @@ const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: st
     finishedAt,
 }) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
-interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
+interface WorkspaceStepFileDiffConnectionProps {
     workspaceID: Scalars['ID']
     // Require the entire step instead of just the spec number to ensure the query gets called as the step changes.
     step: BatchSpecWorkspaceStepFields
@@ -681,12 +673,7 @@ interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
 
 const WorkspaceStepFileDiffConnection: React.FunctionComponent<
     React.PropsWithChildren<WorkspaceStepFileDiffConnectionProps>
-> = ({
-    workspaceID,
-    step,
-    isLightTheme,
-    queryBatchSpecWorkspaceStepFileDiffs = _queryBatchSpecWorkspaceStepFileDiffs,
-}) => {
+> = ({ workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs = _queryBatchSpecWorkspaceStepFileDiffs }) => {
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryBatchSpecWorkspaceStepFileDiffs({
@@ -699,22 +686,21 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
     )
     const history = useHistory()
     return (
-        <FileDiffConnection
+        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"
             noun="changed file"
             pluralNoun="changed files"
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                history,
                 location: history.location,
-                isLightTheme,
                 persistLines: true,
                 lineNumbers: true,
             }}
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
+            withCenteredSummary={true}
             history={history}
             location={history.location}
             useURLQuery={false}

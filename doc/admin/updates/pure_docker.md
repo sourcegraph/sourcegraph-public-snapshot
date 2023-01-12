@@ -12,13 +12,16 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
+## v4.3.1 ➔ v4.4
+
 _Upgrade notes for the next version will appear here._
 
-## v4.2 ➔ v4.3
+## v4.2 ➔ v4.3.1
 
 <!-- Add changes changes to this section before release. -->
 
-_Upgrade notes for the next version will appear here._
+As a template, perform the same actions as the following diffs in your own deployment:
+- [`➔ v4.3.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1a8f9a3d71664bf31a1fae9d2ad99c9074eaebe9)
 
 ## v4.1 ➔ v4.2.1
 

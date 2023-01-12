@@ -1297,7 +1297,7 @@ $PWD/coverage.xml"
                         -or -name .venvs \
                         -or -name .virtualenv \
                         -or -name .virtualenvs \
-                        -or -name .yarn-cache \
+                        -or -name .pnpm-cache \
                         -or -name __pycache__ \
                         -or -name env \
                         -or -name envs \

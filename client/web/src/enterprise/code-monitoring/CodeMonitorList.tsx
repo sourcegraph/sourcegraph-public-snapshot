@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -65,10 +66,10 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             <CloudCtaBanner variant="outlined" small={true}>
                                 To monitor changes across your private repos,{' '}
                                 <Link
-                                    to="https://signup.sourcegraph.com/?p=monitoring"
+                                    to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Monitoring' })}
                                 >
                                     try Sourcegraph Cloud
                                 </Link>

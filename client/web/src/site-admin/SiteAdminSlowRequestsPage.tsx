@@ -6,6 +6,7 @@ import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -30,7 +31,6 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations'
 
 import { SLOW_REQUESTS } from './backend'

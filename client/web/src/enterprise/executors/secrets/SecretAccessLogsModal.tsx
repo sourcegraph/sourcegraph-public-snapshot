@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import {
@@ -11,7 +12,6 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { ExecutorSecretAccessLogFields, Scalars } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 

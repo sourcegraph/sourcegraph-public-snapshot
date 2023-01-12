@@ -3,10 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { QueryState } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { LazyQueryInput } from '@sourcegraph/branded'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Container,
@@ -25,6 +23,7 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
+import { Scalars, SearchPatternType } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { useExperimentalFeatures } from '../stores'
 
@@ -96,7 +95,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -131,9 +129,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     <Label className={classNames('w-100 form-group', styles.label)}>
                         <div className="mb-2">Query</div>
 
-                        <LazyMonacoQueryInput
+                        <LazyQueryInput
                             className={classNames('form-control', styles.queryInput)}
-                            editorComponent={editorComponent}
                             isLightTheme={props.isLightTheme}
                             patternType={SearchPatternType.standard}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}

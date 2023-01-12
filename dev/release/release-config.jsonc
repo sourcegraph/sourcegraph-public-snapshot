@@ -2,11 +2,11 @@
  * Configuration for the release tool. All fields should align exactly with those in
  * `src/config.ts`. To learn more about the release tool:
  *
- *     yarn run release help
+ *     pnpm run release help
  *
  * A quick sanity-check can be performed to make sure configuration is loaded correctly:
  *
- *     yarn run release _test:config
+ *     pnpm run release _test:config
  */
 {
     // Captain information
@@ -16,11 +16,11 @@
     // Release versions
     "previousRelease": "4.3.0",
     "upcomingRelease": "4.4.0",
-    "oneWorkingWeekBeforeRelease": "13 January 2022 10:00 PST",
-    "threeWorkingDaysBeforeRelease": "17 January 2022 10:00 PST",
+    "oneWorkingWeekBeforeRelease": "13 January 2023 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "17 January 2023 10:00 PST",
     "releaseDate": "20 January 2023 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 January 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "27 January 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "23 January 2023 10:00 PST",
+    "oneWorkingWeekAfterRelease": "27 January 2023 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

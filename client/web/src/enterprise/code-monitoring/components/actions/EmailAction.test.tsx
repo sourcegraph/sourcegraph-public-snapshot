@@ -3,8 +3,8 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'

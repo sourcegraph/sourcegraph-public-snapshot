@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -12,30 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
-
-var defaultResetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Reset your Sourcegraph password ({{.Host}})`,
-	Text: `
-Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
-
-To reset the password for {{.Username}} on Sourcegraph, follow this link:
-
-  {{.URL}}
-`,
-	HTML: `
-<p>
-  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
-  on Sourcegraph ({{.Host}}).
-</p>
-
-<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
-`,
-})
 
 func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
 	// Configure the template
@@ -47,11 +29,7 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
 		Template: emailTemplate,
-		Data: struct {
-			Username string
-			URL      string
-			Host     string
-		}{
+		Data: passwordEmailTemplateData{
 			Username: username,
 			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
 			Host:     globals.ExternalURL().Host,
@@ -115,9 +93,11 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 	}
 }
 
-// HandleResetPasswordCode resets the password if the correct code is provided.
+// HandleResetPasswordCode resets the password if the correct code is provided, and also
+// verifies emails if the appropriate parameters are found.
 func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("HandleResetPasswordCode", "verifies password reset code requests handler")
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -128,19 +108,27 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 
 		ctx := r.Context()
 		var params struct {
-			UserID   int32  `json:"userID"`
-			Code     string `json:"code"`
-			Password string `json:"password"` // new password
+			UserID          int32  `json:"userID"`
+			Code            string `json:"code"`
+			Email           string `json:"email"`
+			EmailVerifyCode string `json:"emailVerifyCode"`
+			Password        string `json:"password"` // new password
 		}
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 			httpLogError(logger.Error, w, "Password reset with code: could not decode request body", http.StatusBadGateway, log.Error(err))
 			return
 		}
+		verifyEmail := params.Email != "" && params.EmailVerifyCode != ""
+		logger = logger.With(
+			log.Int32("userID", params.UserID),
+			log.Bool("verifyEmail", verifyEmail))
 
 		if err := database.CheckPassword(params.Password); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		logger.Info("handling password reset")
 
 		success, err := db.Users().SetPassword(ctx, params.UserID, params.Code, params.Password)
 		if err != nil {
@@ -154,6 +142,27 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 		}
 
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
+
+		if verifyEmail {
+			ok, err := db.UserEmails().Verify(ctx, params.UserID, params.Email, params.EmailVerifyCode)
+			if err != nil {
+				logger.Error("failed to verify email", log.Error(err))
+			} else if !ok {
+				logger.Warn("got invalid email verification code")
+			} else {
+				// copy-pasta from logEmailVerified
+				event := &database.SecurityEvent{
+					Name:      database.SecurityEventNameEmailVerified,
+					URL:       r.URL.Path,
+					UserID:    uint32(params.UserID),
+					Argument:  nil,
+					Source:    "BACKEND",
+					Timestamp: time.Now(),
+				}
+				event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+				db.SecurityEventLogs().LogEvent(ctx, event)
+			}
+		}
 
 		if conf.CanSendEmail() {
 			if err := backend.NewUserEmailsService(db, logger).SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {

@@ -243,13 +243,13 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			}
 
 			var iter *gitserver.DiffFileIterator
-			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
+			iter, err = cmp.gitserverClient.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,
 				Paths:     paths,
-			}, authz.DefaultSubRepoPermsChecker)
+			})
 			if err != nil {
 				return
 			}

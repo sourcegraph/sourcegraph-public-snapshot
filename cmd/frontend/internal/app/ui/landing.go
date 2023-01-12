@@ -41,7 +41,7 @@ func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) e
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	span, ctx := ot.StartSpanFromContext(r.Context(), "serveDefLanding")
+	span, ctx := ot.StartSpanFromContext(r.Context(), "serveDefLanding") //nolint:staticcheck // OT is deprecated
 	r = r.WithContext(ctx)
 	defer func() {
 		if err != nil {

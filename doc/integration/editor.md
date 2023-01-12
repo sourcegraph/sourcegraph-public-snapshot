@@ -16,4 +16,3 @@ We currently have integrations with these editors:
 
 - [Installation guide for Gitpod](gitpod.md)
 - [Sourcegraph on Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
-- [VS Code extension troubleshooting docs](../admin/how-to/troubleshoot-sg-extension.md#vs-code-extension)

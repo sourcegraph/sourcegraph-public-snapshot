@@ -1,7 +1,7 @@
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
 
-import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
 import { PageSwitcher, PageSwitcherProps } from './PageSwitcher'
 

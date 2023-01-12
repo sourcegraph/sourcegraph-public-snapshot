@@ -4,13 +4,10 @@ import { action } from '@storybook/addon-actions'
 import { Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
-
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import 'storybook-addon-designs'
 
 import { H1, H4, Text } from '..'
+import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
@@ -24,11 +21,7 @@ const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
 
 const config: Meta = {
     title: 'wildcard/Alert',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
     parameters: {
         component: Alert,
         chromatic: {

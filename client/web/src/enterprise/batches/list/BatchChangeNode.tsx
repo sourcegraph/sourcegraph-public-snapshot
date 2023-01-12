@@ -2,10 +2,10 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { Badge, Link, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../components/time/Timestamp'
 import {
     BatchChangeState,
     BatchSpecState,

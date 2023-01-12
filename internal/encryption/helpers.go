@@ -20,14 +20,14 @@ func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string
 		return data, "", nil
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "key.Encrypt")
+	span, ctx := ot.StartSpanFromContext(ctx, "key.Encrypt") //nolint:staticcheck // OT is deprecated
 	encrypted, err := key.Encrypt(ctx, []byte(data))
 	span.Finish()
 	if err != nil {
 		return "", "", err
 	}
 
-	span, ctx = ot.StartSpanFromContext(ctx, "key.Version")
+	span, ctx = ot.StartSpanFromContext(ctx, "key.Version") //nolint:staticcheck // OT is deprecated
 	version, err := key.Version(ctx)
 	span.Finish()
 	if err != nil {
@@ -50,11 +50,11 @@ func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, 
 		return data, errors.Errorf("key mismatch: value is encrypted but no encryption key available in site-config")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
+	span, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt") //nolint:staticcheck // OT is deprecated
 	decrypted, err := key.Decrypt(ctx, []byte(data))
 	span.Finish()
 	if err != nil {
-		span, ctx = ot.StartSpanFromContext(ctx, "key.Version")
+		span, ctx = ot.StartSpanFromContext(ctx, "key.Version") //nolint:staticcheck // OT is deprecated
 		version, versionErr := key.Version(ctx)
 		span.Finish()
 		if versionErr == nil && keyIdent != version.JSON() {
