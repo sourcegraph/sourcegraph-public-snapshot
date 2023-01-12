@@ -95,6 +95,9 @@ func TestSetUserEmailVerified(t *testing.T) {
 			return err
 		})
 
+		ffs := database.NewMockFeatureFlagStore()
+		db.FeatureFlagsFunc.SetDefaultReturn(ffs)
+
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 		userEmails := database.NewMockUserEmailsStore()
@@ -232,6 +235,8 @@ func TestSetUserEmailVerified(t *testing.T) {
 			userExternalAccounts := database.NewMockUserExternalAccountsStore()
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
+			ffs := database.NewMockFeatureFlagStore()
+
 			db := database.NewMockDB()
 			db.TransactFunc.SetDefaultReturn(db, nil)
 			db.DoneFunc.SetDefaultHook(func(err error) error {
@@ -242,6 +247,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.FeatureFlagsFunc.SetDefaultReturn(ffs)
 
 			RunTests(t, test.gqlTests(db))
 
