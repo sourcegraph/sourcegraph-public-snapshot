@@ -10,7 +10,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - nolintlint
+    #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
     - staticcheck
     - typecheck
     - unconvert
@@ -41,7 +41,7 @@ linters-settings:
       - exitAfterDefer # Only occurs in auxiliary tools
       - ifElseChain # Noisy for not much gain
       - singleCaseSwitch # Noisy for not much gain
-  unparam:
+  #unparam:
 
   govet:
     disable:

@@ -3,6 +3,7 @@ package licensing
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -11,9 +12,21 @@ func TestCheckFeature(t *testing.T) {
 
 	check := func(t *testing.T, feature Feature, info *Info, wantEnabled bool) {
 		t.Helper()
-		got := checkFeature(info, feature) == nil
-		if got != wantEnabled {
-			t.Errorf("got %v, want %v", got, wantEnabled)
+		if got := feature.Check(info) == nil; got != wantEnabled {
+			t.Errorf("got enabled %v, want %v, for %q", got, wantEnabled, info)
+		}
+	}
+
+	checkAs := func(t *testing.T, feature Feature, info *Info, wantEnabled bool, wantFeature Feature) {
+		t.Helper()
+		enabled := feature.Check(info) == nil
+		if enabled != wantEnabled {
+			t.Errorf("got enabled %v, want %v, for %q", enabled, wantEnabled, info)
+		}
+		if enabled {
+			if cmp.Diff(feature, wantFeature) != "" {
+				t.Errorf("got %v want %v, for %q", feature, wantFeature, info)
+			}
 		}
 	}
 
@@ -110,27 +123,24 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBranding, license(plan(PlanEnterprise0), string(FeatureBranding)), true)
 	})
 
-	testBatchChanges := func(feature Feature) func(*testing.T) {
-		return func(t *testing.T) {
-			check(t, feature, nil, false)
+	t.Run((&FeatureBatchChanges{}).FeatureName(), func(t *testing.T) {
+		check(t, &FeatureBatchChanges{}, nil, false)
 
-			check(t, feature, license("starter"), false)
-			check(t, feature, license(plan(PlanOldEnterpriseStarter)), false)
-			check(t, feature, license(plan(PlanOldEnterprise)), true)
-			check(t, feature, license(), true)
+		checkAs(t, &FeatureBatchChanges{}, license("starter"), true, &FeatureBatchChanges{MaxNumChangesets: 10})
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanOldEnterpriseStarter)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanOldEnterprise)), true, &FeatureBatchChanges{Unrestricted: true})
+		checkAs(t, &FeatureBatchChanges{}, license(), true, &FeatureBatchChanges{Unrestricted: true})
 
-			check(t, feature, license(plan(PlanTeam0)), false)
-			check(t, feature, license(plan(PlanEnterprise0)), false)
-			check(t, feature, license(plan(PlanEnterprise0), string(feature)), true)
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanTeam0)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanEnterprise0)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanEnterprise0), (&FeatureBatchChanges{}).FeatureName()), true, &FeatureBatchChanges{Unrestricted: true})
 
-			check(t, feature, license(plan(PlanBusiness0)), true)
-			check(t, feature, license(plan(PlanEnterprise1)), true)
-		}
-	}
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanBusiness0)), true, &FeatureBatchChanges{Unrestricted: true})
+		checkAs(t, &FeatureBatchChanges{}, license(plan(PlanEnterprise1)), true, &FeatureBatchChanges{Unrestricted: true})
 
-	// FeatureCampaigns is deprecated but should behave like BatchChanges.
-	t.Run(string(FeatureCampaigns), testBatchChanges(FeatureCampaigns))
-	t.Run(string(FeatureBatchChanges), testBatchChanges(FeatureBatchChanges))
+		// Batch changes should be unrestricted if Campaigns is set.
+		checkAs(t, &FeatureBatchChanges{}, license("starter", string(FeatureCampaigns)), true, &FeatureBatchChanges{Unrestricted: true})
+	})
 
 	testCodeInsights := func(feature Feature) func(*testing.T) {
 		return func(t *testing.T) {
@@ -143,7 +153,7 @@ func TestCheckFeature(t *testing.T) {
 
 			check(t, feature, license(plan(PlanTeam0)), false)
 			check(t, feature, license(plan(PlanEnterprise0)), false)
-			check(t, feature, license(plan(PlanEnterprise0), string(feature)), true)
+			check(t, feature, license(plan(PlanEnterprise0), feature.FeatureName()), true)
 
 			check(t, feature, license(plan(PlanBusiness0)), true)
 			check(t, feature, license(plan(PlanEnterprise1)), true)

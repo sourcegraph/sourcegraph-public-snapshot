@@ -4,13 +4,27 @@
   "version": "1.0.0",
   "license": "Apache-2.0",
   "scripts": {
-    "storybook": "STORIES_GLOB='client/shared/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start",
-    "lint:js": "yarn run -T eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "yarn run -T stylelint 'src/**/*.scss' --quiet",
-    "test": "yarn run -T jest",
-    "schema": "yarn run -T gulp schema",
-    "graphql-operations": "yarn run -T gulp graphQlOperations",
-    "watch-schema": "yarn run -T gulp watchSchema"
+    "storybook": "STORIES_GLOB='client/shared/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest",
+    "schema": "gulp schema",
+    "graphql-operations": "gulp graphQlOperations",
+    "watch-schema": "gulp watchSchema"
+  },
+  "devDependencies": {
+    "@sourcegraph/testing": "workspace:*",
+    "@sourcegraph/build-config": "workspace:*",
+    "@sourcegraph/extension-api-types": "workspace:*"
+  },
+  "dependencies": {
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/client-api": "workspace:*",
+    "@sourcegraph/template-parser": "workspace:*",
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/browser": "workspace:*"
   },
   "sideEffects": true
 }

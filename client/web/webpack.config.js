@@ -233,6 +233,11 @@ const config = {
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+      punycode: require.resolve('punycode'),
+      util: require.resolve('util'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148

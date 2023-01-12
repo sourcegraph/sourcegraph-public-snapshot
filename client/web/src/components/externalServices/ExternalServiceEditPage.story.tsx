@@ -1,16 +1,14 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
-import { subMinutes } from 'date-fns'
-import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
+import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
-import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
+import { FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -42,76 +40,13 @@ const externalService = {
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
+    hasConnectionCheck: false,
     namespace: {
         id: 'userid',
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
 }
-
-const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
-    of({
-        totalCount: 4,
-        pageInfo: { endCursor: null, hasNextPage: false },
-        nodes: [
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: null,
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.CANCELING,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: null,
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.PROCESSING,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: 'Very bad error syncing with the code host.',
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: subMinutes(new Date(), 25).toISOString(),
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.FAILED,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-            {
-                __typename: 'ExternalServiceSyncJob',
-                failureMessage: null,
-                startedAt: subMinutes(new Date(), 25).toISOString(),
-                finishedAt: subMinutes(new Date(), 25).toISOString(),
-                id: 'SYNCJOB1',
-                state: ExternalServiceSyncJobState.COMPLETED,
-                reposSynced: 5,
-                repoSyncErrors: 0,
-                reposAdded: 5,
-                reposDeleted: 0,
-                reposModified: 0,
-                reposUnmodified: 0,
-            },
-        ],
-    })
 
 function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
     return new WildcardMockLink([
@@ -132,8 +67,7 @@ export const ViewConfig: Story = () => (
             <MockedTestProvider link={newFetchMock(externalService)}>
                 <ExternalServiceEditPage
                     {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
+                    routingPrefix="/site-admin"
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
@@ -153,8 +87,7 @@ export const ConfigWithInvalidUrl: Story = () => (
             <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
                 <ExternalServiceEditPage
                     {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
+                    routingPrefix="/site-admin"
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
@@ -176,8 +109,7 @@ export const ConfigWithWarning: Story = () => (
             >
                 <ExternalServiceEditPage
                     {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
+                    routingPrefix="/site-admin"
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
@@ -199,8 +131,7 @@ export const EditingDisabled: Story = () => (
             >
                 <ExternalServiceEditPage
                     {...webProps}
-                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                    afterUpdateRoute="/site-admin/after"
+                    routingPrefix="/site-admin"
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}

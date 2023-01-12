@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const Unlimited = 0
+
 type Runner struct {
 	source      CodeHostSource
 	destination CodeHostDestination
@@ -89,9 +91,12 @@ func (r *Runner) List(ctx context.Context, limit int) error {
 		repoIter := r.source.Iterator()
 		for !repoIter.Done() && repoIter.Err() == nil {
 			repos = append(repos, repoIter.Next(ctx)...)
+			if limit != Unlimited && len(repos) >= limit {
+				break
+			}
 		}
 
-		if err != nil {
+		if repoIter.Err() != nil {
 			r.logger.Error("failed to list repositories from source", log.Error(err))
 			return err
 		}

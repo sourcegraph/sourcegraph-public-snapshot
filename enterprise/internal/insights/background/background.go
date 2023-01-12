@@ -169,5 +169,5 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 		return true
 	}))
 	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
-	return workerMetrics, *resetterMetrics
+	return workerMetrics, resetterMetrics
 }

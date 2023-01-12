@@ -15,14 +15,14 @@ Also see [testing Go code](../background-information/languages/testing_go_code.m
 
 ## Client unit tests (web app and browser extension)
 
-- First run `yarn` in the Sourcegraph root directory if it is a fresh clone.
-- To run all unit tests, run `yarn test` from the root directory.
-- To run unit tests in development (only running the tests related to uncommitted code), run `yarn test --watch`.
+- First run `pnpm install` in the Sourcegraph root directory if it is a fresh clone.
+- To run all unit tests, run `pnpm test` from the root directory.
+- To run unit tests in development (only running the tests related to uncommitted code), run `pnpm test --watch`.
   - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
 - To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
-- You can also run `yarn test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
+- You can also run `pnpm test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
 
-Usually while developing you will either have `yarn test --watch` running in a terminal or you will use vscode-jest.
+Usually while developing you will either have `pnpm test --watch` running in a terminal or you will use vscode-jest.
 
 Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the `unit` flag.
 
@@ -41,7 +41,7 @@ A typical snapshot test might look like this:
 
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
 - See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
-- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
+- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
 
 ### Behavior tests
 
@@ -155,7 +155,7 @@ it.only('widgetizes quuxinators', async () => {
 })
 ```
 
-Alternatively, you can use `-g` to filter tests, e.g. `env ... yarn test-e2e -g "some test name"`.
+Alternatively, you can use `-g` to filter tests, e.g. `env ... pnpm test-e2e -g "some test name"`.
 
 You can find a complete list of all possible options in the [Mocha documentation](https://mochajs.org/#command-line-usage).
 
@@ -169,7 +169,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
-- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 yarn build-web` or `ENTERPRISE=1 yarn watch-web`
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 pnpm build-web` or `ENTERPRISE=1 pnpm watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
@@ -203,7 +203,7 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 To run integration tests for the web app:
 
-1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 pnpm watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
     - Alternatively, `sg run web-integration-build` will only build a bundle once.
 1. Run `sg test web-integration` in the repository root to run the tests.
 
@@ -309,7 +309,7 @@ And if you're running the test suite against an existing server image:
 SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
 ```
 
-Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
+Also, you can also run tests selectively with a command like `pnpm run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
 
 ##### Fixing authentication issues
 
@@ -475,8 +475,8 @@ We run Lighthouse performance tests through [Lighthouse CI](https://github.com/G
 
 #### Running the tests locally
 
-1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
-2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
+1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true pnpm --filter @sourcegraph/web build`
+2. Run the Lighthouse CI tests. `pnpm test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
 
 #### Running the tests in CI
 
@@ -500,8 +500,8 @@ If none of the above is applicable, we might need to consider adjusting our limi
 To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
 
 1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
-2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main yarn workspace @sourcegraph/web run analyze-bundle`.
-3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch yarn workspace @sourcegraph/web run analyze-bundle`.
+2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main pnpm --filter @sourcegraph/web run analyze-bundle`.
+3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch pnpm --filter @sourcegraph/web run analyze-bundle`.
 4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
 5. The generated HTML report should be automatically opened in the new browser tab.
 6. Click "Diff" at the top right corner and select the `reference.json` stats.

@@ -19,7 +19,6 @@ import styles from './AddExternalServicesPage.module.scss'
 export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History
     routingPrefix: string
-    afterCreateRoute: string
     userID?: Scalars['ID']
 
     /**
@@ -46,7 +45,6 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
 export const AddExternalServicesPage: React.FunctionComponent<
     React.PropsWithChildren<AddExternalServicesPageProps>
 > = ({
-    afterCreateRoute,
     codeHostExternalServices,
     history,
     isLightTheme,
@@ -71,7 +69,6 @@ export const AddExternalServicesPage: React.FunctionComponent<
         if (externalService) {
             return (
                 <AddExternalServicePage
-                    afterCreateRoute={afterCreateRoute}
                     history={history}
                     isLightTheme={isLightTheme}
                     routingPrefix={routingPrefix}

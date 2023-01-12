@@ -333,13 +333,13 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 	return description, nil
 }
 
-// renderRules generates the Prometheus rules file which defines our
+// RenderPrometheusRules generates the Prometheus rules file which defines our
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
-	group := promGroup{Name: c.Name}
+func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
+	group := newPrometheusRuleGroup(c.Name)
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
 			for observableIndex, o := range r {
@@ -389,8 +389,8 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 	if err := group.validate(); err != nil {
 		return nil, err
 	}
-	return &promRulesFile{
-		Groups: []promGroup{group},
+	return &PrometheusRules{
+		Groups: []PrometheusRuleGroup{group},
 	}, nil
 }
 
