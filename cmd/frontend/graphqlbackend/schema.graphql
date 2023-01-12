@@ -5109,6 +5109,10 @@ interface File2 {
     """
     byteSize: Int!
     """
+    Total line count for the file.
+    """
+    totalLines: Int!
+    """
     Whether or not it is binary.
     """
     binary: Boolean!
@@ -5175,6 +5179,10 @@ type VirtualFile implements File2 {
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """

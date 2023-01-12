@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -61,6 +62,14 @@ func (r *VirtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 	return int32(len([]byte(content))), nil
+}
+
+func (r *VirtualFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(strings.Split(content, "\n"))), nil
 }
 
 func (r *VirtualFileResolver) Content(ctx context.Context) (string, error) {

@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -90,6 +91,10 @@ func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context) (string, e
 
 func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return int32(r.file.Size), nil
+}
+
+func (r *batchSpecWorkspaceFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	return int32(len(strings.Split(string(r.file.Content), "\n"))), nil
 }
 
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {

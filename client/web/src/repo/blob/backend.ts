@@ -73,7 +73,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        blob(path: $filePath, startLine: $startLine, endLine: $endLine) {
+                        file(path: $filePath, startLine: $startLine, endLine: $endLine) {
                             ...BlobFileFields
                         }
                     }
