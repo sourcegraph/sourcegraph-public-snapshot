@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,13 +31,13 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		email = *args.Email
 	}
 
-	logger := r.logger.Scoped("createUser", "create user handler").With(
-		log.Bool("needsEmailVerification", needsEmailVerification))
-
 	// 🚨 SECURITY: Do not assume user email is verified on creation if email delivery is
 	// enabled and we are allowed to reset passwords (which will become the primary
 	// mechanism for verifying this newly created email).
 	needsEmailVerification := email != "" && conf.CanSendEmail()
+	logger := r.logger.Scoped("createUser", "create user handler").With(
+		log.Bool("needsEmailVerification", needsEmailVerification))
+
 	var emailVerificationCode string
 	if needsEmailVerification {
 		var err error
@@ -99,7 +100,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	if conf.CanSendEmail() {
+	if conf.CanSendEmail() && featureflag.GetEvaluatedFlagSet(ctx)[""] {
 		// HandleSetPasswordEmail will send a special password reset email that also
 		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
