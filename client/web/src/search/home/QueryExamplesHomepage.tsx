@@ -6,11 +6,10 @@ import { useHistory } from 'react-router'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
-
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'

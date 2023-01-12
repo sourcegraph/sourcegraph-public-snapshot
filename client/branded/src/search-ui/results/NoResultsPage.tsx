@@ -9,12 +9,13 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+
 // TODO: move the component
 import { QueryExamplesHomepage } from '../../../../web/src/search/home/QueryExamplesHomepage'
-import searchPageStyles from '../../../../web/src/search/home/SearchPage.module.scss'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
+import searchPageStyles from '../../../../web/src/search/home/SearchPage.module.scss'
 import styles from './NoResultsPage.module.scss'
 
 interface ContainerProps {

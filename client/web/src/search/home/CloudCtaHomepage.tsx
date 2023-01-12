@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
-import { eventLogger } from '../../tracking/eventLogger'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link } from '@sourcegraph/wildcard'
+
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface CloudCtaHomepageProps {
     authenticatedUser?: AuthenticatedUser | null
