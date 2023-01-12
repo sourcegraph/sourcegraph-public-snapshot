@@ -306,10 +306,6 @@ type Client interface {
 	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
 
-	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to make
-	// gitserver instances clone a repo from one instance to another
-	RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error)
-
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
