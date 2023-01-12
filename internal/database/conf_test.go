@@ -243,7 +243,7 @@ func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
 		t.Fatal(err)
 	}
 
-	// The first call to SiteCreatedIfUpToDate will always create a default entry if their are no
+	// The first call to SiteCreatedIfUpToDate will always create a default entry if there are no
 	// rows in the table yet and then eventually create another entry.
 	//
 	// lastID should be 2 here.
