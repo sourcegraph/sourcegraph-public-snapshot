@@ -14,6 +14,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -66,6 +67,12 @@ func getMode() configurationMode {
 }
 
 func getModeUncached() configurationMode {
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		// Single-program always uses the server mode because everything is running in the same
+		// process.
+		return modeServer
+	}
+
 	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {
@@ -206,6 +213,10 @@ var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "$HOME/
 // cannot access the UI (for example by configuring auth in a way that locks them out)
 // they can simply edit this file in any of the frontend containers to undo the change.
 func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
+	if os.Getenv("NO_SITE_CONFIG_ESCAPE_HATCH") == "1" {
+		return
+	}
+
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
 
 	var (
