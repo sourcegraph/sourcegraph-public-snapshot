@@ -43,7 +43,8 @@ If you put this in your organization settings, everyone on your Sourcegraph insi
 This creates a code insight tracking an arbitrary input that you could run a Sourcegraph search for.
 
 Your other options are to:
-* [create a "Detect and track" insight](../explanations/automatically_generated_data_series.md) to automatically generate your data series according to capture group matching (3.35+).
+
+* [create a "Detect and track" insight](explanations/automatically_generated_data_series.md) to automatically generate your data series according to capture group matching (3.35+).
 * [create a language-based insight](language_insight_quickstart.md) to show you language breakdown in your repositories.
 
 ### 4. Once on the form fields page, enter the repositories you want to search or check "all repositories"
