@@ -46,11 +46,13 @@ func TestConvertLSIF(t *testing.T) {
 			{
 				RelativePath: "bar.go",
 				Occurrences: []*scip.Occurrence{
+					{Range: []int32{4, 5, 6, 7}, Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
 					{Range: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `7`."},
 					{Range: []int32{6, 7, 8, 9}, Symbol: "scheme B . pkg B v1.2.3 `ident B`."},
 				},
 				Symbols: []*scip.SymbolInformation{
 					{Symbol: "lsif . 42 . `7`.", Documentation: []string{"```go\ntext A\n```"}},
+					{Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
 					{Symbol: "scheme B . pkg B v1.2.3 `ident B`.", Documentation: []string{"```go\ntext A\n```"}},
 				},
 			},
