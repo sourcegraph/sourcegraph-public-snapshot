@@ -39,11 +39,11 @@ type ConfStore interface {
 	// responsible for ensuring this or that the response never makes it to a user.
 	SiteGetLatest(ctx context.Context) (*SiteConfig, error)
 
-	// ListSiteConfig will list the configs of type "site".
+	// ListSiteConfigs will list the configs of type "site".
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	ListSiteConfig(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	ListSiteConfigs(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
 
 	// GetSiteConfig will return the total count of all configs of type "site".
 	//
@@ -77,6 +77,8 @@ type SiteConfig struct {
 
 type SiteConfigListOptions struct {
 	*LimitOffset
+
+	// Ascending order by default.
 	OrderByDirection OrderByDirection
 }
 
@@ -135,52 +137,47 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	return tx.getLatest(ctx)
 }
 
-func (s *confStore) ListSiteConfig(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
-	// Ascending order by default.
-	orderBy := AscendingOrderByDirection
-	if opt.OrderByDirection != "" {
-		orderBy = opt.OrderByDirection
-	}
+var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
 
-	q := sqlf.Sprintf(`
-		SELECT
-			 id,
-			 author_user_id,
-			 contents,
-			 created_at,
-			 updated_at
-		 FROM critical_and_site_config
-         WHERE type = 'site'
-		 ORDER BY id `+string(orderBy)+`
-         %s
-        `,
-		opt.LimitOffset.SQL(),
+func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
+	var c SiteConfig
+	err := s.Scan(
+		&c.ID,
+		&dbutil.NullInt32{N: &c.AuthorUserID},
+		&c.Contents,
+		&c.CreatedAt,
+		&c.UpdatedAt,
 	)
-
-	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	return &c, nil
+}
 
-	history := []*SiteConfig{}
-	for rows.Next() {
-		var c SiteConfig
-		err := rows.Scan(
-			&c.ID,
-			&dbutil.NullInt32{N: &c.AuthorUserID},
-			&c.Contents,
-			&c.CreatedAt,
-			&c.UpdatedAt,
-		)
-		if err != nil {
-			return []*SiteConfig{}, err
-		}
+const listSiteConfigsFmtStr = `
+SELECT
+	id,
+	author_user_id,
+	contents,
+	created_at,
+	updated_at
+FROM critical_and_site_config
+WHERE type = 'site'
+%s
+%s
+`
 
-		history = append(history, &c)
+func (s *confStore) ListSiteConfigs(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
+	// Ascending order by default.
+	orderByClause := sqlf.Sprintf("ORDER BY id ASC")
+	if opt.OrderByDirection == DescendingOrderByDirection {
+		orderByClause = sqlf.Sprintf("ORDER BY id DESC")
 	}
 
-	return history, nil
+	q := sqlf.Sprintf(listSiteConfigsFmtStr, orderByClause, opt.LimitOffset.SQL())
+
+	rows, err := s.Query(ctx, q)
+	return scanSiteConfigs(rows, err)
 }
 
 func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {

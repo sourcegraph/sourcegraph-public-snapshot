@@ -235,8 +235,10 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	}
 }
 
-func seedDB(t *testing.T, ctx context.Context, s ConfStore) {
-	if _, err := s.SiteCreateIfUpToDate(ctx, nil, 0, `{"disableAutoGitUpdates": true, "auth.Providers": []}`, false); err != nil {
+func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
+	const config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
+
+	if _, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -244,14 +246,13 @@ func seedDB(t *testing.T, ctx context.Context, s ConfStore) {
 	// rows in the table yet and then eventually create another entry.
 	lastID := int32(2)
 
-	if _, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, `{"disableAutoGitUpdates": false, "auth.Providers": []}`, false); err != nil {
-		t.Fatal(err)
-	}
+	// Create two more entries.
+	for lastID < 4 {
+		if _, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false); err != nil {
+			t.Fatal(err)
+		}
 
-	lastID = int32(3)
-
-	if _, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, `{"disableAutoGitUpdates": false, "auth.Providers": []}`, false); err != nil {
-		t.Fatal(err)
+		lastID += 1
 	}
 
 	// By this point we have 4 entries instead of 3.
@@ -267,7 +268,7 @@ func TestGetSiteConfigCount(t *testing.T) {
 	ctx := context.Background()
 
 	s := db.Conf()
-	seedDB(t, ctx, s)
+	createDummySiteConfigs(t, ctx, s)
 
 	count, err := s.GetSiteConfigCount(ctx)
 	if err != nil {
@@ -279,7 +280,7 @@ func TestGetSiteConfigCount(t *testing.T) {
 	}
 }
 
-func TestListSiteConfig(t *testing.T) {
+func TestListSiteConfigs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -289,7 +290,7 @@ func TestListSiteConfig(t *testing.T) {
 	ctx := context.Background()
 
 	s := db.Conf()
-	seedDB(t, ctx, s)
+	createDummySiteConfigs(t, ctx, s)
 
 	testCases := []struct {
 		name        string
@@ -373,7 +374,7 @@ func TestListSiteConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			siteConfigs, err := s.ListSiteConfig(ctx, tc.listOptions)
+			siteConfigs, err := s.ListSiteConfigs(ctx, tc.listOptions)
 			if err != nil {
 				t.Fatal(err)
 			}
