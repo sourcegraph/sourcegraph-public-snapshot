@@ -3,13 +3,15 @@ package singleprogram
 import (
 	"context"
 	"fmt"
-	"log"
+	golog "log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -21,7 +23,7 @@ type postgresqlEnvVars struct {
 	PGPORT, PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE, PGDATASOURCE string
 }
 
-func initPostgreSQL(embeddedPostgreSQLRootDir string) error {
+func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 	var vars *postgresqlEnvVars
 	if useEmbeddedPostgreSQL {
 		var err error
@@ -48,13 +50,13 @@ func initPostgreSQL(embeddedPostgreSQLRootDir string) error {
 		}
 	}
 
-	useSinglePostgreSQLDatabase(vars)
+	useSinglePostgreSQLDatabase(logger, vars)
 
 	// Migration on startup is ideal for the single-program deployment because there are no other
 	// simultaneously running services at startup that might interfere with a migration.
 	//
 	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"
-	setDefaultEnv("SG_DEV_MIGRATE_ON_APPLICATION_STARTUP", "1")
+	setDefaultEnv(logger, "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP", "1")
 
 	return nil
 }
@@ -84,7 +86,7 @@ func startEmbeddedPostgreSQL(pgRootDir string) (*postgresqlEnvVars, error) {
 			Password(vars.PGPASSWORD).
 			Database(vars.PGDATABASE).
 			Port(pgPort).
-			Logger(log.Writer()),
+			Logger(golog.Writer()),
 	)
 	if err := db.Start(); err != nil {
 		return nil, err
@@ -109,24 +111,24 @@ func (db *embeddedPostgreSQLBackgroundJob) Stop() {
 	}
 }
 
-func useSinglePostgreSQLDatabase(vars *postgresqlEnvVars) {
+func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
 	// Use a single PostgreSQL DB.
 	//
 	// For code intel:
-	setDefaultEnv("CODEINTEL_PGPORT", vars.PGPORT)
-	setDefaultEnv("CODEINTEL_PGHOST", vars.PGHOST)
-	setDefaultEnv("CODEINTEL_PGUSER", vars.PGUSER)
-	setDefaultEnv("CODEINTEL_PGPASSWORD", vars.PGPASSWORD)
-	setDefaultEnv("CODEINTEL_PGDATABASE", vars.PGDATABASE)
-	setDefaultEnv("CODEINTEL_PGSSLMODE", vars.PGSSLMODE)
-	setDefaultEnv("CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
-	setDefaultEnv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	setDefaultEnv(logger, "CODEINTEL_PGPORT", vars.PGPORT)
+	setDefaultEnv(logger, "CODEINTEL_PGHOST", vars.PGHOST)
+	setDefaultEnv(logger, "CODEINTEL_PGUSER", vars.PGUSER)
+	setDefaultEnv(logger, "CODEINTEL_PGPASSWORD", vars.PGPASSWORD)
+	setDefaultEnv(logger, "CODEINTEL_PGDATABASE", vars.PGDATABASE)
+	setDefaultEnv(logger, "CODEINTEL_PGSSLMODE", vars.PGSSLMODE)
+	setDefaultEnv(logger, "CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
+	setDefaultEnv(logger, "CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 	// And for code insights.
-	setDefaultEnv("CODEINSIGHTS_PGPORT", vars.PGPORT)
-	setDefaultEnv("CODEINSIGHTS_PGHOST", vars.PGHOST)
-	setDefaultEnv("CODEINSIGHTS_PGUSER", vars.PGUSER)
-	setDefaultEnv("CODEINSIGHTS_PGPASSWORD", vars.PGPASSWORD)
-	setDefaultEnv("CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
-	setDefaultEnv("CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
-	setDefaultEnv("CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGPORT", vars.PGPORT)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGHOST", vars.PGHOST)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGUSER", vars.PGUSER)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGPASSWORD", vars.PGPASSWORD)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
+	setDefaultEnv(logger, "CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
 }

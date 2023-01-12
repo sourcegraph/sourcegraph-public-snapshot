@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -26,23 +27,6 @@ type Config struct {
 
 // Main is called from the `main` function of the `sourcegraph-oss` and `sourcegraph` commands.
 func Main(services []service.Service, config Config) {
-	singleprogram.Init()
-	run(services, config)
-}
-
-// DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
-// service (such as frontend or gitserver).
-//
-// DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
-// is deprecated.
-func DeprecatedSingleServiceMain(svc service.Service, config Config) {
-	run([]service.Service{svc}, config)
-}
-
-func run(services []service.Service, config Config) {
-	// Initialize log15. Even though it's deprecated, it's still fairly widely used.
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -55,7 +39,25 @@ func run(services []service.Service, config Config) {
 			},
 		),
 	)
+	logger := log.Scoped("sourcegraph", "Sourcegraph")
+	singleprogram.Init(logger)
+	run(liblog, logger, services, config)
+}
+
+// DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
+// service (such as frontend or gitserver).
+//
+// DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
+// is deprecated.
+func DeprecatedSingleServiceMain(svc service.Service, config Config) {
+	run([]service.Service{svc}, config)
+}
+
+func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Service, config Config) {
 	defer liblog.Sync()
+
+	// Initialize log15. Even though it's deprecated, it's still fairly widely used.
+	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
@@ -63,7 +65,6 @@ func run(services []service.Service, config Config) {
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
 
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
 	obctx := observation.NewContext(logger)
 	ctx := context.Background()
 

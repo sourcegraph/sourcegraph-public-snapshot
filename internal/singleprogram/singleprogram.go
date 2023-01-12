@@ -5,9 +5,10 @@ package singleprogram
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -22,12 +23,12 @@ func init() {
 	os.Setenv("DEPLOY_TYPE", "single-program")
 }
 
-func Init() {
+func Init(logger log.Logger) {
 	// HACK TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring
 	env.HackClearEnvironCache()
 
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
-	setDefaultEnv("INDEXED_SEARCH_SERVERS", "")
+	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
 	// Need to set this to avoid trying to look up gitservers via k8s service discovery.
 	// TODO(sqs) TODO(single-binary): Make this not require the hostname.
@@ -36,32 +37,32 @@ func Init() {
 		fmt.Fprintln(os.Stderr, "unable to determine hostname:", err)
 		os.Exit(1)
 	}
-	setDefaultEnv("SRC_GIT_SERVERS", hostname+":3178")
+	setDefaultEnv(logger, "SRC_GIT_SERVERS", hostname+":3178")
 
-	setDefaultEnv("SYMBOLS_URL", "http://127.0.0.1:3184")
-	setDefaultEnv("SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv("REPO_UPDATER_URL", "http://127.0.0.1:3182")
+	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
+	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
+	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
-	setDefaultEnv("SRC_SYNTECT_SERVER", "http://localhost:9238")
+	setDefaultEnv(logger, "SRC_SYNTECT_SERVER", "http://localhost:9238")
 
 	// Jaeger might not be running, but this is a better default than an internal hostname.
 	//
 	// TODO(sqs) TODO(single-binary): this isnt taking effect
 	//
-	// setDefaultEnv("JAEGER_SERVER_URL", "http://localhost:16686")
+	// setDefaultEnv(logger, "JAEGER_SERVER_URL", "http://localhost:16686")
 
 	// The s3proxy blobstore does need to be running. TODO(sqs): TODO(single-binary): bundle this somehow?
-	setDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
-	setDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
+	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
+	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
 
 	// Need to override this because without a host (eg ":3080") it listens only on localhost, which
 	// is not accessible from the containers
-	setDefaultEnv("SRC_HTTP_ADDR", "0.0.0.0:3080")
+	setDefaultEnv(logger, "SRC_HTTP_ADDR", "0.0.0.0:3080")
 
 	// This defaults to an internal hostname.
-	setDefaultEnv("SRC_FRONTEND_INTERNAL", "localhost:3090")
+	setDefaultEnv(logger, "SRC_FRONTEND_INTERNAL", "localhost:3090")
 
 	cacheDir, err := os.UserCacheDir()
 	if err == nil {
@@ -73,8 +74,8 @@ func Init() {
 		os.Exit(1)
 	}
 
-	setDefaultEnv("SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
-	setDefaultEnv("CACHE_DIR", filepath.Join(cacheDir, "cache"))
+	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
+	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {
@@ -87,7 +88,7 @@ func Init() {
 	}
 
 	embeddedPostgreSQLRootDir := filepath.Join(configDir, "postgresql")
-	if err := initPostgreSQL(embeddedPostgreSQLRootDir); err != nil {
+	if err := initPostgreSQL(logger, embeddedPostgreSQLRootDir); err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
 	}
@@ -104,25 +105,25 @@ func Init() {
 	}
 
 	siteConfigPath := filepath.Join(configDir, "site-config.json")
-	setDefaultEnv("SITE_CONFIG_FILE", siteConfigPath)
-	setDefaultEnv("SITE_CONFIG_ALLOW_EDITS", "true")
+	setDefaultEnv(logger, "SITE_CONFIG_FILE", siteConfigPath)
+	setDefaultEnv(logger, "SITE_CONFIG_ALLOW_EDITS", "true")
 	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.SingleProgram.Site))
 
 	globalSettingsPath := filepath.Join(configDir, "global-settings.json")
-	setDefaultEnv("GLOBAL_SETTINGS_FILE", globalSettingsPath)
-	setDefaultEnv("GLOBAL_SETTINGS_ALLOW_EDITS", "true")
+	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
+	setDefaultEnv(logger, "GLOBAL_SETTINGS_ALLOW_EDITS", "true")
 	writeFileIfNotExists(globalSettingsPath, []byte("{}\n"))
 
 	// Escape hatch isn't needed in local dev since the site config can always just be a file on disk.
-	setDefaultEnv("NO_SITE_CONFIG_ESCAPE_HATCH", "1")
+	setDefaultEnv(logger, "NO_SITE_CONFIG_ESCAPE_HATCH", "1")
 
 	// TODO(sqs): TODO(single-binary): Executor shouldnt need a password when running in single-program.
-	setDefaultEnv("EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv("EXECUTOR_FRONTEND_PASSWORD", "asdf1234asdf1234asdf1234")
-	setDefaultEnv("EXECUTOR_USE_FIRECRACKER", "false")
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", "asdf1234asdf1234asdf1234")
+	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you
 	// need to change this to "batches" to use batch changes executors.
-	setDefaultEnv("EXECUTOR_QUEUE_NAME", "codeintel")
+	setDefaultEnv(logger, "EXECUTOR_QUEUE_NAME", "codeintel")
 
 	writeFile := func(path string, data []byte, perm fs.FileMode) {
 		if err := os.WriteFile(path, data, perm); err != nil {
@@ -131,12 +132,12 @@ func Init() {
 		}
 	}
 
-	setDefaultEnv("CTAGS_PROCESSES", "2")
+	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 	// Write script that invokes universal-ctags via Docker.
 	// TODO(sqs): TODO(single-binary): this assumes that the `ctags` image is already built locally.
 	ctagsPath := filepath.Join(cacheDir, "universal-ctags-dev")
 	writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-	setDefaultEnv("CTAGS_COMMAND", ctagsPath)
+	setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.
@@ -153,13 +154,13 @@ exec docker run --rm -i \
 `
 
 // setDefaultEnv will set the environment variable if it is not set.
-func setDefaultEnv(k, v string) string {
+func setDefaultEnv(logger log.Logger, k, v string) string {
 	if s, ok := os.LookupEnv(k); ok {
 		return s
 	}
 	err := os.Setenv(k, v)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("setting default env variable", log.Error(err))
 	}
 	return v
 }
