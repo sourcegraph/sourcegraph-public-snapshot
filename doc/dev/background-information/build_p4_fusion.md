@@ -8,7 +8,7 @@ In order to import Perforce depots into Sourcegraph we first convert them into g
 
 ## How to build
 
-Below are the instructions for building p4-fusion locally, assuming you have the [Sourcegraph repo](https://github.com/sourcegraph/sourcegraph) checked out.
+Below are the instructions for building p4-fusion locally, assuming you have the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph) checked out.
 
 1. Follow [these instruction](https://nixos.org/download.html) to install Nix. (Tested with version 2.11.1)
 2. Navigate to the root of your Sourcegraph directory
