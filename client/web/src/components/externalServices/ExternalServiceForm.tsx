@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -126,10 +125,9 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             </div>
             <Button
                 type="submit"
-                className={classNames(
-                    'mb-3',
+                className={
                     mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
-                )}
+                }
                 disabled={loading || disabled}
                 variant="primary"
             >

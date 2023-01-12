@@ -389,20 +389,22 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
-                <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                    className="mb-0"
-                    listClassName="list-group list-group-flush mb-0"
-                    summaryClassName="mt-2"
-                    withCenteredSummary={true}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={queryRepositories}
-                    nodeComponent={RepositoryNode}
-                    inputClassName="ml-2 flex-1"
-                    filters={filters}
-                    history={history}
-                    location={location}
-                />
+                {extSvcs && (
+                    <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
+                        className="mb-0"
+                        listClassName="list-group list-group-flush mb-0"
+                        summaryClassName="mt-2"
+                        withCenteredSummary={true}
+                        noun="repository"
+                        pluralNoun="repositories"
+                        queryConnection={queryRepositories}
+                        nodeComponent={RepositoryNode}
+                        inputClassName="ml-2 flex-1"
+                        filters={filters}
+                        history={history}
+                        location={location}
+                    />
+                )}
             </Container>
         </div>
     )

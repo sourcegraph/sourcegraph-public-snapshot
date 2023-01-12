@@ -17,8 +17,10 @@
     { "path": "../shared" },
     { "path": "../storybook" },
     { "path": "../common" },
+    { "path": "../http-client" },
     { "path": "../codeintellify" },
     { "path": "../client-api" },
+    { "path": "../observability-client" },
     { "path": "../wildcard" },
   ],
 }

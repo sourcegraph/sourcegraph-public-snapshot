@@ -40,14 +40,13 @@
     "@sourcegraph/storybook": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/branded": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*",
-    "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
-    "@sourcegraph/search-ui": "workspace:*"
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/observability-client": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*"
   }
 }

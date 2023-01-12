@@ -1,6 +1,0 @@
-load("//client/shared/dev:tools.bzl", "module_style_typings")
-
-module_style_typings(
-    name = "module_style_typings",
-    deps = ["//client/wildcard"],
-)

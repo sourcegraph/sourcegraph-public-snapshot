@@ -18,7 +18,6 @@
     { "path": "../http-client" },
     { "path": "../codeintellify" },
     { "path": "../common" },
-    { "path": "../search-ui" },
     { "path": "../client-api" },
     { "path": "../observability-client" },
     { "path": "../wildcard" },

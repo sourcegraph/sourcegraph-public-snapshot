@@ -290,13 +290,12 @@
     "@sourcegraph/extension-api-types": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/shared": "workspace:*",
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*",
-    "@sourcegraph/search-ui": "workspace:*",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*"
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*"
   }
 }

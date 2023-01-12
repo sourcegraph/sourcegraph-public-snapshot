@@ -47,7 +47,6 @@
     "storybook:jetbrains": "pnpm --filter @sourcegraph/jetbrains run storybook",
     "storybook:shared": "pnpm --filter @sourcegraph/shared run storybook",
     "storybook:web": "pnpm --filter @sourcegraph/web run storybook",
-    "storybook:search-ui": "pnpm --filter @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "pnpm --filter @sourcegraph/wildcard run storybook",
     "storybook:build": "pnpm --filter @sourcegraph/storybook run build",
     "cover-storybook": "nyc --hook-require=false --silent pnpm jest client/storybook/src/coverage",

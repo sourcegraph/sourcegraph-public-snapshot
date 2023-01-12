@@ -63,7 +63,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 {data && !redirectAfterExclusion ? (
                     <Alert variant="success">
                         Code host configuration updated. Please see the updated code host configuration{' '}
-                        <Link to={`/site-admin/external-services/${service.id}/edit`}>here</Link>
+                        <Link to={`/site-admin/external-services/${service.id}`}>here</Link>
                     </Alert>
                 ) : (
                     <ExternalServiceCard
@@ -79,7 +79,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 {error && <ErrorAlert error={`Failed to exclude repository: ${renderError(error)}`} />}
                 {data && redirectAfterExclusion && (
                     <RedirectionAlert
-                        to={`/site-admin/external-services/${service.id}/edit`}
+                        to={`/site-admin/external-services/${service.id}`}
                         messagePrefix="Code host configuration updated."
                     />
                 )}

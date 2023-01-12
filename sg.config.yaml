@@ -868,6 +868,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -940,6 +941,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -964,6 +966,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
 
   batches:
     requiresDevPrivate: true
@@ -989,6 +992,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
       - batches-executor
       - batcheshelper-builder
 

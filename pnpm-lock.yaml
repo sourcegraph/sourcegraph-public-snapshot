@@ -805,18 +805,20 @@ importers:
       '@sourcegraph/codeintellify': workspace:*
       '@sourcegraph/common': workspace:*
       '@sourcegraph/extension-api-types': workspace:*
-      '@sourcegraph/search-ui': workspace:*
+      '@sourcegraph/observability-client': workspace:*
       '@sourcegraph/shared': workspace:*
+      '@sourcegraph/testing': workspace:*
       '@sourcegraph/wildcard': workspace:*
     dependencies:
       '@sourcegraph/client-api': link:../client-api
       '@sourcegraph/codeintellify': link:../codeintellify
       '@sourcegraph/common': link:../common
-      '@sourcegraph/search-ui': link:../search-ui
+      '@sourcegraph/observability-client': link:../observability-client
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
       '@sourcegraph/extension-api-types': link:../extension-api-types
+      '@sourcegraph/testing': link:../testing
 
   client/browser:
     specifiers:
@@ -904,7 +906,6 @@ importers:
       '@sourcegraph/common': workspace:*
       '@sourcegraph/eslint-plugin-wildcard': workspace:*
       '@sourcegraph/http-client': workspace:*
-      '@sourcegraph/search-ui': workspace:*
       '@sourcegraph/shared': workspace:*
       '@sourcegraph/storybook': workspace:*
       '@sourcegraph/wildcard': workspace:*
@@ -912,7 +913,6 @@ importers:
       '@sourcegraph/branded': link:../branded
       '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
-      '@sourcegraph/search-ui': link:../search-ui
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
@@ -931,23 +931,6 @@ importers:
       '@sourcegraph/build-config': workspace:*
     devDependencies:
       '@sourcegraph/build-config': link:../build-config
-
-  client/search-ui:
-    specifiers:
-      '@sourcegraph/branded': workspace:*
-      '@sourcegraph/common': workspace:*
-      '@sourcegraph/observability-client': workspace:*
-      '@sourcegraph/shared': workspace:*
-      '@sourcegraph/testing': workspace:*
-      '@sourcegraph/wildcard': workspace:*
-    dependencies:
-      '@sourcegraph/branded': link:../branded
-      '@sourcegraph/common': link:../common
-      '@sourcegraph/observability-client': link:../observability-client
-      '@sourcegraph/shared': link:../shared
-      '@sourcegraph/wildcard': link:../wildcard
-    devDependencies:
-      '@sourcegraph/testing': link:../testing
 
   client/shared:
     specifiers:
@@ -1004,7 +987,6 @@ importers:
       '@sourcegraph/common': workspace:*
       '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/http-client': workspace:*
-      '@sourcegraph/search-ui': workspace:*
       '@sourcegraph/shared': workspace:*
       '@sourcegraph/wildcard': workspace:*
       vsce: ^2.7.0
@@ -1014,7 +996,6 @@ importers:
       '@sourcegraph/codeintellify': link:../codeintellify
       '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
-      '@sourcegraph/search-ui': link:../search-ui
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
@@ -1032,7 +1013,6 @@ importers:
       '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/http-client': workspace:*
       '@sourcegraph/observability-client': workspace:*
-      '@sourcegraph/search-ui': workspace:*
       '@sourcegraph/shared': workspace:*
       '@sourcegraph/storybook': workspace:*
       '@sourcegraph/testing': workspace:*
@@ -1044,7 +1024,6 @@ importers:
       '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
       '@sourcegraph/observability-client': link:../observability-client
-      '@sourcegraph/search-ui': link:../search-ui
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
