@@ -6,6 +6,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,7 +24,7 @@ type PeriodicGoroutine struct {
 	routineType types.BackgroundRoutineType
 	description string
 	jobName     string
-	jobLogger   *JobLogger
+	recorder    *recorder.Recorder
 	interval    time.Duration
 	handler     unifiedHandler
 	operation   *observation.Operation
@@ -33,7 +34,7 @@ type PeriodicGoroutine struct {
 	finished    chan struct{}      // signals that Start has finished
 }
 
-var _ Loggable = &PeriodicGoroutine{}
+var _ recorder.Loggable = &PeriodicGoroutine{}
 
 type unifiedHandler interface {
 	Handler
@@ -134,8 +135,8 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
 func (r *PeriodicGoroutine) Start() {
-	if r.jobLogger != nil {
-		go (*r.jobLogger).LogStart(r)
+	if r.recorder != nil {
+		go (*r.recorder).LogStart(r)
 	}
 	defer close(r.finished)
 
@@ -144,8 +145,8 @@ loop:
 		start := time.Now()
 		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
-		if r.jobLogger != nil {
-			go (*r.jobLogger).LogRun(r, duration, err)
+		if r.recorder != nil {
+			go (*r.recorder).LogRun(r, duration, err)
 		}
 
 		if shutdown {
@@ -170,8 +171,8 @@ loop:
 // iteration of work, then break the loop in the Start method so that no new work
 // is accepted. This method blocks until Start has returned.
 func (r *PeriodicGoroutine) Stop() {
-	if r.jobLogger != nil {
-		go (*r.jobLogger).LogStop(r)
+	if r.recorder != nil {
+		go (*r.recorder).LogStop(r)
 	}
 	r.cancel()
 	<-r.finished
@@ -205,8 +206,8 @@ func (r *PeriodicGoroutine) SetJobName(jobName string) {
 	r.jobName = jobName
 }
 
-func (r *PeriodicGoroutine) RegisterJobLogger(jobLogger *JobLogger) {
-	r.jobLogger = jobLogger
+func (r *PeriodicGoroutine) RegisterRecorder(recorder *recorder.Recorder) {
+	r.recorder = recorder
 }
 
 func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {

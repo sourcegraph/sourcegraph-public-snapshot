@@ -1,11 +1,11 @@
-package goroutine
+package recorder
 
 import (
 	"encoding/json"
-	"math"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -13,17 +13,17 @@ import (
 )
 
 type Loggable interface {
-	BackgroundRoutine
+	goroutine.BackgroundRoutine
 	Name() string
 	Type() types.BackgroundRoutineType
 	JobName() string
 	SetJobName(string)
 	Description() string
 	Interval() time.Duration
-	RegisterJobLogger(jobLogger *JobLogger)
+	RegisterRecorder(recorder *Recorder)
 }
 
-type JobLogger struct {
+type Recorder struct {
 	rcache   *rcache.Cache
 	logger   log.Logger
 	routines []Loggable
@@ -46,19 +46,19 @@ type backgroundRoutine struct {
 	LastSeen    string                      `json:"lastSeen"`
 }
 
-// NewJobLogger creates a new job logger.
-func NewJobLogger(logger log.Logger, hostName string, cache *rcache.Cache) *JobLogger {
-	return &JobLogger{rcache: cache, logger: logger, hostName: hostName}
+// New creates a new recorder.
+func New(logger log.Logger, hostName string, cache *rcache.Cache) *Recorder {
+	return &Recorder{rcache: cache, logger: logger, hostName: hostName}
 }
 
-// Register registers a new routine with the job logger.
-func (m *JobLogger) Register(r Loggable) {
-	m.routines = append(m.routines, r)
+// Register registers a new routine with the recorder.
+func (m *Recorder) Register(l Loggable) {
+	m.routines = append(m.routines, l)
 }
 
 // RegistrationDone should be called after all routines have been registered.
 // It saves the known job names, host names, and routine names in Redis, along with updating their “last seen” date/time.
-func (m *JobLogger) RegistrationDone() {
+func (m *Recorder) RegistrationDone() {
 	// Save/update known job names
 	for _, jobName := range m.collectAllJobNames() {
 		m.saveKnownJobName(jobName)
@@ -74,7 +74,7 @@ func (m *JobLogger) RegistrationDone() {
 }
 
 // collectAllJobNames collects all known job names in Redis.
-func (m *JobLogger) collectAllJobNames() []string {
+func (m *Recorder) collectAllJobNames() []string {
 	var allJobNames []string
 	for _, routine := range m.routines {
 		jobName := routine.JobName()
@@ -88,7 +88,7 @@ func (m *JobLogger) collectAllJobNames() []string {
 }
 
 // saveKnownJobName updates the “lastSeen” date of a known job in Redis. Also adds it to the list of known jobs if it doesn’t exist.
-func (m *JobLogger) saveKnownJobName(jobName string) {
+func (m *Recorder) saveKnownJobName(jobName string) {
 	err := m.rcache.SetHashItem("knownJobNames", jobName, time.Now().Format(time.RFC3339))
 	if err != nil {
 		m.logger.Error("failed to save/update known job name", log.Error(err), log.String("jobName", jobName))
@@ -96,7 +96,7 @@ func (m *JobLogger) saveKnownJobName(jobName string) {
 }
 
 // saveKnownHostName updates the “lastSeen” date of a known host in Redis. Also adds it to the list of known hosts if it doesn’t exist.
-func (m *JobLogger) saveKnownHostName() {
+func (m *Recorder) saveKnownHostName() {
 	err := m.rcache.SetHashItem("knownHostNames", m.hostName, time.Now().Format(time.RFC3339))
 	if err != nil {
 		m.logger.Error("failed to save/update known host name", log.Error(err), log.String("hostName", m.hostName))
@@ -104,7 +104,7 @@ func (m *JobLogger) saveKnownHostName() {
 }
 
 // saveKnownRouting updates the routine in Redis. Also adds it to the list of known routines if it doesn’t exist.
-func (m *JobLogger) saveKnownRoutine(loggable Loggable) {
+func (m *Recorder) saveKnownRoutine(loggable Loggable) {
 	routine := backgroundRoutine{
 		Name:        loggable.Name(),
 		Type:        loggable.Type(),
@@ -128,23 +128,19 @@ func (m *JobLogger) saveKnownRoutine(loggable Loggable) {
 	}
 }
 
-func (m *JobLogger) LogStart(r Loggable) {
+func (m *Recorder) LogStart(r Loggable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just started! 🚀")
 }
 
-func (m *JobLogger) LogStop(r Loggable) {
+func (m *Recorder) LogStop(r Loggable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStop", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just stopped! 🛑")
 }
 
-func GetLoggerCache(ttlSeconds int) *rcache.Cache {
-	return rcache.NewWithTTL(keyPrefix, ttlSeconds)
-}
-
-func (m *JobLogger) LogRun(r Loggable, duration time.Duration, runErr error) {
+func (m *Recorder) LogRun(r Loggable, duration time.Duration, runErr error) {
 	durationMs := int32(duration.Milliseconds())
-	err := saveRun(m.rcache, r.Name(), m.hostName, durationMs, runErr)
+	err := m.saveRun(r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
 		m.logger.Error("failed to save run", log.Error(err))
 	}
@@ -157,7 +153,7 @@ func (m *JobLogger) LogRun(r Loggable, duration time.Duration, runErr error) {
 	m.logger.Debug("Hello from " + r.Name() + "! 😄")
 }
 
-func saveRun(c *rcache.Cache, routineName string, hostName string, durationMs int32, err error) error {
+func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
 	stackTrace := ""
 	if err != nil {
@@ -181,7 +177,7 @@ func saveRun(c *rcache.Cache, routineName string, hostName string, durationMs in
 	}
 
 	// Save run
-	err = c.AddToList(routineName+":"+hostName+":"+"recentRuns", string(runJson))
+	err = m.rcache.AddToList(routineName+":"+hostName+":"+"recentRuns", string(runJson))
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}
@@ -230,44 +226,4 @@ func addRunToStats(stats types.BackgroundRoutineRunStats, durationMs int32, erro
 		AvgDurationMs: durationMs,
 		MaxDurationMs: durationMs,
 	})
-}
-
-// mergeStats returns the given stats updated with the given run data.
-func mergeStats(a types.BackgroundRoutineRunStats, b types.BackgroundRoutineRunStats) types.BackgroundRoutineRunStats {
-	// Calculate earlier "since"
-	var since time.Time
-	if a.Since != nil && (b.Since != nil && b.Since.Before(*a.Since)) {
-		since = *b.Since
-	} else if a.Since != nil {
-		since = *a.Since
-	}
-	var sincePtr *time.Time
-	if !since.IsZero() {
-		sincePtr = &since
-	}
-
-	// Calculate durations
-	var minDurationMs int32
-	if a.MinDurationMs == 0 || b.MinDurationMs < a.MinDurationMs {
-		minDurationMs = b.MinDurationMs
-	} else {
-		minDurationMs = a.MinDurationMs
-	}
-	avgDurationMs := int32(math.Round(float64(a.AvgDurationMs*a.RunCount+b.AvgDurationMs*b.RunCount) / float64(a.RunCount+b.RunCount)))
-	var maxDurationMs int32
-	if b.MaxDurationMs > a.MaxDurationMs {
-		maxDurationMs = b.MaxDurationMs
-	} else {
-		maxDurationMs = a.MaxDurationMs
-	}
-
-	// Return merged stats
-	return types.BackgroundRoutineRunStats{
-		Since:         sincePtr,
-		RunCount:      a.RunCount + b.RunCount,
-		ErrorCount:    a.ErrorCount + b.ErrorCount,
-		MinDurationMs: minDurationMs,
-		AvgDurationMs: avgDurationMs,
-		MaxDurationMs: maxDurationMs,
-	}
 }

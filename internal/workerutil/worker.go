@@ -9,7 +9,7 @@ import (
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -41,14 +41,14 @@ type Worker[T Record] struct {
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
 	jobName          string
-	jobLogger        *goroutine.JobLogger
+	recorder         *recorder.Recorder
 }
 
 type DummyType struct{}
 
 func (d DummyType) RecordID() int { return 0 }
 
-var _ goroutine.Loggable = &Worker[DummyType]{}
+var _ recorder.Loggable = &Worker[DummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
@@ -140,8 +140,8 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker[T]) Start() {
-	if w.jobLogger != nil {
-		go (*w.jobLogger).LogStart(w)
+	if w.recorder != nil {
+		go (*w.recorder).LogStart(w)
 	}
 	defer close(w.finished)
 
@@ -250,11 +250,11 @@ loop:
 }
 
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
-// context passed to the dequeue operations (but not the handler perations). This method blocks until
+// context passed to the dequeue operations (but not the handler operations). This method blocks until
 // all handler goroutines have exited.
 func (w *Worker[T]) Stop() {
-	if w.jobLogger != nil {
-		go (*w.jobLogger).LogStop(w)
+	if w.recorder != nil {
+		go (*w.recorder).LogStop(w)
 	}
 	w.dequeueCancel()
 	w.Wait()
@@ -458,6 +458,6 @@ func (w *Worker[T]) Interval() time.Duration {
 	return w.options.Interval
 }
 
-func (w *Worker[T]) RegisterJobLogger(jobLogger *goroutine.JobLogger) {
-	w.jobLogger = jobLogger
+func (w *Worker[T]) RegisterRecorder(r *recorder.Recorder) {
+	w.recorder = r
 }

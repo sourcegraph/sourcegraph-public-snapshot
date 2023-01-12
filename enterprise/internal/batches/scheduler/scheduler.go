@@ -7,7 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,14 +15,14 @@ import (
 // scheduled state to the queued state based on the current rate limit, if
 // anything. Changesets are processed in a FIFO manner.
 type Scheduler struct {
-	ctx       context.Context
-	done      chan struct{}
-	store     *store.Store
-	jobName   string
-	jobLogger *goroutine.JobLogger
+	ctx      context.Context
+	done     chan struct{}
+	store    *store.Store
+	jobName  string
+	recorder *recorder.Recorder
 }
 
-var _ goroutine.Loggable = &Scheduler{}
+var _ recorder.Loggable = &Scheduler{}
 
 func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 	return &Scheduler{
@@ -33,8 +33,8 @@ func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	if s.jobLogger != nil {
-		go (*s.jobLogger).LogStart(s)
+	if s.recorder != nil {
+		go (*s.recorder).LogStart(s)
 	}
 
 	// Set up a global backoff strategy where we start at 5 seconds, up to a
@@ -74,8 +74,8 @@ func (s *Scheduler) Start() {
 				}
 
 				duration := time.Since(start)
-				if s.jobLogger != nil {
-					go (*s.jobLogger).LogRun(s, duration, nil)
+				if s.recorder != nil {
+					go (*s.recorder).LogRun(s, duration, nil)
 				}
 
 			case <-validity.C:
@@ -101,8 +101,8 @@ func (s *Scheduler) Start() {
 }
 
 func (s *Scheduler) Stop() {
-	if s.jobLogger != nil {
-		go (*s.jobLogger).LogStop(s)
+	if s.recorder != nil {
+		go (*s.recorder).LogStop(s)
 	}
 	s.done <- struct{}{}
 	close(s.done)
@@ -178,6 +178,6 @@ func (s *Scheduler) Interval() time.Duration {
 	return 5 * time.Second // Actually between 5 sec and 1 min, changes dynamically
 }
 
-func (s *Scheduler) RegisterJobLogger(jobLogger *goroutine.JobLogger) {
-	s.jobLogger = jobLogger
+func (s *Scheduler) RegisterRecorder(recorder *recorder.Recorder) {
+	s.recorder = recorder
 }

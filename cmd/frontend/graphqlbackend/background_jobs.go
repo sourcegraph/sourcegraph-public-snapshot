@@ -8,7 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -99,7 +99,7 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := goroutine.GetBackgroundJobInfo(goroutine.GetLoggerCache(1), jobName, int32(recentRunCount), dayCountForStats)
+	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(1), jobName, int32(recentRunCount), dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqluti
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
 	r.once.Do(func() {
-		jobInfos, err := goroutine.GetBackgroundJobInfos(goroutine.GetLoggerCache(1), r.after, *r.recentRunCount, dayCountForStats)
+		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(1), r.after, *r.recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 		}

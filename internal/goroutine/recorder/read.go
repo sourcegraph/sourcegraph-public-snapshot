@@ -1,4 +1,4 @@
-package goroutine
+package recorder
 
 import (
 	"encoding/json"

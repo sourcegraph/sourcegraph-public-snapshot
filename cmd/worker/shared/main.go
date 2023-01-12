@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
@@ -38,7 +39,7 @@ import (
 )
 
 const addr = ":3189"
-const jobLoggerCacheTTLSeconds = 604800 // 7 days
+const recorderCacheTTLSeconds = 604800 // 7 days
 
 type EnterpriseInit = func(ossDB database.DB)
 
@@ -122,17 +123,17 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: server, JobName: "health-server"}
 	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
 
-	// Register jobLogger in all routines that support it
-	jobLoggerCache := goroutine.GetLoggerCache(jobLoggerCacheTTLSeconds)
-	jobLogger := goroutine.NewJobLogger(observationCtx.Logger, env.MyName, jobLoggerCache)
-	for _, r := range allRoutinesWithJobNames {
-		if loggable, ok := r.Routine.(goroutine.Loggable); ok {
-			loggable.SetJobName(r.JobName)
-			loggable.RegisterJobLogger(jobLogger)
-			jobLogger.Register(loggable)
+	// Register recorder in all routines that support it
+	recorderCache := recorder.GetCache(recorderCacheTTLSeconds)
+	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
+	for _, rj := range allRoutinesWithJobNames {
+		if loggable, ok := rj.Routine.(recorder.Loggable); ok {
+			loggable.SetJobName(rj.JobName)
+			loggable.RegisterRecorder(rec)
+			rec.Register(loggable)
 		}
 	}
-	jobLogger.RegistrationDone()
+	rec.RegistrationDone()
 
 	// We're all set up now
 	// Respond positively to ready checks
@@ -270,16 +271,16 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 	defer cancel()
 
 	for _, name := range jobNames(jobs) {
-		jobLogger := observationCtx.Logger.Scoped(name, jobs[name].Description())
-		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
+		rec := observationCtx.Logger.Scoped(name, jobs[name].Description())
+		observationCtx := observation.ContextWithLogger(rec, observationCtx)
 
 		if !shouldRunJob(name) {
-			jobLogger.Debug("Skipping job")
+			rec.Debug("Skipping job")
 			continue
 		}
 
 		wg.Add(1)
-		jobLogger.Debug("Running job")
+		rec.Debug("Running job")
 
 		go func(name string) {
 			defer wg.Done()
@@ -295,7 +296,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			results <- routinesResult{name, routinesWithJobNames, err}
 
 			if err == nil {
-				jobLogger.Debug("Finished initializing job")
+				rec.Debug("Finished initializing job")
 			} else {
 				cancel()
 			}

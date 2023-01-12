@@ -1,4 +1,4 @@
-package goroutine
+package recorder
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"cuelang.org/go/pkg/time"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -17,24 +18,24 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	// Create logger
-	c := GetLoggerCache(1)
-	jobLogger := NewJobLogger(log.NoOp(), "test", c)
+	c := GetCache(1)
+	recorder := New(log.NoOp(), "test", c)
 
 	// Create and register routines
 	// - job-1 has two routines: routine-1 and routine-2
 	// - job-2 has one routine: routine-3
 	ctx := context.Background()
-	emptyHandler := HandlerFunc(func(ctx context.Context) error { return nil })
-	routine1 := NewPeriodicGoroutine(ctx, "routine-1", "a routine", 2*time.Minute, emptyHandler)
+	emptyHandler := goroutine.HandlerFunc(func(ctx context.Context) error { return nil })
+	routine1 := goroutine.NewPeriodicGoroutine(ctx, "routine-1", "a routine", 2*time.Minute, emptyHandler)
 	routine1.SetJobName("job-1")
-	jobLogger.Register(routine1)
-	routine2 := NewPeriodicGoroutine(ctx, "routine-2", "another routine", 2*time.Minute, emptyHandler)
+	recorder.Register(routine1)
+	routine2 := goroutine.NewPeriodicGoroutine(ctx, "routine-2", "another routine", 2*time.Minute, emptyHandler)
 	routine2.SetJobName("job-1")
-	jobLogger.Register(routine2)
-	routine3 := NewPeriodicGoroutine(ctx, "routine-3", "a third routine", 2*time.Minute, emptyHandler)
+	recorder.Register(routine2)
+	routine3 := goroutine.NewPeriodicGoroutine(ctx, "routine-3", "a third routine", 2*time.Minute, emptyHandler)
 	routine3.SetJobName("job-2")
-	jobLogger.Register(routine3)
-	jobLogger.RegistrationDone()
+	recorder.Register(routine3)
+	recorder.RegistrationDone()
 
 	// Get infos
 	jobInfos, err := GetBackgroundJobInfos(c, "", 5, 7)
@@ -53,14 +54,14 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", false, false, 0, 0, 0, 0, 0, 0)
 
 	// Log some runs: 3x routine-1 (1x with error), 1x routine-2, 0x routine-3
-	jobLogger.LogStart(routine1)
-	jobLogger.LogStart(routine2)
-	jobLogger.LogStart(routine3)
-	jobLogger.LogRun(routine1, 10*time.Millisecond, nil)
-	jobLogger.LogRun(routine1, 15*time.Millisecond, nil)
-	jobLogger.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
-	jobLogger.LogRun(routine2, 2*time.Second, nil)
-	jobLogger.LogStop(routine3)
+	recorder.LogStart(routine1)
+	recorder.LogStart(routine2)
+	recorder.LogStart(routine3)
+	recorder.LogRun(routine1, 10*time.Millisecond, nil)
+	recorder.LogRun(routine1, 15*time.Millisecond, nil)
+	recorder.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
+	recorder.LogRun(routine2, 2*time.Second, nil)
+	recorder.LogStop(routine3)
 
 	// Get infos again
 	jobInfos, err = GetBackgroundJobInfos(c, "", 5, 7)
