@@ -103,12 +103,6 @@ var Mac = []category{
 					).Wait()
 				},
 			},
-			{
-				Name:        "gpg",
-				Description: "Required for yarn installation.",
-				Check:       checkAction(check.InPath("gpg")),
-				Fix:         cmdFix("brew install gpg"),
-			},
 		},
 	},
 	{

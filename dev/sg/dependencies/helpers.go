@@ -321,7 +321,7 @@ func getPackageManagerConstraint(tool string) (string, error) {
 	}
 
 	if version == "" {
-		return "", errors.Newf("yarn version is not found in package.json")
+		return "", errors.Newf("pnpm version is not found in package.json")
 	}
 
 	return fmt.Sprintf("~> %s", version), nil
@@ -350,17 +350,17 @@ func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error 
 	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
 }
 
-func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("yarn")(ctx); err != nil {
+func checkPnpmVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+	if err := check.InPath("pnpm")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getPackageManagerConstraint("yarn")
+	constraint, err := getPackageManagerConstraint("pnpm")
 	if err != nil {
 		return err
 	}
 
-	cmd := "yarn --version"
+	cmd := "pnpm --version"
 	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run %q", cmd)
@@ -370,7 +370,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("yarn", trimmed, constraint)
+	return check.Version("pnpm", trimmed, constraint)
 }
 
 func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) error {

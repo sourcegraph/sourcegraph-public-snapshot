@@ -16,8 +16,6 @@ import (
 
 	"github.com/gorilla/mux"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
-	prometheusAPI "github.com/prometheus/client_golang/api"
-	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 
 	"github.com/sourcegraph/log"
 
@@ -79,15 +77,6 @@ func main() {
 		Schemes:  []string{"http"},
 	})
 
-	// prometheus client
-	promClient, err := prometheusAPI.NewClient(prometheusAPI.Config{
-		Address: fmt.Sprintf("http://127.0.0.1:%s", prometheusPort),
-	})
-	if err != nil {
-		logger.Fatal("failed to initialize prometheus client",
-			log.Error(err))
-	}
-
 	// disable all components that depend on Alertmanager if DISABLE_ALERTMANAGER=true
 	if disableAlertmanager {
 		logger.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
@@ -128,7 +117,7 @@ func main() {
 	}
 
 	// serve alerts summary status
-	alertsReporter := NewAlertsStatusReporter(logger, alertmanager, prometheus.NewAPI(promClient))
+	alertsReporter := NewAlertsStatusReporter(logger, alertmanager)
 	router.PathPrefix(srcprometheus.EndpointAlertsStatus).Handler(alertsReporter.Handler())
 
 	// serve prometheus by default via reverse proxy - place last so other prefixes get served first

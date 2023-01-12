@@ -336,7 +336,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
         totalCount,
     }) => (
-        <div className="mt-2">
+        <div className="p-2">
             {showOlderCommits ? (
                 <>
                     {totalCount} total {pluralize('commit', totalCount)} in this tree.

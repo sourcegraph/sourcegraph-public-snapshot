@@ -16,9 +16,8 @@ jobs:
     - name: Install asdf plugins
       uses: asdf-vm/actions/install@v1
 
-    # we use classic yarn to install the new version of yarn
-    - name: ensure the correct version of yarn
-      run: yarn
+    - name: Install npm dependencies
+      run: pnpm install --frozen-lockfile
 
     - name: Install license_finder
       run: gem install license_finder:7.1.0 # sync with licenses-check.yml
