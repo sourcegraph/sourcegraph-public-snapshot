@@ -115,7 +115,12 @@ func (s *freeLicenseStore) getDefaultFreeLicense(ctx context.Context) (FreeLicen
 	// If the semver check failed, we try to parse the date from the firstVersion,
 	// which could be in the format 98222_2021-06-04_77d9d32
 	versionParts := strings.Split(firstVersion, "_")
-	if firstVersionTime, err := time.Parse("2006-01-24", versionParts[1]); err == nil {
+	// We check if the versionParts has at least 3 parts as expected, otherwise default
+	// to latest free version
+	if len(versionParts) < 3 {
+		return free1License, free1LicenseInfo
+	}
+	if firstVersionTime, err := time.Parse("2006-01-02", versionParts[1]); err == nil {
 		if firstVersionTime.Before(time.Date(2023, 2, 23, 0, 0, 0, 0, time.UTC)) {
 			return free0License, free0LicenseInfo
 		}
