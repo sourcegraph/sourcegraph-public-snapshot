@@ -282,8 +282,7 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
-
-export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {

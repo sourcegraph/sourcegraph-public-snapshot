@@ -59,30 +59,17 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-// checkLicense returns a user-facing error if the batchChanges feature is not purchased
+// checkLicense returns the current plan's configured Batch Changes feature.
+// Returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
-func checkLicense() error {
-	batchChangesErr := licensing.Check(licensing.FeatureBatchChanges)
-	if batchChangesErr == nil {
-		return nil
+func checkLicense() (*licensing.FeatureBatchChanges, error) {
+	bcFeature := &licensing.FeatureBatchChanges{}
+	if err := licensing.Check(bcFeature); err != nil {
+		return nil, err
 	}
 
-	if licensing.IsFeatureNotActivated(batchChangesErr) {
-		// Let's fallback and check whether (deprecated) campaigns are enabled:
-		campaignsErr := licensing.Check(licensing.FeatureCampaigns)
-		if campaignsErr == nil {
-			return nil
-		}
-		return batchChangesErr
-	}
-
-	return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	return bcFeature, nil
 }
-
-// maxUnlicensedChangesets is the maximum number of changesets that can be
-// attached to a batch change when Sourcegraph is unlicensed or the Batch
-// Changes feature is disabled.
-const maxUnlicensedChangesets = 10
 
 type batchSpecCreatedArg struct {
 	ChangesetSpecsCount int `json:"changeset_specs_count"`
@@ -509,24 +496,22 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 		return nil, ErrIDIsZero{}
 	}
 
-	if licenseErr := checkLicense(); licenseErr != nil {
-		if licensing.IsFeatureNotActivated(licenseErr) {
-			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-				RandID: opts.BatchSpecRandID,
-			})
-			if err != nil {
-				return nil, err
-			}
-			count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
-			if err != nil {
-				return nil, err
-			}
-			if count > maxUnlicensedChangesets {
-				return nil, ErrBatchChangesUnlicensed{licenseErr}
-			}
-		} else {
-			return nil, licenseErr
+	if batchChangesFeature, licenseErr := checkLicense(); licenseErr == nil {
+		batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+			RandID: opts.BatchSpecRandID,
+		})
+		if err != nil {
+			return nil, err
 		}
+		count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			return nil, err
+		}
+		if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumChangesets {
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
+		}
+	} else {
+		return nil, ErrBatchChangesUnlicensed{licenseErr}
 	}
 
 	if args.EnsureBatchChange != nil {
@@ -570,14 +555,12 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		return nil, err
 	}
 
-	if err := checkLicense(); err != nil {
-		if licensing.IsFeatureNotActivated(err) {
-			if len(args.ChangesetSpecs) > maxUnlicensedChangesets {
-				return nil, ErrBatchChangesUnlicensed{err}
-			}
-		} else {
-			return nil, err
+	if batchChangesFeature, err := checkLicense(); err == nil {
+		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumChangesets {
+			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
 		}
+	} else {
+		return nil, ErrBatchChangesUnlicensed{err}
 	}
 
 	opts := service.CreateBatchSpecOpts{RawSpec: args.BatchSpec}
@@ -1998,8 +1981,20 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// Realistically, we don't care about this field if an instance _is_ licensed. However, at
+// present there's no way to directly query the license details over GraphQL, so we just
+// return an arbitrarily high number if an instance is licensed and unrestricted.
 func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
-	return maxUnlicensedChangesets
+	if bcFeature, err := checkLicense(); err == nil {
+		if bcFeature.Unrestricted {
+			return 999999
+		} else {
+			return int32(bcFeature.MaxNumChangesets)
+		}
+	} else {
+		// The license could not be checked.
+		return 0
+	}
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

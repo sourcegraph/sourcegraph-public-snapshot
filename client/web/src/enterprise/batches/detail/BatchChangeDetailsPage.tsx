@@ -32,7 +32,6 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
-import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
@@ -169,7 +168,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice history={history} location={location} />
-            <WebhookAlert batchChange={batchChange} />
+            {/* Temporarily disabled due to bug with discovery. */}
+            {/* See https://github.com/sourcegraph/sourcegraph/issues/45919 */}
+            {/* <WebhookAlert batchChange={batchChange} /> */}
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

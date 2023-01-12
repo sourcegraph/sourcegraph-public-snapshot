@@ -1409,6 +1409,14 @@
       "group": "CodeInsights",
       "default": 50000
     },
+    "insights.maximumSampleSize": {
+      "description": "The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 30,
+      "maximum": 90,
+      "examples": [12, 24, 50]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",

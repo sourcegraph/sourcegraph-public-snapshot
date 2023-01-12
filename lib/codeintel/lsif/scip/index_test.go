@@ -37,7 +37,7 @@ func TestConvertLSIF(t *testing.T) {
 
 	expectedIndex := &scip.Index{
 		Metadata: &scip.Metadata{
-			ProjectRoot:          "root/",
+			ProjectRoot:          "file:///test/root/",
 			ToolInfo:             &scip.ToolInfo{Name: "lsif-test"},
 			TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 			Version:              scip.ProtocolVersion_UnspecifiedProtocolVersion,
@@ -46,17 +46,11 @@ func TestConvertLSIF(t *testing.T) {
 			{
 				RelativePath: "bar.go",
 				Occurrences: []*scip.Occurrence{
-					{Range: []int32{4, 5, 6, 7}, Symbol: "lsif . 42 . `15`."},
-					{Range: []int32{4, 5, 6, 7}, Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
-					{Range: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `12`."},
-					{Range: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `14`."},
+					{Range: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `7`."},
 					{Range: []int32{6, 7, 8, 9}, Symbol: "scheme B . pkg B v1.2.3 `ident B`."},
 				},
 				Symbols: []*scip.SymbolInformation{
-					{Symbol: "lsif . 42 . `12`.", Documentation: []string{"```go\ntext A\n```"}},
-					{Symbol: "lsif . 42 . `14`.", Documentation: []string{"```go\ntext A\n```"}},
-					{Symbol: "lsif . 42 . `15`.", Documentation: nil},
-					{Symbol: "scheme A . pkg A v0.1.0 `ident A`.", Documentation: nil},
+					{Symbol: "lsif . 42 . `7`.", Documentation: []string{"```go\ntext A\n```"}},
 					{Symbol: "scheme B . pkg B v1.2.3 `ident B`.", Documentation: []string{"```go\ntext A\n```"}},
 				},
 			},
@@ -71,13 +65,11 @@ func TestConvertLSIF(t *testing.T) {
 							Source:   "eslint",
 						},
 					}},
-					{Range: []int32{1, 2, 3, 4}, Symbol: "lsif . 42 . `13`."},
-					{Range: []int32{2, 3, 4, 5}, Symbol: "lsif . 42 . `15`."},
-					{Range: []int32{3, 4, 5, 6}, Symbol: "lsif . 42 . `13`."},
+					{Range: []int32{1, 2, 3, 4}, Symbol: "lsif . 42 . `8`."},
+					{Range: []int32{3, 4, 5, 6}, Symbol: "lsif . 42 . `8`."},
 				},
 				Symbols: []*scip.SymbolInformation{
-					{Symbol: "lsif . 42 . `13`.", Documentation: []string{"```go\ntext B\n```"}},
-					{Symbol: "lsif . 42 . `15`.", Documentation: nil},
+					{Symbol: "lsif . 42 . `8`.", Documentation: []string{"```go\ntext B\n```"}},
 				},
 			},
 		},

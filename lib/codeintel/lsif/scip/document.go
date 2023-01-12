@@ -10,27 +10,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// DefinitionMatcher returns true if the given definition result ID has the given target range ID within
-// the given document path in the list of its definition ranges.
+// TargetRangeFetcher returns the set of LSIF range identifiers that form the targets of the given result identifier.
 //
-// When reading processed LSIF data, this will be determined by checking if the range attached to the input
-// range's definition result set is the same as the input range. When reading unprocessed LSIF data, this
+// When reading processed LSIF data, this will be determined by checking if the range attached to the input range's
+// definition or implementation result set is the same as the input range. When reading unprocessed LSIF data, this
 // will be determined by traversing a state map of the read index.
-type DefinitionMatcher func(targetPath string, targetRangeID precise.ID, definitionResultID precise.ID) bool
+type TargetRangeFetcher func(resultID precise.ID) []precise.ID
 
 // ConvertLSIFDocument converts the given processed LSIF document into a SCIP document.
 func ConvertLSIFDocument(
 	uploadID int,
-	definitionMatcher DefinitionMatcher,
+	targetRangeFetcher TargetRangeFetcher,
 	indexerName string,
 	path string,
 	document precise.DocumentData,
 ) *scip.Document {
 	var (
-		n                           = len(document.Ranges)
-		occurrences                 = make([]*scip.Occurrence, 0, n)
-		documentationBySymbolName   = make(map[string]map[string]struct{}, n)
-		implementationsBySymbolName = make(map[string]map[string]struct{}, n)
+		n                         = len(document.Ranges)
+		occurrences               = make([]*scip.Occurrence, 0, n)
+		documentationBySymbolName = make(map[string]map[string]struct{}, n)
+		interfacesBySymbolName    = make(map[string]map[string]struct{}, n)
 	)
 
 	// Convert each correlated/canonicalized LSIF range within a document to a set of SCIP occurrences.
@@ -43,8 +42,7 @@ func ConvertLSIFDocument(
 	for id, r := range document.Ranges {
 		rangeOccurrences, symbols := convertRange(
 			uploadID,
-			definitionMatcher,
-			path,
+			targetRangeFetcher,
 			document,
 			id,
 			r,
@@ -56,14 +54,15 @@ func ConvertLSIFDocument(
 			if _, ok := documentationBySymbolName[symbol.name]; !ok {
 				documentationBySymbolName[symbol.name] = map[string]struct{}{}
 			}
+
 			documentationBySymbolName[symbol.name][symbol.documentation] = struct{}{}
 
-			for _, other := range symbol.implementationRelationships {
-				if _, ok := implementationsBySymbolName[symbol.name]; !ok {
-					implementationsBySymbolName[symbol.name] = map[string]struct{}{}
+			for _, interfaceName := range symbol.implementationRelationships {
+				if _, ok := interfacesBySymbolName[symbol.name]; !ok {
+					interfacesBySymbolName[symbol.name] = map[string]struct{}{}
 				}
 
-				implementationsBySymbolName[symbol.name][other] = struct{}{}
+				interfacesBySymbolName[symbol.name][interfaceName] = struct{}{}
 			}
 		}
 	}
@@ -73,8 +72,9 @@ func ConvertLSIFDocument(
 		occurrences = append(occurrences, convertDiagnostic(diagnostic))
 	}
 
-	// Aggregate symbol information to store documentation and implementation relationships
-	symbols := make([]*scip.SymbolInformation, 0, len(documentationBySymbolName))
+	// Aggregate symbol information to store documentation
+
+	symbolMap := map[string]*scip.SymbolInformation{}
 	for symbolName, documentationSet := range documentationBySymbolName {
 		var documentation []string
 		for doc := range documentationSet {
@@ -84,10 +84,35 @@ func ConvertLSIFDocument(
 		}
 		sort.Strings(documentation)
 
-		symbols = append(symbols, &scip.SymbolInformation{
+		symbolMap[symbolName] = &scip.SymbolInformation{
 			Symbol:        symbolName,
 			Documentation: documentation,
-		})
+		}
+	}
+
+	// Add additional implements relationships to symbols
+	for symbolName, interfaceNames := range interfacesBySymbolName {
+		symbol, ok := symbolMap[symbolName]
+		if !ok {
+			symbol = &scip.SymbolInformation{Symbol: symbolName}
+			symbolMap[symbolName] = symbol
+		}
+
+		for interfaceName := range interfaceNames {
+			symbol.Relationships = append(symbol.Relationships, &scip.Relationship{
+				Symbol:           interfaceName,
+				IsImplementation: true,
+			})
+
+			if _, ok := symbolMap[interfaceName]; !ok {
+				symbolMap[interfaceName] = &scip.SymbolInformation{Symbol: interfaceName}
+			}
+		}
+	}
+
+	symbols := make([]*scip.SymbolInformation, 0, len(symbolMap))
+	for _, symbol := range symbolMap {
+		symbols = append(symbols, symbol)
 	}
 
 	return &scip.Document{
@@ -110,64 +135,13 @@ type symbolMetadata struct {
 // document.
 func convertRange(
 	uploadID int,
-	definitionMatcher DefinitionMatcher,
-	path string,
+	targetRangeFetcher TargetRangeFetcher,
 	document precise.DocumentData,
 	rangeID precise.ID,
 	r precise.RangeData,
-) ([]*scip.Occurrence, []symbolMetadata) {
-	symbolNames, implementsSymbolNames := constructSymbolNames(uploadID, document, r)
-
-	var (
-		n           = len(symbolNames)
-		occurrences = make([]*scip.Occurrence, 0, n)
-		symbols     = make([]symbolMetadata, 0, n)
-	)
-
-	symbolRoles := scip.SymbolRole_UnspecifiedSymbolRole
-	if r.DefinitionResultID != "" && definitionMatcher(path, rangeID, r.DefinitionResultID) {
-		symbolRoles = symbolRoles | scip.SymbolRole_Definition
-	}
-
-	for _, symbolName := range symbolNames {
-		occurrences = append(occurrences, &scip.Occurrence{
-			Range: []int32{
-				int32(r.StartLine),
-				int32(r.StartCharacter),
-				int32(r.EndLine),
-				int32(r.EndCharacter),
-			},
-			Symbol:      symbolName,
-			SymbolRoles: int32(symbolRoles),
-		})
-
-		symbols = append(symbols, symbolMetadata{
-			name:                        symbolName,
-			documentation:               document.HoverResults[r.HoverResultID],
-			implementationRelationships: implementsSymbolNames,
-		})
-	}
-
-	return occurrences, symbols
-}
-
-// constructSymbolNames returns a slice of symbol names to be associated with the given range, as well as
-// a slice of symbol names that are related to this range via an implements relationship.
-//
-// Symbol names associated with a range include a synthetic symbol name constructed from the upload ID and
-// the definition/reference/implementation result identifiers. These are not deterministic across uploads
-// (as LSIF graph object interning rewrote them to arbitrary values) and won't allow us to take immediate
-// benefit of SCIP data sharing. Symbol names will also represent moniker/package information pairs attached
-// to the range.
-func constructSymbolNames(uploadID int, document precise.DocumentData, r precise.RangeData) (symbolNames, implementsSymbolNames []string) {
-	var (
-		symbolNameMap           = make(map[string]struct{}, 4)
-		implementsSymbolNameMap = make(map[string]struct{}, 4)
-	)
-
-	symbolNameMap[constructSymbolName(uploadID, r.DefinitionResultID)] = struct{}{}
-	symbolNameMap[constructSymbolName(uploadID, r.ReferenceResultID)] = struct{}{}
-	implementsSymbolNameMap[constructSymbolName(uploadID, r.ImplementationResultID)] = struct{}{}
+) (occurrences []*scip.Occurrence, symbols []symbolMetadata) {
+	var monikers []string
+	var implementsMonikers []string
 
 	for _, monikerID := range r.MonikerIDs {
 		moniker, ok := document.Monikers[monikerID]
@@ -199,15 +173,74 @@ func constructSymbolNames(uploadID int, document precise.DocumentData, r precise
 
 		switch moniker.Kind {
 		case "import":
-			symbolNameMap[symbolName] = struct{}{}
+			fallthrough
 		case "export":
-			symbolNameMap[symbolName] = struct{}{}
+			monikers = append(monikers, symbolName)
 		case "implementation":
-			implementsSymbolNameMap[symbolName] = struct{}{}
+			implementsMonikers = append(implementsMonikers, symbolName)
 		}
 	}
 
-	return flattenNonEmptyMap(symbolNameMap), flattenNonEmptyMap(implementsSymbolNameMap)
+	for _, targetRangeID := range targetRangeFetcher(r.ImplementationResultID) {
+		implementsMonikers = append(implementsMonikers, constructSymbolName(uploadID, targetRangeID))
+	}
+
+	addOccurrence := func(symbolName string, symbolRole scip.SymbolRole) {
+		occurrences = append(occurrences, &scip.Occurrence{
+			Range: []int32{
+				int32(r.StartLine),
+				int32(r.StartCharacter),
+				int32(r.EndLine),
+				int32(r.EndCharacter),
+			},
+			Symbol:      symbolName,
+			SymbolRoles: int32(symbolRole),
+		})
+
+		symbols = append(symbols, symbolMetadata{
+			name:                        symbolName,
+			documentation:               document.HoverResults[r.HoverResultID],
+			implementationRelationships: implementsMonikers,
+		})
+	}
+
+	isDefinition := false
+	for _, targetRangeID := range targetRangeFetcher(r.DefinitionResultID) {
+		if rangeID == targetRangeID {
+			isDefinition = true
+			break
+		}
+	}
+	if isDefinition {
+		role := scip.SymbolRole_Definition
+
+		// Add definition of the range itself
+		addOccurrence(constructSymbolName(uploadID, rangeID), role)
+
+		// Add definition of each moniker
+		for _, moniker := range monikers {
+			addOccurrence(moniker, role)
+		}
+
+		// Add definition of each implements relationship
+		for _, moniker := range implementsMonikers {
+			addOccurrence(moniker, role)
+		}
+	} else {
+		role := scip.SymbolRole_UnspecifiedSymbolRole
+
+		for _, targetRangeID := range targetRangeFetcher(r.DefinitionResultID) {
+			// Add reference to the defining range identifier
+			addOccurrence(constructSymbolName(uploadID, targetRangeID), role)
+
+			// Add reference to each moniker
+			for _, moniker := range monikers {
+				addOccurrence(moniker, role)
+			}
+		}
+	}
+
+	return occurrences, symbols
 }
 
 // convertDiagnostic converts an LSIF diagnostic into an equivalent SCIP diagnostic.

@@ -395,30 +395,30 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn
+    install: pnpm install
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn
+    install: pnpm install
     env:
       ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
-    cmd: yarn workspace @sourcegraph/web serve:dev --color
+    cmd: pnpm --filter @sourcegraph/web serve:dev --color
     install: |
-      yarn
-      yarn generate
+      pnpm install
+      pnpm generate
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
+    cmd: pnpm --filter @sourcegraph/web serve:prod
+    install: pnpm --filter @sourcegraph/web run build
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
@@ -426,7 +426,7 @@ commands:
 
   web-integration-build:
     description: Build web application for integration tests
-    cmd: yarn workspace @sourcegraph/web run build
+    cmd: pnpm --filter @sourcegraph/web run build
     env:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
@@ -803,8 +803,8 @@ commands:
       # HONEYCOMB_DATASET: ''
 
   storybook:
-    cmd: yarn storybook
-    install: yarn
+    cmd: pnpm storybook
+    install: pnpm install
 
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
@@ -813,8 +813,8 @@ commands:
     cmd: env
 
   bext:
-    cmd: yarn workspace @sourcegraph/browser dev
-    install: yarn
+    cmd: pnpm --filter @sourcegraph/browser dev
+    install: pnpm install
 
 defaultCommandset: enterprise
 commandsets:
@@ -1086,21 +1086,21 @@ tests:
       PASSWORD: '12345'
 
   bext:
-    cmd: yarn workspace @sourcegraph/browser test
+    cmd: pnpm --filter @sourcegraph/browser test
 
   bext-build:
-    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn workspace @sourcegraph/browser build
+    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true pnpm --filter @sourcegraph/browser build
 
   bext-integration:
-    cmd: yarn workspace @sourcegraph/browser test-integration
+    cmd: pnpm --filter @sourcegraph/browser test-integration
 
   bext-e2e:
-    cmd: yarn workspace @sourcegraph/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd: pnpm --filter @sourcegraph/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
@@ -1113,7 +1113,7 @@ tests:
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
-    cmd: yarn run test-e2e
+    cmd: pnpm test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword
@@ -1131,7 +1131,7 @@ tests:
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
 
-    cmd: yarn run test-regression
+    cmd: pnpm test-regression
     env:
       SOURCEGRAPH_SUDO_USER: test
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
@@ -1145,7 +1145,7 @@ tests:
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
 
-    cmd: yarn run test-integration
+    cmd: pnpm test-integration
 
   web-integration:debug:
     preamble: |
@@ -1154,4 +1154,4 @@ tests:
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
 
-    cmd: yarn run test-integration:debug
+    cmd: pnpm test-integration:debug
