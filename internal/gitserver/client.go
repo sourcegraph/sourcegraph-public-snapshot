@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -499,14 +498,9 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 		return addr, nil
 	}
 
-	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
-	if err != nil {
-		return "", err
-	}
-	if useRendezvous {
+	if shouldUseRendezvousHashing() {
 		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
-
 	return addrForKey(rs, addresses.Addresses), nil
 }
 
@@ -1408,17 +1402,8 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 
 // shouldUseRendezvousHashing returns true if rendezvous hashing is to be used to find
 // an address of gitserver instance for a given repo
-func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string) (bool, error) {
-	cursor, err := migration.GetCursor(ctx, db)
-	if err != nil {
-		return false, err
-	}
-	if cursor == "" {
-		return false, nil
-	}
-
-	// Migration is in progress or finished, if the name is less than or equal to cursor -- use rendezvous
-	return repo <= cursor, nil
+func shouldUseRendezvousHashing() bool {
+	return conf.GitServerHashingFunction() == conf.HashingFunctionRendezvous
 }
 
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
@@ -1447,7 +1432,7 @@ func readResponseBody(body io.Reader) string {
 
 	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
 	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escapted into a \n
+	// the error message. And in translation that newline gets escaped into a \n
 	// character.  For what the error message would look in the UI without
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.

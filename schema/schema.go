@@ -631,7 +631,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
+	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
@@ -2347,6 +2347,8 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverHashingFunction description: Which hashing function to use to shard repositories across gitserver instances
+	GitserverHashingFunction string `json:"gitserverHashingFunction,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts
@@ -2524,6 +2526,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxCodehostRequestsPerSecond")
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserverHashingFunction")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")

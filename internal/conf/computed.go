@@ -496,3 +496,21 @@ func GitMaxConcurrentClones() int {
 	}
 	return v
 }
+
+type HashingFunction string
+
+const (
+	HashingFunctionMD5        HashingFunction = "md5"
+	HashingFunctionRendezvous HashingFunction = "rendezvous"
+)
+
+func GitServerHashingFunction() HashingFunction {
+	switch Get().GitserverHashingFunction {
+	case "md5":
+		return HashingFunctionMD5
+	case "rendezvous":
+		return HashingFunctionRendezvous
+	default:
+		return HashingFunctionMD5
+	}
+}

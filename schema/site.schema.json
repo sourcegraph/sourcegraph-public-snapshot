@@ -71,6 +71,12 @@
         }
       }
     },
+    "gitserverHashingFunction": {
+      "description": "Which hashing function to use to shard repositories across gitserver instances",
+      "type": "string",
+      "enum": ["md5", "rendezvous"],
+      "default": "md5"
+    },
     "auth.passwordPolicy": {
       "type": "object",
       "additionalProperties": false,
@@ -435,7 +441,7 @@
           }
         },
         "enableGithubInternalRepoVisibility": {
-          "description": "Enable support for visilibity of internal Github repositories",
+          "description": "Enable support for visibility of internal Github repositories",
           "type": "boolean",
           "default": false
         },

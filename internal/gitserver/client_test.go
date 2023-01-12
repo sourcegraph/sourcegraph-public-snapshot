@@ -20,8 +20,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
@@ -592,41 +590,41 @@ func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
 	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
 
 	tests := []struct {
-		name     string
-		repoName api.RepoName
-		cursor   string
-		wantAddr string
+		name            string
+		repoName        api.RepoName
+		hashingFunction string
+		wantAddr        string
 	}{
 		{
-			name:     "Rendezvous hashing is not used before migration",
-			repoName: api.RepoName("repoA"),
-			cursor:   "",
-			wantAddr: "gitserver1",
+			name:            "md5 hashing",
+			repoName:        api.RepoName("repoA"),
+			wantAddr:        "gitserver1",
+			hashingFunction: "md5",
 		},
 		{
-			name:     "Rendezvous hashing is not used for not yet migrated repos",
-			repoName: api.RepoName("repoA"),
-			cursor:   "repo",
-			wantAddr: "gitserver1",
+			name:            "rendezvous hashing",
+			repoName:        api.RepoName("repoA"),
+			wantAddr:        "gitserver2",
+			hashingFunction: "rendezvous",
 		},
 		{
-			name:     "Rendezvous hashing is used for already migrated repos",
-			repoName: api.RepoName("repoA"),
-			cursor:   "repoZ",
-			wantAddr: "gitserver2",
+			name:            "Empty config, default to md5",
+			repoName:        api.RepoName("repoA"),
+			wantAddr:        "gitserver1",
+			hashingFunction: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			migration.MigrationMocks.GetCursor = func(ctx context.Context, db dbutil.DB) (string, error) {
-				return tc.cursor, nil
-			}
-			defer migration.ResetMigrationMocks()
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitserverHashingFunction: tc.hashingFunction}})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
 
 			addr, err := client.AddrForRepo(ctx, tc.repoName)
 			if err != nil {
-				t.Fatal("Error during getting gitserver address")
+				t.Fatal("Error getting gitserver address")
 			}
 			require.Equal(t, tc.wantAddr, addr)
 		})
