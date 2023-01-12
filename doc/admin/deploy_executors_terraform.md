@@ -82,6 +82,8 @@ Access to get and create in the following resources.
 - IAM (Identity & Access Management)
 - VPC (Virtual Private Cloud)
 
+An example IAM policy for minimum permissions is available in the [Terraform repo](https://github.com/sourcegraph/terraform-aws-executors).
+
 ### Google
 
 Ensure the [IAM API](https://console.cloud.google.com/apis/api/iam.googleapis.com/overview) is enabled.
