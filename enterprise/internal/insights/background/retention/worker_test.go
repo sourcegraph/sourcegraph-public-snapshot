@@ -60,7 +60,7 @@ SELECT recording_time,
 	}
 
 	sampleSize := 8
-	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1)
+	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func Test_archiveOldRecordingTimes(t *testing.T) {
 	}
 
 	sampleSize := 4
-	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1)
+	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func Test_archiveOldRecordingTimes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, store.SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ DROP TABLE IF EXISTS series_points
 		t.Fatal("expected error got nil")
 	}
 
-	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, store.SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
