@@ -136,6 +136,19 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	return tx.getLatest(ctx)
 }
 
+const listSiteConfigsFmtStr = `
+SELECT
+	id,
+	author_user_id,
+	contents,
+	created_at,
+	updated_at
+FROM critical_and_site_config
+WHERE type = 'site'
+%s
+%s
+`
+
 var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
 
 func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
@@ -152,19 +165,6 @@ func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
 	}
 	return &c, nil
 }
-
-const listSiteConfigsFmtStr = `
-SELECT
-	id,
-	author_user_id,
-	contents,
-	created_at,
-	updated_at
-FROM critical_and_site_config
-WHERE type = 'site'
-%s
-%s
-`
 
 func (s *confStore) ListSiteConfigs(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
 	// Ascending order by default.
