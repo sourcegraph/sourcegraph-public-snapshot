@@ -146,7 +146,6 @@ func (s *confStore) ListSiteConfig(ctx context.Context, opt SiteConfigListOption
 		SELECT
 			 id,
 			 author_user_id,
-			 type,
 			 contents,
 			 created_at,
 			 updated_at
@@ -170,7 +169,6 @@ func (s *confStore) ListSiteConfig(ctx context.Context, opt SiteConfigListOption
 		err := rows.Scan(
 			&c.ID,
 			&dbutil.NullInt32{N: &c.AuthorUserID},
-			&c.Type,
 			&c.Contents,
 			&c.CreatedAt,
 			&c.UpdatedAt,
