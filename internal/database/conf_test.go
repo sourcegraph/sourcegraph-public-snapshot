@@ -238,21 +238,25 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
 	const config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
 
-	if _, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false); err != nil {
+	siteConfig, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	// The first call to SiteCreatedIfUpToDate will always create a default entry if their are no
 	// rows in the table yet and then eventually create another entry.
-	lastID := int32(2)
+	//
+	// lastID should be 2 here.
+	lastID := siteConfig.ID
 
 	// Create two more entries.
 	for lastID < 4 {
-		if _, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false); err != nil {
+		siteConfig, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		lastID += 1
+		lastID = siteConfig.ID
 	}
 
 	// By this point we have 4 entries instead of 3.
