@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -100,7 +99,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	if conf.CanSendEmail() && featureflag.GetEvaluatedFlagSet(ctx)[""] {
+	if conf.CanSendEmail() {
 		// HandleSetPasswordEmail will send a special password reset email that also
 		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
