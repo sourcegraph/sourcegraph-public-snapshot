@@ -2393,7 +2393,11 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	enterpriseDB := edb.NewEnterpriseDB(db)
-	enterpriseDB.FreeLicense().Init(context.Background())
+	_, err := enterpriseDB.FreeLicense().Init(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	userID := bt.CreateTestUser(t, db, true).ID
 
 	var response struct{ MaxUnlicensedChangesets int32 }

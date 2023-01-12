@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"database/sql"
+	"strings"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/keegancsmith/sqlf"
@@ -100,18 +102,25 @@ func (s *freeLicenseStore) getDefaultFreeLicense(ctx context.Context) (FreeLicen
 	if !ok || err != nil {
 		return free1License, free1LicenseInfo
 	}
-	// If it is not a fresh instance, we try to parse the first version
-	firstVersionSemver, err := semver.NewVersion(firstVersion)
-	if err != nil {
-		// If semver cannot be parsed (i.e. it's not a release build)
-		// we use the latest default license
+	// If it is not a fresh instance, we try to parse the first version, first
+	// as a semantic version check
+	if firstVersionSemver, err := semver.NewVersion(firstVersion); err == nil {
+		if firstVersionSemver.LessThan(semver.MustParse("4.4.0")) {
+			return free0License, free0LicenseInfo
+		}
+
 		return free1License, free1LicenseInfo
 	}
 
-	// If the first version is before 4.4, we use the old default license
-	if firstVersionSemver.LessThan(semver.MustParse("4.4.0")) {
-		return free0License, free0LicenseInfo
+	// If the semver check failed, we try to parse the date from the firstVersion,
+	// which could be in the format 98222_2021-06-04_77d9d32
+	versionParts := strings.Split(firstVersion, "_")
+	if firstVersionTime, err := time.Parse("2006-01-24", versionParts[1]); err == nil {
+		if firstVersionTime.Before(time.Date(2023, 2, 23, 0, 0, 0, 0, time.UTC)) {
+			return free0License, free0LicenseInfo
+		}
 	}
 
+	// If both attempts to get a version failed, return the latest free license
 	return free1License, free1LicenseInfo
 }

@@ -105,7 +105,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 	keyText := conf.Get().LicenseKey
 	if keyText == "" {
 		if FreeLicenseKey == "" {
-			return nil, "", errors.New("no product license key configured")
+			return nil, "", errors.New("no product license key configured and free plan uninitialized")
 		}
 		// If no license key, default to free tier
 		keyText = FreeLicenseKey
