@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func init() {
+func LoadConfig() {
 	ConfigInst.Load()
 }
 
