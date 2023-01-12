@@ -221,11 +221,6 @@ func convertRange(
 		for _, moniker := range monikers {
 			addOccurrence(moniker, role)
 		}
-
-		// Add definition of each implements relationship
-		for _, moniker := range implementsMonikers {
-			addOccurrence(moniker, role)
-		}
 	} else {
 		role := scip.SymbolRole_UnspecifiedSymbolRole
 
