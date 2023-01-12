@@ -92,7 +92,7 @@ func makeResetter(
 		observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 			Name:     "outbound_webhook_job_resetter",
 			Interval: 5 * time.Minute,
-			Metrics:  *dbworker.NewResetterMetrics(observationCtx, "outbound_webhook_job_resetter"),
+			Metrics:  dbworker.NewResetterMetrics(observationCtx, "outbound_webhook_job_resetter"),
 		},
 	)
 }
