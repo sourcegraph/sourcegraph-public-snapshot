@@ -17,9 +17,9 @@ export const ensureWebpackStatsAreReady = (): void => {
     // eslint-disable-next-line no-sync
     if (!fs.existsSync(webpackStatsPath)) {
         signale.warn('Webpack stats not found!')
-        signale.await('Building Webpack stats with `yarn build:webpack-stats`')
+        signale.await('Building Webpack stats with `pnpm build:webpack-stats`')
 
-        spawnSync('yarn', ['build:webpack-stats'], {
+        spawnSync('pnpm', ['build:webpack-stats'], {
             stdio: 'inherit',
             cwd: storybookWorkspacePath,
         })
@@ -28,7 +28,7 @@ export const ensureWebpackStatsAreReady = (): void => {
     signale.success('Webpack stats are ready!')
 }
 
-// Read Webpack stats JSON file. If it's not available use `yarn build:webpack-stats` command to create it.
+// Read Webpack stats JSON file. If it's not available use `pnpm build:webpack-stats` command to create it.
 export function getWebpackStats(): StatsCompilation {
     ensureWebpackStatsAreReady()
 

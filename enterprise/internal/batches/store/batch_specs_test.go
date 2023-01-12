@@ -422,14 +422,24 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			})
 		}
 
+		t.Run("NoID", func(t *testing.T) {
+			opts := GetBatchSpecOpts{}
+
+			spec, err := s.GetBatchSpec(ctx, opts)
+			assert.Nil(t, spec)
+
+			assert.Error(t, err)
+			assert.Equal(t, "missing ID or RandID", err.Error())
+		})
+
 		t.Run("NoResults", func(t *testing.T) {
 			opts := GetBatchSpecOpts{ID: 0xdeadbeef}
 
-			_, have := s.GetBatchSpec(ctx, opts)
-			want := ErrNoResults
+			spec, err := s.GetBatchSpec(ctx, opts)
+			assert.Nil(t, spec)
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if err != ErrNoResults {
+				t.Fatalf("have err %v, want %v", err, ErrNoResults)
 			}
 		})
 

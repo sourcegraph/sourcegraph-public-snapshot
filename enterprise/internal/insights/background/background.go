@@ -55,10 +55,18 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
-		// Register the background goroutine which discovers and enqueues insights work.
+		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-
-		// TODO(slimsag): future: register another worker here for webhook querying.
+		// Enqueues series to be picked up by the retention worker.
+		newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore),
+		// Emits backend pings based on insights data.
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		// Cleans up soft-deleted insight series.
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		// Checks for Code Insights license and freezes insights if necessary.
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+		// Stamps backfill completion time.
+		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
@@ -103,14 +111,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		routines = append(routines, monitor.Routines()...)
 	}
 
-	routines = append(
-		routines,
-		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
-		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
-		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
-		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
-	)
-
 	return routines
 }
 
@@ -141,14 +141,16 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	}
 }
 
-func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
+func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	workerMetrics, resetterMetrics := newWorkerMetrics(observationCtx, "insights_data_retention")
+
+	insightsStore := store.New(insightsDB, store.NewInsightPermissionStore(mainAppDB))
 
 	workerBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 	dbWorkerStore := retention.CreateDBWorkerStore(observationCtx, workerBaseStore)
 
 	return []goroutine.BackgroundRoutine{
-		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, workerMetrics),
+		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, insightsStore, workerMetrics),
 		retention.NewResetter(ctx, observationCtx.Logger.Scoped("Resetter", ""), dbWorkerStore, resetterMetrics),
 		retention.NewCleaner(ctx, observationCtx, workerBaseStore),
 	}
@@ -167,5 +169,5 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 		return true
 	}))
 	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
-	return workerMetrics, *resetterMetrics
+	return workerMetrics, resetterMetrics
 }

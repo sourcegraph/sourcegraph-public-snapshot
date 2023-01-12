@@ -28,12 +28,17 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for receiving Bitbucket Cloud webhook `push` events. [#45960](https://github.com/sourcegraph/sourcegraph/pull/45960)
 - Added a way to test code host connection from the `Manage code hosts` page. [#45972](https://github.com/sourcegraph/sourcegraph/pull/45972)
 - Updates to the site configuration from the site admin panel will now also record the user id of the author in the database in the `critical_and_site_config.author_user_id` column. [#46150](https://github.com/sourcegraph/sourcegraph/pull/46150)
+- When setting and resetting passwords, if the user's primary email address is not yet verified, using the password reset link sent via email will now also verify the email address. [#46307](https://github.com/sourcegraph/sourcegraph/pull/46307)
+- Added new code host details and updated edit code host pages in site admin area. [#46327](https://github.com/sourcegraph/sourcegraph/pull/46327)
+- The number of Code Insights data points that can be viewed is now limited by the site configuration setting `insights.maximumSampleSize`, set to 30 by default. Older points beyond that number will be periodically archived. [#46206](https://github.com/sourcegraph/sourcegraph/pull/46206)
 
 ### Changed
 
 - Code Insights no longer uses a custom index of commits to compress historical backfill and instead queries the repository log directly. This allows the compression algorithm to span any arbitrary time frame, and should improve the reliability of the compression in general. [#45644](https://github.com/sourcegraph/sourcegraph/pull/45644)
 - GitHub code host configuration: The error message for non-existent organizations has been clarified to indicate that the organization is one that the user manually specified in their code host configuration. [#45918](https://github.com/sourcegraph/sourcegraph/pull/45918)
 - Git blame view got a user-interface overhaul and now shows data in a more structured way with additional visual hints. [#44397](https://github.com/sourcegraph/sourcegraph/issues/44397)
+- User emails marked as unverified will no longer receive code monitors and account update emails - unverified emails can be verified from the user settings page to continue receiving these emails. [#46184](https://github.com/sourcegraph/sourcegraph/pull/46184)
+- Zoekt by default eagerly unmarshals the symbol index into memory. Previously we would unmarshal on every request for the purposes of symbol searches or ranking. This lead to pressure on the Go garbage collector. On sourcegraph.com we have noticed time spent in the garbage collector halved. In the unlikely event this leads to more OOMs in zoekt-webserver, you can disable by setting the environment variable `ZOEKT_ENABLE_LAZY_DOC_SECTIONS=t`. [zoekt#503](https://github.com/sourcegraph/zoekt/pull/503)
 
 ### Fixed
 
@@ -43,6 +48,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: fixed an issue where filtering by a search context that included multiple repositories would exclude data. [#45574](https://github.com/sourcegraph/sourcegraph/pull/45574)
 - Ignore null JSON objects returned from GitHub API when listing public repositories. [#45969](https://github.com/sourcegraph/sourcegraph/pull/45969)
 - Fixed issue where emails that have never been verified before would be unable to receive resent verification emails. [#46185](https://github.com/sourcegraph/sourcegraph/pull/46185)
+- Batch Changes: Fixed resolution of the `currentSpec` field for draft batch changes on the GraphQL API. [#46237](https://github.com/sourcegraph/sourcegraph/pull/46237)
+- Resolved issue preventing LSIF uploads larger than 2GiB (gzipped) from uploading successfully. [#46209](https://github.com/sourcegraph/sourcegraph/pull/46209)
 
 ### Removed
 
@@ -50,6 +57,8 @@ All notable changes to Sourcegraph are documented in this file.
 - User and organization auto-defined search contexts have been permanently removed along with the `autoDefinedSearchContexts` GraphQL query. The only auto-defined context now is the `global` context. [#46083](https://github.com/sourcegraph/sourcegraph/pull/46083)
 - The settings `experimentalFeatures.showSearchContext`, `experimentalFeatures.showSearchNotebook`, and `experimentalFeatures.codeMonitoring` have been removed and these features are now permanently enabled when available. [#46086](https://github.com/sourcegraph/sourcegraph/pull/46086)
 - The legacy panels on the homepage (recent searches, etc) which were turned off by default but could still be re-enabled by setting `experimentalFeatures.showEnterpriseHomePanels` to true, are permanently removed now. [#45705](https://github.com/sourcegraph/sourcegraph/pull/45705)
+- The `site { monitoringStatistics { alerts } }` GraphQL query has been deprecated and will no longer return any data. The query will be removed entirely in a future release. [#46299](https://github.com/sourcegraph/sourcegraph/pull/46299)
+- The Monaco version of the search query input and the corresponding feature flag (`experimentalFeatures.editor`) have been permanently removed. [#46249](https://github.com/sourcegraph/sourcegraph/pull/46249)
 
 ## 4.3.1
 

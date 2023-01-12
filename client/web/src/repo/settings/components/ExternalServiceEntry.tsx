@@ -63,7 +63,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 {data && !redirectAfterExclusion ? (
                     <Alert variant="success">
                         Code host configuration updated. Please see the updated code host configuration{' '}
-                        <Link to={`/site-admin/external-services/${service.id}/edit`}>here</Link>
+                        <Link to={`/site-admin/external-services/${service.id}`}>here</Link>
                     </Alert>
                 ) : (
                     <ExternalServiceCard
@@ -79,13 +79,13 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 {error && <ErrorAlert error={`Failed to exclude repository: ${renderError(error)}`} />}
                 {data && redirectAfterExclusion && (
                     <RedirectionAlert
-                        to={`/site-admin/external-services/${service.id}/edit`}
+                        to={`/site-admin/external-services/${service.id}`}
                         messagePrefix="Code host configuration updated."
                     />
                 )}
             </div>
             {service.supportsRepoExclusion && !(data && !error) && (
-                <div className={classNames(styles.button, 'mt-3')}>
+                <div className={classNames(styles.gridButton, 'mt-3')}>
                     <Tooltip
                         content={
                             excludingDisabled
@@ -95,6 +95,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                     >
                         <Button
                             variant="primary"
+                            className={styles.button}
                             onClick={event => {
                                 event.preventDefault()
                                 updateExclusionLoading(true)
@@ -114,7 +115,8 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                             }}
                             disabled={excludingDisabled || (excludingLoading && !isExcluding)}
                         >
-                            {isExcluding ? <LoadingSpinner className="mr-5 ml-5" /> : 'Exclude repository'}
+                            <span className={isExcluding ? styles.invisibleText : ''}>Exclude repository</span>
+                            {isExcluding && <LoadingSpinner className={styles.loader} />}
                         </Button>
                     </Tooltip>
                 </div>

@@ -3,7 +3,7 @@
 set -ex
 
 # Setup
-yarn build
+pnpm build
 rm -rf build/web-ext
 mkdir -p build/web-ext
 
@@ -16,7 +16,7 @@ mkdir -p build/web-ext
 set +e
 tmp="$(mktemp)"
 ok="Your add-on has been submitted for review."
-yarn dlx web-ext sign --source-dir ./build/firefox --artifacts-dir ./build/web-ext --api-key "$FIREFOX_AMO_ISSUER" --api-secret "$FIREFOX_AMO_SECRET" |
+pnpm dlx web-ext sign --source-dir ./build/firefox --artifacts-dir ./build/web-ext --api-key "$FIREFOX_AMO_ISSUER" --api-secret "$FIREFOX_AMO_SECRET" |
   sed -n "s/\($ok\).*$/\0/;1,/$ok/p" |
   tee "$tmp"
 error=${PIPESTATUS[0]}

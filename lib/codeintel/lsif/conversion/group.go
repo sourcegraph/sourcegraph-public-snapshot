@@ -34,6 +34,7 @@ func groupBundleData(ctx context.Context, state *State) *precise.GroupedBundleDa
 	packageReferences := gatherPackageReferences(state, packages)
 
 	return &precise.GroupedBundleDataChans{
+		ProjectRoot:       state.ProjectRoot,
 		Meta:              meta,
 		Documents:         documents,
 		ResultChunks:      resultChunks,

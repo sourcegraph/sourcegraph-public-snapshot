@@ -21,6 +21,7 @@ import {
     Text,
     Tooltip,
     ErrorAlert,
+    LinkOrSpan,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
@@ -84,6 +85,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
                     <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
+        {node.mirrorInfo.isCorrupted && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="danger">
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}
@@ -381,20 +389,22 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
-                <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                    className="mb-0"
-                    listClassName="list-group list-group-flush mb-0"
-                    summaryClassName="mt-2"
-                    withCenteredSummary={true}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={queryRepositories}
-                    nodeComponent={RepositoryNode}
-                    inputClassName="ml-2 flex-1"
-                    filters={filters}
-                    history={history}
-                    location={location}
-                />
+                {extSvcs && (
+                    <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
+                        className="mb-0"
+                        listClassName="list-group list-group-flush mb-0"
+                        summaryClassName="mt-2"
+                        withCenteredSummary={true}
+                        noun="repository"
+                        pluralNoun="repositories"
+                        queryConnection={queryRepositories}
+                        nodeComponent={RepositoryNode}
+                        inputClassName="ml-2 flex-1"
+                        filters={filters}
+                        history={history}
+                        location={location}
+                    />
+                )}
             </Container>
         </div>
     )

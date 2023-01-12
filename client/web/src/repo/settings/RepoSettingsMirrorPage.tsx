@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiLock } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
@@ -20,6 +20,9 @@ import {
     Text,
     Code,
     ErrorAlert,
+    CollapseHeader,
+    Collapse,
+    CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -207,6 +210,74 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
     )
 }
 
+// Add interface for props then create component
+interface CorruptionLogProps {
+    repo: SettingsAreaRepositoryFields
+    history: H.History
+}
+
+const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
+    const health = props.repo.mirrorInfo.isCorrupted ? (
+        <>
+            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                The repository is corrupt, check the log entries below for more info and consider recloning.
+            </Alert>
+            <br />
+        </>
+    ) : null
+    const logEvents: JSX.Element[] = props.repo.mirrorInfo.corruptionLogs.map(log => (
+        <li key={`${props.repo.name}#${log.timestamp}`} className="list-group-item px-2 py-1">
+            <div className="d-flex flex-column align-items-center justify-content-between">
+                <Text className={classNames('overflow-auto', 'text-monospace', styles.log)}>{log.reason}</Text>
+                <small className="text-muted mb-0">
+                    <Timestamp date={log.timestamp} />
+                </small>
+            </div>
+        </li>
+    ))
+
+    const [isOpened, setIsOpened] = useState(false)
+    const hasLogs = logEvents.length !== 0
+
+    return (
+        <BaseActionContainer
+            title="Repository corruption"
+            description={<span>Recent corruption events that have been detected on this repository.</span>}
+            details={
+                <div className="flex-1">
+                    {health}
+                    <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
+                        <CollapseHeader
+                            as={Button}
+                            outline={true}
+                            focusLocked={true}
+                            variant="secondary"
+                            className="w-100 my-2"
+                            disabled={!hasLogs}
+                        >
+                            {hasLogs ? (
+                                <>
+                                    Show corruption history
+                                    <Icon
+                                        aria-hidden={true}
+                                        svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
+                                        className="mr-1"
+                                    />
+                                </>
+                            ) : (
+                                'No corruption history'
+                            )}
+                        </CollapseHeader>
+                        <CollapsePanel>
+                            <ul className="list-group">{logEvents}</ul>
+                        </CollapsePanel>
+                    </Collapse>
+                </div>
+            }
+        />
+    )
+}
+
 interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
     history: H.History
@@ -345,6 +416,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                         </ul>
                     </Alert>
                 )}
+                <CorruptionLogsContainer repo={repo} history={props.history} />
             </Container>
         </>
     )

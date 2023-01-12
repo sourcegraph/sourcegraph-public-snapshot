@@ -2041,8 +2041,6 @@ type SettingsExperimentalFeatures struct {
 	CodeNavigation *string `json:"codeNavigation,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
-	// Editor description: Specifies which (code) editor to use for query and text input
-	Editor *string `json:"editor,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
@@ -2149,7 +2147,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "codeNavigation")
 	delete(m, "copyQueryButton")
-	delete(m, "editor")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
@@ -2323,7 +2320,7 @@ type SiteConfiguration struct {
 	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
 	// ExecutorsBatcheshelperImageTag description: The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
 	ExecutorsBatcheshelperImageTag string `json:"executors.batcheshelperImageTag,omitempty"`
-	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
+	// ExecutorsFrontendURL description: The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
@@ -2366,6 +2363,8 @@ type SiteConfiguration struct {
 	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
+	// InsightsMaximumSampleSize description: The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.
+	InsightsMaximumSampleSize int `json:"insights.maximumSampleSize,omitempty"`
 	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
@@ -2535,6 +2534,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "insights.aggregations.proactiveResultLimit")
 	delete(m, "insights.backfill.interruptAfter")
 	delete(m, "insights.historical.worker.rateLimit")
+	delete(m, "insights.maximumSampleSize")
 	delete(m, "insights.query.worker.concurrency")
 	delete(m, "insights.query.worker.rateLimit")
 	delete(m, "insights.query.worker.rateLimitBurst")
