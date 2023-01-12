@@ -21,6 +21,7 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { CloudCtaHomepage } from './CloudCtaHomepage'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
@@ -109,14 +110,17 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
-                    <QueryExamplesHomepage
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        telemetryService={props.telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        authenticatedUser={props.authenticatedUser}
-                    />
+                    <div>
+                        <CloudCtaHomepage authenticatedUser={props.authenticatedUser} />
+                        <QueryExamplesHomepage
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            authenticatedUser={props.authenticatedUser}
+                        />
+                    </div>
                 )}
             </div>
 
