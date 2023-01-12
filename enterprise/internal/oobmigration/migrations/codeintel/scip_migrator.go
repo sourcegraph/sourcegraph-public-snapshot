@@ -361,28 +361,26 @@ func processDocument(
 		return nil, err
 	}
 
-	definitionMatcher := func(
-		targetPath string,
-		targetRangeID precise.ID,
-		definitionResultID precise.ID,
-	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, numResultChunks)]
+	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+		if resultID == "" {
+			return nil
+		}
+
+		resultChunk, ok := resultChunks[precise.HashKey(resultID, numResultChunks)]
 		if !ok {
-			return false
+			return nil
 		}
 
-		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[ID(definitionResultID)] {
-			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == ID(targetRangeID) {
-				return true
-			}
+		for _, pair := range resultChunk.DocumentIDRangeIDs[ID(resultID)] {
+			rangeIDs = append(rangeIDs, precise.ID(pair.RangeID))
 		}
 
-		return false
+		return rangeIDs
 	}
 
 	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
-		definitionMatcher,
+		targetRangeFetcher,
 		indexerName,
 		path,
 		toPreciseTypes(document),
