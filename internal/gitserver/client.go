@@ -281,10 +281,6 @@ type Client interface {
 	// RemoveFrom removes the repository clone from the given gitserver.
 	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
 
-	// RendezvousAddrForRepo returns the gitserver address to use for the given
-	// repo name using the Rendezvous hashing scheme.
-	RendezvousAddrForRepo(api.RepoName) string
-
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -469,17 +465,6 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
-}
-
-func (c *clientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), c.pinned()); repoPinned {
-		return addr
-	}
-	return RendezvousAddrForRepo(repo, addrs)
 }
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{

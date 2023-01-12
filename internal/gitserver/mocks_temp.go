@@ -152,9 +152,6 @@ type MockClient struct {
 	// RemoveFromFunc is an instance of a mock function object controlling
 	// the behavior of the method RemoveFrom.
 	RemoveFromFunc *ClientRemoveFromFunc
-	// RendezvousAddrForRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method RendezvousAddrForRepo.
-	RendezvousAddrForRepoFunc *ClientRendezvousAddrForRepoFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *ClientRepoCloneProgressFunc
@@ -401,11 +398,6 @@ func NewMockClient() *MockClient {
 		},
 		RemoveFromFunc: &ClientRemoveFromFunc{
 			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
-				return
-			},
-		},
-		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
-			defaultHook: func(api.RepoName) (r0 string) {
 				return
 			},
 		},
@@ -681,11 +673,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RemoveFrom")
 			},
 		},
-		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
-			defaultHook: func(api.RepoName) string {
-				panic("unexpected invocation of MockClient.RendezvousAddrForRepo")
-			},
-		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 				panic("unexpected invocation of MockClient.RepoCloneProgress")
@@ -873,9 +860,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RemoveFromFunc: &ClientRemoveFromFunc{
 			defaultHook: i.RemoveFrom,
-		},
-		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
-			defaultHook: i.RendezvousAddrForRepo,
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
@@ -5669,109 +5653,6 @@ func (c ClientRemoveFromFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRemoveFromFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// ClientRendezvousAddrForRepoFunc describes the behavior when the
-// RendezvousAddrForRepo method of the parent MockClient instance is
-// invoked.
-type ClientRendezvousAddrForRepoFunc struct {
-	defaultHook func(api.RepoName) string
-	hooks       []func(api.RepoName) string
-	history     []ClientRendezvousAddrForRepoFuncCall
-	mutex       sync.Mutex
-}
-
-// RendezvousAddrForRepo delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockClient) RendezvousAddrForRepo(v0 api.RepoName) string {
-	r0 := m.RendezvousAddrForRepoFunc.nextHook()(v0)
-	m.RendezvousAddrForRepoFunc.appendCall(ClientRendezvousAddrForRepoFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// RendezvousAddrForRepo method of the parent MockClient instance is invoked
-// and the hook queue is empty.
-func (f *ClientRendezvousAddrForRepoFunc) SetDefaultHook(hook func(api.RepoName) string) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RendezvousAddrForRepo method of the parent MockClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ClientRendezvousAddrForRepoFunc) PushHook(hook func(api.RepoName) string) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientRendezvousAddrForRepoFunc) SetDefaultReturn(r0 string) {
-	f.SetDefaultHook(func(api.RepoName) string {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRendezvousAddrForRepoFunc) PushReturn(r0 string) {
-	f.PushHook(func(api.RepoName) string {
-		return r0
-	})
-}
-
-func (f *ClientRendezvousAddrForRepoFunc) nextHook() func(api.RepoName) string {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientRendezvousAddrForRepoFunc) appendCall(r0 ClientRendezvousAddrForRepoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientRendezvousAddrForRepoFuncCall objects
-// describing the invocations of this function.
-func (f *ClientRendezvousAddrForRepoFunc) History() []ClientRendezvousAddrForRepoFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientRendezvousAddrForRepoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientRendezvousAddrForRepoFuncCall is an object that describes an
-// invocation of method RendezvousAddrForRepo on an instance of MockClient.
-type ClientRendezvousAddrForRepoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientRendezvousAddrForRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientRendezvousAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
