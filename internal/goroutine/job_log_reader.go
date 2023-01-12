@@ -2,7 +2,6 @@ package goroutine
 
 import (
 	"encoding/json"
-	"math"
 	"sort"
 	"time"
 
@@ -285,15 +284,10 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 			if err != nil {
 				return types.BackgroundRoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
 			}
-
 			if stats.Since == nil {
 				stats.Since = &date
 			}
-			stats.MinDurationMs = int32(math.Min(float64(stats.MinDurationMs), float64(statsForDay.MinDurationMs)))
-			stats.MaxDurationMs = int32(math.Max(float64(stats.MaxDurationMs), float64(statsForDay.MaxDurationMs)))
-			stats.AvgDurationMs = int32(math.Round((float64(stats.AvgDurationMs)*float64(stats.Count) + float64(statsForDay.AvgDurationMs)) / float64(stats.Count+statsForDay.Count)))
-			stats.Count += statsForDay.Count // Do this after calculating the average
-			stats.ErrorCount += statsForDay.ErrorCount
+			stats = mergeStats(stats, statsForDay)
 		}
 	}
 

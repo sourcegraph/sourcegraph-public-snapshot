@@ -30,9 +30,9 @@ type JobLogger struct {
 	hostName string
 }
 
-// seenTimeout signifies the maximum time to have no records of a host, job, or routine.
-// After this time, we consider them nonexistent, and they'll be removed
-const seenTimeout = 5 * 24 * time.Hour // 5 days
+// seenTimeout is the maximum time we allow no activity for each host, job, and routine.
+// After this time, we consider them non-existent.
+const seenTimeout = 6 * 24 * time.Hour // 6 days
 
 const keyPrefix = "background-job-logger"
 
@@ -57,32 +57,26 @@ func (m *JobLogger) Register(r Loggable) {
 }
 
 // RegistrationDone should be called after all routines have been registered.
-// It will save the known job names, host names, and routine names in Redis, along with updating their “last seen” date/time.
+// It saves the known job names, host names, and routine names in Redis, along with updating their “last seen” date/time.
 func (m *JobLogger) RegistrationDone() {
-	// Save/update all known job names
-	err := saveKnownJobNames(m.rcache, m.routines)
-	if err != nil {
-		m.logger.Error("failed to save known job names", log.Error(err))
+	// Save/update known job names
+	for _, jobName := range m.collectAllJobNames() {
+		m.saveKnownJobName(jobName)
 	}
 
-	// Save/update all known host names
-	err = m.rcache.SetHashItem("knownHostNames", m.hostName, time.Now().Format(time.RFC3339))
-	if err != nil {
-		m.logger.Error("failed to save known host names", log.Error(err))
-	}
+	// Save known host name
+	m.saveKnownHostName()
 
 	// Save/update all known routines
-	err = saveKnownRoutines(m.rcache, m.routines)
-	if err != nil {
-		m.logger.Error("failed to save known routines", log.Error(err))
+	for _, r := range m.routines {
+		m.saveKnownRoutine(r)
 	}
 }
 
-// saveKnownJobNames saves all known job names in Redis, along with updating their “last seen” date/time.
-func saveKnownJobNames(c *rcache.Cache, routines []Loggable) error {
-	// Collect all job names
+// collectAllJobNames collects all known job names in Redis.
+func (m *JobLogger) collectAllJobNames() []string {
 	var allJobNames []string
-	for _, routine := range routines {
+	for _, routine := range m.routines {
 		jobName := routine.JobName()
 		if slices.Contains(allJobNames, jobName) {
 			continue
@@ -90,42 +84,48 @@ func saveKnownJobNames(c *rcache.Cache, routines []Loggable) error {
 		allJobNames = append(allJobNames, jobName)
 	}
 
-	// Save/update job names
-	for _, jobName := range allJobNames {
-		err := c.SetHashItem("knownJobNames", jobName, time.Now().Format(time.RFC3339))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return allJobNames
 }
 
-func saveKnownRoutines(c *rcache.Cache, routines []Loggable) error {
-	for _, r := range routines {
-		routine := backgroundRoutine{
-			Name:        r.Name(),
-			Type:        r.Type(),
-			JobName:     r.JobName(),
-			Description: r.Description(),
-			Interval:    r.Interval(),
-			LastSeen:    time.Now().Format(time.RFC3339),
-		}
+// saveKnownJobName updates the “lastSeen” date of a known job in Redis. Also adds it to the list of known jobs if it doesn’t exist.
+func (m *JobLogger) saveKnownJobName(jobName string) {
+	err := m.rcache.SetHashItem("knownJobNames", jobName, time.Now().Format(time.RFC3339))
+	if err != nil {
+		m.logger.Error("failed to save/update known job name", log.Error(err), log.String("jobName", jobName))
+	}
+}
 
-		// Serialize Routine
-		routineJson, err := json.Marshal(routine)
-		if err != nil {
-			return err
-		}
+// saveKnownHostName updates the “lastSeen” date of a known host in Redis. Also adds it to the list of known hosts if it doesn’t exist.
+func (m *JobLogger) saveKnownHostName() {
+	err := m.rcache.SetHashItem("knownHostNames", m.hostName, time.Now().Format(time.RFC3339))
+	if err != nil {
+		m.logger.Error("failed to save/update known host name", log.Error(err), log.String("hostName", m.hostName))
+	}
+}
 
-		// Save/update Routine
-		err = c.SetHashItem("knownRoutines", routine.Name, string(routineJson))
-		if err != nil {
-			return err
-		}
+// saveKnownRouting updates the routine in Redis. Also adds it to the list of known routines if it doesn’t exist.
+func (m *JobLogger) saveKnownRoutine(loggable Loggable) {
+	routine := backgroundRoutine{
+		Name:        loggable.Name(),
+		Type:        loggable.Type(),
+		JobName:     loggable.JobName(),
+		Description: loggable.Description(),
+		Interval:    loggable.Interval(),
+		LastSeen:    time.Now().Format(time.RFC3339),
 	}
 
-	return nil
+	// Serialize Routine
+	routineJson, err := json.Marshal(routine)
+	if err != nil {
+		m.logger.Error("failed to serialize routine", log.Error(err), log.String("routineName", routine.Name))
+		return
+	}
+
+	// Save/update Routine
+	err = m.rcache.SetHashItem("knownRoutines", routine.Name, string(routineJson))
+	if err != nil {
+		m.logger.Error("failed to save/update known routine", log.Error(err), log.String("routineName", routine.Name))
+	}
 }
 
 func (m *JobLogger) LogStart(r Loggable) {
@@ -189,41 +189,23 @@ func saveRun(c *rcache.Cache, routineName string, hostName string, durationMs in
 	return nil
 }
 
+// saveRunStats updates the run stats for a routine in Redis.
 func saveRunStats(c *rcache.Cache, routineName string, durationMs int32, errored bool) error {
 	// Prepare data
 	isoDate := time.Now().Format("2006-01-02")
-	errorCount := 0
-	if errored {
-		errorCount = 1
-	}
 
-	// Get stats and update them
+	// Get stats
 	lastStatsRaw, found := c.Get(routineName + ":runStats:" + isoDate)
-	var newStats types.BackgroundRoutineRunStats
+	var lastStats types.BackgroundRoutineRunStats
 	if found {
-		// Read old stats
-		var lastStats types.BackgroundRoutineRunStats
 		err := json.Unmarshal(lastStatsRaw, &lastStats)
 		if err != nil {
 			return errors.Wrap(err, "deserialize last stats")
 		}
-
-		newStats = types.BackgroundRoutineRunStats{
-			Count:         lastStats.Count + 1,
-			ErrorCount:    lastStats.ErrorCount + int32(errorCount),
-			MinDurationMs: int32(math.Min(float64(lastStats.MinDurationMs), float64(durationMs))),
-			AvgDurationMs: int32(math.Max(float64(lastStats.MaxDurationMs), float64(durationMs))),
-			MaxDurationMs: int32(math.Round((float64(lastStats.AvgDurationMs)*float64(lastStats.Count) + float64(durationMs)) / float64(lastStats.Count+1))),
-		}
-	} else {
-		newStats = types.BackgroundRoutineRunStats{
-			Count:         1,
-			ErrorCount:    int32(errorCount),
-			MinDurationMs: durationMs,
-			AvgDurationMs: durationMs,
-			MaxDurationMs: durationMs,
-		}
 	}
+
+	// Update stats
+	newStats := addRunToStats(lastStats, durationMs, errored)
 
 	// Serialize and save updated stats
 	updatedStatsJson, err := json.Marshal(newStats)
@@ -233,4 +215,59 @@ func saveRunStats(c *rcache.Cache, routineName string, durationMs int32, errored
 	c.Set(routineName+":runStats:"+isoDate, updatedStatsJson)
 
 	return nil
+}
+
+// addRunToStats adds a new run to the stats.
+func addRunToStats(stats types.BackgroundRoutineRunStats, durationMs int32, errored bool) types.BackgroundRoutineRunStats {
+	errorCount := int32(0)
+	if errored {
+		errorCount = 1
+	}
+	return mergeStats(stats, types.BackgroundRoutineRunStats{
+		RunCount:      1,
+		ErrorCount:    errorCount,
+		MinDurationMs: durationMs,
+		AvgDurationMs: durationMs,
+		MaxDurationMs: durationMs,
+	})
+}
+
+// mergeStats returns the given stats updated with the given run data.
+func mergeStats(a types.BackgroundRoutineRunStats, b types.BackgroundRoutineRunStats) types.BackgroundRoutineRunStats {
+	// Calculate earlier "since"
+	var since time.Time
+	if a.Since != nil && (b.Since != nil && b.Since.Before(*a.Since)) {
+		since = *b.Since
+	} else if a.Since != nil {
+		since = *a.Since
+	}
+	var sincePtr *time.Time
+	if !since.IsZero() {
+		sincePtr = &since
+	}
+
+	// Calculate durations
+	var minDurationMs int32
+	if a.MinDurationMs == 0 || b.MinDurationMs < a.MinDurationMs {
+		minDurationMs = b.MinDurationMs
+	} else {
+		minDurationMs = a.MinDurationMs
+	}
+	avgDurationMs := int32(math.Round(float64(a.AvgDurationMs*a.RunCount+b.AvgDurationMs*b.RunCount) / float64(a.RunCount+b.RunCount)))
+	var maxDurationMs int32
+	if b.MaxDurationMs > a.MaxDurationMs {
+		maxDurationMs = b.MaxDurationMs
+	} else {
+		maxDurationMs = a.MaxDurationMs
+	}
+
+	// Return merged stats
+	return types.BackgroundRoutineRunStats{
+		Since:         sincePtr,
+		RunCount:      a.RunCount + b.RunCount,
+		ErrorCount:    a.ErrorCount + b.ErrorCount,
+		MinDurationMs: minDurationMs,
+		AvgDurationMs: avgDurationMs,
+		MaxDurationMs: maxDurationMs,
+	}
 }

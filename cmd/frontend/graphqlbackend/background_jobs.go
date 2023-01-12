@@ -230,7 +230,7 @@ func (r *RoutineResolver) Stats() *RoutineStatsResolver {
 
 func (r *RoutineStatsResolver) Since() *gqlutil.DateTime { return gqlutil.DateTimeOrNil(r.stats.Since) }
 
-func (r *RoutineStatsResolver) RunCount() int32 { return r.stats.Count }
+func (r *RoutineStatsResolver) RunCount() int32 { return r.stats.RunCount }
 
 func (r *RoutineStatsResolver) ErrorCount() int32 { return r.stats.ErrorCount }
 

@@ -1827,7 +1827,7 @@ type BackgroundRoutineRun struct {
 // BackgroundRoutineRunStats contains statistics about a background routine.
 type BackgroundRoutineRunStats struct {
 	Since         *time.Time `json:"since"`
-	Count         int32      `json:"count"`
+	RunCount      int32      `json:"runCount"`
 	ErrorCount    int32      `json:"errorCount"`
 	MinDurationMs int32      `json:"minDurationMs"`
 	AvgDurationMs int32      `json:"avgDurationMs"`
