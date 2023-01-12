@@ -14,6 +14,7 @@ import {
     Icon,
     LoadingSpinner,
     PageHeader,
+    Select,
     Text,
     Tooltip,
     useSessionStorage,
@@ -21,9 +22,9 @@ import {
 
 import { PageTitle } from '../components/PageTitle'
 import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
-import { formatDurationLong, formatDurationStructured, StructuredDuration } from '../util/time'
+import { formatDurationLong } from '../util/time'
 
-import { ValueLegendItem, ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backend'
 
 import styles from './SiteAdminBackgroundJobsPage.module.scss'
@@ -48,10 +49,25 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             pollInterval: BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS,
         }
     )
+    const [polling, setPolling] = useState(true)
 
     return (
         <div>
             <PageTitle title="Background jobs - Admin" />
+            <Button
+                variant="secondary"
+                onClick={() => {
+                    if (polling) {
+                        stopPolling()
+                    } else {
+                        startPolling(BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS)
+                    }
+                    setPolling(!polling)
+                }}
+                className="float-right"
+            >
+                {polling ? 'Pause polling' : 'Resume polling'}
+            </Button>
             <PageHeader
                 path={[{ text: 'Background jobs' }]}
                 headingElement="h2"
@@ -80,9 +96,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
-                {!loading && !error && data?.backgroundJobs.nodes && (
-                    <JobList jobs={data.backgroundJobs.nodes} stopPolling={stopPolling} startPolling={startPolling} />
-                )}
+                {!loading && !error && data?.backgroundJobs.nodes && <JobList jobs={data.backgroundJobs.nodes} />}
             </Container>
         </div>
     )
@@ -90,10 +104,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
 
 const JobList: React.FunctionComponent<{
     jobs: BackgroundJob[]
-    stopPolling: () => void
-    startPolling: (pollInterval: number) => void
-}> = ({ jobs, stopPolling, startPolling }) => {
-    const [polling, setPolling] = useState(true)
+}> = ({ jobs }) => {
     const [onlyShowProblematic, setOnlyShowProblematic] = useSessionStorage(
         'site-admin.background-jobs.only-show-problematic-routines',
         false
@@ -114,61 +125,59 @@ const JobList: React.FunctionComponent<{
 
     return (
         <>
-            <div className="text-right mb-4">
-                <Button variant="secondary" onClick={() => setOnlyShowProblematic(!onlyShowProblematic)}>
-                    {onlyShowProblematic ? 'Show all routines' : 'Only show problematic routines'}
-                </Button>
-                <Button
-                    variant="secondary"
-                    onClick={() => {
-                        if (polling) {
-                            stopPolling()
-                        } else {
-                            startPolling(BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS)
-                        }
-                        setPolling(!polling)
-                    }}
-                    className="ml-2"
-                >
-                    {polling ? 'Pause polling' : 'Resume polling'}
-                </Button>
-            </div>
-            <LegendList jobs={jobsToDisplay} hostNameCount={hostNames.length} />
+            <LegendList jobs={jobs} hostNameCount={hostNames.length} />
             {jobsToDisplay ? (
-                <ul className="list-group list-group-flush">
-                    {jobsToDisplay.map(job => {
-                        const jobHostNames = [
-                            ...new Set(
-                                job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()
-                            ),
-                        ].sort()
-                        return (
-                            <li key={job.name} className="list-group-item px-0 py-2">
-                                <div className="d-flex align-items-center justify-content-between mb-2">
-                                    <div className="d-flex flex-row align-items-center mb-0">
-                                        <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
-                                        <Text className="mb-0 ml-2">
-                                            <strong>{job.name}</strong> (starts {job.routines.length}{' '}
-                                            {pluralize('routine', job.routines.length)}
-                                            {hostNames.length > 1
-                                                ? ` on ${jobHostNames.length} ${pluralize(
-                                                      'instance',
-                                                      jobHostNames.length
-                                                  )}`
-                                                : ''}
-                                            )
-                                        </Text>
+                <>
+                    <div className={styles.tableHeader}>
+                        <div>
+                            <Select
+                                aria-label="Filter for problematic routines"
+                                onChange={value => setOnlyShowProblematic(value.target.value !== 'all')}
+                                selectClassName={styles.filterSelect}
+                            >
+                                <option value="all">Show all routines</option>
+                                <option value="problematic">Only show problematic routines</option>
+                            </Select>
+                        </div>
+                        <div className="text-center">Fastest / avg / slowest run</div>
+                    </div>
+                    <ul className="list-group list-group-flush">
+                        {jobsToDisplay.map(job => {
+                            const jobHostNames = [
+                                ...new Set(
+                                    job.routines
+                                        .map(routine => routine.instances.map(instance => instance.hostName))
+                                        .flat()
+                                ),
+                            ].sort()
+                            return (
+                                <li key={job.name} className="list-group-item px-0 py-2">
+                                    <div className="d-flex align-items-center justify-content-between mb-2">
+                                        <div className="d-flex flex-row align-items-center mb-0">
+                                            <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
+                                            <Text className="mb-0 ml-2">
+                                                <strong>{job.name}</strong> (starts {job.routines.length}{' '}
+                                                {pluralize('routine', job.routines.length)}
+                                                {hostNames.length > 1
+                                                    ? ` on ${jobHostNames.length} ${pluralize(
+                                                          'instance',
+                                                          jobHostNames.length
+                                                      )}`
+                                                    : ''}
+                                                )
+                                            </Text>
+                                        </div>
                                     </div>
-                                </div>
-                                {job.routines
-                                    .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
-                                    .map(routine => (
-                                        <RoutineComponent routine={routine} key={routine.name} />
-                                    ))}
-                            </li>
-                        )
-                    })}
-                </ul>
+                                    {job.routines
+                                        .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
+                                        .map(routine => (
+                                            <RoutineComponent routine={routine} key={routine.name} />
+                                        ))}
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </>
             ) : (
                 'No jobs to display.'
             )}
@@ -262,16 +271,6 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
             <Icon aria-hidden={true} svgPath={mdiHelp} />
         )
 
-    const roughInterval = formatDurationStructured(routine.intervalMs)[0] || { amount: 0, unit: 'millisecond' }
-    const intervalUnitToColor: { [key: StructuredDuration['unit']]: string } = {
-        millisecond: 'var(--orange)',
-        second: 'var(--yellow)',
-        minute: 'var(--green)',
-        hour: 'var(--teal)',
-        day: 'var(--cyan)',
-    }
-    const intervalColor = intervalUnitToColor[roughInterval.unit] || 'var(--gray)'
-
     const recentRunsTooltipContent = (
         <div>
             {commonHostName ? <Text className="mb-0">All on “{commonHostName}”:</Text> : ''}
@@ -297,86 +296,71 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
         </div>
     )
     const recentRunsWithErrors = routine.recentRuns.filter(run => run.error)
-    const slowestRecentRunDuration = Math.max(...routine.recentRuns.map(run => run.durationMs))
 
     return (
         <div className={styles.routine}>
-            <div>
-                <ValueLegendItem
-                    value={routine.intervalMs ? roughInterval.amount : '–'}
-                    description={routine.intervalMs ? roughInterval.unit : 'Non-periodic'}
-                    color={routine.intervalMs ? intervalColor : 'var(--gray)'}
-                    tooltip={
-                        routine.intervalMs
-                            ? `Runs every ${formatDurationLong(routine.intervalMs)}`
-                            : 'This routine is not periodic.'
-                    }
-                    className={styles.legendItem}
-                />
-            </div>
             <div className={styles.nameAndDescription}>
-                <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
-                    {routineIcon}
-                </Tooltip>
-                <Text className="mb-0 ml-2">
-                    <strong>{routine.name}</strong>
+                <Text className="mb-1 ml-4">
+                    <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
+                        {routineIcon}
+                    </Tooltip>
+                    <span className="ml-2">
+                        <strong>{routine.name}</strong>
+                    </span>
+                    <span className="ml-2 text-muted">{routine.description}</span>
                 </Text>
-                <div />
-                <Text className="mb-0 ml-2">{routine.description}</Text>
-            </div>
-            <div>
-                <ValueLegendItem
-                    value={routine.recentRuns.length}
-                    description={pluralize('recent\nrun', routine.recentRuns.length)}
-                    tooltip={recentRunsWithErrors.length < routine.recentRuns.length ? recentRunsTooltipContent : ''}
-                    className={styles.legendItem}
-                    color={getRunDurationColor(slowestRecentRunDuration, routine.intervalMs)}
-                />
-            </div>
-            <div>
-                <ValueLegendItem
-                    value={recentRunsWithErrors.length}
-                    description={pluralize('recent\nerror', routine.recentRuns.length)}
-                    color={recentRunsWithErrors.length ? 'var(--danger)' : 'var(--success)'}
-                    tooltip={recentRunsWithErrors.length ? recentRunsTooltipContent : ''}
-                    className={styles.legendItem}
-                />
-            </div>
-            <div className="d-flex flex-column">
-                {routine.stats.since ? (
-                    <>
-                        <div>
-                            <Text className="mb-0">Fastest / avg / slowest run:</Text>
-                            <Text className="mb-0">
-                                <strong
-                                    className={getRunDurationTextClass(routine.stats.minDurationMs, routine.intervalMs)}
-                                >
-                                    {routine.stats.minDurationMs}ms
+                <Text className="mb-0 ml-4 text-muted">
+                    {routine.intervalMs ? (
+                        <>
+                            Runs every <strong>{formatDurationLong(routine.intervalMs)}</strong>.{' '}
+                        </>
+                    ) : null}
+                    {routine.recentRuns.length > 0 ? (
+                        <Tooltip content={recentRunsTooltipContent} placement="top">
+                            <span>
+                                <strong>
+                                    <span className={recentRunsWithErrors.length ? 'text-danger' : 'text-success'}>{`${
+                                        recentRunsWithErrors.length
+                                    } ${pluralize('error', recentRunsWithErrors.length)}`}</span>
                                 </strong>{' '}
-                                /{' '}
-                                <strong
-                                    className={getRunDurationTextClass(routine.stats.avgDurationMs, routine.intervalMs)}
-                                >
-                                    {routine.stats.avgDurationMs}ms
-                                </strong>{' '}
-                                /{' '}
-                                <strong
-                                    className={getRunDurationTextClass(routine.stats.maxDurationMs, routine.intervalMs)}
-                                >
-                                    {routine.stats.maxDurationMs}ms
+                                in the last{' '}
+                                {`${routine.recentRuns.length} ${pluralize('run', routine.recentRuns.length)}`}.{' '}
+                            </span>
+                        </Tooltip>
+                    ) : null}
+                    {routine.stats.runCount ? (
+                        <>
+                            <span className={routine.stats.errorCount ? 'text-danger' : 'text-success'}>
+                                <strong>
+                                    {routine.stats.errorCount} {pluralize('error', routine.stats.errorCount)}
                                 </strong>
-                            </Text>
-                            <Text className="mb-0">
-                                <span className={routine.stats.errorCount ? 'text-danger' : 'text-success'}>
-                                    <strong>{routine.stats.errorCount}</strong>{' '}
-                                    {pluralize('error', routine.stats.errorCount)}
-                                </span>{' '}
-                                in <strong>{routine.stats.runCount}</strong> {pluralize('run', routine.stats.runCount)}
-                            </Text>
-                            <Text className="mb-0">
-                                Since <Timestamp date={new Date(routine.stats.since)} noAbout={true} />
-                            </Text>
-                        </div>
+                            </span>{' '}
+                            in <strong>{routine.stats.runCount}</strong> {pluralize('run', routine.stats.runCount)}
+                            {routine.stats.since ? (
+                                <>
+                                    {' '}
+                                    in the last{' '}
+                                    <Timestamp date={new Date(routine.stats.since)} noAbout={true} noAgo={true} />.
+                                </>
+                            ) : null}
+                        </>
+                    ) : null}
+                </Text>
+            </div>
+            <div className="text-center">
+                {routine.stats.runCount ? (
+                    <>
+                        <strong className={getRunDurationTextClass(routine.stats.minDurationMs, routine.intervalMs)}>
+                            {routine.stats.minDurationMs}ms
+                        </strong>{' '}
+                        /{' '}
+                        <strong className={getRunDurationTextClass(routine.stats.avgDurationMs, routine.intervalMs)}>
+                            {routine.stats.avgDurationMs}ms
+                        </strong>{' '}
+                        /{' '}
+                        <strong className={getRunDurationTextClass(routine.stats.maxDurationMs, routine.intervalMs)}>
+                            {routine.stats.maxDurationMs}ms
+                        </strong>
                     </>
                 ) : (
                     'No stats.'
@@ -424,17 +408,4 @@ function getRunDurationTextClass(durationMs: number, routineIntervalMs: number):
     }
 
     return 'text-success'
-}
-
-function getRunDurationColor(durationMs: number, routineIntervalMs: number): string {
-    const category = categorizeRunDuration(durationMs, routineIntervalMs)
-    if (category === 'dangerous') {
-        return 'var(--red)'
-    }
-
-    if (category === 'long') {
-        return 'var(--yellow)'
-    }
-
-    return 'var(--green)'
 }

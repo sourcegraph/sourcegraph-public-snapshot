@@ -1,16 +1,24 @@
+.table-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 150px);
+    grid-gap: 0.25rem;
+    align-items: center;
+}
+
+.filter-select {
+    margin-bottom: 0;
+    width: auto;
+}
+
 .routine {
     display: grid;
     margin-bottom: 1rem;
-    grid-template-columns: 80px auto 60px 60px minmax(0, 175px);
+    grid-template-columns: auto minmax(0, 150px);
     grid-gap: 0.25rem;
     align-items: center;
 }
 
 .name-and-description {
-    display: grid;
-    grid-template-columns: 16px auto;
-    grid-gap: 0.25rem;
-    align-items: center;
     overflow-wrap: anywhere;
 }
 
