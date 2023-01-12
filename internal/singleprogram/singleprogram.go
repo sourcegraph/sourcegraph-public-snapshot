@@ -5,7 +5,6 @@ package singleprogram
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -96,7 +95,7 @@ func Init() {
 	writeFileIfNotExists := func(path string, data []byte) {
 		var err error
 		if _, err = os.Stat(path); os.IsNotExist(err) {
-			err = ioutil.WriteFile(path, data, 0600)
+			err = os.WriteFile(path, data, 0600)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable to write file %s: %s\n", path, err)
@@ -126,7 +125,7 @@ func Init() {
 	setDefaultEnv("EXECUTOR_QUEUE_NAME", "codeintel")
 
 	writeFile := func(path string, data []byte, perm fs.FileMode) {
-		if err := ioutil.WriteFile(path, data, perm); err != nil {
+		if err := os.WriteFile(path, data, perm); err != nil {
 			fmt.Fprintf(os.Stderr, "unable to write file %s: %s\n", path, err)
 			os.Exit(1)
 		}
