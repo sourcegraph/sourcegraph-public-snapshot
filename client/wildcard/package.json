@@ -13,7 +13,6 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@sourcegraph/storybook": "workspace:*",
     "@sourcegraph/testing": "workspace:*"
   },
   "dependencies": {
