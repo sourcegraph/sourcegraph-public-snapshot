@@ -9,6 +9,7 @@ import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphContext } from '../jscontext'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
@@ -17,7 +18,6 @@ import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import repoRevisionContainerStyles from './RepoRevisionContainer.module.scss'
-import { SourcegraphContext } from '../jscontext'
 
 const mockUser = {
     id: 'userID',
