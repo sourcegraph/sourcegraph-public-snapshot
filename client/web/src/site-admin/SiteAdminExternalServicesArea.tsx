@@ -73,7 +73,6 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                         {...outerProps}
                         {...props}
                         routingPrefix="/site-admin"
-                        afterDeleteRoute="/site-admin/repositories?repositoriesUpdated"
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
                         allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
                     />
