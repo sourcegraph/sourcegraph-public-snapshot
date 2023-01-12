@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -9,10 +10,24 @@ import (
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
 
-// HasFeature reports whether the plan has the given feature.
-func (p Plan) HasFeature(feature Feature) bool {
+// HasFeature returns whether the plan has the given feature.
+// If the target is a pointer, the plan's feature configuration will be
+// set to the target.
+func (p Plan) HasFeature(target Feature) bool {
+	if target == nil {
+		panic("licensing: target cannot be nil")
+	}
+
+	val := reflect.ValueOf(target)
+	if val.Kind() == reflect.Ptr && val.IsNil() {
+		panic("licensing: target cannot be a nil pointer")
+	}
+
 	for _, f := range planFeatures[p] {
-		if feature == f {
+		if target.FeatureName() == f.FeatureName() {
+			if val.Kind() == reflect.Ptr {
+				val.Elem().Set(reflect.ValueOf(f).Elem())
+			}
 			return true
 		}
 	}
