@@ -19,6 +19,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
@@ -201,6 +202,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	g, ctx := errgroup.WithContext(ctx)
 
 	grpcServer := grpc.NewServer()
+	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
 		Service: service,
 	})
