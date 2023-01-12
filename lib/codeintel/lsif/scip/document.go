@@ -43,7 +43,6 @@ func ConvertLSIFDocument(
 		rangeOccurrences, symbols := convertRange(
 			uploadID,
 			targetRangeFetcher,
-			path,
 			document,
 			id,
 			r,
@@ -137,7 +136,6 @@ type symbolMetadata struct {
 func convertRange(
 	uploadID int,
 	targetRangeFetcher TargetRangeFetcher,
-	path string,
 	document precise.DocumentData,
 	rangeID precise.ID,
 	r precise.RangeData,
