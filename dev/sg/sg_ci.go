@@ -267,14 +267,13 @@ sg ci build --help
 		Usage:   "Get the status of the CI run associated with the currently checked out branch",
 		Flags: append(ciTargetFlags,
 			&cli.BoolFlag{
-				Name:    "wait",
-				Aliases: []string{"w"},
-				Usage:   "Wait by blocking until the build is finished",
+				Name:  "wait",
+				Usage: "Wait by blocking until the build is finished",
 			},
 			&cli.BoolFlag{
-				Name:    "view",
-				Aliases: []string{"v"},
-				Usage:   "Open build page in browser",
+				Name:    "web",
+				Aliases: []string{"view", "w"},
+				Usage:   "Open build page in web browser (--view is DEPRECATED and will be removed in the future)",
 			}),
 		Action: func(cmd *cli.Context) error {
 			client, err := bk.NewClient(cmd.Context, std.Out)
