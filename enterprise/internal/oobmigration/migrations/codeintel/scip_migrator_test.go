@@ -77,7 +77,7 @@ func TestSCIPMigrator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error counting symbols: %s", err)
 	}
-	if expected := 3307; symbolsCount != expected {
+	if expected := 4221; symbolsCount != expected {
 		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
 	}
 }
