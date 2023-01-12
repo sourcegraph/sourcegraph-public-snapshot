@@ -412,6 +412,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // TODO "no results" video thumbnail assets
                             // In build, copy ui/assets/img folder to dist/
                             assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                            setQueryState={setUserQueryState}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

@@ -443,6 +443,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
+                            setQueryState={setQueryState}
                         />
                     </div>
                 </>

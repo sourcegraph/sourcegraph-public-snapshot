@@ -3,12 +3,15 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+// TODO: move the component
+import { QueryExamplesHomepage } from '../../../../web/src/search/home/QueryExamplesHomepage'
+import searchPageStyles from '../../../../web/src/search/home/SearchPage.module.scss'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -47,6 +50,7 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
+    setQueryState: (query: QueryState) => void
 }
 
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
@@ -56,6 +60,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    setQueryState,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -75,6 +80,16 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
+            <div className={searchPageStyles.panelsContainer}>
+                <QueryExamplesHomepage
+                    // TODO:
+                    // selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    telemetryService={telemetryService}
+                    queryState={{ query: '' }}
+                    setQueryState={setQueryState}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                />
+            </div>
             <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>
                 <div className="flex-1 flex-shrink-past-contents">

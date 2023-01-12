@@ -10,7 +10,7 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     SearchMatch,
@@ -71,6 +71,8 @@ export interface StreamingSearchResultsListProps
     prefetchFileEnabled?: boolean
 
     enableKeyboardNavigation?: boolean
+
+    setQueryState: (query: QueryState) => void
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -92,6 +94,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFile,
     prefetchFileEnabled,
     enableKeyboardNavigation,
+    setQueryState,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -285,6 +288,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}
+                                setQueryState={setQueryState}
                             />
                         )}
                     </>
