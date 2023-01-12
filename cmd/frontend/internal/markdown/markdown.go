@@ -1,11 +1,15 @@
 package markdown
 
 import (
+	"bytes"
 	"regexp" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
 	"github.com/microcosm-cc/bluemonday"
-	gfm "github.com/shurcooL/github_flavored_markdown"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 var (
@@ -26,6 +30,17 @@ func Render(content string) string {
 		policy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
 	})
 
-	unsafeHTML := gfm.Markdown([]byte(content))
-	return string(policy.SanitizeBytes(unsafeHTML))
+	md := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(),
+		),
+	)
+
+	var buf bytes.Buffer
+	md.Convert([]byte(content), &buf)
+	return string(policy.SanitizeBytes(buf.Bytes()))
 }
