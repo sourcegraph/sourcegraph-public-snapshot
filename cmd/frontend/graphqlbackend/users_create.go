@@ -76,7 +76,13 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 			log.Error(err))
 	}
 
-	return &createUserResult{logger: logger, db: r.db, user: user}, nil
+	return &createUserResult{
+		logger:        logger,
+		db:            r.db,
+		user:          user,
+		email:         email,
+		emailVerified: !needsEmailVerification,
+	}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
@@ -86,7 +92,9 @@ type createUserResult struct {
 	logger log.Logger
 	db     database.DB
 
-	user *types.User
+	user          *types.User
+	email         string
+	emailVerified bool
 }
 
 func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
@@ -99,10 +107,10 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	if conf.CanSendEmail() {
+	if r.email != "" && conf.CanSendEmail() {
 		// HandleSetPasswordEmail will send a special password reset email that also
 		// verifies the primary email address.
-		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
+		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID, r.user.Username, r.email, r.emailVerified)
 		if err != nil {
 			msg := "failed to send set password email"
 			r.logger.Error(msg, log.Error(err))
