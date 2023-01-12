@@ -1019,6 +1019,13 @@ func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	}
 	return int32(len([]byte(content))), nil
 }
+func (d *dummyFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	content, err := d.content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(strings.Split(content, "\n"))), nil
+}
 
 func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
 	return false, nil

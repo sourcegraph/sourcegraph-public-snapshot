@@ -31,6 +31,9 @@ func (m *mockFileResolver) Binary(ctx context.Context) (bool, error) {
 func (m *mockFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
+func (m *mockFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	return 0, errors.New("not implemented")
+}
 func (m *mockFileResolver) Content(ctx context.Context) (string, error) {
 	return "", errors.New("not implemented")
 }
