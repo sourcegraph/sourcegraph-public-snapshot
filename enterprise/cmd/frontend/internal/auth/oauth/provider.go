@@ -16,6 +16,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -71,6 +74,18 @@ func (p *Provider) CachedInfo() *providers.Info {
 
 func (p *Provider) Refresh(ctx context.Context) error {
 	return nil
+}
+
+func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	switch account.ServiceType {
+	case extsvc.TypeGitHub:
+		return github.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeGitLab:
+		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
+	}
+
+	// TODO: add bitbucket cloud when the bitbucket oauth provider is merged
+	return nil, errors.Errorf("Not implemented, sourcegraph only supports github and gitlab for OAuth at the moment")
 }
 
 type ProviderOp struct {

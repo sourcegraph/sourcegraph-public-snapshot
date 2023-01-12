@@ -45,14 +45,14 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     switch (authProvider.serviceType) {
         case 'openidconnect':
         case 'saml':
-            accountConnection = account.external?.username != null ? account.external.username : 'Not connected'
+            accountConnection = account.external?.displayName || 'Not connected'
             break
         default:
             accountConnection = (
                 <>
                     {account.external?.url ? (
                         <>
-                            {account.external.username} (
+                            {account.external.displayName} (
                             <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
                                 @{account.external.login}
                             </Link>

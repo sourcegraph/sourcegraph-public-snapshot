@@ -48,9 +48,9 @@ type AccountData struct {
 	Data     *EncryptableData
 }
 type PublicAccountData struct {
-	Username *string `json:"username,omitempty"`
-	Login    *string `json:"login,omitempty"`
-	URL      *string `json:"url,omitempty"`
+	DisplayName *string `json:"displayName,omitempty"`
+	Login       *string `json:"login,omitempty"`
+	URL         *string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]

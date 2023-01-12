@@ -8,6 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,6 +39,9 @@ type Provider interface {
 
 	// Refresh refreshes the provider's information with an external service, if any.
 	Refresh(ctx context.Context) error
+
+	// Provides basic external account from this auth provider
+	ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error)
 }
 
 // ConfigID identifies a provider config object in the auth.providers site configuration

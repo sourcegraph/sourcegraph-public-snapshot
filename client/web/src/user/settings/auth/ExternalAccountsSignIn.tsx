@@ -17,7 +17,7 @@ export interface NormalizedExternalAccount {
     // some data may be missing if account is not setup
     external?: {
         id: string
-        username: string
+        displayName: string
         login?: string
         url?: string
     }

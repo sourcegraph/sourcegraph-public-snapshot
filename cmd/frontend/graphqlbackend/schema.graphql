@@ -5814,7 +5814,7 @@ type ExternalAccount implements Node {
 }
 
 type PublicExternalAccountData {
-    username: String
+    displayName: String
     login: String
     url: String
 }
