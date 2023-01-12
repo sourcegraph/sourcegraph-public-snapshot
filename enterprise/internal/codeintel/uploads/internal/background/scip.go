@@ -267,31 +267,44 @@ func canonicalizeDocument(document *scip.Document, externalSymbolsByName map[str
 	_ = types.CanonicalizeDocument(document)
 }
 
-//
-// TODO - also do for relationships
-
 // injectExternalSymbols adds symbol information objects from the external symbols into the document
 // if there is an occurrence that references the external symbol name and no local symbol information
 // exists.
 func injectExternalSymbols(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) {
-	symbolNames := make(map[string]struct{}, len(document.Symbols))
+	referencesSet := make(map[string]struct{}, len(document.Symbols))
 	for _, symbol := range document.Symbols {
-		symbolNames[symbol.Symbol] = struct{}{}
+		for _, relationship := range symbol.Relationships {
+			referencesSet[relationship.Symbol] = struct{}{}
+		}
 	}
-
 	for _, occurrence := range document.Occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
 			continue
 		}
 
-		// Ensure we only add each symbol once
-		if _, ok := symbolNames[occurrence.Symbol]; ok {
-			continue
-		}
-		symbolNames[occurrence.Symbol] = struct{}{}
+		referencesSet[occurrence.Symbol] = struct{}{}
+	}
 
-		if symbol, ok := externalSymbolsByName[occurrence.Symbol]; ok {
-			document.Symbols = append(document.Symbols, symbol)
+	definitionsSet := make(map[string]struct{}, len(document.Symbols))
+	for _, symbol := range document.Symbols {
+		definitionsSet[symbol.Symbol] = struct{}{}
+	}
+
+	for len(referencesSet) > 0 {
+		for symbolName := range referencesSet {
+			delete(referencesSet, symbolName)
+			if _, ok := definitionsSet[symbolName]; ok {
+				continue
+			}
+			definitionsSet[symbolName] = struct{}{}
+
+			if symbol, ok := externalSymbolsByName[symbolName]; ok {
+				document.Symbols = append(document.Symbols, symbol)
+
+				for _, relationship := range symbol.Relationships {
+					referencesSet[relationship.Symbol] = struct{}{}
+				}
+			}
 		}
 	}
 }
