@@ -7,16 +7,16 @@
 Instance validation provides a quick way to check that a Sourcegraph instance functions properly after a fresh install
  or an update.
 
-The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental command `validate` which drives the
+The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental command `validate install` which drives the
  validation from a user-provided configuration file with a validation specification (in JSON or YAML format). If no validation specification file is provided it will execute the following: 
  
-* temporarily add an external service
-* wait for a repository to be cloned
-* perform a search on the cloned repo
-* perform a search on a non-indexed branch of the cloned repo
+* temporarily adds an external service
+* waits for a repository to be cloned
+* performs a search on the cloned repo
+* performs a search on a non-indexed branch of the cloned repo
 * creates basic code insight
-* remove the added external service
-* remove the added code insight
+* removes the added external service
+* removes the added code insight
 
 ### Validation specification
  
