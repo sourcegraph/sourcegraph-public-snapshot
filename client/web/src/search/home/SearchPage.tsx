@@ -54,10 +54,14 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
-        query: '',
+        query:
+            experimentalQueryInput && props.selectedSearchContextSpec && props.selectedSearchContextSpec !== 'global'
+                ? `context:${props.selectedSearchContextSpec} `
+                : '',
     })
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])

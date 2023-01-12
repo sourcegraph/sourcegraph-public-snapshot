@@ -276,7 +276,7 @@ class RegisteredSource {
     }
 
     public update(transaction: Transaction): RegisteredSource {
-        // TODO: We probalby don't want to trigger fetches on every doc changed
+        // TODO: We probably don't want to trigger fetches on every doc change
         if (isUserInput(transaction) || transaction.docChanged) {
             return this.query(transaction.state)
         }
@@ -467,6 +467,7 @@ function applyOption(view: EditorView, option: Option): void {
                         return { range }
                     }),
                 })
+                view.update(
             }
             break
         case 'command':

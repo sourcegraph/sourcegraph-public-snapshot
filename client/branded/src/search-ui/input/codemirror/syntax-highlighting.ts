@@ -1,10 +1,13 @@
 import { RangeSetBuilder } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import inRange from 'lodash/inRange'
 
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 
 import { decoratedTokens, queryTokens } from './parsedQuery'
+import { Token } from '@sourcegraph/shared/src/search/query/token'
+import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
+import { mdiClose } from '@mdi/js'
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
@@ -33,6 +36,38 @@ export const querySyntaxHighlighting = [
 
 const validFilter = Decoration.mark({ class: 'sg-filter', inclusive: false })
 const invalidFilter = Decoration.mark({ class: 'sg-filter sg-invalid-filter', inclusive: false })
+const contextFilter = Decoration.mark({ class: 'sg-context-filter', inclusive: true })
+const replaceContext = Decoration.replace({})
+class ClearTokenWidget extends WidgetType {
+    constructor(private token: Token) {
+        super()
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const wrapper = document.createElement('span')
+        wrapper.setAttribute('aria-hidden', 'true')
+        wrapper.className = 'sg-clear-filter'
+
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.onclick = () => {
+            view.dispatch({
+                // -1/+1 to include possible leading and trailing whitespace
+                changes: {
+                    from: Math.max(this.token.range.start - 1, 0),
+                    to: Math.min(this.token.range.end + 1, view.state.doc.length),
+                },
+            })
+            if (!view.hasFocus) {
+                view.focus()
+            }
+        }
+        button.appendChild(createSVGIcon(mdiClose))
+        wrapper.appendChild(button)
+
+        return wrapper
+    }
+}
 
 export const filterHighlight = [
     EditorView.baseTheme({
@@ -45,19 +80,46 @@ export const filterHighlight = [
             backgroundColor: 'var(--oc-red-1)',
             borderColor: 'var(--oc-red-2)',
         },
+        '.sg-context-filter': {
+            borderRadius: '3px',
+            border: '1px solid var(--border-color)',
+            padding: '0.125rem 0',
+        },
+        '.sg-clear-filter > button': {
+            border: 'none',
+            backgroundColor: 'transparent',
+            padding: 0,
+            width: 'var(--icon-inline-size)',
+            height: 'var(--icon-inline-size)',
+            color: 'var(--icon-color)',
+        },
     }),
     EditorView.decorations.compute([decoratedTokens, 'selection'], state => {
         const query = state.facet(queryTokens)
         const builder = new RangeSetBuilder<Decoration>()
         for (const token of query.tokens) {
             if (token.type === 'filter') {
+                const withinRange = inRange(state.selection.main.head, token.range.start, token.range.end + 1) // or cursor is within field
                 const isValid =
                     token?.value?.value || // has non-empty value
                     token?.value?.quoted || // or is quoted
-                    inRange(state.selection.main.head, token.range.start, token.range.end + 1) // or cursor is within field
+                    withinRange // or cursor is within field
 
-                // +1 to include the colon (:)
-                builder.add(token.range.start, token.field.range.end + 1, isValid ? validFilter : invalidFilter)
+                if (token.field.value === 'context') {
+                    builder.add(token.range.start, token.range.end, contextFilter)
+                    if (!withinRange && token.value?.value) {
+                        // hide context: field name and show remove button
+                        builder.add(token.range.start, token.field.range.end + 1, replaceContext)
+                        builder.add(
+                            token.range.end,
+                            token.range.end,
+                            Decoration.widget({ widget: new ClearTokenWidget(token) })
+                        )
+                    }
+                } else {
+                    // +1 to include the colon (:)
+                    builder.add(token.range.start, token.field.range.end + 1, isValid ? validFilter : invalidFilter)
+                }
             }
         }
         return builder.finish()

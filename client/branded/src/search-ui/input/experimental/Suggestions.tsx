@@ -76,7 +76,7 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
             tabIndex={-1}
         >
             {results.map((group, groupIndex) => (
-                <ul role="rowgroup" key={group.title} keyaria-labelledby={`${id}-${groupIndex}-label`}>
+                <ul role="rowgroup" key={group.title} aria-labelledby={`${id}-${groupIndex}-label`}>
                     <li id={`${id}-${groupIndex}-label`} role="presentation">
                         {group.title}
                     </li>

@@ -12,7 +12,7 @@ import * as uuid from 'uuid'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { QueryChangeSource, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { singleLine } from '../codemirror'
@@ -117,6 +117,7 @@ function createEditor(
     return new EditorView({
         state: EditorState.create({
             doc: queryState.query,
+            selection: { anchor: queryState.query.length },
             extensions: [
                 EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
@@ -269,14 +270,14 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
                     <div ref={setContainer} className="d-contents" />
                     <button
                         type="button"
-                        className={classNames({ [styles.showWhenFocused]: hasValue })}
+                        className={classNames(styles.inputButton, { [styles.showWhenFocused]: hasValue })}
                         onClick={clear}
                     >
                         <Icon svgPath={mdiClose} aria-label="Clear" />
                     </button>
                     <button
                         type="button"
-                        className={classNames(styles.globalShortcut, styles.hideWhenFocused)}
+                        className={classNames(styles.inputButton, styles.globalShortcut, styles.hideWhenFocused)}
                         onClick={focus}
                     >
                         /
