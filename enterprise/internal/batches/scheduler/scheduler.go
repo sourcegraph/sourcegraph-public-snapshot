@@ -59,11 +59,9 @@ func (s *Scheduler) Start() {
 			case delay := <-ticker.C:
 				start := time.Now()
 
-				err := s.enqueueChangeset()
-
 				// We can enqueue a changeset. Let's try to do so, ensuring that
 				// we always return a duration back down the delay channel.
-				if err != nil {
+				if err := s.enqueueChangeset(); err != nil {
 					// If we get an error back, we need to increment the backoff
 					// delay and return that. enqueueChangeset will have handled
 					// any logging we need to do.
@@ -77,7 +75,7 @@ func (s *Scheduler) Start() {
 
 				duration := time.Since(start)
 				if s.jobLogger != nil {
-					go (*s.jobLogger).LogRun(s, duration, err)
+					go (*s.jobLogger).LogRun(s, duration, nil)
 				}
 
 			case <-validity.C:
@@ -177,7 +175,7 @@ func (s *Scheduler) Description() string {
 }
 
 func (s *Scheduler) Interval() time.Duration {
-	return 0
+	return 5 * time.Second // Actually between 5 sec and 1 min, changes dynamically
 }
 
 func (s *Scheduler) RegisterJobLogger(jobLogger *goroutine.JobLogger) {
