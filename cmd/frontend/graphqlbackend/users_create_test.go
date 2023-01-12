@@ -7,10 +7,8 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -68,13 +66,9 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		return url.Parse("/reset-url?code=foobar")
 	}
 	userpasswd.MockResetPasswordEnabled = func() bool { return true }
-	globalURL, err := url.Parse("https://sourcegraph.com")
-	require.NoError(t, err)
-	globals.SetExternalURL(globalURL)
 	t.Cleanup(func() {
 		backend.MockMakePasswordResetURL = nil
 		userpasswd.MockResetPasswordEnabled = nil
-		globals.SetExternalURL(nil)
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
@@ -106,7 +100,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 							"user": {
 								"id": "VXNlcjox"
 							},
-							"resetPasswordURL": "https://sourcegraph.com/reset-url?code=foobar"
+							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
 						}
 					}
 				`,
@@ -156,7 +150,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 							"user": {
 								"id": "VXNlcjox"
 							},
-							"resetPasswordURL": "https://sourcegraph.com/reset-url?code=foobar"
+							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
 						}
 					}
 				`,
@@ -164,7 +158,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		})
 
 		data := sentMessage.Data.(userpasswd.SetPasswordEmailTemplateData)
-		assert.Contains(t, data.URL, "https://sourcegraph.com/reset-url")
+		assert.Contains(t, data.URL, "http://example.com/reset-url")
 		assert.Contains(t, data.URL, "&emailVerifyCode=")
 		assert.Contains(t, data.URL, "&email=")
 
