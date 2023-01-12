@@ -80,7 +80,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         ))}
                     </ConnectionList>
                     {connection && (
-                        <SummaryContainer className="mt-2">
+                        <SummaryContainer className="mt-2" centered={true}>
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={false}
                                 first={connection.totalCount ?? 0}
