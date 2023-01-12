@@ -71,9 +71,11 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     displayNamespace,
 }) => {
     const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(
-        () => node.batchSpecs.nodes?.[0],
-        [node.batchSpecs.nodes]
+        () => node.batchSpecs.nodes?.[0] || node.currentSpec,
+        [node.batchSpecs.nodes, node.currentSpec]
     )
+
+    const latestExecutionState = latestExecution?.state
 
     // The URL to follow when a batch change is clicked on depends on the current state
     // and execution state.
@@ -83,8 +85,6 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
         if (!isExecutionEnabled || node.state === BatchChangeState.CLOSED) {
             return node.url
         }
-
-        const latestExecutionState = latestExecution?.state
 
         switch (latestExecutionState) {
             // If the latest spec hasn't been executed yet...
@@ -109,7 +109,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             default:
                 return node.url
         }
-    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
+    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution, latestExecutionState])
 
     return (
         <li className={styles.batchChangeNode}>
@@ -117,7 +117,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
                     state={node.state}
-                    latestExecutionState={node.batchSpecs.nodes[0]?.state}
+                    latestExecutionState={latestExecutionState}
                     currentSpecID={node.currentSpec.id}
                     latestSpecID={latestExecution?.id}
                     className={styles.batchChangeNodePill}
