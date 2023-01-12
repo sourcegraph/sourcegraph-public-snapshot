@@ -13,7 +13,11 @@ import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
 
 const additionalProps = {
-    authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
+    authenticatedUser: {
+        id: 'foobar',
+        username: 'alice',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
+    } as AuthenticatedUser,
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
             nodes: mockCodeMonitorNodes,

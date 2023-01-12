@@ -78,6 +78,7 @@ func TestJob_MarshalJSON(t *testing.T) {
 				"modifiedAt": "2022-10-07T18:55:45.831031-06:00"
 			}
 		},
+		"dockerAuthConfig": {},
 		"dockerSteps": [{
 			"image": "my-image",
 			"commands": ["run"],

@@ -963,18 +963,21 @@ Indexes:
 
 # Table "public.critical_and_site_config"
 ```
-   Column   |           Type           | Collation | Nullable |                       Default                        
-------------+--------------------------+-----------+----------+------------------------------------------------------
- id         | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
- type       | critical_or_site         |           | not null | 
- contents   | text                     |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- updated_at | timestamp with time zone |           | not null | now()
+     Column     |           Type           | Collation | Nullable |                       Default                        
+----------------+--------------------------+-----------+----------+------------------------------------------------------
+ id             | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type           | critical_or_site         |           | not null | 
+ contents       | text                     |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+ author_user_id | integer                  |           |          | 
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
 
 ```
+
+**author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
 
 # Table "public.discussion_comments"
 ```
@@ -1191,10 +1194,13 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 --------------------+--------------------------+-----------+----------+---------------------------------------------------------
  id                 | integer                  |           | not null | nextval('executor_secret_access_logs_id_seq'::regclass)
  executor_secret_id | integer                  |           | not null | 
- user_id            | integer                  |           | not null | 
+ user_id            | integer                  |           |          | 
  created_at         | timestamp with time zone |           | not null | now()
+ machine_user       | text                     |           | not null | ''::text
 Indexes:
     "executor_secret_access_logs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "user_id_or_machine_user" CHECK (user_id IS NULL AND machine_user <> ''::text OR user_id IS NOT NULL AND machine_user = ''::text)
 Foreign-key constraints:
     "executor_secret_access_logs_executor_secret_id_fkey" FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE
     "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -1471,6 +1477,8 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
+ corrupted_at    | timestamp with time zone |           |          | 
+ corruption_logs | jsonb                    |           | not null | '[]'::jsonb
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1489,6 +1497,10 @@ Triggers:
     trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()
 
 ```
+
+**corrupted_at**: Timestamp of when repo corruption was detected
+
+**corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
 
 # Table "public.gitserver_repos_statistics"
 ```
@@ -1847,6 +1859,7 @@ Stores the configuration used for code intel index jobs for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
+ requested_envvars      | text[]                   |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -2142,7 +2155,7 @@ Stores metadata about an LSIF index uploaded by a user.
  uploaded_at         | timestamp with time zone |           | not null | 
  indexer             | text                     |           | not null | 
  indexer_version     | text                     |           |          | 
- upload_size         | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
  associated_index_id | integer                  |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
  reason              | text                     |           |          | ''::text
@@ -2237,6 +2250,27 @@ Check constraints:
 Foreign-key constraints:
     "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.namespace_permissions"
+```
+   Column    |           Type           | Collation | Nullable |                      Default                      
+-------------+--------------------------+-----------+----------+---------------------------------------------------
+ id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
+ namespace   | text                     |           | not null | 
+ resource_id | integer                  |           | not null | 
+ action      | text                     |           | not null | 
+ user_id     | integer                  |           |          | 
+ created_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "namespace_permissions_pkey" PRIMARY KEY, btree (id)
+    "unique_resource_permission" UNIQUE CONSTRAINT, btree (namespace, resource_id, action, user_id)
+Check constraints:
+    "action_not_blank" CHECK (action <> ''::text)
+    "namespace_not_blank" CHECK (namespace <> ''::text)
+Foreign-key constraints:
+    "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3252,6 +3286,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "namespace_permissions" CONSTRAINT "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
@@ -3615,6 +3650,7 @@ Foreign-key constraints:
     u.execution_logs,
     u.local_steps,
     u.should_reindex,
+    u.requested_envvars,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

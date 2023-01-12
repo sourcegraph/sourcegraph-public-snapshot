@@ -153,10 +153,8 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 
 	const delay = 24 * time.Hour
 	for {
-		if !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-disabled", false) {
-			if err := refreshAnalyticsCache(ctx, db); err != nil {
-				logger.Error("Error refreshing admin analytics cache", log.Error(err))
-			}
+		if err := refreshAnalyticsCache(ctx, db); err != nil {
+			logger.Error("Error refreshing admin analytics cache", log.Error(err))
 		}
 
 		// Randomize sleep to prevent thundering herds.

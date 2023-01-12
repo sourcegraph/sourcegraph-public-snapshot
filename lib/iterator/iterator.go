@@ -15,8 +15,9 @@ func New[T any](next func() ([]T, error)) *Iterator[T] {
 // fetched in batches and can error. In particular this is designed for
 // pagination.
 //
-// Iterating stops as soon as the underlying next function returns an error or
-// no items. If an error is returned, Err will return a non-nil error.
+// Iterating stops as soon as the underlying next function returns no items.
+// If an error is returned then next won't be called again and Err will return
+// a non-nil error.
 type Iterator[T any] struct {
 	items []T
 	err   error
@@ -30,22 +31,23 @@ type Iterator[T any] struct {
 // end of the input or an error occurred. After Next returns false Err() will
 // return the error occurred or nil if none.
 func (it *Iterator[T]) Next() bool {
-	if it.done {
-		return false
-	}
-
 	if len(it.items) > 1 {
 		it.items = it.items[1:]
 		return true
 	}
 
+	// done is true if we shouldn't call it.next again.
+	if it.done {
+		it.items = nil // "consume" the last item when err != nil
+		return false
+	}
+
 	it.items, it.err = it.next()
 	if len(it.items) == 0 || it.err != nil {
-		it.items = nil // clear out so Current fails with err.
 		it.done = true
 	}
 
-	return !it.done
+	return len(it.items) > 0
 }
 
 // Current returns the latest item advanced by Next. Note: this will panic if

@@ -9,6 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
@@ -19,11 +20,6 @@ interface Props extends ThemeProps, TelemetryProps {
     history: H.History
 
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
-
-    /**
-     * JSON Schema of the document.
-     */
-    jsonSchema?: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -164,7 +160,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
-                        jsonSchema={this.props.jsonSchema}
+                        jsonSchema={settingsSchemaJSON}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
                         isLightTheme={this.props.isLightTheme}

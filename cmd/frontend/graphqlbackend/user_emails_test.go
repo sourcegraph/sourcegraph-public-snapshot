@@ -233,7 +233,6 @@ func TestSetUserEmailVerified(t *testing.T) {
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
 			db := database.NewMockDB()
-
 			db.TransactFunc.SetDefaultReturn(db, nil)
 			db.DoneFunc.SetDefaultHook(func(err error) error {
 				return err

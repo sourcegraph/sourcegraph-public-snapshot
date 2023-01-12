@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
@@ -46,7 +47,19 @@ func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
 	return &Schema{
 		Name:                name,
 		MigrationsTableName: MigrationsTableName(name),
-		FS:                  fs,
+		Definitions:         definitions,
+	}, nil
+}
+
+func ResolveSchemaAtRev(name, rev string) (*Schema, error) {
+	definitions, err := shared.GetFrozenDefinitions(name, rev)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Schema{
+		Name:                name,
+		MigrationsTableName: MigrationsTableName(name),
 		Definitions:         definitions,
 	}, nil
 }

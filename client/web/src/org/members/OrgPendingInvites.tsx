@@ -5,7 +5,6 @@ import { mdiEmail, mdiCog, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
     Container,
     PageHeader,
@@ -20,6 +19,7 @@ import {
     H3,
     Icon,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

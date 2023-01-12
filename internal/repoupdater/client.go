@@ -74,7 +74,7 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -241,8 +241,14 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 	return errors.New(res.Error)
 }
 
+// MockSyncExternalService mocks (*Client).SyncExternalService for tests.
+var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
+
 // SyncExternalService requests the given external service to be synced.
 func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
+	if MockSyncExternalService != nil {
+		return MockSyncExternalService(ctx, externalServiceID)
+	}
 	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
@@ -285,7 +291,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

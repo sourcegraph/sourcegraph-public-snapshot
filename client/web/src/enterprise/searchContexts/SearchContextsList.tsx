@@ -6,13 +6,13 @@ import { useHistory, useLocation } from 'react-router'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
-    SearchContextProps,
     ListSearchContextsResult,
     ListSearchContextsVariables,
     SearchContextsOrderBy,
     SearchContextMinimalFields,
-} from '@sourcegraph/search'
+} from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 
 import { AuthenticatedUser } from '../../auth'
 import {

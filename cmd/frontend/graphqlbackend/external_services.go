@@ -11,7 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -77,7 +76,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.SyncExternalService(ctx, r.logger, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -150,13 +149,44 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
 	if oldConfig != newConfig {
-		err = backend.SyncExternalService(ctx, r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient)
-		if err != nil {
+		if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
 	}
 
 	return res, nil
+}
+
+type excludeRepoFromExternalServiceArgs struct {
+	ExternalServices []graphql.ID
+	Repo             graphql.ID
+}
+
+// ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.
+func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	extSvcIDs := make([]int64, 0, len(args.ExternalServices))
+	for _, externalServiceID := range args.ExternalServices {
+		extSvcID, err := UnmarshalExternalServiceID(externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		extSvcIDs = append(extSvcIDs, extSvcID)
+	}
+
+	repositoryID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 type deleteExternalServiceArgs struct {
@@ -307,7 +337,7 @@ type computedExternalServiceConnectionResolver struct {
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
@@ -319,11 +349,11 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
+func (r *computedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *computedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
@@ -333,7 +363,6 @@ const (
 	Add ExternalServiceMutationType = iota
 	Update
 	Delete
-	SetRepos
 )
 
 func (d ExternalServiceMutationType) String() string {

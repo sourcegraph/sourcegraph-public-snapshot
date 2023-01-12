@@ -1,5 +1,9 @@
 # Configuration
 
+> ⚠️ We recommend new users use our [machine image](../../index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+
+---
+
 You can find the default [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) file inside the deployment repository.
 
 If you would like to make changes to the default configurations, we highly recommend you to create a new file called `docker-compose.override.yaml` in the same directory where the base file ([docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml)) is located, and make your customizations inside the `docker-compose.override.yaml` file.

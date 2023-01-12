@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
-import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import {
     BehaviorSubject,
@@ -12,25 +11,11 @@ import {
     EMPTY,
     from,
     fromEvent,
-    of,
     ReplaySubject,
     Subscription,
     Subject,
 } from 'rxjs'
-import {
-    catchError,
-    concatMap,
-    distinctUntilChanged,
-    filter,
-    first,
-    map,
-    mapTo,
-    pairwise,
-    switchMap,
-    tap,
-    throttleTime,
-    withLatestFrom,
-} from 'rxjs/operators'
+import { concatMap, filter, first, map, mapTo, pairwise, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -43,11 +28,9 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import {
-    asError,
     isErrorLike,
     isDefined,
     property,
-    observeResize,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     toPositionOrRangeQueryParameter,
@@ -55,11 +38,8 @@ import {
     formatSearchParameters,
     logger,
 } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -86,20 +66,13 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
-import { StatusBar } from '../../extensions/components/StatusBar'
 import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameColumn } from './BlameColumn'
-import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
-
-/**
- * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
- */
-const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 // Logical grouping of props that are only used by the CodeMirror blob view
 // implementation.
@@ -109,7 +82,7 @@ interface CodeMirrorBlobProps {
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -123,9 +96,6 @@ export interface BlobProps
     blobInfo: BlobInfo
     'data-testid'?: string
 
-    // Experimental reference panel
-    disableStatusBar: boolean
-    disableDecorations: boolean
     // When navigateToLineOnAnyClick=true, the code intel popover is disabled
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
@@ -144,7 +114,7 @@ export interface BlobProps
     supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
-    blameHunks?: { current: BlameHunk[] | undefined }
+    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -203,9 +173,6 @@ const domFunctions = {
     },
 }
 
-const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
-const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
-
 /**
  * Renders a code view augmented by Sourcegraph extensions
  *
@@ -227,7 +194,7 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * - "extension host loading viewer": Extensions have loaded, but the extension host
  * doesn't know about the current viewer yet. We know that we are in this state
  * when blobInfo changes. On entering this state, clear resources from
- * previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
+ * previous viewer (e.g. hoverifier subscription). If we don't remove extension features
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
@@ -341,8 +308,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             viewerUpdates.next(null)
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
-
-    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -627,67 +592,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    // Update position/selections on extension host (extensions use selections to set line decorations)
-    useObservable(
-        useMemo(
-            () =>
-                viewerUpdates.pipe(
-                    switchMap(viewerData => {
-                        if (!viewerData) {
-                            return EMPTY
-                        }
-
-                        // We can't skip the initial position since we can't guarantee that user hadn't
-                        // changed selection between sending the initial message to extension host
-                        // for viewer initialization -> receiving viewerId.
-                        // The extension host will ensure that extensions are only notified when
-                        // selection values have actually changed.
-                        return locationPositions.pipe(
-                            tap(position => {
-                                viewerData.extensionHostAPI
-                                    .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
-                                    .catch(error =>
-                                        logger.error('Error updating editor selections on extension host', error)
-                                    )
-                            })
-                        )
-                    }),
-                    mapTo(undefined)
-                ),
-            [viewerUpdates, locationPositions]
-        )
-    )
-
-    // Listen for line decorations from extensions
-    useObservable(
-        useMemo(
-            () =>
-                props.disableDecorations
-                    ? of(undefined)
-                    : viewerUpdates.pipe(
-                          switchMap(viewerData => {
-                              if (!viewerData) {
-                                  return EMPTY
-                              }
-
-                              // Schedule decorations to be cleared when this viewer is removed.
-                              // We store decoration state independent of this observable since we want to clear decorations
-                              // immediately on viewer change. If we wait for the latest emission of decorations from the
-                              // extension host, decorations from the previous viewer will be visible for a noticeable amount of time
-                              // on the current viewer
-                              viewerData.subscriptions.add(() => setDecorationsOrError(undefined))
-                              return wrapRemoteObservable(
-                                  viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId)
-                              )
-                          }),
-                          catchError(error => [asError(error)]),
-                          tap(setDecorationsOrError),
-                          mapTo(undefined)
-                      ),
-            [props.disableDecorations, viewerUpdates]
-        )
-    )
-
     // Warm cache for references panel. Eventually display a loading indicator
     useObservable(
         useMemo(
@@ -697,78 +601,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
-    // decorations haven't changed.
-    const groupedDecorations = useMemo(
-        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
-        [decorationsOrError]
-    )
-
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
-
-    // Status bar
-    const getStatusBarItems = useCallback(
-        () =>
-            viewerUpdates.pipe(
-                switchMap(viewerData => {
-                    if (!viewerData) {
-                        return of('loading' as const)
-                    }
-
-                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
-                })
-            ),
-        [viewerUpdates]
-    )
-
-    const statusBarElements = useMemo(() => new ReplaySubject<HTMLDivElement | null>(1), [])
-    const nextStatusBarElement = useCallback(
-        (statusBarElement: HTMLDivElement | null) => statusBarElements.next(statusBarElement),
-        [statusBarElements]
-    )
-
-    // Floating status bar: add scrollbar size with "base" gaps to achieve
-    // our desired gap between the scrollbar and status bar
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([blobElements, statusBarElements]).pipe(
-                    switchMap(([blobElement, statusBarElement]) => {
-                        if (!(blobElement && statusBarElement)) {
-                            return EMPTY
-                        }
-
-                        // ResizeObserver doesn't reliably fire when navigating between documents
-                        // in Firefox, so recalculate on blobInfoChanges as well.
-                        return merge(observeResize(blobElement), blobInfoChanges).pipe(
-                            // Throttle reflow without losing final value.
-                            throttleTime(100, undefined, { leading: true, trailing: true }),
-                            map(() => {
-                                // Read
-                                const blobRightScrollbarWidth = blobElement.offsetWidth - blobElement.clientWidth
-                                const blobBottomScollbarHeight = blobElement.offsetHeight - blobElement.clientHeight
-
-                                return { blobRightScrollbarWidth, blobBottomScollbarHeight }
-                            }),
-                            distinctUntilChanged((a, b) => isEqual(a, b)),
-                            tap(({ blobRightScrollbarWidth, blobBottomScollbarHeight }) => {
-                                // Write
-                                statusBarElement.style.right = `calc(var(${STATUS_BAR_HORIZONTAL_GAP_VAR}) + ${blobRightScrollbarWidth}px)`
-                                statusBarElement.style.bottom = `calc(var(${STATUS_BAR_VERTICAL_GAP_VAR}) + ${blobBottomScollbarHeight}px)`
-
-                                // Maintain an equal gap with the left side of the container when the status bar is overflowing.
-                                statusBarElement.style.maxWidth = `calc(100% - ((2 * var(${STATUS_BAR_HORIZONTAL_GAP_VAR})) + ${blobRightScrollbarWidth}px))`
-                            })
-                        )
-                    }),
-                    mapTo(undefined),
-                    catchError(() => EMPTY)
-                ),
-            [blobElements, statusBarElements, blobInfoChanges]
-        )
-    )
 
     const pinOptions = useMemo<PinOptions>(
         () => ({
@@ -899,38 +734,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
                     history={props.history}
+                    isLightTheme={isLightTheme}
                 />
-
-                {groupedDecorations &&
-                    iterate(groupedDecorations)
-                        .map(([line, items]) => {
-                            const portalID = toPortalID(line)
-                            return (
-                                <LineDecorator
-                                    isLightTheme={isLightTheme}
-                                    key={`${portalID}-${blobInfo.filePath}`}
-                                    portalID={portalID}
-                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                    line={line}
-                                    decorations={items}
-                                    codeViewElements={codeViewElements}
-                                />
-                            )
-                        })
-                        .toArray()}
             </div>
-            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
-                <StatusBar
-                    getStatusBarItems={getStatusBarItems}
-                    extensionsController={extensionsController}
-                    uri={toURIWithPath(blobInfo)}
-                    location={location}
-                    className={styles.blobStatusBarBody}
-                    statusBarRef={nextStatusBarElement}
-                    hideWhileInitializing={true}
-                    isBlobPage={true}
-                />
-            )}
         </>
     )
 }

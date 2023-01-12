@@ -10,12 +10,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-	updateUploadsVisibleToCommits *observation.Operation
-
-	// Worker metrics
+type workerOperations struct {
 	uploadProcessor *observation.Operation
 	uploadSizeGuage prometheus.Gauge
+}
+
+func newWorkerOperations(observationCtx *observation.Context) *workerOperations {
+	honeyobservationCtx := *observationCtx
+	honeyobservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyobservationCtx.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
+
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationCtx.Registerer.MustRegister(uploadSizeGuage)
+
+	return &workerOperations{
+		uploadProcessor: uploadProcessor,
+		uploadSizeGuage: uploadSizeGuage,
+	}
+}
+
+type operations struct {
+	updateUploadsVisibleToCommits *observation.Operation
 
 	numReconcileScansFromFrontend      prometheus.Counter
 	numReconcileDeletesFromFrontend    prometheus.Counter
@@ -70,27 +93,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		"The number of abandoned uploads deleted from the codeintel-db.",
 	)
 
-	honeyobservationCtx := *observationCtx
-	honeyobservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyobservationCtx.Operation(observation.Op{
-		Name: "codeintel.uploadHandler",
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			return observation.EmitForTraces | observation.EmitForHoney
-		},
-	})
-
-	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_processor_upload_size",
-		Help: "The combined size of uploads being processed at this instant by this worker.",
-	})
-	observationCtx.Registerer.MustRegister(uploadSizeGuage)
-
 	return &operations{
 		updateUploadsVisibleToCommits: op("UpdateUploadsVisibleToCommits"),
-
-		// Worker metrics
-		uploadProcessor: uploadProcessor,
-		uploadSizeGuage: uploadSizeGuage,
 
 		numReconcileScansFromFrontend:      numReconcileScansFromFrontend,
 		numReconcileDeletesFromFrontend:    numReconcileDeletesFromFrontend,

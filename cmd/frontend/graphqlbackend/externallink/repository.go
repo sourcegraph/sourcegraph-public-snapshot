@@ -100,7 +100,7 @@ func linksForRepository(
 	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
+	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("Repo", repo.Name)
 	span.SetTag("ExternalRepo", repo.ExternalRepo)

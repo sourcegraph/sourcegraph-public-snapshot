@@ -1,17 +1,14 @@
 import { useMemo } from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { AuthenticatedUser } from '../../../auth'
 import { Scalars } from '../../../graphql-operations'
 
-type UserNamespace = Omit<SettingsUserSubject, 'viewerCanAdminister'>
-type OrgNamespace = Omit<SettingsOrgSubject, 'viewerCanAdminister'>
-
 export interface UseNamespacesResult {
-    userNamespace: UserNamespace
-    namespaces: (UserNamespace | OrgNamespace)[]
-    defaultSelectedNamespace: UserNamespace | OrgNamespace
+    userNamespace: UserSettingFields
+    namespaces: (UserSettingFields | OrgSettingFields)[]
+    defaultSelectedNamespace: UserSettingFields | OrgSettingFields
 }
 
 /**
@@ -37,7 +34,7 @@ export const useNamespaces = (
     const namespaces = useMemo(
         () => [userNamespace, ...organizationNamespaces],
         [userNamespace, organizationNamespaces]
-    )
+    ) as UseNamespacesResult['namespaces']
 
     // The default namespace selected from the dropdown should match whatever the initial
     // namespace was, or else default to the user's namespace.

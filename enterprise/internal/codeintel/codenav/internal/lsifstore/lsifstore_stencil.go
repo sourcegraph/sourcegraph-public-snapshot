@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,7 +32,7 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 	}
 
 	if documentData.SCIPData != nil {
-		trace.Log(log.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+		trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
 
 		ranges := make([]types.Range, 0, len(documentData.SCIPData.Occurrences))
 		for _, occurrence := range documentData.SCIPData.Occurrences {
@@ -41,7 +42,7 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 		return ranges, nil
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(documentData.LSIFData.Ranges)))
 
 	ranges := make([]types.Range, 0, len(documentData.LSIFData.Ranges))
 	for _, r := range documentData.LSIFData.Ranges {

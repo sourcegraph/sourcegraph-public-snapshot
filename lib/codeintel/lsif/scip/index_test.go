@@ -30,14 +30,14 @@ func TestConvertLSIF(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewReader(input), "root/", "lsif-test")
+	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewReader(input), "root/")
 	if err != nil {
 		t.Fatalf("unexpected error converting LSIF data: %s", err)
 	}
 
 	expectedIndex := &scip.Index{
 		Metadata: &scip.Metadata{
-			ProjectRoot:          "root/",
+			ProjectRoot:          "file:///test/root/",
 			ToolInfo:             &scip.ToolInfo{Name: "lsif-test"},
 			TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 			Version:              scip.ProtocolVersion_UnspecifiedProtocolVersion,

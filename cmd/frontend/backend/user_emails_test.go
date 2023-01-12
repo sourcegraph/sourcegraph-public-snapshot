@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -449,6 +450,14 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 	createdUser, err := db.Users().Create(ctx, newUser)
 	assert.NoError(t, err)
 
+	createdRepo := &types.Repo{
+		Name:         "github.com/soucegraph/sourcegraph",
+		URI:          "github.com/soucegraph/sourcegraph",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+	err = db.Repos().Create(ctx, createdRepo)
+	require.NoError(t, err)
+
 	svc := NewUserEmailsService(db, logger)
 	ctx = actor.WithInternalActor(ctx)
 
@@ -481,12 +490,7 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		require.Len(t, accounts, 1)
 	}
 
-	t.Run("OnDelete", func(t *testing.T) {
-		setup()
-
-		// Remove the email
-		require.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
-
+	assertRemovals := func(t *testing.T) {
 		// Confirm that the external account is gone
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			UserID:      createdUser.ID,
@@ -494,6 +498,15 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Len(t, accounts, 0)
+	}
+
+	t.Run("OnDelete", func(t *testing.T) {
+		setup()
+
+		// Remove the email
+		require.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+
+		assertRemovals(t)
 	})
 
 	t.Run("OnUnverified", func(t *testing.T) {
@@ -502,12 +515,6 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		// Mark the e-mail as unverified
 		require.NoError(t, svc.SetVerified(ctx, createdUser.ID, email2, false))
 
-		// Confirm that the external account is gone
-		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-			UserID:      createdUser.ID,
-			ServiceType: extsvc.TypePerforce,
-		})
-		require.NoError(t, err)
-		require.Len(t, accounts, 0)
+		assertRemovals(t)
 	})
 }

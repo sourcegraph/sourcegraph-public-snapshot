@@ -2,9 +2,8 @@ import React, { useState } from 'react'
 
 import { useHistory } from 'react-router'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
@@ -94,7 +93,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
         <Form className={styles.surveyForm} onSubmit={handleSubmit}>
             {error && <Text className={styles.error}>{error.message}</Text>}
             {/* Label is associated with control through aria-labelledby */}
-            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+            {}
             <Label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
             </Label>

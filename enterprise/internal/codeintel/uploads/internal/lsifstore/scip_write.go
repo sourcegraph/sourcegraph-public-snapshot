@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"sort"
 	"sync/atomic"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -82,7 +84,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
 		return nil, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIpWriterTemporarySymbolsTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +130,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
 ) ON COMMIT DROP
 `
 
-const newSCIpWriterTemporarySymbolsTableQuery = `
+const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
@@ -208,7 +210,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			"payload_hash",
 			"raw_scip_payload",
 		},
-		"",
+		"ON CONFLICT DO NOTHING",
 		"id",
 		func(inserter *batch.Inserter) error {
 			for _, document := range documents {
@@ -224,7 +226,21 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return err
 	}
 	if len(documentIDs) != len(documents) {
-		return errors.New("unexpected number of document records inserted")
+		hashes := make([][]byte, 0, len(documents))
+		for _, document := range documents {
+			hashes = append(hashes, document.payloadHash)
+		}
+		idsByHash, err := scanIDsByHash(s.db.Query(ctx, sqlf.Sprintf(scipWriterWriteFetchDocumentsQuery, pq.Array(hashes))))
+		if err != nil {
+			return err
+		}
+		documentIDs = documentIDs[:0]
+		for _, document := range documents {
+			documentIDs = append(documentIDs, idsByHash[hex.EncodeToString(document.payloadHash)])
+		}
+		if len(idsByHash) != len(documents) {
+			return errors.New("unexpected number of document records inserted/retrieved")
+		}
 	}
 
 	documentLookupIDs, err := batch.WithInserterForIdentifiers(
@@ -343,6 +359,14 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	return nil
 }
 
+const scipWriterWriteFetchDocumentsQuery = `
+SELECT
+	encode(payload_hash, 'hex'),
+	id
+FROM codeintel_scip_documents
+WHERE payload_hash = ANY(%s)
+`
+
 func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	// Flush all buffered documents
 	if err := s.flush(ctx); err != nil {
@@ -412,3 +436,8 @@ func hashPayload(payload []byte) []byte {
 	_, _ = hash.Write(payload)
 	return hash.Sum(nil)
 }
+
+var scanIDsByHash = basestore.NewMapScanner(func(s dbutil.Scanner) (hash string, id int, _ error) {
+	err := s.Scan(&hash, &id)
+	return hash, id, err
+})

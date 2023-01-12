@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (wr *WebhookRouter) HandleBitbucketCloudWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
+func (wr *Router) HandleBitbucketCloudWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)

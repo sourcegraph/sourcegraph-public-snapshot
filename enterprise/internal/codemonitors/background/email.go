@@ -122,13 +122,17 @@ func NewTestTemplateDataForNewSearchResults(monitorDescription string) *Template
 }
 
 func sendEmail(ctx context.Context, db database.DB, userID int32, template txtypes.Templates, data any) error {
-	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 		}
 		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
 	}
+	if !verified {
+		return errors.Newf("unable to send email to user ID %d's unverified primary email address", userID)
+	}
+
 	if err := internalapi.Client.SendEmail(ctx, "code-monitor", txtypes.Message{
 		To:       []string{email},
 		Template: template,

@@ -72,7 +72,7 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	if err != nil {
 		return false, err
 	}
-	return c.gitserverClient.CommitExists(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.CommitExists(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
 }
 
 type RepositoryCommit struct {
@@ -125,7 +125,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		originalIndexes = append(originalIndexes, i)
 	}
 
-	exists, err := c.gitserverClient.CommitsExist(ctx, repoCommits, authz.DefaultSubRepoPermsChecker)
+	exists, err := c.gitserverClient.CommitsExist(ctx, authz.DefaultSubRepoPermsChecker, repoCommits)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +163,11 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
-	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo)
 }
 
 func (c *Client) HeadFromName(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
-	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
@@ -184,7 +184,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 		return "", time.Time{}, false, nil
 	}
 
-	rev, tm, ok, err := c.gitserverClient.CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	rev, tm, ok, err := c.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
 	if err == nil {
 		return rev, tm, ok, nil
 	}
@@ -255,7 +255,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedA
 		return nil, err
 	}
 
-	return c.gitserverClient.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
+	return c.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo, pointedAt...)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -275,7 +275,7 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 		return nil, err
 	}
 
-	return c.gitserverClient.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.CommitsUniqueToBranch(ctx, authz.DefaultSubRepoPermsChecker, repo, branchName, isDefaultBranch, maxAge)
 }
 
 // branchesContaining returns a map from branch names to branch tip hashes for each branch
@@ -285,7 +285,7 @@ func (c *Client) branchesContaining(ctx context.Context, repositoryID int, commi
 	if err != nil {
 		return nil, err
 	}
-	return c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.BranchesContaining(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
@@ -332,7 +332,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 		return nil, err
 	}
 
-	out, err := c.gitserverClient.ReadFile(ctx, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
+	out, err := c.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file)
 	if err == nil {
 		return out, nil
 	}
@@ -437,7 +437,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 }
 
 func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (_ []string, err error) {
-	matching, err := c.gitserverClient.ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
+	matching, err := c.gitserverClient.ListFiles(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), pattern)
 	if err == nil {
 		return matching, nil
 	}

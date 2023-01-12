@@ -3,7 +3,6 @@ import React from 'react'
 import { RouteComponentProps, Switch, Route, Redirect } from 'react-router'
 import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -12,7 +11,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { codeHostExternalServices, nonCodeHostExternalServices } from '../components/externalServices/externalServices'
 
@@ -22,11 +21,14 @@ const ExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/ExternalServicesPage'),
     'ExternalServicesPage'
 )
+const ExternalServiceEditPage = lazyComponent(
+    () => import('../components/externalServices/ExternalServiceEditPage'),
+    'ExternalServiceEditPage'
+)
 const ExternalServicePage = lazyComponent(
     () => import('../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
 )
-
 const AddExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/AddExternalServicesPage'),
     'AddExternalServicesPage'
@@ -86,7 +88,6 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                         {...outerProps}
                         {...props}
                         routingPrefix="/site-admin"
-                        afterCreateRoute="/site-admin/repositories?repositoriesUpdated"
                         codeHostExternalServices={codeHostExternalServices}
                         nonCodeHostExternalServices={nonCodeHostExternalServices}
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
@@ -101,8 +102,23 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                     <ExternalServicePage
                         {...outerProps}
                         {...props}
+                        routingPrefix="/site-admin"
+                        afterDeleteRoute="/site-admin/external-services"
                         externalServiceID={match.params.id}
-                        afterUpdateRoute="/site-admin/repositories?repositoriesUpdated"
+                        externalServicesFromFile={data?.site?.externalServicesFromFile}
+                        allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
+                    />
+                )}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/:id/edit`}
+                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
+                    <ExternalServiceEditPage
+                        {...outerProps}
+                        {...props}
+                        routingPrefix="/site-admin"
+                        externalServiceID={match.params.id}
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
                         allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
                     />

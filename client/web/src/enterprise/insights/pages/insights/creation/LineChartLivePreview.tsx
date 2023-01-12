@@ -1,7 +1,6 @@
 import { FC, HTMLAttributes } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text, Series, useDebounce } from '@sourcegraph/wildcard'
+import { useDeepMemo, Text, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {

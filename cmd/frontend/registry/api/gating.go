@@ -55,7 +55,11 @@ func ExtensionRegistryReadEnabled() error {
 		return nil
 	}
 
-	return ExtensionRegistryWriteEnabled()
+	if conf.ExperimentalFeatures().EnableLegacyExtensions {
+		return nil
+	}
+
+	return errors.Errorf("extensions are disabled")
 }
 
 // The extensions list query (`extensionRegistry.extensions`) will be called by the native
@@ -77,16 +81,8 @@ func ExtensionRegistryListAllowedExtensions() map[string]bool {
 
 	if err != nil {
 		return codeIntelExtensions
-	} else {
-		// nil means all extensions are allowed
-		return nil
-	}
-}
-
-func ExtensionRegistryWriteEnabled() error {
-	if !conf.ExperimentalFeatures().EnableLegacyExtensions {
-		return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
 	}
 
+	// nil means all extensions are allowed
 	return nil
 }

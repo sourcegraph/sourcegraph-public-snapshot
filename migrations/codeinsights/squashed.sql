@@ -30,6 +30,23 @@ CREATE TYPE time_unit AS ENUM (
     'YEAR'
 );
 
+CREATE TABLE archived_insight_series_recording_times (
+    insight_series_id integer NOT NULL,
+    recording_time timestamp with time zone NOT NULL,
+    snapshot boolean NOT NULL
+);
+
+CREATE TABLE archived_series_points (
+    series_id text NOT NULL,
+    "time" timestamp with time zone NOT NULL,
+    value double precision NOT NULL,
+    repo_id integer,
+    repo_name_id integer,
+    original_repo_name_id integer,
+    capture text,
+    CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
+);
+
 CREATE TABLE commit_index (
     committed_at timestamp with time zone NOT NULL,
     repo_id integer NOT NULL,
@@ -333,6 +350,34 @@ CREATE SEQUENCE insights_background_jobs_id_seq
 
 ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
 
+CREATE TABLE insights_data_retention_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    series_id integer NOT NULL,
+    series_id_string text DEFAULT ''::text NOT NULL
+);
+
+CREATE SEQUENCE insights_data_retention_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insights_data_retention_jobs_id_seq OWNED BY insights_data_retention_jobs.id;
+
 CREATE VIEW insights_jobs_backfill_in_progress AS
  SELECT jobs.id,
     jobs.state,
@@ -519,6 +564,8 @@ ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insigh
 
 ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('insights_background_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY insights_data_retention_jobs ALTER COLUMN id SET DEFAULT nextval('insights_data_retention_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterator_id_seq'::regclass);
@@ -526,6 +573,9 @@ ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterato
 ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_iterator_errors_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
+
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT archived_insight_series_recor_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
 
 ALTER TABLE ONLY commit_index_metadata
     ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
@@ -565,6 +615,9 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insights_background_jobs
     ADD CONSTRAINT insights_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY insights_data_retention_jobs
+    ADD CONSTRAINT insights_data_retention_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);
@@ -660,8 +713,14 @@ ALTER TABLE ONLY insight_series_backfill
 ALTER TABLE ONLY insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_series_incomplete_points
     ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY archived_series_points
+    ADD CONSTRAINT insight_series_series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;

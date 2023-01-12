@@ -4,7 +4,6 @@ import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -80,11 +79,8 @@ export const ListOfChangesets: Story = args => (
                     {...props}
                     refetchBatchChange={noop}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    extensionsController={undefined as any}
-                    platformContext={undefined as any}
                     batchChangeID="batchid"
                     viewerCanAdminister={args.viewerCanAdminister}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                     batchChangeState={BatchChangeState.OPEN}
                     isExecutionEnabled={false}
                 />
@@ -103,12 +99,9 @@ export const ListOfExpandedChangesets: Story = args => (
                     {...props}
                     refetchBatchChange={noop}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    extensionsController={undefined as any}
-                    platformContext={undefined as any}
                     batchChangeID="batchid"
                     viewerCanAdminister={args.viewerCanAdminister}
                     expandByDefault={true}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                     batchChangeState={BatchChangeState.OPEN}
                     isExecutionEnabled={false}
                 />
@@ -130,12 +123,9 @@ export const DraftWithoutChangesets: Story = args => {
                         {...props}
                         refetchBatchChange={noop}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                        extensionsController={undefined as any}
-                        platformContext={undefined as any}
                         batchChangeID="batchid"
                         viewerCanAdminister={true}
                         expandByDefault={true}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
                         batchChangeState={batchChangeState as BatchChangeState}
                         isExecutionEnabled={args.isExecutionEnabled}
                     />

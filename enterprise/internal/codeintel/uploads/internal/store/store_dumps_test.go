@@ -904,7 +904,6 @@ func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, upload
 	}
 }
 
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return

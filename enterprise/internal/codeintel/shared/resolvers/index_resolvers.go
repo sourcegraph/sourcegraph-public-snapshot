@@ -120,7 +120,7 @@ func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTre
 
 func (r *indexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	// drop the tag if it exists
-	if idx, ok := types.ImageToIndexer[strings.Split(r.index.Indexer, ":")[0]]; ok {
+	if idx, ok := types.ImageToIndexer[strings.Split(strings.Split(r.index.Indexer, "@sha256:")[0], ":")[0]]; ok {
 		return types.NewCodeIntelIndexerResolverFrom(idx)
 	}
 

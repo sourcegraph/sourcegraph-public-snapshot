@@ -4,13 +4,12 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Badge, Icon } from '@sourcegraph/wildcard'
+import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
-import { Timestamp } from '../components/time/Timestamp'
 import {
     GitRefConnectionFields,
     GitRefFields,

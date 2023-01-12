@@ -196,6 +196,18 @@ func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (d *DashboardInsightViewConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+	args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
+	var err error
+	viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	views := d.insightStore.GroupByView(ctx, viewSeries)
+	count := int32(len(views))
+	return &count, nil
+}
+
 func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
 	d.once.Do(func() {
 		args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
@@ -366,8 +378,7 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 		return emptyResponse, nil
 	}
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
-	if licenseError != nil {
+	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
 		lamDashboardId, err := r.dashboardStore.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
@@ -407,8 +418,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	}
 	defer func() { err = tx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
-	if licenseError != nil {
+	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
 		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
@@ -469,8 +479,7 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	}
 	defer func() { err = tx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
-	if licenseError != nil {
+	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
 		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")

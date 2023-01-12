@@ -5,15 +5,15 @@ import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
+import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'
-import { ModalVideo } from '@sourcegraph/search-ui'
+import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
 import { TourNewTabLink } from './TourNewTabLink'
-import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
 import styles from './Tour.module.scss'

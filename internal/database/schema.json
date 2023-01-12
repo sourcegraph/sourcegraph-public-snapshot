@@ -716,6 +716,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "namespace_permissions_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "notebooks_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -7363,6 +7372,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "author_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user."
+        },
+        {
           "Name": "contents",
           "Index": 3,
           "TypeName": "text",
@@ -8764,10 +8786,23 @@
           "Comment": ""
         },
         {
+          "Name": "machine_user",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "user_id",
           "Index": 3,
           "TypeName": "integer",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -8803,6 +8838,13 @@
           "RefTableName": "users",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "user_id_or_machine_user",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (user_id IS NULL AND machine_user \u003c\u003e ''::text OR user_id IS NOT NULL AND machine_user = ''::text)"
         }
       ],
       "Triggers": []
@@ -10643,6 +10685,32 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "corrupted_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Timestamp of when repo corruption was detected"
+        },
+        {
+          "Name": "corruption_logs",
+          "Index": 11,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'[]'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Log output of repo corruptions that have been detected - encoded as json"
         },
         {
           "Name": "last_changed",
@@ -12890,6 +12958,19 @@
           "Comment": ""
         },
         {
+          "Name": "requested_envvars",
+          "Index": 25,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "root",
           "Index": 13,
           "TypeName": "text",
@@ -14358,7 +14439,7 @@
         {
           "Name": "upload_size",
           "Index": 10,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -14770,6 +14851,136 @@
           "RefTableName": "users",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "namespace_permissions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "action",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('namespace_permissions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "resource_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "namespace_permissions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX namespace_permissions_pkey ON namespace_permissions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "unique_resource_permission",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, action, user_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (namespace, resource_id, action, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "action_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "namespace_not_blank",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (namespace \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "namespace_permissions_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -21361,7 +21572,7 @@
     },
     {
       "Name": "lsif_indexes_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    u.requested_envvars,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "lsif_uploads_with_repository_name",

@@ -1,13 +1,11 @@
-import React, { FC, ReactNode } from 'react'
+import { FC, ReactNode } from 'react'
 
 import { mdiAlertCircle as mdiAlertCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
-import { IncompleteDatapointAlert } from '@sourcegraph/shared/src/schema'
 import {
     Alert,
     Button,
@@ -20,10 +18,12 @@ import {
     PopoverTail,
     ScrollBox,
     Link,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { BackendInsightSeries } from '../../../../../../core'
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
+import { IncompleteDatapointAlert } from '../../../../../../core/types/insight/common'
 
 import styles from './BackendInsightAlerts.module.scss'
 
@@ -40,7 +40,6 @@ export const BackendAlertOverlay: FC<BackendAlertOverLayProps> = props => {
         return (
             <AlertOverlay
                 title="This insight is still being processed"
-                description="Datapoints shown may be undercounted."
                 icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
                 className={className}
             />
@@ -62,19 +61,19 @@ export const BackendAlertOverlay: FC<BackendAlertOverLayProps> = props => {
 
 export interface AlertOverlayProps {
     title: string
-    description: string
-    icon?: React.ReactNode
+    description?: ReactNode
+    icon?: ReactNode
     className?: string
 }
 
-const AlertOverlay: React.FunctionComponent<React.PropsWithChildren<AlertOverlayProps>> = props => {
+const AlertOverlay: FC<AlertOverlayProps> = props => {
     const { title, description, icon, className } = props
 
     return (
         <div className={classNames(className, styles.alertOverlay)}>
             {icon && <div className={styles.alertOverlayIcon}>{icon}</div>}
             <H4 className={styles.alertOverlayTitle}>{title}</H4>
-            <small className={styles.alertOverlayDescription}>{description}</small>
+            {description && <small className={styles.alertOverlayDescription}>{description}</small>}
         </div>
     )
 }
@@ -136,19 +135,20 @@ function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
 
 interface InsightSeriesIncompleteAlertProps {
     series: BackendInsightSeries<unknown>
+    className?: string
 }
 
 const dateFormatter = timeFormat('%B %d, %Y')
 
 export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps> = props => {
-    const { series } = props
+    const { series, className } = props
 
     const timeoutAlerts = series.alerts.filter(alert => alert.__typename === 'TimeoutDatapointAlert')
     const otherAlerts = series.alerts.filter(alert => alert.__typename !== 'TimeoutDatapointAlert')
 
     return (
         <Popover>
-            <PopoverTrigger as={Button} variant="icon" className={styles.alertIcon}>
+            <PopoverTrigger as={Button} variant="icon" className={classNames(className, styles.alertIcon)}>
                 <Icon
                     aria-label="Insight is in incomplete state"
                     svgPath={mdiAlertCircleOutline}

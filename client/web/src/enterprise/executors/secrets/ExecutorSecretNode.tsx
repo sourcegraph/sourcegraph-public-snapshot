@@ -1,9 +1,9 @@
 import React, { useCallback, useRef, useState } from 'react'
 
+import { mdiDocker, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import LockIcon from 'mdi-react/LockIcon'
 
-import { Badge, Button, Icon, H3, Link, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 
@@ -62,7 +62,19 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                 >
                     <div className="d-flex align-items-center">
                         <H3 className="text-nowrap mb-0 mr-2">
-                            <Icon className="mx-2" aria-hidden={true} as={LockIcon} /> {node.key}
+                            {node.key === 'DOCKER_AUTH_CONFIG' ? (
+                                <Tooltip content="This secret value will be used to configure docker client authentication with private registries.">
+                                    <Icon
+                                        className="mx-2"
+                                        svgPath={mdiDocker}
+                                        aria-label="This secret value will be used to configure docker client authentication with
+                                    private registries."
+                                    />
+                                </Tooltip>
+                            ) : (
+                                <Icon className="mx-2" aria-hidden={true} svgPath={mdiLock} />
+                            )}{' '}
+                            {node.key}
                         </H3>
                         {node.namespace === null && (
                             <span>

@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -817,16 +818,16 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
-		revs := make([]string, 0, len(revSpecs))
-		for _, revSpec := range revSpecs {
+		repoRevs := query.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
 			// treat empty list as HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }

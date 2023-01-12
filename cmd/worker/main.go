@@ -23,7 +23,7 @@ func main() {
 	observationCtx := observation.NewContext(logger)
 
 	authz.SetProviders(true, []authz.Provider{})
-	if err := shared.Start(observationCtx, nil, nil); err != nil {
+	if err := shared.Start(observationCtx, nil, nil, nil); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}

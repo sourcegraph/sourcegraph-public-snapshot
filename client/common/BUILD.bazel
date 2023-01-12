@@ -1,5 +1,5 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//client/shared/dev:defaults.bzl", "ts_project")
+load("//dev:defs.bzl", "ts_project")
 
 # gazelle:aspect_js enabled
 

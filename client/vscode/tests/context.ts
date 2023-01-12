@@ -1,6 +1,5 @@
 import puppeteer from 'puppeteer'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
@@ -15,7 +14,7 @@ import { commonVSCodeGraphQlResults } from './graphql'
 
 export interface VSCodeIntegrationTestContext
     extends IntegrationTestContext<
-        VSCodeGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations,
+        VSCodeGraphQlOperations & SharedGraphQlOperations,
         string & keyof (VSCodeGraphQlOperations & SharedGraphQlOperations)
     > {
     /**

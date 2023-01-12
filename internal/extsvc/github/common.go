@@ -1473,12 +1473,16 @@ var (
 	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
 
-func getGithubProxyURL() *url.URL {
+func getGithubProxyURL() (*url.URL, bool) {
+	if githubProxyRawURL == "" {
+		return nil, false
+	}
 	url, err := url.Parse(githubProxyRawURL)
 	if err != nil {
 		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+		return nil, false
 	}
-	return url
+	return url, true
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
@@ -1514,24 +1518,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	var autherWithRefresh auth.AuthenticatorWithRefresh
-	if auther != nil {
-		var ok bool
-		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
-		// Check if we should pre-emptively refresh
-		if ok && autherWithRefresh.NeedsRefresh() {
-			if err := autherWithRefresh.Refresh(ctx, httpClient); err != nil {
-				logger.Warn("doRequest: refreshing of the token failed", log.Error(err))
-			}
-		}
-		if err := auther.Authenticate(req); err != nil {
-			return nil, errors.Wrap(err, "authenticating request")
-		}
-	}
-
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub") //nolint:staticcheck // OT is deprecated
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -1543,16 +1532,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		span.Finish()
 	}()
 
-	if autherWithRefresh != nil {
-		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
-		if err != nil {
-			return nil, errors.Wrap(err, "do request with refresh and retry failed")
-		}
-	} else {
-		resp, err = httpClient.Do(req.WithContext(ctx))
-		if err != nil {
-			return nil, errors.Wrap(err, "http request failed")
-		}
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
+	if err != nil {
+		return nil, errors.Wrap(err, "request failed")
 	}
 	defer resp.Body.Close()
 
@@ -1595,14 +1577,25 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return getGithubProxyURL()
+		u, ok := getGithubProxyURL()
+		if ok {
+			return u
+		}
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
+	if hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
+		return true
+	}
+
+	if u, ok := getGithubProxyURL(); ok {
+		return apiURL.String() == u.String()
+	}
+
+	return false
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}

@@ -4,9 +4,8 @@ import { useQuery } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
-import { Button, Modal, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Modal, H2, Icon, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     AccessibleInsight,

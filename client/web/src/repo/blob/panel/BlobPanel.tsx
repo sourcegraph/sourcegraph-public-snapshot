@@ -3,7 +3,6 @@ import React, { useEffect, useCallback, useMemo } from 'react'
 import * as H from 'history'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { distinct, map, mapTo, switchMap, tap } from 'rxjs/operators'
-import { DocumentSelector } from 'sourcegraph'
 
 import {
     BuiltinTabbedPanelDefinition,
@@ -16,6 +15,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { DocumentSelector } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

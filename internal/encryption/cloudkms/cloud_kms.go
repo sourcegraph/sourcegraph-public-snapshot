@@ -10,7 +10,7 @@ import (
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"google.golang.org/api/option"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1" //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,7 +42,7 @@ type Key struct {
 }
 
 func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
-	key, err := k.client.GetCryptoKey(ctx, &kmspb.GetCryptoKeyRequest{
+	key, err := k.client.GetCryptoKey(ctx, &kmspb.GetCryptoKeyRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 		Name: k.name,
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (_ *encryption.Sec
 		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
 	}
 	// decrypt ciphertext
-	res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{
+	res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 		Name:       k.name,
 		Ciphertext: ev.Ciphertext,
 	})
@@ -103,7 +103,7 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) (_ []byte, err erro
 	}()
 
 	// encrypt plaintext
-	res, err := k.client.Encrypt(ctx, &kmspb.EncryptRequest{
+	res, err := k.client.Encrypt(ctx, &kmspb.EncryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 		Name:            k.name,
 		Plaintext:       plaintext,
 		PlaintextCrc32C: wrapperspb.Int64(int64(crc32Sum(plaintext))),

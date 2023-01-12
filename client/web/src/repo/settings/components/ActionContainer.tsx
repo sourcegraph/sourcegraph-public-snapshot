@@ -3,9 +3,8 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
-import { Button, ButtonProps, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, H4, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 
@@ -13,7 +12,7 @@ export const BaseActionContainer: React.FunctionComponent<
     React.PropsWithChildren<{
         title: React.ReactNode
         description: React.ReactNode
-        action: React.ReactNode
+        action?: React.ReactNode
         details?: React.ReactNode
         className?: string
     }>
@@ -24,7 +23,7 @@ export const BaseActionContainer: React.FunctionComponent<
                 <H4 className={styles.title}>{title}</H4>
                 {description}
             </div>
-            <div className={styles.btnContainer}>{action}</div>
+            {action && <div className={styles.btnContainer}>{action}</div>}
         </div>
         {details && <div className={styles.row}>{details}</div>}
     </div>

@@ -14,9 +14,8 @@ import {
     TooltipPayload,
 } from 'recharts'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Checkbox, Container, LoadingSpinner, Label } from '@sourcegraph/wildcard'
+import { Checkbox, Container, LoadingSpinner, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 

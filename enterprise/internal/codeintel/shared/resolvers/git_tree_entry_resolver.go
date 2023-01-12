@@ -68,10 +68,10 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
+			authz.DefaultSubRepoPermsChecker,
 			api.RepoName(r.commit.Repository().Name()),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
-			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 
@@ -143,7 +143,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
 	}

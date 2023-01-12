@@ -244,7 +244,9 @@ function getBelowPointId<Datum>(
  * Returns sorted series list by the first datum value in each series dataset.
  */
 export function getSortedByFirstPointSeries<Datum>(series: SeriesWithData<Datum>[]): SeriesWithData<Datum>[] {
-    return [...series].sort((a, b) => getDatumValue(a.data[0]) - getDatumValue(b.data[0]))
+    return [...series]
+        .filter(series => series.data.length > 0)
+        .sort((a, b) => getDatumValue(a.data[0]) - getDatumValue(b.data[0]))
 }
 
 function findLastWithSameValue<T, D>(list: T[], mapper: (item: T) => D): T | null {

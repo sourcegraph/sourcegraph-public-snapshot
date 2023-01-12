@@ -3,8 +3,18 @@ import { FC, MouseEventHandler, useRef } from 'react'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, Button, Input, LoadingSpinner, Modal, ModalProps, H3, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Button,
+    Input,
+    LoadingSpinner,
+    Modal,
+    ModalProps,
+    H3,
+    Text,
+    Tooltip,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import {
     CustomInsightDashboard,

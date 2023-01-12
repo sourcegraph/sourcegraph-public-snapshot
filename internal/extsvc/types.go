@@ -374,6 +374,21 @@ func ParseServiceKind(s string) (string, bool) {
 	}
 }
 
+var supportsRepoExclusion = map[string]bool{
+	KindAWSCodeCommit:   true,
+	KindBitbucketCloud:  true,
+	KindBitbucketServer: true,
+	KindGitHub:          true,
+	KindGitLab:          true,
+	KindGitolite:        true,
+}
+
+// SupportsRepoExclusion returns true when given external service kind supports
+// repo exclusion.
+func SupportsRepoExclusion(extSvcKind string) bool {
+	return supportsRepoExclusion[extSvcKind]
+}
+
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
 // (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.

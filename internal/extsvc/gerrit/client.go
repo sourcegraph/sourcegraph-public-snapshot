@@ -166,7 +166,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	return &respCodeProjects, nextPage, nil
 }
 
-// nolint:unparam
+//nolint:unparam // http.Response is never used, but it makes sense API wise.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 

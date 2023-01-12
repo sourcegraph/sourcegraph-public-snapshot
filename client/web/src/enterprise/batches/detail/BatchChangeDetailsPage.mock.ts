@@ -87,12 +87,14 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
                     name: 'test.txt',
                     binary: false,
                     byteSize: 74,
+                    url: 'test/url',
                 },
                 {
                     id: 'random-id-2',
                     name: 'src-cli',
                     binary: true,
                     byteSize: 75,
+                    url: 'test/url',
                 },
             ],
         },
@@ -188,6 +190,7 @@ export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
                                     url: 'https://test.test/my/pr',
                                 },
                                 repository: {
+                                    id: 'a',
                                     name: 'sourcegraph/sourcegraph',
                                     url: '/github.com/sourcegraph/sourcegraph',
                                 },

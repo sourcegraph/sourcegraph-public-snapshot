@@ -3,8 +3,7 @@ import { FunctionComponent } from 'react'
 import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ErrorBoundary } from './ErrorBoundary'
 

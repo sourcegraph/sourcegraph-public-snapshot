@@ -10,6 +10,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-enry/go-enry/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -234,7 +236,7 @@ func templatize(pattern string, env *MetaEnvironment) string {
 				case "date":
 					templatized = append(templatized, env.Date.Format("2006-01-02"))
 				default:
-					templateVar := strings.Title(a.Name[1:])
+					templateVar := cases.Title(language.English).String(a.Name[1:])
 					templatized = append(templatized, `{{.`+templateVar+`}}`)
 				}
 				continue

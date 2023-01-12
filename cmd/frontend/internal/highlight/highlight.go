@@ -18,6 +18,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
@@ -345,7 +346,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// TODO: It could be worthwhile to log that this language isn't supported or something
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
-	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 
@@ -433,7 +434,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
-		Tracer:           ot.GetTracer(ctx),
+		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
@@ -460,7 +461,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
-		trace.Log(otlog.Bool("timeout", true))
+		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
@@ -484,7 +485,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis.
-			trace.Log(otlog.Bool(problem, true))
+			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
 			prometheusStatus = problem
 		}
 

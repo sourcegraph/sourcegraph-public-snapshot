@@ -50,7 +50,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 first: args.first ?? null,
                 account: props.user.id,
             }
-            return queryGraphQL(
+            return queryGraphQL<ProductSubscriptionsResult>(
                 gql`
                     query ProductSubscriptions($first: Int, $account: ID) {
                         dotcom {
@@ -92,7 +92,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                             Search your private code with{' '}
                             <Link
                                 to="https://signup.sourcegraph.com/"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Subscriptions' })}
                             >
                                 Sourcegraph Cloud
                             </Link>{' '}

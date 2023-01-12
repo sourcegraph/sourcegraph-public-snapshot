@@ -4,14 +4,15 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { SearchPatternType, getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchHomeState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -191,7 +192,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                         containerClassName={styles.searchBoxContainer}
                         autoFocus={true}
-                        editorComponent="monaco"
                     />
                 </form>
 

@@ -3,7 +3,6 @@ package monitoring
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,8 +16,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/grafanaclient"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/headertransport"
 )
 
 // GenerateOptions declares options for the monitoring generator.
@@ -64,7 +63,7 @@ type GenerateOptions struct {
 func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
 	ctx := context.TODO()
 
-	logger.Info("Regenerating monitoring", log.String("options", fmt.Sprintf("%+v", opts)))
+	logger.Info("Regenerating monitoring")
 
 	// Verify dashboard configuration
 	var validationErrors error
@@ -85,33 +84,24 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	if opts.GrafanaURL != "" && opts.Reload {
 		gclog := logger.Scoped("grafana.client", "grafana client setup")
 
-		// DefaultHTTPClient is used unless additional headers are requested
-		httpClient := grafanasdk.DefaultHTTPClient
-		if len(opts.GrafanaHeaders) > 0 {
-			gclog.Debug("Adding additional headers to Grafana requests",
-				log.String("headers", fmt.Sprintf("%v", opts.GrafanaHeaders)))
-			httpClient.Transport = headertransport.New(httpClient.Transport, opts.GrafanaHeaders)
+		var err error
+		grafanaClient, err = grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
+		if err != nil {
+			return err
 		}
 
-		// Init Grafana client
-		var err error
-		grafanaClient, err = grafanasdk.NewClient(opts.GrafanaURL, opts.GrafanaCredentials, httpClient)
-		if err != nil {
-			return errors.Wrap(err, "Failed to initialize Grafana client")
-		}
 		if opts.GrafanaFolder != "" {
 			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
 
-			// Get all the folders and look up the customer by the customer name (title)
-			folders, err := grafanaClient.GetAllFolders(ctx)
-			if err != nil {
-				return errors.Wrap(err, "Unable to get all folders from Grafana API")
+			// we also use the name for the UID
+			if err := grafana.ValidateUID(opts.GrafanaFolder); err != nil {
+				return errors.Wrapf(err, "Grafana folder name %q does not make a valid UID", opts.GrafanaFolder)
 			}
-			for _, folder := range folders {
-				if folder.Title == opts.GrafanaFolder {
-					gclog.Debug("Found existing folder", log.Int("folder.id", folder.ID))
-					grafanaFolderID = folder.ID
-				}
+
+			// try to find existing folder
+			if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
+				gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))
+				grafanaFolderID = folder.ID
 			}
 
 			// folderId is not found, create it
@@ -119,6 +109,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				gclog.Debug("No existing folder found, creating a new one")
 				folder, err := grafanaClient.CreateFolder(ctx, grafanasdk.Folder{
 					Title: opts.GrafanaFolder,
+					UID:   opts.GrafanaFolder,
 				})
 				if err != nil {
 					return errors.Wrapf(err, "Error creating new folder %s", opts.GrafanaFolder)
@@ -193,7 +184,8 @@ func generateAll(
 		}
 	}
 	if grafanaClient != nil {
-		logger.Debug("Reloading Grafana dashboard")
+		homeLogger := logger.With(log.String("dashboard", "home"))
+		homeLogger.Debug("Reloading Grafana dashboard")
 		if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
 			Dashboard: data,
 			Parameters: grafanasdk.SetDashboardParams{
@@ -203,7 +195,7 @@ func generateAll(
 		}); err != nil {
 			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard 'Overview'")
 		} else {
-			logger.Info("Reloaded Grafana dashboard")
+			homeLogger.Info("Reloaded Grafana dashboard")
 		}
 	}
 
@@ -254,7 +246,7 @@ func generateAll(
 			plog := dlog.Scoped("prometheus", "prometheus rules generation")
 
 			plog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
+			promAlertsFile, err := dashboard.RenderPrometheusRules(opts.InjectLabelMatchers)
 			if err != nil {
 				return generatedAssets, errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
 			}
@@ -273,7 +265,7 @@ func generateAll(
 
 	// Generate additional Prometheus assets
 	if opts.PrometheusDir != "" {
-		customRules, err := customPrometheusRules(opts.InjectLabelMatchers)
+		customRules, err := CustomPrometheusRules(opts.InjectLabelMatchers)
 		if err != nil {
 			return generatedAssets, errors.Wrap(err, "failed to generate custom rules")
 		}
@@ -290,7 +282,7 @@ func generateAll(
 	}
 
 	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.Reload {
+	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Reload {
 		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
 			With(log.String("instance", opts.PrometheusURL))
 		// Reload all Prometheus rules

@@ -251,15 +251,16 @@ func convertInferredConfiguration(repositoryID int, commit string, indexJobs []c
 		}
 
 		indexes = append(indexes, types.Index{
-			RepositoryID: repositoryID,
-			Commit:       commit,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
+			RepositoryID:     repositoryID,
+			Commit:           commit,
+			State:            "queued",
+			DockerSteps:      dockerSteps,
+			LocalSteps:       indexJob.LocalSteps,
+			Root:             indexJob.Root,
+			Indexer:          indexJob.Indexer,
+			IndexerArgs:      indexJob.IndexerArgs,
+			Outfile:          indexJob.Outfile,
+			RequestedEnvVars: indexJob.RequestedEnvVars,
 		})
 	}
 

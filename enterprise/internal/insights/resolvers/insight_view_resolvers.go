@@ -2,14 +2,12 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -24,9 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -35,6 +31,7 @@ var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPre
 var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSeriesPresentationResolver{}
 var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
+var _ graphqlbackend.InsightRepositoryDefinition = &insightRepositoryDefinitionResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
@@ -142,12 +139,6 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 	}
 
 	// create the known ways to resolve a data series
-	jitCaptureGroupGenerator := newSeriesResolverGenerator(
-		func(series types.InsightViewSeries) bool {
-			return series.JustInTime && series.GeneratedFromCaptureGroups
-		},
-		expandCaptureGroupSeriesJustInTime,
-	)
 	recordedCaptureGroupGenerator := newSeriesResolverGenerator(
 		func(series types.InsightViewSeries) bool {
 			return !series.JustInTime && series.GeneratedFromCaptureGroups
@@ -160,21 +151,11 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 		},
 		recordedSeries,
 	)
-
-	jitStreamingGenerator := newSeriesResolverGenerator(
-		func(series types.InsightViewSeries) bool {
-			return series.JustInTime && !series.GeneratedFromCaptureGroups
-		},
-		streamingSeriesJustInTime,
-	)
-
 	// build the chain of generators
-	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
 	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
-	recordedGenerator.SetNext(jitStreamingGenerator)
 
 	// set the struct variable to the first generator in the chain
-	i.dataSeriesGenerator = jitCaptureGroupGenerator
+	i.dataSeriesGenerator = recordedCaptureGroupGenerator
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
@@ -239,89 +220,37 @@ func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbacke
 	}
 }
 
-func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
-	matches := make(map[string]any)
-
-	// we need to "unwrap" the search contexts and extract the regexps that compose
-	// the Sourcegraph query filters. Then we will union these sets of included /
-	// excluded regexps with the standalone filter regexp strings that are
-	// available.
-	var includedWrapped []string
-	var excludedWrapped []string
-	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
-	if err != nil {
-		return nil, errors.Wrap(err, "unwrapSearchContexts")
+func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
 	}
-	includedWrapped = append(includedWrapped, inc...)
-	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
-		includedWrapped = append(includedWrapped, *filters.IncludeRepoRegex)
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no repository definitions available")
 	}
 
-	// we have to wrap the excluded ones in a non-capturing group so that we can
-	// apply regexp OR semantics across the entire set
-	wrapRegexp := func(r string) string {
-		return fmt.Sprintf("(?:%s)", r)
+	return &insightRepositoryDefinitionResolver{
+		series: i.view.Series[0],
+	}, nil
+}
+
+func (i *insightViewResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
+	// This depends on the assumption that the repo scope for each series on an insight is the same
+	// If this changes this is no longer valid.
+	if i.view == nil {
+		return nil, errors.New("no insight loaded")
 	}
-	for _, s := range exc {
-		excludedWrapped = append(excludedWrapped, wrapRegexp(s))
-	}
-	if filters.ExcludeRepoRegex != nil && *filters.ExcludeRepoRegex != "" {
-		excludedWrapped = append(excludedWrapped, wrapRegexp(*filters.ExcludeRepoRegex))
+	if len(i.view.Series) == 0 {
+		return nil, errors.New("no time scope available")
 	}
 
-	// first we process the exclude regexps and remove these repos from the original search results
-	if len(excludedWrapped) > 0 {
-		excludeRegexp, err := regexp.Compile(strings.Join(excludedWrapped, "|"))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to compile ExcludeRepoRegex")
-		}
-		for _, repository := range repositories {
-			if !excludeRegexp.MatchString(repository) {
-				matches[repository] = struct{}{}
-			}
-		}
-	} else {
-		for _, repository := range repositories {
-			matches[repository] = struct{}{}
-		}
-	}
-
-	// finally we process the included regexps over the set of repos that remain after we exclude
-	if len(includedWrapped) > 0 {
-		// we are iterating through a set of patterns and trying to match all of them to
-		// replicate forward lookahead semantics, which are not available in RE2. This
-		// means that every single provided regexp gets an opportunity to match and
-		// consume against the entire input string, and we only consider success if we
-		// can match every single input pattern.
-		matchAll := func(patterns []*regexp.Regexp, input string) bool {
-			for _, pattern := range patterns {
-				if !pattern.MatchString(input) {
-					return false
-				}
-			}
-			return true
-		}
-
-		patterns := make([]*regexp.Regexp, 0, len(includedWrapped))
-		for _, wrapped := range includedWrapped {
-			compile, err := regexp.Compile(wrapped)
-			if err != nil {
-				return nil, errors.Wrap(err, "regexp.Compile for included regexp set")
-			}
-			patterns = append(patterns, compile)
-		}
-		for match := range matches {
-			if !matchAll(patterns, match) {
-				delete(matches, match)
-			}
-		}
-	}
-
-	results := make([]string, 0, len(matches))
-	for match := range matches {
-		results = append(results, match)
-	}
-	return results, nil
+	return &insightTimeScopeUnionResolver{
+		resolver: &insightIntervalTimeScopeResolver{
+			unit:  i.view.Series[0].SampleIntervalUnit,
+			value: int32(i.view.Series[0].SampleIntervalValue),
+		},
+	}, nil
 }
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
@@ -385,6 +314,13 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 	return &insightRepositoryScopeResolver{repositories: s.series.Repositories}, nil
 }
 
+func (s *searchInsightDataSeriesDefinitionResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+	if s.series == nil {
+		return nil, errors.New("series required")
+	}
+	return &insightRepositoryDefinitionResolver{series: *s.series}, nil
+}
+
 func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
 	intervalResolver := &insightIntervalTimeScopeResolver{
 		unit:  s.series.SampleIntervalUnit,
@@ -427,6 +363,45 @@ func (i *insightRepositoryScopeResolver) Repositories(ctx context.Context) ([]st
 	return i.repositories, nil
 }
 
+type insightRepositoryDefinitionResolver struct {
+	series types.InsightViewSeries
+}
+
+func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (graphqlbackend.InsightRepositoryScopeResolver, bool) {
+	if len(r.series.Repositories) > 0 && r.series.RepositoryCriteria == nil {
+		return &insightRepositoryScopeResolver{
+			repositories: r.series.Repositories,
+		}, true
+	}
+	return nil, false
+}
+
+func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphqlbackend.RepositorySearchScopeResolver, bool) {
+	if len(r.series.Repositories) > 0 {
+		return nil, false
+	}
+
+	allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
+	return &reposSearchScope{
+		search:   emptyIfNil(r.series.RepositoryCriteria),
+		allRepos: allRepos,
+	}, true
+
+}
+
+type allReposScope struct {
+}
+
+func (a *allReposScope) AllRepos() bool { return true }
+
+type reposSearchScope struct {
+	search   string
+	allRepos bool
+}
+
+func (r *reposSearchScope) Search() string        { return r.search }
+func (r *reposSearchScope) AllRepositories() bool { return r.allRepos }
+
 type lineChartInsightViewPresentation struct {
 	view *types.Insight
 }
@@ -462,8 +437,24 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	// Validation
+	// Needs at least 1 series
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to create an insight view")
+	}
+
+	// Use view level Repo & Time scope if provided and ensure input is valid
+	for i := 0; i < len(args.Input.DataSeries); i++ {
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	uid := actor.FromContext(ctx).UID
@@ -475,7 +466,6 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 	defer func() { err = insightTx.Done(err) }()
 	dashboardTx := r.dashboardStore.With(insightTx)
-	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(insightTx))
 
 	var dashboardIds []int
 	if args.Input.Dashboards != nil {
@@ -510,7 +500,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, backfiller, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(insightTx, r.scheduler, r.insightEnqueuer)
 
 	for _, series := range args.Input.DataSeries {
 		if err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series); err != nil {
@@ -540,6 +530,20 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")
+	}
+
+	// Ensure Repo Scope is valid for each scope
+	for i := 0; i < len(args.Input.DataSeries); i++ {
+		if args.Input.DataSeries[i].RepositoryScope == nil {
+			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+		}
+		if args.Input.DataSeries[i].TimeScope == nil {
+			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		}
+		err := isValidSeriesInput(args.Input.DataSeries[i])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -598,8 +602,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
-	seriesFillStrategy := makeFillSeriesStrategy(ctx, tx, backfiller, r.scheduler, r.insightEnqueuer)
+	seriesFillStrategy := makeFillSeriesStrategy(tx, r.scheduler, r.insightEnqueuer)
 
 	if captureGroupInsight {
 		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, seriesFillStrategy); err != nil {
@@ -693,6 +696,8 @@ func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.Upda
 	return nil
 }
 
+// existingSeriesHasChanged returns a bool indicating if the series was changed in a way that would invalid the existing data.
+// This function assumes that the input has already been validated
 func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSeriesInput, existing types.InsightViewSeries) bool {
 	if new.Query != existing.Query {
 		return true
@@ -714,6 +719,15 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	})
 	for i := 0; i < len(existing.Repositories); i++ {
 		if new.RepositoryScope.Repositories[i] != existing.Repositories[i] {
+			return true
+		}
+	}
+	if isNilString(new.RepositoryScope.RepositoryCriteria) != isNilString(existing.RepositoryCriteria) {
+		return true
+	}
+
+	if !isNilString(new.RepositoryScope.RepositoryCriteria) && !isNilString(existing.RepositoryCriteria) {
+		if *new.RepositoryScope.RepositoryCriteria != *existing.RepositoryCriteria {
 			return true
 		}
 	}
@@ -989,6 +1003,10 @@ func emptyIfNil(in *string) string {
 	return *in
 }
 
+func isNilString(in *string) bool {
+	return in == nil
+}
+
 // A dummy type to represent the GraphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
 	resolver any
@@ -1097,6 +1115,20 @@ func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gra
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (r *InsightViewQueryConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+	orgStore := r.postgresDB.Orgs()
+	args := store.InsightQueryArgs{}
+
+	var err error
+	args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+	insights, err := r.insightStore.GetAllMapped(ctx, args)
+	count := int32(len(insights))
+	return &count, err
+}
+
 func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
 		orgStore := r.postgresDB.Orgs()
@@ -1178,23 +1210,12 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 
 type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 
-func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
-	v2BackfillEnabled := true
-	if v2BackfillSetting != nil {
-		v2BackfillEnabled = *v2BackfillSetting
-	}
-
+func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
 		}
-		if v2BackfillEnabled {
-			return v2HistoricFill(ctx, deprecateJustInTime, series, tx, scheduler)
-		}
-		return v1HistoricFill(ctx, deprecateJustInTime, series, tx, scopedBackfiller)
+		return historicFill(ctx, series, tx, scheduler)
 	}
 }
 
@@ -1211,10 +1232,7 @@ func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *stor
 	return nil
 }
 
-func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
-	if len(series.Repositories) > 0 && !deprecateJustInTime {
-		return nil
-	}
+func historicFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
 	backfillScheduler = backfillScheduler.With(tx)
 	_, err := backfillScheduler.InitialBackfill(ctx, series)
 	if err != nil {
@@ -1225,23 +1243,6 @@ func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.
 		return errors.Wrap(err, "StampBackfill")
 	}
 
-	return nil
-
-}
-
-func v1HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller) error {
-	if !deprecateJustInTime || len(series.Repositories) == 0 {
-		return nil
-	}
-
-	err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{series})
-	if err != nil {
-		return errors.Wrap(err, "ScopedBackfill")
-	}
-	_, err = tx.StampBackfill(ctx, series) // note that this isn't transactional with the backfill above until the queue is migrated to the insights DB
-	if err != nil {
-		return errors.Wrap(err, "StampBackfill")
-	}
 	return nil
 }
 
@@ -1276,7 +1277,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
-	if len(series.RepositoryScope.Repositories) == 0 {
+	// Also don't try to match on series that use repo critieria
+	// TODO: Reconsider matching on on criteria based series. If so the edit case would need work to ensure other insights remain the same.
+	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
@@ -1289,9 +1292,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 		}
 	}
 
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
@@ -1302,11 +1302,12 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
+			JustInTime:                 false,
 			GenerationMethod:           searchGenerationMethod(series),
 			GroupBy:                    groupBy,
 			NextRecordingAfter:         nextRecordingAfter,
 			OldestHistoricalAt:         oldestHistoricalAt,
+			RepositoryCriteria:         series.RepositoryScope.RepositoryCriteria,
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
@@ -1392,8 +1393,7 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 }
 
 func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
-	if licenseError != nil {
+	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
 		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
 		if err != nil {
 			return 0, errors.Wrap(err, "GetUnfrozenInsightCount")
@@ -1546,4 +1546,34 @@ func lowercaseGroupBy(groupBy *string) *string {
 		return &temp
 	}
 	return groupBy
+}
+
+func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	if seriesInput.RepositoryScope == nil {
+		return errors.New("a repository scope is required")
+	}
+	if seriesInput.TimeScope == nil {
+		return errors.New("a time scope is required")
+	}
+	repoCriteriaSpecified := seriesInput.RepositoryScope.RepositoryCriteria != nil
+	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
+	if repoListSpecified && repoCriteriaSpecified {
+		return errors.New("series can not specify both a repository list and repository critieria")
+	}
+	if !repoListSpecified && seriesInput.GroupBy != nil {
+		return errors.New("group by series require a list of repositories to be specified.")
+	}
+
+	if repoCriteriaSpecified {
+		plan, err := querybuilder.ParseQuery(*seriesInput.RepositoryScope.RepositoryCriteria, "literal")
+		if err != nil {
+			return errors.Wrap(err, "ParseQuery")
+		}
+		msg, valid := querybuilder.IsValidScopeQuery(plan)
+		if !valid {
+			return errors.New(msg)
+		}
+	}
+
+	return nil
 }

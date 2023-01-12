@@ -8,19 +8,20 @@ import (
 )
 
 var schema = `#CodeHost: {
-	kind:             "github" | "gitlab" | "bitbucket"
-	token:            string
-	url:              string
-	path:             string
-	username?:        string
-	password?:        string
-    sshKey:           string
+    kind:             "github" | "gitlab" | "bitbucket" | "dummy"
+    token:            string
+    url:              string
+    path:             string
+    username?:        string
+    password?:        string
+    sshKey?:          string
     repositoryLimit?: number
 }
 
 #Config: {
-	from:        #CodeHost
-	destination: #CodeHost
+    from:           #CodeHost
+    destination:    #CodeHost
+    maxConcurrency: number | *25
 }`
 
 type CodeHostDefinition struct {
@@ -35,8 +36,9 @@ type CodeHostDefinition struct {
 }
 
 type Config struct {
-	From        CodeHostDefinition
-	Destination CodeHostDefinition
+	From           CodeHostDefinition
+	Destination    CodeHostDefinition
+	MaxConcurrency int
 }
 
 func loadConfig(path string) (*Config, error) {

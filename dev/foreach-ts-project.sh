@@ -24,11 +24,10 @@ DIRS=(
   client/jetbrains
   client/observability-client
   client/observability-server
-  client/search
-  client/search-ui
   client/shared
   client/storybook
   client/template-parser
+  client/testing
   client/vscode
   client/web
   client/wildcard

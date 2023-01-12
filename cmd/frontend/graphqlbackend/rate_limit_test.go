@@ -71,33 +71,6 @@ query{
 			},
 		},
 		{
-			name: "Query with variables",
-			query: `
-query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
-                    extensionRegistry {
-                        extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
-                            nodes {
-                                id
-                                extensionID
-                                url
-                                manifest {
-                                    raw
-                                }
-                                viewerCanAdminister
-                            }
-                        }
-                    }
-                }
-`,
-			variables: map[string]any{
-				"first": 10,
-			},
-			want: QueryCost{
-				FieldCount: 62,
-				MaxDepth:   5,
-			},
-		},
-		{
 			name: "Query with default variables",
 			query: `
 query fetchExternalServices($first: Int = 10){

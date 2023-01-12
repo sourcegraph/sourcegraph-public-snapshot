@@ -4,10 +4,8 @@ import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
 import { H1, H2, Text, Tooltip, ButtonLink, Code } from '../..'
+import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -18,11 +16,7 @@ const config: Meta = {
     title: 'wildcard/Button',
     component: Button,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 
     parameters: {
         component: Button,

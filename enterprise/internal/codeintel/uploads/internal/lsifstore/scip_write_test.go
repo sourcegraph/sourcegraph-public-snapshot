@@ -31,8 +31,6 @@ func TestInsertMetadata(t *testing.T) {
 }
 
 func TestInsertSharedDocumentsConcurrently(t *testing.T) {
-	t.Skip()
-
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)

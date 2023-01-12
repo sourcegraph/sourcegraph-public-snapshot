@@ -5,8 +5,8 @@ import (
 	"io"
 	"sort"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -66,8 +66,14 @@ func correlateSCIP(
 			}
 
 			// While processing this document, stash the unique packages of each symbol name
-			// that is associated with an occurrence. If the occurrence is a definition, mark
-			// that package as being one that we define (rather than simply reference).
+			// in the document. If there is an occurrence that defines that symbol, mark that
+			// package as being one that we define (rather than simply reference).
+
+			for _, symbol := range document.Symbols {
+				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
+					packageSet[pkg] = false
+				}
+			}
 
 			for _, occurrence := range document.Occurrences {
 				if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
@@ -333,13 +339,13 @@ func writeSCIPData(
 
 		numDocuments += 1
 	}
-	trace.Log(otlog.Uint32("numDocuments", numDocuments))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
 
 	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}
-	trace.Log(otlog.Uint32("numSymbols", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
 
 	return nil
 }

@@ -2,9 +2,9 @@ import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { Text } from '@sourcegraph/wildcard'
+import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
     TestShowMorePaginationQueryFields,

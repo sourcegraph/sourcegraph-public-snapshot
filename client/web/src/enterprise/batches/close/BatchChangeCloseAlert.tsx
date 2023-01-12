@@ -2,9 +2,8 @@ import React, { useCallback, useState } from 'react'
 
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text } from '@sourcegraph/wildcard'
+import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'

@@ -27,6 +27,7 @@ var AdditionalJobs = map[string]job.Job{
 	"codehost-version-syncing":      versions.NewSyncingJob(),
 	"insights-job":                  workerinsights.NewInsightsJob(),
 	"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
+	"insights-data-retention-job":   workerinsights.NewInsightsDataRetentionJob(),
 	"batches-janitor":               batches.NewJanitorJob(),
 	"batches-scheduler":             batches.NewSchedulerJob(),
 	"batches-reconciler":            batches.NewReconcilerJob(),

@@ -2,8 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, ErrorMessage } from '@sourcegraph/wildcard'
 
 import styles from './ConnectionError.module.scss'
 

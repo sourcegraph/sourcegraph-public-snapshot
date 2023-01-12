@@ -2,8 +2,7 @@ import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { LoadingSpinner, Alert, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 

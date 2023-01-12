@@ -63,7 +63,7 @@ func (h *handler) Handle(ctx context.Context) error {
 		return err
 	}
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.Minimal)
+	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 }
 
 func (h *handler) HandleError(err error) {
