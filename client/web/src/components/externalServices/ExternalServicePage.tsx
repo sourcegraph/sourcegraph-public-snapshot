@@ -262,9 +262,10 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                             telemetryService={telemetryService}
                         />
                     )}
+                    <ExternalServiceWebhook externalService={externalService} className="mt-3" />
                     <LoaderButton
                         label="Trigger manual sync"
-                        className="mt-3"
+                        className="mt-3 mb-2 float-right"
                         alwaysShowLabel={true}
                         variant="secondary"
                         onClick={triggerSync}
@@ -272,7 +273,6 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                         disabled={syncExternalServiceLoading}
                     />
                     {syncExternalServiceError && <ErrorAlert error={syncExternalServiceError} />}
-                    <ExternalServiceWebhook externalService={externalService} className="mt-3" />
                     <ExternalServiceSyncJobsList
                         queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
                         updateSyncInProgress={updateSyncInProgress}
