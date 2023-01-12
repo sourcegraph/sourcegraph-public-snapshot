@@ -475,13 +475,14 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
+	if repoPinned, addr := getPinnedRepoAddr(rs, addresses.PinnedServers); repoPinned {
 		return addr, nil
 	}
 
 	if shouldUseRendezvousHashing() {
 		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
+
 	return addrForKey(rs, addresses.Addresses), nil
 }
 
