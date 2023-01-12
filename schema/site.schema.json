@@ -1393,9 +1393,16 @@
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 10,
+      "default": 20,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.historical.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights historical worker rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
