@@ -101,7 +101,7 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
-		NumHandlers:       1,           // Process only one job at a time (per instance)
+		NumHandlers:       1,           // Process only one job at a time (per instance). TODO: This should be changed once the handler above is not async anymore.
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
 	})
@@ -111,6 +111,6 @@ func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "permission_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
-		Metrics:  *dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
 	})
 }

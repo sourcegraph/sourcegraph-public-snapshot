@@ -6,15 +6,22 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 const featureFlagName = "database-permission-sync-worker"
 
-func PermissionSyncWorkerEnabled(ctx context.Context) bool {
-	return featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false)
+func PermissionSyncWorkerEnabled(ctx context.Context, db database.DB, logger log.Logger) bool {
+	globalFeatureFlags, err := db.FeatureFlags().GetGlobalFeatureFlags(ctx)
+	if err != nil {
+		logger.
+			Scoped("PermissionSyncWorkerEnabled", "checking feature flag for permission sync worker").
+			Warn("failed to query global feature flags", log.Error(err))
+		// TODO: log that we couldn't get the feature flags
+		return false
+	}
+	return globalFeatureFlags[featureFlagName]
 }
 
 var MockSchedulePermsSync func(ctx context.Context, logger log.Logger, db database.DB, req protocol.PermsSyncRequest)
@@ -33,7 +40,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 	}
 
 	// If the new permission sync worker is enabled, we create sync jobs, otherwise we send a request to repo-updater
-	if PermissionSyncWorkerEnabled(ctx) {
+	if PermissionSyncWorkerEnabled(ctx, db, logger) {
 		for _, userID := range req.UserIDs {
 			opts := database.PermissionSyncJobOpts{
 				HighPriority:     true,
