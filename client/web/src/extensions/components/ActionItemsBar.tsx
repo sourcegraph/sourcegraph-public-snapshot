@@ -387,11 +387,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                             {!haveExtensionsLoaded ? (
                                 <LoadingSpinner />
                             ) : isOpen ? (
-                                <Icon
-                                    data-testid="action-items-toggle-open"
-                                    aria-hidden={true}
-                                    svgPath={mdiChevronDoubleUp}
-                                />
+                                <Icon aria-hidden={true} svgPath={mdiChevronDoubleUp} />
                             ) : (
                                 <Icon
                                     aria-hidden={true}
