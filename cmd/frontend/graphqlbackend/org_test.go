@@ -10,11 +10,13 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -380,11 +382,9 @@ func TestAddOrganizationMember(t *testing.T) {
 	// tests below depend on config being there
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
-	// mock repo updater http client
-	repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-		return nil
-	}
-	defer func() { repoupdater.MockSchedulePermsSync = nil }()
+	// mock permission sync scheduling
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	defer func() { permssync.MockSchedulePermsSync = nil }()
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
