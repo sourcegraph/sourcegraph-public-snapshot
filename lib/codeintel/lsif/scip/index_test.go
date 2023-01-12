@@ -37,7 +37,7 @@ func TestConvertLSIF(t *testing.T) {
 
 	expectedIndex := &scip.Index{
 		Metadata: &scip.Metadata{
-			ProjectRoot:          "root/",
+			ProjectRoot:          "file:///test/root/",
 			ToolInfo:             &scip.ToolInfo{Name: "lsif-test"},
 			TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 			Version:              scip.ProtocolVersion_UnspecifiedProtocolVersion,
