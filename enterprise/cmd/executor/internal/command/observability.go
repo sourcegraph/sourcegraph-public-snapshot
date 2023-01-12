@@ -27,6 +27,10 @@ type Operations struct {
 	RunLockHeldTotal prometheus.Counter
 }
 
+// TODO(sqs): hack to allow 2 executor instances in same process...this func is copied because its
+// package name conflicts with the local `metrics` var below
+var mustRegisterIgnoreDuplicate = metrics.MustRegisterIgnoreDuplicate[prometheus.Counter]
+
 func NewOperations(observationCtx *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
@@ -47,13 +51,15 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 		Name: "src_executor_run_lock_wait_total",
 		Help: "The number of milliseconds spent waiting for the run lock.",
 	})
-	observationCtx.Registerer.MustRegister(runLockWaitTotal)
+	// TODO(sqs): hack to allow 2 executor instances in same process
+	runLockWaitTotal = mustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockWaitTotal)
 
 	runLockHeldTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_executor_run_lock_held_total",
 		Help: "The number of milliseconds spent holding the run lock.",
 	})
-	observationCtx.Registerer.MustRegister(runLockHeldTotal)
+	// TODO(sqs): hack to allow 2 executor instances in same process
+	runLockHeldTotal = mustRegisterIgnoreDuplicate(observationCtx.Registerer, runLockHeldTotal)
 
 	return &Operations{
 		SetupGitInit:                 op("setup.git.init"),

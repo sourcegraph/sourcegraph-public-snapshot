@@ -20,14 +20,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
+func LoadConfig() {
+	frontendInternal := env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
+	Client = &internalClient{URL: "http://" + frontendInternal}
+}
 
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
 	URL string
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client *internalClient
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
