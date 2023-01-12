@@ -155,13 +155,12 @@ exec docker run --rm -i \
 `
 
 // setDefaultEnv will set the environment variable if it is not set.
-func setDefaultEnv(logger log.Logger, k, v string) string {
-	if s, ok := os.LookupEnv(k); ok {
-		return s
+func setDefaultEnv(logger log.Logger, k, v string) {
+	if _, ok := os.LookupEnv(k); ok {
+		return
 	}
 	err := os.Setenv(k, v)
 	if err != nil {
 		logger.Fatal("setting default env variable", log.Error(err))
 	}
-	return v
 }
