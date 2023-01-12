@@ -23,7 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-var config = types.LoadSqliteConfig(baseConfig, CtagsConfig, RepositoryFetcherConfig)
+func LoadConfig() {
+	RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
+	CtagsConfig = types.LoadCtagsConfig(baseConfig)
+	config = types.LoadSqliteConfig(baseConfig, CtagsConfig, RepositoryFetcherConfig)
+}
+
+var config types.SqliteConfig
 
 func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	logger := observationCtx.Logger.Scoped("sqlite.setup", "SQLite setup")
