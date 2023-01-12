@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
+var symbolsURL = env.Get("SYMBOLS_URL", "http://symbols:3184", "symbols service URL")
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
