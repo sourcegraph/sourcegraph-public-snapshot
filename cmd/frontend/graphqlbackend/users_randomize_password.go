@@ -39,9 +39,16 @@ func sendPasswordResetURLToPrimaryEmail(ctx context.Context, db database.DB, use
 		return err
 	}
 
-	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return err
+	}
+
+	if !verified {
+		resetURL, err = userpasswd.AttachEmailVerificationToPasswordReset(ctx, db.UserEmails(), *resetURL, userID, email)
+		if err != nil {
+			return errors.Wrap(err, "attach email verification")
+		}
 	}
 
 	if err = userpasswd.SendResetPasswordURLEmail(ctx, email, user.Username, resetURL); err != nil {

@@ -74,10 +74,14 @@ func TestConvertLSIFDocument(t *testing.T) {
 		Diagnostics: []precise.DiagnosticData{},
 	}
 
-	definitionMatcher := func(targetPath string, targetRangeID precise.ID, definitionResultID precise.ID) bool {
-		return definitionResultID == "d0" && targetRangeID == "r0"
+	targetRangeFetcher := func(resultID precise.ID) []precise.ID {
+		if resultID == precise.ID("d0") {
+			return []precise.ID{precise.ID("r0")}
+		}
+
+		return nil
 	}
-	scipDocument := ConvertLSIFDocument(42, definitionMatcher, "lsif-sml", "src/main.ml", document)
+	scipDocument := ConvertLSIFDocument(42, targetRangeFetcher, "lsif-sml", "src/main.ml", document)
 
 	if expected := "src/main.ml"; scipDocument.RelativePath != expected {
 		t.Fatalf("unexpected path. want=%s have=%s", expected, scipDocument.RelativePath)
@@ -87,11 +91,11 @@ func TestConvertLSIFDocument(t *testing.T) {
 	}
 
 	expectedOccurrences := []*scip.Occurrence{
-		{Range: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `d0`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
+		{Range: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `r0`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
 		{Range: []int32{50, 25, 50, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
-		{Range: []int32{51, 25, 51, 35}, Symbol: "lsif . 42 . `d0`."},
+		{Range: []int32{51, 25, 51, 35}, Symbol: "lsif . 42 . `r0`."},
 		{Range: []int32{51, 25, 51, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`."},
-		{Range: []int32{52, 25, 52, 35}, Symbol: "lsif . 42 . `d0`."},
+		{Range: []int32{52, 25, 52, 35}, Symbol: "lsif . 42 . `r0`."},
 		{Range: []int32{52, 25, 52, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`."},
 	}
 	sort.Slice(scipDocument.Occurrences, func(i, j int) bool {
@@ -109,7 +113,7 @@ func TestConvertLSIFDocument(t *testing.T) {
 	}
 
 	expectedSymbols := []*scip.SymbolInformation{
-		{Symbol: "lsif . 42 . `d0`.", Documentation: []string{"hello world"}, Relationships: nil},
+		{Symbol: "lsif . 42 . `r0`.", Documentation: []string{"hello world"}, Relationships: nil},
 		{Symbol: "node npm left-pad 0.1.0 `padItUp`.", Documentation: []string{"hello world"}, Relationships: nil},
 	}
 	sort.Slice(scipDocument.Symbols, func(i, j int) bool {

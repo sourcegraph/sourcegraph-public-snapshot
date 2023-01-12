@@ -116,7 +116,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // strategies and so on, see Popover doc for more details)
             as={PopoverContent}
             isOpen={true}
-            targetElement={inputRef}
+            target={inputRef}
             // Suppress TS problem about position prop. ReachComboboxPopover and PopoverContent both
             // have position props with different interfaces. Since we swap component rendering with `as`
             // prop it's safe to suppress position type here due to PopoverContent position type is correct.

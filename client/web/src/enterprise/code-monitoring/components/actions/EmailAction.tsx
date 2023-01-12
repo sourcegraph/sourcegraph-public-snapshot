@@ -108,8 +108,14 @@ export const EmailAction: React.FunctionComponent<React.PropsWithChildren<Action
                 <Link to="/help/admin/config/email">configure email sending</Link>.
             </>
         )
+    ) : !userPrimaryEmail?.verified ? (
+        <>
+            Please <Link to={`${authenticatedUser.settingsURL!}/settings/emails`}>verify your email</Link> to enable
+            this feature.
+        </>
     ) : undefined
-    const disabledBasedOnEmailConfig = (!emailConfigured && !action) || disabled
+
+    const disabledBasedOnEmailConfig = !userPrimaryEmail?.verified || (!emailConfigured && !action) || disabled
 
     return (
         <ActionEditor

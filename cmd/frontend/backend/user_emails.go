@@ -293,16 +293,16 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
 func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
-	logger := e.logger.Scoped("UserEmails", "handles user emails")
-	email, _, err := e.db.UserEmails().GetPrimaryEmail(ctx, id)
+	email, verified, err := e.db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
-		logger.Warn("Failed to get user email", log.Error(err))
-		return err
+		return errors.Wrap(err, "get user primary email")
+	}
+	if !verified {
+		return errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
 	}
 	usr, err := e.db.Users().GetByID(ctx, id)
 	if err != nil {
-		logger.Warn("Failed to get user from database", log.Error(err))
-		return err
+		return errors.Wrap(err, "get user")
 	}
 
 	return txemail.Send(ctx, "user_account_update", txemail.Message{

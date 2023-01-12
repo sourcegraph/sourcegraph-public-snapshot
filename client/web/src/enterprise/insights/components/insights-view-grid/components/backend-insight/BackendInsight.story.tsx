@@ -149,11 +149,7 @@ function generateSeries(chartContent: SeriesChartContent<BackendInsightDatum>, i
             diffQuery: 'type:diff',
         })),
         status: {
-            backfillQueuedAt: '2021-06-06T15:48:11Z',
-            completedJobs: 0,
-            pendingJobs: isFetchingHistoricalData ? 10 : 0,
-            failedJobs: 0,
-            isLoading: isFetchingHistoricalData,
+            isLoadingData: isFetchingHistoricalData,
             incompleteDatapoints: series.alerts
                 ? [{ __typename: 'TimeoutDatapointAlert', time: '2022-04-21T01:13:43Z' }]
                 : [],

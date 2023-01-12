@@ -1079,7 +1079,7 @@
       "group": "Email"
     },
     "executors.frontendURL": {
-      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
@@ -1408,6 +1408,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 30,
+      "maximum": 90,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

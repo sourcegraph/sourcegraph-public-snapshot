@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Scripts for managing release captain duties",
   "scripts": {
-    "release": "yarn run -T ts-node --transpile-only ./src/main.ts",
-    "lint:js": "yarn run -T eslint --cache 'src/**/*.[jt]s?(x)'"
+    "release": "ts-node --transpile-only ./src/main.ts",
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'"
   }
 }

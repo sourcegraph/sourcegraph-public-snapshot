@@ -171,6 +171,7 @@ const CONTRIBUTORS_QUERY = gql`
                 username
                 url
                 displayName
+                avatarURL
             }
         }
         count
