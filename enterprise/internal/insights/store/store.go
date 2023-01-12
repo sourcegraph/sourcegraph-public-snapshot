@@ -682,6 +682,22 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	return series, nil
 }
 
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int) (time.Time, error) {
+	var tempTime time.Time
+	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, seriesId, n)))
+	if err != nil {
+		return tempTime, err
+	}
+	if !got {
+		return tempTime, nil
+	}
+	return oldestTime, nil
+}
+
+const getOffsetNRecordingTimeSql = `
+select recording_time from insight_series_recording_times where insight_series_id = %s and snapshot is false order by recording_time desc offset %s limit 1
+`
+
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
 // functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
 // Use this in favour of RecordSeriesPoints if recording times are known.
