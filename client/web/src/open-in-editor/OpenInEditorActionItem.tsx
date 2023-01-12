@@ -125,7 +125,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
     // we're okay with having the user go to the settings to configure this
     // instead.
     //
-    // Chances are that they won't have an IDE configured on this devices
+    // Chances are that they won't have an IDE configured on these devices
     // anyways.
     props.actionType !== 'dropdown' ? (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
