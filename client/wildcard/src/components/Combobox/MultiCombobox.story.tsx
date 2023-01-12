@@ -216,6 +216,10 @@ function MultiComboboxWithAsyncSearch() {
 
     const { suggestions, loading } = useAssigneeSearch(search)
 
+    const suggestionsWithExcludes = suggestions.filter(
+        item => !selectedItems.find(selectedItem => selectedItem.id === item.id)
+    )
+
     return (
         <MultiCombobox
             selectedItems={selectedItems}
@@ -232,7 +236,7 @@ function MultiComboboxWithAsyncSearch() {
             <small className="text-muted pl-2">You can connect any search engine on consumer level</small>
 
             <MultiComboboxPopover className={styles.asyncSearchPopover}>
-                <MultiComboboxList items={suggestions}>
+                <MultiComboboxList items={suggestionsWithExcludes}>
                     {items => items.map((item, index) => <CustomOption key={item.id} item={item} index={index} />)}
                 </MultiComboboxList>
             </MultiComboboxPopover>
