@@ -30,6 +30,9 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		email = *args.Email
 	}
 
+	logger := r.logger.Scoped("createUser", "create user handler").With(
+		log.Bool("needsEmailVerification", needsEmailVerification))
+
 	// 🚨 SECURITY: Do not assume user email is verified on creation if email delivery is
 	// enabled and we are allowed to reset passwords (which will become the primary
 	// mechanism for verifying this newly created email).
@@ -39,7 +42,9 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		var err error
 		emailVerificationCode, err = backend.MakeEmailVerificationCode()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate email verification code")
+			msg := "failed to generate email verification code"
+			logger.Error(msg, log.Error(err))
+			return nil, errors.Wrap(err, msg)
 		}
 	}
 
@@ -54,13 +59,12 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		EmailVerificationCode: emailVerificationCode,
 	})
 	if err != nil {
-		return nil, err
+		msg := "failed to create user"
+		logger.Error(msg, log.Error(err))
+		return nil, errors.Wrap(err, msg)
 	}
 
-	logger := r.logger.Scoped("createUser", "create user handler").With(
-		log.Bool("needsEmailVerification", needsEmailVerification),
-		log.Int32("user.id", user.ID),
-	)
+	logger = logger.With(log.Int32("user.id", user.ID))
 	logger.Debug("user created")
 
 	if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
@@ -72,14 +76,15 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 			log.Error(err))
 	}
 
-	return &createUserResult{db: r.db, user: user}, nil
+	return &createUserResult{logger: logger, db: r.db, user: user}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
 //
 // 🚨 SECURITY: Only site admins should be able to instantiate this value.
 type createUserResult struct {
-	db database.DB
+	logger log.Logger
+	db     database.DB
 
 	user *types.User
 }
@@ -99,15 +104,20 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
 		if err != nil {
-			return nil, err
+			msg := "failed to send set password email"
+			r.logger.Error(msg, log.Error(err))
+			return nil, errors.Wrap(err, msg)
 		}
 		return &ru, nil
 	}
 
 	resetURL, err := backend.MakePasswordResetURL(ctx, r.db, r.user.ID)
 	if err != nil {
-		return nil, err
+		msg := "failed to generate reset URL"
+		r.logger.Error(msg, log.Error(err))
+		return nil, errors.Wrap(err, msg)
 	}
+
 	ru := globals.ExternalURL().ResolveReference(resetURL).String()
 	return &ru, nil
 }
