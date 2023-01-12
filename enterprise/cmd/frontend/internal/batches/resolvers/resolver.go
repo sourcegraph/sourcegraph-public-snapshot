@@ -1976,9 +1976,20 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-// DEPRECATED
+// Realistically, we don't care about this field if an instance _is_ licensed. However, at
+// present there's no way to directly query the license details over GraphQL, so we just
+// return an arbitrarily high number if an instance is licensed and unrestricted.
 func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
-	return 10
+	if bcFeature, err := checkLicense(); err == nil {
+		if bcFeature.Unrestricted {
+			return 999999
+		} else {
+			return int32(bcFeature.MaxNumChangesets)
+		}
+	} else {
+		// The license could not be checked.
+		return 0
+	}
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
