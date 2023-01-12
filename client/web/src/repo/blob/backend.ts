@@ -80,7 +80,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
 
-            fragment BlobFileFields on GitBlob {
+            fragment BlobFileFields on File2 {
                 __typename
                 content
                 richHTML
@@ -109,7 +109,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 throw new Error('Commit not found')
             }
 
-            return data.repository.commit.blob
+            return data.repository.commit.file
         })
     )
 }, fetchBlobCacheKey)
