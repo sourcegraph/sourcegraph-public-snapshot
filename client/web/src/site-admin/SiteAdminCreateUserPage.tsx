@@ -90,28 +90,21 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
 
     public render(): JSX.Element | null {
         const postCreateText = (result: CreateUserResult['createUser'], emailProvided: boolean): React.ReactNode => {
+            let text = 'The user must authenticate using a configured authentication provider.';
+            let copyableURL = null
             if (result.resetPasswordURL) {
-                const copyableURL = <CopyableText text={result.resetPasswordURL} size={40} />
+                copyableURL = <CopyableText text={result.resetPasswordURL} size={40} />
+                text = "You must manually send this password reset link to the new user: "
                 if (window.context.emailEnabled && emailProvided) {
-                    return (
-                        <>
-                            <Text>
-                                A password reset URL has been sent to the new user's email address. If they don't
-                                receive it, you can also share the following password reset link:
-                            </Text>
-                            {copyableURL}
-                        </>
-                    )
+                    text = "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
                 }
-
-                return (
-                    <>
-                        <Text>You must manually send this password reset link to the new user:</Text>
-                        {copyableURL}
-                    </>
-                )
             }
-            return <Text>The user must authenticate using a configured authentication provider.</Text>
+            return (
+                <>
+                    <Text>{text}</Text>
+                    {copyableURL}
+                </>
+            )
         }
 
         return (
