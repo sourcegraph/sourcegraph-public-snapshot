@@ -12,6 +12,9 @@ $ kubectl apply -k --prune -l deploy=sourcegraph -f $PATH_TO_OVERLAY
 
 #### Create an overlay for Sourcegraph
 
+**IMPORTANT NOTE**: Please create your own sets of overlays within the 'overlays' directory and refrain from making changes to the other directories to prevent potential conflicts during future updates and ensure a seamless upgrade process.
+
+
 1. Ensure you have met [all the prerequisites](../kustomize/index.md#prerequisites) with your private reference repository available locally
 2. Create a duplicate of the `new/overlays/template` folder within the `new/overlays` directory
 3. Rename the duplicate to the name of your cluster environment (ex. `prod`, `staging`, `aws`, etc) --this would be the name of your overlay: $OVERLAY_NAME
@@ -260,7 +263,7 @@ It is recommended to enable TLS and configure a certificate properly on your Ing
 
 To configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets) manually:
 
-Step 1: Move the tls.cert and tls.key to the config directory within your overlay. E.g. `new/overlays/$OVERLAY_NAME/config`.
+Step 1: Move the tls.cert and tls.key to the env folder inside the overlay directory. Ex. `new/overlays/$OVERLAY_NAME/config`.
 
 Step 2: Generate secrets with the provided files using secretGenerator by adding the following to your kustomization file:
 

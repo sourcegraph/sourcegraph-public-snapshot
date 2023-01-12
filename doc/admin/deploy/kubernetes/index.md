@@ -42,51 +42,48 @@ Not sure if Kubernetes is the right choice for you? Learn more about other [Sour
 
 Sourcegraph for Kubernetes is configured using our [reference repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph deployment on Kubernetes.
 
-Follow our [reference repository docs](../repositories.md) to create a private copy of the reference repository.
+Follow our [reference repository docs](../repositories.md) to create a private copy of the reference repository for deploying Sourcegraph.
+
+## Quick start
+
+The instructions below only works for clusters that are configured to run Sourcegraph with default settings, with network access set up using [ingress controller](https://github.com/kubernetes/ingress-nginx). Please see the detailed instructions in our [configuration guide for Kustomize](kustomize/configure.md) or [configuration guide for Helm](helm.md#configuration) when deploying to a specified cloud environment (eg. EKS, GKE, etc).
+
+### Step 1: Deploy Sourcegraph
+
+Run command below to deploy a pre-configured Sourcegraph instance without the monitoring stacks to your cluster using kustomize _`-k`_.
+
+```bash
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/base/xs?ref=v4.4.0
+```
+
+Alternatively, you can deploy Sourcegraph with default values using Helm.
+
+```bash
+$ helm repo add sourcegraph https://helm.sourcegraph.com/release
+$ helm install --version 4.3.1 sourcegraph sourcegraph/sourcegraph
+```
+
+### Step 2: Access Sourcegraph
+
+When the status of all Sourcegraph services are shown to be `Running`, it means the deployment has been completed successfully. You can then make the frontend accessible temporarily by connecting to the sourcegraph-frontend service in your Kubernetes cluster using [kubectl port-forward](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
+
+```sh
+$ kubectl port-forward svc/sourcegraph-frontend 3080:30080
+```
+
+Visit http://localhost:3080 in your browser to view the new Sourcegraph instance.
+
+You can also access your Sourcegraph instance through ingress if an [`ingress-controller`](kustomize/configure.md#ingress-controller) is available in your cluster.
 
 ## Configure
 
 The default deployment includes the necessary services to start Sourcegraph. It does not includes services or configurations that your cluster needs to run Sourcegraph successfully. As a result, additional [configuration](kustomize/configure.md) might be required in order to deploy Sourcegraph to your Kubernetes cluster successfully.
 Common configurations include:
 
-- Adjust [resources](kustomize/configure.md#resources-adjustment)
-- Create [storage class](kustomize/configure.md#storage-class)
-- Set up network access via [ingress-controller](kustomize/configure.md#ingress-controller)
-- Set up an [external PostgreSQL Database](kustomize/configure.md#external-databases)
-- Set up [SSH connection for cloning repositories](kustomize/configure.md##repository-cloning-via-ssh)
+- Adjust resources [Kustomize](kustomize/configure.md#resources-adjustment) / [Helm](helm.md#configuration)
+- Create storage class [Kustomize](kustomize/configure.md#storage-class) / [Helm](helm.md#cloud-providers-guides)
+- Configure network settings [Kustomize](kustomize/configure.md#ingress-controller) / [Helm](helm.md#helm-subcharts)
+- Set up an external PostgreSQL Database [Kustomize](kustomize/configure.md#external-databases) / [Helm](helm.md#using-external-postgresql-databases)
+- Set up SSH connection for cloning repositories [Kustomize](kustomize/configure.md##repository-cloning-via-ssh) / [Helm](helm.md#using-ssh-to-clone-repositories)
 
-For more information, please read the [configuration guide](kustomize/configure.md) before installing Sourcegraph.
-
-## Quick start
-
-The instructions below only works on clusters that are pre-configured and do not require additional configurations. If you are deploying to a cluster that are hosted on a service provider (eg. AWS, Google Kubernetes Engine (GKE), please deploy following the instruction in our [configuration guide](kustomize/configure.md).
-
-Follow the instructions below to deploy the latest version of Sourcegraph with default settings to your cluster using Kustomize overlays for Sourcegraph.
-
-#### Step 1: Deploy Sourcegraph
-
-> NOTE: This assumes your cluster has already been configured to run Sourcegraph with [Ingress Controller](https://github.com/kubernetes/ingress-nginx) installed.
-
-Run below command to deploy a pre-configured Sourcegraph instance without the monitoring stacks to your cluster.
-
-```bash
-kubectl apply -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/base/xs?ref=v4.4.0
-```
-
-#### Step 2: Access Sourcegraph
-
-When the status of all Sourcegraph services are shown to be `Running`, it means the deployment has been completed successfully. You can then make the frontend accessible temporarily by connecting to the sourcegraph-frontend service in your Kubernetes cluster using [kubectl port-forward](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
-
-```sh
-kubectl port-forward svc/sourcegraph-frontend 3080:30080
-```
-
-You can access Sourcegraph in your browser at http://localhost:3080 🎉 You can also access your Sourcegraph instance through ingress if an [`ingress-controller`](kustomize/configure.md#ingress-controller) is available in your cluster.
-
-#### Preview resources
-
-To examine the resources generated by the Sourcegraph's quick-start kustomize overlay:
-
-```bash
-kustomize build https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/k3s/xs?ref=v4.4.0
-```
+For more information, please read the [configuration guide for Kustomize](kustomize/configure.md) or the [configuration guide for Helm](helm.md#configuration) before installing Sourcegraph.

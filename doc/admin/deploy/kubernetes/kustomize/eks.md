@@ -1,3 +1,157 @@
-# Installation Guide - Google Kubernetes Engine (GKE)
+# Installation Guide - Amazon Elastic Kubernetes Service (EKS)
 
-This section is aimed at providing high-level guidance on deploying Sourcegraph using a Kustomize overlay on Amazon EKS. 
+This section is aimed at providing high-level guidance on deploying Sourcegraph using a Kustomize overlay on Amazon Elastic Kubernetes Service (EKS). 
+
+## Overview
+
+The installation steps below will walk you through the steps to deploy Sourcegraph using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy the Sourcegraph main stacks without monitoring services.
+
+The overlay will:
+
+- Deploy a resources for the Sourcegraph main stacks without monitoring services
+- Monitoring services required RBAC and can be deployed later 
+- Configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly on your domain
+- Configure the Storage Class to use [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html) (installed as adds-on)
+
+## Prerequisites
+
+- Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
+- [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
+- Support for Persistent Volumes (SSDs recommended)
+-  a EKS cluster (>=1.19) with the following addons enabled:
+   - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+     - You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller
+   - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
+
+## Quick Start
+
+Once you have met all the prerequisites listed above and have created a cluster with nodes available...
+
+### Step 0: Install Ingress Controller
+
+```bash
+$ kubectl apply -k https://github.com/kubernetes/ingress-nginx/deploy/static/provider/aws\?ref\=controller-v1.5.1
+```
+
+### Step 1: Deploy Sourcegraph
+
+Deploy Sourcegraph main app without the monitoring stacks to your cluster:
+
+```bash
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/aws/eks?ref=v4.3.1
+```
+
+Monitor the deployment status to make sure everything is up and running:
+
+```bash
+kubectl get pods -o wide --watch
+```
+
+### Step 2: Access Sourcegraph in Browser
+
+To check the status of the load balancer and obtain its IP:
+
+```bash
+$ kubectl describe ingress sourcegraph-frontend
+```
+
+From you output, look for the IP address of the load balancer, which is listed under `Address`.
+
+```bash
+# Sample output:
+Name:             sourcegraph-frontend
+Namespace:        default
+Address:          12.345.678.0
+```
+
+Once the load balancer is ready, you can access your new Sourcegraph instance at the returned IP address in your browser via HTTP. Accessing the IP address with HTTPS returns errors because TLS must be enabled first.
+
+It might take about 10 minutes for the load balancer to be fully ready. In the meantime, you can access Sourcegraph using the port forward method as described below.
+
+#### Port forward
+
+Forward the remote port so that you can access Sourcegraph without network configuration temporarily.
+
+```bash
+kubectl port-forward svc/sourcegraph-frontend 3080:30080
+```
+
+You should now be able to access your new Sourcegraph instance at http://localhost:3080  🎉
+
+### Optional Step: Deploy monitoring stacks 
+
+**IMPORTANT**: RBAC is required for the monitoring stacks to work properly.
+
+If RBAC is enabled in your cluster, we strongly recommend you to deploy the monitoring stacks for Sourcegraph.
+
+```bash
+$ kubectl apply -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/monitoring?ref=v4.3.1
+```
+
+### Further configuration
+
+The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/quick-start/aws/eks) overlay preconfigured by us.
+
+If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
+
+```yaml
+# new/overlays/your_aws_deployment/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+# Sourcegraph Main Stacks
+- ../../base/sourcegraph
+components:
+# Use resources for a size-XS instance
+- ../../components/sizes/xs
+# Apply configurations for AWS EKS
+- ../../components/aws/configure-eks
+```
+
+#### Enable TLS
+
+Once you have created a new overlay using the kustomization file from our quick-start overlay for AWS EKS, we strongly recommend you to: 
+- create a DNS A record for your Sourcegraph instance domain
+- enable TLS is highly recommended. 
+
+If you would like to enable TLS with your own certificate, please read the [TLS configuration guide](configure.md#tls) for detailed instructions. 
+
+##### AWS-managed certificate
+
+In order to use a managed certificate from [AWS Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) to enable TLS:
+
+Step 1: Add the `aws/mange-cert` component to your overlay:
+
+```yaml
+# new/overlays/your_aws_deployment/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+- ../../base/sourcegraph
+components:
+- ../../components/sizes/xs
+- ../../components/aws/configure-eks
+- ../../components/aws/mange-cert
+```
+
+Step 2: Add the `ARN of the AWS-managed TLS certificate` to the `overlay.config` file using the `AWS_MANAGED_CERT_ARN` variable:
+
+```yaml
+# new/overlays/your_aws_deployment/config/overlay.config
+# ARN of the AWS-managed TLS certificate
+AWS_MANAGED_CERT_ARN=arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
+```
+
+## Troubleshooting
+
+### Validating Webhook Error
+
+Error: _Error from server (InternalError): error when creating "new/generated-cluster.yaml": Internal error occurred: failed calling webhook "validate.nginx.ingress.kubernetes.io": failed to call webhook: Post "https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s": no endpoints available for service "ingress-nginx-controller-admission"_
+
+Remove the Validating webhook:
+
+```bash
+$ kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+```

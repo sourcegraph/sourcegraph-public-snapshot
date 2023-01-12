@@ -4,7 +4,9 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The overlay 
+The installation steps below will walk you through the steps to deploy Sourcegraph using our quick-start overlay for GKE to deploy the Sourcegraph main stacks without monitoring services.
+
+The overlay will configure the Sourcegraph base cluster with:
 
 - A [BackendConfig](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig) CRD. This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
 - Ingress to use [Container-native load balancing](https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing) to expose Sourcegraph publicly on a domain of your choosing and
@@ -99,6 +101,12 @@ components:
 - ../../components/gke/configure
 ```
 
+You can also build the kustomization file remotely and build on top of it:
+
+```yaml
+kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/gke/base?ref=v4.3.1
+```
+
 #### Enable TLS
 
 Once you have created a new overlay using the kustomization file from our quick-start overlay for gke, we strongly recommend you to: 
@@ -109,7 +117,9 @@ If you would like to enable TLS with your own certificate, please read the [TLS 
 
 ##### Google-managed certificate
 
-Step 1: Add the `gke ingress` component to your overlay:
+In order to use [Google-managed SSL certificates](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) to enable TLS:
+
+Step 1: Add the `gke mange-cert` component to your overlay:
 
 ```yaml
 # new/overlays/your_gke_deployment/kustomization.yaml
