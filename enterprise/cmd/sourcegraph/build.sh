@@ -26,7 +26,7 @@ build() {
   arch=${1##*/}
   ext=""
   [[ ${os} == windows ]] && ext=".exe"
-  binary=".bin/$(basename ${pkg})-${os}-${arch}-dist${ext}"
+  binary=".bin/$(basename "${pkg}")-${os}-${arch}-dist${ext}"
   echo "--- go build for ${os}/${arch}"
   (GOOS="${os}" \
     GOARCH="${arch}" \
