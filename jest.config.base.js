@@ -13,7 +13,7 @@ const path = require('path')
 // ugly side effect. (This is especially evident when running tests in-band.)
 process.env.LANG = 'en_US.UTF-8'
 
-const esmModules = [
+const ESM_NPM_DEPS = [
   'abortable-rx',
   '@sourcegraph/comlink',
   'monaco-editor',
@@ -24,6 +24,8 @@ const esmModules = [
   'uuid',
   'vscode-languageserver-types',
 ]
+  .join('|')
+  .replace(/\//g, '\\+')
 
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
@@ -44,7 +46,14 @@ const config = {
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: [`node_modules/(?!(?:.pnpm/)?(${esmModules.join('|')}))`],
+  transformIgnorePatterns: [
+    // packages within the root pnpm/rules_js package store
+    `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    // files under a subdir: eg. '/packages/lib-a/'
+    `(../)+node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    // packages nested within another
+    `node_modules/(?!.aspect_rules_js|.pnpm|${ESM_NPM_DEPS})`,
+  ],
 
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
