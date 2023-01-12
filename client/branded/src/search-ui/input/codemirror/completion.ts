@@ -551,6 +551,23 @@ export function suggestionTypeFromTokens(
 
 type CompletionWithURL = Completion & { url?: string }
 
+// Returns the value of `type:VALUE` if it exists, or undefined otherwise.
+function queryType(tokens: Token[]): string | undefined {
+    for (const token of tokens) {
+        if (token.type === 'filter' && token.field.value === 'type') {
+            return token.value?.value
+        }
+    }
+    return undefined
+}
+
+// Returns true if the query has an unspecified type, or a `type:VALUE` matching
+// the type of the search match.
+function hasMatchingType(query: Token[], match: SearchMatch): boolean {
+    const tpe = queryType(query)
+    return tpe === undefined || tpe === match.type
+}
+
 function completionFromSearchMatch(
     match: SearchMatch,
     options: DefaultSuggestionSourcesOptions,
@@ -563,19 +580,20 @@ function completionFromSearchMatch(
 ): CompletionWithURL[] {
     const hasNonActivePatternTokens =
         tokens.find(token => token.type === 'pattern' && !isEqual(token.range, activeToken.range)) !== undefined
+    const shouldHaveURL = !hasNonActivePatternTokens && hasMatchingType(tokens, match)
     switch (match.type) {
         case 'path':
             return [
                 {
                     label: match.path,
                     type: SymbolKind.FILE,
-                    url: hasNonActivePatternTokens
-                        ? undefined
-                        : toPrettyBlobURL({
+                    url: shouldHaveURL
+                        ? toPrettyBlobURL({
                               filePath: match.path,
                               revision: match.commit,
                               repoName: match.repository,
-                          }),
+                          })
+                        : undefined,
                     apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
                     info: match.repository,
                 },
@@ -585,7 +603,7 @@ function completionFromSearchMatch(
                 {
                     label: match.repository,
                     type: 'repository',
-                    url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
+                    url: shouldHaveURL ? `/${match.repository}` : undefined,
                     detail: formatRepositoryStars(match.repoStars),
                     apply:
                         (params?.isDefaultSource ? 'repo:' : '') +
@@ -599,7 +617,7 @@ function completionFromSearchMatch(
                     (options.applyOnEnter && params?.isDefaultSource ? `${symbol.kind.toLowerCase()} ` : '') +
                     symbol.name,
                 type: symbol.kind,
-                url: hasNonActivePatternTokens ? undefined : symbol.url,
+                url: shouldHaveURL ? symbol.url : undefined,
                 apply: symbol.name + ' ',
                 detail:
                     options.applyOnEnter && params?.isDefaultSource
