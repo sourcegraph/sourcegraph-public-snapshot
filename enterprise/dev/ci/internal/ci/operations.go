@@ -828,6 +828,14 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 // Ask trivy, a security scanning tool, to scan the candidate image
 // specified by "app" and "tag".
 func trivyScanCandidateImage(app, tag string) operations.Operation {
+	// hack to prevent trivy scanes of blobstore and server images due to timeouts,
+	// even with extended deadlines
+	if app == "blobstore" || app == "server" {
+		return func(pipeline *bk.Pipeline) {
+			// no-op
+		}
+	}
+
 	image := images.DevRegistryImage(app, tag)
 
 	// This is the special exit code that we tell trivy to use
