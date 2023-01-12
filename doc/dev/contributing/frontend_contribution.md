@@ -18,35 +18,35 @@ To work on most frontend issues, it is necessary to run three applications local
 
     ```sh
     # Generate Typescript types
-    yarn generate
+    pnpm generate
 
     # Verify Typescript build
-    yarn build-ts
+    pnpm build-ts
     ```
 
 2. Linters.
 
     ```sh
-    yarn lint:js:all
-    yarn lint:css:all
-    yarn lint:graphql
-    yarn format:check
+    pnpm lint:js:all
+    pnpm lint:css:all
+    pnpm lint:graphql
+    pnpm format:check
     ```
 
 3. Unit tests
 
     ```sh
     # Run unit tests
-    yarn test
+    pnpm test
     ```
 
 4. Integration tests
 
     ```sh
     # Prepare web application for integration tests
-    ENTERPRISE=1 DISABLE_TYPECHECKING=true yarn run build-web
+    ENTERPRISE=1 DISABLE_TYPECHECKING=true pnpm run build-web
     # Run integration tests
-    yarn test-integration
+    pnpm test-integration
     ```
 
 ## Relevant development docs

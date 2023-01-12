@@ -671,6 +671,10 @@ type SeriesDisplayOptions {
     Max number of series to return.
     """
     limit: Int
+    """
+    Max number of samples to return for all the series on the view.
+    """
+    numSamples: Int
 }
 
 """
@@ -685,6 +689,10 @@ input SeriesDisplayOptionsInput {
     Max number of series to return.
     """
     limit: Int
+    """
+    Max number of samples to return.
+    """
+    numSamples: Int
 }
 
 """
