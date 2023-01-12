@@ -6465,7 +6465,7 @@ type Site implements SettingsSubject {
         """
         Days of history (based on current UTC time).
         """
-        days: Int
+        days: Int @deprecated(reason: "No longer supported - will be removed after Sourcegraph 4.5")
     ): MonitoringStatistics!
     """
     Whether changes can be made to site settings through the API. When global settings are configured through
@@ -7321,6 +7321,9 @@ type MonitoringStatistics {
     Alerts fired in this time span.
     """
     alerts: [MonitoringAlert!]!
+        @deprecated(
+            reason: "No longer supported, and will no longer return data - query will be removed after Sourcegraph 4.5"
+        )
 }
 
 """

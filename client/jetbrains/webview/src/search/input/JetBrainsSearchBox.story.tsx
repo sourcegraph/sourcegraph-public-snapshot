@@ -74,7 +74,6 @@ export const JetBrainsSearchBoxStory: Story = () => {
                             className=""
                             containerClassName=""
                             autoFocus={true}
-                            editorComponent="monaco"
                             hideHelpButton={true}
                         />
                     </div>

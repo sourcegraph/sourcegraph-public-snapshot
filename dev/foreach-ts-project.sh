@@ -24,7 +24,6 @@ DIRS=(
   client/jetbrains
   client/observability-client
   client/observability-server
-  client/search-ui
   client/shared
   client/storybook
   client/template-parser

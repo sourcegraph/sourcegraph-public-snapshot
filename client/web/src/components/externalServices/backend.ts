@@ -37,11 +37,12 @@ export const externalServiceFragment = gql`
         warning
         lastSyncError
         repoCount
-        webhookURL
         lastSyncAt
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
+        hasConnectionCheck
     }
 `
 
@@ -101,16 +102,6 @@ export function updateExternalService(
         )
         .toPromise()
 }
-
-export const FETCH_EXTERNAL_SERVICE = gql`
-    query ExternalService($id: ID!) {
-        node(id: $id) {
-            __typename
-            ...ExternalServiceFields
-        }
-    }
-    ${externalServiceFragment}
-`
 
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(
@@ -220,6 +211,17 @@ const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         }
     }
 `
+
+export const FETCH_EXTERNAL_SERVICE = gql`
+    query ExternalService($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...ListExternalServiceFields
+        }
+    }
+    ${LIST_EXTERNAL_SERVICE_FRAGMENT}
+`
+
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String) {
         externalServices(first: $first, after: $after) {

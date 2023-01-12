@@ -33,7 +33,7 @@ func (r repositoryContributorResolver) ID() graphql.ID {
 }
 
 func (r *repositoryContributorResolver) Person() *PersonResolver {
-	return &PersonResolver{db: r.db, name: r.name, email: r.email}
+	return &PersonResolver{db: r.db, name: r.name, email: r.email, includeUserInfo: true}
 }
 
 func (r *repositoryContributorResolver) Count() int32 { return r.count }
