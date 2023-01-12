@@ -81,4 +81,3 @@ func TestSCIPMigrator(t *testing.T) {
 		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
 	}
 }
-
