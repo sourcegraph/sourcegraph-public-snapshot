@@ -82,7 +82,7 @@ func New(urlspec string) *Map {
 // Note: Docker-compose and k8s deployments have different endpoints
 // docker-compose: zoekt-webserver-0:6070
 // k8s: indexed-search-0.indexed-search:6070
-func NewReplicas(urlspec string, service string, replicas string, port string, protocol string) *Map {
+func NewReplicas(urlspec, service, replicas, port, protocol string) *Map {
 	if replicas != "" {
 		r, err := strconv.Atoi(replicas)
 		if err != nil || r < 1 {
