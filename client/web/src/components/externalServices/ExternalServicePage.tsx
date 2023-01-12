@@ -265,7 +265,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />
                     <LoaderButton
                         label="Trigger manual sync"
-                        className="mt-2 mb-2 float-right"
+                        className="mt-3 mb-2 float-right"
                         alwaysShowLabel={true}
                         variant="secondary"
                         onClick={triggerSync}
