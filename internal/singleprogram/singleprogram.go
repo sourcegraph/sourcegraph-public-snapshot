@@ -24,7 +24,8 @@ func init() {
 }
 
 func Init(logger log.Logger) {
-	// HACK TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring
+	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
+	// eventually.
 	env.HackClearEnvironCache()
 
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
