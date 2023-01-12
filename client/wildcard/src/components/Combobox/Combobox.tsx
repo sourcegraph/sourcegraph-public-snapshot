@@ -55,7 +55,7 @@ const ComboboxContext = createContext<ComboboxContextValue>({
     setInputRef: () => {},
 })
 
-interface ComboboxProps extends ReachComboboxProps {}
+export interface ComboboxProps extends ReachComboboxProps {}
 
 /**
  * Combobox UI wrapper over Reach UI combobox component https://reach.tech/combobox
@@ -86,7 +86,7 @@ interface ComboboxInputProps extends ReachComboboxInputProps, Omit<InputProps, '
  * wrappers (for example: use input ref as Popover target in the {@link ComboboxPopover} component)
  */
 export const ComboboxInput = forwardRef((props, ref) => {
-    const { as: Component = Input, ...attributes } = props
+    const { as: Component = Input, value, ...attributes } = props
 
     const { setInputRef } = useContext(ComboboxContext)
     const mergedRef = useMergeRefs([ref, setInputRef])
