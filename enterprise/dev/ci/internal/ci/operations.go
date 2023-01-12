@@ -134,11 +134,12 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			withPnpmCache(),
 			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
 			buildkite.Cache(&bk.CacheOptions{
-				ID:          "golangci-lint",
-				Key:         "golangci-lint-{{ git.branch }}",
-				RestoreKeys: []string{"golangci-lint-{{ git.branch }}", "golangci-lint-main"},
-				Paths:       []string{".golangci-lint-cache"},
-				Compress:    true,
+				ID:                "golangci-lint",
+				Key:               "golangci-lint-{{ git.branch }}",
+				RestoreKeys:       []string{"golangci-lint-main"}, // We only restore the main branch cache.
+				Paths:             []string{".golangci-lint-cache"},
+				Compress:          true,
+				IgnorePullRequest: true,
 			}),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
