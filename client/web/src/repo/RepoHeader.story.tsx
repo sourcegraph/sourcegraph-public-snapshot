@@ -17,6 +17,7 @@ import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import repoRevisionContainerStyles from './RepoRevisionContainer.module.scss'
+import { SourcegraphContext } from '../jscontext'
 
 const mockUser = {
     id: 'userID',
