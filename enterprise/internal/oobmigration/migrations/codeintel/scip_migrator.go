@@ -900,6 +900,9 @@ func extractDefinitionResultIDs(ranges map[ID]RangeData) []ID {
 		if r.DefinitionResultID != "" {
 			resultIDMap[r.DefinitionResultID] = struct{}{}
 		}
+		if r.ImplementationResultID != "" {
+			resultIDMap[r.ImplementationResultID] = struct{}{}
+		}
 	}
 
 	ids := make([]ID, 0, len(resultIDMap))
