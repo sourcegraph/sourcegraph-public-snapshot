@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
@@ -18,19 +17,13 @@ import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    onDidUpdate: () => void
-    history: H.History
     routingPrefix: string
-    afterDeleteRoute: string
     editingDisabled: boolean
 }
 
 export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
     node,
-    onDidUpdate,
-    history,
     routingPrefix,
-    afterDeleteRoute,
     editingDisabled,
 }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
@@ -42,14 +35,14 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            onDidUpdate()
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
-            history.push(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
+        } finally {
+            window.location.reload()
         }
-    }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
+    }, [node])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -60,7 +53,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="align-self-start">
-                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs.nodes[0]?.state) ? (
+                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
                         <Tooltip content="Sync is running">
                             <div aria-label="Sync is running">
                                 <LoadingSpinner className="mr-2" inline={true} />
