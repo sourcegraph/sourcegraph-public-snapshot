@@ -134,11 +134,33 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     tooltip="Set your preferred editor"
                     isActive={popoverOpen}
                     icon={
-                        <img
-                            src={`${assetsRoot}/img/open-in-editor.svg`}
-                            alt="Set your preferred editor"
-                            className={styles.icon}
-                        />
+                        props.source === 'repoHeader' ? (
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className={styles.icon}
+                            >
+                                <rect x="3" y="2" width="6" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="3" y="16" width="6" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="9" y="9" width="6" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="10" y="2" width="4" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="6" y="12.5" width="6" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="13" y="12.5" width="4" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="16" y="9" width="3" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="6" y="5.5" width="6" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="13" y="5.5" width="3" height="1.5" rx="0.75" fill="currentColor" />
+                                <rect x="10" y="16" width="2" height="1.5" rx="0.75" fill="currentColor" />
+                            </svg>
+                        ) : (
+                            <img
+                                src={`${assetsRoot}/img/open-in-editor.svg`}
+                                alt="Set your preferred editor"
+                                className={styles.icon}
+                            />
+                        )
                     }
                     onClick={togglePopover}
                     source={props.source}
