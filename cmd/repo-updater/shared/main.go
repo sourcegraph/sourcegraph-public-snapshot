@@ -57,7 +57,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) map[string]debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server, syncer *repos.Syncer) map[string]debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -161,12 +161,6 @@ func Main(enterpriseInit EnterpriseInit) {
 		logger.Error("Performing initial rate limit sync", log.Error(err))
 	}
 
-	// All dependencies ready
-	debugDumpers := make(map[string]debugserver.Dumper)
-	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
-	}
-
 	syncer := &repos.Syncer{
 		Sourcer: src,
 		Store:   store,
@@ -175,6 +169,12 @@ func Main(enterpriseInit EnterpriseInit) {
 		Synced:  make(chan repos.Diff),
 		Now:     clock,
 		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
+	}
+
+	// All dependencies ready
+	debugDumpers := make(map[string]debugserver.Dumper)
+	if enterpriseInit != nil {
+		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server, syncer)
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)

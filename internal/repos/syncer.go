@@ -45,6 +45,9 @@ type Syncer struct {
 
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
+
+	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
+	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -786,6 +789,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			break
 		}
 
+		if s.EnterpriseUpdateRepoHook != nil {
+			if err := s.EnterpriseUpdateRepoHook(ctx, tx, stored[0], sourced); err != nil {
+				return Diff{}, errors.Wrap(err, "syncer: failed to update repo")
+			}
+		}
 		if err = tx.UpdateExternalServiceRepo(ctx, svc, stored[0]); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
@@ -795,6 +803,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
+		if s.EnterpriseCreateRepoHook != nil {
+			if err := s.EnterpriseCreateRepoHook(ctx, tx, sourced); err != nil {
+				return Diff{}, errors.Wrap(err, "syncer: failed to update repo")
+			}
+		}
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
