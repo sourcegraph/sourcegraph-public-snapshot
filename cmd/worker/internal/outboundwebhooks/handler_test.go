@@ -112,7 +112,7 @@ func TestHandler_Handle(t *testing.T) {
 
 		webhook := &types.OutboundWebhook{
 			ID:     1,
-			URL:    encryption.NewUnencrypted("moot"),
+			URL:    encryption.NewUnencrypted("http://sourcegraph.com/webhook-receiver/1234"),
 			Secret: encryption.NewUnencrypted(secret),
 		}
 

@@ -4,8 +4,9 @@ import (
 	"context"
 	"net"
 	"net/url"
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
