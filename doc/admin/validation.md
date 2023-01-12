@@ -16,6 +16,7 @@ The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental comm
 * perform a search on a non-indexed branch of the cloned repo
 * creates basic code insight
 * remove the added external service
+* remove the added code insight
 
 ### Validation specification
  
@@ -24,30 +25,22 @@ Validation specifications can be provided in either a YAML or JSON format. The b
 #### YAML File Specification
 
 ```yaml
-# creates the first admin user on a fresh install (skips creation if user exists)
-firstAdmin:
-    email: foo@example.com
-    username: foo
-    password: "{{ .admin_password }}"
-
 # adds the specified code host
 externalService:
-  config:
-    url: https://github.com
-    token: "{{ .github_token }}"
-    orgs: []
-    repos:
-      - sourcegraph-testing/zap
   kind: GITHUB
-  displayName: footest
+  displayName: srcgraph-test
   # set to true if this code host config should be deleted at the end of validation
   deleteWhenDone: true
-
-# checks maxTries if specified repo is cloned and waits sleepBetweenTriesSeconds between checks 
-waitRepoCloned:
-  repo: github.com/sourcegraph-testing/zap
-  maxTries: 5
-  sleepBetweenTriesSeconds: 2
+  # maxRetries amount of retries for cloning repo
+  maxRetries: 5
+  # retryTimeoutSeconds wait in seconds between retries
+  retryTimeoutSeconds: 5
+  config:
+    gitHub:
+      url: https://github.com
+      orgs: []
+      repos:
+        - sourcegraph-testing/zap
 
 # performs the specified search and checks that at least one result is returned
 searchQuery: 
@@ -55,24 +48,26 @@ searchQuery:
   - repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test
 
 # checks to see if instance can create code insights
-createInsight:
-  title: "Javascript to Typescript migration" 
+insight:
+  title: "Javascript to Typescript migration"
   dataSeries:
     [ {
-        "query": "lang:javascript",
-        "label": "javascript",
-        "repositoryScope": [], # e.g. ["github.com/sourcegraph-testing/zap"]
-        "lineColor": "#6495ED",
-        "timeScopeUnit": "MONTH",
-        "timeScopeValue": 1
-      },
-     {
+      "query": "lang:javascript",
+      "label": "javascript",
+      "repositoryScope": [
+        "github.com/sourcegraph/sourcegraph"
+      ],
+      "lineColor": "#6495ED",
+      "timeScopeUnit": "MONTH",
+      "timeScopeValue": 1
+    },
+      {
         "query": "lang:typescript",
         "label": "typescript",
         "lineColor": "#DE3163",
         "repositoryScope": [
-            "github.com/sourcegraph/sourcegraph"
-          ],
+          "github.com/sourcegraph/sourcegraph"
+        ],
         "timeScopeUnit": "MONTH",
         "timeScopeValue": 1
       }
@@ -81,60 +76,60 @@ createInsight:
 #### JSON File Specification
 
 ```json
-{   
-   "firstAdmin": {
-    "email": "foo@example.com",
-    "username": "foo",
-    "password": "{{ .admin_password }}"
-    },
-    "externalService": {
-        "config": {
-            "url": "https://github.com",
-            "token": "{{ .github_token }}",
-            "orgs": [],
-            "repos": [
-                "sourcegraph-testing/zap"
-            ]
-        },
-        "kind": "GITHUB",
-        "displayName": "footest",
-        "deleteWhenDone": true
-    },
-    "waitRepoCloned": {
-        "repo": "github.com/sourcegraph-testing/zap",
-        "maxTries": 5,
-        "sleepBetweenTriesSeconds": 5
-    },
-    "searchQuery": [
-        "repo:^github.com/sourcegraph-testing/zap$ test",
-        "repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test"
-    ],
-   
-    "createInsight": {
-        "title": "Javascript to Typescript migration", 
-        "dataSeries" : [ {
-            "query": "lang:javascript",
-            "label": "javascript",
-            "repositoryScope": [],
-            "lineColor": "#6495ED",
-            "timeScopeUnit": "MONTH",
-            "timeScopeValue": 1
-          },
-          {
-            "query": "lang:typescript",
-            "label": "typescript",
-            "lineColor": "#DE3163",
-            "repositoryScope": [],
-            "timeScopeUnit": "MONTH",
-            "timeScopeValue": 1
-          }
-       ]
+{
+  "externalService": {
+    "kind": "GITHUB",
+    "displayName": "srcgraph-test",
+    "deleteWhenDone": true,
+    "maxRetries": 5,
+    "retryTimeoutSeconds": 5,
+    "config": {
+      "gitHub": {
+        "url": "https://github.com",
+        "orgs": [],
+        "repos": [
+          "sourcegraph-testing/zap"
+        ]
+      }
+    }
+  },
+
+  "searchQuery": [
+    "repo:^github.com/sourcegraph-testing/zap$ test",
+    "repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test"
+  ],
+
+  "insight": {
+    "title": "Javascript to Typescript migration",
+    "dataSeries": [
+      {
+        "query": "lang:javascript",
+        "label": "javascript",
+        "repositoryScope": [
+          "github.com/sourcegraph/sourcegraph"
+        ],
+        "lineColor": "#6495ED",
+        "timeScopeUnit": "MONTH",
+        "timeScopeValue": 1
+      },
+      {
+        "query": "lang:typescript",
+        "label": "typescript",
+        "lineColor": "#DE3163",
+        "repositoryScope": [
+          "github.com/sourcegraph/sourcegraph"
+        ],
+        "timeScopeUnit": "MONTH",
+        "timeScopeValue": 1
+      }
+    ]
+  }
+
 }
 ```
 
 With this configuration, the validation command executes the following steps: 
 
-* create the first admin user
 * add an external service
 * wait for a repository to be cloned
 * perform a search
