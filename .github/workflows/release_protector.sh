@@ -17,16 +17,16 @@ function is_weekend() {
   day_of_week=$(date -d "$date_string" +%u)
   # Check if the day of the week is 6 (Saturday) or 7 (Sunday)
   if [ "$day_of_week" -eq 6 ] || [ "$day_of_week" -eq 7 ]; then
-    echo "true"
+    return 0
   else
-    echo "false"
+    return 1
   fi
 }
 
 # Use the this to get the last working day before the date passed in as an argument
 function find_last_working_day() {
   local date_string=$1
-  while $(is_weekend "$date_string"); do
+  while is_weekend "$date_string"; do
     date_string=$(date -d "$date_string 1 day ago" +%F)
   done
   echo "$date_string"
@@ -39,7 +39,7 @@ function get_closest_working_day() {
   fi
 
   local date_to_check=$1
-  if $(is_weekend "$date_to_check"); then
+  if is_weekend "$date_to_check"; then
     date_to_check=$(find_last_working_day "$date_to_check")
   fi
   echo "$date_to_check"
@@ -51,7 +51,7 @@ function get_epoch() {
     return 1
   fi
 
-  echo "$(date -d "$1" +%s)"
+  date -d "$1" +%s
 }
 
 release_day=22
