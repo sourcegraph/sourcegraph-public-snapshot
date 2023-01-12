@@ -139,10 +139,12 @@ With this configuration, the validation command executes the following steps:
  
 >NOTE: Every step is optional (if the corresponding top-level key is not present then the step is skipped).
 > 
+
 ### Passing in secrets
 
 Secrets are handled via environment variables. `src validate install` requires an environment variables to be set to authenticate to your code host.
->NOTE: currently only GitHub is supported as a code host.
+
+>NOTE: Currently only GitHub is supported as a code host.
 >
 
 `src validate install` requires an environment variable to be setup to authenticate against your code host.
