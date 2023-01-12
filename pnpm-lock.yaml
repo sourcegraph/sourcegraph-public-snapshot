@@ -1035,12 +1035,10 @@ importers:
   client/wildcard:
     specifiers:
       '@sourcegraph/common': workspace:*
-      '@sourcegraph/storybook': workspace:*
       '@sourcegraph/testing': workspace:*
     dependencies:
       '@sourcegraph/common': link:../common
     devDependencies:
-      '@sourcegraph/storybook': link:../storybook
       '@sourcegraph/testing': link:../testing
 
   dev/release:
