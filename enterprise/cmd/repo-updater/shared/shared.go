@@ -37,7 +37,6 @@ func EnterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-	syncer *repos.Syncer,
 ) (debugDumpers map[string]debugserver.Dumper) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
@@ -62,8 +61,8 @@ func EnterpriseInit(
 		logger.Fatal("failed to initialize free license", log.Error(err))
 	}
 
-	syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
-	syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+	server.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+	server.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
 
 	permsStore := enterpriseDB.Perms()
 	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
