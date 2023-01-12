@@ -24,12 +24,12 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 **If you're on Sourcegraph version 3.31 or earlier** and you don't already see the "Insights" item in your main nav bar, you'll need to add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings` (and _not_ in your site configuration settings):
 
-```javascript
+```json
 "experimentalFeatures": { "codeInsights": true },
  "extensions": {
       "sourcegraph/code-stats-insights": true,
-      "sourcegraph/search-insights": true,
-    },
+      "sourcegraph/search-insights": true
+ }
 ```
 
 If you put this in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" navbar menu item and create their own code insights. If you put the flag in your user settings, only you will have those abilities.
@@ -68,11 +68,11 @@ Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository
 
 ### 7. Set the distance between data points
 
-Code insights give you twelve datapoints for each data series. Setting it to one month means you'll see the results over the last year.
+Code insights give you twelve datapoints for each data series on insight creation. Setting it to one month means you'll see the results over the last year.
 
 ### 8. Click "create code insight" and view your insight.
 
-You'll be taken to the example.sourcegraph.com/insights page and can view your insight.
+You'll be taken to the `example.sourcegraph.com/insights` page and can view your insight.
 
 ### 9. Filter your insight to explore it further 
 
