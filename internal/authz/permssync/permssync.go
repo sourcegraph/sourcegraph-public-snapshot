@@ -18,7 +18,6 @@ func PermissionSyncWorkerEnabled(ctx context.Context, db database.DB, logger log
 		logger.
 			Scoped("PermissionSyncWorkerEnabled", "checking feature flag for permission sync worker").
 			Warn("failed to query global feature flags", log.Error(err))
-		// TODO: log that we couldn't get the feature flags
 		return false
 	}
 	return globalFeatureFlags[featureFlagName]

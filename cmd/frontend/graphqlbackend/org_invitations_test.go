@@ -568,11 +568,14 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		return int32(id), nil
 	})
 
+	ffs := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.FeatureFlagsFunc.SetDefaultReturn(ffs)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
 
