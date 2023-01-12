@@ -72,7 +72,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 			log.Error(err))
 	}
 
-	return &createUserResult{db: r.db, user: user, needsEmailVerification: needsEmailVerification}, nil
+	return &createUserResult{db: r.db, user: user}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
@@ -81,8 +81,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 type createUserResult struct {
 	db database.DB
 
-	user                   *types.User
-	needsEmailVerification bool
+	user *types.User
 }
 
 func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
@@ -92,7 +91,7 @@ func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error
 		return nil, nil
 	}
 
-	if conf.CanSendEmail() && r.needsEmailVerification {
+	if conf.CanSendEmail() {
 		// HandleSetPasswordEmail will send a special password reset email that also
 		// verifies the primary email address.
 		ru, err := userpasswd.HandleSetPasswordEmail(ctx, r.db, r.user.ID)
