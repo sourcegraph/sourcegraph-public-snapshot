@@ -57,6 +57,11 @@ Examples:
 			return err
 		}
 
+		file, err := getBatchSpecFile(flagSet, fileFlag)
+		if err != nil {
+			return err
+		}
+
 		ctx := context.Background()
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
@@ -71,11 +76,6 @@ Examples:
 
 		if err := validateSourcegraphVersionConstraint(ctx, ffs); err != nil {
 			return err
-		}
-
-		var file string
-		if fileFlag != nil {
-			file = *fileFlag
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
