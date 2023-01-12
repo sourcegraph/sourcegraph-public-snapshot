@@ -12447,6 +12447,272 @@ func (c EnterpriseDBZoektReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockFreeLicenseStore is a mock implementation of the FreeLicenseStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/database) used for
+// unit testing.
+type MockFreeLicenseStore struct {
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *FreeLicenseStoreHandleFunc
+	// InitFunc is an instance of a mock function object controlling the
+	// behavior of the method Init.
+	InitFunc *FreeLicenseStoreInitFunc
+}
+
+// NewMockFreeLicenseStore creates a new mock of the FreeLicenseStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockFreeLicenseStore() *MockFreeLicenseStore {
+	return &MockFreeLicenseStore{
+		HandleFunc: &FreeLicenseStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		InitFunc: &FreeLicenseStoreInitFunc{
+			defaultHook: func(context.Context) (r0 *FreeLicense, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockFreeLicenseStore creates a new mock of the FreeLicenseStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockFreeLicenseStore() *MockFreeLicenseStore {
+	return &MockFreeLicenseStore{
+		HandleFunc: &FreeLicenseStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockFreeLicenseStore.Handle")
+			},
+		},
+		InitFunc: &FreeLicenseStoreInitFunc{
+			defaultHook: func(context.Context) (*FreeLicense, error) {
+				panic("unexpected invocation of MockFreeLicenseStore.Init")
+			},
+		},
+	}
+}
+
+// NewMockFreeLicenseStoreFrom creates a new mock of the
+// MockFreeLicenseStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockFreeLicenseStoreFrom(i FreeLicenseStore) *MockFreeLicenseStore {
+	return &MockFreeLicenseStore{
+		HandleFunc: &FreeLicenseStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		InitFunc: &FreeLicenseStoreInitFunc{
+			defaultHook: i.Init,
+		},
+	}
+}
+
+// FreeLicenseStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockFreeLicenseStore instance is invoked.
+type FreeLicenseStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []FreeLicenseStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockFreeLicenseStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(FreeLicenseStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockFreeLicenseStore instance is invoked and the hook queue is
+// empty.
+func (f *FreeLicenseStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockFreeLicenseStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *FreeLicenseStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FreeLicenseStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FreeLicenseStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *FreeLicenseStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FreeLicenseStoreHandleFunc) appendCall(r0 FreeLicenseStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FreeLicenseStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *FreeLicenseStoreHandleFunc) History() []FreeLicenseStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]FreeLicenseStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FreeLicenseStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockFreeLicenseStore.
+type FreeLicenseStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FreeLicenseStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FreeLicenseStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// FreeLicenseStoreInitFunc describes the behavior when the Init method of
+// the parent MockFreeLicenseStore instance is invoked.
+type FreeLicenseStoreInitFunc struct {
+	defaultHook func(context.Context) (*FreeLicense, error)
+	hooks       []func(context.Context) (*FreeLicense, error)
+	history     []FreeLicenseStoreInitFuncCall
+	mutex       sync.Mutex
+}
+
+// Init delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockFreeLicenseStore) Init(v0 context.Context) (*FreeLicense, error) {
+	r0, r1 := m.InitFunc.nextHook()(v0)
+	m.InitFunc.appendCall(FreeLicenseStoreInitFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Init method of the
+// parent MockFreeLicenseStore instance is invoked and the hook queue is
+// empty.
+func (f *FreeLicenseStoreInitFunc) SetDefaultHook(hook func(context.Context) (*FreeLicense, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Init method of the parent MockFreeLicenseStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *FreeLicenseStoreInitFunc) PushHook(hook func(context.Context) (*FreeLicense, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FreeLicenseStoreInitFunc) SetDefaultReturn(r0 *FreeLicense, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*FreeLicense, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FreeLicenseStoreInitFunc) PushReturn(r0 *FreeLicense, r1 error) {
+	f.PushHook(func(context.Context) (*FreeLicense, error) {
+		return r0, r1
+	})
+}
+
+func (f *FreeLicenseStoreInitFunc) nextHook() func(context.Context) (*FreeLicense, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FreeLicenseStoreInitFunc) appendCall(r0 FreeLicenseStoreInitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FreeLicenseStoreInitFuncCall objects
+// describing the invocations of this function.
+func (f *FreeLicenseStoreInitFunc) History() []FreeLicenseStoreInitFuncCall {
+	f.mutex.Lock()
+	history := make([]FreeLicenseStoreInitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FreeLicenseStoreInitFuncCall is an object that describes an invocation of
+// method Init on an instance of MockFreeLicenseStore.
+type FreeLicenseStoreInitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *FreeLicense
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FreeLicenseStoreInitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FreeLicenseStoreInitFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockPermsStore is a mock implementation of the PermsStore interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/database) used for
