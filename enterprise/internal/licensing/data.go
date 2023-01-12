@@ -173,5 +173,6 @@ var planFeatures = map[Plan][]Feature{
 	PlanFree1: {
 		FeatureSSO,
 		FeatureMonitoring,
+		&FeatureBatchChanges{MaxNumChangesets: 10},
 	},
 }
