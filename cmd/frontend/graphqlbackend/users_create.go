@@ -86,6 +86,9 @@ type createUserResult struct {
 
 func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
 
+// This method modifies the DB when it generates reset URLs, which is somewhat
+// counterintuitive for a "value" type from an implementation POV. Its behavior is
+// justified because it is convenient and intuitive from the POV of the API consumer.
 func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error) {
 	if !userpasswd.ResetPasswordEnabled() {
 		return nil, nil
