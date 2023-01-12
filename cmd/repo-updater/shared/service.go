@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 )
 
@@ -22,8 +21,6 @@ func (svc) Name() string { return "repo-updater" }
 func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	// Signals health of startup.
 	s.ready = make(chan struct{})
-
-	repoupdater.LoadConfig()
 
 	return nil, createDebugServerEndpoints(s.ready, &s.debugserverEndpoints)
 }
