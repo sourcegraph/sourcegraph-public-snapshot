@@ -73,6 +73,12 @@ func correlateSCIP(
 				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
 					packageSet[pkg] = false
 				}
+
+				for _, relationship := range symbol.Relationships {
+					if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
+						packageSet[pkg] = false
+					}
+				}
 			}
 
 			for _, occurrence := range document.Occurrences {
@@ -260,6 +266,9 @@ func canonicalizeDocument(document *scip.Document, externalSymbolsByName map[str
 	// Order the remaining fields deterministically
 	_ = types.CanonicalizeDocument(document)
 }
+
+//
+// TODO - also do for relationships
 
 // injectExternalSymbols adds symbol information objects from the external symbols into the document
 // if there is an occurrence that references the external symbol name and no local symbol information
