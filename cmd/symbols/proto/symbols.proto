@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package symbols.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/cmd/symbols/proto";
+
+service Symbols {
+  rpc Search(SearchRequest) returns (SymbolsResponse) {}
+}
+
+message SearchRequest {
+  // repo is the name of the repository to search in
+  string repo = 1;
+
+  // commit id is the commit to search in
+  string commit_id = 2;
+
+  // query is the search query
+  string query = 3;
+
+  // is_reg_exp, if true, will treat the Pattern as a regular expression
+  bool is_reg_exp = 4;
+
+  // is_case_sensitive, if false, will ignore the case of query and file pattern when
+  // finding matches
+  bool is_case_sensitive = 5;
+
+  // include_patterns is a list of regexes that symbol's file paths
+  // need to match to get included in the result
+  //
+  // The patterns are ANDed together; a file's path must match all patterns
+  // for it to be kept. That is also why it is a list (unlike the singular
+  // ExcludePattern); it is not possible in general to construct a single
+  // glob or Go regexp that represents multiple such patterns ANDed together.
+  repeated string include_patterns = 6;
+
+  // exclude_pattern is an optional regex that symbol's file paths
+  // need to match to get included in the result
+  string exclude_pattern = 7;
+
+  // first indicates that only the first n symbols should be returned.
+  int32 first = 8;
+
+  // timeout in seconds.
+  int32 timeout = 9;
+}
+
+// Symbol is a code symbol
+message Symbol {
+  string name = 1;
+
+  string path = 2;
+  int32 line = 3; // TODO@ggilmore: check to see if an int32 is sufficiently large
+  int32 character = 4;
+
+  string kind = 5;
+  string language = 6;
+
+  string parent = 7;
+  string parentKind = 8;
+
+  string signature = 9;
+
+  bool file_limited = 10;
+}
+
+// Symbol is the result of a search on the symbols service.
+message SymbolsList {
+  repeated Symbol symbols = 1;
+}
+
+message SymbolsResponse {
+  SymbolsList symbols = 1;
+  optional string error = 2; // TODO@ggilmore: Custom error type?
+}
