@@ -452,3 +452,10 @@
     :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/stdin#license
     :versions: []
     :when: 2023-01-09 04:58:41.642155000 Z
+- - :license
+  - github.com/xi2/xz
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-01-12 01:20:17.504279000 Z
