@@ -94,19 +94,25 @@ export const ComboboxInput = forwardRef((props, ref) => {
     return <ReachComboboxInput ref={mergedRef} as={Component} {...attributes} />
 }) as ForwardReferenceComponent<'input', ComboboxInputProps>
 
-interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {}
+interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
+    target?: HTMLElement | null
+    open?: boolean
+}
 
 export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>((props, ref) => {
-    const { className, ...attributes } = props
+    const { target, open, className, ...attributes } = props
 
     const { inputRef, isExpanded } = useContext(ComboboxContext)
-    const [, { width: inputWidth }] = useMeasure(inputRef, 'boundingRect')
+    const targetElement = target ?? inputRef
+    const isOpen = open !== undefined ? open : isExpanded
+
+    const [, { width: inputWidth }] = useMeasure(targetElement, 'boundingRect')
 
     // If we don't have registered input element we should not
     // render anything about combobox suggestions (popover content)
     // And if we have closed state we shouldn't render anything about ReachComboboxPopover
     // (by default even if combobox is closed it renders empty block with border 1px line)
-    if (!inputRef || !isExpanded) {
+    if (!targetElement || !isOpen) {
         return null
     }
 
@@ -118,7 +124,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // strategies and so on, see Popover doc for more details)
             as={PopoverContent}
             isOpen={true}
-            target={inputRef}
+            target={targetElement}
             // Suppress TS problem about position prop. ReachComboboxPopover and PopoverContent both
             // have position props with different interfaces. Since we swap component rendering with `as`
             // prop it's safe to suppress position type here due to PopoverContent position type is correct.
