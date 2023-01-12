@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Scheduler provides a scheduling service that moves changesets from the
@@ -22,7 +21,7 @@ type Scheduler struct {
 	recorder *recorder.Recorder
 }
 
-var _ recorder.Loggable = &Scheduler{}
+var _ recorder.Recordable = &Scheduler{}
 
 func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 	return &Scheduler{
@@ -158,8 +157,8 @@ func (s *Scheduler) Name() string {
 	return "batches-scheduler"
 }
 
-func (s *Scheduler) Type() types.BackgroundRoutineType {
-	return types.BackgroundRoutineCustom
+func (s *Scheduler) Type() recorder.RoutineType {
+	return recorder.CustomRoutine
 }
 
 func (s *Scheduler) JobName() string {

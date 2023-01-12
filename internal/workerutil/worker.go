@@ -9,10 +9,8 @@ import (
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -48,7 +46,7 @@ type DummyType struct{}
 
 func (d DummyType) RecordID() int { return 0 }
 
-var _ recorder.Loggable = &Worker[DummyType]{}
+var _ recorder.Recordable = &Worker[DummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
@@ -438,8 +436,8 @@ func (w *Worker[T]) Name() string {
 	return w.options.Name
 }
 
-func (w *Worker[T]) Type() types.BackgroundRoutineType {
-	return types.BackgroundRoutineDBBackedWorker
+func (w *Worker[T]) Type() recorder.RoutineType {
+	return recorder.DBBackedRoutine
 }
 
 func (w *Worker[T]) JobName() string {

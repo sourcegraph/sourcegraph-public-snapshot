@@ -127,10 +127,10 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	recorderCache := recorder.GetCache(recorderCacheTTLSeconds)
 	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
 	for _, rj := range allRoutinesWithJobNames {
-		if loggable, ok := rj.Routine.(recorder.Loggable); ok {
-			loggable.SetJobName(rj.JobName)
-			loggable.RegisterRecorder(rec)
-			rec.Register(loggable)
+		if recordable, ok := rj.Routine.(recorder.Recordable); ok {
+			recordable.SetJobName(rj.JobName)
+			recordable.RegisterRecorder(rec)
+			rec.Register(recordable)
 		}
 	}
 	rec.RegistrationDone()

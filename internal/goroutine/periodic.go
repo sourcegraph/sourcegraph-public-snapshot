@@ -7,8 +7,6 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,7 +19,7 @@ import (
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	name        string
-	routineType types.BackgroundRoutineType
+	routineType recorder.RoutineType
 	description string
 	jobName     string
 	recorder    *recorder.Recorder
@@ -34,7 +32,7 @@ type PeriodicGoroutine struct {
 	finished    chan struct{}      // signals that Start has finished
 }
 
-var _ recorder.Loggable = &PeriodicGoroutine{}
+var _ recorder.Recordable = &PeriodicGoroutine{}
 
 type unifiedHandler interface {
 	Handler
@@ -182,11 +180,11 @@ func (r *PeriodicGoroutine) Name() string {
 	return r.name
 }
 
-func (r *PeriodicGoroutine) Type() types.BackgroundRoutineType {
+func (r *PeriodicGoroutine) Type() recorder.RoutineType {
 	if r.operation != nil {
-		return types.BackgroundRoutinePeriodicWithMetrics
+		return recorder.PeriodicWithMetrics
 	} else {
-		return types.BackgroundRoutinePeriodic
+		return recorder.PeriodicRoutine
 	}
 }
 

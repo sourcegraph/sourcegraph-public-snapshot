@@ -254,7 +254,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
             <Icon aria-hidden={true} svgPath={mdiCached} />
         ) : routine.type === 'PERIODIC_WITH_METRICS' ? (
             <Icon aria-hidden={true} svgPath={mdiNumeric} />
-        ) : routine.type === 'DB_BACKED_WORKER' ? (
+        ) : routine.type === 'DB_BACKED' ? (
             <Icon aria-hidden={true} svgPath={mdiDatabase} />
         ) : routine.type === 'CUSTOM' ? (
             <Icon aria-hidden={true} svgPath={mdiShape} />

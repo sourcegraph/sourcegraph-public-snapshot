@@ -1,14 +1,11 @@
 package recorder
 
 import (
-	"context"
 	"testing"
 
 	"cuelang.org/go/pkg/time"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,19 +18,17 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	c := GetCache(1)
 	recorder := New(log.NoOp(), "test", c)
 
-	// Create and register routines
-	// - job-1 has two routines: routine-1 and routine-2
-	// - job-2 has one routine: routine-3
-	ctx := context.Background()
-	emptyHandler := goroutine.HandlerFunc(func(ctx context.Context) error { return nil })
-	routine1 := goroutine.NewPeriodicGoroutine(ctx, "routine-1", "a routine", 2*time.Minute, emptyHandler)
+	// Create routines
+	routine1 := newRoutineMock("routine-1", "a routine", 2*time.Minute)
 	routine1.SetJobName("job-1")
-	recorder.Register(routine1)
-	routine2 := goroutine.NewPeriodicGoroutine(ctx, "routine-2", "another routine", 2*time.Minute, emptyHandler)
+	routine2 := newRoutineMock("routine-2", "another routine", 2*time.Minute)
 	routine2.SetJobName("job-1")
-	recorder.Register(routine2)
-	routine3 := goroutine.NewPeriodicGoroutine(ctx, "routine-3", "a third routine", 2*time.Minute, emptyHandler)
+	routine3 := newRoutineMock("routine-3", "a third routine", 2*time.Minute)
 	routine3.SetJobName("job-2")
+
+	// Register routines
+	recorder.Register(routine1)
+	recorder.Register(routine2)
 	recorder.Register(routine3)
 	recorder.RegistrationDone()
 
@@ -53,7 +48,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	assertRoutineStats(t, jobInfos[0].Routines[1], "routine-2", false, false, 0, 0, 0, 0, 0, 0)
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", false, false, 0, 0, 0, 0, 0, 0)
 
-	// Log some runs: 3x routine-1 (1x with error), 1x routine-2, 0x routine-3
+	// Log some runs: 3x routine-1 (1x with error), 1x routine-2, 0x routine-3 (and stops)
 	recorder.LogStart(routine1)
 	recorder.LogStart(routine2)
 	recorder.LogStart(routine3)
@@ -74,7 +69,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", true, true, 0, 0, 0, 0, 0, 0)
 }
 
-func assertRoutineStats(t *testing.T, r types.BackgroundRoutineInfo, name string,
+func assertRoutineStats(t *testing.T, r RoutineInfo, name string,
 	started bool, stopped bool, rRuns int, sRuns int32, sErrors int32, sMin int32, sAvg int32, sMax int32) {
 	assert.Equal(t, name, r.Name)
 	if started {

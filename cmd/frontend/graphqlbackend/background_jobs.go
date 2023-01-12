@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // This is hard-coded for now. This signifies the number of days to use for generating the stats for each routine.
@@ -23,27 +22,27 @@ type backgroundJobsArgs struct {
 }
 
 type BackgroundJobResolver struct {
-	jobInfo types.BackgroundJobInfo
+	jobInfo recorder.JobInfo
 }
 
 type RoutineResolver struct {
-	routine types.BackgroundRoutineInfo
+	routine recorder.RoutineInfo
 }
 
 type RoutineInstanceResolver struct {
-	instance types.BackgroundRoutineInstanceInfo
+	instance recorder.RoutineInstanceInfo
 }
 
 type RoutineRecentRunResolver struct {
-	recentRun types.BackgroundRoutineRun
+	recentRun recorder.RoutineRun
 }
 
 type RoutineRecentRunErrorResolver struct {
-	recentRun types.BackgroundRoutineRun
+	recentRun recorder.RoutineRun
 }
 
 type RoutineStatsResolver struct {
-	stats types.BackgroundRoutineRunStats
+	stats recorder.RoutineRunStats
 }
 
 // backgroundJobConnectionResolver resolves a list of access tokens.
@@ -173,7 +172,7 @@ func (r *BackgroundJobResolver) Routines() []*RoutineResolver {
 
 func (r *RoutineResolver) Name() string { return r.routine.Name }
 
-func (r *RoutineResolver) Type() types.BackgroundRoutineType { return r.routine.Type }
+func (r *RoutineResolver) Type() recorder.RoutineType { return r.routine.Type }
 
 func (r *RoutineResolver) Description() string { return r.routine.Description }
 
@@ -228,7 +227,12 @@ func (r *RoutineResolver) Stats() *RoutineStatsResolver {
 	return &RoutineStatsResolver{stats: r.routine.Stats}
 }
 
-func (r *RoutineStatsResolver) Since() *gqlutil.DateTime { return gqlutil.DateTimeOrNil(r.stats.Since) }
+func (r *RoutineStatsResolver) Since() *gqlutil.DateTime {
+	if r.stats.Since.IsZero() {
+		return nil
+	}
+	return gqlutil.DateTimeOrNil(&r.stats.Since)
+}
 
 func (r *RoutineStatsResolver) RunCount() int32 { return r.stats.RunCount }
 

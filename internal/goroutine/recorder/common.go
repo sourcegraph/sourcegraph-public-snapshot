@@ -5,7 +5,62 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+)
+
+// JobInfo contains information about a background job, including all its recordables.
+type JobInfo struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Routines []RoutineInfo
+}
+
+// RoutineInfo contains information about a background routine.
+type RoutineInfo struct {
+	Name        string      `json:"name"`
+	Type        RoutineType `json:"type"`
+	JobName     string      `json:"jobName"`
+	Description string      `json:"description"`
+	IntervalMs  int32       `json:"intervalMs"` // Assumes that the routine runs at a fixed interval across all hosts.
+	Instances   []RoutineInstanceInfo
+	RecentRuns  []RoutineRun
+	Stats       RoutineRunStats
+}
+
+// RoutineInstanceInfo contains information about a background routine instance.
+// That is, a single version that's running (or ran) on a single node.
+type RoutineInstanceInfo struct {
+	HostName      string     `json:"hostName"`
+	LastStartedAt *time.Time `json:"lastStart"`
+	LastStoppedAt *time.Time `json:"lastStop"`
+}
+
+// RoutineRun contains information about a single run of a background routine.
+// That is, a single action that a running instance of a background routine performed.
+type RoutineRun struct {
+	At           time.Time `json:"at"`
+	HostName     string    `json:"hostname"`
+	DurationMs   int32     `json:"durationMs"`
+	ErrorMessage string    `json:"errorMessage"`
+	StackTrace   string    `json:"stackTrace"`
+}
+
+// RoutineRunStats contains statistics about a background routine.
+type RoutineRunStats struct {
+	Since         time.Time `json:"since"`
+	RunCount      int32     `json:"runCount"`
+	ErrorCount    int32     `json:"errorCount"`
+	MinDurationMs int32     `json:"minDurationMs"`
+	AvgDurationMs int32     `json:"avgDurationMs"`
+	MaxDurationMs int32     `json:"maxDurationMs"`
+}
+
+type RoutineType string
+
+const (
+	PeriodicRoutine     RoutineType = "PERIODIC"
+	PeriodicWithMetrics RoutineType = "PERIODIC_WITH_METRICS"
+	DBBackedRoutine     RoutineType = "DB_BACKED"
+	CustomRoutine       RoutineType = "CUSTOM"
 )
 
 func GetCache(ttlSeconds int) *rcache.Cache {
@@ -13,17 +68,17 @@ func GetCache(ttlSeconds int) *rcache.Cache {
 }
 
 // mergeStats returns the given stats updated with the given run data.
-func mergeStats(a types.BackgroundRoutineRunStats, b types.BackgroundRoutineRunStats) types.BackgroundRoutineRunStats {
+func mergeStats(a RoutineRunStats, b RoutineRunStats) RoutineRunStats {
 	// Calculate earlier "since"
 	var since time.Time
-	if a.Since != nil && (b.Since != nil && b.Since.Before(*a.Since)) {
-		since = *b.Since
-	} else if a.Since != nil {
-		since = *a.Since
+	if a.Since.IsZero() {
+		since = b.Since
 	}
-	var sincePtr *time.Time
-	if !since.IsZero() {
-		sincePtr = &since
+	if b.Since.IsZero() {
+		since = a.Since
+	}
+	if !a.Since.IsZero() && !b.Since.IsZero() && a.Since.Before(b.Since) {
+		since = a.Since
 	}
 
 	// Calculate durations
@@ -42,8 +97,8 @@ func mergeStats(a types.BackgroundRoutineRunStats, b types.BackgroundRoutineRunS
 	}
 
 	// Return merged stats
-	return types.BackgroundRoutineRunStats{
-		Since:         sincePtr,
+	return RoutineRunStats{
+		Since:         since,
 		RunCount:      a.RunCount + b.RunCount,
 		ErrorCount:    a.ErrorCount + b.ErrorCount,
 		MinDurationMs: minDurationMs,
