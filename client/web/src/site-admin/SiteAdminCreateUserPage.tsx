@@ -90,13 +90,14 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
 
     public render(): JSX.Element | null {
         const postCreateText = (result: CreateUserResult['createUser'], emailProvided: boolean): React.ReactNode => {
-            let text = 'The user must authenticate using a configured authentication provider.';
+            let text = 'The user must authenticate using a configured authentication provider.'
             let copyableURL = null
             if (result.resetPasswordURL) {
                 copyableURL = <CopyableText text={result.resetPasswordURL} size={40} />
-                text = "You must manually send this password reset link to the new user: "
+                text = 'You must manually send this password reset link to the new user: '
                 if (window.context.emailEnabled && emailProvided) {
-                    text = "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
+                    text =
+                        "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
                 }
             }
             return (
@@ -158,7 +159,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                                 aria-describedby="site-admin-create-user-page__form-email-help"
                             />
                             <small id="site-admin-create-user-page__form-email-help" className="form-text text-muted">
-                                Optional email for the user that will require verification when provided.
+                                Optional email for the user.
                             </small>
                         </div>
                         {this.state.errorDescription && (
