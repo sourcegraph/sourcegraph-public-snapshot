@@ -8,9 +8,13 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -235,7 +239,8 @@ func TestSetUserEmailVerified(t *testing.T) {
 			userExternalAccounts := database.NewMockUserExternalAccountsStore()
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
-			ffs := database.NewMockFeatureFlagStore()
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			db := database.NewMockDB()
 			db.TransactFunc.SetDefaultReturn(db, nil)
@@ -247,7 +252,6 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
-			db.FeatureFlagsFunc.SetDefaultReturn(ffs)
 
 			RunTests(t, test.gqlTests(db))
 
