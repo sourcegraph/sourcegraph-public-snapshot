@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SiteConfigurationChangeConnectionResolver struct {
@@ -17,54 +16,58 @@ type SiteConfigurationChangeConnectionResolver struct {
 type SiteConfigurationChangeConnectionResolverArgs struct {
 }
 
-func (r SiteConfigurationChangeConnectionResolver) compute(ctx context.Context) {
-	// FIXME
-}
-
-func (r SiteConfigurationChangeConnectionResolver) Nodes(ctx context.Context) ([]*SiteConfigurationChangeResolver, error) {
-	if r.First != nil && r.Last != nil {
-		return nil, errors.New("Cannot use both first and last at the same time")
-	}
-
-	// FIXME
-	return nil, nil
-}
-
 func (r SiteConfigurationChangeConnectionResolver) ID() graphql.ID {
 	return graphql.ID("FIXME")
 }
 
-// func (*SiteConfigChangeConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-// 	// FIXME
-// 	return nil, nil
-// }
-
-// func (*SiteConfigChangeConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.BidirectionalPageInfo, error) {
-// 	// FIXME
-// 	return nil, nil
-// }
-
-// FIXME
+// FIXME: Do we need more args here?
 type SiteConfigurationChangeConnectionStore struct {
 	db database.DB
 }
 
-// FIXME
 func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	return nil, nil
+	count, err := s.db.Conf().GetSiteConfigCount(ctx)
+	c := int32(count)
+	return &c, err
 }
 
-// FIXME
-func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, p *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
-	return nil, nil
+// FIXME: Pagination offset is not implemented yet.
+func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
+	opt := database.SiteConfigListOptions{}
+	if args.First != nil {
+		opt.LimitOffset = &database.LimitOffset{Limit: *args.First}
+		opt.OrderByDirection = database.AscendingOrderByDirection
+	} else if args.Last != nil {
+		opt.LimitOffset = &database.LimitOffset{Limit: *args.Last}
+		opt.OrderByDirection = database.DescendingOrderByDirection
+	}
+
+	history, err := s.db.Conf().ListSiteConfig(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := []*SiteConfigurationChangeResolver{}
+	var previousSiteConfig *database.SiteConfig
+	for _, config := range history {
+		resolvers = append(resolvers, &SiteConfigurationChangeResolver{
+			db:                 s.db,
+			siteConfig:         config,
+			previousSiteConfig: previousSiteConfig,
+		})
+
+		previousSiteConfig = config
+	}
+
+	return resolvers, nil
 }
 
-// FIXME
+// FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver) (*string, error) {
 	return nil, nil
 }
 
-// FIXME
+// FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
 	return nil, nil
 }
