@@ -1,9 +1,9 @@
 -- This reverts a previous migration, so this is literally just 1669576792_make_batch_spec_of_batch_change_nullable/down.sql
 WITH reconstructed_batch_specs AS (
     INSERT INTO batch_specs
-        (batch_change_id, user_id, namespace_user_id, namespace_org_id, rand_id, raw_spec, spec)
+        (batch_change_id, user_id, namespace_user_id, namespace_org_id, rand_id, raw_spec, spec, created_from_raw)
     SELECT
-        id, creator_id, namespace_user_id, namespace_org_id, md5(CONCAT(id, name)::bytea), CONCAT('name: ', name), json_build_object('name', name)
+        id, creator_id, namespace_user_id, namespace_org_id, md5(CONCAT(id, name)::bytea), CONCAT('name: ', name), json_build_object('name', name), TRUE
     FROM
         batch_changes
     WHERE
