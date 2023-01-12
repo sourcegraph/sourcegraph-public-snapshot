@@ -66,8 +66,14 @@ func correlateSCIP(
 			}
 
 			// While processing this document, stash the unique packages of each symbol name
-			// that is associated with an occurrence. If the occurrence is a definition, mark
-			// that package as being one that we define (rather than simply reference).
+			// in the document. If there is an occurrence that defines that symbol, mark that
+			// package as being one that we define (rather than simply reference).
+
+			for _, symbol := range document.Symbols {
+				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
+					packageSet[pkg] = false
+				}
+			}
 
 			for _, occurrence := range document.Occurrences {
 				if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {

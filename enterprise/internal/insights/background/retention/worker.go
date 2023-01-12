@@ -25,11 +25,7 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
-	// Default should match what is shown in the schema not to be confusing
-	maximumSampleSize := 90
-	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
-		maximumSampleSize = configured
-	}
+	maximumSampleSize := getMaximumSampleSize(logger)
 
 	// All the retention operations need to be completed in the same transaction
 	tx, err := h.insightsStore.Transact(ctx)
@@ -38,26 +34,40 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	}
 	defer func() { err = tx.Done(err) }()
 
-	oldestRecordingTime, err := selectOldestRecordingTimeBeforeMax(ctx, tx, record.InsightSeriesID, maximumSampleSize)
+	// We remove 1 off the maximum sample size so that we get the last timestamp that we want to keep data for.
+	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, maximumSampleSize-1)
 	if err != nil {
-		return errors.Wrap(err, "selectOldestRecordingTimeBeforeMax")
+		return errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
 
-	if oldestRecordingTime == nil {
+	if oldestRecordingTime.IsZero() {
 		// this series does not have any data beyond the max sample size
 		logger.Debug("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
 		return nil
 	}
 
-	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, oldestRecordingTime); err != nil {
 		return errors.Wrap(err, "archiveOldRecordingTimes")
 	}
 
-	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, *oldestRecordingTime); err != nil {
+	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, oldestRecordingTime); err != nil {
 		return errors.Wrap(err, "archiveOldSeriesPoints")
 	}
 
 	return nil
+}
+
+func getMaximumSampleSize(logger log.Logger) int {
+	// Default should match what is shown in the schema not to be confusing
+	maximumSampleSize := 30
+	if configured := conf.Get().InsightsMaximumSampleSize; configured >= 0 {
+		maximumSampleSize = configured
+	}
+	if maximumSampleSize > 90 {
+		logger.Info("code insights maximum sample size was set over allowed maximum, setting to 90", log.Int("disallowed maximum value", maximumSampleSize))
+		maximumSampleSize = 90
+	}
+	return maximumSampleSize
 }
 
 // NewWorker returns a worker that will find what data to prune and separate for a series.
@@ -128,22 +138,6 @@ INSERT INTO insights_data_retention_jobs (series_id, series_id_string) VALUES (%
 RETURNING id
 `
 
-func selectOldestRecordingTimeBeforeMax(ctx context.Context, tx *store.Store, seriesID int, maxSampleSize int) (_ *time.Time, err error) {
-	oldestTime, got, err := basestore.ScanFirstTime(tx.Query(ctx, sqlf.Sprintf(selectOldestRecordingTimeSql, seriesID, maxSampleSize-1)))
-	if err != nil {
-		return nil, err
-	}
-	if !got || oldestTime.IsZero() {
-		return nil, nil
-	}
-	return &oldestTime, nil
-}
-
-const selectOldestRecordingTimeSql = `
-SELECT recording_time FROM insight_series_recording_times
-WHERE insight_series_id = %s AND snapshot IS FALSE
-ORDER BY recording_time DESC OFFSET %s LIMIT 1;`
-
 func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
 	return tx.Exec(ctx, sqlf.Sprintf(archiveOldSeriesPointsSql, seriesID, oldestTimestamp))
 }
@@ -154,8 +148,8 @@ with moved_rows as (
 	WHERE series_id = %s AND time < %s
 	RETURNING * 
 )
-INSERT INTO archived_series_points
-SELECT * from moved_rows
+INSERT INTO archived_series_points (series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture)
+SELECT series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture from moved_rows
 ON CONFLICT DO NOTHING
 `
 
@@ -167,9 +161,9 @@ const archiveOldRecordingTimesSql = `
 WITH moved_rows AS (
 	DELETE FROM insight_series_recording_times
 	WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s
-	RETURNING *
+	RETURNING * 
 )
-INSERT INTO archived_insight_series_recording_times 
+INSERT INTO archived_insight_series_recording_times
 SELECT * FROM moved_rows
 ON CONFLICT DO NOTHING
 `

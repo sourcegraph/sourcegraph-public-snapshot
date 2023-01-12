@@ -33,7 +33,7 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
+	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.24.2")),
 	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.3")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
@@ -272,9 +272,9 @@ func checkGoVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
-func checkYarnVersion(versionConstraint string) func(context.Context) error {
+func checkPnpmVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		cmd := "yarn --version"
+		cmd := "pnpm --version"
 		out, err := usershell.CombinedExec(ctx, cmd)
 		if err != nil {
 			return errors.Wrapf(err, "failed to run %q", cmd)
@@ -286,7 +286,7 @@ func checkYarnVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[0])
-		return check.Version("yarn", trimmed, versionConstraint)
+		return check.Version("pnpm", trimmed, versionConstraint)
 	}
 }
 

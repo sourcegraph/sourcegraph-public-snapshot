@@ -656,7 +656,7 @@ type Mutation {
     a format that is readable by the previous Sourcegraph instance. Recently introduced migrations
     should be applied in reverse prior to downgrading the instance.
     """
-    SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
+    setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
@@ -3428,6 +3428,15 @@ type MirrorRepositoryInfo {
     """
     cloned: Boolean!
     """
+    Whether the repository is currently corrupt.
+    """
+    isCorrupted: Boolean!
+    """
+    A Log of the corruption events that have been detected on this repository. Only 10 events are kept and the events
+    are ordered from most recent to least.
+    """
+    corruptionLogs: [RepoCorruptionLog!]!
+    """
     When the repository was last successfully updated from the remote source repository..
     """
     updatedAt: DateTime
@@ -3452,6 +3461,21 @@ type MirrorRepositoryInfo {
     Only site admins can access this field.
     """
     shard: String
+}
+
+"""
+A corruption log entry that that records the time of when corruption was detected and a reason why the repo is regarded
+as corrupt
+"""
+type RepoCorruptionLog {
+    """
+    The time at which the repository was detected to be corrupt
+    """
+    timestamp: DateTime!
+    """
+    The reason why this repository was regarded as corrupt
+    """
+    reason: String!
 }
 
 """
@@ -4672,11 +4696,14 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
-
         """
         Skip the first N commits of the repo before returning the number of commits as set in the field "first".
         """
         afterCursor: String
+        """
+        Return commits older than the specified date.
+        """
+        before: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
@@ -6438,7 +6465,7 @@ type Site implements SettingsSubject {
         """
         Days of history (based on current UTC time).
         """
-        days: Int
+        days: Int @deprecated(reason: "No longer supported - will be removed after Sourcegraph 4.5")
     ): MonitoringStatistics!
     """
     Whether changes can be made to site settings through the API. When global settings are configured through
@@ -7294,6 +7321,9 @@ type MonitoringStatistics {
     Alerts fired in this time span.
     """
     alerts: [MonitoringAlert!]!
+        @deprecated(
+            reason: "No longer supported, and will no longer return data - query will be removed after Sourcegraph 4.5"
+        )
 }
 
 """

@@ -31,16 +31,15 @@ CREATE TYPE time_unit AS ENUM (
 );
 
 CREATE TABLE archived_insight_series_recording_times (
-    insight_series_id integer,
-    recording_time timestamp with time zone,
-    snapshot boolean
+    insight_series_id integer NOT NULL,
+    recording_time timestamp with time zone NOT NULL,
+    snapshot boolean NOT NULL
 );
 
 CREATE TABLE archived_series_points (
     series_id text NOT NULL,
     "time" timestamp with time zone NOT NULL,
     value double precision NOT NULL,
-    metadata_id integer,
     repo_id integer,
     repo_name_id integer,
     original_repo_name_id integer,

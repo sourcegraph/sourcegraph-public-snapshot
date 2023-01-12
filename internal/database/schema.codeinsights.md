@@ -2,9 +2,9 @@
 ```
       Column       |           Type           | Collation | Nullable | Default 
 -------------------+--------------------------+-----------+----------+---------
- insight_series_id | integer                  |           |          | 
- recording_time    | timestamp with time zone |           |          | 
- snapshot          | boolean                  |           |          | 
+ insight_series_id | integer                  |           | not null | 
+ recording_time    | timestamp with time zone |           | not null | 
+ snapshot          | boolean                  |           | not null | 
 Indexes:
     "archived_insight_series_recor_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:
@@ -19,7 +19,6 @@ Foreign-key constraints:
  series_id             | text                     |           | not null | 
  time                  | timestamp with time zone |           | not null | 
  value                 | double precision         |           | not null | 
- metadata_id           | integer                  |           |          | 
  repo_id               | integer                  |           |          | 
  repo_name_id          | integer                  |           |          | 
  original_repo_name_id | integer                  |           |          | 

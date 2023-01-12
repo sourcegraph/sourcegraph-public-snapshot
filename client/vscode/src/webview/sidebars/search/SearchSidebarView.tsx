@@ -15,7 +15,7 @@ import {
     getSearchSnippetLinks,
     SearchSidebar,
     SearchSidebarSection,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
     InitialParametersSource,

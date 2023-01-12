@@ -37,7 +37,8 @@ grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
 npm-debug.log
-yarn-error.log
+pnpm-error.log
+pnpm-debug.log
 .codemod.bookmark
 .elasticbeanstalk/
 

@@ -4,7 +4,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,6 +13,7 @@ import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from 
 
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { SearchPatternType } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
@@ -137,7 +138,9 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                                 to={buildCloudTrialURL(authenticatedUser)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                onClick={() =>
+                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeUnderSearch' })
+                                }
                             >
                                 try Sourcegraph Cloud
                             </Link>

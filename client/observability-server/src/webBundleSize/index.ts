@@ -2,10 +2,10 @@
  * The script collects web application bundlesize information from the disk and uploads it to Honeycomb.
  *
  * 1. Build web application using:
- * ENTERPRISE=1 NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true yarn build-web
+ * ENTERPRISE=1 NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true pnpm build-web
  *
  * 2. Upload bundlesize information to Honeycomb:
- * HONEYCOMB_API_KEY=XXX yarn workspace @sourcegraph/observability-server run bundlesize:web:upload
+ * HONEYCOMB_API_KEY=XXX pnpm --filter @sourcegraph/observability-server run bundlesize:web:upload
  *
  * 3. Check out collected data in Honeycomb! 🧠
  */

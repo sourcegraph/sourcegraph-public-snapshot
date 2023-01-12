@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -128,6 +129,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	license := func(tags ...string) *licensing.Info { return &licensing.Info{Info: license.Info{Tags: tags}} }
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -145,8 +147,10 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	maxNumChangesets := 10
+
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, maxNumChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			BaseRepoID: repo.ID,
@@ -170,41 +174,38 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*btypes.ChangesetSpec
-		hasLicenseFor  map[licensing.Feature]struct{}
+		licenseInfo    *licensing.Info
 		wantErr        bool
 	}{
-		"batch changes license, over the limit": {
+		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureBatchChanges: {},
-			},
-			wantErr: false,
+			licenseInfo:    license("starter"),
+			wantErr:        true,
 		},
-		"campaigns license, over the limit": {
-			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureCampaigns: {},
-			},
-			wantErr: false,
-		},
-		"no licence, but under the limit": {
-			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+		"batch changes license, restricted, under the limit": {
+			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
+			licenseInfo:    license("starter"),
 			wantErr:        false,
 		},
-		"no licence, over the limit": {
+		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+			licenseInfo:    license("starter", "batch-changes"),
+			wantErr:        false,
+		},
+		"campaigns license, no limit": {
+			changesetSpecs: changesetSpecs,
+			licenseInfo:    license("starter", "campaigns"),
+			wantErr:        false,
+		},
+		"no license": {
+			changesetSpecs: changesetSpecs[0:1],
 			wantErr:        true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
 			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if _, ok := tc.hasLicenseFor[feature]; !ok {
-					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
-				}
-				return nil
+				return feature.Check(tc.licenseInfo)
 			}
 
 			defer func() {
@@ -501,6 +502,9 @@ func TestApplyBatchChange(t *testing.T) {
 
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.Unrestricted = true
+		}
 		return nil
 	}
 
@@ -894,6 +898,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.Unrestricted = true
+		}
 		return nil
 	}
 
@@ -1139,6 +1146,18 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
+	maxNumBatchChanges := 5
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.MaxNumChangesets = maxNumBatchChanges
+		}
+		return nil
+	}
+	defer func() {
+		licensing.MockCheckFeature = oldMock
+	}()
+
 	tests := []struct {
 		name          string
 		numChangesets int
@@ -1158,13 +1177,6 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				return licensing.NewFeatureNotActivatedError("no batch changes for you!")
-			}
-			defer func() {
-				licensing.MockCheckFeature = oldMock
-			}()
 
 			// Create enough changeset specs to hit the license check.
 			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
@@ -1189,9 +1201,10 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			var response struct{ ApplyBatchChange apitest.BatchChange }
 			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
-			if test.numChangesets > maxUnlicensedChangesets {
+
+			if test.numChangesets > maxNumBatchChanges {
 				assert.Len(t, errs, 1)
-				assert.ErrorAs(t, errs[0], &ErrBatchChangesUnlicensed{})
+				assert.ErrorAs(t, errs[0], &ErrBatchChangesOverLimit{})
 			} else {
 				assert.Len(t, errs, 0)
 			}

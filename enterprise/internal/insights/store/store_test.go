@@ -901,3 +901,66 @@ func Test_coalesceZeroValues(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOffsetNRecordingTime(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	insightStore := NewInsightStore(insightsDB)
+	seriesStore := New(insightsDB, NewInsightPermissionStore(mainDB))
+
+	// create a series with id 1 to attach to recording times
+	setupSeries(ctx, insightStore, t)
+
+	// we want the 6th oldest sample time
+	n := 6
+
+	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
+	newTime := time.Now().Truncate(time.Hour)
+	var expectedOldestTimestamp time.Time
+	for i := 1; i <= 12; i++ {
+		newTime = newTime.Add(time.Hour)
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+		if i == 12-n {
+			expectedOldestTimestamp = newTime
+		}
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, n)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.String() != expectedOldestTimestamp.String() {
+		t.Errorf("expected timestamp %v got %v", expectedOldestTimestamp, got)
+	}
+}
+
+func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
+	now := time.Now()
+	series := types.InsightSeries{
+		SeriesID:           "series1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	got, err := tx.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
+}
