@@ -2074,8 +2074,8 @@ github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
 github.com/sourcegraph/conc v0.1.0 h1:9GeYVmWWa1jeOq3zGq17m10d9pjYZpiGTj/N4hQFl58=
 github.com/sourcegraph/conc v0.1.0/go.mod h1:sEXGtKMpRbfGhShfObhgMyxDpdu/5ABGrzSGYaigx5A=
-github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037 h1:gk2cs5tfGFtpZfaK5sKnn3Y4iyzrpCfdpncZhTKLz5E=
-github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
+github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71 h1:tsWE3F3StWvnwLnC4JWb0zX0UHY9GULQtu/aoQvLJvI=
+github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
 github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3 h1:11miag7hlORpW7ici5mL7T9PyiEsmVmf+8PFOvJ/ZrA=
@@ -2112,8 +2112,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230111101438-d541ae2d078d h1:+mGDWQedGYriTQaXNXuqZW0Whk9yMgnasdqN9T9slps=
-github.com/sourcegraph/zoekt v0.0.0-20230111101438-d541ae2d078d/go.mod h1:MoGvSaF4Te3ciCtm93lqPmuLNvSKew4krlX/K/0POfQ=
+github.com/sourcegraph/zoekt v0.0.0-20230112115613-e0cf62d238b9 h1:/5j+ftuIYINCYnGLlC8TKk/EYNaijSPow5UVrA4AvpM=
+github.com/sourcegraph/zoekt v0.0.0-20230112115613-e0cf62d238b9/go.mod h1:EgK9KLlvkj/fXQYqnhlh8JuMDQxmlyhRSLchbbH/BJo=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
