@@ -9,7 +9,7 @@ import styles from './PreviewNodeIndicator.module.scss'
 
 const containerClassName = classNames(
     styles.previewNodeIndicatorContainer,
-    'd-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
+    'd-none d-md-flex flex-column align-items-center justify-content-center align-self-stretch'
 )
 
 export interface PreviewNodeIndicatorProps {

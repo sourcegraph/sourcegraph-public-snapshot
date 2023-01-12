@@ -5,29 +5,29 @@
     &__action,
     &__information,
     &__show-details {
-        @media (--xs-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }
     }
     &__bg-expanded {
         background-color: var(--body-bg);
-        @media (--sm-breakpoint-up) {
+        @media (--md-breakpoint-up) {
             border-top: 1px solid var(--border-color-2);
             padding: 1.5rem;
         }
     }
     &__status-cell {
         color: var(--muted);
-        @media (--sm-breakpoint-up) {
+        @media (--md-breakpoint-up) {
             background-color: var(--body-bg);
         }
     }
     &__list-cell {
-        @media (--sm-breakpoint-up) {
+        @media (--md-breakpoint-up) {
             padding: 0.5rem;
         }
-        @media (--xs-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             padding-top: 0.25rem;
             padding-bottom: 0.25rem;
         }

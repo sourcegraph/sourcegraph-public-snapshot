@@ -62,7 +62,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
         <>
             <Button
                 variant="icon"
-                className="test-batches-expand-preview d-none d-sm-block mx-1"
+                className="test-batches-expand-preview d-none d-md-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -166,7 +166,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
-                    'd-block d-sm-none test-batches-expand-preview'
+                    'd-block d-md-none test-batches-expand-preview'
                 )}
                 outline={true}
                 variant="secondary"
@@ -240,7 +240,7 @@ const SelectBox: React.FunctionComponent<
         <div className="d-flex p-2 align-items-center">
             {input}
             {isPublishableResult.publishable ? (
-                <span className="pl-2 d-block d-sm-none text-nowrap">Modify publication state</span>
+                <span className="pl-2 d-block d-md-none text-nowrap">Modify publication state</span>
             ) : null}
         </div>
     )
