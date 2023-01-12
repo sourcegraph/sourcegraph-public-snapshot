@@ -25,6 +25,6 @@ func DeprecatedSingleServiceMainEnterprise(service service.Service) {
 }
 
 func init() {
-	// TODO(sqs): TODO(single-binary): does this need to be in init?
+	// TODO(sqs): TODO(single-binary): could we move this out of init?
 	oobmigration.ReturnEnterpriseMigrations = true
 }
