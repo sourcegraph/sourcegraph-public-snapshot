@@ -22,6 +22,11 @@ func (o *LimitOffset) SQL() *sqlf.Query {
 	if o == nil {
 		return &sqlf.Query{}
 	}
+
+	if o.Limit == 0 {
+		return sqlf.Sprintf("OFFSET %d", o.Offset)
+	}
+
 	return sqlf.Sprintf("LIMIT %d OFFSET %d", o.Limit, o.Offset)
 }
 
