@@ -66,13 +66,18 @@ type UserResolver struct {
 	user   *types.User
 }
 
-// NewUserResolver returns a new UserResolver with given user object.
+// NewUserResolver returns a new UserResolver with given user object. But returns nil if user is
+// nil.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{
-		db:     db,
-		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+	if user != nil {
+		return &UserResolver{
+			db:     db,
+			user:   user,
+			logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		}
 	}
+
+	return nil
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a

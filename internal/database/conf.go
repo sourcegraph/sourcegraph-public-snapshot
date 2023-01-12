@@ -39,6 +39,18 @@ type ConfStore interface {
 	// responsible for ensuring this or that the response never makes it to a user.
 	SiteGetLatest(ctx context.Context) (*SiteConfig, error)
 
+	// ListSiteConfig will list the configs of type "site".
+	//
+	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
+	// responsible for ensuring this or that the response never makes it to a user.
+	ListSiteConfig(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+
+	// GetSiteConfig will return the total count of all configs of type "site".
+	//
+	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
+	// responsible for ensuring this or that the response never makes it to a user.
+	GetSiteConfigCount(context.Context) (int, error)
+
 	Transact(ctx context.Context) (ConfStore, error)
 	Done(error) error
 	basestore.ShareableStore
@@ -55,15 +67,26 @@ type confStore struct {
 // SiteConfig contains the contents of a site config along with associated me
 // tadata.
 type SiteConfig struct {
-	ID           int32  // the unique ID of this config
-	AuthorUserID int32  // the user id of the author that updated this config
+	ID           int32 // the unique ID of this config
+	AuthorUserID int32 // the user id of the author that updated this config
+	Type         string
 	Contents     string // the raw JSON content (with comments and trailing commas allowed)
 
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
 }
 
-type SiteConfigListOptions struct{}
+type SiteConfigType string
+
+var (
+	SiteConfigTypeCritical SiteConfigType = "critical"
+	SiteConfigTypeSite     SiteConfigType = "site"
+)
+
+type SiteConfigListOptions struct {
+	*LimitOffset
+	OrderByDirection OrderByDirection
+}
 
 var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
@@ -120,25 +143,62 @@ func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error
 	return tx.getLatest(ctx)
 }
 
-func (s *confStore) List(ctx context.Context, opt *SiteConfigListOptions) ([]*SiteConfig, error) {
-	// q := sqlf.Sprintf(
-	// 	"SELECT id, type, contents, author_user_id, created_at, updated_at  FROM critical_and_site_config WHERE %s ORDER BY created_at %s",
-	// )
-	// rows, err := s.Query(ctx, q)
-	// if err != nil {
-	// 	return nil, err
-	// }
+func (s *confStore) ListSiteConfig(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
+	// Ascending order by default.
+	orderBy := AscendingOrderByDirection
+	if opt.OrderByDirection != "" {
+		orderBy = opt.OrderByDirection
+	}
 
-	// history := []*SiteConfig{}
-	// defer rows.Close()
-	// for rows.Next() {
-	// 	var c SiteConfig
-	// 	err := rows.Scan()
-	// }
+	q := sqlf.Sprintf(`
+		SELECT
+			 id,
+			 author_user_id,
+			 type,
+			 contents,
+			 created_at,
+			 updated_at
+		 FROM critical_and_site_config
+         WHERE type = 'site'
+		 ORDER BY id `+string(orderBy)+`
+         %s
+        `,
+		opt.LimitOffset.SQL(),
+	)
 
-	return []*SiteConfig{
-		{ID: 1}, {ID: 2},
-	}, nil
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	history := []*SiteConfig{}
+	for rows.Next() {
+		var c SiteConfig
+		err := rows.Scan(
+			&c.ID,
+			&dbutil.NullInt32{N: &c.AuthorUserID},
+			&c.Type,
+			&c.Contents,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+		)
+		if err != nil {
+			return []*SiteConfig{}, err
+		}
+
+		history = append(history, &c)
+	}
+
+	return history, nil
+}
+
+func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
+	q := sqlf.Sprintf(`SELECT count(*) from critical_and_site_config WHERE type = 'site'`)
+
+	var count int
+	err := s.QueryRow(ctx, q).Scan(&count)
+	return count, err
 }
 
 func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents string) (newLastID *int32, _ error) {
