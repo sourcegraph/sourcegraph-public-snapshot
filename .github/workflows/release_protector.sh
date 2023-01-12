@@ -60,7 +60,7 @@ current_year=$(date +'%Y')
 
 release_date=$(get_closest_working_day "${current_year}-${current_month}-${release_day}")
 cut_date=$(get_closest_working_day "$(date -d "$release_date - 3 days" +%F)")
-freeze_date=$(get_closest_working_day "$(date -d "$cut_date - 5 days" +%F)")
+freeze_date=$(get_closest_working_day "$(date -d "$cut_date - 2 days" +%F)")
 todays_date=$(date +'%Y-%m-%d %H:%M')
 
 has_label=$1
