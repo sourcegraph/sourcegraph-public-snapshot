@@ -242,7 +242,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                         <ExternalServiceInformation
                             displayName={externalService.displayName}
                             codeHostID={externalService.id}
-                            reposNumber={numberOfRepos}
+                            reposNumber={numberOfRepos === 0 ? externalService.repoCount : numberOfRepos}
                             syncInProgress={syncInProgress}
                             {...externalServiceCategory}
                         />
