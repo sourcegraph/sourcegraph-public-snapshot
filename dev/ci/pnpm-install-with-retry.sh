@@ -10,7 +10,7 @@ while : ; do
     echo "--- ✂️ timeout reached, aborting".
     exit 1
   fi
-  if yarn --immutable --network-timeout 30000 "$@" 2> >(tee "$tmp_log">&2); then
+  if pnpm install --frozen-lockfile --fetch-timeout 30000 --silent "$@" 2> >(tee "$tmp_log">&2); then
     break
   fi
 

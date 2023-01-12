@@ -158,7 +158,7 @@ export const createSharedIntegrationTestContext = async <
 
     // Fail the test in the case a request handler threw an error,
     // e.g. because a request had no mock defined.
-    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
+    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as unknown as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe(error => {
             /**
