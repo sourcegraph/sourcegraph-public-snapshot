@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -56,6 +57,16 @@ func setTokenAuth(token string) SetAuthFunc {
 func WithTimeout(n time.Duration) ClientOpt {
 	return func(client *Client) {
 		client.http.Timeout = n
+	}
+}
+
+func WithNoVerify() ClientOpt {
+	return func(client *Client) {
+		tp := client.http.Transport.(*http.Transport)
+		if tp.TLSClientConfig == nil {
+			tp.TLSClientConfig = &tls.Config{}
+		}
+		tp.TLSClientConfig.InsecureSkipVerify = true
 	}
 }
 

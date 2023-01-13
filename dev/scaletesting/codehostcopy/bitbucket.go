@@ -38,7 +38,7 @@ func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*Bitbucke
 	}
 
 	// The basic auth client has more power in the rest API than the token based client
-	c := bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second))
+	c := bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second), bitbucket.WithNoVerify())
 
 	return &BitbucketCodeHost{
 		logger:  logger.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
