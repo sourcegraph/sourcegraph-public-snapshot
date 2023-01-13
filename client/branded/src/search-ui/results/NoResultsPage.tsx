@@ -49,7 +49,9 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
-    setQueryState: (query: QueryState) => void
+    showQueryExamples?: boolean
+    setQueryState?: (query: QueryState) => void
+    selectedSearchContextSpec?: string
 }
 
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
@@ -59,7 +61,9 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    showQueryExamples,
     setQueryState,
+    selectedSearchContextSpec,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -79,17 +83,19 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <div className={styles.queryExamplesContainer}>
-                <QueryExamples
-                    // TODO:
-                    // selectedSearchContextSpec={props.selectedSearchContextSpec}
-                    telemetryService={telemetryService}
-                    queryState={{ query: '' }}
-                    setQueryState={setQueryState}
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                />
-            </div>
             <H2>Sourcegraph basics</H2>
+
+            {showQueryExamples && setQueryState && (
+                <div className={styles.queryExamplesContainer}>
+                    <QueryExamples
+                        selectedSearchContextSpec={selectedSearchContextSpec}
+                        telemetryService={telemetryService}
+                        queryState={{ query: '' }}
+                        setQueryState={setQueryState}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                    />
+                </div>
+            )}
             <div className={styles.panels}>
                 <div className="flex-1 flex-shrink-past-contents">
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (

@@ -72,7 +72,14 @@ export interface StreamingSearchResultsListProps
 
     enableKeyboardNavigation?: boolean
 
-    setQueryState: (query: QueryState) => void
+    showQueryExamplesOnNoResultsPage?: boolean
+
+    /*
+     * For updating the query from the QueryExamples on NoResultsPage. Only
+     * needed if showQueryExamplesOnNoResultsPage is true.
+     */
+    setQueryState?: (query: QueryState) => void
+    selectedSearchContextSpec?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -94,6 +101,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFile,
     prefetchFileEnabled,
     enableKeyboardNavigation,
+    showQueryExamplesOnNoResultsPage,
     setQueryState,
 }) => {
     const resultsNumber = results?.results.length || 0
@@ -288,6 +296,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}
+                                showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
                             />
                         )}
