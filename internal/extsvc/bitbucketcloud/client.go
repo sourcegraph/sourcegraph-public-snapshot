@@ -150,8 +150,8 @@ func (c *client) Ping(ctx context.Context) error {
 
 func FetchAll[T any](ctx context.Context, c Client, results []T, next *PageToken, err error) ([]T, error) {
 	cli := c.(*client)
+	var page []T
 	for err == nil && next.HasMore() {
-		var page []T
 		next, err = cli.page(ctx, next.Next, next.Values(), next, &page)
 		results = append(results, page...)
 	}
