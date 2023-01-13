@@ -33,17 +33,15 @@ func TestProvider_ValidateConnection(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		client   func(*bitbucketserver.Client)
-		problems []string
+		problems string
 	}{
 		{
 			name: "no-problems-when-authenticated-as-admin",
 		},
 		{
-			name:   "problems-when-authenticated-as-non-admin",
-			client: func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
-			problems: []string{
-				`Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
-			},
+			name:     "problems-when-authenticated-as-non-admin",
+			client:   func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
+			problems: `Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -55,9 +53,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 				tc.client(p.client)
 			}
 
-			for i := range tc.problems {
-				tc.problems[i] = strings.ReplaceAll(tc.problems[i], "${INSTANCEURL}", instanceURL)
-			}
+			tc.problems = strings.ReplaceAll(tc.problems, "${INSTANCEURL}", instanceURL)
 
 			problems := p.ValidateConnection(context.Background())
 			if have, want := problems, tc.problems; !reflect.DeepEqual(have, want) {
