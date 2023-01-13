@@ -18,6 +18,18 @@ on:
 jobs:
   protect-pr:
     runs-on: ubuntu-latest
+    if: |-
+      github.repository == 'sourcegraph/sourcegraph'
+        &&
+        (
+          (
+            contains(fromJSON('["labeled", "unlabeled"]'), github.event.action 
+            && 
+            github.event.label.name == 'i-acknowledge-this-goes-into-the-release')
+          ) 
+          || 
+          !contains(fromJSON('["labeled", "unlabeled"]'))
+        )
     steps:
       - name: Check date and labels
         id: check-date-and-labels
@@ -109,3 +121,38 @@ jobs:
             echo "📅 Not enabled, we're not yet on ${freeze_date} and release code freeze has not started yet."
             exit 0
           fi
+      - name: "Post comment if failed"
+        uses: actions/github-script@v6
+        if: ${{always() && steps.check-date-and-labels.outcome != 'success'}} 
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let d = new Date()
+            d.setHours(d.getHours() -1) // Yes, this handles properly midnight. 
+
+            let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+            let skip = false
+
+            const { comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              since: d.toISOString(),
+            })
+
+            if (Array.isArray(comments) && comments.length > 0) {
+              comments.data.forEach((comment => {
+                if (comment.body == body) {
+                  skip = true
+                }
+              }))
+            }
+
+            if (!skip) { 
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body,
+              })
+            }
