@@ -30,6 +30,7 @@ type repositoryArgs struct {
 
 	CloneStatus *string
 	FailedFetch bool
+	IsCorrupted bool
 
 	ExternalService *graphql.ID
 
@@ -77,6 +78,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 	}
 
 	opt.FailedFetch = args.FailedFetch
+	opt.IsCorrupted = args.IsCorrupted
 
 	if !args.Cloned && !args.NotCloned {
 		return database.ReposListOptions{}, errors.New("excluding cloned and not cloned repos leaves an empty set")
