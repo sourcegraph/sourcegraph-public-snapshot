@@ -308,7 +308,7 @@ const generateCommitMessageWithLinks = (
 
         linkSegments.push(<Link {...commitLinkProps}>{remainingMessage}</Link>)
 
-        return linkSegments
+        return <div>{linkSegments}</div>
     }
 
     return <Link {...commitLinkProps}>{blameHunk.message}</Link>
