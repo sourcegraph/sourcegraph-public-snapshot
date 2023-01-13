@@ -47,13 +47,11 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, recor
 		prio = priorityHigh
 	}
 
-	reqType := requestTypeRepo
-	if record.UserID != 0 {
-		reqType = requestTypeUser
-	}
-	reqID := int32(record.RepositoryID)
-	if record.UserID != 0 {
-		reqID = int32(record.UserID)
+	reqType := requestTypeUser
+	reqID := int32(record.UserID)
+	if record.RepositoryID != 0 {
+		reqType = requestTypeRepo
+		reqID = int32(record.RepositoryID)
 	}
 
 	h.logger.Info(

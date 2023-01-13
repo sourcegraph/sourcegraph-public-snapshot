@@ -3,8 +3,10 @@ package database
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,7 +36,8 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true}
+	nextSyncAt := time.Now().Add(5 * time.Minute)
+	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, NextSyncAt: nextSyncAt}
 	if err := store.CreateUserSyncJob(ctx, 77, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -48,14 +51,29 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 2, len(jobs))
 	}
 
-	if have, want := jobs[0].RepositoryID, 99; have != want {
-		t.Fatalf("jobs[0] has wrong RepositoryID. want=%d, have=%d", want, have)
+	wantJobs := []*PermissionSyncJob{
+		{
+			ID:               jobs[0].ID,
+			State:            "queued",
+			RepositoryID:     99,
+			HighPriority:     true,
+			InvalidateCaches: true,
+		},
+		{
+			ID:               jobs[1].ID,
+			State:            "queued",
+			UserID:           77,
+			InvalidateCaches: true,
+			ProcessAfter:     nextSyncAt,
+		},
 	}
-	if have, want := jobs[1].UserID, 77; have != want {
-		t.Fatalf("jobs[1] has wrong UserID. want=%d, have=%d", want, have)
+	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
+		t.Fatalf("jobs[0] has wrong attributes: %s", diff)
 	}
-	if !jobs[1].InvalidateCaches {
-		t.Fatal("jobs[1] option InvalidateCaches is not true")
+	for i, j := range jobs {
+		if j.QueuedAt.IsZero() {
+			t.Fatalf("job %d has no QueuedAt set", i)
+		}
 	}
 
 	listTests := []struct {
