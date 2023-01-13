@@ -36,7 +36,8 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 		&oauth2.Token{AccessToken: def.Token},
 	))
 
-	tp := tc.Transport.(*http.Transport)
+	otp := tc.Transport.(*oauth2.Transport)
+	tp := otp.Base.(*http.Transport)
 	if tp.TLSClientConfig == nil {
 		tp.TLSClientConfig = &tls.Config{}
 	}
