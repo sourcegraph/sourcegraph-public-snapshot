@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -157,7 +159,7 @@ type CreateEmptyBatchChangeOpts struct {
 	Name string
 }
 
-// CreateEmptyBatchChange creates a new batch change without an applied spec. It enforces
+// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
@@ -168,30 +170,61 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	// The combination of name + namespace must be unique.
-	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
-	// be considered unique?
-	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
-		NamespaceUserID: opts.NamespaceUserID,
-		NamespaceOrgID:  opts.NamespaceOrgID,
-		Name:            opts.Name,
-	})
-	if err != nil && err != store.ErrNoResults {
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+	// TODO: Should name require a minimum length?
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
 		return nil, err
-	} else if batchChange != nil {
-		return nil, ErrNameNotUnique
 	}
 
 	actor := actor.FromContext(ctx)
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	// The combination of name + namespace must be unique
+	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
+	// be considered unique?
+	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+	if batchChange != nil {
+		return nil, ErrNameNotUnique
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
 
 	batchChange = &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
-		// Note: No batch spec id, meaning it's a draft batch change.
 	}
-	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
@@ -216,17 +249,56 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(string(rawSpec))
+	if err != nil {
+		return nil, err
+	}
+
 	actor := actor.FromContext(ctx)
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
 
 	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
 		CreatorID:       actor.UID,
 	}
 
-	err = s.store.UpsertBatchChange(ctx, batchChange)
+	err = tx.UpsertBatchChange(ctx, batchChange)
 
 	if err != nil {
 		return nil, err

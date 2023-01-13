@@ -821,7 +821,7 @@ CREATE TABLE batch_changes (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     closed_at timestamp with time zone,
-    batch_spec_id bigint,
+    batch_spec_id bigint NOT NULL,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
     CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
