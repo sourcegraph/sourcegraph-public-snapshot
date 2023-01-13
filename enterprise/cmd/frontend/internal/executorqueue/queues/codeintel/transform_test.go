@@ -80,7 +80,8 @@ func TestTransformRecord(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
+			accessToken := func() (token string, tokenEnabled bool) { return "hunter2", true }
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, accessToken)
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -176,7 +177,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		conf.Mock(nil)
 	})
 
-	job, err := transformRecord(context.Background(), db, index, handler.ResourceMetadata{}, "hunter2")
+	accessToken := func() (token string, tokenEnabled bool) { return "hunter2", true }
+	job, err := transformRecord(context.Background(), db, index, handler.ResourceMetadata{}, accessToken)
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -307,7 +309,8 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
+			accessToken := func() (token string, tokenEnabled bool) { return "hunter2", true }
+			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, accessToken)
 			if err != nil {
 				t.Fatalf("unexpected error transforming record: %s", err)
 			}
@@ -391,7 +394,8 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 	}, 0, nil)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
 
-	job, err := transformRecord(context.Background(), db, types.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	accessToken := func() (token string, tokenEnabled bool) { return "hunter2", true }
+	job, err := transformRecord(context.Background(), db, types.Index{ID: 42}, handler.ResourceMetadata{}, accessToken)
 	if err != nil {
 		t.Fatal(err)
 	}
