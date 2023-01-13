@@ -49,13 +49,14 @@ func TestCheckAddress(t *testing.T) {
 			"ssh://blah",
 			// No host
 			"http://",
-			// Non-local host
+			// Localhost
 			"http://localhost:3000",
 			// Unspecificed IP
 			"0.0.0.0",
 			// Private IP
 			"10.0.0.0",
 			"192.168.255.255",
+			"fd00::1",
 			// Link-local IP
 			"169.254.0.0",
 			// Reserved TLD
@@ -77,6 +78,8 @@ func TestCheckAddress(t *testing.T) {
 			"https://my.webhooks.site/receiver",
 			"1.2.3.4",
 			"1.2.3.4:2000",
+			"2001:0db8:0000:0000:0000:8a2e:0370:7334",
+			"2001:db8::8a2e:370:7334",
 		}
 
 		for _, goodURL := range goodURLS {
