@@ -135,8 +135,12 @@ const JobList: React.FunctionComponent<{
                                 onChange={value => setOnlyShowProblematic(value.target.value !== 'all')}
                                 selectClassName={styles.filterSelect}
                             >
-                                <option value="all">Show all routines</option>
-                                <option value="problematic">Only show problematic routines</option>
+                                <option value="all" selected={!onlyShowProblematic}>
+                                    Show all routines
+                                </option>
+                                <option value="problematic" selected={onlyShowProblematic}>
+                                    Only show problematic routines
+                                </option>
                             </Select>
                         </div>
                         <div className="text-center">Fastest / avg / slowest run</div>
@@ -312,7 +316,8 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
                 <Text className="mb-0 ml-4 text-muted">
                     {routine.intervalMs ? (
                         <>
-                            Runs every <strong>{formatDurationLong(routine.intervalMs)}</strong>.{' '}
+                            {routine.type !== 'DB_BACKED' ? 'Runs ' : 'Checks queue '}every{' '}
+                            <strong>{formatDurationLong(routine.intervalMs)}</strong>.{' '}
                         </>
                     ) : null}
                     {routine.recentRuns.length > 0 ? (
@@ -322,8 +327,8 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
                                     <span className={recentRunsWithErrors.length ? 'text-danger' : 'text-success'}>{`${
                                         recentRunsWithErrors.length
                                     } ${pluralize('error', recentRunsWithErrors.length)}`}</span>
-                                </strong>{' '}
-                                in the last{' '}
+                                </strong>
+                                <span className={styles.linkColor}>*</span> in the last{' '}
                                 {`${routine.recentRuns.length} ${pluralize('run', routine.recentRuns.length)}`}.{' '}
                             </span>
                         </Tooltip>
@@ -390,8 +395,10 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number): R
     if (durationMs > routineIntervalMs * 0.7) {
         return 'dangerous'
     }
-    // Uses both a relative and an absolute filter
-    if (durationMs > routineIntervalMs * 0.1 || durationMs > 5000) {
+    // Uses both a relative and an absolute filter:
+    // If the run is more than 10% longer than the interval, it's long, except for intervals of 1s or less where 500ms+ is long.
+    // Also, any run longer than 5s is long.
+    if (durationMs > routineIntervalMs * (durationMs > 1000 ? 0.1 : 0.5) || durationMs > 5000) {
         return 'long'
     }
     return 'short'
