@@ -45,10 +45,14 @@ type Client interface {
 	Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) ([]*Repo, *PageToken, error)
 	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
 
-	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string) ([]*Account, *PageToken, error)
+	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string, opts *RequestOptions) ([]*Account, *PageToken, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
 	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
+}
+
+type RequestOptions struct {
+	FetchAll bool
 }
 
 // client access a Bitbucket Cloud via the REST API 2.0.
@@ -148,11 +152,10 @@ func (c *client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func FetchAll[T any](ctx context.Context, c Client, results []T, next *PageToken, err error) ([]T, error) {
-	cli := c.(*client)
+func fetchAll[T any](ctx context.Context, c *client, results []T, next *PageToken, err error) ([]T, error) {
 	var page []T
 	for err == nil && next.HasMore() {
-		next, err = cli.page(ctx, next.Next, next.Values(), next, &page)
+		next, err = c.page(ctx, next.Next, next.Values(), next, &page)
 		results = append(results, page...)
 	}
 

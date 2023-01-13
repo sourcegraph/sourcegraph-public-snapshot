@@ -27,6 +27,7 @@ func (c *client) Repo(ctx context.Context, namespace, slug string) (*Repo, error
 }
 
 type ReposOptions struct {
+	RequestOptions
 	Role string `url:"role,omitempty"`
 }
 
@@ -58,6 +59,11 @@ func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 	}
 
 	next, err = c.page(ctx, reposURL, urlValues, pageToken, &repos)
+
+	if opts != nil && opts.FetchAll {
+		repos, err = fetchAll(ctx, c, repos, next, err)
+	}
+
 	return repos, next, err
 }
 
@@ -66,13 +72,17 @@ type ExplicitUserPermsResponse struct {
 	Permission string   `json:"permission"`
 }
 
-func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string) (users []*Account, next *PageToken, err error) {
+func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string, opts *RequestOptions) (users []*Account, next *PageToken, err error) {
 	var resp []ExplicitUserPermsResponse
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &resp)
 	} else {
 		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", url.PathEscape(namespace), url.PathEscape(slug))
 		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
+	}
+
+	if opts != nil && opts.FetchAll {
+		resp, err = fetchAll(ctx, c, resp, next, err)
 	}
 
 	if err != nil {
