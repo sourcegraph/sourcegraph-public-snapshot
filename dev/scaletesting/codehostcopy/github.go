@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"math"
-	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -35,13 +33,6 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: def.Token},
 	))
-
-	otp := tc.Transport.(*oauth2.Transport)
-	tp := otp.Base.(*http.Transport)
-	if tp.TLSClientConfig == nil {
-		tp.TLSClientConfig = &tls.Config{}
-	}
-	tp.TLSClientConfig.InsecureSkipVerify = true
 
 	baseURL, err := url.Parse(def.URL)
 	if err != nil {
