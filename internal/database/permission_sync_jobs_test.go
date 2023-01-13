@@ -21,6 +21,14 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	store := PermissionSyncJobsWith(logger, db)
 
+	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if len(jobs) != 0 {
+		t.Fatalf("jobs returned even though database is empty")
+	}
+
 	opts := PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: true}
 	if err := store.CreateRepoSyncJob(ctx, 99, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -31,7 +39,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
+	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

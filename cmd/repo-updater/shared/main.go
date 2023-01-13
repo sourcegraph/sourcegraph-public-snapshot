@@ -58,7 +58,17 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(observationCtx *observation.Context, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID) error)
+//
+// It returns a debugserver.Dumper and a function with which to enqueue a
+// permission sync for a repository.
+type EnterpriseInit func(
+	observationCtx *observation.Context,
+	db database.DB,
+	store repos.Store,
+	keyring keyring.Ring,
+	cf *httpcli.Factory,
+	server *repoupdater.Server,
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc

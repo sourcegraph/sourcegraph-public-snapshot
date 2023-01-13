@@ -1159,7 +1159,7 @@ func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
-	logger.Debug("started")
+	logger.Info("started")
 	defer logger.Info("stopped")
 
 	store := s.db.PermissionSyncJobs()
@@ -1175,7 +1175,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() {
-			logger.Debug("disabled")
+			logger.Info("disabled")
 			continue
 		}
 
@@ -1185,7 +1185,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		// TODO: Yes, you're right. This is obviously spaghetti code:
+		// TODO(sashaostrikov): Yes, you're right. This is obviously spaghetti code:
 		// `PermsSyncer` creates jobs that a worker picks up and then hands to
 		// PermSyncer.
 		// The idea is that once the worker becomes the default then this whole
@@ -1205,7 +1205,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 
 			for _, u := range schedule.Repos {
 				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
-				if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), opts); err != nil {
+				if err := store.CreateRepoSyncJob(ctx, u.repoID, opts); err != nil {
 					logger.Error("failed to create repo sync job", log.Error(err))
 					continue
 				}

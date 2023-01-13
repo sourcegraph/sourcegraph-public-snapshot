@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -24,12 +25,12 @@ type PermissionSyncJobOpts struct {
 type PermissionSyncJobStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) PermissionSyncJobStore
-	// Transact begins a new transaction and make a new PermsStore over it.
+	// Transact begins a new transaction and make a new PermissionSyncJobStore over it.
 	Transact(ctx context.Context) (PermissionSyncJobStore, error)
 	Done(err error) error
 
 	CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error
-	CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error
+	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 }
@@ -74,7 +75,7 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 	return s.createSyncJob(ctx, job)
 }
 
-func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo int32, opts PermissionSyncJobOpts) error {
+func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		RepositoryID:     int(repo),
 		HighPriority:     opts.HighPriority,

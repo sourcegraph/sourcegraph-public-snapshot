@@ -31494,7 +31494,7 @@ type MockPermissionSyncJobStore struct {
 func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
-			defaultHook: func(context.Context, int32, PermissionSyncJobOpts) (r0 error) {
+			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) (r0 error) {
 				return
 			},
 		},
@@ -31537,7 +31537,7 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
-			defaultHook: func(context.Context, int32, PermissionSyncJobOpts) error {
+			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 				panic("unexpected invocation of MockPermissionSyncJobStore.CreateRepoSyncJob")
 			},
 		},
@@ -31607,15 +31607,15 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 // the CreateRepoSyncJob method of the parent MockPermissionSyncJobStore
 // instance is invoked.
 type PermissionSyncJobStoreCreateRepoSyncJobFunc struct {
-	defaultHook func(context.Context, int32, PermissionSyncJobOpts) error
-	hooks       []func(context.Context, int32, PermissionSyncJobOpts) error
+	defaultHook func(context.Context, api.RepoID, PermissionSyncJobOpts) error
+	hooks       []func(context.Context, api.RepoID, PermissionSyncJobOpts) error
 	history     []PermissionSyncJobStoreCreateRepoSyncJobFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateRepoSyncJob delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) CreateRepoSyncJob(v0 context.Context, v1 int32, v2 PermissionSyncJobOpts) error {
+func (m *MockPermissionSyncJobStore) CreateRepoSyncJob(v0 context.Context, v1 api.RepoID, v2 PermissionSyncJobOpts) error {
 	r0 := m.CreateRepoSyncJobFunc.nextHook()(v0, v1, v2)
 	m.CreateRepoSyncJobFunc.appendCall(PermissionSyncJobStoreCreateRepoSyncJobFuncCall{v0, v1, v2, r0})
 	return r0
@@ -31624,7 +31624,7 @@ func (m *MockPermissionSyncJobStore) CreateRepoSyncJob(v0 context.Context, v1 in
 // SetDefaultHook sets function that is called when the CreateRepoSyncJob
 // method of the parent MockPermissionSyncJobStore instance is invoked and
 // the hook queue is empty.
-func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultHook(hook func(context.Context, int32, PermissionSyncJobOpts) error) {
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultHook(hook func(context.Context, api.RepoID, PermissionSyncJobOpts) error) {
 	f.defaultHook = hook
 }
 
@@ -31633,7 +31633,7 @@ func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushHook(hook func(context.Context, int32, PermissionSyncJobOpts) error) {
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushHook(hook func(context.Context, api.RepoID, PermissionSyncJobOpts) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -31642,19 +31642,19 @@ func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushHook(hook func(context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, PermissionSyncJobOpts) error {
+	f.SetDefaultHook(func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, PermissionSyncJobOpts) error {
+	f.PushHook(func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 		return r0
 	})
 }
 
-func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) nextHook() func(context.Context, int32, PermissionSyncJobOpts) error {
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) nextHook() func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -31694,7 +31694,7 @@ type PermissionSyncJobStoreCreateRepoSyncJobFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int32
+	Arg1 api.RepoID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 PermissionSyncJobOpts

@@ -75,7 +75,7 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, recor
 		Options: authz.FetchPermsOptions{
 			InvalidateCaches: record.InvalidateCaches,
 		},
-		// TODO: Fill this out
+		// TODO(sashaostrikov): Fill this out
 		NoPerms: false,
 	}})
 
@@ -88,7 +88,7 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 		TableName:         "permission_sync_jobs",
 		ColumnExpressions: database.PermissionSyncJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(database.ScanPermissionSyncJob),
-		// TODO: We need to take `NextSyncAt`/`process_after` into account
+		// TODO(sashaostrikov): We need to take `NextSyncAt`/`process_after` into account
 		OrderByExpression: sqlf.Sprintf("permission_sync_jobs.repository_id, permission_sync_jobs.user_id, permission_sync_jobs.high_priority"),
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 30,
@@ -101,9 +101,12 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
-		NumHandlers:       1,           // Process only one job at a time (per instance). TODO: This should be changed once the handler above is not async anymore.
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
+
+		// Process only one job at a time (per instance).
+		// TODO(sashaostrikov): This should be changed once the handler above is not async anymore.
+		NumHandlers: 1,
 	})
 }
 
