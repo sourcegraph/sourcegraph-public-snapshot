@@ -39,10 +39,7 @@ export interface RepoSettingsContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps {
-    // repo: RepositoryFields | undefined
-    // repo: RepositoryFields
     repoName: string
-    // resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
