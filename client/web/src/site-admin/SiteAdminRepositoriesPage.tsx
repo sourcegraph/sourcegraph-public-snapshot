@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { mdiCloudDownload, mdiCog } from '@mdi/js'
+import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -72,6 +72,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
+                <Tooltip content="Repository code graph data">
+                    <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                    </Button>
+                </Tooltip>{' '}
                 <Tooltip content="Repository settings">
                     <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
