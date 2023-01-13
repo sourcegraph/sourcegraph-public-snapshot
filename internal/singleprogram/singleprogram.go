@@ -118,9 +118,12 @@ func Init(logger log.Logger) {
 	// Escape hatch isn't needed in local dev since the site config can always just be a file on disk.
 	setDefaultEnv(logger, "NO_SITE_CONFIG_ESCAPE_HATCH", "1")
 
-	// TODO(sqs): TODO(single-binary): Executor shouldnt need a password when running in single-program.
+	// We disable the use of executors passwords, because executors only listen on `localhost` this
+	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", "asdf1234asdf1234asdf1234")
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", "none")
+	setDefaultEnv(logger, "EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN", "true")
+
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you
 	// need to change this to "batches" to use batch changes executors.
