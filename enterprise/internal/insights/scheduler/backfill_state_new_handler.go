@@ -67,6 +67,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
 		Name:              name,
+		Description:       "handles backfills that are in the \"new\" state",
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,

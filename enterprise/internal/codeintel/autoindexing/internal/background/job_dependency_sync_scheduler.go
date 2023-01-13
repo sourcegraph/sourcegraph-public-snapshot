@@ -45,6 +45,7 @@ func NewDependencySyncScheduler(
 
 	return dbworker.NewWorker[shared.DependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
+		Description:       "periodically checks for dependency packages that can be auto-indexed",
 		NumHandlers:       1,
 		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
