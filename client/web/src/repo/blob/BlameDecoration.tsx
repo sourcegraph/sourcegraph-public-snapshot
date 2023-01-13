@@ -19,6 +19,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
@@ -27,7 +28,6 @@ import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 import { useBlameRecencyColor } from './BlameRecency'
 
 import styles from './BlameDecoration.module.scss'
-import { ExternalServiceKind } from '../../graphql-operations'
 
 const currentPopoverId = new BehaviorSubject<string | null>(null)
 let closeTimeoutId: NodeJS.Timeout | null = null
@@ -299,7 +299,7 @@ const generateCommitMessageWithLinks = (
             const before = remainingMessage.slice(0, index)
 
             linkSegments.push(<Link {...commitLinkProps}>{before}</Link>)
-            linkSegments.push(<Link to={`${github.url}/issues/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
+            linkSegments.push(<Link to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
 
             const nextIndex = index + issueNumber.length
             remainingMessage = remainingMessage.slice(index + issueNumber.length)
