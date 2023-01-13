@@ -1,11 +1,4 @@
-import {
-    createContext,
-    forwardRef,
-    InputHTMLAttributes,
-    useContext,
-    useImperativeHandle,
-    useMemo,
-} from 'react'
+import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -15,7 +8,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../stores'
 import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'

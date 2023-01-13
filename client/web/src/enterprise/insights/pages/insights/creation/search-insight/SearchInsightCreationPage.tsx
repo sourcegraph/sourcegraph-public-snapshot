@@ -102,10 +102,10 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
             <PageHeader
                 className="mb-5"
                 path={[
-                                { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
-                                { text: 'Create', to: backUrl },
-                                { text: 'Track changes insight' },
-                            ]}
+                    { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                    { text: 'Create', to: backUrl },
+                    { text: 'Track changes insight' },
+                ]}
                 description={
                     <span className="text-muted">
                         Search-based code insights analyze your code based on any search query.{' '}
