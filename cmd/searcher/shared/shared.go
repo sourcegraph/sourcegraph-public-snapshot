@@ -199,7 +199,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
 
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
@@ -229,6 +228,8 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			handler.ServeHTTP(w, r)
 		})),
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Listen
 	g.Go(func() error {
