@@ -1,4 +1,4 @@
-FROM sourcegraph-wolfi/wolfi-base:latest
+FROM --platform=linux/amd64 sourcegraph-wolfi/sourcegraph-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

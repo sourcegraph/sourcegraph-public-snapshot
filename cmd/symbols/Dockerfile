@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/go:latest AS symbols-build
+FROM --platform=linux/amd64 cgr.dev/chainguard/go:latest AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
@@ -28,7 +28,7 @@ RUN \
     -o /symbols \
     $PKG
 
-FROM sourcegraph-wolfi/symbols-base:latest AS symbols
+FROM --platform=linux/amd64 sourcegraph-wolfi/symbols-base:latest AS symbols
 
 # TODO(security): This container should not run as root!
 #

@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph-wolfi/searcher-base:latest
+FROM --platform=linux/amd64 sourcegraph-wolfi/searcher-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
