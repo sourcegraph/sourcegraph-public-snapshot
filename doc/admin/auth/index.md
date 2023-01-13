@@ -318,8 +318,8 @@ Sourcegraph instance:
 - Permissions: 
   - `Account`: `Read`
 
-After the consumer is created, you will need the Key and the Secret, which can be found by expanding OAuth consumer in the list.
-Then add the following lines to your site configuration:
+After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
+Then add the following lines to your [site configuration](config/site_config.md):
 ```json
 {
     // ...

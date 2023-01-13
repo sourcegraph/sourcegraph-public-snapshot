@@ -78,7 +78,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 }
 
 func failureHandler(w http.ResponseWriter, r *http.Request) {
-	// As a special case wa want to handle `access_denied` errors by redirecting
+	// As a special case we want to handle `access_denied` errors by redirecting
 	// back. This case arises when the user decides not to proceed by clicking `cancel`.
 	if err := r.URL.Query().Get("error"); err != "access_denied" {
 		// Fall back to default failure handler

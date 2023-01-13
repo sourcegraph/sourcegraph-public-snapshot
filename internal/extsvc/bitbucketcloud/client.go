@@ -46,6 +46,7 @@ type Client interface {
 
 	CurrentUser(ctx context.Context) (*User, error)
 	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
+	AllCurrentUserEmails(ctx context.Context) ([]*UserEmail, error)
 }
 
 // client access a Bitbucket Cloud via the REST API 2.0.

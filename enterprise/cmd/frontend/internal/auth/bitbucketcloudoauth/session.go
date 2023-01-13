@@ -67,47 +67,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 
-	emails, next, err := s.client.CurrentUserEmails(ctx, nil)
+	emails, err := s.client.AllCurrentUserEmails(ctx)
 	if err != nil {
 		return nil, "", err
 	}
 
-	for next.HasMore() {
-		var nextEmails []*bitbucketcloud.UserEmail
-		nextEmails, next, err = s.client.CurrentUserEmails(ctx, next)
-		if err != nil {
-			return nil, "", err
-		}
-		emails = append(emails, nextEmails...)
-	}
-
-	type attemptConfig struct {
-		email            string
-		createIfNotExist bool
-	}
-	attempts := []attemptConfig{}
-	verifiedEmails := []string{}
-	for _, email := range emails {
-		if email.IsConfirmed {
-			attempts = append(attempts, attemptConfig{
-				email:            email.Email,
-				createIfNotExist: false,
-			})
-			verifiedEmails = append(verifiedEmails, email.Email)
-		}
-	}
-	if len(verifiedEmails) == 0 {
-		return nil, "Could not find verified email address for Bitbucket user.", errors.New("no verified email")
-	}
-	// If allowSignup is true, we will create an account using the first verified
-	// email address from Bitbucket which we expect to be their primary address. Note
-	// that the order of attempts is important. If we manage to connect with an
-	// existing account we return early and don't attempt to create a new account.
-	if s.allowSignup {
-		attempts = append(attempts, attemptConfig{
-			email:            verifiedEmails[0],
-			createIfNotExist: true,
-		})
+	attempts, err := buildUserFetchAttempts(emails, s.allowSignup)
+	if err != nil {
+		return nil, "Could not find verified email address for Bitbucket user.", err
 	}
 
 	var (
@@ -147,7 +114,43 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	// On failure, return the first error
-	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+	verifiedEmails := make([]string, 0, len(attempts))
+	for i, attempt := range attempts {
+		verifiedEmails[i] = attempt.email
+	}
+	return nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+}
+
+type attempt struct {
+	email            string
+	createIfNotExist bool
+}
+
+func buildUserFetchAttempts(emails []*bitbucketcloud.UserEmail, allowSignup bool) ([]attempt, error) {
+	attempts := []attempt{}
+	for _, email := range emails {
+		if email.IsConfirmed {
+			attempts = append(attempts, attempt{
+				email:            email.Email,
+				createIfNotExist: false,
+			})
+		}
+	}
+	if len(attempts) == 0 {
+		return nil, errors.New("no verified email")
+	}
+	// If allowSignup is true, we will create an account using the first verified
+	// email address from Bitbucket which we expect to be their primary address. Note
+	// that the order of attempts is important. If we manage to connect with an
+	// existing account we return early and don't attempt to create a new account.
+	if allowSignup {
+		attempts = append(attempts, attempt{
+			email:            attempts[0].email,
+			createIfNotExist: true,
+		})
+	}
+
+	return attempts, nil
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
@@ -164,6 +167,6 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 		},
 		AccessToken: token.AccessToken,
 		TokenType:   token.Type(),
-		// TODO(beyang): store and use refresh token to auto-refresh sessions
+		// TODO(pjlast): investigate exactly where and how we use this SessionData
 	}
 }

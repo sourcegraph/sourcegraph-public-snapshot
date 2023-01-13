@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,11 +28,10 @@ import (
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
-	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewMockDB()
 
 	const mockUserID = 123
 
