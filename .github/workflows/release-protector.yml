@@ -115,13 +115,13 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            var d = new Date()
+            let d = new Date()
             d.setHours(d.getHours() -1) // Yes, this handles properly midnight. 
 
-            var body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
-            var skip = false
+            let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+            let skip = false
 
-            comments := github.rest.issues.listComments({
+            let comments = github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               since: d.toISOString(),
