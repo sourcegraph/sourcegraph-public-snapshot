@@ -115,9 +115,29 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            var d = new Date()
+            d.setHours(d.getHours() -1) // Yes, this handles properly midnight. 
+
+            var body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+            var skip = false
+
+            comments := github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+              since: d.toISOString(),
             })
+
+            comments.forEach((comment => {
+              if (comment.body == body) {
+                skip = true
+              }
+            }))
+
+            if (!skip) { 
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body,
+              })
+            }
