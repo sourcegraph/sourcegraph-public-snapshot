@@ -89,7 +89,7 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 		ColumnExpressions: database.PermissionSyncJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(database.ScanPermissionSyncJob),
 		// TODO(sashaostrikov): We need to take `NextSyncAt`/`process_after` into account
-		OrderByExpression: sqlf.Sprintf("permission_sync_jobs.repository_id, permission_sync_jobs.user_id, permission_sync_jobs.high_priority"),
+		OrderByExpression: sqlf.Sprintf("permission_sync_jobs.high_priority, permission_sync_jobs.repository_id, permission_sync_jobs.user_id"),
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 30,
 	})
