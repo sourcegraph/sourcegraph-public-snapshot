@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 # Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
 # Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=prom_upstream /bin/prometheus /bin/prometheus
-COPY --from=prom_upstream /bin/promtool /bin/promtoool
+COPY --from=prom_upstream /bin/promtool /bin/promtool
 COPY --from=prom_upstream /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
 COPY --from=prom_upstream /usr/share/prometheus/console_libraries/ /usr/share/prometheus/console_libraries/
 COPY --from=prom_upstream /usr/share/prometheus/consoles/ /usr/share/prometheus/consoles/
