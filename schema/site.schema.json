@@ -625,6 +625,12 @@
       "default": false,
       "group": "Misc."
     },
+    "disableFeedbackSurvey": {
+      "description": "Disable the feedback survey",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
