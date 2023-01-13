@@ -109,3 +109,14 @@ jobs:
             echo "📅 Not enabled, we're not yet on ${freeze_date} and release code freeze has not started yet."
             exit 0
           fi
+      - uses: actions/github-script@v5
+        if: ${{steps.check-date-and-labels.outcome != "success"}} 
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'TEST'
+            })
