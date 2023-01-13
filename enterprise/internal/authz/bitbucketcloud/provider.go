@@ -119,6 +119,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	repos, next, err := client.Repos(ctx, nil, "", &bitbucketcloud.ReposOptions{Role: "member"})
 	repos, err = bitbucketcloud.FetchAll(ctx, client, repos, next, err)
+	if err != nil {
+		return nil, err
+	}
 
 	extIDs := make([]extsvc.RepoID, 0, len(repos))
 	for _, repo := range repos {

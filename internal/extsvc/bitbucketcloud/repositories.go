@@ -48,7 +48,7 @@ func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 	if accountName == "" {
 		reposURL = "/2.0/repositories"
 	} else {
-		reposURL = fmt.Sprintf("/2.0/repositories/%s", accountName)
+		reposURL = fmt.Sprintf("/2.0/repositories/%s", url.PathEscape(accountName))
 	}
 
 	var urlValues url.Values
@@ -71,7 +71,7 @@ func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *Pa
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &resp)
 	} else {
-		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", namespace, slug)
+		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", url.PathEscape(namespace), url.PathEscape(slug))
 		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
 	}
 

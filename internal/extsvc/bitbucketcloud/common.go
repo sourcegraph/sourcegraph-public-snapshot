@@ -1,6 +1,7 @@
 package bitbucketcloud
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,8 +23,16 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 			if rawURL == "" {
 				rawURL = "https://bitbucket.org"
 			}
-			bbURL := strings.TrimSuffix(rawURL, "/")
-			if !strings.HasPrefix(baseURL, bbURL) {
+			rawURL = strings.TrimSuffix(rawURL, "/")
+			if !strings.HasPrefix(baseURL, rawURL) {
+				continue
+			}
+			authURL, err := url.JoinPath(rawURL, "/site/oauth2/authorize")
+			if err != nil {
+				continue
+			}
+			tokenURL, err := url.JoinPath(rawURL, "/site/oauth2/access_token")
+			if err != nil {
 				continue
 			}
 
@@ -31,8 +40,8 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 				ClientID:     p.ClientKey,
 				ClientSecret: p.ClientSecret,
 				Endpoint: oauth2.Endpoint{
-					AuthURL:  bbURL + "/site/oauth2/authorize",
-					TokenURL: bbURL + "/site/oauth2/access_token",
+					AuthURL:  authURL,
+					TokenURL: tokenURL,
 				},
 			}
 		}
