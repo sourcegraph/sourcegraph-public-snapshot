@@ -1,27 +1,5 @@
-# Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS p4cli
-
-# hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
-    mv p4 /usr/local/bin/p4 && \
-    chmod +x /usr/local/bin/p4
-
-# Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS p4-fusion
-
-COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
-RUN /p4-fusion-install-alpine.sh
-
-# Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS coursier
-
-# TODO(code-intel): replace with official streams when musl builds are upstreamed
-RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
-    unzip coursier.zip && \
-    mv cs-musl /usr/local/bin/coursier && \
-    chmod +x /usr/local/bin/coursier
-
 FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
+FROM sourcegraph-wolfi/server-base:latest
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -39,38 +17,9 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-RUN apk add --no-cache --verbose \
-    # [NOTE: git-version-min-requirement]
-    # We require git 2.38+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
-    'git>=2.38.1' \
-    git-lfs \
-    git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \
-    # NOTE that the Postgres version we run is different
-    # from our *Minimum Supported Version* which alone dictates
-    # the features we can depend on. See this link for more information:
-    # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-    # You can't just bump the major version since that requires pgupgrade
-    # between Sourcegraph releases.
-    && apk add --no-cache --verbose \
-    postgresql=~12 \
-    postgresql-contrib=~12 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
-    && apk add --no-cache --verbose \
-    'bash>=5.0.17' \
-    'redis>=5.0' \
-    python2 \
-    python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs libev su-exec 'nodejs-current>=14.5.0' \
-    # We require libstdc++ for p4-fusion
-    libstdc++
-
 # IMPORTANT: If you update the syntax-highlighter version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/syntax-highlighter/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
-# hadolint ignore=DL3022
-COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=docker.io/sourcegraph/syntax-highlighter:186324_2022-12-01_02d3b4384446 /syntax_highlighter /usr/local/bin/
 
@@ -81,9 +30,6 @@ RUN apk add --no-cache --verbose openjdk11
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
 
-
-COPY ctags-install-alpine.sh /ctags-install-alpine.sh
-RUN /ctags-install-alpine.sh
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin
@@ -98,27 +44,10 @@ COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
-RUN set -ex && \
-    addgroup -S grafana && \
-    adduser -S -G grafana grafana && \
-    apk add --no-cache libc6-compat ca-certificates su-exec
-
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
 
 COPY . /
-
-# hadolint ignore=DL3022
-COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
-
-COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
-
-COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
-
-# This is a trick to include libraries required by p4,
-# please refer to https://blog.tilander.org/docker-perforce/
-# hadolint ignore=DL4006
-RUN wget -O - https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz | tar zx --directory /
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
