@@ -467,6 +467,14 @@
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }
+        },
+        "insightsDataRetention": {
+          "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "examples": [
