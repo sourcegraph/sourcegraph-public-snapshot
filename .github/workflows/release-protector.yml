@@ -23,9 +23,9 @@ jobs:
         &&
         (
           (
-            contains(fromJSON('["labeled", "unlabeled"]'), github.event.action 
+            contains(fromJSON('["labeled", "unlabeled"]'), github.event.action) 
             && 
-            github.event.label.name == 'i-acknowledge-this-goes-into-the-release')
+            github.event.label.name == 'i-acknowledge-this-goes-into-the-release'
           ) 
           || 
           !contains(fromJSON('["labeled", "unlabeled"]'))
