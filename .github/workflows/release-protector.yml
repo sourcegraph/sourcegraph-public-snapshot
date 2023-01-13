@@ -92,8 +92,6 @@ jobs:
           fi
           todays_date=$(date +'%Y-%m-%d %H:%M')
 
-          has_label=$1
-
           todays_date_epoch=$(get_epoch "$todays_date")
           freeze_date_epoch=$(get_epoch "$freeze_date 00:00")
           release_date_epoch=$(get_epoch "$release_date 23:59")
