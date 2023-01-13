@@ -187,7 +187,10 @@ extend type Query {
         first: Int
         after: String
         id: ID
-        query: String
+        """
+        Allow you to search insight views by their title or data series labels.
+        """
+        find: String
         isFrozen: Boolean
         filters: InsightViewFiltersInput
         seriesDisplayOptions: SeriesDisplayOptionsInput
