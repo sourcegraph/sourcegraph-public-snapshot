@@ -24,7 +24,7 @@ jobs:
         run: |
           # Does this PR have the acknowledgement label?
           has_label="${{contains(github.event.pull_request.labels.*.name, 'i-acknowledge-this-goes-into-the-release')}}"
-          P=pwd
+          P=$(pwd)
           echo $P
           # Pass the value of the above check into the shell script
           .github/workflows/release_protector.sh "$has_label"
