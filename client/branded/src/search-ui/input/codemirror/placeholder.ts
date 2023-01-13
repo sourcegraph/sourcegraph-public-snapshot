@@ -6,20 +6,20 @@ import { EditorState, Extension } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view'
 
 class Placeholder extends WidgetType {
-    constructor(readonly content: string) {
+    constructor(private readonly content: string) {
         super()
     }
 
-    toDOM() {
-        let wrap = document.createElement('span')
+    public toDOM(): HTMLElement {
+        const wrap = document.createElement('span')
         wrap.className = 'cm-placeholder'
         wrap.style.pointerEvents = 'none'
         wrap.setAttribute('aria-hidden', 'true')
-        wrap.appendChild(document.createTextNode(this.content))
+        wrap.append(document.createTextNode(this.content))
         return wrap
     }
 
-    ignoreEvent() {
+    public ignoreEvent(): boolean {
         return false
     }
 }
@@ -35,15 +35,15 @@ function showWhenEmpty(state: EditorState): boolean {
 export function placeholder(content: string, show: (state: EditorState) => boolean = showWhenEmpty): Extension {
     return ViewPlugin.fromClass(
         class {
-            placeholderDecoration: Decoration
-            decorations: DecorationSet
+            private placeholderDecoration: Decoration
+            public decorations: DecorationSet
 
-            constructor(readonly view: EditorView) {
+            constructor(view: EditorView) {
                 this.placeholderDecoration = Decoration.widget({ widget: new Placeholder(content), side: 1 })
                 this.decorations = this.createDecorationSet(view.state)
             }
 
-            update(update: ViewUpdate) {
+            public update(update: ViewUpdate): void {
                 if (update.docChanged || update.selectionSet) {
                     this.decorations = this.createDecorationSet(update.view.state)
                 }
@@ -55,6 +55,6 @@ export function placeholder(content: string, show: (state: EditorState) => boole
                     : Decoration.none
             }
         },
-        { decorations: v => v.decorations }
+        { decorations: plugin => plugin.decorations }
     )
 }

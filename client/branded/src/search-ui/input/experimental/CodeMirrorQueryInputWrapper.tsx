@@ -6,6 +6,7 @@ import { EditorView, keymap } from '@codemirror/view'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { History } from 'history'
+import inRange from 'lodash/inRange'
 import { useHistory } from 'react-router'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
@@ -22,7 +23,6 @@ import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-h
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
-import inRange from 'lodash/inRange'
 
 interface ExtensionConfig {
     popoverID: string

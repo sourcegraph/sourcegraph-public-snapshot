@@ -1,13 +1,13 @@
 import { RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
+import { mdiClose } from '@mdi/js'
 import inRange from 'lodash/inRange'
 
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
-
-import { decoratedTokens, queryTokens } from './parsedQuery'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
-import { mdiClose } from '@mdi/js'
+
+import { decoratedTokens, queryTokens } from './parsedQuery'
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
@@ -43,14 +43,14 @@ class ClearTokenWidget extends WidgetType {
         super()
     }
 
-    toDOM(view: EditorView): HTMLElement {
+    public toDOM(view: EditorView): HTMLElement {
         const wrapper = document.createElement('span')
         wrapper.setAttribute('aria-hidden', 'true')
         wrapper.className = 'sg-clear-filter'
 
         const button = document.createElement('button')
         button.type = 'button'
-        button.onclick = () => {
+        button.addEventListener('click', () => {
             view.dispatch({
                 // -1/+1 to include possible leading and trailing whitespace
                 changes: {
@@ -61,9 +61,9 @@ class ClearTokenWidget extends WidgetType {
             if (!view.hasFocus) {
                 view.focus()
             }
-        }
-        button.appendChild(createSVGIcon(mdiClose))
-        wrapper.appendChild(button)
+        })
+        button.append(createSVGIcon(mdiClose))
+        wrapper.append(button)
 
         return wrapper
     }

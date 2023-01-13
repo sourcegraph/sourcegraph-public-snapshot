@@ -3,6 +3,7 @@ import React from 'react'
 import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar } from '@mdi/js'
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
+import { AuthenticatedUser } from 'src/auth'
 import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
 
 import { gql } from '@sourcegraph/http-client'
@@ -20,23 +21,24 @@ import {
     getEditorConfig,
     SuggestionResult,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
-
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { AuthenticatedUser } from 'src/auth'
+import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 /**
  * Used to organize the various sources that contribute to the final list of
  * suggestions.
  */
-interface InternalSource<T extends Token | undefined = Token | undefined> {
-    (params: { token: T; tokens: Token[]; input: string; position: number }): SuggestionResult | null
-}
+type InternalSource<T extends Token | undefined = Token | undefined> = (params: {
+    token: T
+    tokens: Token[]
+    input: string
+    position: number
+}) => SuggestionResult | null
 
 const none: any[] = []
 
@@ -370,7 +372,7 @@ export const createSuggestionsSource = ({
     fetchSearchContexts,
     getUserSearchContextNamespaces,
 }: SuggestionsSourceConfig): Source => {
-    const cleanRegex = (value: string) => value.replace(/^\^|\\\.|\$$/g, '')
+    const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
 
     const repoFzfOptions: FzfOptions<Repo> = {
         selector: item => item.name,
@@ -484,7 +486,7 @@ class Cache<T, U> {
     constructor(private config: CacheConfig<T, U>) {}
 
     public query(value: string, mapper: (values: U[]) => Group[]): ReturnType<InternalSource> {
-        const next = () => {
+        const next: SuggestionResult['next'] = () => {
             const key = this.config.queryKey(value)
             let result = this.queryCache.get(key)
 
