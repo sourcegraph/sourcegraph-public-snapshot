@@ -122,7 +122,7 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 	}
 	if args.Query != "" {
-		preds = append(preds, sqlf.Sprintf("iv.title ILIKE %s", "%"+args.Query+"%"))
+		preds = append(preds, sqlf.Sprintf("iv.title ILIKE %s OR ivs.label ILIKE %s", "%"+args.Query+"%", "%"+args.Query+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
