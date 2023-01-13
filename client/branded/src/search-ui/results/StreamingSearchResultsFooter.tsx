@@ -36,18 +36,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
             <div className="pr-3 mt-3 align-self-stretch">
                 <Alert variant="info">
                     <Text className="m-0">
-                        <strong>No results matched your query</strong>
-                        <br />
-                        Learn more about how to search{' '}
-                        <Link
-                            to="/help/code_search/explanations/features"
-                            rel="noopener noreferrer"
-                            target="_blank"
-                            onClick={() => telemetryService.log('ClickedOnDocs')}
-                        >
-                            in our docs
-                        </Link>
-                        , or use the tips below to improve your query.
+                        <strong>No results matched your search.</strong>
                     </Text>
                 </Alert>
             </div>
