@@ -20,7 +20,11 @@
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## Unreleased
+## Unreleased (4.5)
+
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+
+## Unreleased (4.4)
 
 <!-- Add changes changes to this section before release. -->
 
