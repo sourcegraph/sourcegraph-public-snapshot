@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 
+import { mdiCog } from '@mdi/js'
 import * as H from 'history'
 import { Redirect } from 'react-router'
 
@@ -14,14 +15,13 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
+import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
 
 import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
-import { mdiCog } from '@mdi/js'
-import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
@@ -135,13 +135,13 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
                             {
                                 text: (
                                     <>
-                                        {externalService.displayName}{' '}
+                                        {externalService.displayName}
                                         {externalServiceCategory && (
                                             <Icon
                                                 inline={true}
                                                 as={externalServiceCategory.icon}
                                                 aria-label="Code host logo"
-                                                className="mr-2"
+                                                className="ml-2"
                                             />
                                         )}
                                     </>
