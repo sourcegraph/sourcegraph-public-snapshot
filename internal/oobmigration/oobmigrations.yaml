@@ -115,4 +115,6 @@
   non_destructive: false
   is_enterprise: true
   introduced_version_major: 4
-  introduced_version_minor: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6
