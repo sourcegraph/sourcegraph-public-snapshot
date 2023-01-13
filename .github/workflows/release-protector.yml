@@ -18,6 +18,7 @@ on:
 jobs:
   protect-pr:
     runs-on: ubuntu-latest
+    if: github.repository == 'sourcegraph/sourcegraph' && (github.event_name != 'label' || (github.event.label.name != 'cla-signed')
     steps:
       - name: Check date and labels
         id: check-date-and-labels
