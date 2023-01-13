@@ -386,10 +386,15 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
+	start := time.Now()
 	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
+	}
+	duration := time.Since(start)
+	if w.recorder != nil {
+		go (*w.recorder).LogRun(w, duration, handleErr)
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
