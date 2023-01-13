@@ -53,7 +53,7 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 func (r *Cache) GetMulti(keys ...string) [][]byte {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if len(keys) == 0 {
@@ -87,7 +87,7 @@ func (r *Cache) GetMulti(keys ...string) [][]byte {
 }
 
 func (r *Cache) SetMulti(keyvals ...[2]string) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if len(keyvals) == 0 {
@@ -117,7 +117,7 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	b, err := redis.Bytes(c.Do("GET", r.rkeyPrefix()+key))
@@ -130,7 +130,7 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
@@ -148,7 +148,7 @@ func (r *Cache) Set(key string, b []byte) {
 }
 
 func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
@@ -162,7 +162,7 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 func (r *Cache) Increase(key string) {
-	c := pool.Get()
+	c := poolGet()
 	defer func() { _ = c.Close() }()
 
 	_, err := c.Do("INCR", r.rkeyPrefix()+key)
@@ -183,7 +183,7 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
-	c := pool.Get()
+	c := poolGet()
 	defer func() { _ = c.Close() }()
 
 	ttl, err := redis.Int(c.Do("TTL", r.rkeyPrefix()+key))
@@ -203,7 +203,7 @@ func (r *Cache) DeleteMulti(keys ...string) {
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	c := pool.Get()
+	c := poolGet()
 	defer func(c redis.Conn) {
 		_ = c.Close()
 	}(c)
@@ -218,7 +218,7 @@ func (r *Cache) Delete(key string) {
 // Use with care if you have long TTLs or no TTL configured.
 func (r *Cache) ListKeys(ctx context.Context) (results []string, err error) {
 	var c redis.Conn
-	c, err = pool.GetContext(ctx)
+	c, err = poolGetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
 	}
@@ -277,7 +277,7 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	pool = &redis.Pool{
+	pool = redispool.RedisKeyValue(&redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -287,10 +287,10 @@ func SetupForTest(t TB) {
 			_, err := c.Do("PING")
 			return err
 		},
-	}
+	})
 
 	globalPrefix = "__test__" + t.Name()
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
