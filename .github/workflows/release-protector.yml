@@ -128,7 +128,7 @@ jobs:
               since: d.toISOString(),
             })
 
-            comments.forEach((comment => {
+            comments.data.forEach((comment => {
               if (comment.body == body) {
                 skip = true
               }
