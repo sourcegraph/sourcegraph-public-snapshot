@@ -986,7 +986,7 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
+	return fmt.Sprintf("repo not cloneable (name=%q notfound=%v) because %s", e.repo, e.notFound, e.reason)
 }
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
