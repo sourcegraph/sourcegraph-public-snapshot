@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiAccountHardHat, mdiAlert, mdiCached, mdiDatabase, mdiHelp, mdiNumeric, mdiShape } from '@mdi/js'
+import {
+    mdiAccountHardHat,
+    mdiAlert,
+    mdiCached,
+    mdiCheck,
+    mdiClose,
+    mdiDatabase,
+    mdiHelp,
+    mdiNumeric,
+    mdiShape,
+} from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -187,7 +197,7 @@ const JobList: React.FunctionComponent<{
                                     {job.routines
                                         .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
                                         .map(routine => (
-                                            <RoutineComponent routine={routine} key={routine.name} />
+                                            <RoutineItem routine={routine} key={routine.name} />
                                         ))}
                                 </li>
                             )
@@ -250,7 +260,7 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
     return legends && <ValueLegendList className="mb-3" items={legends} />
 }
 
-const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
+const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
     const commonHostName = routine.recentRuns.reduce<string | undefined | null>(
         (hostName, run) => (hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null),
         undefined
@@ -294,10 +304,42 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
     )
     const recentRunsWithErrors = routine.recentRuns.filter(run => run.error)
 
+    const latestStartDateString = routine.instances.reduce(
+        (mostRecent, instance) =>
+            instance.lastStartedAt && (!mostRecent || instance.lastStartedAt > mostRecent)
+                ? instance.lastStartedAt
+                : mostRecent,
+        ''
+    )
+    const earliestStopDateString = routine.instances.reduce(
+        (earliest, instance) =>
+            instance.lastStoppedAt && (!earliest || instance.lastStoppedAt < earliest)
+                ? instance.lastStoppedAt
+                : earliest,
+        ''
+    )
+    const lastRecentRunDate =
+        routine.recentRuns.length && new Date(routine.recentRuns[routine.recentRuns.length - 1].at)
+    const isAlive =
+        !earliestStopDateString ||
+        earliestStopDateString >= latestStartDateString ||
+        (lastRecentRunDate && lastRecentRunDate.getTime() + routine.intervalMs + 5000 < Date.now())
+
     return (
         <div className={styles.routine}>
             <div className={styles.nameAndDescription}>
                 <Text className="mb-1 ml-4">
+                    <span className="mr-2">
+                        {isAlive ? (
+                            <Tooltip content="This routine is currently started.">
+                                <Icon aria-hidden={true} svgPath={mdiCheck} className="text-success" />
+                            </Tooltip>
+                        ) : (
+                            <Tooltip content="This routine is currently stopped.">
+                                <Icon aria-hidden={true} svgPath={mdiClose} className="text-danger" />
+                            </Tooltip>
+                        )}
+                    </span>
                     <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
                         {routineIcon}
                     </Tooltip>

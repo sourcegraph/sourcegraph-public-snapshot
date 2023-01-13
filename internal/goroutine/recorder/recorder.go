@@ -35,6 +35,9 @@ const seenTimeout = 6 * 24 * time.Hour // 6 days
 
 const keyPrefix = "background-job-logger"
 
+// maxRecentRunsLength is the maximum number of recent runs we want to store for each routine.
+const maxRecentRunsLength = 100
+
 // New creates a new recorder.
 func New(logger log.Logger, hostName string, cache *rcache.Cache) *Recorder {
 	return &Recorder{rcache: cache, logger: logger, hostName: hostName}
@@ -92,7 +95,7 @@ func (m *Recorder) saveKnownHostName() {
 	}
 }
 
-// saveKnownRouting updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
+// saveKnownRoutine updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
 func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 	r := serializableRoutineInfo{
 		Name:        recordable.Name(),
@@ -100,7 +103,6 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 		JobName:     recordable.JobName(),
 		Description: recordable.Description(),
 		Interval:    recordable.Interval(),
-		LastSeen:    time.Now().Format(time.RFC3339),
 	}
 
 	// Serialize Routine
@@ -117,11 +119,13 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 	}
 }
 
+// LogStart logs the start of a routine.
 func (m *Recorder) LogStart(r Recordable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just started! 🚀")
 }
 
+// LogStop logs the stop of a routine.
 func (m *Recorder) LogStop(r Recordable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStop", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just stopped! 🛑")
@@ -129,19 +133,27 @@ func (m *Recorder) LogStop(r Recordable) {
 
 func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 	durationMs := int32(duration.Milliseconds())
+
+	// Save the run
 	err := m.saveRun(r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
 		m.logger.Error("failed to save run", log.Error(err))
 	}
 
+	// Save run stats
 	err = saveRunStats(m.rcache, r.Name(), durationMs, runErr != nil)
 	if err != nil {
 		m.logger.Error("failed to save run stats", log.Error(err))
 	}
 
+	// Update host's and job's “last seen” dates
+	m.saveKnownHostName()
+	m.saveKnownJobName(r.JobName())
+
 	m.logger.Debug("Hello from " + r.Name() + "! 😄")
 }
 
+// saveRun saves a run in the Redis list under the "*:recentRuns" key and trims the list.
 func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
 	stackTrace := ""
@@ -170,6 +182,9 @@ func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}
+
+	// Trim list
+	err = m.rcache.LTrimList(routineName+":"+hostName+":"+"recentRuns", maxRecentRunsLength)
 
 	return nil
 }

@@ -33,7 +33,6 @@ type serializableRoutineInfo struct {
 	JobName     string        `json:"jobName"`
 	Description string        `json:"description"`
 	Interval    time.Duration `json:"interval"`
-	LastSeen    string        `json:"lastSeen"`
 }
 
 // RoutineInstanceInfo contains information about a routine instance.

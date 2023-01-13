@@ -283,6 +283,26 @@ func TestCache_ListKeys(t *testing.T) {
 	}
 }
 
+func TestCache_LTrimList(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+
+	c.AddToList("list", "1")
+	c.AddToList("list", "2")
+	c.AddToList("list", "3")
+	c.AddToList("list", "4")
+	c.AddToList("list", "5")
+
+	c.LTrimList("list", 2)
+
+	items, err := c.GetLastListItems("list", 8)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(items))
+	assert.Equal(t, "4", items[0])
+	assert.Equal(t, "5", items[1])
+}
+
 func TestCache_Hashes(t *testing.T) {
 	SetupForTest(t)
 
