@@ -347,14 +347,6 @@
             "pointer": true
           }
         },
-        "archiveCodeInsightsData": {
-          "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "preloadGoToDefinition": {
           "description": "Preload definitions for available tokens in the visible viewport.",
           "type": "boolean",
