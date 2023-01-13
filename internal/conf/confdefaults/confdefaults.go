@@ -80,10 +80,6 @@ var SingleProgram = conftypes.RawUnified{
 	],
 	"externalURL": "http://localhost:3080",
 
-	// TODO(sqs) TODO!(sqs) TODO(single-binary): security: make this auto-generated or something so it's not guessable
-	// Today this is not used as single-binary is not yet merged into main fully, so this is not
-	// a real security risk.
-	"executors.accessToken": "asdf1234asdf1234asdf1234",
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
