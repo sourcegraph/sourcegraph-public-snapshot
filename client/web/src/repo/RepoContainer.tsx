@@ -303,7 +303,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     // while returning empty repository for all other routes
     const isEmptyRepo = isRevisionNotFoundErrorLike(repoOrError)
 
-    // for errors beyond empty repository we defer to RepoContainerError for all routes
+    // for repo errors beyond revision not found (aka empty repository)
+    // we defer to RepoContainerError for every repo container request
     if (isError && !isEmptyRepo) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
