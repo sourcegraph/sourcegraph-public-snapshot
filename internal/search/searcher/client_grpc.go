@@ -81,8 +81,9 @@ func SearchGRPC(
 		if err != nil {
 			return false, err
 		}
-		client := proto.NewSearcherClient(clientConn)
+		defer clientConn.Close()
 
+		client := proto.NewSearcherClient(clientConn)
 		resp, err := client.Search(ctx, &r)
 		if err != nil {
 			return false, err
@@ -97,9 +98,14 @@ func SearchGRPC(
 				return false, err
 			}
 
-			onMatch(msg.FileMatch)
+			switch v := msg.Message.(type) {
+			case *proto.SearchResponse_FileMatch:
+				onMatch(v.FileMatch)
+			case *proto.SearchResponse_DoneMessage:
+				return v.DoneMessage.LimitHit, nil
+			}
 		}
 	}
 
-	return false, err
+	return false, nil
 }

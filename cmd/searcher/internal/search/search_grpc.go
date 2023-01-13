@@ -16,14 +16,25 @@ func (s *Server) Search(req *proto.SearchRequest, stream proto.Searcher_SearchSe
 
 	onMatches := func(match protocol.FileMatch) {
 		stream.Send(&proto.SearchResponse{
-			FileMatch:   match.ToProto(),
-			LimitHit:    false,
-			DeadlineHit: false,
+			Message: &proto.SearchResponse_FileMatch{
+				FileMatch: match.ToProto(),
+			},
 		})
 	}
 
 	ctx, cancel, matchStream := newLimitedStream(stream.Context(), int(req.PatternInfo.Limit), onMatches)
 	defer cancel()
 
-	return s.Service.search(ctx, &unmarshaledReq, matchStream)
+	err := s.Service.search(ctx, &unmarshaledReq, matchStream)
+	if err != nil {
+		return err
+	}
+
+	return stream.Send(&proto.SearchResponse{
+		Message: &proto.SearchResponse_DoneMessage{
+			DoneMessage: &proto.DoneMessage{
+				LimitHit: matchStream.LimitHit(),
+			},
+		},
+	})
 }
