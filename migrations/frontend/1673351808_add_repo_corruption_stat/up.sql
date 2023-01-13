@@ -1,5 +1,5 @@
 ALTER TABLE gitserver_repos_statistics
-  ADD COLUMN IF NOT EXISTS corrupted integer DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS corrupted integer NOT NULL DEFAULT 0;
 COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'total amount of repos currently corrupted';
 
 ALTER TABLE repo_statistics

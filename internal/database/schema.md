@@ -1512,7 +1512,7 @@ Triggers:
  cloning      | bigint  |           | not null | 0
  cloned       | bigint  |           | not null | 0
  failed_fetch | bigint  |           | not null | 0
- corrupted    | integer |           |          | 0
+ corrupted    | integer |           | not null | 0
 Indexes:
     "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
 

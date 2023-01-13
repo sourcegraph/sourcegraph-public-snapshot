@@ -10963,7 +10963,7 @@
           "Name": "corrupted",
           "Index": 7,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "0",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
