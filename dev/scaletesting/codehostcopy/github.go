@@ -52,6 +52,7 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
+
 	return &GithubCodeHost{
 		def: def,
 		c:   gh,

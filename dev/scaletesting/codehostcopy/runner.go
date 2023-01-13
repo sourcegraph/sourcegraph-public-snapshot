@@ -85,15 +85,17 @@ func (r *Runner) List(ctx context.Context, limit int) error {
 	if len(srcRepos) == 0 {
 		loadedFromDB = false
 		r.logger.Info("No existing state found, creating ...")
-		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
 
 		var repos []*store.Repo
 		repoIter := r.source.Iterator()
+		r.logger.Info("Requesting repos", log.Int("limit", limit))
+		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
 		for !repoIter.Done() && repoIter.Err() == nil {
 			repos = append(repos, repoIter.Next(ctx)...)
 			if limit != Unlimited && len(repos) >= limit {
 				break
 			}
+			r.logger.Info("Added repos", log.Int("total", len(repos)))
 		}
 
 		if repoIter.Err() != nil {
