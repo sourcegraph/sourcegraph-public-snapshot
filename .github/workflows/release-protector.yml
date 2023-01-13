@@ -142,6 +142,7 @@ jobs:
 
             if (Array.isArray(comments) && comments.length > 0) {
               comments.data.forEach((comment => {
+                console.log(comment)
                 if (comment.body == body) {
                   skip = true
                 }
