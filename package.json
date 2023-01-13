@@ -55,7 +55,9 @@
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
-    "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch"
+    "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
+    "postinstall": "set-project-references --save",
+    "postuninstall": "set-project-references --save"
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
@@ -96,6 +98,7 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@babel/runtime": "^7.20.6",
+    "@bessonovs/set-project-references": "^0.0.10",
     "@gql2ts/types": "^1.9.0",
     "@graphql-codegen/cli": "^2.16.1",
     "@graphql-codegen/typescript": "2.8.5",
