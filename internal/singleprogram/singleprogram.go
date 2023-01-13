@@ -138,7 +138,7 @@ func Init(logger log.Logger) {
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 	// Write script that invokes universal-ctags via Docker.
-	// TODO(sqs): TODO(single-binary): this assumes that the `ctags` image is already built locally.
+	// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
 	ctagsPath := filepath.Join(cacheDir, "universal-ctags-dev")
 	writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
 	setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
@@ -154,7 +154,7 @@ exec docker run --rm -i \
     --user guest \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
-    ctags "$@"
+    slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"
 `
 
 // setDefaultEnv will set the environment variable if it is not set.
