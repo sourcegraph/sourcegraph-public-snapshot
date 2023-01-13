@@ -67,7 +67,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      */
     site: Pick<
         SiteConfiguration,
-        'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry' | 'authz.enforceForSiteAdmins'
+        | 'auth.public'
+        | 'update.channel'
+        | 'disableNonCriticalTelemetry'
+        | 'authz.enforceForSiteAdmins'
+        | 'disableFeedbackSurvey'
     >
 
     /** Whether access tokens are enabled. */
@@ -171,6 +175,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     RedirectUnsupportedBrowser?: boolean
 
     outboundRequestLogLimit?: number
+
+    /** Whether the feedback survey is enabled. */
+    disableFeedbackSurvey?: boolean
 }
 
 export interface BrandAssets {
