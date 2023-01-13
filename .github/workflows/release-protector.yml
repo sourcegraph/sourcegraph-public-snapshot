@@ -121,14 +121,14 @@ jobs:
             let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
             let skip = false
 
-            let comments = github.rest.issues.listComments({
+            const { comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               since: d.toISOString(),
             })
 
-            if (Array.isArray( comments.data ) && comments.data.length > 0) {
+            if (Array.isArray(comments) && comments.length > 0) {
               comments.data.forEach((comment => {
                 if (comment.body == body) {
                   skip = true
