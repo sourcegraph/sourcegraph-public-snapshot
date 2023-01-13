@@ -4,7 +4,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps to deploy Sourcegraph using our quick-start overlay for GKE to deploy the Sourcegraph main stacks without monitoring services.
+The installation steps below will walk you through the steps using our quick-start overlay for GKE to deploy the Sourcegraph without the monitoring services.
 
 The overlay will configure the Sourcegraph base cluster with:
 
@@ -23,7 +23,7 @@ The overlay will configure the Sourcegraph base cluster with:
 
 ## Quick Start
 
-Once you have created a cluster that meets all the prerequisites listed above...
+You must complete **all** the prerequisites listed above before installing Sourcegraph with following steps.
 
 ### Step 1: Deploy Sourcegraph
 
