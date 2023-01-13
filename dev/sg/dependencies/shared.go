@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -183,6 +184,26 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					`rm -rf ~/.asdf/shims`,
 					`asdf reshim`,
 				),
+			},
+			{
+				Name:        "docker memory limits",
+				Description: `Open the Docker Desktop appplication preferences, find the Resources section and set the memory to at least 2Gb.`,
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					bytesCount, err := root.Run(usershell.Command(ctx, "docker info --format '{{ .MemTotal }}'")).String()
+					if err != nil {
+						return err
+					}
+					c, err := strconv.Atoi(bytesCount)
+					if err != nil {
+						return err
+					}
+
+					c = c / 1000 / 1000 / 1000 // Converts bytes to gigabytes
+					if c < 12 {
+						return errors.New("Docker daemon is configured to operate with less than 2 Gb of allocated memory")
+					}
+					return nil
+				},
 			},
 		},
 	}
