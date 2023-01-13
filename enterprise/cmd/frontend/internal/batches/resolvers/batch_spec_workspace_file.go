@@ -85,7 +85,7 @@ func (r *batchSpecWorkspaceFileResolver) IsDirectory() bool {
 	return false
 }
 
-func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context) (string, error) {
+func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 
@@ -102,7 +102,7 @@ func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, erro
 	return vfr.Binary(ctx)
 }
 
-func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 

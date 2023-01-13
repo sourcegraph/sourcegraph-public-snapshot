@@ -498,7 +498,10 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			if file == nil {
 				return nil, nil
 			}
-			content, err := file.Content(ctx)
+			content, err := file.Content(ctx, &GitTreeContentPageArgs{
+				StartLine: args.StartLine,
+				EndLine:   args.EndLine,
+			})
 			if err != nil {
 				return nil, err
 			}
