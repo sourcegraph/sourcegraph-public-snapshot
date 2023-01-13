@@ -35,16 +35,6 @@ const seenTimeout = 6 * 24 * time.Hour // 6 days
 
 const keyPrefix = "background-job-logger"
 
-// backgroundRoutine represents a single routine in a background job, and is used for serialization to/from Redis.
-type backgroundRoutine struct {
-	Name        string        `json:"name"`
-	Type        RoutineType   `json:"type"`
-	JobName     string        `json:"jobName"`
-	Description string        `json:"description"`
-	Interval    time.Duration `json:"interval"` // Assumes that the routine runs at a fixed interval across all hosts
-	LastSeen    string        `json:"lastSeen"`
-}
-
 // New creates a new recorder.
 func New(logger log.Logger, hostName string, cache *rcache.Cache) *Recorder {
 	return &Recorder{rcache: cache, logger: logger, hostName: hostName}
@@ -104,7 +94,7 @@ func (m *Recorder) saveKnownHostName() {
 
 // saveKnownRouting updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
 func (m *Recorder) saveKnownRoutine(recordable Recordable) {
-	routine := backgroundRoutine{
+	r := serializableRoutineInfo{
 		Name:        recordable.Name(),
 		Type:        recordable.Type(),
 		JobName:     recordable.JobName(),
@@ -114,16 +104,16 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 	}
 
 	// Serialize Routine
-	routineJson, err := json.Marshal(routine)
+	routineJson, err := json.Marshal(r)
 	if err != nil {
-		m.logger.Error("failed to serialize routine", log.Error(err), log.String("routineName", routine.Name))
+		m.logger.Error("failed to serialize routine", log.Error(err), log.String("routineName", r.Name))
 		return
 	}
 
 	// Save/update Routine
-	err = m.rcache.SetHashItem("knownRoutines", routine.Name, string(routineJson))
+	err = m.rcache.SetHashItem("knownRoutines", r.Name, string(routineJson))
 	if err != nil {
-		m.logger.Error("failed to save/update known routine", log.Error(err), log.String("routineName", routine.Name))
+		m.logger.Error("failed to save/update known routine", log.Error(err), log.String("routineName", r.Name))
 	}
 }
 

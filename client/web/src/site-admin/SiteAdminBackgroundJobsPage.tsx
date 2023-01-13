@@ -12,6 +12,7 @@ import {
     Container,
     ErrorAlert,
     Icon,
+    Link,
     LoadingSpinner,
     PageHeader,
     Select,
@@ -71,7 +72,15 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <PageHeader
                 path={[{ text: 'Background jobs' }]}
                 headingElement="h2"
-                description="This page lists all running jobs, their routines, recent runs, any errors, timings, and stats."
+                description={
+                    <>
+                        This page lists{' '}
+                        <Link to="https://docs.sourcegraph.com/admin/workers" target="_blank" rel="noopener noreferrer">
+                            all running jobs
+                        </Link>
+                        , their routines, recent runs, any errors, timings, and stats.
+                    </>
+                }
                 className="mb-3"
             />
             <Text>Terminology:</Text>
@@ -143,7 +152,7 @@ const JobList: React.FunctionComponent<{
                                 </option>
                             </Select>
                         </div>
-                        <div className="text-center">Fastest / avg / slowest run</div>
+                        <div className="text-center">Fastest / avg / slowest run (ms)</div>
                     </div>
                     <ul className="list-group list-group-flush">
                         {jobsToDisplay.map(job => {
@@ -160,15 +169,18 @@ const JobList: React.FunctionComponent<{
                                         <div className="d-flex flex-row align-items-center mb-0">
                                             <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
                                             <Text className="mb-0 ml-2">
-                                                <strong>{job.name}</strong> (starts {job.routines.length}{' '}
-                                                {pluralize('routine', job.routines.length)}
-                                                {hostNames.length > 1
-                                                    ? ` on ${jobHostNames.length} ${pluralize(
-                                                          'instance',
-                                                          jobHostNames.length
-                                                      )}`
-                                                    : ''}
-                                                )
+                                                <strong>{job.name}</strong>{' '}
+                                                <span className="text-muted">
+                                                    (starts {job.routines.length}{' '}
+                                                    {pluralize('routine', job.routines.length)}
+                                                    {hostNames.length > 1
+                                                        ? ` on ${jobHostNames.length} ${pluralize(
+                                                              'instance',
+                                                              jobHostNames.length
+                                                          )}`
+                                                        : ''}
+                                                    )
+                                                </span>
                                             </Text>
                                         </div>
                                     </div>
@@ -199,18 +211,10 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
             (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.instances.length, 0),
             0
         )
-        const recentRunCount = jobs.reduce(
-            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.recentRuns.length, 0),
-            0
-        )
         const recentRunErrors = jobs.reduce(
             (acc, job) =>
                 acc +
                 job.routines.reduce((acc, routine) => acc + routine.recentRuns.filter(run => run.error).length, 0),
-            0
-        )
-        const runsForStats = jobs.reduce(
-            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.stats.runCount, 0),
             0
         )
         return [
@@ -235,21 +239,10 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
                 tooltip: 'The total number of routine instances across all jobs and hosts.',
             },
             {
-                value: recentRunCount,
-                description: pluralize('Recent run', recentRunCount),
-                tooltip: 'The total number of runs tracked.',
-            },
-            {
                 value: recentRunErrors,
                 description: pluralize('Recent error', recentRunErrors),
                 color: recentRunErrors > 0 ? 'var(--red)' : undefined,
                 tooltip: 'The total number of errors across all runs across all routine instances.',
-            },
-            {
-                value: runsForStats,
-                description: 'Runs for stats',
-                position: 'right',
-                tooltip: 'The total number of runs used for calculating the stats below.',
             },
         ]
     }, [jobs, hostNameCount])
@@ -321,7 +314,7 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
                         </>
                     ) : null}
                     {routine.recentRuns.length > 0 ? (
-                        <Tooltip content={recentRunsTooltipContent} placement="top">
+                        <Tooltip content={recentRunsTooltipContent}>
                             <span>
                                 <strong>
                                     <span className={recentRunsWithErrors.length ? 'text-danger' : 'text-success'}>{`${
@@ -354,21 +347,23 @@ const RoutineComponent: React.FunctionComponent<{ routine: BackgroundJob['routin
             </div>
             <div className="text-center">
                 {routine.stats.runCount ? (
-                    <>
-                        <strong className={getRunDurationTextClass(routine.stats.minDurationMs, routine.intervalMs)}>
-                            {routine.stats.minDurationMs}ms
-                        </strong>{' '}
-                        /{' '}
-                        <strong className={getRunDurationTextClass(routine.stats.avgDurationMs, routine.intervalMs)}>
-                            {routine.stats.avgDurationMs}ms
-                        </strong>{' '}
-                        /{' '}
-                        <strong className={getRunDurationTextClass(routine.stats.maxDurationMs, routine.intervalMs)}>
-                            {routine.stats.maxDurationMs}ms
-                        </strong>
-                    </>
+                    <Tooltip content="Fastest / avg / slowest run in milliseconds">
+                        <div>
+                            <span className={getRunDurationTextClass(routine.stats.minDurationMs, routine.intervalMs)}>
+                                {routine.stats.minDurationMs}
+                            </span>{' '}
+                            /{' '}
+                            <span className={getRunDurationTextClass(routine.stats.avgDurationMs, routine.intervalMs)}>
+                                {routine.stats.avgDurationMs}
+                            </span>{' '}
+                            /{' '}
+                            <span className={getRunDurationTextClass(routine.stats.maxDurationMs, routine.intervalMs)}>
+                                {routine.stats.maxDurationMs}
+                            </span>
+                        </div>
+                    </Tooltip>
                 ) : (
-                    'No stats.'
+                    <span className="text-muted">No stats.</span>
                 )}
             </div>
         </div>

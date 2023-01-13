@@ -1,6 +1,6 @@
 .table-header {
     display: grid;
-    grid-template-columns: auto minmax(0, 150px);
+    grid-template-columns: auto minmax(0, 125px);
     grid-gap: 0.25rem;
     align-items: center;
 }
@@ -13,7 +13,7 @@
 .routine {
     display: grid;
     margin-bottom: 1rem;
-    grid-template-columns: auto minmax(0, 150px);
+    grid-template-columns: auto minmax(0, 125px);
     grid-gap: 0.25rem;
     align-items: center;
 }

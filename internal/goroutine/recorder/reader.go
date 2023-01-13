@@ -53,8 +53,8 @@ func GetBackgroundJobInfo(c *rcache.Cache, jobName string, recentRunCount int32,
 	}
 
 	routineInfos := make([]RoutineInfo, 0, len(routines))
-	for _, routine := range routines {
-		routineInfo, err := getRoutineInfo(c, routine, allHostNames, recentRunCount, dayCountForStats)
+	for _, r := range routines {
+		routineInfo, err := getRoutineInfo(c, r, allHostNames, recentRunCount, dayCountForStats)
 		if err != nil {
 			return JobInfo{}, err
 		}
@@ -126,7 +126,7 @@ func getKnownHostNames(c *rcache.Cache) ([]string, error) {
 }
 
 // getKnownRoutinesForJob returns a list of all known recordables for the given job name, ascending.
-func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutine, error) {
+func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]serializableRoutineInfo, error) {
 	// Get all recordables
 	routines, err := getKnownRoutines(c)
 	if err != nil {
@@ -134,10 +134,10 @@ func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutin
 	}
 
 	// Filter by job name
-	var routinesForJob []backgroundRoutine
-	for _, routine := range routines {
-		if routine.JobName == jobName {
-			routinesForJob = append(routinesForJob, routine)
+	var routinesForJob []serializableRoutineInfo
+	for _, r := range routines {
+		if r.JobName == jobName {
+			routinesForJob = append(routinesForJob, r)
 		}
 	}
 
@@ -150,15 +150,15 @@ func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]backgroundRoutin
 }
 
 // getKnownRoutines returns a list of all known recordables, unfiltered, in no particular order.
-func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutine, error) {
+func getKnownRoutines(c *rcache.Cache) ([]serializableRoutineInfo, error) {
 	rawItems, err := c.GetHashAll("knownRoutines")
 	if err != nil {
 		return nil, err
 	}
 
-	routines := make([]backgroundRoutine, 0, len(rawItems))
+	routines := make([]serializableRoutineInfo, 0, len(rawItems))
 	for _, rawItem := range rawItems {
-		var item backgroundRoutine
+		var item serializableRoutineInfo
 		err := json.Unmarshal([]byte(rawItem), &item)
 		if err != nil {
 			return nil, err
@@ -169,7 +169,7 @@ func getKnownRoutines(c *rcache.Cache) ([]backgroundRoutine, error) {
 }
 
 // getRoutineInfo returns the info for a single routine: its instances, recent runs, and stats.
-func getRoutineInfo(c *rcache.Cache, r backgroundRoutine, allHostNames []string, recentRunCount int32, dayCountForStats int32) (RoutineInfo, error) {
+func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []string, recentRunCount int32, dayCountForStats int32) (RoutineInfo, error) {
 	routineInfo := RoutineInfo{
 		Name:        r.Name,
 		Type:        r.Type,
@@ -283,10 +283,10 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 			if err != nil {
 				return RoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
 			}
+			stats = mergeStats(stats, statsForDay)
 			if stats.Since.IsZero() {
 				stats.Since = date
 			}
-			stats = mergeStats(stats, statsForDay)
 		}
 	}
 

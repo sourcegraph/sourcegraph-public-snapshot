@@ -7,14 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
-// JobInfo contains information about a background job, including all its recordables.
+// JobInfo contains information about a job, including all its routines.
 type JobInfo struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Routines []RoutineInfo
 }
 
-// RoutineInfo contains information about a background routine.
+// RoutineInfo contains information about a routine.
 type RoutineInfo struct {
 	Name        string      `json:"name"`
 	Type        RoutineType `json:"type"`
@@ -26,7 +26,17 @@ type RoutineInfo struct {
 	Stats       RoutineRunStats
 }
 
-// RoutineInstanceInfo contains information about a background routine instance.
+// serializableRoutineInfo represents a single routine in a job, and is used for serialization in Redis.
+type serializableRoutineInfo struct {
+	Name        string        `json:"name"`
+	Type        RoutineType   `json:"type"`
+	JobName     string        `json:"jobName"`
+	Description string        `json:"description"`
+	Interval    time.Duration `json:"interval"`
+	LastSeen    string        `json:"lastSeen"`
+}
+
+// RoutineInstanceInfo contains information about a routine instance.
 // That is, a single version that's running (or ran) on a single node.
 type RoutineInstanceInfo struct {
 	HostName      string     `json:"hostName"`
@@ -34,8 +44,8 @@ type RoutineInstanceInfo struct {
 	LastStoppedAt *time.Time `json:"lastStop"`
 }
 
-// RoutineRun contains information about a single run of a background routine.
-// That is, a single action that a running instance of a background routine performed.
+// RoutineRun contains information about a single run of a routine.
+// That is, a single action that a running instance of a routine performed.
 type RoutineRun struct {
 	At           time.Time `json:"at"`
 	HostName     string    `json:"hostname"`
@@ -44,7 +54,7 @@ type RoutineRun struct {
 	StackTrace   string    `json:"stackTrace"`
 }
 
-// RoutineRunStats contains statistics about a background routine.
+// RoutineRunStats contains statistics about a routine.
 type RoutineRunStats struct {
 	Since         time.Time `json:"since"`
 	RunCount      int32     `json:"runCount"`
