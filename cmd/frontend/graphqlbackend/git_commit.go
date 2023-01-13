@@ -217,7 +217,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	treeEntry, err := r.path(ctx, args.Path, nil, nil, func(stat fs.FileInfo) error {
+	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)
 		}
@@ -236,11 +236,9 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
-	Path      string
-	StartLine *int32
-	EndLine   *int32
+	Path string
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, args.StartLine, args.EndLine, func(stat fs.FileInfo) error {
+	return r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 			return errors.Errorf("not a blob: %q", args.Path)
 		}
@@ -250,22 +248,18 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
-	Path      string
-	StartLine *int32
-	EndLine   *int32
+	Path string
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
 func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
-	Path      string
-	StartLine *int32
-	EndLine   *int32
+	Path string
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, args.StartLine, args.EndLine, func(_ fs.FileInfo) error { return nil })
+	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, startLine, endLine *int32, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
+func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "commit.path") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("path", path)
@@ -281,10 +275,8 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, startLine, en
 		return nil, err
 	}
 	opts := GitTreeEntryResolverOpts{
-		commit:    r,
-		stat:      stat,
-		startLine: startLine,
-		endLine:   endLine,
+		commit: r,
+		stat:   stat,
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }

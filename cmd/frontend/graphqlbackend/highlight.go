@@ -37,6 +37,8 @@ type HighlightArgs struct {
 	IsLightTheme       *bool
 	HighlightLongLines bool
 	Format             string
+	startLine          *int32
+	endLine            *int32
 }
 
 type HighlightedFileResolver struct {

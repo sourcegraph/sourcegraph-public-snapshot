@@ -73,7 +73,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        file(path: $filePath, startLine: $startLine, endLine: $endLine) {
+                        file(path: $filePath) {
                             ...BlobFileFields
                         }
                     }
@@ -82,14 +82,14 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
 
             fragment BlobFileFields on File2 {
                 __typename
-                content
-                richHTML
-                totalLines
-                highlight(disableTimeout: $disableTimeout, format: $format) {
+                content(startLine: $startLine, endLine: $endLine)
+                richHTML(startLine: $startLine, endLine: $endLine)
+                highlight(disableTimeout: $disableTimeout, format: $format, startLine: $startLine, endLine: $endLine) {
                     aborted
                     html @include(if: $html)
                     lsif
                 }
+                totalLines
                 ... on GitBlob {
                     lfs {
                         byteSize

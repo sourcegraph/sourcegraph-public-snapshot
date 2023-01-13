@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,20 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// Prefix for cached files in Redis.
-const gitTreeEntryContentCacheKeyPrefix = "git_tree_entry_content"
-
-var largeFileContentCacheThresholdBytes, _ = strconv.Atoi(env.Get("SRC_LARGE_FILE_CONTENT_CACHE_THRESHOLD_BYTES", "300000", "threshold of files size in bytes before we start caching to Redis"))
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -47,12 +39,8 @@ type GitTreeEntryResolver struct {
 	commit          *GitCommitResolver
 
 	contentOnce      sync.Once
-	fullContentLines []string
 	fullContentBytes []byte
-	contentCache     *rcache.Cache
 	contentErr       error
-	startLine        *int32
-	endLine          *int32
 	cacheHighlighted bool
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
@@ -62,8 +50,11 @@ type GitTreeEntryResolver struct {
 }
 
 type GitTreeEntryResolverOpts struct {
-	commit    *GitCommitResolver
-	stat      fs.FileInfo
+	commit *GitCommitResolver
+	stat   fs.FileInfo
+}
+
+type GitTreeContentPageArgs struct {
 	startLine *int32
 	endLine   *int32
 }
@@ -74,9 +65,6 @@ func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, o
 		commit:          opts.commit,
 		stat:            opts.stat,
 		gitserverClient: gitserverClient,
-		contentCache:    rcache.NewWithTTL(gitTreeEntryContentCacheKeyPrefix, 60),
-		endLine:         opts.endLine,
-		startLine:       opts.startLine,
 	}
 }
 
@@ -93,57 +81,34 @@ func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileRes
 
 func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
 	// We only care about the full content length here, so we just need content to be set.
-	_, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(r.fullContentLines)), nil
+	return int32(len(content)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 	// We only care about the full content length here, so we just need content to be set.
-	_, err := r.Content(ctx)
+	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(r.fullContentBytes)), nil
 }
 
-func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
+func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-		cacheKey := r.Path() + ":" + string(r.commit.OID())
-		content, ok := r.contentCache.Get(cacheKey)
-		if !ok {
-			fullContentBytes, contentErr := r.gitserverClient.ReadFile(
-				ctx,
-				authz.DefaultSubRepoPermsChecker,
-				r.commit.repoResolver.RepoName(),
-				api.CommitID(r.commit.OID()),
-				r.Path(),
-			)
-			r.contentErr = contentErr
-			if r.contentErr != nil {
-				r.fullContentLines = []string{}
-				return
-			}
-
-			r.fullContentBytes = fullContentBytes
-			// Split file by lines for easier paging.
-			r.fullContentLines = strings.Split(string(fullContentBytes), "\n")
-
-			// To avoid overwhelming Redis, we only cache larger files.
-			if len(fullContentBytes) > largeFileContentCacheThresholdBytes {
-				r.contentCache.Set(cacheKey, fullContentBytes)
-			}
-		} else {
-			r.fullContentBytes = content
-			r.fullContentLines = strings.Split(string(content), "\n")
-		}
+		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
+			ctx,
+			authz.DefaultSubRepoPermsChecker,
+			r.commit.repoResolver.RepoName(),
+			api.CommitID(r.commit.OID()),
+			r.Path(),
+		)
 	})
 
-	return pageContent(r.fullContentLines, r.startLine, r.endLine), r.contentErr
+	return pageContent(strings.Split(string(r.fullContentBytes), "\n"), args.startLine, args.endLine), r.contentErr
 }
 
 func pageContent(content []string, startLine, endLine *int32) string {
@@ -179,8 +144,8 @@ func pageContent(content []string, startLine, endLine *int32) string {
 	return strings.Join(content[startCursor:endCursor], "\n")
 }
 
-func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
-	content, err := r.Content(ctx)
+func (r *GitTreeEntryResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+	content, err := r.Content(ctx, args)
 	if err != nil {
 		return "", err
 	}
@@ -189,7 +154,7 @@ func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 
 func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	// We only care about the full content length here, so we just need r.fullContentLines to be set.
-	_, err := r.Content(ctx)
+	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return false, err
 	}
@@ -198,12 +163,12 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
-	if (r.startLine != nil || r.endLine != nil) && args.Format != "HTML_PLAINTEXT" {
+	if (args.startLine != nil || args.endLine != nil) && args.Format != "HTML_PLAINTEXT" {
 		return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +
 			"set startLine or endLine with other formats")
 	}
 
-	content, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{startLine: args.startLine, endLine: args.endLine})
 	if err != nil {
 		return nil, err
 	}
@@ -425,11 +390,11 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 
 func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	// We only care about the full content length here, so we just need content to be set.
-	_, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return nil, err
 	}
-	return parseLFSPointer(string(r.fullContentBytes)), nil
+	return parseLFSPointer(content), nil
 }
 
 type symbolInfoArgs struct {
