@@ -83,7 +83,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
     ) {
         return null
     }
-
+    console.log(alert)
     const content = alertContent[alert.kind](alert.proposedQueries?.length || 0)
 
     return (
