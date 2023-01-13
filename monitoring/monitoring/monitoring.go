@@ -520,6 +520,11 @@ var (
 		handbookSlug:     "data-analytics",
 		handbookTeamName: "Data & Analytics",
 	}
+	ObservableOwnerCloud = ObservableOwner{
+		identifier:       "cloud",
+		handbookSlug:     "cloud",
+		handbookTeamName: "Cloud",
+	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
