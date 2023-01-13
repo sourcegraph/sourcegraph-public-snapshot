@@ -118,7 +118,6 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                             queryState={queryState}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            authenticatedUser={props.authenticatedUser}
                         />
                     </div>
                 )}

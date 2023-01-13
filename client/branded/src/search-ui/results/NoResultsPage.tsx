@@ -14,7 +14,6 @@ import { QueryExamples } from '../components/QueryExamples'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
-import searchPageStyles from '../../../../web/src/search/home/SearchPage.module.scss'
 import styles from './NoResultsPage.module.scss'
 
 interface ContainerProps {
@@ -80,7 +79,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <div className={searchPageStyles.panelsContainer}>
+            <div className={styles.queryExamplesContainer}>
                 <QueryExamples
                     // TODO:
                     // selectedSearchContextSpec={props.selectedSearchContextSpec}
