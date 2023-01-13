@@ -14,7 +14,7 @@ interface ValueLegendItemProps {
     color?: string
     description: string
     value: number | string
-    tooltip?: React.ReactNode
+    tooltip?: string
     className?: string
     filter?: { name: string; value: string }
 }
