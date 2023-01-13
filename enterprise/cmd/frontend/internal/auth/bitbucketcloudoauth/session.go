@@ -40,15 +40,17 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
-	if s.client == nil {
+	var client bitbucketcloud.Client
+	if s.client != nil {
+		client = s.client
+	} else {
 		conf := &schema.BitbucketCloudConnection{
 			Url: s.baseURL.String(),
 		}
-		bbClient, err := bitbucketcloud.NewClient(s.baseURL.String(), conf, nil)
+		client, err = bitbucketcloud.NewClient(s.baseURL.String(), conf, nil)
 		if err != nil {
 			return nil, "Could not initialize Bitbucket Cloud client", err
 		}
-		s.client = bbClient
 	}
 
 	// The token used here is fresh from Bitbucket OAuth. It should be valid
@@ -56,8 +58,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// If account creation/linking succeeds, the token will be stored in the
 	// database with the refresh token, and refreshing can happen from that point.
 	auther := &esauth.OAuthBearerToken{Token: token.AccessToken}
-	s.client = s.client.WithAuthenticator(auther)
-	bbUser, err := s.client.CurrentUser(ctx)
+	client = client.WithAuthenticator(auther)
+	bbUser, err := client.CurrentUser(ctx)
 	if err != nil {
 		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
 	}
@@ -67,7 +69,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 
-	emails, err := s.client.AllCurrentUserEmails(ctx)
+	emails, err := client.AllCurrentUserEmails(ctx)
 	if err != nil {
 		return nil, "", err
 	}
