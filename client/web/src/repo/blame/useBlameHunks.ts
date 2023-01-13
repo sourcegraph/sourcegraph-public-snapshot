@@ -63,7 +63,7 @@ export interface BlameHunk {
     displayInfo: BlameHunkDisplayInfo
 }
 
-interface BlameHunkData {
+export interface BlameHunkData {
     current: BlameHunk[] | undefined
     externalURLs: { url: string; serviceKind: ExternalServiceKind | null }[] | undefined
     firstCommitDate: Date | undefined

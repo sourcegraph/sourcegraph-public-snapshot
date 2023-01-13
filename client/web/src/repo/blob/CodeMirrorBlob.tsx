@@ -127,13 +127,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
     const blameDecorations = useMemo(
-        () =>
-            createBlameDecorationsExtension(
-                !!isBlameVisible,
-                blameHunks?.current,
-                blameHunks?.firstCommitDate,
-                isLightTheme
-            ),
+        () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
         [isBlameVisible, blameHunks, isLightTheme]
     )
 

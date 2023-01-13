@@ -323,7 +323,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     }
 
     const [isBlameVisible] = useBlameVisibility()
-    const blameDecorations = useBlameHunks(
+    const blameHunks = useBlameHunks(
         { repoName, revision, filePath, enableCodeMirror },
         props.platformContext.sourcegraphURL
     )
@@ -553,7 +553,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
-                        blameHunks={blameDecorations}
+                        blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
                         enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
                         enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
