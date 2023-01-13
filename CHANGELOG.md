@@ -14,11 +14,15 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - `src validate` has an added check to determine if an instance is able to create a basic code insight. [#912](https://github.com/sourcegraph/src-cli/pull/912)
+- Add visual feedback to `src validate install` CLI [#921](https://github.com/sourcegraph/src-cli/pull/921)
+- Add insight cleanup as per [#912](https://github.com/sourcegraph/src-cli/pull/912#issuecomment-1377084768)
 
 ### Changed
 
 - Renamed `src users clean` command to `src users prune` [#901](https://github.com/sourcegraph/src-cli/pull/901)
 - Failed code-intel uploads now print every error encountered while retrying instead of only the error encountered in the final retry attempt. [#46281](https://github.com/sourcegraph/sourcegraph/pull/46281)
+- `src validate` has been changed to `srv validate install` subcommand [#921](https://github.com/sourcegraph/src-cli/pull/921)
+- Move GitHub token for `srv validate` to ENV var [#921](https://github.com/sourcegraph/src-cli/pull/921)
 
 ### Fixed
 
@@ -27,6 +31,8 @@ All notable changes to `src-cli` are documented in this file.
 - batches: Remove empty log outputs. [#923](https://github.com/sourcegraph/src-cli/pull/923)
 
 ### Removed
+
+- Removed __create first admin__ feature from `src validate` [#921](https://github.com/sourcegraph/src-cli/pull/921)
 
 ## 4.3.0
 
