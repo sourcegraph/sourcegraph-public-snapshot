@@ -24,7 +24,6 @@
     "watchDirectory": "useFsEvents",
     "fallbackPolling": "dynamicPriority"
   },
-
   "include": [],
   "exclude": ["out", "node_modules"]
 }

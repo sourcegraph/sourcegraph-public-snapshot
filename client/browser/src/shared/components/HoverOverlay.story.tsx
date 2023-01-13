@@ -4,16 +4,18 @@ import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
-// eslint-disable-next-line no-restricted-imports
-import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
-// eslint-disable-next-line no-restricted-imports
-import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
 import { registerHighlightContributions } from '@sourcegraph/common'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import {
+    commonProps,
+    FIXTURE_ACTIONS,
+    FIXTURE_CONTENT,
+    FIXTURE_SEMANTIC_BADGE,
+} from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
 
-import { NotificationType } from '../api/extension/extensionHostApi'
-
-import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
-import { commonProps, FIXTURE_ACTIONS, FIXTURE_CONTENT, FIXTURE_SEMANTIC_BADGE } from './HoverOverlay.fixtures'
+import browserExtensionStyles from '../../app.scss'
+import bitbucketCodeHostStyles from '../code-hosts/bitbucket/codeHost.module.scss'
 
 const decorator: DecoratorFn = story => (
     <>
@@ -24,6 +26,8 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
+    // This story lives in the @sourcegraph/browser package because
+    // it uses the browser extension styles and bitbucket CSS module styles.
     title: 'shared/HoverOverlay',
     decorators: [decorator],
     parameters: {

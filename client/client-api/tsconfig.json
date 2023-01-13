@@ -11,6 +11,13 @@
       "*": ["../common/src/types/*"],
     },
   },
-  "references": [{ "path": "../template-parser" }],
+  "references": [
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../template-parser",
+    },
+  ],
   "include": ["./src/**/*", "./*.ts"],
 }

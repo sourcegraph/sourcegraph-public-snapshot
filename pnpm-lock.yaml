@@ -894,10 +894,8 @@ importers:
   client/http-client:
     specifiers:
       '@sourcegraph/common': workspace:*
-      '@sourcegraph/shared': workspace:*
     dependencies:
       '@sourcegraph/common': link:../common
-      '@sourcegraph/shared': link:../shared
 
   client/jetbrains:
     specifiers:
@@ -934,7 +932,6 @@ importers:
 
   client/shared:
     specifiers:
-      '@sourcegraph/browser': workspace:*
       '@sourcegraph/build-config': workspace:*
       '@sourcegraph/client-api': workspace:*
       '@sourcegraph/codeintellify': workspace:*
@@ -945,7 +942,6 @@ importers:
       '@sourcegraph/testing': workspace:*
       '@sourcegraph/wildcard': workspace:*
     dependencies:
-      '@sourcegraph/browser': link:../browser
       '@sourcegraph/client-api': link:../client-api
       '@sourcegraph/codeintellify': link:../codeintellify
       '@sourcegraph/common': link:../common
