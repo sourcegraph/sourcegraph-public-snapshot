@@ -83,6 +83,7 @@ func startEmbeddedPostgreSQL(pgRootDir string) (*postgresqlEnvVars, error) {
 			// we need to prohibit external connections.
 			// Today this is not used as single-binary is not yet merged into main fully, so this is not
 			// a real security risk.
+			// HACK
 			Password(vars.PGPASSWORD).
 			Database(vars.PGDATABASE).
 			Port(pgPort).
