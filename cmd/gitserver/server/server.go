@@ -993,14 +993,13 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var resp protocol.IsRepoCloneableResponse
+	resp := protocol.IsRepoCloneableResponse{
+		Cloned: repoCloned(s.dir(req.Repo)),
+	}
 	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
-		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
+		resp.Cloneable = true
 	} else {
-		resp = protocol.IsRepoCloneableResponse{
-			Cloneable: false,
-			Reason:    err.Error(),
-		}
+		resp.Reason = err.Error()
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

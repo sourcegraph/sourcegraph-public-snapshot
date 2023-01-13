@@ -258,11 +258,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source === 'blob' && (
                     <>
-                        <ToggleBlameAction />
+                        <ToggleBlameAction actionType="nav" source="actionItemsBar" />
                         {window.context.isAuthenticatedUser && (
                             <OpenInEditorActionItem
                                 platformContext={props.platformContext}
                                 externalServiceType={props.repo?.externalRepository?.serviceType}
+                                actionType="nav"
+                                source="actionItemsBar"
                             />
                         )}
                     </>
@@ -385,11 +387,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                             {!haveExtensionsLoaded ? (
                                 <LoadingSpinner />
                             ) : isOpen ? (
-                                <Icon
-                                    data-testid="action-items-toggle-open"
-                                    aria-hidden={true}
-                                    svgPath={mdiChevronDoubleUp}
-                                />
+                                <Icon aria-hidden={true} svgPath={mdiChevronDoubleUp} />
                             ) : (
                                 <Icon
                                     aria-hidden={true}

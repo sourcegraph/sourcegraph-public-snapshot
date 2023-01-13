@@ -22,7 +22,7 @@ export const UnpublishedNotice: React.FunctionComponent<React.PropsWithChildren<
             {unpublished} unpublished {pluralize('changeset', unpublished, 'changesets')}. Select changeset(s) and
             choose the 'Publish changesets' action to publish them, or{' '}
             <AlertLink
-                to="https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#publishing-changesets"
+                to="/help/batch_changes/how-tos/publishing_changesets#publishing-changesets"
                 rel="noopener"
                 target="_blank"
             >

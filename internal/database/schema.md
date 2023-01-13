@@ -51,7 +51,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  closed_at         | timestamp with time zone |           |          | 
- batch_spec_id     | bigint                   |           |          | 
+ batch_spec_id     | bigint                   |           | not null | 
  last_applier_id   | bigint                   |           |          | 
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
@@ -2532,6 +2532,36 @@ Stores errors that occurred while performing an out-of-band migration.
 **message**: The error message.
 
 **migration_id**: The identifier of the migration.
+
+# Table "public.permission_sync_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                      
+-------------------+--------------------------+-----------+----------+--------------------------------------------------
+ id                | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repository_id     | integer                  |           |          | 
+ user_id           | integer                  |           |          | 
+ high_priority     | boolean                  |           | not null | false
+ invalidate_caches | boolean                  |           | not null | false
+Indexes:
+    "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
+    "permission_sync_jobs_process_after" btree (process_after)
+    "permission_sync_jobs_repository_id" btree (repository_id)
+    "permission_sync_jobs_state" btree (state)
+    "permission_sync_jobs_user_id" btree (user_id)
+
+```
 
 # Table "public.permissions"
 ```

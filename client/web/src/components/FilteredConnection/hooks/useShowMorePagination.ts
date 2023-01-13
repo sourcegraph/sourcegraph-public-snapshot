@@ -108,7 +108,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
              */
             after: (options?.useURL && searchParameters.get('after')) || after,
         }),
-        // We only need these controls for the inital request. We do not care about dependency updates.
+        // We only need these controls for the initial request. We do not care about dependency updates.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
@@ -195,7 +195,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         })
     }, [connection?.nodes.length, refetch, variables])
 
-    // We use `refetchAll` to poll for all of the nodes currently loaded in the
+    // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
     // would only poll for the first page of results.
     const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)

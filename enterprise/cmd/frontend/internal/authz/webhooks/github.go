@@ -13,9 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -141,12 +141,11 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	// TODO: Here we should call another method to set `NextSyncAt` on the
+	// PermsSyncJob if that feature is enabled.
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
 		UserIDs: []int32{externalAccounts[0].UserID},
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
-	}
 
 	return err
 }
@@ -159,12 +158,11 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	// TODO: Here we should call another method to set `NextSyncAt` on the
+	// PermsSyncJob if that feature is enabled.
+	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
 		RepoIDs: []api.RepoID{repo.ID},
 	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
-	}
 
-	return err
+	return nil
 }
