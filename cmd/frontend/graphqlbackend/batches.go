@@ -914,7 +914,7 @@ type BatchSpecWorkspaceStepResolver interface {
 	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context) (*[]string, error)
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
 
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
