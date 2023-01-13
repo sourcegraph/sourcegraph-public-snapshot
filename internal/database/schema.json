@@ -10970,7 +10970,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "total amount of repos currently corrupted"
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table"
         },
         {
           "Name": "failed_fetch",
@@ -18250,14 +18250,14 @@
           "Name": "corrupted",
           "Index": 7,
           "TypeName": "bigint",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "0",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "total amount of repos currently corrupted"
+          "Comment": "Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table"
         },
         {
           "Name": "failed_fetch",

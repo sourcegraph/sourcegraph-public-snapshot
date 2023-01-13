@@ -1522,7 +1522,7 @@ Indexes:
 
 **cloning**: Number of repositories in gitserver_repos table on this shard that cloning
 
-**corrupted**: total amount of repos currently corrupted
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
 
@@ -2828,7 +2828,7 @@ Indexes:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
- corrupted    | bigint |           |          | 0
+ corrupted    | bigint |           | not null | 0
 
 ```
 
@@ -2836,7 +2836,7 @@ Indexes:
 
 **cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
 
-**corrupted**: total amount of repos currently corrupted
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
 

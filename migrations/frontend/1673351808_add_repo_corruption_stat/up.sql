@@ -1,10 +1,10 @@
 ALTER TABLE gitserver_repos_statistics
   ADD COLUMN IF NOT EXISTS corrupted bigint NOT NULL DEFAULT 0;
-COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'total amount of repos currently corrupted';
+COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 ALTER TABLE repo_statistics
   ADD COLUMN IF NOT EXISTS corrupted bigint NOT NULL DEFAULT 0;
-COMMENT ON COLUMN repo_statistics.corrupted IS 'total amount of repos currently corrupted';
+COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 --- repo UPDATE trigger
 CREATE OR REPLACE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger

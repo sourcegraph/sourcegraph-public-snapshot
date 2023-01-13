@@ -2223,7 +2223,7 @@ COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories i
 
 COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
 
-COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'total amount of repos currently corrupted';
+COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -3434,7 +3434,7 @@ CREATE TABLE repo_statistics (
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
     failed_fetch bigint DEFAULT 0 NOT NULL,
-    corrupted bigint DEFAULT 0
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
@@ -3449,7 +3449,7 @@ COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
-COMMENT ON COLUMN repo_statistics.corrupted IS 'total amount of repos currently corrupted';
+COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,
