@@ -5,6 +5,7 @@ import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { OpenInEditorIcon } from '@sourcegraph/shared/src/components/icons'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
 import {
@@ -135,25 +136,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     isActive={popoverOpen}
                     icon={
                         props.source === 'repoHeader' ? (
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={styles.icon}
-                            >
-                                <rect x="3" y="2" width="6" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="3" y="16" width="6" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="9" y="9" width="6" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="10" y="2" width="4" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="6" y="12.5" width="6" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="13" y="12.5" width="4" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="16" y="9" width="3" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="6" y="5.5" width="6" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="13" y="5.5" width="3" height="1.5" rx="0.75" fill="currentColor" />
-                                <rect x="10" y="16" width="2" height="1.5" rx="0.75" fill="currentColor" />
-                            </svg>
+                            <OpenInEditorIcon className={styles.icon} />
                         ) : (
                             <img
                                 src={`${assetsRoot}/img/open-in-editor.svg`}
