@@ -46,7 +46,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore *workerStoreE
 
 	options := workerutil.WorkerOptions{
 		Name:              "insights_query_runner_worker",
-		Description:       "runs code insights queries",
+		Description:       "runs code insights queries for daily snapshots and new recordings",
 		NumHandlers:       numHandlers,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
