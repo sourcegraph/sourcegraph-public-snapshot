@@ -9,9 +9,9 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+import { SmartSearchPreview } from '@sourcegraph/web/src/search/suggestion/SmartSearchPreview'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
-
 import styles from './NoResultsPage.module.scss'
 
 interface ContainerProps {
@@ -85,6 +85,8 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             </div>
                         </Container>
                     )}
+
+                    <SmartSearchPreview />
 
                     <Container title="More resources">
                         <Text>
