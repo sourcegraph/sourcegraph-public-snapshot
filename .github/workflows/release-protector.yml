@@ -110,7 +110,7 @@ jobs:
             exit 0
           fi
       - name: "Post comment if failed"
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         if: ${{always() && steps.check-date-and-labels.outcome != 'success'}} 
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -119,5 +119,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'TEST'
+              body: "❌ Label 'i-acknowledge-this-goes-into-the-release' is absent\n👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the-release'"
             })
