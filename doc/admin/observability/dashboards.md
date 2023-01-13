@@ -18987,7 +18987,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/engineering/teams/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -19010,7 +19010,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/engineering/teams/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
 
 <details>
 <summary>Technical details</summary>
