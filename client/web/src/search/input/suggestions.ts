@@ -6,7 +6,6 @@ import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 import { AuthenticatedUser } from 'src/auth'
 import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
 
-import { gql } from '@sourcegraph/http-client'
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
 // eslint-disable-next-line no-restricted-imports
@@ -21,6 +20,7 @@ import {
     getEditorConfig,
     SuggestionResult,
 } from '@sourcegraph/branded/src/search-ui/experimental'
+import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
