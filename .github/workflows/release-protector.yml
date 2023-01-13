@@ -140,6 +140,10 @@ jobs:
               since: d.toISOString(),
             })
 
+            console.log("here")
+            console.log(comments)
+            console.log("===")
+
             if (Array.isArray(comments) && comments.length > 0) {
               comments.data.forEach((comment => {
                 console.log(comment)
