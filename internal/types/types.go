@@ -1759,6 +1759,7 @@ type Webhook struct {
 	UpdatedByUserID int32
 }
 
+// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
 type OutboundRequestLogItem struct {
 	ID                 string              `json:"id"`
 	StartedAt          time.Time           `json:"startedAt"`

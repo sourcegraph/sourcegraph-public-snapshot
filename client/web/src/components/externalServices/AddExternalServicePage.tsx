@@ -5,7 +5,7 @@ import * as H from 'history'
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
+import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -99,46 +99,48 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
         <>
             <PageTitle title="Add repositories" />
             <H2>Add repositories</H2>
-            {createdExternalService?.warning ? (
-                <div>
-                    <div className="mb-3">
-                        <ExternalServiceCard
-                            {...externalService}
-                            title={createdExternalService.displayName}
-                            shortDescription="Update this external service configuration to manage repository mirroring."
-                            to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
+            <Container>
+                {createdExternalService?.warning ? (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard
+                                {...externalService}
+                                title={createdExternalService.displayName}
+                                shortDescription="Update this external service configuration to manage repository mirroring."
+                                to={`${routingPrefix}/external-services/${createdExternalService.id}/edit`}
+                            />
+                        </div>
+                        <Alert variant="warning">
+                            <H4>Warning</H4>
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                        </Alert>
+                    </div>
+                ) : (
+                    <>
+                        <div className="mb-3">
+                            <ExternalServiceCard {...externalService} />
+                        </div>
+                        <H3>Instructions:</H3>
+                        <div className="mb-4">{externalService.instructions}</div>
+                        <ExternalServiceForm
+                            history={history}
+                            isLightTheme={isLightTheme}
+                            telemetryService={telemetryService}
+                            error={isErrorLike(isCreating) ? isCreating : undefined}
+                            input={getExternalServiceInput()}
+                            editorActions={externalService.editorActions}
+                            jsonSchema={externalService.jsonSchema}
+                            mode="create"
+                            onSubmit={onSubmit}
+                            onChange={onChange}
+                            loading={isCreating === true}
+                            autoFocus={autoFocusForm}
+                            externalServicesFromFile={externalServicesFromFile}
+                            allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                         />
-                    </div>
-                    <Alert variant="warning">
-                        <H4>Warning</H4>
-                        <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
-                    </Alert>
-                </div>
-            ) : (
-                <>
-                    <div className="mb-3">
-                        <ExternalServiceCard {...externalService} />
-                    </div>
-                    <H3>Instructions:</H3>
-                    <div className="mb-4">{externalService.instructions}</div>
-                    <ExternalServiceForm
-                        history={history}
-                        isLightTheme={isLightTheme}
-                        telemetryService={telemetryService}
-                        error={isErrorLike(isCreating) ? isCreating : undefined}
-                        input={getExternalServiceInput()}
-                        editorActions={externalService.editorActions}
-                        jsonSchema={externalService.jsonSchema}
-                        mode="create"
-                        onSubmit={onSubmit}
-                        onChange={onChange}
-                        loading={isCreating === true}
-                        autoFocus={autoFocusForm}
-                        externalServicesFromFile={externalServicesFromFile}
-                        allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
-                    />
-                </>
-            )}
+                    </>
+                )}
+            </Container>
         </>
     )
 }

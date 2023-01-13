@@ -1,6 +1,14 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 :root {
     --blame-decoration-width: 300px;
     --blame-recency-width: 5px;
+}
+
+@media (--lg-breakpoint-up) {
+    :root {
+        --blame-decoration-width: 400px;
+    }
 }
 
 .blame {
@@ -32,10 +40,9 @@
         width: calc(100% - var(--blame-recency-width));
         max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
         height: 1.5rem;
-
-        color: var(--body-color);
+        color: var(--text-muted);
         &:hover {
-            color: var(--body-color);
+            color: var(--text-muted);
         }
 
         .avatar {
@@ -44,10 +51,12 @@
             min-height: 1rem;
             height: 1rem;
             font-size: 0.5rem;
+            vertical-align: text-top;
         }
 
         .author {
             margin: 0 0.5rem;
+            margin-right: 0.25rem;
             display: inline-block;
             text-decoration: none;
         }

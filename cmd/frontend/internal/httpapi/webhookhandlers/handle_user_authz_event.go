@@ -6,23 +6,24 @@ import (
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
-	return webhooks.Handler(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
+	return webhooks.Handler(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -30,7 +31,7 @@ func handleGitHubUserAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
 			return nil
 		}
 
-		log15.Debug("handleGitHubUserAuthzEvent: Got github event", "type", fmt.Sprintf("%T", payload))
+		logger.Debug("handleGitHubUserAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
 
 		var user *gh.User
 
@@ -46,7 +47,7 @@ func handleGitHubUserAuthzEvent(opts authz.FetchPermsOptions) webhooks.Handler {
 			return errors.Errorf("could not extract GitHub user from %T GitHub event", payload)
 		}
 
-		return scheduleUserUpdate(ctx, db, user, opts)
+		return scheduleUserUpdate(ctx, logger, db, user, opts)
 	})
 }
 
@@ -58,7 +59,7 @@ type membershipGetter interface {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User, opts authz.FetchPermsOptions) error {
+func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, githubUser *gh.User, opts authz.FetchPermsOptions) error {
 	if githubUser == nil {
 		return nil
 	}
@@ -79,11 +80,12 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 		ids = append(ids, acc.UserID)
 	}
 
-	log15.Debug("scheduleUserUpdate: Dispatching permissions update", "users", ids)
+	logger.Debug("scheduleUserUpdate: Dispatching permissions update", log.Int32s("users", ids))
 
-	c := repoupdater.DefaultClient
-	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: ids,
 		Options: opts,
 	})
+
+	return nil
 }

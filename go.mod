@@ -127,7 +127,7 @@ require (
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/snabb/sitemap v1.0.0
-	github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037
+	github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -232,7 +232,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230111101438-d541ae2d078d
+	github.com/sourcegraph/zoekt v0.0.0-20230112115613-e0cf62d238b9
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

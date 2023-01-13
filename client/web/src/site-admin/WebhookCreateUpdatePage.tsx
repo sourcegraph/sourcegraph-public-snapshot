@@ -253,7 +253,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                             Update
                                         </Button>
                                     </div>
-                                    <div className="ml-3">
+                                    <div className="ml-1">
                                         <ButtonLink
                                             to={`/site-admin/webhooks/${existingWebhook.id}`}
                                             variant="secondary"

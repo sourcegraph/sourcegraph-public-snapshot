@@ -25,8 +25,6 @@ This page describes how to launch a verified and pre-configured Sourcegraph inst
 
 <small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
 
-<small>Prefer manually installing on AWS yourself? See our [AMI installation options](aws-ami.md) and [script installation options](../single-node/script.md).</small>
-
 ---
 
 ## Prerequisites

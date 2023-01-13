@@ -1,5 +1,7 @@
 package licensing
 
+import "fmt"
+
 // The list of plans.
 const (
 	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
@@ -37,51 +39,87 @@ var allPlans = []Plan{
 const (
 	// FeatureSSO is whether non-builtin authentication may be used, such as GitHub
 	// OAuth, GitLab OAuth, SAML, and OpenID.
-	FeatureSSO Feature = "sso"
+	FeatureSSO BasicFeature = "sso"
 
 	// FeatureACLs is whether the Background Permissions Syncing may be be used for
 	// setting repository permissions.
-	FeatureACLs Feature = "acls"
+	FeatureACLs BasicFeature = "acls"
 
 	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
 	// setting repository permissions.
-	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
+	FeatureExplicitPermissionsAPI BasicFeature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
 	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry Feature = "private-extension-registry"
+	FeatureExtensionRegistry BasicFeature = "private-extension-registry"
 
 	// FeatureRemoteExtensionsAllowDisallow is whether explicitly specify a list of allowed remote
 	// extensions and prevent any other remote extensions from being used has been purchased. It
 	// does not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
+	FeatureRemoteExtensionsAllowDisallow BasicFeature = "remote-extensions-allow-disallow"
 
 	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
-	FeatureBranding Feature = "branding"
+	FeatureBranding BasicFeature = "branding"
 
 	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
 	//
 	// DEPRECATED: See FeatureBatchChanges.
-	FeatureCampaigns Feature = "campaigns"
-
-	// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-	FeatureBatchChanges Feature = "batch-changes"
+	FeatureCampaigns BasicFeature = "campaigns"
 
 	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
-	FeatureMonitoring Feature = "monitoring"
+	FeatureMonitoring BasicFeature = "monitoring"
 
 	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
 	// has been purchased.
-	FeatureBackupAndRestore Feature = "backup-and-restore"
+	FeatureBackupAndRestore BasicFeature = "backup-and-restore"
 
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
-	FeatureCodeInsights Feature = "code-insights"
+	FeatureCodeInsights BasicFeature = "code-insights"
 )
+
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
+	MaxNumChangesets int
+}
+
+func (*FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
+
+func (f *FeatureBatchChanges) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the deprecated campaigns are enabled, use unrestricted batch changes
+	if FeatureCampaigns.Check(info) == nil {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// If the batch changes tag exists on the license, use unrestricted batch changes
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default batch changes feature
+	if info.Plan().HasFeature(f) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
 
 // planFeatures defines the features that are enabled for each plan.
 var planFeatures = map[Plan][]Feature{
-	PlanOldEnterpriseStarter: {},
+	PlanOldEnterpriseStarter: {
+		&FeatureBatchChanges{MaxNumChangesets: 10},
+	},
 	PlanOldEnterprise: {
 		FeatureSSO,
 		FeatureACLs,
@@ -90,7 +128,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureRemoteExtensionsAllowDisallow,
 		FeatureBranding,
 		FeatureCampaigns,
-		FeatureBatchChanges,
+		&FeatureBatchChanges{Unrestricted: true},
 		FeatureMonitoring,
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
@@ -99,17 +137,19 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
+		&FeatureBatchChanges{MaxNumChangesets: 10},
 	},
 	PlanEnterprise0: {
 		FeatureACLs,
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
+		&FeatureBatchChanges{MaxNumChangesets: 10},
 	},
 
 	PlanBusiness0: {
 		FeatureACLs,
 		FeatureCampaigns,
-		FeatureBatchChanges,
+		&FeatureBatchChanges{Unrestricted: true},
 		FeatureCodeInsights,
 		FeatureSSO,
 	},
@@ -117,12 +157,13 @@ var planFeatures = map[Plan][]Feature{
 		FeatureACLs,
 		FeatureCampaigns,
 		FeatureCodeInsights,
-		FeatureBatchChanges,
+		&FeatureBatchChanges{Unrestricted: true},
 		FeatureExplicitPermissionsAPI,
 		FeatureSSO,
 	},
 	PlanFree0: {
 		FeatureSSO,
 		FeatureMonitoring,
+		&FeatureBatchChanges{MaxNumChangesets: 10},
 	},
 }

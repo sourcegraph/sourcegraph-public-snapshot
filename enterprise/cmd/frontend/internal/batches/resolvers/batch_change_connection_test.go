@@ -186,7 +186,7 @@ func TestBatchChangesListing(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	orgID := bt.CreateTestOrg(t, db, "org", userID).ID
+	orgID := bt.CreateTestOrg(t, db, "org").ID
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -200,9 +200,7 @@ func TestBatchChangesListing(t *testing.T) {
 		t.Helper()
 
 		spec.UserID = userID
-		if spec.NamespaceOrgID == 0 {
-			spec.NamespaceUserID = userID
-		}
+		spec.NamespaceUserID = userID
 		if err := store.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
@@ -220,7 +218,6 @@ func TestBatchChangesListing(t *testing.T) {
 		spec := &btypes.BatchSpec{}
 		createBatchSpec(t, spec)
 
-		// Create an open batch change.
 		batchChange := &btypes.BatchChange{
 			Name:            "batch-change-1",
 			NamespaceUserID: userID,
@@ -242,7 +239,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -258,6 +255,7 @@ func TestBatchChangesListing(t *testing.T) {
 		batchChange2 := &btypes.BatchChange{
 			Name:            "batch-change-2",
 			NamespaceUserID: userID,
+			BatchSpecID:     spec2.ID,
 		}
 		createBatchChange(t, batchChange2)
 
@@ -269,8 +267,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(marshalBatchChangeID(batchChange2.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -301,9 +299,7 @@ func TestBatchChangesListing(t *testing.T) {
 	})
 
 	t.Run("listing an orgs batch changes", func(t *testing.T) {
-		spec := &btypes.BatchSpec{
-			NamespaceOrgID: orgID,
-		}
+		spec := &btypes.BatchSpec{}
 		createBatchSpec(t, spec)
 
 		batchChange := &btypes.BatchChange{
@@ -327,7 +323,7 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -336,18 +332,18 @@ func TestBatchChangesListing(t *testing.T) {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 
+		spec2 := &btypes.BatchSpec{UserID: userID}
+		createBatchSpec(t, spec2)
+
 		// This batch change has never been applied -- it is a draft.
 		batchChange2 := &btypes.BatchChange{
 			Name:           "batch-change-2",
 			NamespaceOrgID: orgID,
-			CreatorID:      userID,
+			BatchSpecID:    spec2.ID,
 		}
 		createBatchChange(t, batchChange2)
 
-		spec2 := &btypes.BatchSpec{UserID: userID, BatchChangeID: batchChange2.ID}
-		createBatchSpec(t, spec2)
-
-		// DRAFTS CASE 1: USERS CAN VIEW DRAFTS IN ORGS THEY'RE PART OF.
+		// DRAFTS CASE 1: USERS CAN VIEW THEIR OWN DRAFTS.
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
 
 		wantBoth := apitest.Org{
@@ -355,8 +351,8 @@ func TestBatchChangesListing(t *testing.T) {
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 2,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(batchChange2.ID)), State: "DRAFT"},
-					{ID: string(marshalBatchChangeID(batchChange.ID)), State: "OPEN"},
+					{ID: string(marshalBatchChangeID(batchChange2.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
@@ -375,7 +371,7 @@ func TestBatchChangesListing(t *testing.T) {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 
-		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW DRAFTS IN ORGS THEY'RE NOT PART OF.
+		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
 		otherUserID := bt.CreateTestUser(t, db, false).ID
 		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 
@@ -396,7 +392,6 @@ query($node: ID!) {
         totalCount
         nodes {
           id
-          state
         }
       }
     }
@@ -407,7 +402,6 @@ query($node: ID!) {
         totalCount
         nodes {
           id
-          state
         }
       }
     }

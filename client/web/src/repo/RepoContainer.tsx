@@ -287,6 +287,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
+        if (!window.context.enableLegacyExtensions) {
+            return true
+        }
         const paths = [
             ...props.repoContainerRoutes.map(route => route.path),
             ...props.repoSettingsContainerRoutes.map(route => route.path),
