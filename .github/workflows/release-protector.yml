@@ -18,6 +18,7 @@ on:
 jobs:
   protect-pr:
     runs-on: ubuntu-latest
+    if: github.repository == 'sourcegraph/sourcegraph'
     steps:
       - name: Check date and labels
         id: check-date-and-labels
@@ -109,3 +110,61 @@ jobs:
             echo "📅 Not enabled, we're not yet on ${freeze_date} and release code freeze has not started yet."
             exit 0
           fi
+      - name: "Post comment if failed"
+        uses: actions/github-script@v6
+        # We need always() otherwise, the step won't run if the previous one exited, regardless of the predicate value when evaluated.
+        #
+        # Because we have other actions labeling the PR, they can trigger the entire job to run twice simultaneously, preventing the 
+        # code ensuring that we're not commenting again if a comment has been posted by us. Basically, with cla-bot labels being instant 
+        # means that this job is ran twice at the same time, but always second.
+        # To fix that, we specifically check the event.label.name value and the event.action. 
+        #
+        # In essence, we're always running the check, but only commenting if we really need to. This can't be done at the job level, because 
+        # it would be mean the job would be first run by the pr creation, but then skipped when the cla-bot triggered job completes, which 
+        # is very confusing for the user in the UI (you get a comment about a failure, but it appears skipped). 
+        if: |- 
+          always() 
+          && 
+          steps.check-date-and-labels.outcome != 'success' 
+          &&
+          (
+            (
+              contains(fromJSON('["labeled", "unlabeled"]'), github.event.action) 
+              && 
+              github.event.label.name == 'i-acknowledge-this-goes-into-the-release'
+            ) 
+            || 
+            !contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
+          )
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let d = new Date()
+            d.setHours(d.getHours() -1) // Yes, this handles properly midnight. 
+
+            let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
+            let skip = false
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              since: d.toISOString(),
+            })
+
+            if (Array.isArray(comments) && comments.length > 0) {
+              comments.forEach((comment => {
+                if (comment.body == body) {
+                  skip = true
+                }
+              }))
+            }
+
+            if (!skip) { 
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body,
+              })
+            }
