@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -142,30 +145,8 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	span.SetTag("Repo", string(args.Repo))
 	span.SetTag("CommitID", string(args.CommitID))
 
-	resp, err := c.httpPost(ctx, "search", args.Repo, args)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	response, err := c.searchGRPC(ctx, args)
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf(
-			"Symbol.Search http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-	}
-
-	var response search.SymbolsResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return nil, err
-	}
-	if response.Err != "" {
-		return nil, errors.New(response.Err)
-	}
 	symbols = response.Symbols
 
 	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
@@ -197,6 +178,112 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	return filtered, nil
+}
+
+func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
+	rawURL, err := c.url(args.Repo)
+	if err != nil {
+		return search.SymbolsResponse{}, errors.Wrap(err, "getting symbols service URL")
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return search.SymbolsResponse{}, errors.Wrap(err, "parsing symbols service URL")
+	}
+
+	conn, err := grpc.Dial(u.Host, grpc.WithInsecure())
+	if err != nil {
+		return search.SymbolsResponse{}, errors.Wrap(err, "dialing symbols GRPC service")
+	}
+	defer conn.Close()
+
+	grpcClient := proto.NewSymbolsClient(conn)
+	params := paramsToProto(args)
+
+	response, err := grpcClient.Search(ctx, &params)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+
+	return protoToResponse(response), nil
+}
+
+func paramsToProto(p search.SymbolsParameters) proto.SearchRequest {
+	return proto.SearchRequest{
+		Repo:     string(p.Repo),
+		CommitId: string(p.CommitID),
+
+		Query:           p.Query,
+		IsRegExp:        p.IsRegExp,
+		IsCaseSensitive: p.IsCaseSensitive,
+		IncludePatterns: p.IncludePatterns,
+		ExcludePattern:  p.ExcludePattern,
+
+		First:   int32(p.First),
+		Timeout: int32(p.Timeout),
+	}
+}
+
+func protoToResponse(p *proto.SymbolsResponse) search.SymbolsResponse {
+	var symbols []result.Symbol
+	for _, s := range p.Symbols.Symbols {
+
+		symbols = append(symbols, result.Symbol{
+			Name: s.Name,
+			Path: s.Path,
+
+			Line:      int(s.Line),
+			Character: int(s.Character),
+
+			Kind:     s.Kind,
+			Language: s.Language,
+
+			Parent:     s.Parent,
+			ParentKind: s.ParentKind,
+
+			Signature:   s.Signature,
+			FileLimited: s.FileLimited,
+		})
+	}
+
+	var err string
+	if p.Error != nil {
+		err = *p.Error
+	}
+
+	return search.SymbolsResponse{
+		Symbols: symbols,
+		Err:     err,
+	}
+}
+
+func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
+	resp, err := c.httpPost(ctx, "search", args.Repo, args)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return search.SymbolsResponse{}, errors.Errorf(
+			"Symbol.Search http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	var response search.SymbolsResponse
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return search.SymbolsResponse{}, err
+	}
+	if response.Err != "" {
+		return search.SymbolsResponse{}, errors.New(response.Err)
+	}
+
+	return search.SymbolsResponse{}, nil
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
