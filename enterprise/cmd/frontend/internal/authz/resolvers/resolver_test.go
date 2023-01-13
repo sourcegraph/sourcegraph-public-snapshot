@@ -322,7 +322,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 
 	r := &Resolver{db: db}
 
-	repoID := 1
+	const repoID = 1
 
 	called := false
 	permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
@@ -346,7 +346,8 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
-	licensing.MockCheckFeatureError("")
+	reset := licensing.TestingSkipFeatureChecks()
+	t.Cleanup(reset)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -371,7 +372,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
-	userID := int32(1)
+	const userID = int32(1)
 
 	t.Run("queue a user", func(t *testing.T) {
 		r := &Resolver{db: db}
