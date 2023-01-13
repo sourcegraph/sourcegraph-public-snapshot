@@ -58,11 +58,16 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
-        query:
-            experimentalQueryInput && props.selectedSearchContextSpec && props.selectedSearchContextSpec !== 'global'
-                ? `context:${props.selectedSearchContextSpec} `
-                : '',
+        query: '',
     })
+
+    useEffect(() => {
+        if (experimentalQueryInput && props.selectedSearchContextSpec) {
+            setQueryState(state =>
+                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
+            )
+        }
+    }, [experimentalQueryInput, props.selectedSearchContextSpec])
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 

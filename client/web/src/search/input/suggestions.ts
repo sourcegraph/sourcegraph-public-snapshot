@@ -121,7 +121,8 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
         type: 'completion',
         // Passing an empty string is a hack to draw an "empty" icon
         icon: item.starred ? mdiStar : ' ',
-        value: item.spec + ' ',
+        value: item.spec,
+        insertValue: item.spec + ' ',
         description,
         matches: positions,
         from,
@@ -152,7 +153,11 @@ function toFilterCompletion(filter: FilterType, from: number, to?: number): Comp
  * If the query is not empty, this source will return a single command
  * suggestion which submits the query when selected.
  */
-const currentQuery: InternalSource = ({ input }) => {
+const currentQuery: InternalSource = ({ token, input }) => {
+    if (token?.type === 'filter') {
+        return null
+    }
+
     let value = input
     let note = 'Search everywhere'
 
@@ -161,7 +166,7 @@ const currentQuery: InternalSource = ({ input }) => {
     if (contextFilter) {
         value = omitFilter(input, contextFilter)
         if (contextFilter.value?.value !== 'global') {
-            note = `Across ${contextFilter.value?.value ?? ''}`
+            note = `Search '${contextFilter.value?.value ?? ''}'`
         }
     }
 
@@ -271,6 +276,18 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                     title: 'Search contexts',
                                     options: entries.map(entry => toContextCompletion(entry, from, to)),
                                 },
+                                {
+                                    title: 'Actions',
+                                    options: [
+                                        {
+                                            type: 'target',
+                                            value: 'Manage contexts',
+                                            description: 'Add, edit, remove search contexts',
+                                            note: 'Got to /contexts',
+                                            url: '/contexts',
+                                        },
+                                    ],
+                                },
                             ]
                         })
                     default: {
@@ -365,6 +382,7 @@ export const createSuggestionsSource = ({
         tiebreakers: [contextTiebraker],
     }
 
+    // TODO: Initialize outside to persist cache across page navigation
     const caches: Caches = {
         repo: new Cache({
             queryKey: value => `type:repo count:50 repo:${value}`,
