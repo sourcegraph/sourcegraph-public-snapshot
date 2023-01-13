@@ -1,8 +1,8 @@
 .root {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px 6px;
+    gap: 0.25rem;
+    padding: 0.25rem 0.375rem;
     margin: 0;
     border: 1px solid var(--input-border-color);
     border-radius: var(--border-radius);
@@ -30,16 +30,16 @@
 .input {
     border: none;
     outline: none;
-    padding: 0 0 0 8px;
+    padding: 0 0 0 0.5rem;
     box-shadow: none !important;
     height: 1.75rem;
 }
 
 .pill {
     display: flex;
-    gap: 4px;
-    padding: 4px 4px 4px 8px;
-    border-radius: 4px;
+    gap: 0.25rem;
+    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    border-radius: 0.25rem;
     min-width: 0;
 
     :global(.theme-dark) & {
@@ -60,9 +60,10 @@
 
 .remove-pill {
     border: none;
-    margin-right: -4px;
-    margin-top: -4px;
-    margin-bottom: -4px;
+    margin-right: -0.25rem;
+    margin-top: -0.25rem;
+    margin-bottom: -0.25rem;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     width: 28px;
     display: flex;
     align-items: center;

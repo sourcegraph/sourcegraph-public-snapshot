@@ -1,7 +1,6 @@
 import {
     ChangeEvent,
     Dispatch,
-    FocusEventHandler,
     InputHTMLAttributes,
     RefObject,
     useCallback,
@@ -24,7 +23,8 @@ export interface Validators<FieldValue, ErrorContext> {
 /**
  * Subset of native input props that useField can set to the native input element.
  */
-export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange'> {
+export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange' | 'onBlur'> {
+    onBlur?: () => void
     onChange?: (value: Value) => void
 }
 
@@ -44,7 +44,7 @@ export interface useFieldAPI<FieldValue, ErrorContext = unknown> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur: FocusEventHandler<HTMLInputElement> | (() => void)
+        onBlur:() => void
     } & InputProps<FieldValue>
 
     /**
