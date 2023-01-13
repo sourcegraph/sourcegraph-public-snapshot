@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
@@ -49,10 +50,13 @@ func TestCheckAddress(t *testing.T) {
 			"ssh://blah",
 			// No host
 			"http://",
-			// Localhost
+			// Loopback
 			"http://localhost:3000",
+			"127.0.0.1",
+			"::1",
 			// Unspecificed IP
-			"0.0.0.0",
+			string(net.IPv4zero),
+			string(net.IPv6zero),
 			// Private IP
 			"10.0.0.0",
 			"192.168.255.255",

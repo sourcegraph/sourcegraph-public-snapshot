@@ -8,6 +8,8 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -61,6 +63,9 @@ const reservedTLDs = "localhost|local|test|example|invalid|localdomain|domain|la
 func CheckAddress(address string) error {
 	// Try to interpret address as a URL, as an IP with a port, or as an IP without a port.
 	u, uErr := url.Parse(address)
+	// If it's an IP with a port, ipStr will contain the IP address without the port. If
+	// it doesn't have a port, the function will error and ipStr will be an empty string.
+	// We'll also try to parse it from the full address for that case.
 	ipStr, _, _ := net.SplitHostPort(address)
 	ip1 := net.ParseIP(ipStr)
 	ip2 := net.ParseIP(address)
@@ -78,16 +83,14 @@ func CheckAddress(address string) error {
 			return errors.New("Not a valid IPv4 or IPv6 address")
 		}
 
-		if ip.IsUnspecified() {
-			return errors.New("Must not be an unspecified IP address")
-		}
+		// This will match any valid non-private unicast IP, aka any public host. It will filter out:
+		// - Unspecified (zero'd) IP addresses
+		// - Link-local addresses
+		// - Loopback (localhost) addresses
+		hostAllowList := hostmatcher.ParseHostMatchList("", hostmatcher.MatchBuiltinExternal)
 
-		if ip.IsPrivate() {
-			return errors.New("Must not be a private IP address")
-		}
-
-		if ip.IsLinkLocalMulticast() || ip.IsLinkLocalUnicast() {
-			return errors.New("Must not be a link-local IP address")
+		if !hostAllowList.MatchIPAddr(ip) {
+			return errors.New("Must not be unspecified, private, link-local, or loopback address")
 		}
 
 		return nil
@@ -100,7 +103,7 @@ func CheckAddress(address string) error {
 		}
 
 		if u.Hostname() == "" || u.Hostname() == "localhost" {
-			return errors.New("Must have a non-local hostname")
+			return errors.New("Must not be localhost")
 		}
 
 		parts := strings.Split(u.Hostname(), ".")
