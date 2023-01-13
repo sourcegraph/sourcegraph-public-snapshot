@@ -68,7 +68,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
-	doArchive := conf.ExperimentalFeatures().ArchiveCodeInsightsData
+	doArchive := conf.ExperimentalFeatures().InsightsDataRetention
 	if doArchive != nil && *doArchive {
 		// Enqueues series to be picked up by the retention worker.
 		routines = append(routines, newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore))
