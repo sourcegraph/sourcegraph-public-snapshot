@@ -63,8 +63,7 @@
     margin-right: -0.25rem;
     margin-top: -0.25rem;
     margin-bottom: -0.25rem;
-    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-    width: 28px;
+    width: 1.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,4 +87,9 @@
 
 .popover {
     display: flex;
+    border-radius: 0;
+
+    &:empty {
+        display: none;
+    }
 }

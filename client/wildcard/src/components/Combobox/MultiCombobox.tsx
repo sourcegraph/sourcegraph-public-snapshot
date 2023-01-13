@@ -13,6 +13,8 @@ import {
     useState,
     useCallback,
     HTMLAttributes,
+    useMemo,
+    useLayoutEffect,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -47,8 +49,8 @@ interface MultiComboboxContextData<T> {
 
     // Internal sub-component setters
     setTether: (tether: TetherInstanceAPI) => void
-    setPopoverState: (isOpen: boolean) => void
     setInputElement: (element: HTMLElement | null) => void
+    setPopoverState: (isOpen: boolean) => void
     setSuggestOptions: (items: T[]) => void
     onItemSelect: (selectedItemName: string | null) => void
 
@@ -114,22 +116,37 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
         [selectedItems, tether, onSelectedItemsChange, getItemName]
     )
 
+    const memoizedContextValue = useMemo(
+        () => ({
+            inputElement,
+            isPopoverOpen,
+            setTether,
+            setInputElement,
+            setPopoverState,
+            setSuggestOptions,
+            selectedItems,
+            getItemKey,
+            getItemName,
+            onSelectedItemsChange: handleSelectedItemsChange,
+            onItemSelect: handleSelectItem,
+        }),
+        [
+            inputElement,
+            isPopoverOpen,
+            setTether,
+            setInputElement,
+            setPopoverState,
+            setSuggestOptions,
+            selectedItems,
+            getItemKey,
+            getItemName,
+            handleSelectedItemsChange,
+            handleSelectItem,
+        ]
+    )
+
     return (
-        <MultiComboboxContext.Provider
-            value={{
-                inputElement,
-                setTether,
-                setInputElement,
-                isPopoverOpen,
-                setPopoverState,
-                selectedItems,
-                getItemKey,
-                getItemName,
-                setSuggestOptions,
-                onSelectedItemsChange: handleSelectedItemsChange,
-                onItemSelect: handleSelectItem,
-            }}
-        >
+        <MultiComboboxContext.Provider value={memoizedContextValue}>
             <Combobox {...attributes} openOnFocus={true} />
         </MultiComboboxContext.Provider>
     )
@@ -274,13 +291,17 @@ interface MultiComboboxListProps<T> {
     className?: string
 }
 
-export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactElement {
+export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactElement | null {
     const { items, children, className } = props
     const { setSuggestOptions } = useContext(MultiComboboxContext)
 
-    // It's safe to call this during the React call tree since it
-    // doesn't produce any call tree state updates
-    setSuggestOptions(items)
+    // Register rendered item in top level object in order to use it
+    // when user selects one of these options
+    useLayoutEffect(() => setSuggestOptions(items), [items, setSuggestOptions])
+
+    if (items.length === 0) {
+        return null
+    }
 
     return (
         <ComboboxList persistSelection={true} className={className}>
