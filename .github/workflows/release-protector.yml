@@ -128,11 +128,13 @@ jobs:
               since: d.toISOString(),
             })
 
-            comments.data.forEach((comment => {
-              if (comment.body == body) {
-                skip = true
-              }
-            }))
+            if (Array.isArray( comments.data ) && comments.data.length > 0) {
+              comments.data.forEach((comment => {
+                if (comment.body == body) {
+                  skip = true
+                }
+              }))
+            }
 
             if (!skip) { 
               github.rest.issues.createComment({
