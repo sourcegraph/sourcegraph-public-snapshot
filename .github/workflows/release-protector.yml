@@ -111,7 +111,7 @@ jobs:
           fi
       - name: "Post comment if failed"
         uses: actions/github-script@v5
-        if: ${{steps.check-date-and-labels.outcome }} != 'success' 
+        if: ${{always() && steps.check-date-and-labels.outcome != 'success'}} 
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
