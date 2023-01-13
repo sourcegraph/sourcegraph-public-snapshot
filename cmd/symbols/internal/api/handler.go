@@ -6,15 +6,19 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"google.golang.org/grpc/reflection"
 )
 
 type grpcServer struct {
@@ -47,6 +51,13 @@ func NewHandler(
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
+	tempGRPCserver := &grpcServer{
+		searchFunc: searchFunc,
+	}
+
+	s := grpc.NewServer()
+	s.RegisterService(&proto.Symbols_ServiceDesc, tempGRPCserver)
+	reflection.Register(s)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
@@ -56,7 +67,17 @@ func NewHandler(
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}
-	return mux
+
+	handler := h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
+			s.ServeHTTP(w, r)
+			return
+		}
+
+		mux.ServeHTTP(w, r)
+	}), &http2.Server{})
+
+	return handler
 }
 
 const maxNumSymbolResults = 500
