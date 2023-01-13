@@ -467,6 +467,7 @@ type InsightViewQueryArgs struct {
 	First                *int32
 	After                *string
 	Id                   *graphql.ID
+	Query                *string
 	IsFrozen             *bool
 	Filters              *InsightViewFiltersInput
 	SeriesDisplayOptions *SeriesDisplayOptionsInput

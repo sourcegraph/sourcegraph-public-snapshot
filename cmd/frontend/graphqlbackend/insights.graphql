@@ -187,6 +187,7 @@ extend type Query {
         first: Int
         after: String
         id: ID
+        query: String
         isFrozen: Boolean
         filters: InsightViewFiltersInput
         seriesDisplayOptions: SeriesDisplayOptionsInput
