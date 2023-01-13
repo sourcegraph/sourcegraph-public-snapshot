@@ -701,6 +701,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            corrupted
             indexed
         }
     }
