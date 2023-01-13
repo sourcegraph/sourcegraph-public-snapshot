@@ -631,7 +631,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
+	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
@@ -2363,6 +2363,8 @@ type SiteConfiguration struct {
 	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
+	// InsightsHistoricalWorkerRateLimitBurst description: The allowed burst rate for the Code Insights historical worker rate limiter.
+	InsightsHistoricalWorkerRateLimitBurst int `json:"insights.historical.worker.rateLimitBurst,omitempty"`
 	// InsightsMaximumSampleSize description: The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.
 	InsightsMaximumSampleSize int `json:"insights.maximumSampleSize,omitempty"`
 	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
@@ -2534,6 +2536,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "insights.aggregations.proactiveResultLimit")
 	delete(m, "insights.backfill.interruptAfter")
 	delete(m, "insights.historical.worker.rateLimit")
+	delete(m, "insights.historical.worker.rateLimitBurst")
 	delete(m, "insights.maximumSampleSize")
 	delete(m, "insights.query.worker.concurrency")
 	delete(m, "insights.query.worker.rateLimit")

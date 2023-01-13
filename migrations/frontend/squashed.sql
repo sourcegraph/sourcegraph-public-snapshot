@@ -3163,6 +3163,36 @@ CREATE SEQUENCE out_of_band_migrations_id_seq
 
 ALTER SEQUENCE out_of_band_migrations_id_seq OWNED BY out_of_band_migrations.id;
 
+CREATE TABLE permission_sync_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    repository_id integer,
+    user_id integer,
+    high_priority boolean DEFAULT false NOT NULL,
+    invalidate_caches boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE permission_sync_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE permission_sync_jobs_id_seq OWNED BY permission_sync_jobs.id;
+
 CREATE TABLE permissions (
     id integer NOT NULL,
     namespace text NOT NULL,
@@ -3973,6 +4003,8 @@ ALTER TABLE ONLY out_of_band_migrations ALTER COLUMN id SET DEFAULT nextval('out
 
 ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_errors_id_seq'::regclass);
 
+ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
@@ -4281,6 +4313,9 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 
 ALTER TABLE ONLY out_of_band_migrations
     ADD CONSTRAINT out_of_band_migrations_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY permission_sync_jobs
+    ADD CONSTRAINT permission_sync_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permissions
     ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
@@ -4686,6 +4721,14 @@ CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHER
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
+
+CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
+
+CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING btree (repository_id);
+
+CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
+
+CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 

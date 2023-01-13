@@ -718,6 +718,7 @@ commands:
         -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
         -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
         -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
+        -e PROMETHEUS_ADDITIONAL_FLAGS="--web.enable-lifecycle --web.enable-admin-api" \
         ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${PROMETHEUS_DISK}"

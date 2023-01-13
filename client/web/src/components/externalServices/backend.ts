@@ -26,7 +26,9 @@ import {
     ExternalServiceSyncJobsResult,
     CancelExternalServiceSyncVariables,
     CancelExternalServiceSyncResult,
+    ListExternalServiceFields,
 } from '../../graphql-operations'
+import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {
@@ -250,18 +252,21 @@ export const EXTERNAL_SERVICE_IDS_AND_NAMES = gql`
     }
 `
 
-export function queryExternalServices(
-    variables: ExternalServicesVariables
-): Observable<ExternalServicesResult['externalServices']> {
-    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
-}
+export const useExternalServicesConnection = (
+    vars: ExternalServicesVariables
+): UseShowMorePaginationResult<ListExternalServiceFields> =>
+    useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
+        query: EXTERNAL_SERVICES,
+        variables: { after: vars.after, first: vars.first ?? 10 },
+        getConnection: result => {
+            const { externalServices } = dataOrThrowErrors(result)
+            return externalServices
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 15000,
+        },
+    })
 
 export const SYNC_EXTERNAL_SERVICE = gql`
     mutation SyncExternalService($id: ID!) {
