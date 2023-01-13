@@ -6880,6 +6880,9 @@ type MockEnterpriseDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *EnterpriseDBOrgsFunc
+	// PermissionSyncJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method PermissionSyncJobs.
+	PermissionSyncJobsFunc *EnterpriseDBPermissionSyncJobsFunc
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *EnterpriseDBPermissionsFunc
@@ -7068,6 +7071,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: func() (r0 database.OrgStore) {
+				return
+			},
+		},
+		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
+			defaultHook: func() (r0 database.PermissionSyncJobStore) {
 				return
 			},
 		},
@@ -7313,6 +7321,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Orgs")
 			},
 		},
+		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
+			defaultHook: func() database.PermissionSyncJobStore {
+				panic("unexpected invocation of MockEnterpriseDB.PermissionSyncJobs")
+			},
+		},
 		PermissionsFunc: &EnterpriseDBPermissionsFunc{
 			defaultHook: func() database.PermissionStore {
 				panic("unexpected invocation of MockEnterpriseDB.Permissions")
@@ -7511,6 +7524,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: i.Orgs,
+		},
+		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
+			defaultHook: i.PermissionSyncJobs,
 		},
 		PermissionsFunc: &EnterpriseDBPermissionsFunc{
 			defaultHook: i.Permissions,
@@ -9798,6 +9814,107 @@ func (c EnterpriseDBOrgsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBOrgsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBPermissionSyncJobsFunc describes the behavior when the
+// PermissionSyncJobs method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBPermissionSyncJobsFunc struct {
+	defaultHook func() database.PermissionSyncJobStore
+	hooks       []func() database.PermissionSyncJobStore
+	history     []EnterpriseDBPermissionSyncJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// PermissionSyncJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) PermissionSyncJobs() database.PermissionSyncJobStore {
+	r0 := m.PermissionSyncJobsFunc.nextHook()()
+	m.PermissionSyncJobsFunc.appendCall(EnterpriseDBPermissionSyncJobsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PermissionSyncJobs
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBPermissionSyncJobsFunc) SetDefaultHook(hook func() database.PermissionSyncJobStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PermissionSyncJobs method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBPermissionSyncJobsFunc) PushHook(hook func() database.PermissionSyncJobStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBPermissionSyncJobsFunc) SetDefaultReturn(r0 database.PermissionSyncJobStore) {
+	f.SetDefaultHook(func() database.PermissionSyncJobStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBPermissionSyncJobsFunc) PushReturn(r0 database.PermissionSyncJobStore) {
+	f.PushHook(func() database.PermissionSyncJobStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBPermissionSyncJobsFunc) nextHook() func() database.PermissionSyncJobStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBPermissionSyncJobsFunc) appendCall(r0 EnterpriseDBPermissionSyncJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBPermissionSyncJobsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBPermissionSyncJobsFunc) History() []EnterpriseDBPermissionSyncJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBPermissionSyncJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBPermissionSyncJobsFuncCall is an object that describes an
+// invocation of method PermissionSyncJobs on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBPermissionSyncJobsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.PermissionSyncJobStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBPermissionSyncJobsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBPermissionSyncJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

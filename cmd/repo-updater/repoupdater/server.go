@@ -50,6 +50,7 @@ type Server struct {
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
+	DatabaseBackedPermissionSyncerEnabled func(ctx context.Context) bool
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -378,6 +379,12 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
+	if s.DatabaseBackedPermissionSyncerEnabled != nil && s.DatabaseBackedPermissionSyncerEnabled(r.Context()) {
+		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
+		s.respond(w, http.StatusOK, nil)
+		return
+	}
+
 	if s.PermsSyncer == nil {
 		s.respond(w, http.StatusForbidden, nil)
 		return

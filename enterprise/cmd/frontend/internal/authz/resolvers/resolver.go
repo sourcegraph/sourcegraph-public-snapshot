@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -18,12 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,11 +31,8 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
-	logger            log.Logger
-	db                edb.EnterpriseDB
-	repoupdaterClient interface {
-		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
-	}
+	logger          log.Logger
+	db              edb.EnterpriseDB
 	syncJobsRecords interface {
 		Get(timestamp time.Time) (*syncjobs.Status, error)
 		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
@@ -60,10 +56,9 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 
 func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger:            observationCtx.Logger.Scoped("authz.Resolver", ""),
-		db:                edb.NewEnterpriseDB(db),
-		repoupdaterClient: repoupdater.DefaultClient,
-		syncJobsRecords:   syncjobs.NewRecordsReader(),
+		logger:          observationCtx.Logger.Scoped("authz.Resolver", ""),
+		db:              edb.NewEnterpriseDB(db),
+		syncJobsRecords: syncjobs.NewRecordsReader(),
 	}
 }
 
@@ -183,12 +178,10 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
 		RepoIDs: []api.RepoID{repoID},
 	})
-	if err != nil {
-		return nil, err
-	}
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -207,16 +200,13 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{
-		UserIDs: []int32{userID},
-	}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
 
-	if err := r.repoupdaterClient.SchedulePermsSync(ctx, req); err != nil {
-		return nil, err
-	}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 

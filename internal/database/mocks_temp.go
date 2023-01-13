@@ -3931,6 +3931,9 @@ type MockDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
+	// PermissionSyncJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method PermissionSyncJobs.
+	PermissionSyncJobsFunc *DBPermissionSyncJobsFunc
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *DBPermissionsFunc
@@ -4108,6 +4111,11 @@ func NewMockDB() *MockDB {
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: func() (r0 OrgStore) {
+				return
+			},
+		},
+		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
+			defaultHook: func() (r0 PermissionSyncJobStore) {
 				return
 			},
 		},
@@ -4338,6 +4346,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Orgs")
 			},
 		},
+		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
+			defaultHook: func() PermissionSyncJobStore {
+				panic("unexpected invocation of MockDB.PermissionSyncJobs")
+			},
+		},
 		PermissionsFunc: &DBPermissionsFunc{
 			defaultHook: func() PermissionStore {
 				panic("unexpected invocation of MockDB.Permissions")
@@ -4522,6 +4535,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
+		},
+		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
+			defaultHook: i.PermissionSyncJobs,
 		},
 		PermissionsFunc: &DBPermissionsFunc{
 			defaultHook: i.Permissions,
@@ -6684,6 +6700,105 @@ func (c DBOrgsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOrgsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBPermissionSyncJobsFunc describes the behavior when the
+// PermissionSyncJobs method of the parent MockDB instance is invoked.
+type DBPermissionSyncJobsFunc struct {
+	defaultHook func() PermissionSyncJobStore
+	hooks       []func() PermissionSyncJobStore
+	history     []DBPermissionSyncJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// PermissionSyncJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) PermissionSyncJobs() PermissionSyncJobStore {
+	r0 := m.PermissionSyncJobsFunc.nextHook()()
+	m.PermissionSyncJobsFunc.appendCall(DBPermissionSyncJobsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the PermissionSyncJobs
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBPermissionSyncJobsFunc) SetDefaultHook(hook func() PermissionSyncJobStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PermissionSyncJobs method of the parent MockDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBPermissionSyncJobsFunc) PushHook(hook func() PermissionSyncJobStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBPermissionSyncJobsFunc) SetDefaultReturn(r0 PermissionSyncJobStore) {
+	f.SetDefaultHook(func() PermissionSyncJobStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBPermissionSyncJobsFunc) PushReturn(r0 PermissionSyncJobStore) {
+	f.PushHook(func() PermissionSyncJobStore {
+		return r0
+	})
+}
+
+func (f *DBPermissionSyncJobsFunc) nextHook() func() PermissionSyncJobStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBPermissionSyncJobsFunc) appendCall(r0 DBPermissionSyncJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBPermissionSyncJobsFuncCall objects
+// describing the invocations of this function.
+func (f *DBPermissionSyncJobsFunc) History() []DBPermissionSyncJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBPermissionSyncJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBPermissionSyncJobsFuncCall is an object that describes an invocation of
+// method PermissionSyncJobs on an instance of MockDB.
+type DBPermissionSyncJobsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermissionSyncJobStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBPermissionSyncJobsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBPermissionSyncJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -31588,6 +31703,891 @@ func (c OrgStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockPermissionSyncJobStore is a mock implementation of the
+// PermissionSyncJobStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockPermissionSyncJobStore struct {
+	// CreateRepoSyncJobFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateRepoSyncJob.
+	CreateRepoSyncJobFunc *PermissionSyncJobStoreCreateRepoSyncJobFunc
+	// CreateUserSyncJobFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateUserSyncJob.
+	CreateUserSyncJobFunc *PermissionSyncJobStoreCreateUserSyncJobFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *PermissionSyncJobStoreDoneFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *PermissionSyncJobStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *PermissionSyncJobStoreListFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *PermissionSyncJobStoreTransactFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *PermissionSyncJobStoreWithFunc
+}
+
+// NewMockPermissionSyncJobStore creates a new mock of the
+// PermissionSyncJobStore interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
+	return &MockPermissionSyncJobStore{
+		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
+			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) (r0 error) {
+				return
+			},
+		},
+		CreateUserSyncJobFunc: &PermissionSyncJobStoreCreateUserSyncJobFunc{
+			defaultHook: func(context.Context, int32, PermissionSyncJobOpts) (r0 error) {
+				return
+			},
+		},
+		DoneFunc: &PermissionSyncJobStoreDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		HandleFunc: &PermissionSyncJobStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListFunc: &PermissionSyncJobStoreListFunc{
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) (r0 []*PermissionSyncJob, r1 error) {
+				return
+			},
+		},
+		TransactFunc: &PermissionSyncJobStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 PermissionSyncJobStore, r1 error) {
+				return
+			},
+		},
+		WithFunc: &PermissionSyncJobStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 PermissionSyncJobStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockPermissionSyncJobStore creates a new mock of the
+// PermissionSyncJobStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
+	return &MockPermissionSyncJobStore{
+		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
+			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CreateRepoSyncJob")
+			},
+		},
+		CreateUserSyncJobFunc: &PermissionSyncJobStoreCreateUserSyncJobFunc{
+			defaultHook: func(context.Context, int32, PermissionSyncJobOpts) error {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CreateUserSyncJob")
+			},
+		},
+		DoneFunc: &PermissionSyncJobStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockPermissionSyncJobStore.Done")
+			},
+		},
+		HandleFunc: &PermissionSyncJobStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockPermissionSyncJobStore.Handle")
+			},
+		},
+		ListFunc: &PermissionSyncJobStoreListFunc{
+			defaultHook: func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+				panic("unexpected invocation of MockPermissionSyncJobStore.List")
+			},
+		},
+		TransactFunc: &PermissionSyncJobStoreTransactFunc{
+			defaultHook: func(context.Context) (PermissionSyncJobStore, error) {
+				panic("unexpected invocation of MockPermissionSyncJobStore.Transact")
+			},
+		},
+		WithFunc: &PermissionSyncJobStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) PermissionSyncJobStore {
+				panic("unexpected invocation of MockPermissionSyncJobStore.With")
+			},
+		},
+	}
+}
+
+// NewMockPermissionSyncJobStoreFrom creates a new mock of the
+// MockPermissionSyncJobStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermissionSyncJobStore {
+	return &MockPermissionSyncJobStore{
+		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
+			defaultHook: i.CreateRepoSyncJob,
+		},
+		CreateUserSyncJobFunc: &PermissionSyncJobStoreCreateUserSyncJobFunc{
+			defaultHook: i.CreateUserSyncJob,
+		},
+		DoneFunc: &PermissionSyncJobStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		HandleFunc: &PermissionSyncJobStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &PermissionSyncJobStoreListFunc{
+			defaultHook: i.List,
+		},
+		TransactFunc: &PermissionSyncJobStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		WithFunc: &PermissionSyncJobStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// PermissionSyncJobStoreCreateRepoSyncJobFunc describes the behavior when
+// the CreateRepoSyncJob method of the parent MockPermissionSyncJobStore
+// instance is invoked.
+type PermissionSyncJobStoreCreateRepoSyncJobFunc struct {
+	defaultHook func(context.Context, api.RepoID, PermissionSyncJobOpts) error
+	hooks       []func(context.Context, api.RepoID, PermissionSyncJobOpts) error
+	history     []PermissionSyncJobStoreCreateRepoSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateRepoSyncJob delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CreateRepoSyncJob(v0 context.Context, v1 api.RepoID, v2 PermissionSyncJobOpts) error {
+	r0 := m.CreateRepoSyncJobFunc.nextHook()(v0, v1, v2)
+	m.CreateRepoSyncJobFunc.appendCall(PermissionSyncJobStoreCreateRepoSyncJobFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateRepoSyncJob
+// method of the parent MockPermissionSyncJobStore instance is invoked and
+// the hook queue is empty.
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultHook(hook func(context.Context, api.RepoID, PermissionSyncJobOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateRepoSyncJob method of the parent MockPermissionSyncJobStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushHook(hook func(context.Context, api.RepoID, PermissionSyncJobOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) nextHook() func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) appendCall(r0 PermissionSyncJobStoreCreateRepoSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreCreateRepoSyncJobFuncCall objects describing the
+// invocations of this function.
+func (f *PermissionSyncJobStoreCreateRepoSyncJobFunc) History() []PermissionSyncJobStoreCreateRepoSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreCreateRepoSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreCreateRepoSyncJobFuncCall is an object that
+// describes an invocation of method CreateRepoSyncJob on an instance of
+// MockPermissionSyncJobStore.
+type PermissionSyncJobStoreCreateRepoSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 PermissionSyncJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreCreateRepoSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreCreateRepoSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermissionSyncJobStoreCreateUserSyncJobFunc describes the behavior when
+// the CreateUserSyncJob method of the parent MockPermissionSyncJobStore
+// instance is invoked.
+type PermissionSyncJobStoreCreateUserSyncJobFunc struct {
+	defaultHook func(context.Context, int32, PermissionSyncJobOpts) error
+	hooks       []func(context.Context, int32, PermissionSyncJobOpts) error
+	history     []PermissionSyncJobStoreCreateUserSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateUserSyncJob delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CreateUserSyncJob(v0 context.Context, v1 int32, v2 PermissionSyncJobOpts) error {
+	r0 := m.CreateUserSyncJobFunc.nextHook()(v0, v1, v2)
+	m.CreateUserSyncJobFunc.appendCall(PermissionSyncJobStoreCreateUserSyncJobFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateUserSyncJob
+// method of the parent MockPermissionSyncJobStore instance is invoked and
+// the hook queue is empty.
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) SetDefaultHook(hook func(context.Context, int32, PermissionSyncJobOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateUserSyncJob method of the parent MockPermissionSyncJobStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) PushHook(hook func(context.Context, int32, PermissionSyncJobOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, PermissionSyncJobOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, PermissionSyncJobOpts) error {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) nextHook() func(context.Context, int32, PermissionSyncJobOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) appendCall(r0 PermissionSyncJobStoreCreateUserSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreCreateUserSyncJobFuncCall objects describing the
+// invocations of this function.
+func (f *PermissionSyncJobStoreCreateUserSyncJobFunc) History() []PermissionSyncJobStoreCreateUserSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreCreateUserSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreCreateUserSyncJobFuncCall is an object that
+// describes an invocation of method CreateUserSyncJob on an instance of
+// MockPermissionSyncJobStore.
+type PermissionSyncJobStoreCreateUserSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 PermissionSyncJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreCreateUserSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreCreateUserSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermissionSyncJobStoreDoneFunc describes the behavior when the Done
+// method of the parent MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []PermissionSyncJobStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(PermissionSyncJobStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockPermissionSyncJobStore instance is invoked and the hook queue
+// is empty.
+func (f *PermissionSyncJobStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockPermissionSyncJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PermissionSyncJobStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreDoneFunc) appendCall(r0 PermissionSyncJobStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionSyncJobStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *PermissionSyncJobStoreDoneFunc) History() []PermissionSyncJobStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreDoneFuncCall is an object that describes an
+// invocation of method Done on an instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermissionSyncJobStoreHandleFunc describes the behavior when the Handle
+// method of the parent MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []PermissionSyncJobStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(PermissionSyncJobStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockPermissionSyncJobStore instance is invoked and the hook queue
+// is empty.
+func (f *PermissionSyncJobStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockPermissionSyncJobStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermissionSyncJobStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreHandleFunc) appendCall(r0 PermissionSyncJobStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionSyncJobStoreHandleFuncCall
+// objects describing the invocations of this function.
+func (f *PermissionSyncJobStoreHandleFunc) History() []PermissionSyncJobStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreHandleFuncCall is an object that describes an
+// invocation of method Handle on an instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermissionSyncJobStoreListFunc describes the behavior when the List
+// method of the parent MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreListFunc struct {
+	defaultHook func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
+	hooks       []func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
+	history     []PermissionSyncJobStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) List(v0 context.Context, v1 ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(PermissionSyncJobStoreListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockPermissionSyncJobStore instance is invoked and the hook queue
+// is empty.
+func (f *PermissionSyncJobStoreListFunc) SetDefaultHook(hook func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockPermissionSyncJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PermissionSyncJobStoreListFunc) PushHook(hook func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreListFunc) SetDefaultReturn(r0 []*PermissionSyncJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreListFunc) PushReturn(r0 []*PermissionSyncJob, r1 error) {
+	f.PushHook(func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionSyncJobStoreListFunc) nextHook() func(context.Context, ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreListFunc) appendCall(r0 PermissionSyncJobStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionSyncJobStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *PermissionSyncJobStoreListFunc) History() []PermissionSyncJobStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreListFuncCall is an object that describes an
+// invocation of method List on an instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListPermissionSyncJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*PermissionSyncJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermissionSyncJobStoreTransactFunc describes the behavior when the
+// Transact method of the parent MockPermissionSyncJobStore instance is
+// invoked.
+type PermissionSyncJobStoreTransactFunc struct {
+	defaultHook func(context.Context) (PermissionSyncJobStore, error)
+	hooks       []func(context.Context) (PermissionSyncJobStore, error)
+	history     []PermissionSyncJobStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) Transact(v0 context.Context) (PermissionSyncJobStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(PermissionSyncJobStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockPermissionSyncJobStore instance is invoked and the hook
+// queue is empty.
+func (f *PermissionSyncJobStoreTransactFunc) SetDefaultHook(hook func(context.Context) (PermissionSyncJobStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockPermissionSyncJobStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermissionSyncJobStoreTransactFunc) PushHook(hook func(context.Context) (PermissionSyncJobStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreTransactFunc) SetDefaultReturn(r0 PermissionSyncJobStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (PermissionSyncJobStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreTransactFunc) PushReturn(r0 PermissionSyncJobStore, r1 error) {
+	f.PushHook(func(context.Context) (PermissionSyncJobStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermissionSyncJobStoreTransactFunc) nextHook() func(context.Context) (PermissionSyncJobStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreTransactFunc) appendCall(r0 PermissionSyncJobStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionSyncJobStoreTransactFuncCall
+// objects describing the invocations of this function.
+func (f *PermissionSyncJobStoreTransactFunc) History() []PermissionSyncJobStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreTransactFuncCall is an object that describes an
+// invocation of method Transact on an instance of
+// MockPermissionSyncJobStore.
+type PermissionSyncJobStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermissionSyncJobStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermissionSyncJobStoreWithFunc describes the behavior when the With
+// method of the parent MockPermissionSyncJobStore instance is invoked.
+type PermissionSyncJobStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) PermissionSyncJobStore
+	hooks       []func(basestore.ShareableStore) PermissionSyncJobStore
+	history     []PermissionSyncJobStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) With(v0 basestore.ShareableStore) PermissionSyncJobStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(PermissionSyncJobStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockPermissionSyncJobStore instance is invoked and the hook queue
+// is empty.
+func (f *PermissionSyncJobStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) PermissionSyncJobStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockPermissionSyncJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PermissionSyncJobStoreWithFunc) PushHook(hook func(basestore.ShareableStore) PermissionSyncJobStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreWithFunc) SetDefaultReturn(r0 PermissionSyncJobStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) PermissionSyncJobStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreWithFunc) PushReturn(r0 PermissionSyncJobStore) {
+	f.PushHook(func(basestore.ShareableStore) PermissionSyncJobStore {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreWithFunc) nextHook() func(basestore.ShareableStore) PermissionSyncJobStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreWithFunc) appendCall(r0 PermissionSyncJobStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermissionSyncJobStoreWithFuncCall objects
+// describing the invocations of this function.
+func (f *PermissionSyncJobStoreWithFunc) History() []PermissionSyncJobStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreWithFuncCall is an object that describes an
+// invocation of method With on an instance of MockPermissionSyncJobStore.
+type PermissionSyncJobStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermissionSyncJobStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
