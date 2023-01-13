@@ -122,7 +122,7 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 	}
 	if args.Find != "" {
-		preds = append(preds, sqlf.Sprintf("iv.title ILIKE %s OR ivs.label ILIKE %s", "%"+args.Find+"%", "%"+args.Find+"%"))
+		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
