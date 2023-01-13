@@ -112,6 +112,16 @@ jobs:
           fi
       - name: "Post comment if failed"
         uses: actions/github-script@v6
+        # We need always() otherwise, the step won't run if the previous one exited, regardless of the predicate value when evaluated.
+        #
+        # Because we have other actions labeling the PR, they can trigger the entire job to run twice simultaneously, preventing the 
+        # code ensuring that we're not commenting again if a comment has been posted by us. Basically, with cla-bot labels being instant 
+        # means that this job is ran twice at the same time, but always second.
+        # To fix that, we specifically check the event.label.name value and the event.action. 
+        #
+        # In essence, we're always running the check, but only commenting if we really need to. This can't be done at the job level, because 
+        # it would be mean the job would be first run by the pr creation, but then skipped when the cla-bot triggered job completes, which 
+        # is very confusing for the user in the UI (you get a comment about a failure, but it appears skipped). 
         if: |- 
           always() 
           && 
