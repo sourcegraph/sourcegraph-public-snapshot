@@ -4,6 +4,8 @@ package searcher;
 
 option go_package = "github.com/sourcegraph/sourcegraph/cmd/searcher/proto/";
 
+
+// Searcher is internal interface for the searcher service.
 service Searcher {
     rpc Search(SearchRequest) returns (stream SearchResponse) {};
 };
