@@ -4,7 +4,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps to deploy Sourcegraph using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy the Sourcegraph main stacks without monitoring services.
+The installation steps below will walk you through the steps using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy the Sourcegraph without the monitoring services.
 
 The overlay will:
 
@@ -25,13 +25,7 @@ The overlay will:
 
 ## Quick Start
 
-Once you have met all the prerequisites listed above and have created a cluster with nodes available...
-
-### Step 0: Install Ingress Controller
-
-```bash
-$ kubectl apply -k https://github.com/kubernetes/ingress-nginx/deploy/static/provider/aws\?ref\=controller-v1.5.1
-```
+You must complete **all** the prerequisites listed above before installing Sourcegraph with following steps.
 
 ### Step 1: Deploy Sourcegraph
 
@@ -142,16 +136,4 @@ Step 2: Add the `ARN of the AWS-managed TLS certificate` to the `overlay.config`
 # new/overlays/your_aws_deployment/config/overlay.config
 # ARN of the AWS-managed TLS certificate
 AWS_MANAGED_CERT_ARN=arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
-```
-
-## Troubleshooting
-
-### Validating Webhook Error
-
-Error: _Error from server (InternalError): error when creating "new/generated-cluster.yaml": Internal error occurred: failed calling webhook "validate.nginx.ingress.kubernetes.io": failed to call webhook: Post "https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s": no endpoints available for service "ingress-nginx-controller-admission"_
-
-Remove the Validating webhook:
-
-```bash
-$ kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
 ```
