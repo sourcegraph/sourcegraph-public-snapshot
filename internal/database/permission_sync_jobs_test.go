@@ -10,12 +10,15 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -36,7 +39,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	nextSyncAt := time.Now().Add(5 * time.Minute)
+	nextSyncAt := clock.Now().Add(5 * time.Minute)
 	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, NextSyncAt: nextSyncAt}
 	if err := store.CreateUserSyncJob(ctx, 77, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
