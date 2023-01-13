@@ -2208,7 +2208,7 @@ CREATE TABLE gitserver_repos_statistics (
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
     failed_fetch bigint DEFAULT 0 NOT NULL,
-    corrupted integer DEFAULT 0 NOT NULL
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
@@ -3434,7 +3434,7 @@ CREATE TABLE repo_statistics (
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
     failed_fetch bigint DEFAULT 0 NOT NULL,
-    corrupted integer DEFAULT 0
+    corrupted bigint DEFAULT 0
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';

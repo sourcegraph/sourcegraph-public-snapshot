@@ -10962,7 +10962,7 @@
         {
           "Name": "corrupted",
           "Index": 7,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
           "CharacterMaximumLength": 0,
@@ -18249,7 +18249,7 @@
         {
           "Name": "corrupted",
           "Index": 7,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "0",
           "CharacterMaximumLength": 0,

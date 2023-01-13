@@ -436,7 +436,6 @@ func logCorruption(t *testing.T, db DB, repoName api.RepoName, shard string, msg
 	if err := db.GitserverRepos().LogCorruption(context.Background(), repoName, msg, shard); err != nil {
 		t.Fatalf("failed to log corruption for repo %s: %s", repoName, err)
 	}
-
 }
 
 func assertRepoStatistics(t *testing.T, ctx context.Context, s RepoStatisticsStore, wantRepoStats RepoStatistics, wantGitserverStats []GitserverReposStatistic) {

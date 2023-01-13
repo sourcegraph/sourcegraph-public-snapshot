@@ -1504,15 +1504,15 @@ Triggers:
 
 # Table "public.gitserver_repos_statistics"
 ```
-    Column    |  Type   | Collation | Nullable | Default 
---------------+---------+-----------+----------+---------
- shard_id     | text    |           | not null | 
- total        | bigint  |           | not null | 0
- not_cloned   | bigint  |           | not null | 0
- cloning      | bigint  |           | not null | 0
- cloned       | bigint  |           | not null | 0
- failed_fetch | bigint  |           | not null | 0
- corrupted    | integer |           | not null | 0
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ shard_id     | text   |           | not null | 
+ total        | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 Indexes:
     "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
 
@@ -2820,15 +2820,15 @@ Indexes:
 
 # Table "public.repo_statistics"
 ```
-    Column    |  Type   | Collation | Nullable | Default 
---------------+---------+-----------+----------+---------
- total        | bigint  |           | not null | 0
- soft_deleted | bigint  |           | not null | 0
- not_cloned   | bigint  |           | not null | 0
- cloning      | bigint  |           | not null | 0
- cloned       | bigint  |           | not null | 0
- failed_fetch | bigint  |           | not null | 0
- corrupted    | integer |           |          | 0
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ total        | bigint |           | not null | 0
+ soft_deleted | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           |          | 0
 
 ```
 
