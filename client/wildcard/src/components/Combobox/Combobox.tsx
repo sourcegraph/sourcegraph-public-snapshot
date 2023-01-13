@@ -100,7 +100,7 @@ interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>((props, ref) => {
-    const { target, open, className, ...attributes } = props
+    const { target, open, className, style, ...attributes } = props
 
     const { inputRef, isExpanded } = useContext(ComboboxContext)
     const targetElement = target ?? inputRef
@@ -139,7 +139,7 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             // Turn off reach UI portal position logic PopoverContent does this job
             portal={false}
             // Make sure that the width of the suggestion isn't less than combobox input width
-            style={{ minWidth: inputWidth }}
+            style={{ minWidth: inputWidth, ...style }}
             className={classNames(className, styles.popover)}
             {...attributes}
         />

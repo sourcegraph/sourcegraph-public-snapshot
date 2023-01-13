@@ -17,6 +17,7 @@ import {
 
 import { mdiClose } from '@mdi/js'
 import { useComboboxContext } from '@reach/combobox'
+import classNames from 'classnames'
 import { noop } from 'lodash'
 import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
@@ -247,19 +248,21 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
 })
 
 export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): ReactElement {
+    const { className, style, ...attributes } = props
     const { inputElement, isPopoverOpen, setTether } = useContext(MultiComboboxContext)
 
     const [, { width: inputWidth }] = useMeasure(inputElement, 'boundingRect')
 
     return (
         <PopoverContent
-            {...props}
+            {...attributes}
             target={inputElement}
             isOpen={isPopoverOpen}
             position={Position.bottomStart}
             focusLocked={false}
             returnTargetFocus={false}
-            style={{ minWidth: inputWidth }}
+            style={{ minWidth: inputWidth, ...style }}
+            className={classNames(styles.popover, className)}
             onTetherCreate={setTether}
         />
     )
