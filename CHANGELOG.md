@@ -24,6 +24,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - Fix network timeout in `src users clean` occuring in instances with many users  [#901](https://github.com/sourcegraph/src-cli/pull/901)
 - Aligned parsing of spec file parameter of `src batch repos` with other commands. [#919](https://github.com/sourcegraph/src-cli/pull/919)
+- batches: Remove empty log outputs. [#923](https://github.com/sourcegraph/src-cli/pull/923)
 
 ### Removed
 

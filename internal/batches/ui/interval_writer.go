@@ -116,15 +116,17 @@ type prefixedWriter struct {
 	prefix     string
 }
 
-func (w *prefixedWriter) Write(p []byte) (int, error) {
-	var prefixedLines []byte
-	for _, line := range bytes.Split(p, []byte("\n")) {
-		prefixedLine := append([]byte(w.prefix), line...)
-		prefixedLine = append(prefixedLine, []byte("\n")...)
+var newLineByteSlice = []byte("\n")
 
-		prefixedLines = append(prefixedLines, prefixedLine...)
+// Write is only ever called with a single line. That line may or may not end with a newline character.
+// It then writes the content as a single line to the inner writer, regardless of if the provided line
+// had a newline or not. That is, because our encoding requires exactly one line per formatted line.
+func (w *prefixedWriter) Write(p []byte) (int, error) {
+	prefixedLine := append([]byte(w.prefix), p...)
+	if !bytes.HasSuffix(prefixedLine, newLineByteSlice) {
+		prefixedLine = append(prefixedLine, newLineByteSlice...)
 	}
-	w.writes <- prefixedLines
+	w.writes <- prefixedLine
 	<-w.writesDone
 	return len(p), nil
 }
