@@ -76,7 +76,7 @@ export const Input = forwardRef(function Input(props, reference) {
                     {...attributes}
                     ref={reference}
                     variant={variant}
-                    status={status}
+                    status={error ? InputStatus.error : status}
                     type={type}
                     autoFocus={autoFocus}
                     className={inputClassName}

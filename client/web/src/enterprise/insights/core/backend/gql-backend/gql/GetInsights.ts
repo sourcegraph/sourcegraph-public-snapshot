@@ -21,9 +21,6 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
             ... on SearchInsightDataSeriesDefinition {
                 seriesId
                 query
-                repositoryScope {
-                    repositories
-                }
                 timeScope {
                     ... on InsightIntervalTimeScope {
                         unit

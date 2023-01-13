@@ -161,6 +161,11 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
 
     return (
         <div className={styles.radioGroup}>
+            {/*
+                Standard wildcard input doesn't provide a simple layout for the radio element,
+                in order to have custom layout in the repo control we have to use native input
+                with custom styles around spacing and layout
+            */}
             {/* eslint-disable-next-line react/forbid-elements */}
             <input
                 id={labelId}
@@ -210,7 +215,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     // callback. Mutable value is needed because codemirror doesn't update callback in a sync
     // way and even if we have disabled: true code mirror still preserves the prev callback
     // where we still have disabled: false in the scope.
-    const disabledValue = useMutableValue(disabled)
+    const disabledRefValue = useMutableRefValue(disabled)
 
     const handleChipSuggestions = (chip: SmartRepoQueryChip): void => {
         const nextQueryValue = `${value.query} ${chip.query}`.trimStart()
@@ -218,7 +223,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const handleOnChange = (queryState: QueryState): void => {
-        if (queryState.query !== value.query && !disabledValue.current) {
+        if (queryState.query !== value.query && !disabledRefValue.current) {
             onChange({ query: queryState.query, changeSource: QueryChangeSource.userInput })
         }
     }
@@ -335,7 +340,7 @@ function SmartRepoQueryChips(props: SmartRepoQueryChipsProps): ReactElement {
     )
 }
 
-function useMutableValue<T>(value: T): MutableRefObject<T> {
+function useMutableRefValue<T>(value: T): MutableRefObject<T> {
     const valueRef = useRef<T>(value)
     valueRef.current = value
 
