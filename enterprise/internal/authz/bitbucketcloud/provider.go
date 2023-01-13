@@ -149,6 +149,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 
 	users, next, err := p.client.ListExplicitUserPermsForRepo(ctx, nil, repoOwner, repoName)
 	users, err = bitbucketcloud.FetchAll(ctx, p.client, users, next, err)
+	if err != nil {
+		return nil, err
+	}
 
 	// Bitbucket Cloud API does not return the owner of the repository as part
 	// of the explicit permissions list, so we need to fetch and add them.
