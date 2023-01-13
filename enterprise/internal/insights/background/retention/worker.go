@@ -25,6 +25,13 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
+	doArchive := conf.ExperimentalFeatures().ArchiveCodeInsightsData
+	if doArchive != nil && !*doArchive {
+		// This handler shouldn't be called if the experimental setting isn't set but we add
+		// this check out of caution.
+		return nil
+	}
+
 	maximumSampleSize := getMaximumSampleSize(logger)
 
 	// All the retention operations need to be completed in the same transaction

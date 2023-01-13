@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -57,8 +58,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	routines := []goroutine.BackgroundRoutine{
 		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-		// Enqueues series to be picked up by the retention worker.
-		newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore),
 		// Emits backend pings based on insights data.
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		// Cleans up soft-deleted insight series.
@@ -67,6 +66,12 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 		// Stamps backfill completion time.
 		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
+	}
+
+	doArchive := conf.ExperimentalFeatures().ArchiveCodeInsightsData
+	if doArchive != nil && *doArchive {
+		// Enqueues series to be picked up by the retention worker.
+		routines = append(routines, newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore))
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
