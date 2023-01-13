@@ -64,12 +64,10 @@ type confStore struct {
 	*basestore.Store
 }
 
-// SiteConfig contains the contents of a site config along with associated me
-// tadata.
+// SiteConfig contains the contents of a site config along with associated metadata.
 type SiteConfig struct {
-	ID           int32 // the unique ID of this config
-	AuthorUserID int32 // the user id of the author that updated this config
-	Type         string
+	ID           int32  // the unique ID of this config
+	AuthorUserID int32  // the user id of the author that updated this config
 	Contents     string // the raw JSON content (with comments and trailing commas allowed)
 
 	CreatedAt time.Time // the date when this config was created
