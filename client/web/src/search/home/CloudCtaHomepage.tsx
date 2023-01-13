@@ -30,7 +30,7 @@ export const CloudCtaHomepage: React.FunctionComponent<CloudCtaHomepageProps> = 
 
     return (
         <div className="d-table mx-auto">
-            <CloudCtaBanner className="mb-5" variant={cloudCtaVariant}>
+            <CloudCtaBanner variant={cloudCtaVariant}>
                 To search across your private repositories,{' '}
                 <Link
                     to={buildCloudTrialURL(authenticatedUser)}

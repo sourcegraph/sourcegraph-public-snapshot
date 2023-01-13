@@ -111,7 +111,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             >
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
                     <div>
-                        <CloudCtaHomepage authenticatedUser={props.authenticatedUser} />
+                        {props.isSourcegraphDotCom && <CloudCtaHomepage authenticatedUser={props.authenticatedUser} />}
                         <QueryExamples
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
