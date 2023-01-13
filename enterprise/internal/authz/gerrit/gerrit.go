@@ -136,7 +136,7 @@ func (p Provider) URN() string {
 func (p Provider) ValidateConnection(ctx context.Context) error {
 	adminGroup, err := p.client.GetGroup(ctx, adminGroupName)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to get %s group: %v", adminGroupName)
+		return errors.Newf("Unable to get %s group: %s", adminGroupName, err)
 	}
 
 	if adminGroup.ID == "" || adminGroup.Name != adminGroupName || adminGroup.CreatedOn == "" {
