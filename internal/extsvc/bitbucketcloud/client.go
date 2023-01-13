@@ -148,6 +148,17 @@ func (c *client) Ping(ctx context.Context) error {
 	return nil
 }
 
+func FetchAll[T any](ctx context.Context, c Client, results []T, next *PageToken, err error) ([]T, error) {
+	cli := c.(*client)
+	for err == nil && next.HasMore() {
+		var page []T
+		next, err = cli.page(ctx, next.Next, next.Values(), next, &page)
+		results = append(results, page...)
+	}
+
+	return results, err
+}
+
 func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)

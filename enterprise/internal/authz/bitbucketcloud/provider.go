@@ -58,10 +58,14 @@ func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts Prov
 	}
 }
 
-// ValidateConnection validates that the Provider has access to the Bitbucket Server API
-// with the OAuth credentials it was configured with.
+// ValidateConnection validates that the Provider has access to the Bitbucket Cloud API
+// with the credentials it was configured with.
 func (p *Provider) ValidateConnection(ctx context.Context) []string {
-	return nil
+	_, err := p.client.CurrentUser(ctx)
+	if err != nil {
+		return []string{err.Error()}
+	}
+	return []string{}
 }
 
 func (p *Provider) URN() string {
@@ -104,27 +108,17 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, err
 	}
 	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
-		RefreshToken: tok.RefreshToken,
-		Expiry:       tok.Expiry,
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		NeedsRefreshBuffer: 5,
 	}
-
 	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, bitbucketcloud.GetOAuthContext(p.codeHost.BaseURL.String()))
-	oauthToken.NeedsRefreshBuffer = 5
 
 	client := p.client.WithAuthenticator(oauthToken)
+
 	repos, next, err := client.Repos(ctx, nil, "", &bitbucketcloud.ReposOptions{Role: "member"})
-	if err != nil {
-		return nil, err
-	}
-	for next.HasMore() {
-		var nextRepos []*bitbucketcloud.Repo
-		nextRepos, next, err = client.Repos(ctx, next, "", &bitbucketcloud.ReposOptions{Role: "member"})
-		if err != nil {
-			return nil, err
-		}
-		repos = append(repos, nextRepos...)
-	}
+	repos, err = bitbucketcloud.FetchAll(ctx, client, repos, next, err)
 
 	extIDs := make([]extsvc.RepoID, 0, len(repos))
 	for _, repo := range repos {
@@ -149,19 +143,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	repoNameParts := strings.Split(repo.URI, "/")
 	repoOwner := repoNameParts[1]
 	repoName := repoNameParts[2]
-	users, next, err := p.client.ListExplicitUserPermsForRepo(ctx, nil, repoOwner, repoName)
-	if err != nil {
-		return nil, err
-	}
 
-	for next.HasMore() {
-		var nextUsers []*bitbucketcloud.Account
-		nextUsers, next, err = p.client.ListExplicitUserPermsForRepo(ctx, next, repoOwner, repoName)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, nextUsers...)
-	}
+	users, next, err := p.client.ListExplicitUserPermsForRepo(ctx, nil, repoOwner, repoName)
+	users, err = bitbucketcloud.FetchAll(ctx, p.client, users, next, err)
 
 	// Bitbucket Cloud API does not return the owner of the repository as part
 	// of the explicit permissions list, so we need to fetch and add them.
