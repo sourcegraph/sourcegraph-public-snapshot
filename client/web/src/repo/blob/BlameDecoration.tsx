@@ -196,9 +196,6 @@ export const BlameDecoration: React.FunctionComponent<{
                                                 }
                                                 size={16}
                                             />
-                                            <span className={styles.authorName}>
-                                                {`${displayInfo.username}${displayInfo.displayName}`.split(' ')[0]}
-                                            </span>
                                         </span>
                                     </>
                                 ) : (
@@ -207,6 +204,12 @@ export const BlameDecoration: React.FunctionComponent<{
                                     </span>
                                 )}
                                 <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                    {blameHunk.author.person ? (
+                                        <>
+                                            {`${displayInfo.username}${displayInfo.displayName}`.split(' ')[0]}
+                                            {' • '}
+                                        </>
+                                    ) : null}
                                     {displayInfo.message}
                                 </span>
                             </>

@@ -56,16 +56,9 @@
 
         .author {
             margin: 0 0.5rem;
-            margin-right: 1rem;
+            margin-right: 0.25rem;
             display: inline-block;
             text-decoration: none;
-
-            &-name {
-                margin-left: 0.25rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
         }
 
         .content,
