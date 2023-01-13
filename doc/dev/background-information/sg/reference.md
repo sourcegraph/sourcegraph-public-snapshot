@@ -220,8 +220,8 @@ Flags:
 * `--commit, -c="<value>"`: Override branch detection with the latest build for `commit`
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
-* `--view, -v`: Open build page in browser
-* `--wait, -w`: Wait by blocking until the build is finished
+* `--wait`: Wait by blocking until the build is finished
+* `--web, --view, -w`: Open build page in web browser (--view is DEPRECATED and will be removed in the future)
 
 ### sg ci build
 
