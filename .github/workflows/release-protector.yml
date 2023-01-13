@@ -18,7 +18,7 @@ on:
 jobs:
   protect-pr:
     runs-on: ubuntu-latest
-    if: github.repository == 'sourcegraph/sourcegraph' && (github.event_name != 'label' || (github.event.label.name == 'i-acknowledge-this-goes-into-the-release'))
+    if: github.repository == 'sourcegraph/sourcegraph' && (github.event_name != 'labeled' || (github.event.label.name == 'i-acknowledge-this-goes-into-the-release'))
     steps:
       - name: Check date and labels
         id: check-date-and-labels
