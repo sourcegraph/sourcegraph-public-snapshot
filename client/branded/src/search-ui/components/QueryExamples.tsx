@@ -17,7 +17,7 @@ import styles from './QueryExamples.module.scss'
 
 export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
-    queryState: QueryState
+    queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
 }
@@ -43,7 +43,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
-    queryState,
+    queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
 }) => {

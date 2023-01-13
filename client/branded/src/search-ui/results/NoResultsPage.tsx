@@ -8,7 +8,7 @@ import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/setting
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
 
@@ -83,18 +83,18 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <H2>Sourcegraph basics</H2>
-
             {showQueryExamples && setQueryState && (
-                <div className={styles.queryExamplesContainer}>
-                    <QueryExamples
-                        selectedSearchContextSpec={selectedSearchContextSpec}
-                        telemetryService={telemetryService}
-                        queryState={{ query: '' }}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                    />
-                </div>
+                <>
+                    <H3>Search basics</H3>
+                    <div className={styles.queryExamplesContainer}>
+                        <QueryExamples
+                            selectedSearchContextSpec={selectedSearchContextSpec}
+                            telemetryService={telemetryService}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                        />
+                    </div>
+                </>
             )}
             <div className={styles.panels}>
                 <div className="flex-1 flex-shrink-past-contents">
