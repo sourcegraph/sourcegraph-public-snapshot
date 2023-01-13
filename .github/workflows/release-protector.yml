@@ -140,13 +140,8 @@ jobs:
               since: d.toISOString(),
             })
 
-            console.log("here")
-            console.log(comments)
-            console.log("===")
-
             if (Array.isArray(comments) && comments.length > 0) {
               comments.forEach((comment => {
-                console.log(comment)
                 if (comment.body == body) {
                   skip = true
                 }
@@ -154,7 +149,7 @@ jobs:
             }
 
             if (!skip) { 
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
