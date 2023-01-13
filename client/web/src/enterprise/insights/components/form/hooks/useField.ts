@@ -1,12 +1,4 @@
-import {
-    ChangeEvent,
-    Dispatch,
-    InputHTMLAttributes,
-    RefObject,
-    useCallback,
-    useLayoutEffect,
-    useRef,
-} from 'react'
+import { ChangeEvent, Dispatch, InputHTMLAttributes, RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 
 import { noop } from 'rxjs'
 
@@ -23,7 +15,8 @@ export interface Validators<FieldValue, ErrorContext> {
 /**
  * Subset of native input props that useField can set to the native input element.
  */
-export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange' | 'onBlur'> {
+export interface InputProps<Value>
+    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange' | 'onBlur'> {
     onBlur?: () => void
     onChange?: (value: Value) => void
 }
@@ -44,7 +37,7 @@ export interface useFieldAPI<FieldValue, ErrorContext = unknown> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur:() => void
+        onBlur: () => void
     } & InputProps<FieldValue>
 
     /**
