@@ -206,7 +206,6 @@ func run(logger log.Logger) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
 
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
@@ -236,6 +235,8 @@ func run(logger log.Logger) error {
 			handler.ServeHTTP(w, r)
 		})),
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Listen
 	g.Go(func() error {
