@@ -199,7 +199,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					}
 
 					c = c / 1000 / 1000 / 1000 // Converts bytes to gigabytes
-					if c < 12 {
+					if c < 2 {
 						return errors.New("Docker daemon is configured to operate with less than 2 Gb of allocated memory")
 					}
 					return nil
