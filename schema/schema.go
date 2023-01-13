@@ -2347,8 +2347,6 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
-	// GitserverHashingFunction description: Which hashing function to use to shard repositories across gitserver instances. Changing this value will lead to the majority of repositories being re-cloned, so use with caution.
-	GitserverHashingFunction string `json:"gitserverHashingFunction,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts
@@ -2526,7 +2524,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxCodehostRequestsPerSecond")
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitUpdateInterval")
-	delete(m, "gitserverHashingFunction")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")

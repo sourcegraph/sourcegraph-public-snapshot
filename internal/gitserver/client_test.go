@@ -325,46 +325,6 @@ func TestAddrForRepo(t *testing.T) {
 	}
 }
 
-func TestRendezvousAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-
-	testCases := []struct {
-		name string
-		repo api.RepoName
-		want string
-	}{
-		{
-			name: "repo1",
-			repo: api.RepoName("repo1"),
-			want: "gitserver-1",
-		},
-		{
-			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
-			want: "gitserver-1",
-		},
-		{
-			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-			want: "gitserver-3",
-		},
-		{
-			name: "yet another repo",
-			repo: api.RepoName("gitlab.com/foo/bar"),
-			want: "gitserver-2",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.RendezvousAddrForRepo(tc.repo, addrs)
-			if got != tc.want {
-				t.Fatalf("Want %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestClient_P4Exec(t *testing.T) {
 	_ = gitserver.CreateRepoDir(t)
 	tests := []struct {
@@ -544,52 +504,6 @@ func setPinnedRepos(pinned map[string]string) {
 			GitServerPinnedRepos: pinned,
 		},
 	}})
-}
-
-func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
-	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
-
-	tests := []struct {
-		name            string
-		repoName        api.RepoName
-		hashingFunction string
-		wantAddr        string
-	}{
-		{
-			name:            "md5 hashing",
-			repoName:        api.RepoName("repoA"),
-			wantAddr:        "gitserver1",
-			hashingFunction: "md5",
-		},
-		{
-			name:            "rendezvous hashing",
-			repoName:        api.RepoName("repoA"),
-			wantAddr:        "gitserver2",
-			hashingFunction: "rendezvous",
-		},
-		{
-			name:            "Empty config, default to md5",
-			repoName:        api.RepoName("repoA"),
-			wantAddr:        "gitserver1",
-			hashingFunction: "",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitserverHashingFunction: tc.hashingFunction}})
-			t.Cleanup(func() {
-				conf.Mock(nil)
-			})
-
-			addr, err := client.AddrForRepo(ctx, tc.repoName)
-			if err != nil {
-				t.Fatal("Error getting gitserver address")
-			}
-			require.Equal(t, tc.wantAddr, addr)
-		})
-	}
 }
 
 func TestClient_BatchLog(t *testing.T) {

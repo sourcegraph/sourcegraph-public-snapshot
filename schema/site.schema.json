@@ -71,12 +71,6 @@
         }
       }
     },
-    "gitserverHashingFunction": {
-      "description": "Which hashing function to use to shard repositories across gitserver instances. Changing this value will lead to the majority of repositories being re-cloned, so use with caution.",
-      "type": "string",
-      "enum": ["md5", "rendezvous"],
-      "default": "md5"
-    },
     "auth.passwordPolicy": {
       "type": "object",
       "additionalProperties": false,
