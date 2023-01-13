@@ -435,7 +435,7 @@
           }
         },
         "enableGithubInternalRepoVisibility": {
-          "description": "Enable support for visilibity of internal Github repositories",
+          "description": "Enable support for visibility of internal Github repositories",
           "type": "boolean",
           "default": false
         },
