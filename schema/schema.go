@@ -2018,6 +2018,8 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 type SettingsExperimentalFeatures struct {
 	// ApplySearchQuerySuggestionOnEnter description: This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)
 	ApplySearchQuerySuggestionOnEnter *bool `json:"applySearchQuerySuggestionOnEnter,omitempty"`
+	// ArchiveCodeInsightsData description: Code insights data points beyond the sample size defined in the site configuration will be periodically archived
+	ArchiveCodeInsightsData *bool `json:"archiveCodeInsightsData,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
@@ -2135,6 +2137,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "applySearchQuerySuggestionOnEnter")
+	delete(m, "archiveCodeInsightsData")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsights")
