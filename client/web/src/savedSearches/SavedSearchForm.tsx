@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { LazyQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {

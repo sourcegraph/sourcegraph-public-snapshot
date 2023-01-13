@@ -89,6 +89,17 @@ export const hoveredOccurrenceField = StateField.define<Occurrence | null>({
     },
 })
 
+const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
+    if (!pin || !pin.line || !pin.character) {
+        return null
+    }
+    const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
+    if (offset === null) {
+        return null
+    }
+    return occurrenceAtPosition(view.state, positionAtCmPosition(view, offset)) ?? null
+}
+
 export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
     const cmLine = view.state.doc.lineAt(pos)
     const line = cmLine.number - 1
@@ -101,7 +112,8 @@ export async function getHoverTooltip(view: EditorView, pos: number): Promise<To
     if (!result.markdownContents) {
         return null
     }
-    return new CodeIntelTooltip(view, occurrence, result)
+    const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
+    return new CodeIntelTooltip(view, occurrence, result, occurrence === pinnedOccurrence)
 }
 
 export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<HoverResult> {
@@ -134,21 +146,8 @@ const pinManager = ViewPlugin.fromClass(
             this.subscription = this.nextPin
                 .pipe(
                     map(pin => {
-                        if (!pin || !pin.line || !pin.character) {
-                            return null
-                        }
-
-                        const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
-                        if (offset === null) {
-                            return null
-                        }
-
-                        const occurrence = occurrenceAtPosition(view.state, positionAtCmPosition(view, offset))
-                        if (!occurrence) {
-                            return null
-                        }
-
-                        return rangeToCmSelection(view.state, occurrence.range)
+                        const occurrence = getPinnedOccurrence(view, pin)
+                        return occurrence ? rangeToCmSelection(view.state, occurrence.range) : null
                     }),
                     tap(range => {
                         if (!range) {

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -322,13 +321,13 @@ func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphq
 }
 
 type insightSeriesResolverGenerator interface {
-	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 	handles(series types.InsightViewSeries) bool
 	SetNext(nextGenerator insightSeriesResolverGenerator)
 }
 
 type handleSeriesFunc func(series types.InsightViewSeries) bool
-type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 
 type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
@@ -347,12 +346,12 @@ func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGen
 	j.next = nextGenerator
 }
 
-func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	if j.handles(series) {
-		return j.generateResolver(ctx, series, baseResolver, filters)
+		return j.generateResolver(ctx, series, baseResolver, filters, options)
 	}
 	if j.next != nil {
-		return j.next.Generate(ctx, series, baseResolver, filters)
+		return j.next.Generate(ctx, series, baseResolver, filters, options)
 	} else {
 		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
 		return nil, errors.New("no resolvers for insights series")
@@ -366,7 +365,7 @@ func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGener
 	}
 }
 
-func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition types.InsightViewSeries, filters types.InsightViewFilters) (*store.SeriesPointsOpts, error) {
+func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesStore *store.Store, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions) (*store.SeriesPointsOpts, error) {
 	opts := &store.SeriesPointsOpts{}
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
@@ -374,19 +373,14 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	opts.ID = &definition.InsightSeriesID
 	opts.SupportsAugmentation = definition.SupportsAugmentation
 
-	// Default to last 12 points of data
-	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}, definition.CreatedAt.Truncate(time.Minute))
-	oldest := time.Now().AddDate(-1, 0, 0)
-	if len(frames) != 0 {
-		possibleOldest := frames[0]
-		if possibleOldest.Before(oldest) {
-			oldest = possibleOldest
-		}
+	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, options.NumSamples, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
-	opts.From = &oldest
+	if !oldest.IsZero() {
+		opts.After = &oldest
+	}
+
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
 	}
@@ -413,8 +407,8 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 
 var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
 
-func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.workerBaseStore), definition, filters)
+func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
+	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.workerBaseStore), r.timeSeriesStore, definition, filters, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}
@@ -450,8 +444,8 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	return points, err
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) (_ []graphqlbackend.InsightSeriesResolver, err error) {
-	points, err := fetchSeries(ctx, definition, filters, &r)
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) (_ []graphqlbackend.InsightSeriesResolver, err error) {
+	points, err := fetchSeries(ctx, definition, filters, options, &r)
 	if err != nil {
 		return nil, err
 	}
@@ -474,8 +468,8 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 	return resolvers, nil
 }
 
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	allPoints, err := fetchSeries(ctx, definition, filters, &r)
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	allPoints, err := fetchSeries(ctx, definition, filters, options, &r)
 	if err != nil {
 		return nil, err
 	}

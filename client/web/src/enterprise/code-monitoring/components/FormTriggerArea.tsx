@@ -4,7 +4,7 @@ import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { LazyQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'

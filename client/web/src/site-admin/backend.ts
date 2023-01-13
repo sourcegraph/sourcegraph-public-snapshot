@@ -3,14 +3,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
-import { createAggregateError, repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-    isErrorGraphQLResult,
-    useQuery,
-} from '@sourcegraph/http-client'
+import { repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -49,7 +43,6 @@ import {
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
     SiteAdminSettingsCascadeFields,
-    SiteMonitoringStatisticsResult,
     SiteResult,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
@@ -289,8 +282,7 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
-
-export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -619,52 +611,6 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
     return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
-    )
-}
-
-/**
- * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
- *
- * @param days number of days of data to fetch
- */
-export function fetchMonitoringStats(
-    days: number
-): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
-    // more details in /internal/srcprometheus.ErrPrometheusUnavailable
-    const errorPrometheusUnavailable = 'prometheus API is unavailable'
-    return queryGraphQL<SiteMonitoringStatisticsResult>(
-        gql`
-            query SiteMonitoringStatistics($days: Int!) {
-                site {
-                    monitoringStatistics(days: $days) {
-                        alerts {
-                            serviceName
-                            name
-                            timestamp
-                            average
-                            owner
-                        }
-                    }
-                }
-            }
-        `,
-        { days }
-    ).pipe(
-        map(result => {
-            if (isErrorGraphQLResult(result)) {
-                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
-                    return false
-                }
-                throw createAggregateError(result.errors)
-            }
-            return result.data
-        }),
-        map(data => {
-            if (data) {
-                return data.site.monitoringStatistics
-            }
-            return data
-        })
     )
 }
 

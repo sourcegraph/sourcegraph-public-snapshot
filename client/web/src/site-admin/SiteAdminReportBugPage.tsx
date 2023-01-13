@@ -30,7 +30,7 @@ import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 
-import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
+import { fetchAllConfigAndSettings } from './backend'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -115,8 +115,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
     telemetryService,
     history,
 }) => {
-    const monitoringDaysBack = 7
-    const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -143,15 +141,11 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     support@sourcegraph.com.
                 </div>
             </Alert>
-            {allConfig === undefined || monitoringStats === undefined ? (
+            {allConfig === undefined ? (
                 <LoadingSpinner className="mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={JSON.stringify(
-                        monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
-                        undefined,
-                        2
-                    )}
+                    value={JSON.stringify(allConfig, undefined, 2)}
                     jsonSchema={allConfigSchema}
                     canEdit={false}
                     height={800}

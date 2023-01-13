@@ -19,29 +19,37 @@ func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
 	historicalOnce.Do(func() {
 		historicalLogger = log.Scoped("insights.historical.ratelimiter", "")
 		defaultRateLimit := rate.Limit(20.0)
-		getRateLimit := getHistoricalWorkerRateLimit(defaultRateLimit)
-		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", rate.NewLimiter(getRateLimit(), 1))
+		defaultBurst := 20
+		getRateLimit := getHistoricalWorkerRateLimit(defaultRateLimit, defaultBurst)
+		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", rate.NewLimiter(getRateLimit()))
+
 		go conf.Watch(func() {
-			val := getRateLimit()
-			historicalLogger.Info("Updating insights/historical rate limit", log.Int("value", int(val)))
-			historicalLimiter.SetLimit(val)
+			limit, burst := getRateLimit()
+			historicalLogger.Info("Updating insights/historical rate limit", log.Int("rate limit", int(limit)), log.Int("burst", burst))
+			historicalLimiter.SetLimit(limit)
+			historicalLimiter.SetBurst(burst)
 		})
 	})
 
 	return historicalLimiter
 }
 
-func getHistoricalWorkerRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsHistoricalWorkerRateLimit
+func getHistoricalWorkerRateLimit(defaultRate rate.Limit, defaultBurst int) func() (rate.Limit, int) {
+	return func() (rate.Limit, int) {
+		limit := conf.Get().InsightsHistoricalWorkerRateLimit
+		burst := conf.Get().InsightsHistoricalWorkerRateLimitBurst
 
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
+		var rateLimit rate.Limit
+		if limit == nil {
+			rateLimit = defaultRate
 		} else {
-			result = rate.Limit(*val)
+			rateLimit = rate.Limit(*limit)
 		}
 
-		return result
+		if burst <= 0 {
+			burst = defaultBurst
+		}
+
+		return rateLimit, burst
 	}
 }

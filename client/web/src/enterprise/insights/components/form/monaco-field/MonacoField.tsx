@@ -3,7 +3,7 @@ import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperati
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { LazyQueryInput } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryChangeSource } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'

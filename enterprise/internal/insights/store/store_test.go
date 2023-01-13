@@ -529,7 +529,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	}
 	autogold.Equal(t, points, autogold.ExportedOnly())
 
-	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -744,11 +744,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	afterNow := now.AddDate(0, 0, 1)
 
 	testCases := []struct {
-		insert  *types.InsightSeriesRecordingTimes
-		getFor  int
-		getFrom *time.Time
-		getTo   *time.Time
-		want    autogold.Value
+		insert   *types.InsightSeriesRecordingTimes
+		getFor   int
+		getFrom  *time.Time
+		getTo    *time.Time
+		getAfter *time.Time
+		want     autogold.Value
 	}{
 		{
 			getFor: 1,
@@ -780,6 +781,11 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			getTo:   &afterNow,
 			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
 		},
+		{
+			getFor:   1,
+			getAfter: &now,
+			want:     autogold.Want("gets all times after", stringifyTimes(series1Times[1:])),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
@@ -788,7 +794,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, tc.getFrom, tc.getTo)
+			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, SeriesPointsOpts{From: tc.getFrom, To: tc.getTo, After: tc.getAfter})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -899,5 +905,89 @@ func Test_coalesceZeroValues(t *testing.T) {
 			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
+	}
+}
+
+func TestGetOffsetNRecordingTime(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	insightStore := NewInsightStore(insightsDB)
+	seriesStore := New(insightsDB, NewInsightPermissionStore(mainDB))
+
+	// create a series with id 1 to attach to recording times
+	setupSeries(ctx, insightStore, t)
+
+	// we want the 6th oldest sample time
+	n := 6
+
+	var expectedOldestTimestamp time.Time
+	var expectedOldestTimestampExcludeSnapshot time.Time
+
+	newTime := time.Now().Truncate(time.Hour)
+	recordingTimes := types.InsightSeriesRecordingTimes{
+		InsightSeriesID: 1,
+		RecordingTimes: []types.RecordingTime{
+			{newTime, true},
+		},
+	}
+	for i := 1; i <= 11; i++ {
+		newTime = newTime.Add(-1 * time.Hour)
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+		if i == n+1 {
+			expectedOldestTimestampExcludeSnapshot = newTime
+		}
+		if i == n {
+			expectedOldestTimestamp = newTime
+		}
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("include snapshot timestamps", func(t *testing.T) {
+		got, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, n, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.String() != expectedOldestTimestamp.String() {
+			t.Errorf("expected timestamp %v got %v", expectedOldestTimestamp, got)
+		}
+	})
+	t.Run("exclude snapshot timestamps", func(t *testing.T) {
+		got, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, n, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.String() != expectedOldestTimestampExcludeSnapshot.String() {
+			t.Errorf("expected timestamp %v got %v", expectedOldestTimestampExcludeSnapshot, got)
+		}
+	})
+}
+
+func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
+	now := time.Now()
+	series := types.InsightSeries{
+		SeriesID:           "series1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	got, err := tx.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 1 {
+		t.Errorf("expected first series to have id 1")
 	}
 }

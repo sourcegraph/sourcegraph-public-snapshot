@@ -1393,9 +1393,16 @@
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 10,
+      "default": 20,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.historical.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights historical worker rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
@@ -1408,6 +1415,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 30,
+      "maximum": 90,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

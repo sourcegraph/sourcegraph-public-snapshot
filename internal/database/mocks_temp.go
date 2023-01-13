@@ -2990,9 +2990,15 @@ type MockConfStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *ConfStoreDoneFunc
+	// GetSiteConfigCountFunc is an instance of a mock function object
+	// controlling the behavior of the method GetSiteConfigCount.
+	GetSiteConfigCountFunc *ConfStoreGetSiteConfigCountFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *ConfStoreHandleFunc
+	// ListSiteConfigsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListSiteConfigs.
+	ListSiteConfigsFunc *ConfStoreListSiteConfigsFunc
 	// SiteCreateIfUpToDateFunc is an instance of a mock function object
 	// controlling the behavior of the method SiteCreateIfUpToDate.
 	SiteCreateIfUpToDateFunc *ConfStoreSiteCreateIfUpToDateFunc
@@ -3013,8 +3019,18 @@ func NewMockConfStore() *MockConfStore {
 				return
 			},
 		},
+		GetSiteConfigCountFunc: &ConfStoreGetSiteConfigCountFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
 		HandleFunc: &ConfStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListSiteConfigsFunc: &ConfStoreListSiteConfigsFunc{
+			defaultHook: func(context.Context, SiteConfigListOptions) (r0 []*SiteConfig, r1 error) {
 				return
 			},
 		},
@@ -3045,9 +3061,19 @@ func NewStrictMockConfStore() *MockConfStore {
 				panic("unexpected invocation of MockConfStore.Done")
 			},
 		},
+		GetSiteConfigCountFunc: &ConfStoreGetSiteConfigCountFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockConfStore.GetSiteConfigCount")
+			},
+		},
 		HandleFunc: &ConfStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockConfStore.Handle")
+			},
+		},
+		ListSiteConfigsFunc: &ConfStoreListSiteConfigsFunc{
+			defaultHook: func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+				panic("unexpected invocation of MockConfStore.ListSiteConfigs")
 			},
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
@@ -3075,8 +3101,14 @@ func NewMockConfStoreFrom(i ConfStore) *MockConfStore {
 		DoneFunc: &ConfStoreDoneFunc{
 			defaultHook: i.Done,
 		},
+		GetSiteConfigCountFunc: &ConfStoreGetSiteConfigCountFunc{
+			defaultHook: i.GetSiteConfigCount,
+		},
 		HandleFunc: &ConfStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		ListSiteConfigsFunc: &ConfStoreListSiteConfigsFunc{
+			defaultHook: i.ListSiteConfigs,
 		},
 		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
 			defaultHook: i.SiteCreateIfUpToDate,
@@ -3191,6 +3223,112 @@ func (c ConfStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// ConfStoreGetSiteConfigCountFunc describes the behavior when the
+// GetSiteConfigCount method of the parent MockConfStore instance is
+// invoked.
+type ConfStoreGetSiteConfigCountFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []ConfStoreGetSiteConfigCountFuncCall
+	mutex       sync.Mutex
+}
+
+// GetSiteConfigCount delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockConfStore) GetSiteConfigCount(v0 context.Context) (int, error) {
+	r0, r1 := m.GetSiteConfigCountFunc.nextHook()(v0)
+	m.GetSiteConfigCountFunc.appendCall(ConfStoreGetSiteConfigCountFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetSiteConfigCount
+// method of the parent MockConfStore instance is invoked and the hook queue
+// is empty.
+func (f *ConfStoreGetSiteConfigCountFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetSiteConfigCount method of the parent MockConfStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ConfStoreGetSiteConfigCountFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ConfStoreGetSiteConfigCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ConfStoreGetSiteConfigCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *ConfStoreGetSiteConfigCountFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ConfStoreGetSiteConfigCountFunc) appendCall(r0 ConfStoreGetSiteConfigCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ConfStoreGetSiteConfigCountFuncCall objects
+// describing the invocations of this function.
+func (f *ConfStoreGetSiteConfigCountFunc) History() []ConfStoreGetSiteConfigCountFuncCall {
+	f.mutex.Lock()
+	history := make([]ConfStoreGetSiteConfigCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ConfStoreGetSiteConfigCountFuncCall is an object that describes an
+// invocation of method GetSiteConfigCount on an instance of MockConfStore.
+type ConfStoreGetSiteConfigCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ConfStoreGetSiteConfigCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ConfStoreGetSiteConfigCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // ConfStoreHandleFunc describes the behavior when the Handle method of the
 // parent MockConfStore instance is invoked.
 type ConfStoreHandleFunc struct {
@@ -3287,6 +3425,114 @@ func (c ConfStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c ConfStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ConfStoreListSiteConfigsFunc describes the behavior when the
+// ListSiteConfigs method of the parent MockConfStore instance is invoked.
+type ConfStoreListSiteConfigsFunc struct {
+	defaultHook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	hooks       []func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	history     []ConfStoreListSiteConfigsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSiteConfigs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockConfStore) ListSiteConfigs(v0 context.Context, v1 SiteConfigListOptions) ([]*SiteConfig, error) {
+	r0, r1 := m.ListSiteConfigsFunc.nextHook()(v0, v1)
+	m.ListSiteConfigsFunc.appendCall(ConfStoreListSiteConfigsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListSiteConfigs
+// method of the parent MockConfStore instance is invoked and the hook queue
+// is empty.
+func (f *ConfStoreListSiteConfigsFunc) SetDefaultHook(hook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSiteConfigs method of the parent MockConfStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ConfStoreListSiteConfigsFunc) PushHook(hook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ConfStoreListSiteConfigsFunc) SetDefaultReturn(r0 []*SiteConfig, r1 error) {
+	f.SetDefaultHook(func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ConfStoreListSiteConfigsFunc) PushReturn(r0 []*SiteConfig, r1 error) {
+	f.PushHook(func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+		return r0, r1
+	})
+}
+
+func (f *ConfStoreListSiteConfigsFunc) nextHook() func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ConfStoreListSiteConfigsFunc) appendCall(r0 ConfStoreListSiteConfigsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ConfStoreListSiteConfigsFuncCall objects
+// describing the invocations of this function.
+func (f *ConfStoreListSiteConfigsFunc) History() []ConfStoreListSiteConfigsFuncCall {
+	f.mutex.Lock()
+	history := make([]ConfStoreListSiteConfigsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ConfStoreListSiteConfigsFuncCall is an object that describes an
+// invocation of method ListSiteConfigs on an instance of MockConfStore.
+type ConfStoreListSiteConfigsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 SiteConfigListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*SiteConfig
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ConfStoreListSiteConfigsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ConfStoreListSiteConfigsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ConfStoreSiteCreateIfUpToDateFunc describes the behavior when the

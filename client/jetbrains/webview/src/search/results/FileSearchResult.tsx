@@ -3,7 +3,7 @@ import React from 'react'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
+import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'

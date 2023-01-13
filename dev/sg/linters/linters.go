@@ -69,7 +69,7 @@ var Targets = []Target{
 		Checks: []*linter{
 			tsEnterpriseImport,
 			inlineTemplates,
-			runScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			runScript("pnpm deduplicate", "dev/check/pnpm-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
 		},
 	},
@@ -119,7 +119,7 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	}
 }
 
-// yarnInstallFilter is a LineMap that filters out all the warning junk that yarn install
+// pnpmInstallFilter is a LineMap that filters out all the warning junk that pnpm install
 // emits that seem inconsequential, for example:
 //
 //	warning "@storybook/addon-storyshots > react-test-renderer@16.14.0" has incorrect peer dependency "react@^16.14.0".
@@ -130,7 +130,7 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 //	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
 //	warning Workspaces can only be enabled in private projects.
 //	warning Workspaces can only be enabled in private projects.
-func yarnInstallFilter() run.LineMap {
+func pnpmInstallFilter() run.LineMap {
 	return func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
 		// We can't seem to do a simple prefix check, so let's just do something lazy for
 		// now and figure it out later if it's an issue.
