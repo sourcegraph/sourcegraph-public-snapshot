@@ -4,24 +4,22 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
-import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
+import { exampleQueryColumns } from './QueryExamples.constants'
+import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
-import styles from './QueryExamplesHomepage.module.scss'
+import styles from './QueryExamples.module.scss'
 
-export interface QueryExamplesHomepageProps extends TelemetryProps {
+export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
-    authenticatedUser?: AuthenticatedUser | null
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -42,13 +40,12 @@ export const queryToTip = (id: string | undefined): Tip | null => {
     return null
 }
 
-export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
     queryState,
     setQueryState,
     isSourcegraphDotCom = false,
-    authenticatedUser,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()

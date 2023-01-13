@@ -10,8 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
-// TODO: move the component
-import { QueryExamplesHomepage } from '../../../../web/src/search/home/QueryExamplesHomepage'
+import { QueryExamples } from '../components/QueryExamples'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -82,7 +81,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     return (
         <div className={styles.root}>
             <div className={searchPageStyles.panelsContainer}>
-                <QueryExamplesHomepage
+                <QueryExamples
                     // TODO:
                     // selectedSearchContextSpec={props.selectedSearchContextSpec}
                     telemetryService={telemetryService}

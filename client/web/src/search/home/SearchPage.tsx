@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -22,7 +23,6 @@ import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { CloudCtaHomepage } from './CloudCtaHomepage'
-import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -112,7 +112,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
                     <div>
                         <CloudCtaHomepage authenticatedUser={props.authenticatedUser} />
-                        <QueryExamplesHomepage
+                        <QueryExamples
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
                             queryState={queryState}
