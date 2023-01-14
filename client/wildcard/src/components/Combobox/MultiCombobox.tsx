@@ -326,7 +326,9 @@ export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactEle
     )
 }
 
-interface MultiComboboxOptionProps extends ComboboxOptionProps {}
+interface MultiComboboxOptionProps extends ComboboxOptionProps {
+    className?: string
+}
 
 export function MultiComboboxOption(props: MultiComboboxOptionProps): ReactElement {
     const { value, ...attributes } = props
