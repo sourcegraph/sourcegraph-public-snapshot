@@ -61,11 +61,6 @@ export interface StreamingSearchResultsListProps
      */
     resultClassName?: string
 
-    /**
-     * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
-     */
-    smartSearchEnabled?: boolean
-
     prefetchFile?: FilePrefetcher
 
     prefetchFileEnabled?: boolean
