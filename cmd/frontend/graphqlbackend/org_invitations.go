@@ -13,12 +13,12 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -345,14 +345,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 			return nil, err
 		}
 
-		// Schedule permission sync for user that accepted the invite
-		err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
-		if err != nil {
-			log15.Warn("schemaResolver.RespondToOrganizationInvitation.SchedulePermsSync",
-				"userID", a.UID,
-				"error", err,
-			)
-		}
+		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
+		permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
 	}
 	return &EmptyResponse{}, nil
 }

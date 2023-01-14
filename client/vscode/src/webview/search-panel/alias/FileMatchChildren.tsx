@@ -5,6 +5,7 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
@@ -12,7 +13,6 @@ import {
     appendSubtreeQueryParameter,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'

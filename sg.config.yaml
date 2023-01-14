@@ -718,6 +718,7 @@ commands:
         -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
         -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
         -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
+        -e PROMETHEUS_ADDITIONAL_FLAGS="--web.enable-lifecycle --web.enable-admin-api" \
         ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${PROMETHEUS_DISK}"
@@ -868,6 +869,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -940,6 +942,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -964,6 +967,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
 
   batches:
     requiresDevPrivate: true
@@ -989,6 +993,7 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+      - blobstore
       - batches-executor
       - batcheshelper-builder
 

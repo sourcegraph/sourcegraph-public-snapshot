@@ -322,6 +322,7 @@ type InsightViewFiltersResolver interface {
 type InsightViewSeriesDisplayOptionsResolver interface {
 	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
 	Limit(ctx context.Context) (*int32, error)
+	NumSamples() *int32
 }
 
 type InsightViewSeriesSortOptionsResolver interface {
@@ -395,6 +396,7 @@ type SeriesDisplayOptions struct {
 type SeriesDisplayOptionsInput struct {
 	SortOptions *SeriesSortOptionsInput
 	Limit       *int32
+	NumSamples  *int32
 }
 
 type SeriesSortOptions struct {

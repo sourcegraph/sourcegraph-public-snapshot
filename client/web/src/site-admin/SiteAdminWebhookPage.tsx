@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiCog, mdiDelete } from '@mdi/js'
 import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
@@ -17,6 +17,7 @@ import {
     PageHeader,
     Tooltip,
     ErrorAlert,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
@@ -95,7 +96,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                         variant="primary"
                                         display="inline"
                                     >
-                                        Edit
+                                        <Icon aria-hidden={true} svgPath={mdiCog} />
+                                        {' Edit'}
                                     </ButtonLink>
                                 </Tooltip>
                             </div>
@@ -124,7 +126,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                     >
                                         <>
                                             {isDeleting && <LoadingSpinner />}
-                                            Delete
+                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                            {' Delete'}
                                         </>
                                     </Button>
                                 </Tooltip>

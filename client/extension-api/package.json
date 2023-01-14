@@ -26,9 +26,8 @@
     "prepublish": "pnpm eslint && pnpm run docs"
   },
   "devDependencies": {
-    "typedoc": "^0.17.8",
     "graphql": "^15.4.0",
-    "signale": "^1.4.0"
+    "typedoc": "^0.17.8"
   },
   "peerDependencies": {
     "graphql": "^15.4.0"

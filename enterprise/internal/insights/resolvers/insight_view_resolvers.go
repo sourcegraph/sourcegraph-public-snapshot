@@ -102,6 +102,12 @@ func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Contex
 	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
 }
 
+func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
+	v := int32(i.seriesDisplayOptions.NumSamples)
+	return &v
+
+}
+
 type insightViewSeriesSortOptionsResolver struct {
 	seriesSortOptions *types.SeriesSortOptions
 }
@@ -192,7 +198,7 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 		}
 
 		for _, current := range i.view.Series {
-			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
 			if err != nil {
 				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 				return
@@ -201,12 +207,12 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 		}
 		i.totalSeries = len(resolvers)
 
-		sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
+		sortedAndLimitedResolvers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
 		if err != nil {
 			i.seriesErr = errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
 			return
 		}
-		i.seriesResolvers = sortedAndLimitedResovlers
+		i.seriesResolvers = sortedAndLimitedResolvers
 	})
 
 	return i.seriesResolvers, i.seriesErr
@@ -1093,9 +1099,17 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
+			numSamples := 30
+			if d.args.SeriesDisplayOptions.NumSamples != nil {
+				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
+				if numSamples > 90 {
+					numSamples = 90
+				}
+			}
 			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
 				Limit:       d.args.SeriesDisplayOptions.Limit,
+				NumSamples:  numSamples,
 			}
 		}
 		resolvers = append(resolvers, resolver)
@@ -1393,8 +1407,7 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 }
 
 func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
-	if licenseError != nil {
+	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
 		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
 		if err != nil {
 			return 0, errors.Wrap(err, "GetUnfrozenInsightCount")

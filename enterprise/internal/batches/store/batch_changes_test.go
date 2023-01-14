@@ -63,6 +63,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
+				BatchSpecID:     1742 + int64(i),
 				NamespaceUserID: tc.namespaceUserID,
 				NamespaceOrgID:  tc.namespaceOrgID,
 			}
@@ -75,7 +76,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			}
 
 			if !tc.draft {
-				c.BatchSpecID = 1742 + int64(i)
 				c.CreatorID = tc.creatorID
 				c.LastAppliedAt = clock.Now()
 				c.LastApplierID = tc.creatorID

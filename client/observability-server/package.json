@@ -21,6 +21,7 @@
     "signale": "^1.4.0"
   },
   "dependencies": {
+    "@opentelemetry/semantic-conventions": "^1.5.0",
     "lodash": "^4.17.20"
   }
 }

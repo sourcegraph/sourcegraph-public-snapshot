@@ -171,6 +171,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     RedirectUnsupportedBrowser?: boolean
 
     outboundRequestLogLimit?: number
+
+    /** Whether the feedback survey is enabled. */
+    disableFeedbackSurvey?: boolean
 }
 
 export interface BrandAssets {

@@ -7,10 +7,17 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "lint:js": "pnpm eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "pnpm jest"
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "test": "jest"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.24.0",
+    "monaco-yaml": "^3.2.1",
+    "path-browserify": "^1.0.1",
+    "rxjs": "^6.6.3"
   },
   "devDependencies": {
+    "@statoscope/webpack-plugin": "^5.24.0",
     "css-loader": "^6.7.2",
     "enhanced-resolve": "^5.9.3",
     "esbuild": "^0.16.10",
@@ -24,12 +31,6 @@
     "style-loader": "^3.3.1",
     "terser-webpack-plugin": "^5.3.6",
     "webpack": "^5.75.0",
-    "worker-loader": "^3.0.8",
-    "@statoscope/webpack-plugin": "^5.24.0"
-  },
-  "dependencies": {
-    "monaco-editor": "^0.24.0",
-    "monaco-yaml": "^3.2.1",
-    "path-browserify": "^1.0.1"
+    "worker-loader": "^3.0.8"
   }
 }

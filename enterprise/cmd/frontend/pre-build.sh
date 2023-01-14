@@ -8,9 +8,6 @@ parallel_run() {
 }
 
 echo "--- pnpm root"
-# mutex is necessary since frontend and the management-console can
-# run concurrent "pnpm" installs
-# TODO: This is no longer needed since the management console was removed.
 ./dev/ci/pnpm-install-with-retry.sh
 
 MAYBE_TIME_PREFIX=""

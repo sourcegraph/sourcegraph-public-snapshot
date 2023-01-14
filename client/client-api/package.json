@@ -14,9 +14,9 @@
     "@sourcegraph/extension-api-types": "workspace:*"
   },
   "dependencies": {
-    "sourcegraph": "workspace:*",
-    "@sourcegraph/template-parser": "workspace:*",
     "@sourcegraph/extension-api-classes": "^1.1.0",
+    "@sourcegraph/template-parser": "workspace:*",
+    "sourcegraph": "workspace:*",
     "utility-types": "^3.10.0"
   }
 }

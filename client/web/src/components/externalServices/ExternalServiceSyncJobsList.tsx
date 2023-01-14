@@ -2,23 +2,27 @@ import React, { useCallback } from 'react'
 
 import { useHistory } from 'react-router'
 import { Subject } from 'rxjs'
-import { delay, repeatWhen } from 'rxjs/operators'
+import { delay, repeatWhen, tap } from 'rxjs/operators'
 
-import { H3 } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceSyncJobListFields,
+    ExternalServiceSyncJobState,
     Scalars,
 } from '../../graphql-operations'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 
 import { queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
+import { EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
 import { ExternalServiceSyncJobNode, ExternalServiceSyncJobNodeProps } from './ExternalServiceSyncJobNode'
 
 interface ExternalServiceSyncJobsListProps {
     externalServiceID: Scalars['ID']
     updates: Subject<void>
+    updateSyncInProgress: (syncInProgress: boolean) => void
+    updateNumberOfRepos: (numberOfRepos: number) => void
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -27,6 +31,8 @@ interface ExternalServiceSyncJobsListProps {
 export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJobsListProps> = ({
     externalServiceID,
     updates,
+    updateSyncInProgress,
+    updateNumberOfRepos,
     queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
 }) => {
     const queryConnection = useCallback(
@@ -34,24 +40,36 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
             queryExternalServiceSyncJobs({
                 first: args.first ?? null,
                 externalService: externalServiceID,
-            }).pipe(repeatWhen(obs => obs.pipe(delay(1500)))),
-        [externalServiceID, queryExternalServiceSyncJobs]
+            }).pipe(
+                tap(({ nodes }) => {
+                    if (nodes?.length > 0 && nodes[0]) {
+                        const syncJob = nodes[0]
+                        const state = syncJob.state
+                        updateSyncInProgress(EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(state))
+                        if (state === ExternalServiceSyncJobState.COMPLETED) {
+                            updateNumberOfRepos(syncJob.reposSynced)
+                        }
+                    }
+                }),
+                repeatWhen(obs => obs.pipe(delay(1500)))
+            ),
+        [externalServiceID, queryExternalServiceSyncJobs, updateSyncInProgress, updateNumberOfRepos]
     )
 
     const history = useHistory()
 
     return (
         <>
-            <H3 className="mt-3">Recent sync jobs</H3>
+            <H2 className="mt-3">Recent sync jobs</H2>
             <FilteredConnection<
                 ExternalServiceSyncJobListFields,
                 Omit<ExternalServiceSyncJobNodeProps, 'node'>,
                 {},
                 ExternalServiceSyncJobConnectionFields
             >
-                className="mb-0"
-                listClassName="list-group list-group-flush mb-0"
+                className="mb-0 mt-1"
                 noun="sync job"
+                listClassName="list-group-flush"
                 pluralNoun="sync jobs"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceSyncJobNode}

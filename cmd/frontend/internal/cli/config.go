@@ -587,6 +587,9 @@ func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexedEndpoints = endpoint.New(addr)
+		} else {
+			// It is OK to have no indexed search endpoints.
+			indexedEndpoints = endpoint.Static()
 		}
 	})
 	return indexedEndpoints

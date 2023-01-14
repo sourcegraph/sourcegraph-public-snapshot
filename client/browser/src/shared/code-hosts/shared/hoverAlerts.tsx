@@ -59,7 +59,7 @@ export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOver
     buttons: [
         <ButtonLink
             key="learn_more"
-            href="https://docs.sourcegraph.com/admin/repo/add"
+            href="/help/admin/repo/add"
             className={codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''}
             target="_blank"
             rel="noopener norefferer"

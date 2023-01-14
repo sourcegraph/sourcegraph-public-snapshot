@@ -14,8 +14,8 @@
     "@sourcegraph/extension-api-types": "workspace:*",
     "expect": "^27.5.1",
     "graphql": "^15.4.0",
-    "mockdate": "^3.0.2",
-    "jest-fetch-mock": "^3.0.3"
+    "jest-fetch-mock": "^3.0.3",
+    "mockdate": "^3.0.2"
   },
   "dependencies": {
     "delay": "^4.4.1",
