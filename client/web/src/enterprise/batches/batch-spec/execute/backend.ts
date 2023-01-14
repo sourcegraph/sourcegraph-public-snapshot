@@ -109,7 +109,9 @@ const batchSpecWorkspaceFieldsFragment = gql`
         ifCondition
         cachedResultFound
         skipped
-        outputLines
+        outputLines {
+            nodes
+        }
         startedAt
         finishedAt
         exitCode
