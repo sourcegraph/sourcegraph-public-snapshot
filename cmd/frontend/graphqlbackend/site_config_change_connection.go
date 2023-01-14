@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -14,10 +13,6 @@ type SiteConfigurationChangeConnectionResolver struct {
 }
 
 type SiteConfigurationChangeConnectionResolverArgs struct {
-}
-
-func (r SiteConfigurationChangeConnectionResolver) ID() graphql.ID {
-	return graphql.ID("FIXME")
 }
 
 // FIXME: Do we need more args here?
@@ -42,7 +37,7 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		opt.OrderByDirection = database.DescendingOrderByDirection
 	}
 
-	history, err := s.db.Conf().ListSiteConfig(ctx, opt)
+	history, err := s.db.Conf().ListSiteConfigs(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
