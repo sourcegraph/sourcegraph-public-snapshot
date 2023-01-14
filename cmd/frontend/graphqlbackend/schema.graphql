@@ -4083,7 +4083,17 @@ type CodeIntelGitBlob {
     """
     The content of this blob.
     """
-    content: String!
+    # /* content: String! */
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -4911,7 +4921,18 @@ type CodeIntelGitTree {
     """
     The content of this blob.
     """
-    content: String!
+    # content: String!
+
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """

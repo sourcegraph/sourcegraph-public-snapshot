@@ -262,13 +262,18 @@ type PositionResolver interface {
 	Character() int32
 }
 
+type ContentPageArgs struct {
+	StartLine *int32
+	EndLine   *int32
+}
+
 type GitTreeEntryResolver interface {
 	Path() string
 	Name() string
 	ToGitTree() (GitTreeEntryResolver, bool)
 	ToGitBlob() (GitTreeEntryResolver, bool)
 	ByteSize(ctx context.Context) (int32, error)
-	Content(ctx context.Context) (string, error)
+	Content(ctx context.Context, args *ContentPageArgs) (string, error)
 	Commit() GitCommitResolver
 	Repository() RepositoryResolver
 	CanonicalURL() string

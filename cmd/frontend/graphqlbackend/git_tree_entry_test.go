@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -51,7 +52,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background())
+	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,13 +137,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 			commit: &GitCommitResolver{
 				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 			},
-			stat:      CreateFileInfo(wantPath, true),
-			startLine: &tc.startLine,
-			endLine:   &tc.endLine,
+			stat: CreateFileInfo(wantPath, true),
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-		newFileContent, err := gitTree.Content(context.Background())
+		newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{StartLine: &tc.startLine, EndLine: &tc.endLine})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,13 +173,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 		commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat:      CreateFileInfo(wantPath, true),
-		startLine: nil,
-		endLine:   nil,
+		stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background())
+	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
 	if err != nil {
 		t.Fatal(err)
 	}

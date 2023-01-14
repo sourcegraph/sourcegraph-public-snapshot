@@ -1008,7 +1008,7 @@ type dummyFileResolver struct {
 func (d *dummyFileResolver) Path() string      { return d.path }
 func (d *dummyFileResolver) Name() string      { return d.name }
 func (d *dummyFileResolver) IsDirectory() bool { return false }
-func (d *dummyFileResolver) Content(ctx context.Context) (string, error) {
+func (d *dummyFileResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	return d.content(ctx)
 }
 
@@ -1031,7 +1031,7 @@ func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (d *dummyFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (d *dummyFileResolver) RichHTML(ctx context.Context, _ *GitTreeContentPageArgs) (string, error) {
 	return d.richHTML, nil
 }
 

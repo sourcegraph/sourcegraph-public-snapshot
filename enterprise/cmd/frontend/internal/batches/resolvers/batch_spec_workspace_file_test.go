@@ -34,10 +34,10 @@ func (m *mockFileResolver) ByteSize(ctx context.Context) (int32, error) {
 func (m *mockFileResolver) TotalLines(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
-func (m *mockFileResolver) Content(ctx context.Context) (string, error) {
+func (m *mockFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
-func (m *mockFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (m *mockFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 func (m *mockFileResolver) URL(ctx context.Context) (string, error) {
@@ -161,7 +161,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "Content",
 				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background())
+					return resolver.Content(context.Background(), nil)
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -176,7 +176,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "RichHTML",
 				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background())
+					return resolver.RichHTML(context.Background(), nil)
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -306,7 +306,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "Content",
 				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background())
+					return resolver.Content(context.Background(), nil)
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -321,7 +321,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "RichHTML",
 				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background())
+					return resolver.RichHTML(context.Background(), nil)
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
