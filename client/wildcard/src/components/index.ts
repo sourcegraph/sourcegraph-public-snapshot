@@ -72,6 +72,13 @@ export {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxOptionGroup,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
 } from './Combobox'
 
 /**
@@ -94,6 +101,7 @@ export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+export type { MultiComboboxProps } from './Combobox'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

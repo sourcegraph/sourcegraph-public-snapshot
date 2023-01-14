@@ -5,6 +5,7 @@ import {
     ReactNode,
     ReactElement,
     InputHTMLAttributes,
+    MouseEvent,
     PropsWithChildren,
     createContext,
     useContext,
@@ -38,6 +39,7 @@ import {
     ComboboxOption,
     ComboboxOptionText,
     ComboboxProps,
+    ComboboxOptionProps,
 } from './Combobox'
 
 import styles from './MultiCombobox.module.scss'
@@ -45,6 +47,7 @@ import styles from './MultiCombobox.module.scss'
 interface MultiComboboxContextData<T> {
     // Internal component state
     inputElement: HTMLElement | null
+    tether: TetherInstanceAPI | null
     isPopoverOpen: boolean
 
     // Internal sub-component setters
@@ -63,6 +66,7 @@ interface MultiComboboxContextData<T> {
 
 const MultiComboboxContext = createContext<MultiComboboxContextData<any>>({
     inputElement: null,
+    tether: null,
     isPopoverOpen: false,
 
     setTether: noop,
@@ -77,7 +81,7 @@ const MultiComboboxContext = createContext<MultiComboboxContextData<any>>({
     onSelectedItemsChange: noop,
 })
 
-interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
+export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     selectedItems: T[]
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
@@ -119,6 +123,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
     const memoizedContextValue = useMemo(
         () => ({
             inputElement,
+            tether,
             isPopoverOpen,
             setTether,
             setInputElement,
@@ -132,6 +137,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
         }),
         [
             inputElement,
+            tether,
             isPopoverOpen,
             setTether,
             setInputElement,
@@ -163,7 +169,7 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
         <ComboboxInput
             ref={reference}
             as={MultiValueInput}
-            selectOnClick={true}
+            selectOnClick={false}
             autocomplete={false}
             value={value.toString()}
             {...attributes}
@@ -218,8 +224,6 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
         const isLastElementDeleted = index === selectedItems.length - 1
         const newSelectedItems = selectedItems.filter(item => getItemKey(item) !== getItemKey(deletedItem))
 
-        onSelectedItemsChange(newSelectedItems)
-
         if (isLastElementDeleted) {
             // If it was the last element pill move focus to the editor
             inputRef.current?.focus()
@@ -229,6 +233,8 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
                 ?.querySelector<HTMLButtonElement>(`[data-multibox-pill]:nth-child(${index + 2}) button`)
                 ?.focus()
         }
+
+        onSelectedItemsChange(newSelectedItems)
     }
 
     const handleFocus = (event: FocusEvent<HTMLInputElement>): void => {
@@ -246,7 +252,13 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
             {selectedItems.map((item, index) => (
                 <li key={getItemKey(item)} data-multibox-pill={true} className={styles.pill}>
                     <span className={styles.pillText}>{getItemName(item)}</span>
-                    <Button variant="icon" className={styles.removePill} onClick={() => handleItemDelete(item, index)}>
+                    <Button
+                        type="button"
+                        variant="icon"
+                        className={styles.removePill}
+                        onClick={() => handleItemDelete(item, index)}
+                        onMouseDown={event => event.preventDefault()}
+                    >
                         <Icon svgPath={mdiClose} aria-label="deselect item" />
                     </Button>
                 </li>
@@ -266,9 +278,13 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
 
 export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): ReactElement {
     const { className, style, ...attributes } = props
-    const { inputElement, isPopoverOpen, setTether } = useContext(MultiComboboxContext)
+    const { inputElement, isPopoverOpen, tether, setTether } = useContext(MultiComboboxContext)
 
     const [, { width: inputWidth }] = useMeasure(inputElement, 'boundingRect')
+
+    useLayoutEffect(() => {
+        tether?.forceUpdate()
+    }, [inputWidth, tether])
 
     return (
         <PopoverContent
@@ -310,8 +326,19 @@ export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactEle
     )
 }
 
-export {
-    ComboboxOptionGroup as MultiComboboxOptionGroup,
-    ComboboxOption as MultiComboboxOption,
-    ComboboxOptionText as MultiComboboxOptionText,
+interface MultiComboboxOptionProps extends ComboboxOptionProps {}
+
+export function MultiComboboxOption(props: MultiComboboxOptionProps): ReactElement {
+    const { value, ...attributes } = props
+
+    const { onItemSelect } = useContext(MultiComboboxContext)
+
+    const handleItemClick = (event: MouseEvent<HTMLLIElement>): void => {
+        event.preventDefault()
+        onItemSelect(value)
+    }
+
+    return <ComboboxOption {...attributes} value={value} onMouseDown={handleItemClick} />
 }
+
+export { ComboboxOptionGroup as MultiComboboxOptionGroup, ComboboxOptionText as MultiComboboxOptionText }

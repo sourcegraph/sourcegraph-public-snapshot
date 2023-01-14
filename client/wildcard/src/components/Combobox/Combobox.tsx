@@ -187,7 +187,7 @@ export const ComboboxOptionGroup = forwardRef((props, ref) => {
     )
 }) as ForwardReferenceComponent<'div', ComboboxOptionGroupProps>
 
-interface ComboboxOptionProps extends ReachComboboxOptionProps {
+export interface ComboboxOptionProps extends ReachComboboxOptionProps {
     disabled?: boolean
     selected?: boolean
 }
