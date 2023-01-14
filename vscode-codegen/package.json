@@ -55,7 +55,13 @@
       "type": "object",
       "title": "Codebot extension settings",
       "properties": {
-        "conf.codebot.serverEndpoint": {
+        "codebot.conf.serverEndpoint": {
+          "type": "string"
+        },
+        "codebot.conf.embeddingsEndpoint": {
+          "type": "string"
+        },
+        "codebot.conf.codebaseID": {
           "type": "string"
         }
       }
@@ -63,18 +69,21 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run copy-static && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "unittest": "mocha ./out/test/unittest"
+    "unittest": "mocha ./out/test/unittest",
+    "copy-static": "mkdir -p ./out/static && rsync -r ./src/static/ ./out/static",
+    "watch:copy-static": "nodemon --watch ./src/static/ -e js,css,html -x \"npm run copy-static\""
   },
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
@@ -87,9 +96,19 @@
   "dependencies": {
     "@completion/sampling": "^0.1.1",
     "@sourcegraph/cody-common": "^0.0.0",
+    "@types/axios": "^0.14.0",
+    "@types/escape-html": "^1.0.2",
+    "@types/highlight.js": "^10.1.0",
+    "@types/marked": "^4.0.8",
+    "@types/sanitize-html": "^2.8.0",
+    "axios": "^1.2.2",
     "chai": "^4.3.7",
+    "escape-html": "^1.0.3",
+    "highlight.js": "^11.7.0",
     "isomorphic-ws": "^5.0.0",
+    "marked": "^4.2.5",
     "openai": "^3.1.0",
+    "sanitize-html": "^2.8.1",
     "vscode-uri": "^3.0.7",
     "ws": "^8.11.0"
   },

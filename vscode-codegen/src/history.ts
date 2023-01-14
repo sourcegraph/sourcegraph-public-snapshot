@@ -1,7 +1,11 @@
 import * as vscode from "vscode";
 import { getSymbols } from "./vscode-utils";
 import { SymbolKind } from "vscode";
-import { InflatedHistoryItem, HistoryItem, InflatedSymbol } from "@sourcegraph/cody-common";
+import {
+	InflatedHistoryItem,
+	HistoryItem,
+	InflatedSymbol,
+} from "@sourcegraph/cody-common";
 
 export class History {
 	window = 10;

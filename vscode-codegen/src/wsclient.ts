@@ -31,7 +31,6 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 			}
 			const handler = this.responseListeners[msg.requestId];
 			if (!handler) {
-				console.error(`did not find handler for requestId ${msg.requestId}`);
 				return;
 			}
 			const isLastResponse = handler(msg);
@@ -84,7 +83,7 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 	async sendRequest(
 		req: TRequest,
 		handleResponse: (resp: TResponse) => boolean
-	): Promise<void> {
+	): Promise<() => void> {
 		const requestId = this.nextRequestId++;
 		this.responseListeners[requestId] = handleResponse;
 		const reqWithId = {
@@ -98,5 +97,10 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 				throw new Error(`failed to send websocket request: ${err}`);
 			}
 		});
+
+		// A callback to close (or ignore the responses for) the current request.
+		return () => {
+			delete this.responseListeners[requestId];
+		};
 	}
 }
