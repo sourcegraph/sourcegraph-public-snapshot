@@ -35,10 +35,10 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
     const { filters, selectedFilters, onFiltersChange, className } = props
 
     const id = useId()
-    const [value, setValue] = useState('')
+    const [searchTerm, setSearchTerm] = useState('')
 
     // Render only non-selected filters and filters that match with search term value
-    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.includes(value))
+    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.includes(searchTerm))
 
     return (
         <Label htmlFor={id} className={classNames(className, styles.root)}>
@@ -55,9 +55,9 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
             >
                 <MultiComboboxInput
                     id={id}
-                    value={value}
+                    value={searchTerm}
                     placeholder="Select filter..."
-                    onChange={event => setValue(event.target.value)}
+                    onChange={event => setSearchTerm(event.target.value)}
                 />
 
                 <MultiComboboxPopover>
@@ -71,7 +71,11 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
 
                     {suggestions.length === 0 && (
                         <span className={styles.noFilters}>
-                            All filters are selected, there are no any other filters
+                            {!searchTerm ? (
+                                <>All filters are selected, there are no any other filters</>
+                            ) : (
+                                <>No options</>
+                            )}
                         </span>
                     )}
                 </MultiComboboxPopover>
