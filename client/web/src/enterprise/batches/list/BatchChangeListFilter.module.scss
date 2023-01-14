@@ -1,0 +1,14 @@
+.root {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    // Normalize font-wight within Label element
+    font-weight: normal;
+}
+
+.no-filters {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.5rem;
+}
