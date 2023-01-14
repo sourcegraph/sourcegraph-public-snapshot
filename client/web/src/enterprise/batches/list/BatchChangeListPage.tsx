@@ -83,7 +83,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
-    const { selectedFilters, setSelectedFilters, selectedStates } = useBatchChangeListFilters()
+    const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
         openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
     )
@@ -118,7 +118,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
         variables: {
             namespaceID,
-            states: selectedStates,
+            states: selectedFilters,
             first: BATCH_CHANGES_PER_PAGE_COUNT,
             after: null,
             viewerCanAdminister: null,
@@ -206,10 +206,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                 )}
 
                                 <BatchChangeListFilters
+                                    filters={availableFilters}
+                                    selectedFilters={selectedFilters}
+                                    onFiltersChange={setSelectedFilters}
                                     className="m-0"
-                                    isExecutionEnabled={isExecutionEnabled}
-                                    value={selectedFilters}
-                                    onChange={setSelectedFilters}
                                 />
                             </div>
                             {error && <ConnectionError errors={[error.message]} />}

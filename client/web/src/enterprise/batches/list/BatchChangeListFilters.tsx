@@ -1,37 +1,81 @@
-import React from 'react'
+import { FC, useId, useState } from 'react'
 
-import { H3, H4, MultiSelect, MultiSelectOption, MultiSelectProps } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import {
+    H3,
+    H4,
+    Label,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxOption,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../../graphql-operations'
 
-export const OPEN_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Open', value: BatchChangeState.OPEN }
-export const DRAFT_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Draft', value: BatchChangeState.DRAFT }
-export const CLOSED_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Closed', value: BatchChangeState.CLOSED }
+import styles from './BatchChangeListFilter.module.scss'
 
-export const STATUS_OPTIONS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, DRAFT_STATUS, CLOSED_STATUS]
-// Drafts are a new feature of severside execution that for now should not be shown if
-// execution is not enabled.
-const STATUS_OPTIONS_NO_DRAFTS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, CLOSED_STATUS]
+/** Returns string with capitalized first letter */
+const format = (filter: BatchChangeState): string => {
+    const str = filter.toString()
 
-interface BatchChangeListFiltersProps
-    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'value'>> {
-    className?: string
-    isExecutionEnabled: boolean
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
-export const BatchChangeListFilters: React.FunctionComponent<React.PropsWithChildren<BatchChangeListFiltersProps>> = ({
-    isExecutionEnabled,
-    ...props
-}) => (
-    <>
-        {/* TODO: This should be a proper label. MultiSelect currently doesn't support that being inline though, so this is for later. */}
-        <H4 as={H3} className="mb-0 mr-2">
-            Status
-        </H4>
-        <MultiSelect
-            {...props}
-            options={isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS}
-            aria-label="Select batch change status to filter."
-        />
-    </>
-)
+interface BatchChangeListFiltersProps {
+    filters: BatchChangeState[]
+    selectedFilters: BatchChangeState[]
+    onFiltersChange: (filters: BatchChangeState[]) => void
+    className?: string
+}
+
+export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => {
+    const { filters, selectedFilters, onFiltersChange, className } = props
+
+    const id = useId()
+    const [value, setValue] = useState('')
+
+    // Render only non-selected filters and filters that match with search term value
+    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.includes(value))
+
+    return (
+        <Label htmlFor={id} className={classNames(className, styles.root)}>
+            <H4 as={H3} className="mb-0 mr-2">
+                Status
+            </H4>
+
+            <MultiCombobox
+                selectedItems={selectedFilters}
+                getItemName={format}
+                getItemKey={format}
+                onSelectedItemsChange={onFiltersChange}
+                aria-label="Select batch change status to filter."
+            >
+                <MultiComboboxInput
+                    id={id}
+                    value={value}
+                    placeholder="Select filter..."
+                    onChange={event => setValue(event.target.value)}
+                />
+
+                <MultiComboboxPopover>
+                    <MultiComboboxList items={suggestions}>
+                        {filters =>
+                            filters.map((filter, index) => (
+                                <MultiComboboxOption key={filter.toString()} value={format(filter)} index={index} />
+                            ))
+                        }
+                    </MultiComboboxList>
+
+                    {suggestions.length === 0 && (
+                        <span className={styles.noFilters}>
+                            All filters are selected, there are no any other filters
+                        </span>
+                    )}
+                </MultiComboboxPopover>
+            </MultiCombobox>
+        </Label>
+    )
+}
