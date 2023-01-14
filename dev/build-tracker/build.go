@@ -23,6 +23,12 @@ type Build struct {
 
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
 	ConsecutiveFailure int `json:"consecutiveFailures"`
+
+	// Notification is the details about the notification that was sent for this build
+	Notification *SlackNotification
+
+	// Mutex is used to to control and stop other changes being made to the build
+	sync.Mutex
 }
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
@@ -90,6 +96,10 @@ func (b *Build) failedJobs() []*Job {
 	}
 
 	return result
+}
+
+func (b *Build) hasNotification() bool {
+	return b.Notification != nil
 }
 
 type Job struct {
@@ -203,6 +213,10 @@ func (s *BuildStore) Add(event *Event) {
 		build = event.build()
 		s.builds[event.buildNumber()] = build
 	}
+
+	// Now that we have a build, lets make sure it isn't modified while we look and possibly update it
+	build.Lock()
+	defer build.Unlock()
 
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data
