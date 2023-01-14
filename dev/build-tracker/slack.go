@@ -154,6 +154,9 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
 		j := failedJobs[i]
 		jobSection += fmt.Sprintf("• %s", *j.Name)
+		if j.hasTimedOut() {
+			jobSection += "(Timed out)"
+		}
 		if j.WebURL != "" {
 			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
 		}

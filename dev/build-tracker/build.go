@@ -122,6 +122,14 @@ func (j *Job) failed() bool {
 	return !j.SoftFailed && j.exitStatus() > 0
 }
 
+func (j *Job) state() string {
+	return strp(j.State)
+}
+
+func (j *Job) hasTimedOut() bool {
+	return j.state() == "timed_out"
+}
+
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
 	buildkite.Pipeline `json:"pipeline"`
