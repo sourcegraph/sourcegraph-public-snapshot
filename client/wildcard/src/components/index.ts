@@ -24,7 +24,6 @@ export {
     LoaderInput,
     RadioButton,
     Select,
-    MultiSelect,
     TextArea,
     InputStatus,
     getInputStatus,
@@ -87,7 +86,6 @@ export {
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
