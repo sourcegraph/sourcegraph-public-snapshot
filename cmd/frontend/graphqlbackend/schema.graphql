@@ -5112,7 +5112,7 @@ interface File2 {
     """
     byteSize: Int!
     """
-    Total line count for the file.
+    Total line count for the file. Returns 0 for binary files.
     """
     totalLines: Int!
     """
@@ -5211,7 +5211,7 @@ type VirtualFile implements File2 {
     """
     byteSize: Int!
     """
-    Total line count for the file.
+    Total line count for the file. Returns 0 for binary files.
     """
     totalLines: Int!
     """
@@ -5336,7 +5336,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     byteSize: Int!
     """
-    Total line count for the Blob.
+    Total line count for the Blob. Returns 0 for binary files.
     """
     totalLines: Int!
     """

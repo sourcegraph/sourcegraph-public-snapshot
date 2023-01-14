@@ -23,8 +23,8 @@ import { useExperimentalFeatures } from '../../stores'
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
-    startLine = 0,
-    endLine = -1,
+    startLine = null,
+    endLine = null,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
@@ -46,8 +46,8 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
-    startLine?: number
-    endLine?: number
+    startLine?: number | null
+    endLine?: number | null
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
@@ -58,6 +58,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
     // include LSIF because this is used for languages that are configured
     // to be processed with tree sitter (and is used when explicitly
     // requested via JSON_SCIP).
+    // !format is safe because of: applyDefaultValuesToFetchBlobOptions
     const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
     return requestGraphQL<BlobResult, BlobVariables>(
         gql`

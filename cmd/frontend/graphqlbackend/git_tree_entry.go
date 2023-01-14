@@ -80,12 +80,18 @@ func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileRes
 }
 
 func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
+	// If it is a binary, return 0
+	binary, err := r.Binary(ctx)
+	if err != nil || binary {
+		return 0, err
+	}
+
 	// We only care about the full content length here, so we just need content to be set.
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(content)), nil
+	return int32(len(strings.Split(content, "\n"))), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {

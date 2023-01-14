@@ -140,7 +140,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-		newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
+		newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{
+			StartLine: &tc.startLine,
+			EndLine:   &tc.endLine,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}

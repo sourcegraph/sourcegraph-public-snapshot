@@ -94,6 +94,11 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 }
 
 func (r *batchSpecWorkspaceFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	// If it is a binary, return 0
+	binary, err := r.Binary(ctx)
+	if err != nil || binary {
+		return 0, err
+	}
 	return int32(len(strings.Split(string(r.file.Content), "\n"))), nil
 }
 

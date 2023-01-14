@@ -65,6 +65,11 @@ func (r *VirtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
 }
 
 func (r *VirtualFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	// If it is a binary, return 0
+	binary, err := r.Binary(ctx)
+	if err != nil || binary {
+		return 0, err
+	}
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err

@@ -3531,7 +3531,7 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     """
     byteSize: Int!
     """
-    Total line count for the Blob.
+    Total line count for the Blob. Returns 0 for binary files.
     """
     totalLines: Int!
     """
