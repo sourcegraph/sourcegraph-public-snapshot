@@ -207,7 +207,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 
   When combined with `"allowSignup": true`, only members of the allowed teams can create their accounts in Sourcegraph via GitHub authentication.
 
-  If set with `"allowSignup": false` or if `allowSignup` is unset, an admim should first create the new users accounts so that they can login with GitHub.
+  If set with `"allowSignup": false` or if `allowSignup` is unset, an admin should first create the new users accounts so that they can login with GitHub.
 
   In case both `allowOrgs` and `allowOrgsMap` filters are configured, org membership (`allowOrgs`) will be checked first. Only if the user doesn't belong to any of the listed organizations then team membership (`allowOrgsMap`) will be checked.
 
@@ -294,7 +294,7 @@ You can use the following filters to control how users can create accounts and s
 
   When empty or unset, no restrictions will be applied.
 
-  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+  If combined with `"allowSignup": false`, an admin should first create the user account so that the user can sign in with GitLab.
 
   If combined with `"allowSignup": true` or with `allowSignup` unset, only members of  the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
 
