@@ -4083,7 +4083,16 @@ type CodeIntelGitBlob {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -4658,16 +4667,12 @@ type GitCommit implements Node {
     """
     The Git blob in this commit at the given path.
     """
-    blob(
-        path: String!
-    ): GitBlob
+    blob(path: String!): GitBlob
     """
     The file at the given path for this commit.
     See "File" documentation for the difference between this field and the "blob" field.
     """
-    file(
-        path: String!
-    ): File2
+    file(path: String!): File2
     """
     Lists the programming languages present in the tree at this commit.
     """
@@ -4911,7 +4916,16 @@ type CodeIntelGitTree {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """

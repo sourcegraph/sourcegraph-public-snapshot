@@ -51,7 +51,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background())
+	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,13 +136,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 			commit: &GitCommitResolver{
 				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 			},
-			stat:      CreateFileInfo(wantPath, true),
-			startLine: &tc.startLine,
-			endLine:   &tc.endLine,
+			stat: CreateFileInfo(wantPath, true),
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-		newFileContent, err := gitTree.Content(context.Background())
+		newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,13 +172,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 		commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat:      CreateFileInfo(wantPath, true),
-		startLine: nil,
-		endLine:   nil,
+		stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background())
+	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
 	if err != nil {
 		t.Fatal(err)
 	}
