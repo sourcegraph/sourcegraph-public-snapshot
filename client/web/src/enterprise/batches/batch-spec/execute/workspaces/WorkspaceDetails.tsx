@@ -493,9 +493,10 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
 
     const outputLines = useMemo(() => {
         const outputLines = cloneDeep(step.outputLines)
-        if (outputLines !== null) {
+        console.log(outputLines, '<=====')
+        if (outputLines.nodes !== null) {
             if (
-                outputLines.every(
+                outputLines.nodes.every(
                     line =>
                         line
                             .replaceAll(/'^std(out|err):'/g, '')
@@ -503,15 +504,15 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                             .trim() === ''
                 )
             ) {
-                outputLines.push('stdout: This command did not produce any output')
+                outputLines.nodes.push('stdout: This command did not produce any output')
             }
 
             if (step.exitCode === 0) {
-                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
+                outputLines.nodes.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
             }
 
             if (step.exitCode !== null && step.exitCode !== 0) {
-                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
+                outputLines.nodes.push(`stderr: Command failed with status ${step.exitCode}`)
             }
         }
 
@@ -581,7 +582,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         {!step.startedAt && (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
                                         )}
-                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
+                                        {step.startedAt && outputLines && outputLines.nodes.length > 0 && <LogOutput text={outputLines.nodes.join('\n')} />}
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="output-variables">
                                         {!step.startedAt && (

@@ -2486,7 +2486,7 @@ type BatchSpecWorkspaceStep {
         Return the log lines after N lines.
         """
         after: Int
-    ): [String!]
+    ): BatchSpecWorkspaceStepOutputLines
 
     """
     The time when the step started processing. Null, if not yet started.
@@ -2522,6 +2522,12 @@ type BatchSpecWorkspaceStep {
     The generated diff from this step. Null, if not yet finished.
     """
     diff: PreviewRepositoryComparison
+}
+
+type BatchSpecWorkspaceStepOutputLines {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [String!]!
 }
 
 """
