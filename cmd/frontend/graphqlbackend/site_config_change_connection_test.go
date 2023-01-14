@@ -92,10 +92,7 @@ func TestSiteConfigConnection(t *testing.T) {
 	conf.SiteGetLatestFunc.SetDefaultReturn(siteConfigs[len(siteConfigs)-1], nil)
 	db.ConfFunc.SetDefaultReturn(conf)
 
-	// FIXME: Possibly we can just use SetDefaultReturn if we're not modifying siteConfigs between tests.
-	conf.GetSiteConfigCountFunc.SetDefaultHook(func(context.Context) (int, error) {
-		return len(siteConfigs), nil
-	})
+	conf.GetSiteConfigCountFunc.SetDefaultReturn(len(siteConfigs), nil)
 	conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
 	conf.ListSiteConfigsFunc.SetDefaultHook(
 		func(ctx context.Context, opt database.SiteConfigListOptions) ([]*database.SiteConfig, error) {
