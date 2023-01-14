@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-const siteConfigurationKind = "SiteConfiguration"
+const siteConfigurationChangeKind = "SiteConfigurationChange"
 
 type SiteConfigurationChangeResolver struct {
 	db                 database.DB
@@ -19,12 +19,12 @@ type SiteConfigurationChangeResolver struct {
 }
 
 func (r SiteConfigurationChangeResolver) ID() graphql.ID {
-	return relay.MarshalID(siteConfigurationKind, r.siteConfig.ID)
+	return relay.MarshalID(siteConfigurationChangeKind, r.siteConfig.ID)
 }
 
 func (r SiteConfigurationChangeResolver) PreviousID() *graphql.ID {
 	if r.previousSiteConfig != nil {
-		id := relay.MarshalID(siteConfigurationKind, r.previousSiteConfig.ID)
+		id := relay.MarshalID(siteConfigurationChangeKind, r.previousSiteConfig.ID)
 		return &id
 	}
 
