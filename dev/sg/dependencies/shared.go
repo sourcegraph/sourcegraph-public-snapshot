@@ -136,6 +136,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			},
 			{
 				Name:  "pnpm",
+				Description: "Run `asdf install pnpm` or `npm i -g pnpm`",
 				Check: checkPnpmVersion,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "pnpm", ""); err != nil {
