@@ -121,22 +121,22 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset1.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset1.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset2.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset2.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset3.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset3.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename: "HiddenExternalChangeset",
-			ID:       string(marshalChangesetID(changeset4.ID)),
+			ID:       string(bgql.MarshalChangesetID(changeset4.ID)),
 		},
 	}
 

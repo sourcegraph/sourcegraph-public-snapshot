@@ -60,7 +60,7 @@ func TestNullIDResilience(t *testing.T) {
 
 	ids := []graphql.ID{
 		bgql.MarshalBatchChangeID(0),
-		marshalChangesetID(0),
+		bgql.MarshalChangesetID(0),
 		marshalBatchSpecRandID(""),
 		marshalChangesetSpecRandID(""),
 		marshalBatchChangesCredentialID(0, false),
@@ -89,8 +89,8 @@ func TestNullIDResilience(t *testing.T) {
 	mutations := []string{
 		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, bgql.MarshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, bgql.MarshalBatchChangeID(0)),
@@ -98,15 +98,15 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
 		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, bgql.MarshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
@@ -1760,7 +1760,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	generateInput := func() map[string]any {
 		return map[string]any{
 			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 			"body":        "test-body",
 		}
 	}
@@ -1798,7 +1798,7 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
 
 		if len(errs) != 1 {
@@ -1870,7 +1870,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	generateInput := func() map[string]any {
 		return map[string]any{
 			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -1894,7 +1894,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
 
 		if len(errs) != 1 {
@@ -1907,7 +1907,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	t.Run("successful changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(successfulChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(successfulChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
 
 		if len(errs) != 1 {
@@ -1981,7 +1981,7 @@ func TestMergeChangesets(t *testing.T) {
 	generateInput := func() map[string]any {
 		return map[string]any{
 			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -2005,7 +2005,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
 
 		if len(errs) != 1 {
@@ -2018,7 +2018,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	t.Run("merged changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
 
 		if len(errs) != 1 {
@@ -2092,7 +2092,7 @@ func TestCloseChangesets(t *testing.T) {
 	generateInput := func() map[string]any {
 		return map[string]any{
 			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -2116,7 +2116,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
 
 		if len(errs) != 1 {
@@ -2129,7 +2129,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	t.Run("merged changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
 
 		if len(errs) != 1 {
@@ -2226,8 +2226,8 @@ func TestPublishChangesets(t *testing.T) {
 		return map[string]any{
 			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
 			"changesets": []string{
-				string(marshalChangesetID(publishableChangeset.ID)),
-				string(marshalChangesetID(unpublishableChangeset.ID)),
+				string(bgql.MarshalChangesetID(publishableChangeset.ID)),
+				string(bgql.MarshalChangesetID(unpublishableChangeset.ID)),
 			},
 			"draft": true,
 		}
@@ -2253,7 +2253,7 @@ func TestPublishChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
 
 		if len(errs) != 1 {

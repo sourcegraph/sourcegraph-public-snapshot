@@ -619,7 +619,7 @@ func TestPermissionLevels(t *testing.T) {
 							batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
 						}
 					}
-					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					}`, tc.viewerCanAdminister, bgql.MarshalChangesetID(changeset.ID), tc.viewerCanAdminister)
 					var res struct {
 						BatchChanges apitest.BatchChangeConnection
 						Node         apitest.Changeset
@@ -1007,7 +1007,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
 								string(bgql.MarshalBatchChangeID(batchChangeID)),
-								string(marshalChangesetID(changeset.ID)),
+								string(bgql.MarshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
 
@@ -1744,7 +1744,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	t.Helper()
 
 	var res struct{ Node apitest.Changeset }
-	query := fmt.Sprintf(queryChangesetPermLevels, marshalChangesetID(id))
+	query := fmt.Sprintf(queryChangesetPermLevels, bgql.MarshalChangesetID(id))
 	apitest.MustExec(ctx, t, s, nil, &res, query)
 
 	if have, want := res.Node.Typename, wantType; have != want {
