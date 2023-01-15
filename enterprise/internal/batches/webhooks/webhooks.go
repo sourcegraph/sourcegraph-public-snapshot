@@ -9,19 +9,21 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 )
 
 var service struct {
 	once sync.Once
-	svc  outbound.OutboundWebhookService
+	key  encryption.Key
 }
 
 func getService(db basestore.ShareableStore) outbound.OutboundWebhookService {
 	service.once.Do(func() {
-		service.svc = outbound.NewOutboundWebhookService(db, nil)
+		service.key = keyring.Default().OutboundWebhookKey
 	})
-	return service.svc
+	return outbound.NewOutboundWebhookService(db, service.key)
 }
 
 // Enqueue creates an outbound webhook job that will dispatch a webhook of the
