@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SearcherClient interface {
+	// Search executes a search, streaming back its results
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (Searcher_SearchClient, error)
 }
 
@@ -69,6 +70,7 @@ func (x *searcherSearchClient) Recv() (*SearchResponse, error) {
 // All implementations must embed UnimplementedSearcherServer
 // for forward compatibility
 type SearcherServer interface {
+	// Search executes a search, streaming back its results
 	Search(*SearchRequest, Searcher_SearchServer) error
 	mustEmbedUnimplementedSearcherServer()
 }
