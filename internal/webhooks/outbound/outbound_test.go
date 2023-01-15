@@ -80,6 +80,7 @@ func TestCheckAddress(t *testing.T) {
 		goodURLS := []string{
 			"http://somesite.com/some-endpoint",
 			"https://my.webhooks.site/receiver",
+			"https://my.webhooks.site:3000/receiver",
 			"1.2.3.4",
 			"1.2.3.4:2000",
 			"2001:0db8:0000:0000:0000:8a2e:0370:7334",
