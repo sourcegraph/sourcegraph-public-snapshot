@@ -104,6 +104,7 @@
     "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",
     "@percy/cli": "^1.16.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
@@ -117,6 +118,7 @@
     "@sourcegraph/stylelint-plugin-sourcegraph": "^1.0.1",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@statoscope/cli": "^5.24.0",
+    "@statoscope/webpack-plugin": "^5.24.0",
     "@testing-library/dom": "^8.13.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.4.0",
@@ -199,6 +201,7 @@
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
+    "esbuild": "^0.16.10",
     "eslint": "^8.13.0",
     "eslint-plugin-monorepo": "^0.3.2",
     "events": "^3.3.0",
@@ -262,7 +265,6 @@
   "dependencies": {
     "@sourcegraph/extension-api-types": "workspace:*",
     "core-js": "^3.8.2",
-    "css-loader": "^6.7.2",
     "date-fns": "^2.16.1",
     "downshift": "^3.4.8",
     "eventsource": "1.1.1",
@@ -279,12 +281,14 @@
     "util": "^0.12.5"
   },
   "packageManager": "pnpm@7.24.2",
-  "resolutions": {
-    "@types/webpack": "5",
-    "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "webpack": "5",
-    "tslib": "2.1.0",
-    "jsprim": "1.4.2"
+  "pnpm": {
+    "overrides": {
+      "@types/webpack": "5",
+      "history": "4.5.1",
+      "cssnano": "4.1.10",
+      "webpack": "5",
+      "tslib": "2.1.0",
+      "jsprim": "1.4.2"
+    }
   }
 }

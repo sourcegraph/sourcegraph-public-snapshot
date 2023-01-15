@@ -31,7 +31,6 @@
     "@types/react": "18.0.8",
     "@types/react-dom": "18.0.2",
     "buffer": "^6.0.3",
-    "esbuild": "^0.16.10",
     "express": "^4.17.1",
     "jsdom": "^16.7.0",
     "process": "^0.11.10",

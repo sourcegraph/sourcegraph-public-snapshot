@@ -61,7 +61,6 @@
     "socket.io-client": "^4.5.2",
     "terser-webpack-plugin": "^5.3.6",
     "utc-version": "^2.0.2",
-    "webpack": "^5.75.0",
     "worker-loader": "^3.0.8"
   },
    "dependencies": {

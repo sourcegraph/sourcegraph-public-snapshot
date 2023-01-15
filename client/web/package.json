@@ -34,7 +34,6 @@
     "report-bundle-diff": "ts-node scripts/report-bundle-diff"
   },
   "devDependencies": {
-    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
     "@sentry/webpack-plugin": "^1.20.0",
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
@@ -57,7 +56,6 @@
     "compression-webpack-plugin": "^10.0.0",
     "connect-history-api-fallback": "^1.6.0",
     "css-minimizer-webpack-plugin": "^4.2.2",
-    "esbuild": "^0.16.10",
     "expect": "^27.5.1",
     "express": "^4.17.1",
     "express-static-gzip": "^2.1.1",
@@ -78,9 +76,7 @@
     "sinon": "^9.0.2",
     "style-loader": "^3.3.1",
     "ts-node": "^10.7.0",
-    "webpack": "^5.75.0",
     "webpack-dev-server": "^4.11.1",
-    "webpack-manifest-plugin": "^5.0.0",
     "webpack-stats-plugin": "^1.1.1",
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8"
