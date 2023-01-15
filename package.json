@@ -23,7 +23,7 @@
     "lint:css:changed": "pnpm _lint:css --allow-empty-input \"*.none\" $(git diff --diff-filter=d --name-only origin/main... | grep -E '.s?css$' | xargs)",
     "lint:css:all": "pnpm _lint:css 'client/*/src/**/*.scss'",
     "lint:graphql": "graphql-schema-linter",
-    "build-ts": "tsc -b tsconfig.all.json",
+    "build-ts": "tsc --build tsconfig.all.json --emitDeclarationOnly",
     "build-web": "pnpm --filter @sourcegraph/web run build",
     "watch-web": "pnpm --filter @sourcegraph/web run watch",
     "generate": "gulp generate",
