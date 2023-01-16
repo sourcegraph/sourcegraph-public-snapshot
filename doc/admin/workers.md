@@ -70,7 +70,7 @@ This job was split from the other Code Insights background processes so that it 
 
 #### `insights-data-retention-job`
 
-This job is responsible for periodically archiving code insights data points that are beyond the maximum sample size as specified by the site config setting `insights.maximumSampleSize`. It dequeues jobs which are enqueued from the `insights-job` worker in the retention job enqueuer routine. 
+This job is responsible for periodically archiving code insights data points that are beyond the maximum sample size as specified by the site config setting `insights.maximumSampleSize`. It dequeues jobs which are enqueued from the `insights-job` worker in the retention job enqueuer routine. Data will only be archived if the experimental setting `insightsDataRetention` is enabled.
 
 #### `webhook-log-janitor`
 
