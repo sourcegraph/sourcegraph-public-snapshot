@@ -597,7 +597,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	assertCount(t, ReposListOptions{}, 1)
 }
 
-func TestRepos_List_IsCorrupted(t *testing.T) {
+func TestRepos_List_OnlyCorrupted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

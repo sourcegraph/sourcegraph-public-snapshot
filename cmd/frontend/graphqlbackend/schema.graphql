@@ -1325,7 +1325,7 @@ type Query {
         """
         Include repositories that are corrupt
         """
-        isCorrupted: Boolean = false
+        corrupted: Boolean = false
         """
         Return repositories that are associated with the given external service.
         """
