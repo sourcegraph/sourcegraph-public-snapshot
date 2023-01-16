@@ -54,6 +54,7 @@ type InsightQueryArgs struct {
 	After    string
 	Limit    int
 	IsFrozen *bool
+	Find     string
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -119,6 +120,9 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+	if args.Find != "" {
+		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")

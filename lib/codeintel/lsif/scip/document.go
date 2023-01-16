@@ -221,22 +221,17 @@ func convertRange(
 		for _, moniker := range monikers {
 			addOccurrence(moniker, role)
 		}
-
-		// Add definition of each implements relationship
-		for _, moniker := range implementsMonikers {
-			addOccurrence(moniker, role)
-		}
 	} else {
 		role := scip.SymbolRole_UnspecifiedSymbolRole
 
 		for _, targetRangeID := range targetRangeFetcher(r.DefinitionResultID) {
 			// Add reference to the defining range identifier
 			addOccurrence(constructSymbolName(uploadID, targetRangeID), role)
+		}
 
-			// Add reference to each moniker
-			for _, moniker := range monikers {
-				addOccurrence(moniker, role)
-			}
+		// Add reference to each moniker
+		for _, moniker := range monikers {
+			addOccurrence(moniker, role)
 		}
 	}
 

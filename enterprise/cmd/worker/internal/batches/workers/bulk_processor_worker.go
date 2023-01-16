@@ -29,6 +29,7 @@ func NewBulkOperationWorker(
 
 	options := workerutil.WorkerOptions{
 		Name:              "batches_bulk_processor",
+		Description:       "executes the bulk operations in the background",
 		NumHandlers:       5,
 		HeartbeatInterval: 15 * time.Second,
 		Interval:          5 * time.Second,

@@ -1,4 +1,4 @@
-import React, { forwardRef, PropsWithChildren, Ref } from 'react'
+import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,7 +8,7 @@ import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './DrillDownInput.module.scss'
 
-interface DrillDownRegExpInputProps extends InputProps {
+interface DrillDownRegExpInputProps extends InputProps, InputHTMLAttributes<HTMLInputElement> {
     prefix: string
 }
 

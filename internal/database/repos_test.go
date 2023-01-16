@@ -122,7 +122,7 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 func logRepoCorruption(t *testing.T, db DB, name api.RepoName, logOutput string) {
 	t.Helper()
 
-	err := db.GitserverRepos().LogCorruption(context.Background(), name, logOutput)
+	err := db.GitserverRepos().LogCorruption(context.Background(), name, logOutput, shardID)
 	if err != nil {
 		t.Fatalf("failed to log repo corruption: %s", err)
 	}

@@ -10,6 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type OrderByDirection string
+
+var (
+	AscendingOrderByDirection  OrderByDirection = "ASC"
+	DescendingOrderByDirection OrderByDirection = "DESC"
+)
+
 // LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
 // structs that need to perform SQL queries with LIMIT and OFFSET.
 type LimitOffset struct {
