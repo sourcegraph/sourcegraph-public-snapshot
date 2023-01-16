@@ -279,11 +279,13 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
             <Icon aria-hidden={true} svgPath={mdiHelp} />
         )
 
+    const recentRunsReversed = [...routine.recentRuns].reverse()
+
     const recentRunsTooltipContent = (
         <div>
             {commonHostName ? <Text className="mb-0">All on “{commonHostName}”:</Text> : ''}
             <ul className="pl-4">
-                {routine.recentRuns.map(run => (
+                {recentRunsReversed.map(run => (
                     <li key={run.at}>
                         <Text className="mb-0">
                             {run.errorMessage ? (
