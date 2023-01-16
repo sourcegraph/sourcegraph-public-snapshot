@@ -70,13 +70,13 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				assertEventTypes := func(t *testing.T, have []string) {
+				assertEventTypes := func(t *testing.T, have []database.FilterEventType) {
 					t.Helper()
 
 					if tc.eventType == "" {
 						assert.Empty(t, have)
 					} else {
-						assert.Equal(t, []string{tc.eventType}, have)
+						assert.Equal(t, []database.FilterEventType{{EventType: tc.eventType}}, have)
 					}
 				}
 
