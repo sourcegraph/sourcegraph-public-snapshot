@@ -245,12 +245,12 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 
 func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		lines, err := usershell.Command(ctx, "src version").StdOut().Run().Lines()
+		lines, err := usershell.Command(ctx, "src version -client-only").StdOut().Run().Lines()
 		if err != nil {
 			return errors.Wrapf(err, "failed to run 'src version'")
 		}
 
-		if len(lines) < 2 {
+		if len(lines) < 1 {
 			return errors.Newf("unexpected output from src: %s", strings.Join(lines, "\n"))
 		}
 		out := lines[0]
