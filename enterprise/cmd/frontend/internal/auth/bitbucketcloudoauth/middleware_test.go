@@ -228,6 +228,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		Url:          baseURL,
 		ClientSecret: clientSecret,
 		ClientKey:    clientID,
+		ApiScope:     "account,email",
 	}}
 	mp.Provider, problems = parseProvider(logtest.Scoped(t), cfg.Bitbucketcloud, db, cfg)
 	if len(problems) > 0 {

@@ -317,6 +317,7 @@ Sourcegraph instance:
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
 - Permissions: 
   - `Account`: `Read`
+  - `Repositories`: `Read` (if [permissions syncing](../repo/permissions.md) is desired)
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
 Then add the following lines to your [site configuration](config/site_config.md):

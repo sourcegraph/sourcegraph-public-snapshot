@@ -2136,7 +2136,7 @@
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "account,email,repository",
-          "enum": ["account", "email", "repository:read"]
+          "enum": ["account", "email", "repository"]
         },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",

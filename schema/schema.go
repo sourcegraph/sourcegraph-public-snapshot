@@ -235,12 +235,20 @@ type BitbucketCloudAuthProvider struct {
 	Url string `json:"url,omitempty"`
 }
 
+// BitbucketCloudAuthorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+type BitbucketCloudAuthorization struct {
+	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
+	IdentityProvider string `json:"identityProvider,omitempty"`
+}
+
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword"`
+	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
 	//
 	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).

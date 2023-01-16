@@ -32,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added new code host details and updated edit code host pages in site admin area. [#46327](https://github.com/sourcegraph/sourcegraph/pull/46327)
 - If the experimental setting `insightsDataRetention` is enabled, the number of Code Insights data points that can be viewed will be limited by the site configuration setting `insights.maximumSampleSize`, set to 30 by default. Older points beyond that number will be periodically archived. [#46206](https://github.com/sourcegraph/sourcegraph/pull/46206), [#46440](https://github.com/sourcegraph/sourcegraph/pull/46440)
 - Bitbucket Cloud can now be added as an authentication provider on Sourcegraph. [#46309](https://github.com/sourcegraph/sourcegraph/pull/46309)
+- Bitbucket Cloud code host connections now support permissions syncing. [#46312](https://github.com/sourcegraph/sourcegraph/pull/46312)
 
 ### Changed
 
