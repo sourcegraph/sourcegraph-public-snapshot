@@ -329,6 +329,7 @@ importers:
       punycode: 2.1.1
       puppeteer: ^13.5.1
       react: 18.1.0
+      react-accessible-treeview: ^2.3.1
       react-calendar: ^3.7.0
       react-circular-progressbar: ^2.0.3
       react-dom: 18.1.0
@@ -510,6 +511,7 @@ importers:
       pretty-bytes: 5.3.0
       prop-types: 15.8.1
       react: 18.1.0
+      react-accessible-treeview: 2.3.1_qfkiurxyiy76qtdvsfcfsizt2y
       react-calendar: 3.7.0_ef5jwxihqo6n7gxfmzogljlgcm
       react-circular-progressbar: 2.0.3_react@18.1.0
       react-dom: 18.1.0_react@18.1.0
@@ -22302,6 +22304,20 @@ packages:
       minimist: 1.2.6
       strip-json-comments: 2.0.1
     dev: true
+
+  /react-accessible-treeview/2.3.1_qfkiurxyiy76qtdvsfcfsizt2y:
+    resolution: {integrity: sha512-rVTGAJuN0SIl1Ind4jgGLVrU15GQZCzdVbJsJYihIFOMDEJ9L8T+O0m0zh6ro911cfM8VKFnbnJ9PGR5dkvPzA==}
+    peerDependencies:
+      classnames: ^2.2.6
+      prop-types: ^15.7.2
+      react: ^16.8.0 || ^17.0.0
+      react-dom: ^16.8.0 || ^17.0.0
+    dependencies:
+      classnames: 2.3.1
+      prop-types: 15.8.1
+      react: 18.1.0
+      react-dom: 18.1.0_react@18.1.0
+    dev: false
 
   /react-calendar/3.7.0_ef5jwxihqo6n7gxfmzogljlgcm:
     resolution: {integrity: sha512-zkK95zWLWLC6w3O7p3SHx/FJXEyyD2UMd4jr3CrKD+G73N+G5vEwrXxYQCNivIPoFNBjqoyYYGlkHA+TBDPLCw==}

@@ -30,6 +30,7 @@ import { Tree } from '../tree/Tree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
+import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 
 interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCascadeProps {
     repoID?: Scalars['ID']
@@ -40,6 +41,8 @@ interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCas
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
+
+const USE_NEW_FILE_TREE = true
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
 const TABS_KEY = 'repo-revision-sidebar-last-tab'
@@ -137,19 +140,29 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                         {props.repoID && props.commitID && (
                             <TabPanels>
                                 <TabPanel>
-                                    <Tree
-                                        key="files"
-                                        repoName={props.repoName}
-                                        repoID={props.repoID}
-                                        revision={props.revision}
-                                        commitID={props.commitID}
-                                        history={props.history}
-                                        scrollRootSelector=".explorer"
-                                        activePath={props.filePath}
-                                        activePathIsDir={props.isDir}
-                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                        telemetryService={props.telemetryService}
-                                    />
+                                    {USE_NEW_FILE_TREE ? (
+                                        <RepoRevisionSidebarFileTree
+                                            repoName={props.repoName}
+                                            revision={props.revision}
+                                            commitID={props.commitID}
+                                            initialFilePath={props.filePath}
+                                            initialFilePathIsDirectory={props.isDir}
+                                        />
+                                    ) : (
+                                        <Tree
+                                            key="files"
+                                            repoName={props.repoName}
+                                            repoID={props.repoID}
+                                            revision={props.revision}
+                                            commitID={props.commitID}
+                                            history={props.history}
+                                            scrollRootSelector=".explorer"
+                                            activePath={props.filePath}
+                                            activePathIsDir={props.isDir}
+                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                            telemetryService={props.telemetryService}
+                                        />
+                                    )}
                                 </TabPanel>
                                 <TabPanel>
                                     <RepoRevisionSidebarSymbols
