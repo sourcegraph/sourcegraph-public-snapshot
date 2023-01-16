@@ -191,6 +191,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 tooltip: 'Show only repositories that have failed to fetch or clone',
                 args: { failedFetch: true },
             },
+            {
+                label: 'Corrupted',
+                value: 'corrupted',
+                tooltip: 'Show only repositories which are corrupt',
+                args: { corrupted: true },
+            },
         ],
     },
 ]
