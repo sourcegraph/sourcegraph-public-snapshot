@@ -210,16 +210,22 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	// to add a backlink to Sourcegraph).
 	body, err := e.decorateChangesetBody(ctx)
 	if err != nil {
+		// At this point in time, we haven't yet established if the changeset has already
+		// been published or not. When in doubt, we record a more generic "update error"
+		// event.
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
@@ -238,10 +244,16 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
 		draftCss, err := sources.ToDraftChangesetSource(css)
 		if err != nil {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return err
 		}
 		exists, err = draftCss.CreateDraftChangeset(ctx, cs)
 		if err != nil {
+			if exists {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
+			} else {
+				e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
+			}
 			return errors.Wrap(err, "creating draft changeset")
 		}
 	} else {
@@ -251,6 +263,11 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// commit yet, because the API of the codehost doesn't return it yet.
 		exists, err = css.CreateChangeset(ctx, cs)
 		if err != nil {
+			if exists {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
+			} else {
+				e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
+			}
 			return errors.Wrap(err, "creating changeset")
 		}
 	}
@@ -259,11 +276,13 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	if exists {
 		outdated, err := cs.IsOutdated()
 		if err != nil {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return errors.Wrap(err, "could not determine whether changeset needs update")
 		}
 
 		if outdated {
 			if err := css.UpdateChangeset(ctx, cs); err != nil {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 				return errors.Wrap(err, "updating changeset")
 			}
 		}
@@ -335,16 +354,19 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	// to add a backlink to Sourcegraph).
 	body, err := e.decorateChangesetBody(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
@@ -398,7 +420,7 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 		Changeset:  e.ch,
 	}
 	if err := css.ReopenChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
+		return errors.Wrap(err, "reopening changeset")
 	}
 	return nil
 }
