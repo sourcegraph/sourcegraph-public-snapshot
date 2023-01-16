@@ -4,9 +4,12 @@ package protocol
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Request represents a request to searcher
@@ -175,6 +178,10 @@ func (p *PatternInfo) String() string {
 }
 
 func (r *Request) ToProto() *proto.SearchRequest {
+	fetchTimeout, err := time.ParseDuration(r.FetchTimeout)
+	if err != nil {
+		panic(errors.Newf("invalid duration %q", r.FetchTimeout))
+	}
 	return &proto.SearchRequest{
 		Repo:      string(r.Repo),
 		RepoId:    uint32(r.RepoID),
@@ -198,7 +205,7 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: r.FetchTimeout,
+		FetchTimeout: durationpb.New(fetchTimeout),
 		FeatHybrid:   r.FeatHybrid,
 	}
 }
@@ -227,7 +234,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout,
+		FetchTimeout: req.FetchTimeout.AsDuration().String(),
 		Indexed:      req.Indexed,
 		FeatHybrid:   req.FeatHybrid,
 	}
