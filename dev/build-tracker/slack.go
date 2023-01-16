@@ -85,7 +85,7 @@ func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNot
 		return previous, err
 	}
 
-	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
