@@ -204,3 +204,17 @@ func GetProviderByConfigID(id ConfigID) Provider {
 	}
 	return nil
 }
+
+func GetProviderbyServiceType(serviceType string) Provider {
+	curProvidersMu.RLock()
+	defer curProvidersMu.RUnlock()
+
+	for _, pkgProviders := range curProviders {
+		for _, p := range pkgProviders {
+			if p.ConfigID().Type == serviceType {
+				return p
+			}
+		}
+	}
+	return nil
+}

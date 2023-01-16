@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type externalAccountDataResolver struct {
@@ -22,15 +23,17 @@ func NewExternalAccountDataResolver(ctx context.Context, account extsvc.Account)
 }
 
 func publicAccountDataFromJSON(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	p := providers.GetProviderByConfigID(providers.ConfigID{Type: account.ServiceType, ID: account.ServiceID})
+	// each provider type implements the correct method ExternalAccountInfo, we do not
+	// need a specific instance, just the first one of the same type
+	p := providers.GetProviderbyServiceType(account.ServiceType)
 	if p == nil {
-		return nil, nil
+		return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
 	}
 
 	return p.ExternalAccountInfo(ctx, account)
 }
 
-func (r *externalAccountDataResolver) Username() *string {
+func (r *externalAccountDataResolver) DisplayName() *string {
 	return r.data.DisplayName
 }
 

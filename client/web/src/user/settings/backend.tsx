@@ -42,7 +42,7 @@ export const USER_EXTERNAL_ACCOUNTS = gql`
                     serviceID
                     serviceType
                     publicAccountData {
-                        username
+                        displayName
                         login
                         url
                     }
