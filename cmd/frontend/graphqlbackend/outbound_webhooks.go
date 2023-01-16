@@ -62,6 +62,7 @@ type ListOutboundWebhooksArgs struct {
 	First     int32   `json:"first"`
 	After     *string `json:"after"`
 	EventType *string `json:"eventType"`
+	Scope     *string `json:"scope"`
 }
 
 type OutboundWebhookLogsArgs struct {
@@ -103,7 +104,7 @@ func (r *schemaResolver) OutboundWebhooks(ctx context.Context, args ListOutbound
 		opts.Offset = offset
 	}
 	if args.EventType != nil {
-		opts.EventTypes = []string{*args.EventType}
+		opts.EventTypes = []database.FilterEventType{{EventType: *args.EventType, Scope: args.Scope}}
 	}
 
 	return newOutboundWebhookConnectionResolver(ctx, outboundWebhookStore(r.db), opts), nil

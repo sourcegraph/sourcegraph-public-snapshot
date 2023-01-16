@@ -1,12 +1,12 @@
 extend type Query {
     """
-    Returns the outbound webhooks registered within Sourcegraph, optionally
-    filtered by event type. If the event type is omitted, all webhooks are
-    returned.
+    Returns the outbound webhooks registered within Sourcegraph, optionally filtered by
+    event type and scope. To filter by scope, event type is also required. If the event
+    type and scope are both omitted, all webhooks are returned.
 
     Only site admins have access to this query.
     """
-    outboundWebhooks(first: Int = 50, after: String, eventType: String): OutboundWebhookConnection!
+    outboundWebhooks(first: Int = 50, after: String, eventType: String, scope: String): OutboundWebhookConnection!
 
     """
     Returns all possible outbound webhook event types.
