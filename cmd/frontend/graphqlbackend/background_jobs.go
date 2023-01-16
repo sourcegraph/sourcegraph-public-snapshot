@@ -142,6 +142,7 @@ func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, e
 		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(), r.after, *r.recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
+			return
 		}
 
 		resolvers := make([]*BackgroundJobResolver, 0, len(jobInfos))
