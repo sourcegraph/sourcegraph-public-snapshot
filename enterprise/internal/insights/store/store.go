@@ -870,3 +870,61 @@ const (
 	ReasonGeneric           IncompleteReason = "generic"
 	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
 )
+
+// SeriesPointForExport contains series points data that has additional metadata, like insight view title.
+// It should only be used for code insight data exporting.
+type SeriesPointForExport struct {
+	InsightViewTitle string
+	SeriesLabel      string
+	SeriesQuery      string
+	RecordingTime    time.Time
+	RepoID           int
+	Value            int
+	Capture          *string
+}
+
+func (s *Store) GetPointDataForInsightViewID(ctx context.Context, insightViewId string) (_ []SeriesPointForExport, err error) {
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
+	}
+	excludedRepoIDs := make([]*sqlf.Query, 0, len(denylist))
+	for _, repoID := range denylist {
+		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
+	}
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, insightViewId, sqlf.Join(excludedRepoIDs, ",")))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]SeriesPointForExport, 0)
+	for rows.Next() {
+		var tmp SeriesPointForExport
+		if err = rows.Scan(
+			&tmp.InsightViewTitle,
+			&tmp.SeriesQuery,
+			&tmp.SeriesQuery,
+			&tmp.RecordingTime,
+			&tmp.RepoID,
+			&tmp.Value,
+			&tmp.Capture,
+			); err != nil {
+			return nil, err
+		}
+		results = append(results, tmp)
+	})
+	return results, nil
+}
+
+const exportCodeInsightsDataSql = `
+select iv.title, ivs.label, i.query, isrt.recording_time, sp.repo_id, coalesce(sp.value, 0) as value, sp.capture 
+from insight_series_recording_times isrt
+    join insight_series i on i.id = isrt.insight_series_id
+    join insight_view_series ivs ON i.id = ivs.insight_series_id
+    join insight_view iv ON ivs.insight_view_id = iv.id
+    left outer join series_points sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
+	where ivs.insight_view_id = %s and sp.repo_id not in (%s)
+    order by iv.title, isrt.recording_time, ivs.label;
+`
