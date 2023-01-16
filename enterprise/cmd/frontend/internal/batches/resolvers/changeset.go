@@ -67,6 +67,8 @@ func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, 
 	}
 }
 
+const changesetIDKind = "Changeset"
+
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
 	return

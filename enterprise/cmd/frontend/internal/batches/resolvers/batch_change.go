@@ -46,6 +46,8 @@ type batchChangeResolver struct {
 	canAdministerErr  error
 }
 
+const batchChangeIDKind = "BatchChange"
+
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
