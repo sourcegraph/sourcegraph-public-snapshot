@@ -97,4 +97,5 @@ type SiteUser struct {
 	Email        string
 	SiteAdmin    bool
 	LastActiveAt string
+	DeletedAt    string
 }
