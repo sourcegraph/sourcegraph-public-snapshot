@@ -239,7 +239,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         if (!data) {
             return undefined
         }
-        return [
+        const items: ValueLegendListProps['items'] = [
             {
                 value: data.repositoryStats.total,
                 description: 'Repositories',
@@ -288,6 +288,18 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
+        if (data.repositoryStats.corrupted > 0) {
+            items.push({
+                value: data.repositoryStats.corrupted,
+                description: 'Corrupted',
+                color: 'var(--danger)',
+                position: 'right',
+                tooltip:
+                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
+                filter: { name: 'status', value: 'corrupted' },
+            })
+        }
+        return items
     }, [data])
 
     const {
