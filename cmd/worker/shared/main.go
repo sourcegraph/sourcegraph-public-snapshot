@@ -42,7 +42,7 @@ const addr = ":3189"
 
 type EnterpriseInit = func(ossDB database.DB)
 
-type backgroundRoutineWithJobName struct {
+type namedBackgroundRoutine struct {
 	Routine goroutine.BackgroundRoutine
 	JobName string
 }
@@ -119,7 +119,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		WriteTimeout: 10 * time.Minute,
 		Handler:      httpserver.NewHandler(nil),
 	})
-	serverRoutineWithJobName := backgroundRoutineWithJobName{Routine: server, JobName: "health-server"}
+	serverRoutineWithJobName := namedBackgroundRoutine{Routine: server, JobName: "health-server"}
 	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
 
 	// Register recorder in all routines that support it
@@ -230,9 +230,9 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 // createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]backgroundRoutineWithJobName, error) {
+func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]namedBackgroundRoutine, error) {
 	var (
-		allRoutinesWithJobNames []backgroundRoutineWithJobName
+		allRoutinesWithJobNames []namedBackgroundRoutine
 		descriptions            []string
 	)
 
@@ -254,7 +254,7 @@ func createBackgroundRoutines(observationCtx *observation.Context, jobs map[stri
 
 type routinesResult struct {
 	name                 string
-	routinesWithJobNames []backgroundRoutineWithJobName
+	routinesWithJobNames []namedBackgroundRoutine
 	err                  error
 }
 
@@ -285,9 +285,9 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
-			routinesWithJobNames := make([]backgroundRoutineWithJobName, 0, len(routines))
+			routinesWithJobNames := make([]namedBackgroundRoutine, 0, len(routines))
 			for _, r := range routines {
-				routinesWithJobNames = append(routinesWithJobNames, backgroundRoutineWithJobName{
+				routinesWithJobNames = append(routinesWithJobNames, namedBackgroundRoutine{
 					Routine: r,
 					JobName: name,
 				})
