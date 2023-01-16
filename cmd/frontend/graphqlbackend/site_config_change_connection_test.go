@@ -12,12 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestSiteConfigConnection(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+type siteConfigStubs struct {
+	db    *database.MockDB
+	users *database.MockUserStore
+	conf  *database.MockConfStore
 
-	db := database.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	now         time.Time
+	siteConfigs []*database.SiteConfig
+}
+
+func setupSiteConfigStubs() *siteConfigStubs {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		switch id {
 		case 1:
@@ -37,10 +43,11 @@ func TestSiteConfigConnection(t *testing.T) {
 		}
 	})
 
-	now := time.Now()
-	expectedNow := now.Format("2006-01-02T15:04:05Z")
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
-	// FIXME: DOn't use the same now for all the site configs
+	now := time.Now()
+	// FIXME: Don't use the same now for all the site configs
 	siteConfigs := []*database.SiteConfig{
 		{
 			ID:        1,
@@ -91,21 +98,51 @@ func TestSiteConfigConnection(t *testing.T) {
 	}
 
 	conf := database.NewMockConfStore()
-	conf.SiteGetLatestFunc.SetDefaultReturn(siteConfigs[len(siteConfigs)-1], nil)
 	db.ConfFunc.SetDefaultReturn(conf)
 
-	conf.GetSiteConfigCountFunc.SetDefaultReturn(len(siteConfigs), nil)
-	conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
+	// conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
 	conf.ListSiteConfigsFunc.SetDefaultHook(
 		func(ctx context.Context, opt database.SiteConfigListOptions) ([]*database.SiteConfig, error) {
-			return siteConfigs[:opt.Limit], nil
+			var dataSet = siteConfigs
+			if opt.OrderByDirection == database.DescendingOrderByDirection {
+				// Reverse the result set if ORDER BY DESC is being used.
+				for i := len(siteConfigs) - 1; i >= 0; i-- {
+					dataSet = append(dataSet, siteConfigs[i])
+				}
+			}
+
+			if opt.LimitOffset != nil {
+				limit := math.Min(float64(len(siteConfigs)), float64(opt.LimitOffset.Limit))
+				dataSet = dataSet[:int(limit)]
+			}
+
+			return dataSet, nil
 		})
-	// db.Users
+
+	return &siteConfigStubs{
+		db:          db,
+		users:       users,
+		conf:        conf,
+		now:         now,
+		siteConfigs: siteConfigs,
+	}
+}
+
+func TestSiteConfigConnection(t *testing.T) {
+	stubs := setupSiteConfigStubs()
+
+	siteConfigs := stubs.siteConfigs
+
+	stubs.conf.SiteGetLatestFunc.SetDefaultReturn(siteConfigs[len(siteConfigs)-1], nil)
+	stubs.conf.GetSiteConfigCountFunc.SetDefaultReturn(len(siteConfigs), nil)
+	stubs.conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
+
+	expectedNow := stubs.now.Format("2006-01-02T15:04:05Z")
 
 	// FIXME: Test for hasNextPage, hasPreviousPage
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: mustParseGraphQLSchema(t, stubs.db),
 			Label:  "Get first 2 site configuration history",
 			Query: `
 			{
@@ -166,7 +203,7 @@ func TestSiteConfigConnection(t *testing.T) {
 		`, expectedNow),
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: mustParseGraphQLSchema(t, stubs.db),
 			Label:  "Get last 2 site configuration history",
 			Query: `
 			{
@@ -216,9 +253,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
 										"previousID": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
 										"author": {
-											"id": "VXNlcjox",
-											"username": "foo",
-											"displayName": "foo user"
+											"id": "VXNlcjoy",
+											"username": "bar",
+											"displayName": "bar user"
 										},
 										"createdAt": %[1]q,
 										"updatedAt": %[1]q
@@ -254,87 +291,10 @@ func toIntPtr(n int) *int {
 }
 
 func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-	db := database.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-
-	now := time.Now()
-	siteConfigs := []*database.SiteConfig{
-		{
-			ID:        1,
-			Contents:  ``,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		{
-			ID:           2,
-			AuthorUserID: 1,
-			Contents: `{
-  foo: 1
-}`,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		{
-			ID:           3,
-			AuthorUserID: 2,
-			// Newline added.
-			Contents: `{
-  foo: 1,
-  bar: 2
-}`,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		{
-			ID:           4,
-			AuthorUserID: 1,
-			// Existing line removed.
-			Contents: `{
-  bar: 2
-}`,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-		{
-			ID:           5,
-			AuthorUserID: 1,
-			// Existing line changed.
-			Contents: `{
-  bar: 3
-}`,
-			CreatedAt: now,
-			UpdatedAt: now,
-		},
-	}
-
-	conf := database.NewMockConfStore()
-	db.ConfFunc.SetDefaultReturn(conf)
-
-	// conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
-	conf.ListSiteConfigsFunc.SetDefaultHook(
-		func(ctx context.Context, opt database.SiteConfigListOptions) ([]*database.SiteConfig, error) {
-			var input []*database.SiteConfig
-			if opt.OrderByDirection == database.DescendingOrderByDirection {
-				// Reverse the result set if ORDER BY DESC is being used.
-				for i := len(siteConfigs) - 1; i >= 0; i-- {
-					input = append(input, siteConfigs[i])
-				}
-			} else {
-				input = siteConfigs
-			}
-
-			if opt.LimitOffset != nil {
-				limit := math.Min(float64(len(siteConfigs)), float64(opt.LimitOffset.Limit))
-				input = input[:int(limit)]
-			}
-
-			return input, nil
-		})
+	stubs := setupSiteConfigStubs()
 
 	ctx := context.Background()
-	store := SiteConfigurationChangeConnectionStore{db: db}
+	store := SiteConfigurationChangeConnectionStore{db: stubs.db}
 
 	testCases := []struct {
 		name                          string
