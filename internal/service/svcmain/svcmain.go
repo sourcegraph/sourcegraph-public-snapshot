@@ -122,7 +122,7 @@ func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Se
 		serviceConfig := serviceConfigs[i]
 		allReadyWG.Add(1)
 		go func() {
-			// TODO(sqs): Consider using the goroutine package and/or the errgroup package to report
+			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
 			obctx := observation.ScopedContext("", service.Name(), "", obctx)
