@@ -294,7 +294,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 description: 'Corrupted',
                 color: 'var(--danger)',
                 position: 'right',
-                tooltip: 'The number of repositories where corruption has been detected.',
+                tooltip:
+                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
                 filter: { name: 'status', value: 'corrupted' },
             })
         }
