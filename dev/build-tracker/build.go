@@ -27,7 +27,7 @@ type Build struct {
 	// Notification is the details about the notification that was sent for this build
 	Notification *SlackNotification
 
-	// Mutex is used to to control and stop other changes being made to the build
+	// Mutex is used to to control and stop other changes being made to the build.
 	sync.Mutex
 }
 
