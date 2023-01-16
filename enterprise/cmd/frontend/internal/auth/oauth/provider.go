@@ -85,7 +85,7 @@ func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 	}
 
 	// TODO: add bitbucket cloud when the bitbucket oauth provider is merged
-	return nil, errors.Errorf("Not implemented, sourcegraph only supports github and gitlab for OAuth at the moment")
+	return nil, errors.Errorf("Sourcegraph currently only supports GitHub and GitLab as OAuth providers")
 }
 
 type ProviderOp struct {
