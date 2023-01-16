@@ -52,9 +52,9 @@ func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 		reposURL = fmt.Sprintf("/2.0/repositories/%s", url.PathEscape(accountName))
 	}
 
-	var urlValues url.Values
+	urlValues := make(url.Values)
+	urlValues.Set("pagelen", "100")
 	if opts != nil && opts.Role != "" {
-		urlValues = make(url.Values)
 		urlValues.Set("role", opts.Role)
 	}
 
@@ -77,8 +77,10 @@ func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *Pa
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &resp)
 	} else {
+		urlValues := make(url.Values)
+		urlValues.Set("pagelen", "100")
 		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", url.PathEscape(namespace), url.PathEscape(slug))
-		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
+		next, err = c.page(ctx, userPermsURL, urlValues, pageToken, &resp)
 	}
 
 	if opts != nil && opts.FetchAll {
