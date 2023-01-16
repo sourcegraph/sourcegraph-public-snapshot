@@ -13,10 +13,10 @@ import {
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
+import { WebpackManifest, getHTMLPage } from '../../dev/webpack/get-html-webpack-plugins'
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 
-import { isHotReloadEnabled } from './environment'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'
 import { TemporarySettingsContext } from './temporarySettingsContext'
@@ -47,16 +47,10 @@ export interface WebIntegrationTestContext
 const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
 const manifestFile = path.resolve(rootDirectory, 'ui/assets/webpack.manifest.json')
 
-const getAppBundle = (): string => {
+const getManifestBundles = (): Partial<WebpackManifest> => {
     // eslint-disable-next-line no-sync
     const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
-    return manifest['app.js']
-}
-
-const getRuntimeAppBundle = (): string => {
-    // eslint-disable-next-line no-sync
-    const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
-    return manifest['runtime.js']
+    return manifest
 }
 
 /**
@@ -70,6 +64,7 @@ export const createWebIntegrationTestContext = async ({
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const config = getConfig('disableAppAssetsMocking')
+    const bundles = getManifestBundles()
 
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -83,31 +78,22 @@ export const createWebIntegrationTestContext = async ({
     sharedTestContext.overrideGraphQL(tempSettings.getGraphQLOverrides())
 
     if (!config.disableAppAssetsMocking) {
-        // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.
-        // This branching will be redundant after switching to production bundles for integration tests:
-        // https://github.com/sourcegraph/sourcegraph/issues/22831
-        const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
-
         // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
         sharedTestContext.server
             .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
             .filter(request => !request.pathname.startsWith('/-/'))
             .intercept((request, response) => {
-                response.type('text/html').send(html`
-                    <html lang="en">
-                        <head>
-                            <title>Sourcegraph Test</title>
-                        </head>
-                        <body>
-                            <div id="root"></div>
-                            <script>
-                                window.context = ${JSON.stringify({ ...jsContext, ...customContext })}
-                            </script>
-                            ${runtimeChunkScriptTag}
-                            <script src=${getAppBundle()}></script>
-                        </body>
-                    </html>
-                `)
+                response.type('text/html').send(
+                    html`${getHTMLPage(
+                        {
+                            'app.css': bundles['app.css'],
+                            'app.js': bundles['app.js'] || '',
+                            'react.js': bundles['react.js'],
+                            'opentelemetry.js': bundles['opentelemetry.js'],
+                        },
+                        { ...jsContext, ...customContext }
+                    )}`
+                )
             })
     }
 

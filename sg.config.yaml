@@ -430,6 +430,8 @@ commands:
     env:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: false
 
   docsite:
     description: Docsite instance serving the docs
