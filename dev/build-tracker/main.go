@@ -20,6 +20,13 @@ var ErrUnwantedEvent = errors.New("Unwanted event received")
 
 var nowFunc func() time.Time = time.Now
 
+// CleanUpInterval determines how often the old build cleaner should run
+var CleanUpInterval = 5 * time.Minute
+
+// BuildExpiryWindow defines the window for a build to be consider 'valid'. A build older than this window
+// will be eligible for clean up.
+var BuildExpiryWindow = 4 * time.Hour
+
 const DefaultChannel = "#william-buildchecker-webhook-test"
 
 // Server is the http server that listens for events from Buildkite. The server tracks builds and their associated jobs
@@ -286,7 +293,7 @@ func main() {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
 	server := NewServer(logger, *serverConf)
 
-	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
+	stopFn := server.startOldBuildCleaner(CleanUpInterval, BuildExpiryWindow)
 	defer stopFn()
 
 	if server.config.Production {
