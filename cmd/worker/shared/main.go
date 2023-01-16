@@ -39,7 +39,6 @@ import (
 )
 
 const addr = ":3189"
-const recorderCacheTTLSeconds = 604800 // 7 days
 
 type EnterpriseInit = func(ossDB database.DB)
 
@@ -124,7 +123,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
 
 	// Register recorder in all routines that support it
-	recorderCache := recorder.GetCache(recorderCacheTTLSeconds)
+	recorderCache := recorder.GetCache()
 	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
 	for _, rj := range allRoutinesWithJobNames {
 		if recordable, ok := rj.Routine.(recorder.Recordable); ok {

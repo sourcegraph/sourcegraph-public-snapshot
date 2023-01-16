@@ -98,7 +98,7 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(1), jobName, int32(recentRunCount), dayCountForStats)
+	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, int32(recentRunCount), dayCountForStats)
 	if err != nil {
 		return nil, err
 	}

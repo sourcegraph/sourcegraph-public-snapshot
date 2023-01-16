@@ -15,7 +15,7 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	// Create logger
-	c := GetCache(1)
+	c := rcache.NewWithTTL(keyPrefix, 1)
 	recorder := New(log.NoOp(), "test", c)
 
 	// Create routines

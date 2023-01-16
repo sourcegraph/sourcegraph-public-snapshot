@@ -71,7 +71,9 @@ const (
 	CustomRoutine       RoutineType = "CUSTOM"
 )
 
-func GetCache(ttlSeconds int) *rcache.Cache {
+const ttlSeconds = 604800 // 7 days
+
+func GetCache() *rcache.Cache {
 	return rcache.NewWithTTL(keyPrefix, ttlSeconds)
 }
 
