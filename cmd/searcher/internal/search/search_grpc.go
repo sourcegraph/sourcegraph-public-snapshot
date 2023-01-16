@@ -32,7 +32,7 @@ func (s *Server) Search(req *proto.SearchRequest, stream proto.Searcher_SearchSe
 
 	return stream.Send(&proto.SearchResponse{
 		Message: &proto.SearchResponse_DoneMessage{
-			DoneMessage: &proto.DoneMessage{
+			DoneMessage: &proto.SearchResponse_Done{
 				LimitHit: matchStream.LimitHit(),
 			},
 		},

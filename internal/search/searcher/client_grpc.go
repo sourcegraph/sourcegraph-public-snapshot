@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Search searches repo@commit with p.
@@ -33,7 +33,7 @@ func SearchGRPC(
 ) (limitHit bool, err error) {
 	r := proto.SearchRequest{
 		Repo:      string(repo),
-		RepoId:    int32(repoID),
+		RepoId:    uint32(repoID),
 		CommitOid: string(commit),
 		Branch:    branch,
 		Indexed:   indexed,
@@ -72,12 +72,13 @@ func SearchGRPC(
 		return false, err
 	}
 
-	for attempt := 0; attempt < 2; attempt++ {
+	trySearch := func(attempt int) (bool, error) {
 		parsed, err := url.Parse(urls[attempt%len(urls)])
 		if err != nil {
-			return false, err
+			return false, errors.Wrap(err, "failed to parse URL")
 		}
-		clientConn, err := grpc.Dial(parsed.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+		clientConn, err := grpc.Dial(parsed.Host, grpc.WithInsecure())
 		if err != nil {
 			return false, err
 		}
@@ -89,11 +90,10 @@ func SearchGRPC(
 			return false, err
 		}
 
-		// TODO proper retries
 		for {
 			msg, err := resp.Recv()
 			if errors.Is(err, io.EOF) {
-				return limitHit, nil
+				return false, nil
 			} else if err != nil {
 				return false, err
 			}
@@ -103,9 +103,16 @@ func SearchGRPC(
 				onMatch(v.FileMatch)
 			case *proto.SearchResponse_DoneMessage:
 				return v.DoneMessage.LimitHit, nil
+			default:
+				return false, errors.Newf("unknown SearchResponse message %T", v)
 			}
 		}
 	}
 
-	return false, nil
+	limitHit, err = trySearch(0)
+	if err != nil && errcode.IsTemporary(err) {
+		// Retry once if we get a temporary error back
+		limitHit, err = trySearch(1)
+	}
+	return limitHit, err
 }
