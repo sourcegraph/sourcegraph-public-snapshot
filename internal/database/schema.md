@@ -2535,25 +2535,27 @@ Stores errors that occurred while performing an out-of-band migration.
 
 # Table "public.permission_sync_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                     Default                      
--------------------+--------------------------+-----------+----------+--------------------------------------------------
- id                | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- last_heartbeat_at | timestamp with time zone |           |          | 
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- cancel            | boolean                  |           | not null | false
- repository_id     | integer                  |           |          | 
- user_id           | integer                  |           |          | 
- high_priority     | boolean                  |           | not null | false
- invalidate_caches | boolean                  |           | not null | false
+        Column        |           Type           | Collation | Nullable |                     Default                      
+----------------------+--------------------------+-----------+----------+--------------------------------------------------
+ id                   | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
+ state                | text                     |           |          | 'queued'::text
+ failure_message      | text                     |           |          | 
+ queued_at            | timestamp with time zone |           |          | now()
+ started_at           | timestamp with time zone |           |          | 
+ finished_at          | timestamp with time zone |           |          | 
+ process_after        | timestamp with time zone |           |          | 
+ num_resets           | integer                  |           | not null | 0
+ num_failures         | integer                  |           | not null | 0
+ last_heartbeat_at    | timestamp with time zone |           |          | 
+ execution_logs       | json[]                   |           |          | 
+ worker_hostname      | text                     |           | not null | ''::text
+ cancel               | boolean                  |           | not null | false
+ repository_id        | integer                  |           |          | 
+ user_id              | integer                  |           |          | 
+ high_priority        | boolean                  |           | not null | false
+ invalidate_caches    | boolean                  |           | not null | false
+ reason               | text                     |           |          | 
+ triggered_by_user_id | integer                  |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_process_after" btree (process_after)
@@ -2562,6 +2564,10 @@ Indexes:
     "permission_sync_jobs_user_id" btree (user_id)
 
 ```
+
+**reason**: Specifies why permissions sync job was triggered.
+
+**triggered_by_user_id**: Specifies an ID of a user who triggered a sync.
 
 # Table "public.permissions"
 ```

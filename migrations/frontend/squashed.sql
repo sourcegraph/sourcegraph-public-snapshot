@@ -3180,8 +3180,14 @@ CREATE TABLE permission_sync_jobs (
     repository_id integer,
     user_id integer,
     high_priority boolean DEFAULT false NOT NULL,
-    invalidate_caches boolean DEFAULT false NOT NULL
+    invalidate_caches boolean DEFAULT false NOT NULL,
+    reason text,
+    triggered_by_user_id integer
 );
+
+COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';
+
+COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
