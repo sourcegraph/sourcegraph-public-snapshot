@@ -204,7 +204,7 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 		return routineInfo.RecentRuns[i].At.Before(routineInfo.RecentRuns[j].At)
 	})
 	// Limit to recentRunCount
-	if len(routineInfo.RecentRuns) > int(recentRunCount) {
+	if len(routineInfo.RecentRuns) > recentRunCount {
 		routineInfo.RecentRuns = routineInfo.RecentRuns[:recentRunCount]
 	}
 
@@ -273,7 +273,7 @@ func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount i
 	// Get all stats
 	var stats RoutineRunStats
 	for i := 0; i < dayCount; i++ {
-		date := now.AddDate(0, 0, -int(i)).Truncate(24 * time.Hour)
+		date := now.AddDate(0, 0, -i).Truncate(24 * time.Hour)
 		statsRaw, found := c.Get(routineName + ":runStats:" + date.Format("2006-01-02"))
 		if found {
 			var statsForDay RoutineRunStats
