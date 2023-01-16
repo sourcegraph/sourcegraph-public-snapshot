@@ -43,7 +43,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         return null
     }
 
-    return namespaceID ? (
+    return !namespaceID ? (
         <div className={classNames(styles.statsBar, 'text-muted d-block d-sm-flex')}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
