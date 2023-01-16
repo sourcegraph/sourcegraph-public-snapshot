@@ -21,9 +21,6 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
             ... on SearchInsightDataSeriesDefinition {
                 seriesId
                 query
-                repositoryScope {
-                    repositories
-                }
                 timeScope {
                     ... on InsightIntervalTimeScope {
                         unit
@@ -41,6 +38,15 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
 export const INSIGHT_VIEW_FRAGMENT = gql`
     fragment InsightViewNode on InsightView {
         id
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         defaultSeriesDisplayOptions {
             limit
             sortOptions {
