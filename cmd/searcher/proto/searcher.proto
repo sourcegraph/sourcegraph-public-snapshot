@@ -4,6 +4,8 @@ package searcher;
 
 option go_package = "github.com/sourcegraph/sourcegraph/cmd/searcher/proto/";
 
+import "google/protobuf/duration.proto";
+
 
 // Searcher is internal interface for the searcher service.
 service Searcher {
@@ -43,7 +45,7 @@ message SearchRequest {
     string branch = 17;
 
     // fetch_timeout is the amount of time to wait for a repo archive to
-    // fetch. It is parsed with time.ParseDuration.
+    // fetch.
 	//
     // This timeout should be low when searching across many repos so that
     // unfetched repos don't delay the search, and because we are likely
@@ -56,7 +58,7 @@ message SearchRequest {
     // This only times out how long we wait for the fetch request; the
     // fetch will still happen in the background so future requests don't
     // have to wait.
-    string fetch_timeout = 18;
+    google.protobuf.Duration fetch_timeout = 18;
 
     // feat_hybrid is a feature flag which enables hybrid search.
     // Hybrid search will only search what has changed since Zoekt has

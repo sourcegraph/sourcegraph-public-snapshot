@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Search searches repo@commit with p.
@@ -53,7 +54,7 @@ func SearchGRPC(
 			Languages:                    p.Languages,
 			Select:                       p.Select.Root(),
 		},
-		FetchTimeout: fetchTimeout.String(),
+		FetchTimeout: durationpb.New(fetchTimeout),
 		FeatHybrid:   features.HybridSearch,
 	}
 
