@@ -5003,6 +5003,10 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
+        """
+        Recurse into all parents if the entries are loaded for a sub-tree
+        """
+        recursiveParents: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.

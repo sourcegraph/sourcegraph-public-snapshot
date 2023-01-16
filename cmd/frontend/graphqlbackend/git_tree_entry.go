@@ -334,6 +334,20 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
+func (r *GitTreeEntryResolver) Parent(ctx context.Context) (*GitTreeEntryResolver, error) {
+	if r.IsRoot() {
+		return nil, nil
+	}
+
+	parent_path := path.Dir(r.Path())
+	return r.commit.path(ctx, parent_path, func(stat fs.FileInfo) error {
+		if !stat.Mode().IsDir() {
+			return errors.Errorf("not a directory: %q", parent_path)
+		}
+		return nil
+	})
+}
+
 type symbolInfoArgs struct {
 	Line      int32
 	Character int32
