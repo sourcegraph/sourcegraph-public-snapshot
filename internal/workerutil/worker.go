@@ -42,11 +42,12 @@ type Worker[T Record] struct {
 	recorder         *recorder.Recorder
 }
 
-type DummyType struct{}
+// dummyType is only for this compile-time test.
+type dummyType struct{}
 
-func (d DummyType) RecordID() int { return 0 }
+func (d dummyType) RecordID() int { return 0 }
 
-var _ recorder.Recordable = &Worker[DummyType]{}
+var _ recorder.Recordable = &Worker[dummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
