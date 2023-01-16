@@ -39,8 +39,8 @@ type serializableRoutineInfo struct {
 // That is, a single version that's running (or ran) on a single node.
 type RoutineInstanceInfo struct {
 	HostName      string     `json:"hostName"`
-	LastStartedAt *time.Time `json:"lastStart"`
-	LastStoppedAt *time.Time `json:"lastStop"`
+	LastStartedAt *time.Time `json:"lastStartedAt"`
+	LastStoppedAt *time.Time `json:"LastStoppedAt"`
 }
 
 // RoutineRun contains information about a single run of a routine.
