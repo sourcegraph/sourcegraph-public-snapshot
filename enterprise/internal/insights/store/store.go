@@ -896,7 +896,12 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	for _, repoID := range denylist {
 		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
 	}
-	repoIDsPred := sqlf.Join(excludedRepoIDs, ",")
+	var repoIDsPred *sqlf.Query
+	if len(excludedRepoIDs) == 0 {
+		repoIDsPred = sqlf.Sprintf("true")
+	} else {
+		repoIDsPred = sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
+	}
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -941,6 +946,6 @@ from %s isrt
     join insight_view_series ivs ON i.id = ivs.insight_series_id
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
-	where ivs.insight_view_id = %s and sp.repo_id not in (%s)
+	where ivs.insight_view_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label;
 `

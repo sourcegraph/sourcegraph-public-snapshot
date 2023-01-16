@@ -969,6 +969,29 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	})
 }
 
+func TestGetAllDataForInsightViewId(t *testing.T) {
+	//ctx := context.Background()
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+
+	permissionStore := NewMockInsightPermissionStore()
+	// no repo restrictions by default
+	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+
+	_ = NewInsightStore(insightsDB)
+	_ = New(insightsDB, permissionStore)
+
+	t.Run("only live data", func(t *testing.T) {
+
+	})
+	t.Run("get all data", func(t *testing.T) {
+
+	})
+	t.Run("respects repo permissions", func(t *testing.T) {
+
+	})
+}
+
 func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
 	now := time.Now()
 	series := types.InsightSeries{
