@@ -177,7 +177,7 @@ func (p *PatternInfo) String() string {
 func (r *Request) ToProto() *proto.SearchRequest {
 	return &proto.SearchRequest{
 		Repo:      string(r.Repo),
-		RepoId:    int32(r.RepoID),
+		RepoId:    uint32(r.RepoID),
 		CommitOid: string(r.Commit),
 		Branch:    r.Branch,
 		Indexed:   r.Indexed,
