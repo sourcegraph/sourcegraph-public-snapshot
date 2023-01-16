@@ -161,7 +161,7 @@ func fetchAll[T any](ctx context.Context, c *client, results []T, next *PageToke
 		if err != nil {
 			return nil, err
 		}
-		next, err = c.page(ctx, nextURL.RequestURI(), next.Values(), next, &page)
+		next, err = c.page(ctx, nextURL.Path, next.Values(), next, &page)
 		results = append(results, page...)
 	}
 
@@ -273,6 +273,12 @@ func (t *PageToken) Values() url.Values {
 	v := url.Values{}
 	if t == nil {
 		return v
+	}
+	if t.Next != "" {
+		nextURL, err := url.Parse(t.Next)
+		if err != nil {
+			v = nextURL.Query()
+		}
 	}
 	if t.Pagelen != 0 {
 		v.Set("pagelen", strconv.Itoa(t.Pagelen))
