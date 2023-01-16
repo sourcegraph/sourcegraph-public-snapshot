@@ -63,11 +63,11 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 	}
 
 	jobs := map[string]job.Job{}
-	for name, j := range builtins {
-		jobs[name] = j
+	for name, job := range builtins {
+		jobs[name] = job
 	}
-	for name, j := range additionalJobs {
-		jobs[name] = j
+	for name, job := range additionalJobs {
+		jobs[name] = job
 	}
 
 	// Setup environment variables
@@ -141,12 +141,12 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 
 	// This method blocks while the app is live - the following return is only to appease
 	// the type checker.
-	routines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
+	allRoutines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
 	for _, r := range allRoutinesWithJobNames {
-		routines = append(routines, r.Routine)
+		allRoutines = append(allRoutines, r.Routine)
 	}
 
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
 	return nil
 }
 
@@ -179,12 +179,12 @@ func validateConfigs(jobs map[string]job.Job) error {
 		// If the worker config is valid, validate the children configs. We guard this
 		// in the case of worker config errors because we don't want to spew validation
 		// errors for things that should be disabled.
-		for name, j := range jobs {
+		for name, job := range jobs {
 			if !shouldRunJob(name) {
 				continue
 			}
 
-			for _, c := range j.Config() {
+			for _, c := range job.Config() {
 				if err := c.Validate(); err != nil {
 					validationErrors[name] = append(validationErrors[name], err)
 				}
@@ -271,16 +271,16 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 	defer cancel()
 
 	for _, name := range jobNames(jobs) {
-		rec := observationCtx.Logger.Scoped(name, jobs[name].Description())
-		observationCtx := observation.ContextWithLogger(rec, observationCtx)
+		jobLogger := observationCtx.Logger.Scoped(name, jobs[name].Description())
+		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
 
 		if !shouldRunJob(name) {
-			rec.Debug("Skipping job")
+			jobLogger.Debug("Skipping job")
 			continue
 		}
 
 		wg.Add(1)
-		rec.Debug("Running job")
+		jobLogger.Debug("Running job")
 
 		go func(name string) {
 			defer wg.Done()
@@ -296,7 +296,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			results <- routinesResult{name, routinesWithJobNames, err}
 
 			if err == nil {
-				rec.Debug("Finished initializing job")
+				jobLogger.Debug("Finished initializing job")
 			} else {
 				cancel()
 			}
