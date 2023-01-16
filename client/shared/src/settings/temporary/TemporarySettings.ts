@@ -8,7 +8,7 @@ import { SectionID, NoResultsSectionID } from './searchSidebar'
 import { TourListState } from './tourState'
 
 // Prior to this type we store in settings list of MultiSelectState
-// we no longer use MultiSelect UI but for backward compitability we still
+// we no longer use MultiSelect UI but for backward compatibility we still
 // have to store and parse the old version of batch changes filters
 export interface LegacyBatchChangesFilter {
     label: string
