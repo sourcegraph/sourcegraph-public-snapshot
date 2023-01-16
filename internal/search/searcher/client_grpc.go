@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
@@ -81,7 +82,7 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		clientConn, err := grpc.Dial(parsed.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		clientConn, err := grpc.Dial(parsed.Host, append(internalgrpc.DefaultDialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))...)
 		if err != nil {
 			return false, err
 		}
