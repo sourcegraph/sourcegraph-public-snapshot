@@ -29,31 +29,26 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 Not sure if Kubernetes is the right choice for you? Learn more about other [Sourcegraph installation options](../index.md).
 
-1. [Sourcegraph Enterprise license](kustomize/configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
+1. [Sourcegraph Enterprise license](kustomize/configure.md#add-license-key) for instances with more than 10 users
 2. A [Kubernetes](https://kubernetes.io/) cluster
    - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
    - [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
    - Support for Persistent Volumes (SSDs recommended)
 3. [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 4. A private local copy of the [Sourcegraph reference repository for Kubernetes](#deployment-repository)
+   - Follow our [reference repository docs](../repositories.md) to create one
 5. Determine your instance size using our [instance size chart](../../instance-size.md)
-
-### Deployment repository
-
-Sourcegraph for Kubernetes is configured using our [reference repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph deployment on Kubernetes.
-
-Follow our [reference repository docs](../repositories.md) to create a private copy of the reference repository for deploying Sourcegraph.
 
 ## Quick start
 
 The instructions below only works for clusters that are configured to run Sourcegraph with default settings, with network access set up using [ingress controller](https://github.com/kubernetes/ingress-nginx). Please see the detailed instructions in our [configuration guide for Kustomize](kustomize/configure.md) or [configuration guide for Helm](helm.md#configuration) when deploying to a specified cloud environment (eg. EKS, GKE, etc).
 
-### Step 1: Deploy Sourcegraph
+#### Step 1: Deploy Sourcegraph
 
 Run command below to deploy a pre-configured Sourcegraph instance without the monitoring stacks to your cluster using kustomize _`-k`_.
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/base/xs?ref=v4.4.0
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/base/xs?ref=v4.3.1
 ```
 
 Alternatively, you can deploy Sourcegraph with default values using Helm.
@@ -63,7 +58,7 @@ $ helm repo add sourcegraph https://helm.sourcegraph.com/release
 $ helm install --version 4.3.1 sourcegraph sourcegraph/sourcegraph
 ```
 
-### Step 2: Access Sourcegraph
+#### Step 2: Access Sourcegraph
 
 When the status of all Sourcegraph services are shown to be `Running`, it means the deployment has been completed successfully. You can then make the frontend accessible temporarily by connecting to the sourcegraph-frontend service in your Kubernetes cluster using [kubectl port-forward](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
 
@@ -87,3 +82,9 @@ Common configurations include:
 - Set up SSH connection for cloning repositories [Kustomize](kustomize/configure.md##repository-cloning-via-ssh) / [Helm](helm.md#using-ssh-to-clone-repositories)
 
 For more information, please read the [configuration guide for Kustomize](kustomize/configure.md) or the [configuration guide for Helm](helm.md#configuration) before installing Sourcegraph.
+
+### Deployment repository
+
+Sourcegraph for Kubernetes is configured using our [reference repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph deployment on Kubernetes.
+
+Follow our [reference repository docs](../repositories.md) to create a private copy of the reference repository for deploying Sourcegraph.

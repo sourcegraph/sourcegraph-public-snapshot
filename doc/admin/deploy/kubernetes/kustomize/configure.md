@@ -10,15 +10,15 @@ $ kubectl apply -k --prune -l deploy=sourcegraph -f $PATH_TO_OVERLAY
 
 > NOTE: If you are deploying Sourcegraph with Helm, please refer to the [configuration guide for Helm](helm.md#configuration).
 
-#### Create an overlay for Sourcegraph
+## Create an overlay for Sourcegraph
 
-**IMPORTANT NOTE**: Please create your own sets of overlays within the 'overlays' directory and refrain from making changes to the other directories to prevent potential conflicts during future updates and ensure a seamless upgrade process.
-
+⚠️ **IMPORTANT NOTE**: Please create your own sets of overlays within the [new/overlays](index.md#overlays) directory of your reference repository, and refrain from making changes to the other directories to prevent potential conflicts during future updates and ensure a seamless upgrade process.
 
 1. Ensure you have met [all the prerequisites](../kustomize/index.md#prerequisites) with your private reference repository available locally
-2. Create a duplicate of the `new/overlays/template` folder within the `new/overlays` directory
-3. Rename the duplicate to the name of your cluster environment (ex. `prod`, `staging`, `aws`, etc) --this would be the name of your overlay: $OVERLAY_NAME
-4. Start configuring your overlay accordingly using the instructions below
+2. Understand how the [reference repository is structured](index.md#overview), and the correct [configuration-files](index.md#configuration-files) to use: [overlay.config](configure.md#overlay-config) and [frontend.env](configure.md#frontend-env)
+3. Create a duplicate of the `new/overlays/template` folder within the `new/overlays` directory
+4. Rename the duplicate to the name of your cluster environment (ex. `prod`, `staging`, `aws`, etc) --this would be the name of your overlay: $OVERLAY_NAME
+5. Start configuring your overlay accordingly using the instructions below
 
 ---
 
@@ -29,23 +29,46 @@ RBAC must be enabled in your cluster for Sourcegraph to do the following:
 - Communicates with the Kubernetes API for service discovery
 - Runs janitor DaemonSets that clean up temporary cache data
 
-### Non-privileged
+### Non-Privileged
 
-By default, RBAC is not required to deploy the Sourcegraph main stacks; however, RBACs must be enabled for the monitoring stacks to be fully functional.
+All Sourcegraph services are now defaulted to run as **non-root and non-privileged**. 
 
-### Privileged
+### Enabled
 
-If you have RBAC enabled on your cluster and wish to deploy a Sourcegraph instance with privileged access, you can include the privileged component in your overlay.
+The Sourcegraph main app does not include any RBAC-required resources; therefore, service discovery is not available by default, and the endpoints for additional replicas must be added to the frontend ConfigMap. 
+
+To enable service discovery for frontend to discover service endpoint automatically, please add the component below as the last component:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
+...
+# Add as the last component under components
+- ../../components/enable/service-discovery
+```
+
+#### Privileged
+
+If you have RBAC enabled on your cluster and wish to deploy a Sourcegraph instance with privileged access and root user, you can include the privileged component along with the monitoring component in your overlay.
+
+```yaml
+# new/overlays/$OVERLAY_NAME/kustomization.yaml
+components:
+- ../../components/monitoring
 - ../../components/privileged
 ```
 
-## Monitoring Stacks
+This also enables Kubernetes service discovery for frontend and run all Sourcegraph services with privileged access and root user. Do not use the `privileged component` with `enable/service-discovery component` for duplicated configurations.
 
-Add the `monitoring component` to deploy the Sourcegraph Monitoring Stacks:
+### Disabled
+
+By default, RBAC is not required to deploy the Sourcegraph main app; however, RBACs must be enabled for the monitoring stack to be fully functional.
+
+If RBAC is not enabled in your cluster, please replace the monitoring component with the [non-privileged Sourcegraph monitoring component](#non-privileged-monitoring) that has all RBAC-resources removed.
+
+## Monitoring Stack
+
+Add the `monitoring component` to deploy the Sourcegraph Monitoring Stack:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -53,11 +76,11 @@ components:
 - ../../components/monitoring
 ```
 
-> IMPORTANT: RBAC must be enabled for the monitoring stacks to be working properly.
+> IMPORTANT: RBAC must be enabled for the monitoring stack to be working properly.
 
-### Non-privileged
+### Non-privileged monitoring
 
-To deploy the non-privileged version of the Sourcegraph Monitoring Stacks:
+If RBAC is not enabled in your cluster, you can replace the monitoring component with the non-privileged Sourcegraph monitoring component that has all RBAC resources removed:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -65,17 +88,22 @@ components:
 - ../../components/monitoring/non-privileged
 ```
 
-All the RBAC-required services are removed from the monitoring stacks. The UI for grafana might still be accessible, but most of the dashboards are expected to be empty.
+All the RBAC-required services will be removed from the monitoring stack. The UI for grafana might still be accessible, but most of the dashboards are expected to be empty.
 
 ## Remove DaemonSets
 
-If your cluster does not allow DaemonSets, we recommend removing the Sourcegraph Monitoring Stacks from your deployment, or add the `remove/daemonset component` to remove all DaemonSets from the base resources:
+The Sourcegraph monitoring stack includes DaemonSets resources. If you do not have permission to deploy DaemonSets, you can add the `remove/daemonset component` to remove all DaemonSets from your monitoring stack **when deploying the monitoring stack with monitoring component**:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
+# monitoring component
+- ../../components/monitoring
+# component to remove all daemonsets
 - ../../components/remove/daemonset
 ```
+
+⚠️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to be removed.
 
 ## Namespace
 
@@ -86,8 +114,18 @@ Update the [namespace](https://kubectl.docs.kubernetes.io/references/kustomize/k
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
+```
+
+> NOTE: This assumes the namespace exists in your cluster. It does not create a new namespace.
+
+### Create a namespace
+
+Before following the steps listed in the previous step, add the namespace component to your kustomization file to create resources for the new namespace:
+
+```yaml
+# new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
-- ../../components/$COMPONENT_NAME
+- ../../components/namespace
 ```
 
 ## Resources
@@ -224,7 +262,26 @@ NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
 sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 ```
 
-### Configuration
+### Hostname
+
+Use the hostname component to configure your ingress hostname.
+
+**Step 1**: Add the `HOST_DOMAIN` variable to configure the hostname to your overlay.config file:
+
+```yaml
+# new/overlays/$OVERLAY_NAME/config/overlay.config
+HOST_DOMAIN=sourcegraph.company.com
+```
+
+**Step 2**: Add the hostname component to your kustomization file:
+
+```yaml
+# new/overlays/$OVERLAY_NAME/kustomization.yaml
+components:
+- ../../components/hostname
+```
+
+### Annotations
 
 `ingress-nginx` has extensive configuration documented at [NGINX Configuration](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/). We expect most administrators to modify [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/) in [sourcegraph-frontend.Ingress.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml), which can be done by adding the following to your overlay:
 
@@ -298,7 +355,7 @@ data:
 
 Step 3: Configure the TLS settings on your Ingress using variables
 
-Add the following variables to your overlay.config file:
+Add the following variables to your `overlay.config` file:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
@@ -406,6 +463,20 @@ components:
 > the outside to the frontend for the users of the Sourcegraph installation.
 > Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
 
+## Environment variables
+
+Update the environment variables for **sourcegraph-frontend** inside the `env/frontend.env` file that is located within your overlay directory. For example:
+
+```sh
+# new/overlays/$OVERLAY_NAME/env/frontend.env
+PGHOST=NEW_PGHOST
+REDIS_STORE_ENDPOINT=NEW_EDIS_STORE_DSN
+NEW_ENV_VAR=NEW_VALUE
+```
+
+The values will be automatically merge with the environment variables currently listed in your frontendend's ConfigMap.
+
+
 ## External databases
 
 We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcegraph databases, see [this guide](../../postgres.md).
@@ -417,6 +488,40 @@ Simply add the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, P
 ...
 PGHOST=NEW_PGHOST
 PGPORT=NEW_PGPORT
+```
+
+## Custom Redis
+
+Sourcegraph supports specifying a custom Redis server with these environment variables:
+
+- **REDIS_CACHE_ENDPOINT**=[redis-cache:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for caching information.
+- **REDIS_STORE_ENDPOINT**=[redis-store:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for storing information (session data and job queues). 
+
+When using a custom Redis server, the corresponding environment variable must also be added to the following services:
+
+<!-- Use ./dev/depgraph/depgraph summary internal/redispool to generate this -->
+
+- `sourcegraph-frontend`
+- `repo-updater`
+- `gitserver`
+- `searcher`
+- `symbols`
+- `worker`
+
+**Step 1**: Add the following component to your overlay:
+
+```yaml
+# new/overlays/$OVERLAY_NAME/kustomization.yaml
+components:
+- .../components/redis
+```
+
+**Step 2**: Define the variables inside the `env/frontend.env` file that is located within your overlay directory:
+
+```sh
+# new/overlays/$OVERLAY_NAME/env/frontend.env
+REDIS_CACHE_ENDPOINT=<REDIS_CACHE_DSN>
+REDIS_STORE_ENDPOINT=<REDIS_STORE_DSN>
 ```
 
 ## SSH for cloning
@@ -456,40 +561,6 @@ To mount the files through Kustomize:
 
 Update the configuration file for your code host to enable ssh cloning. For example, set [gitURLType](../../../../admin/external_service/github.md#gitURLType) to ssh for GitHub. See the [external service docs](../../../../admin/external_service.md) for the correct setting for your code host.
 
-## Custom Redis
-
-Sourcegraph supports specifying a custom Redis server with these environment variables:
-
-- **REDIS_CACHE_ENDPOINT**=[redis-cache:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for caching information.
-- **REDIS_STORE_ENDPOINT**=[redis-store:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for storing information (session data and job queues). 
-
-When using a custom Redis server, the corresponding environment variable must also be added to the following services:
-
-<!-- Use ./dev/depgraph/depgraph summary internal/redispool to generate this -->
-
-- `sourcegraph-frontend`
-- `repo-updater`
-- `gitserver`
-- `searcher`
-- `symbols`
-- `worker`
-
-Step 1: Add the following component to your overlay:
-
-```yaml
-# new/overlays/$OVERLAY_NAME/kustomization.yaml
-components:
-- .../components/redis
-```
-
-Step 2: Define the variables inside the `env/frontend.env` file that is located within your overlay directory:
-
-```sh
-# new/overlays/$OVERLAY_NAME/env/frontend.env
-REDIS_CACHE_ENDPOINT=<REDIS_CACHE_DSN>
-REDIS_STORE_ENDPOINT=<REDIS_STORE_DSN>
-```
-
 ## OpenTelemetry Collector
 
 Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
@@ -521,19 +592,6 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
-## Environment variables
-
-Update the environment variables for frontend inside the `env/frontend.env` file that is located within your overlay directory. For example:
-
-```sh
-# new/overlays/$OVERLAY_NAME/env/frontend.env
-PGHOST=NEW_PGHOST
-REDIS_STORE_ENDPOINT=NEW_EDIS_STORE_DSN
-NEW_ENV_VAR=NEW_VALUE
-```
-
-The values will be automatically merge with the environment variables currently listed in your frontendend's ConfigMap.
-
 ## Filtering cAdvisor metrics
 
 Due to how cAdvisor works, Sourcegraph's cAdvisor deployment can pick up metrics for services unrelated to the Sourcegraph deployment running on the same nodes as Sourcegraph services.
@@ -559,18 +617,19 @@ To update all image names with your private registry, eg. `index.docker.io/sourc
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
-- .../components/private-registry
+- ../../components/private-registry
 ```
 
 Set the `DEPLOY_SOURCEGRAPH_PRIVATE_REGISTRY` variable in your overlay.config:
 
 ```yaml
+# new/overlays/$OVERLAY_NAME/config/overlay.config
 DEPLOY_SOURCEGRAPH_PRIVATE_REGISTRY=your.private.registry.com
 ```
 
 ## Outbound Traffic
 
-When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your organization's security requirements.
+When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
 
 ## Troubleshooting
 

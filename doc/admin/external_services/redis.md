@@ -25,5 +25,7 @@ If using Docker for Desktop, `host.docker.internal` will resolve to the host IP 
 [See the Helm Redis guidance here](../deploy/kubernetes/helm.md#using-external-redis-instances)
 
 ### Kubernetes without Helm
-- See our documentation for Kubernetes [here](../deploy/kubernetes/configure.md#configure-custom-redis)
- - **Related:** [How to Set a Password for Redis using a ConfigMap](../how-to/redis_configmap.md)
+- See our documentation for Kubernetes [here](../deploy/kubernetes/kustomize/configure.md#custom-redis) when deploying with Kustomize
+- See our documentation for Kubernetes [here](../deploy/kubernetes/configure.md#configure-custom-redis) when deploying using the deprecated deployment scripts (without Kustomize)
+
+**Related:** [How to Set a Password for Redis using a ConfigMap](../how-to/redis_configmap.md)

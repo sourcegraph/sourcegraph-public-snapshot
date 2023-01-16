@@ -32,6 +32,10 @@ git merge $NEW_VERSION
 
 Then, deploy the updated version of Sourcegraph to your Kubernetes cluster
 
+#### Kustomize
+
+Follow the steps below if your instance was deployed using [Kustomize](kustomize/index.md).
+
 **Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
@@ -52,6 +56,16 @@ $ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
 
 ```bash
 kubectl get pods -o wide --watch
+```
+
+#### Non-Kustomize
+
+<!-- @TODO update 4.4.0 to the correct version number -->
+
+If you are on version below 4.4.0, please use the built-in scripts to deploy the updated version of Sourcegraph to your Kubernetes cluster:
+
+```
+./kubectl-apply-all.sh
 ```
 
 ### Multi-version upgrades
