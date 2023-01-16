@@ -24,7 +24,7 @@ type NotificationClient struct {
 	channel string
 }
 type SlackNotification struct {
-	//SentAt is the time the notification got sent
+	// SentAt is the time the notification got sent.
 	SentAt time.Time
 	// ID is the unique idenfifier which represents this notification in Slack. Typically this is the timestamp as
 	// is returned by the Slack API upon successful send of a notification.
@@ -89,7 +89,7 @@ func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNot
 	var id, channel string
 	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID
+	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
 	channel, id, _, err = c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to update message", log.Error(err))
@@ -107,7 +107,7 @@ func (c *NotificationClient) sendNewMessage(build *Build) (*SlackNotification, e
 	if err != nil {
 		return build.Notification, err
 	}
-	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 
 	logger.Debug("sending new notification")
