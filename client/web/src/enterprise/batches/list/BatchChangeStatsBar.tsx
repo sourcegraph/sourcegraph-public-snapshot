@@ -18,9 +18,12 @@ import styles from './BatchChangeStatsBar.module.scss'
 
 interface BatchChangeStatsBarProps {
     className?: string
+    namespaceID?: string
 }
 
-export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
+export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = ({
+    namespaceID,
+}) => {
     const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] =
         useTemporarySetting('batches.minSavedPerChangeset')
 
@@ -40,7 +43,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         return null
     }
 
-    return (
+    return namespaceID ? (
         <div className={classNames(styles.statsBar, 'text-muted d-block d-sm-flex')}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
@@ -106,5 +109,5 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
             </div>
         </div>
-    )
+    ) : null
 }
