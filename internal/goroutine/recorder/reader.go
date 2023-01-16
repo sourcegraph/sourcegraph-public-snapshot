@@ -31,8 +31,7 @@ func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int32, 
 	if after != "" {
 		for i, job := range jobs {
 			if job.Name > after {
-				jobs = jobs[i:]
-				break
+				return jobs[i:], nil
 			}
 		}
 	}
