@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { Fragment, useCallback, useMemo, useState } from 'react'
 
 import {
     mdiClose,
@@ -13,7 +13,6 @@ import {
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
@@ -60,6 +59,8 @@ import {
     Scalars,
     VisibleBatchSpecWorkspaceFields,
     FileDiffFields,
+    BatchSpecWorkspaceStepByIndexResult,
+    BatchSpecWorkspaceStepByIndexVariables,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -68,6 +69,7 @@ import {
     useBatchSpecWorkspace,
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    BATCH_SPEC_WORKSPACE_STEP_BY_INDEX,
 } from '../backend'
 import { DiagnosticsModal } from '../DiagnosticsModal'
 
@@ -75,6 +77,7 @@ import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
+import { useLazyQuery } from '@sourcegraph/http-client'
 
 export interface WorkspaceDetailsProps {
     id: Scalars['ID']
@@ -490,13 +493,51 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
+    const [outputLines, setOutputLines] = useState<string[] | undefined>(step.outputLines?.nodes)
+    const [pageInfo, setPageInfo] = useState(step.outputLines?.pageInfo)
 
-    const outputLines = useMemo(() => {
-        const outputLines = cloneDeep(step.outputLines)
-        console.log(outputLines, '<=====')
-        if (outputLines.nodes !== null) {
+    const [fetchAdditionalOutputLines, additionalOutputLinesResult] = useLazyQuery<
+        BatchSpecWorkspaceStepByIndexResult,
+        BatchSpecWorkspaceStepByIndexVariables
+    >(BATCH_SPEC_WORKSPACE_STEP_BY_INDEX, {
+        fetchPolicy: 'no-cache',
+        onCompleted: result => {
+            const previousData = outputLines
+
+            if (previousData === undefined || result === undefined) {
+                return
+            }
+
+            if (result.node?.__typename !== 'VisibleBatchSpecWorkspace' || result.node.step === null) {
+                return
+            }
+
+            if (result.node.step.outputLines === null) {
+                return
+            }
+
+            const newOutputLines = result.node.step.outputLines
+            setOutputLines([...previousData, ...newOutputLines.nodes])
+            setPageInfo(newOutputLines.pageInfo)
+        }
+    })
+
+    const memoizedFetchAdditionalOutputLines = useCallback(() => {
+        const variables = {
+            workspaceID,
+            stepIndex: step.number,
+            after: (pageInfo && pageInfo.endCursor) ? parseInt(pageInfo.endCursor, 10) : 0,
+        }
+
+        return fetchAdditionalOutputLines({ variables })
+    }, [fetchAdditionalOutputLines, workspaceID, step.number, pageInfo])
+
+    const additionalOutputLines = useMemo(() => {
+        const outputLines: string[] = []
+
+        if (step.outputLines !== null) {
             if (
-                outputLines.nodes.every(
+                step.outputLines.nodes.every(
                     line =>
                         line
                             .replaceAll(/'^std(out|err):'/g, '')
@@ -504,21 +545,23 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                             .trim() === ''
                 )
             ) {
-                outputLines.nodes.push('stdout: This command did not produce any output')
+                outputLines.push('stdout: This command did not produce any output')
             }
 
             if (step.exitCode === 0) {
-                outputLines.nodes.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
+                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
             }
 
             if (step.exitCode !== null && step.exitCode !== 0) {
-                outputLines.nodes.push(`stderr: Command failed with status ${step.exitCode}`)
+                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
             }
         }
 
         return outputLines
     }, [step.exitCode, step.outputLines])
     const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
+    const isFetchingOutputLines = additionalOutputLinesResult.loading
+
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
             <CollapseHeader
@@ -579,10 +622,34 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 </TabList>
                                 <TabPanels>
                                     <TabPanel className="pt-2" key="logs">
-                                        {!step.startedAt && (
+                                        {step.startedAt ? (
+                                            <>
+                                                {outputLines && outputLines.length > 0 && (
+                                                    <>
+                                                        <LogOutput text={outputLines.join('\n')} />
+                                                        {pageInfo && pageInfo.hasNextPage && (
+                                                            <Fragment>
+                                                                {isFetchingOutputLines && <LoadingSpinner />}
+                                                                {!isFetchingOutputLines && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        className={styles.stepOutputShowMoreBtn}
+                                                                        onClick={() => memoizedFetchAdditionalOutputLines()}
+                                                                    >
+                                                                        Load more ...
+                                                                    </Button>
+                                                                )}
+                                                            </Fragment>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {additionalOutputLines.length > 0 && (
+                                                    <LogOutput text={additionalOutputLines.join('\n')} />
+                                                )}
+                                            </>
+                                        ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
                                         )}
-                                        {step.startedAt && outputLines && outputLines.nodes.length > 0 && <LogOutput text={outputLines.nodes.join('\n')} />}
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="output-variables">
                                         {!step.startedAt && (

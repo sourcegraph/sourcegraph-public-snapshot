@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -368,7 +369,8 @@ type batchSpecWorkspaceOutputLiinesResolver struct {
 	once        sync.Once
 	total       int32
 	linesSubset []string
-	hasNext     bool
+	hasNextPage bool
+	endCursor   int32
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver = &batchSpecWorkspaceOutputLiinesResolver{}
@@ -392,9 +394,12 @@ func (r *batchSpecWorkspaceOutputLiinesResolver) compute(ctx context.Context) ([
 		if int(r.first) < len(r.lines) && r.total > offset {
 			r.linesSubset = r.linesSubset[:r.first]
 		}
-		r.hasNext = r.total > offset
+		r.hasNextPage = r.total > offset
+		if r.hasNextPage {
+			r.endCursor = offset
+		}
 	})
-	return r.linesSubset, r.total, r.hasNext
+	return r.linesSubset, r.total, r.hasNextPage
 }
 
 func (r *batchSpecWorkspaceOutputLiinesResolver) TotalCount(ctx context.Context) (int32, error) {
@@ -403,8 +408,11 @@ func (r *batchSpecWorkspaceOutputLiinesResolver) TotalCount(ctx context.Context)
 }
 
 func (r *batchSpecWorkspaceOutputLiinesResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, hasNext := r.compute(ctx)
-	return graphqlutil.HasNextPage(hasNext), nil
+	_, _, hasNextPage := r.compute(ctx)
+	if hasNextPage {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), nil
+	}
+	return graphqlutil.HasNextPage(hasNextPage), nil
 }
 
 func (r *batchSpecWorkspaceOutputLiinesResolver) Nodes(ctx context.Context) ([]string, error) {
