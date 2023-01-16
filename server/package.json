@@ -14,10 +14,12 @@
   "dependencies": {
     "@completion/sampling": "^0.1.1",
     "@sourcegraph/cody-common": "^0.0.0",
+    "@types/node-fetch": "^2.6.2",
     "axios": "^1.2.2",
     "body-parser": "^1.20.1",
     "express": "^4.18.2",
     "http": "^0.0.1-security",
+    "node-fetch": "^2.6.7",
     "openai": "^3.1.0",
     "socket.io": "^4.5.4",
     "socket.io-client": "^4.5.4",

@@ -34,6 +34,7 @@ const port = process.env.CODY_PORT || "8080";
 const openaiConfig = new openai.Configuration({
 	apiKey: openaiKey,
 });
+
 const openaiBackend = new OpenAIBackend(
 	openaiConfig,
 	{
@@ -45,10 +46,14 @@ const openaiBackend = new OpenAIBackend(
 	prompt_refs_history_inlinecomments(1000),
 	langKeywordStopStrings
 );
+
 const claudeBackend = new ClaudeBackend(claudeKey, {
-	...defaultModelParams,
-	name: "santa-h-v3-s400",
+	model: "santa-h-v3-s400",
 	temperature: 0.2,
+	stop_sequences: ["\n\nHuman:"],
+	max_tokens_to_sample: 1000,
+	top_p: 1.0,
+	top_k: -1,
 });
 
 const app = express();
