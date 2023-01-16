@@ -67,15 +67,14 @@ func (m *Recorder) RegistrationDone() {
 
 // collectAllJobNames collects all known job names in Redis.
 func (m *Recorder) collectAllJobNames() []string {
-	var allJobNames []string
+	names := make(map[string]struct{}, len(m.recordables))
 	for _, r := range m.recordables {
-		jobName := r.JobName()
-		if slices.Contains(allJobNames, jobName) {
-			continue
-		}
-		allJobNames = append(allJobNames, jobName)
+		names[r.JobName()] = struct{}{}
 	}
-
+	allJobNames := make([]string, 0, len(names))
+	for name := range names {
+		allJobNames = append(allJobNames, name)
+	}
 	return allJobNames
 }
 
