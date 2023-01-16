@@ -38,7 +38,7 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
     const [searchTerm, setSearchTerm] = useState('')
 
     // Render only non-selected filters and filters that match with search term value
-    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.includes(searchTerm))
+    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.toLowerCase().includes(searchTerm.toLowerCase()))
 
     return (
         <Label htmlFor={id} className={classNames(className, styles.root)}>
