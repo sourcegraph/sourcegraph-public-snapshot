@@ -10,7 +10,7 @@ import (
 )
 
 // GetBackgroundJobInfos returns information about all known jobs.
-func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int32, dayCountForStats int32) ([]JobInfo, error) {
+func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int, dayCountForStats int) ([]JobInfo, error) {
 	// Get known job names sorted by name, ascending
 	knownJobNames, err := getKnownJobNames(c)
 	if err != nil {
@@ -40,7 +40,7 @@ func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int32, 
 }
 
 // GetBackgroundJobInfo returns information about the given job.
-func GetBackgroundJobInfo(c *rcache.Cache, jobName string, recentRunCount int32, dayCountForStats int32) (JobInfo, error) {
+func GetBackgroundJobInfo(c *rcache.Cache, jobName string, recentRunCount int, dayCountForStats int) (JobInfo, error) {
 	allHostNames, err := getKnownHostNames(c)
 	if err != nil {
 		return JobInfo{}, err
@@ -168,7 +168,7 @@ func getKnownRoutines(c *rcache.Cache) ([]serializableRoutineInfo, error) {
 }
 
 // getRoutineInfo returns the info for a single routine: its instances, recent runs, and stats.
-func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []string, recentRunCount int32, dayCountForStats int32) (RoutineInfo, error) {
+func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []string, recentRunCount int, dayCountForStats int) (RoutineInfo, error) {
 	routineInfo := RoutineInfo{
 		Name:        r.Name,
 		Type:        r.Type,
@@ -249,7 +249,7 @@ func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string
 }
 
 // loadRecentRuns loads the recent runs for a routine, in no particular order.
-func loadRecentRuns(c *rcache.Cache, routineName string, hostName string, count int32) ([]RoutineRun, error) {
+func loadRecentRuns(c *rcache.Cache, routineName string, hostName string, count int) ([]RoutineRun, error) {
 	recentRuns, err := c.GetLastListItems(routineName+":"+hostName+":"+"recentRuns", count)
 	if err != nil {
 		return nil, errors.Wrap(err, "load recent runs")
@@ -269,10 +269,10 @@ func loadRecentRuns(c *rcache.Cache, routineName string, hostName string, count 
 }
 
 // loadRunStats loads the run stats for a routine.
-func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount int32) (RoutineRunStats, error) {
+func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount int) (RoutineRunStats, error) {
 	// Get all stats
 	var stats RoutineRunStats
-	for i := int32(0); i < dayCount; i++ {
+	for i := 0; i < dayCount; i++ {
 		date := now.AddDate(0, 0, -int(i)).Truncate(24 * time.Hour)
 		statsRaw, found := c.Get(routineName + ":runStats:" + date.Format("2006-01-02"))
 		if found {

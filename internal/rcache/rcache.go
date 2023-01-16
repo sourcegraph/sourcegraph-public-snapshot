@@ -237,7 +237,7 @@ func (r *Cache) AddToList(key string, value string) error {
 }
 
 // GetLastListItems returns the last `count` items in the list.
-func (r *Cache) GetLastListItems(key string, count int32) ([]string, error) {
+func (r *Cache) GetLastListItems(key string, count int) ([]string, error) {
 	c := pool.Get()
 	defer func(c redis.Conn) {
 		_ = c.Close()
@@ -246,7 +246,7 @@ func (r *Cache) GetLastListItems(key string, count int32) ([]string, error) {
 }
 
 // LTrimList trims the list to the last `count` items.
-func (r *Cache) LTrimList(key string, count int32) error {
+func (r *Cache) LTrimList(key string, count int) error {
 	c := pool.Get()
 	defer func(c redis.Conn) {
 		_ = c.Close()

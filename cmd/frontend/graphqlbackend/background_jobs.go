@@ -97,7 +97,7 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 	if err != nil {
 		return nil, err
 	}
-	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, int32(defaultRecentRunCount), dayCountForStats)
+	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, defaultRecentRunCount, dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +138,12 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqluti
 }
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
+	recentRunCount := defaultRecentRunCount
+	if r.recentRunCount != nil {
+		recentRunCount = int(*r.recentRunCount)
+	}
 	r.once.Do(func() {
-		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(), r.after, *r.recentRunCount, dayCountForStats)
+		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(), r.after, recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 			return
