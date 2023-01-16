@@ -614,12 +614,13 @@ type ExternalServiceSyncJob struct {
 	Cancel            bool
 
 	// Counters that show progress of a running job
-	ReposSynced     int32
-	RepoSyncErrors  int32
-	ReposAdded      int32
-	ReposDeleted    int32
-	ReposModified   int32
-	ReposUnmodified int32
+	ReposSynced       int32
+	RepoSyncErrors    int32
+	ReposAdded        int32
+	ReposDeleted      int32
+	ReposModified     int32
+	ReposUnmodified   int32
+	RepoLicenseErrors int32
 }
 
 // URN returns a unique resource identifier of this external service,

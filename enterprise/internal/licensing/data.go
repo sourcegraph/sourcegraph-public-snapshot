@@ -1,7 +1,5 @@
 package licensing
 
-import "fmt"
-
 // The list of plans.
 const (
 	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
@@ -24,6 +22,8 @@ const (
 
 	// PlanFree0 is the default plan if no license key is set.
 	PlanFree0 Plan = "free-0"
+
+	PlanFree1 Plan = "free-1"
 )
 
 var allPlans = []Plan{
@@ -36,6 +36,7 @@ var allPlans = []Plan{
 	PlanEnterprise1,
 	PlanEnterpriseExtension,
 	PlanFree0,
+	PlanFree1,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -81,43 +82,6 @@ const (
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
 )
-
-// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-type FeatureBatchChanges struct {
-	// If true, there is no limit to the number of changesets that can be created.
-	Unrestricted bool
-	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
-	MaxNumChangesets int
-}
-
-func (*FeatureBatchChanges) FeatureName() string {
-	return "batch-changes"
-}
-
-func (f *FeatureBatchChanges) Check(info *Info) error {
-	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
-	}
-
-	// If the deprecated campaigns are enabled, use unrestricted batch changes
-	if FeatureCampaigns.Check(info) == nil && !info.IsExpired() {
-		f.Unrestricted = true
-		return nil
-	}
-
-	// If the batch changes tag exists on the license, use unrestricted batch changes
-	if info.HasTag(f.FeatureName()) && !info.IsExpired() {
-		f.Unrestricted = true
-		return nil
-	}
-
-	// Otherwise, check the default batch changes feature
-	if info.Plan().HasFeature(f, info.IsExpired()) {
-		return nil
-	}
-
-	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
-}
 
 type PlanDetails struct {
 	Features []Feature
@@ -225,5 +189,24 @@ var planDetails = map[Plan]PlanDetails{
 		FeatureSSO,
 		FeatureMonitoring,
 		&FeatureBatchChanges{MaxNumChangesets: 10},
-	}},
+		&FeaturePrivateRepositories{Unrestricted: true},
+	},
+		ExpiredFeatures: []Feature{
+			FeatureSSO,
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
+		},
+	},
+	PlanFree1: {Features: []Feature{
+		FeatureMonitoring,
+		&FeatureBatchChanges{MaxNumChangesets: 10},
+		&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+	},
+		ExpiredFeatures: []Feature{
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		},
+	},
 }

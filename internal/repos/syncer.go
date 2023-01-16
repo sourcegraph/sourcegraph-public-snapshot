@@ -41,6 +41,9 @@ type Syncer struct {
 
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
+
+	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
+	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -112,19 +115,24 @@ func (s *syncHandler) Handle(ctx context.Context, _ log.Logger, sj *SyncJob) (er
 	progressRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
 		if final || progressLimiter.Allow() {
 			return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
-				ID:              int64(sj.ID),
-				ReposSynced:     progress.Synced,
-				RepoSyncErrors:  progress.Errors,
-				ReposAdded:      progress.Added,
-				ReposDeleted:    progress.Deleted,
-				ReposModified:   progress.Modified,
-				ReposUnmodified: progress.Unmodified,
+				ID:                int64(sj.ID),
+				ReposSynced:       progress.Synced,
+				RepoSyncErrors:    progress.Errors,
+				ReposAdded:        progress.Added,
+				ReposDeleted:      progress.Deleted,
+				ReposModified:     progress.Modified,
+				ReposUnmodified:   progress.Unmodified,
+				RepoLicenseErrors: progress.LicenseErrors,
 			})
 		}
 		return nil
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
+}
+
+type LicenseError struct {
+	error
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -196,10 +204,11 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 // Diff is the difference found by a sync between what is in the store and
 // what is returned from sources.
 type Diff struct {
-	Added      types.Repos
-	Deleted    types.Repos
-	Modified   ReposModified
-	Unmodified types.Repos
+	Added         types.Repos
+	Deleted       types.Repos
+	Modified      ReposModified
+	Unmodified    types.Repos
+	LicenseErrors types.Repos
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -209,6 +218,7 @@ func (d *Diff) Sort() {
 		d.Deleted,
 		d.Modified.Repos(),
 		d.Unmodified,
+		d.LicenseErrors,
 	} {
 		sort.Sort(ds)
 	}
@@ -463,8 +473,9 @@ var ErrCloudDefaultSync = errors.New("cloud default external services can't be s
 
 // SyncProgress represents running counts for an external service sync.
 type SyncProgress struct {
-	Synced int32 `json:"synced,omitempty"`
-	Errors int32 `json:"errors,omitempty"`
+	Synced        int32 `json:"synced,omitempty"`
+	Errors        int32 `json:"errors,omitempty"`
+	LicenseErrors int32 `json:"license_errors,omitempty"`
 
 	// Diff stats
 	Added      int32 `json:"added,omitempty"`
@@ -604,7 +615,13 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
-			syncProgress.Errors++
+			var licenseError *LicenseError
+			if errors.As(err, licenseError) {
+				syncProgress.LicenseErrors++
+				syncProgress.LicenseErrors += int32(diff.LicenseErrors.Len())
+			} else {
+				syncProgress.Errors++
+			}
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
@@ -759,6 +776,12 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		fallthrough
 	case 1: // Existing repo, update.
 		s.ObsvCtx.Logger.Debug("existing repo")
+		if s.EnterpriseUpdateRepoHook != nil {
+			if err := s.EnterpriseUpdateRepoHook(ctx, tx, stored[0], sourced); err != nil {
+				d.LicenseErrors = append(d.LicenseErrors, sourced)
+				return d, LicenseError{errors.Wrap(err, "syncer: failed to update repo")}
+			}
+		}
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -774,6 +797,14 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
+
+		if s.EnterpriseCreateRepoHook != nil {
+			if err := s.EnterpriseCreateRepoHook(ctx, tx, sourced); err != nil {
+				d.LicenseErrors = append(d.LicenseErrors, sourced)
+				return d, LicenseError{errors.Wrap(err, "syncer: failed to update repo")}
+			}
+		}
+
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}

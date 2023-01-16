@@ -54,6 +54,9 @@ func EnterpriseInit(
 		}
 	}
 
+	server.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+	server.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+
 	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
