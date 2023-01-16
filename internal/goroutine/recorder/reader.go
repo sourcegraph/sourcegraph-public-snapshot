@@ -177,7 +177,6 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 		IntervalMs:  int32(r.Interval / time.Millisecond),
 		Instances:   make([]RoutineInstanceInfo, 0, len(allHostNames)),
 		RecentRuns:  []RoutineRun{},
-		Stats:       RoutineRunStats{},
 	}
 
 	// Collect instances
