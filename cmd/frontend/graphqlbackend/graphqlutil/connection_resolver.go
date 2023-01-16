@@ -56,15 +56,30 @@ func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 }
 
 type ConnectionResolverOptions struct {
-	// The maximum number of nodes that can be returned in a single page.
+	// MaxPageSize is the maximum number of nodes that can be returned in a single page.
 	MaxPageSize *int
-	// Used to enable or disable the automatic reversal of nodes in backward
-	// pagination mode.
+
+	// Reverse is used to enable the reversal of nodes in backward pagination mode. Setting this to
+	// `true` is useful if an API wants to reverse the result set when using `last:N` in the
+	// arguments. For example:
 	//
-	// Setting this to `false` is useful when the data is not fetched via a SQL
-	// index.
+	// If the database contains: [1, 2, 3, 4, 5]
 	//
-	// Defaults to `true` when not set.
+	// The user wants: last:2
+	//
+	// SQL query will need to apply ORDER BY DESC on the dataset which means the resulting dataset
+	// returned in the API response will be: [5, 4]
+	//
+	// If for any reason this is not ideal for an API implementing the ConnectionResolver, setting
+	// `Reverse: true` will mean that now this data set will be returned as: `[4, 5]` instead.
+	//
+	// Not that if Reverse: true and first:2 is used on the dataset, then the resulting response
+	// from the API will also be reversed and then look like: [2, 1] instead.
+	//
+	// The decision of reversing is left upon the implementer of ConnectionNode interface, but
+	// usually should not be required.
+	//
+	// Defaults to `false` when not set.
 	Reverse *bool
 }
 
@@ -170,15 +185,12 @@ func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 
 		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
 
-		}
-
-		if r.options.Reverse != nil && !*r.options.Reverse {
+		if r.options.Reverse == nil || !*r.options.Reverse {
 			return
 		}
 
-		// NOTE(naman): with `last` argument the items are sorted in opposite
-		// direction in the SQL query. Here we are reversing the list to return
-		// them in correct order, to reduce complexity.
+		// NOTE: With the `last` argument the items are sorted in opposite direction in the SQL
+		// query. Reversse the list if the API suggests to do so.
 		if r.args.Last != nil {
 			for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
 				r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]

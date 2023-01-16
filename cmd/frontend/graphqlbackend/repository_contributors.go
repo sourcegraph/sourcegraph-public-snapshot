@@ -35,8 +35,8 @@ func (r *RepositoryResolver) Contributors(args *struct {
 		connectionArgs: connectionArgs,
 		repo:           r,
 	}
-	reverse := false
-	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{Reverse: &reverse})
+
+	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, connectionArgs, &graphqlutil.ConnectionResolverOptions{})
 }
 
 type repositoryContributorConnectionStore struct {
