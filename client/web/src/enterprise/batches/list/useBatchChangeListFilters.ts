@@ -38,7 +38,7 @@ interface UseBatchChangeListFiltersResult {
 }
 
 /**
- * Custom hook for managing, persisting, filter options selected from
+ * Custom hook for managing and persisting filter options selected from
  * the MultiCombobox UI to filter a list of batch changes.
  */
 export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps): UseBatchChangeListFiltersResult => {
