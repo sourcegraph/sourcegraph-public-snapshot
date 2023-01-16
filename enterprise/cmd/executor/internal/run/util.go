@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
@@ -87,7 +88,7 @@ func execOutput(ctx context.Context, name string, args ...string) (string, error
 	cmd.Stdout = &buf
 	if err := cmd.Run(); err != nil {
 		cmdLine := strings.Join(append([]string{name}, args...), " ")
-		return "", fmt.Errorf("'%s': error: %v output: %s", cmdLine, err, buf.String())
+		return "", errors.Wrap(err, fmt.Sprintf("'%s': %s", cmdLine, buf.String()))
 	}
 	return strings.TrimSpace(buf.String()), nil
 }
