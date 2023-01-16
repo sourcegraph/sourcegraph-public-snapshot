@@ -3197,8 +3197,14 @@ CREATE TABLE permission_sync_jobs (
     repository_id integer,
     user_id integer,
     high_priority boolean DEFAULT false NOT NULL,
-    invalidate_caches boolean DEFAULT false NOT NULL
+    invalidate_caches boolean DEFAULT false NOT NULL,
+    reason text,
+    triggered_by_user_id integer
 );
+
+COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';
+
+COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
@@ -5205,6 +5211,9 @@ ALTER TABLE ONLY org_stats
 
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY permission_sync_jobs
+    ADD CONSTRAINT permission_sync_jobs_triggered_by_user_id_fkey FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);
