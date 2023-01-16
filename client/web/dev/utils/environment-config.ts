@@ -10,6 +10,8 @@ type WEB_BUILDER = 'esbuild' | 'webpack'
 
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
+const NODE_DEBUG = process.env.NODE_DEBUG
+
 export const IS_DEVELOPMENT = NODE_ENV === 'development'
 export const IS_PRODUCTION = NODE_ENV === 'production'
 
@@ -20,6 +22,7 @@ export const ENVIRONMENT_CONFIG = {
      * ----------------------------------------
      */
     NODE_ENV,
+    NODE_DEBUG,
     // Determines if build is running on CI.
     CI: getEnvironmentBoolean('CI'),
     // Determines if the build will be used for integration tests.

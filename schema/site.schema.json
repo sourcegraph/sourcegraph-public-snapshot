@@ -435,7 +435,7 @@
           }
         },
         "enableGithubInternalRepoVisibility": {
-          "description": "Enable support for visilibity of internal Github repositories",
+          "description": "Enable support for visibility of internal Github repositories",
           "type": "boolean",
           "default": false
         },
@@ -467,6 +467,14 @@
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }
+        },
+        "insightsDataRetention": {
+          "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "examples": [
@@ -613,6 +621,12 @@
     },
     "disableNonCriticalTelemetry": {
       "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
+    "disableFeedbackSurvey": {
+      "description": "Disable the feedback survey",
       "type": "boolean",
       "default": false,
       "group": "Misc."

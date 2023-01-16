@@ -107,6 +107,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoID={repo?.id}
                                     repoName={repoName}
                                     repoUrl={repo?.url}
+                                    repoServiceType={repo?.externalRepository?.serviceType}
                                     mode={mode}
                                     location={location}
                                     repoHeaderContributionsLifecycleProps={

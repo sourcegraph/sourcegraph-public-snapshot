@@ -631,7 +631,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
+	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
@@ -653,6 +653,8 @@ type ExperimentalFeatures struct {
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// InsightsBackfillerV2 description: DEPRECATED: Setting any value to this flag has no effect.
 	InsightsBackfillerV2 *bool `json:"insightsBackfillerV2,omitempty"`
+	// InsightsDataRetention description: Code insights data points beyond the sample size defined in the site configuration will be periodically archived
+	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -733,6 +735,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goPackages")
 	delete(m, "insightsAlternateLoadingStrategy")
 	delete(m, "insightsBackfillerV2")
+	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
@@ -2298,6 +2301,8 @@ type SiteConfiguration struct {
 	DisableAutoCodeHostSyncs bool `json:"disableAutoCodeHostSyncs,omitempty"`
 	// DisableAutoGitUpdates description: Disable periodically fetching git contents for existing repositories.
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
+	// DisableFeedbackSurvey description: Disable the feedback survey
+	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
 	// DisableNonCriticalTelemetry description: Disable aggregated event counts from being sent to Sourcegraph.com via pings.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
@@ -2504,6 +2509,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "defaultRateLimit")
 	delete(m, "disableAutoCodeHostSyncs")
 	delete(m, "disableAutoGitUpdates")
+	delete(m, "disableFeedbackSurvey")
 	delete(m, "disableNonCriticalTelemetry")
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")

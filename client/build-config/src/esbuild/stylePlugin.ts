@@ -10,7 +10,7 @@ import sass from 'sass'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
-import { NODE_MODULES_PATH, ROOT_PATH } from '../paths'
+import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -101,7 +101,7 @@ export const stylePlugin: esbuild.Plugin = {
         const resolver = ResolverFactory.createResolver({
             fileSystem: new CachedInputFileSystem(fs, 4000),
             extensions: ['.css', '.scss'],
-            modules: [NODE_MODULES_PATH],
+            modules: [NODE_MODULES_PATH, ...WORKSPACE_NODE_MODULES_PATHS],
             unsafeCache: true,
         })
 

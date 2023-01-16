@@ -1166,6 +1166,10 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			// we might want to not filter on this attribute at all, and `bool` defaults to false.
 			args.IsFrozen = r.args.IsFrozen
 		}
+		if r.args.Find != nil {
+			args.Find = *r.args.Find
+		}
+
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
 		if err != nil {
