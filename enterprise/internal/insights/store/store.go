@@ -536,10 +536,14 @@ DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snap
 type PersistMode string
 
 const (
-	RecordMode     PersistMode = "record"
-	SnapshotMode   PersistMode = "snapshot"
-	recordingTable string      = "series_points"
-	snapshotsTable string      = "series_points_snapshots"
+	RecordMode          PersistMode = "record"
+	SnapshotMode        PersistMode = "snapshot"
+	recordingTable      string      = "series_points"
+	snapshotsTable      string      = "series_points_snapshots"
+	recordingTimesTable             = "insight_series_recording_times"
+
+	recordingTableArchive      string = "archived_series_points"
+	recordingTimesTableArchive        = "archived_insight_series_recording_times"
 )
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
@@ -883,7 +887,7 @@ type SeriesPointForExport struct {
 	Capture          *string
 }
 
-func (s *Store) GetPointDataForInsightViewID(ctx context.Context, insightViewId string) (_ []SeriesPointForExport, err error) {
+func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId string) (_ []SeriesPointForExport, err error) {
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
@@ -892,17 +896,18 @@ func (s *Store) GetPointDataForInsightViewID(ctx context.Context, insightViewId 
 	for _, repoID := range denylist {
 		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
 	}
+	repoIDsPred := sqlf.Join(excludedRepoIDs, ",")
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, insightViewId, sqlf.Join(excludedRepoIDs, ",")))
+	tx, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = tx.Done(err) }()
 
-	results := make([]SeriesPointForExport, 0)
-	for rows.Next() {
+	var results []SeriesPointForExport
+	exportScanner := func(sc scanner) error {
 		var tmp SeriesPointForExport
-		if err = rows.Scan(
+		if err = sc.Scan(
 			&tmp.InsightViewTitle,
 			&tmp.SeriesQuery,
 			&tmp.SeriesQuery,
@@ -910,21 +915,32 @@ func (s *Store) GetPointDataForInsightViewID(ctx context.Context, insightViewId 
 			&tmp.RepoID,
 			&tmp.Value,
 			&tmp.Capture,
-			); err != nil {
-			return nil, err
+		); err != nil {
+			return err
 		}
 		results = append(results, tmp)
-	})
+		return nil
+	}
+
+	// start with the oldest archived points and add them to the results
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, recordingTableArchive, recordingTimesTableArchive, insightViewId, repoIDsPred), exportScanner); err != nil {
+		return nil, errors.Wrap(err, "fetching archived code insights data")
+	}
+	// then add live points
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, recordingTable, recordingTimesTable, insightViewId, repoIDsPred), exportScanner); err != nil {
+		return nil, errors.Wrap(err, "fetching code insights data")
+	}
+
 	return results, nil
 }
 
 const exportCodeInsightsDataSql = `
 select iv.title, ivs.label, i.query, isrt.recording_time, sp.repo_id, coalesce(sp.value, 0) as value, sp.capture 
-from insight_series_recording_times isrt
+from %s isrt
     join insight_series i on i.id = isrt.insight_series_id
     join insight_view_series ivs ON i.id = ivs.insight_series_id
     join insight_view iv ON ivs.insight_view_id = iv.id
-    left outer join series_points sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
+    left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
 	where ivs.insight_view_id = %s and sp.repo_id not in (%s)
     order by iv.title, isrt.recording_time, ivs.label;
 `
