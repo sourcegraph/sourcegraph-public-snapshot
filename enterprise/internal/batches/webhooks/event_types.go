@@ -3,13 +3,14 @@ package webhooks
 import "github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 
 const (
-	BatchChangeApply     = "batch_change:apply"
-	BatchChangeClose     = "batch_change:close"
-	BatchChangeDelete    = "batch_change:delete"
-	ChangesetClose       = "changeset:close"
-	ChangesetPublish     = "changeset:publish"
-	ChangesetUpdate      = "changeset:update"
-	ChangesetUpdateError = "changeset:update_error"
+	BatchChangeApply      = "batch_change:apply"
+	BatchChangeClose      = "batch_change:close"
+	BatchChangeDelete     = "batch_change:delete"
+	ChangesetClose        = "changeset:close"
+	ChangesetPublish      = "changeset:publish"
+	ChangesetPublishError = "changeset:publish_error"
+	ChangesetUpdate       = "changeset:update"
+	ChangesetUpdateError  = "changeset:update_error"
 )
 
 func init() {
@@ -36,6 +37,11 @@ func init() {
 	outbound.RegisterEventType(outbound.EventType{
 		Key:         ChangesetPublish,
 		Description: "sent when a changeset is published to the code host",
+	})
+
+	outbound.RegisterEventType(outbound.EventType{
+		Key:         ChangesetPublishError,
+		Description: "sent when an attempt to publish a changeset to the code host fails",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
