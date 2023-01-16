@@ -12,8 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-// This is hard-coded for now. This signifies the number of days to use for generating the stats for each routine.
+// dayCountForStats is hard-coded for now. This signifies the number of days to use for generating the stats for each routine.
 const dayCountForStats = 7
+
+// defaultRecentRunCount signifies the default number of recent runs to return for each routine.
+const defaultRecentRunCount = 5
 
 type backgroundJobsArgs struct {
 	First          *int32
@@ -91,14 +94,12 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
-	recentRunCount := 5 // Magic value for now
-
 	var jobName string
 	err := relay.UnmarshalSpec(id, &jobName)
 	if err != nil {
 		return nil, err
 	}
-	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, int32(recentRunCount), dayCountForStats)
+	item, err := recorder.GetBackgroundJobInfo(recorder.GetCache(), jobName, int32(defaultRecentRunCount), dayCountForStats)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +142,7 @@ func (r *backgroundJobConnectionResolver) PageInfo(context.Context) (*graphqluti
 
 func (r *backgroundJobConnectionResolver) compute() ([]*BackgroundJobResolver, error) {
 	r.once.Do(func() {
-		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(1), r.after, *r.recentRunCount, dayCountForStats)
+		jobInfos, err := recorder.GetBackgroundJobInfos(recorder.GetCache(), r.after, *r.recentRunCount, dayCountForStats)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 		}
