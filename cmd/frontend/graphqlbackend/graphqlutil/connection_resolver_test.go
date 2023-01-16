@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const testTotalCount = int32(10)
@@ -50,9 +51,17 @@ func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.P
 	s.ComputeNodesCalled = s.ComputeNodesCalled + 1
 	s.testPaginationArgs(args)
 
-	nodes := []*testConnectionNode{{id: 0}, {id: 1}}
+	if args.First != nil {
+		return []*testConnectionNode{{id: 0}, {id: 1}}, nil
+	}
 
-	return nodes, nil
+	// Return in the reverse order because a SQL query will need to ORDER BY DESC to support
+	// args.Last.
+	if args.Last != nil {
+		return []*testConnectionNode{{id: 1}, {id: 0}}, nil
+	}
+
+	return []*testConnectionNode{}, errors.New("unexpected: either of First or Last must be set")
 }
 
 func (*testConnectionStore) MarshalCursor(n *testConnectionNode) (*string, error) {
@@ -236,7 +245,7 @@ func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[tes
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(expectedResponse.startCursor, *startCursor); diff != "" {
-		t.Fatal(diff)
+		t.Errorf("mismatched startCursor in response: %v", diff)
 	}
 
 	endCursor, err := pageInfo.EndCursor()
@@ -244,14 +253,14 @@ func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[tes
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(expectedResponse.endCursor, *endCursor); diff != "" {
-		t.Fatal(diff)
+		t.Errorf("mismatched endCursor in response: %v", diff)
 	}
 
 	if expectedResponse.hasNextPage != pageInfo.HasNextPage() {
-		t.Fatalf("hasNextPage should be %v, but is %v", expectedResponse.hasNextPage, pageInfo.HasNextPage())
+		t.Errorf("hasNextPage should be %v, but is %v", expectedResponse.hasNextPage, pageInfo.HasNextPage())
 	}
 	if expectedResponse.hasPreviousPage != pageInfo.HasPreviousPage() {
-		t.Fatalf("hasPreviousPage should be %v, but is %v", expectedResponse.hasPreviousPage, pageInfo.HasPreviousPage())
+		t.Errorf("hasPreviousPage should be %v, but is %v", expectedResponse.hasPreviousPage, pageInfo.HasPreviousPage())
 	}
 
 	resolver.PageInfo(ctx)
@@ -284,16 +293,19 @@ func TestConnectionPageInfo(t *testing.T) {
 		{
 			name: "backward first page",
 			args: withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: true},
+			want: &pageInfoResponse{startCursor: "1", endCursor: "1", hasNextPage: true, hasPreviousPage: true},
 		},
 		{
 			name: "backward first page without cursor",
 			args: withLastCA(1, &ConnectionResolverArgs{}),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: false, hasPreviousPage: true},
+			want: &pageInfoResponse{startCursor: "1", endCursor: "1", hasNextPage: false, hasPreviousPage: true},
 		},
 		{
 			name: "backward last page",
-			args: withBeforeCA("0", withBeforeCA("0", withLastCA(20, &ConnectionResolverArgs{}))),
+			args: &ConnectionResolverArgs{
+				Last:   newInt32(20),
+				Before: stringPtr("0"),
+			},
 			want: &pageInfoResponse{startCursor: "1", endCursor: "0", hasNextPage: true, hasPreviousPage: false},
 		},
 	} {
@@ -306,4 +318,8 @@ func TestConnectionPageInfo(t *testing.T) {
 			testResolverPageInfoResponse(t, resolver, store, test.want)
 		})
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
