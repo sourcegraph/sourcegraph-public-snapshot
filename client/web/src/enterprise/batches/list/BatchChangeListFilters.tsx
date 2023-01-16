@@ -1,6 +1,7 @@
 import { FC, useId, useState } from 'react'
 
 import classNames from 'classnames'
+import { upperFirst } from 'lodash';
 
 import {
     H3,
@@ -10,6 +11,7 @@ import {
     MultiComboboxInput,
     MultiComboboxPopover,
     MultiComboboxList,
+    MultiComboboxEmptyList,
     MultiComboboxOption,
 } from '@sourcegraph/wildcard'
 
@@ -18,11 +20,7 @@ import { BatchChangeState } from '../../../graphql-operations'
 import styles from './BatchChangeListFilter.module.scss'
 
 /** Returns string with capitalized first letter */
-const format = (filter: BatchChangeState): string => {
-    const str = filter.toString()
-
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
-}
+const format = (filter: BatchChangeState): string => upperFirst(filter.toLowerCase())
 
 interface BatchChangeListFiltersProps {
     filters: BatchChangeState[]
@@ -70,13 +68,13 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
                     </MultiComboboxList>
 
                     {suggestions.length === 0 && (
-                        <span className={styles.noFilters}>
+                        <MultiComboboxEmptyList>
                             {!searchTerm ? (
                                 <>All filters are selected</>
                             ) : (
                                 <>No options</>
                             )}
-                        </span>
+                        </MultiComboboxEmptyList>
                     )}
                 </MultiComboboxPopover>
             </MultiCombobox>

@@ -326,6 +326,14 @@ export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactEle
     )
 }
 
+interface MultiComboboxEmptyListProps extends HTMLAttributes<HTMLSpanElement> {}
+
+export function MultiComboboxEmptyList(props: MultiComboboxEmptyListProps): ReactElement {
+    const { className, ...attributes } = props
+
+    return <span {...attributes} className={classNames(className, styles.zeroState)}/>
+}
+
 interface MultiComboboxOptionProps extends ComboboxOptionProps {
     className?: string
 }
