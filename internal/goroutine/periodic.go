@@ -134,7 +134,7 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 // wait the interval supplied at construction between invocations.
 func (r *PeriodicGoroutine) Start() {
 	if r.recorder != nil {
-		go (*r.recorder).LogStart(r)
+		go r.recorder.LogStart(r)
 	}
 	defer close(r.finished)
 
@@ -144,7 +144,7 @@ loop:
 		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
 		if r.recorder != nil {
-			go (*r.recorder).LogRun(r, duration, err)
+			go r.recorder.LogRun(r, duration, err)
 		}
 
 		if shutdown {
@@ -170,7 +170,7 @@ loop:
 // is accepted. This method blocks until Start has returned.
 func (r *PeriodicGoroutine) Stop() {
 	if r.recorder != nil {
-		go (*r.recorder).LogStop(r)
+		go r.recorder.LogStop(r)
 	}
 	r.cancel()
 	<-r.finished

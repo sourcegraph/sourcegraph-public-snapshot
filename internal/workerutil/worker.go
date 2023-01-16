@@ -139,7 +139,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker[T]) Start() {
 	if w.recorder != nil {
-		go (*w.recorder).LogStart(w)
+		go w.recorder.LogStart(w)
 	}
 	defer close(w.finished)
 
@@ -252,7 +252,7 @@ loop:
 // all handler goroutines have exited.
 func (w *Worker[T]) Stop() {
 	if w.recorder != nil {
-		go (*w.recorder).LogStop(w)
+		go w.recorder.LogStop(w)
 	}
 	w.dequeueCancel()
 	w.Wait()
@@ -394,7 +394,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 	duration := time.Since(start)
 	if w.recorder != nil {
-		go (*w.recorder).LogRun(w, duration, handleErr)
+		go w.recorder.LogRun(w, duration, handleErr)
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
