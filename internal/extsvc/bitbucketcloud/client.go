@@ -155,8 +155,9 @@ func (c *client) Ping(ctx context.Context) error {
 
 func fetchAll[T any](ctx context.Context, c *client, results []T, next *PageToken, err error) ([]T, error) {
 	var page []T
+	var nextURL *url.URL
 	for err == nil && next.HasMore() {
-		nextURL, err := url.Parse(next.Next)
+		nextURL, err = url.Parse(next.Next)
 		if err != nil {
 			return nil, err
 		}
