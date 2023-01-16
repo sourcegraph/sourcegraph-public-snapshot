@@ -149,6 +149,11 @@ interface RawStreamHunk {
     startLine: number
     filename: string
     message: string
+    user?: {
+      username: string,
+      displayName: string,
+      avatarURL: string,
+    }
 }
 
 /**
@@ -198,6 +203,11 @@ const fetchBlameViaStreaming = memoizeObservable(
                         if (event.event === 'hunk') {
                             const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
                             for (const rawHunk of rawHunks) {
+                              // TODO: remove this, it's just a thing to highlight when we have the user while I'm passing this PR 
+                              // to Phillip.
+                              if (rawHunk.user != null) {
+                                console.log(rawHunk.user)
+                              }
                                 const hunk: Omit<BlameHunk, 'displayInfo'> = {
                                     startLine: rawHunk.startLine,
                                     endLine: rawHunk.endLine,
@@ -206,9 +216,9 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
-                                            email: rawHunk.author.Email,
-                                            displayName: rawHunk.author.Name,
-                                            avatarURL: null,
+                                            email: rawHunk.user?.email,
+                                            displayName: rawHunk.user?.displayName,
+                                            avatarURL: rawHunk.user?.avatarURL,
                                             user: null,
                                         },
                                     },
