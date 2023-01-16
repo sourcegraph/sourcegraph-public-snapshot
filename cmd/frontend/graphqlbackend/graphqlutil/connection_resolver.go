@@ -170,6 +170,8 @@ func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 
 		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
 
+		}
+
 		if r.options.Reverse != nil && !*r.options.Reverse {
 			return
 		}
@@ -186,16 +188,33 @@ func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 
 	nodes := r.data.nodes
 
-	// NOTE(naman): we pass actual_limit + 1 to SQL query so that we
-	// can check for `hasNextPage`. Here we need to remove the extra item,
-	// last item in case of `first` and first item in case of `last` as
-	// they are sorted in opposite directions in SQL query.
+	// NOTE: We fetch r.pagesize() + 1 in the SQL query to check for `hasNextPage`. Truncate the
+	// extra item from the end.
+	//
+	// When `first` is used, the data is already sorted in ascending order and dropping the last
+	// item is the right thing to do.
+	//
+	// When `last` is used, the data is sorted in descending order but dropping the last item is
+	// still the right thing to do. Example:
+	//
+	// The database has the following items: [1, 2, 3, 4, 5]
+	//
+	// User wants: `first:2`.
+	// r.store.ComputeNodes above will return [1, 2, 3]
+	// Drop the last item to have the correct result set: [1, 2]
+	//
+	// User wants: `last:2`
+	// r.store.ComputeNodes above will return [5, 4, 3]
+	// Again drop the last item to have the correct result set: [5, 4]
+	//
+	// However, if r.options.Reverse is true, then our data set has been flipped. In that case we
+	// should truncate from the beginning.
 	if len(nodes) > r.pageSize() {
-		if r.args.Last != nil {
+		if r.options.Reverse != nil && *r.options.Reverse {
 			nodes = nodes[1:]
-		} else {
-			nodes = nodes[:len(nodes)-1]
 		}
+
+		nodes = nodes[:len(nodes)-1]
 	}
 
 	return nodes, r.data.nodesError
