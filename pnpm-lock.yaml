@@ -894,10 +894,8 @@ importers:
   client/http-client:
     specifiers:
       '@sourcegraph/common': workspace:*
-      '@sourcegraph/shared': workspace:*
     dependencies:
       '@sourcegraph/common': link:../common
-      '@sourcegraph/shared': link:../shared
 
   client/jetbrains:
     specifiers:
