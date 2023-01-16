@@ -493,17 +493,15 @@ $$;
 CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
-      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
       SELECT
         newtab.shard_id AS shard_id,
         COUNT(*) AS total,
         COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
         COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
         COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
-        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
+        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
       FROM
         newtab
       GROUP BY newtab.shard_id
@@ -514,12 +512,13 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
         not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
         cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
         cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        corrupted    = grs.corrupted    + (excluded.corrupted    - (SELECT COUNT(*) FILTER(WHERE ot.corrupted_at IS NOT NULL)    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
       ;
 
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
+      -------------------------------------------------
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
+      -------------------------------------------------
       WITH moved AS (
         SELECT
           oldtab.shard_id AS shard_id,
@@ -527,7 +526,8 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,
-          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch
+          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,
+          COUNT(*) FILTER(WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted
         FROM
           oldtab
         JOIN newtab ON newtab.repo_id = oldtab.repo_id
@@ -541,14 +541,15 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
         not_cloned   = grs.not_cloned   - moved.not_cloned,
         cloning      = grs.cloning      - moved.cloning,
         cloned       = grs.cloned       - moved.cloned,
-        failed_fetch = grs.failed_fetch - moved.failed_fetch
+        failed_fetch = grs.failed_fetch - moved.failed_fetch,
+        corrupted    = grs.corrupted    - moved.corrupted
       FROM moved
       WHERE moved.shard_id = grs.shard_id;
 
       -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
       -------------------------------------------------
-      WITH diff(not_cloned, cloning, cloned, failed_fetch) AS (
+      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (
           (
             (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
@@ -569,17 +570,24 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
             (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
             -
             (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)
           )
+
         )
       )
-      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)
-      SELECT not_cloned, cloning, cloned, failed_fetch
+      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)
+      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted
       FROM diff
       WHERE
            not_cloned != 0
         OR cloning != 0
         OR cloned != 0
         OR failed_fetch != 0
+        OR corrupted != 0
       ;
 
       RETURN NULL;
@@ -624,7 +632,7 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
       -- Insert diff of changes
-      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch) AS (
+      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (
           (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
           (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
@@ -647,12 +655,17 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
             (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.last_error IS NOT NULL)
             -
             (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.corrupted_at IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.corrupted_at IS NOT NULL)
           )
         )
       )
       INSERT INTO
-        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
-      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
+      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted
       FROM diff
       WHERE
            total != 0
@@ -661,6 +674,7 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
         OR cloning != 0
         OR cloned != 0
         OR failed_fetch != 0
+        OR corrupted != 0
       ;
       RETURN NULL;
   END
@@ -2193,7 +2207,8 @@ CREATE TABLE gitserver_repos_statistics (
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
-    failed_fetch bigint DEFAULT 0 NOT NULL
+    failed_fetch bigint DEFAULT 0 NOT NULL,
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
@@ -2207,6 +2222,8 @@ COMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories 
 COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';
 
 COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
+
+COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -3416,7 +3433,8 @@ CREATE TABLE repo_statistics (
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
-    failed_fetch bigint DEFAULT 0 NOT NULL
+    failed_fetch bigint DEFAULT 0 NOT NULL,
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
@@ -3430,6 +3448,8 @@ COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories that are NO
 COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver';
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
+
+COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,

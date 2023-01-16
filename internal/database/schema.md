@@ -1512,6 +1512,7 @@ Triggers:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 Indexes:
     "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
 
@@ -1520,6 +1521,8 @@ Indexes:
 **cloned**: Number of repositories in gitserver_repos table on this shard that are cloned
 
 **cloning**: Number of repositories in gitserver_repos table on this shard that cloning
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
 
@@ -2825,12 +2828,15 @@ Indexes:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 
 ```
 
 **cloned**: Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver
 
 **cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
 
