@@ -115,14 +115,13 @@ func (s *syncHandler) Handle(ctx context.Context, _ log.Logger, sj *SyncJob) (er
 	progressRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
 		if final || progressLimiter.Allow() {
 			return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
-				ID:                int64(sj.ID),
-				ReposSynced:       progress.Synced,
-				RepoSyncErrors:    progress.Errors,
-				ReposAdded:        progress.Added,
-				ReposDeleted:      progress.Deleted,
-				ReposModified:     progress.Modified,
-				ReposUnmodified:   progress.Unmodified,
-				RepoLicenseErrors: progress.LicenseErrors,
+				ID:              int64(sj.ID),
+				ReposSynced:     progress.Synced,
+				RepoSyncErrors:  progress.Errors,
+				ReposAdded:      progress.Added,
+				ReposDeleted:    progress.Deleted,
+				ReposModified:   progress.Modified,
+				ReposUnmodified: progress.Unmodified,
 			})
 		}
 		return nil
@@ -615,13 +614,7 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
-			var licenseError *LicenseError
-			if errors.As(err, licenseError) {
-				syncProgress.LicenseErrors++
-				syncProgress.LicenseErrors += int32(diff.LicenseErrors.Len())
-			} else {
-				syncProgress.Errors++
-			}
+			syncProgress.Errors++
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 

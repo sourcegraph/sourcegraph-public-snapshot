@@ -75,8 +75,10 @@ func EnterpriseInit(
 
 	if server != nil {
 		server.PermsSyncer = permsSyncer
-		server.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
-		server.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+		if server.Syncer != nil {
+			server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+			server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+		}
 	}
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)

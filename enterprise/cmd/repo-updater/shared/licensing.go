@@ -37,11 +37,35 @@ func enterpriseCreateRepoHook(ctx context.Context, s repos.Store, repo *types.Re
 }
 
 func enterpriseUpdateRepoHook(ctx context.Context, s repos.Store, existingRepo *types.Repo, newRepo *types.Repo) error {
-	// If the privacy of the repo remains the same, the number of private reops
-	// should remain the same, so we don't have to check anything
-	if existingRepo.Private == newRepo.Private {
+	if !newRepo.Private {
 		return nil
 	}
 
-	return enterpriseCreateRepoHook(ctx, s, newRepo)
+	if prFeature := (&licensing.FeaturePrivateRepositories{}); licensing.Check(prFeature) == nil {
+		if prFeature.Unrestricted {
+			return nil
+		}
+
+		restoringDeletedRepo := !existingRepo.DeletedAt.IsZero() && newRepo.DeletedAt.IsZero()
+		publicToPrivate := !existingRepo.Private && newRepo.Private
+
+		numPrivateRepos, err := s.RepoStore().Count(ctx, ossDB.ReposListOptions{OnlyPrivate: true})
+		if err != nil {
+			return err
+		}
+
+		if numPrivateRepos > prFeature.MaxNumPrivateRepos {
+			return errors.Newf("maximum number of private repositories (%d) reached", prFeature.MaxNumPrivateRepos)
+		}
+
+		if numPrivateRepos >= prFeature.MaxNumPrivateRepos {
+			if (restoringDeletedRepo && newRepo.Private) || publicToPrivate {
+				return errors.Newf("maximum number of private repositories (%d) reached", prFeature.MaxNumPrivateRepos)
+			}
+		}
+
+		return nil
+	}
+
+	return licensing.NewFeatureNotActivatedError("The private repositories feature is not activated for this license. Please upgrade your license to use this feature.")
 }
