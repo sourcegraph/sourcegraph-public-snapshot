@@ -7730,6 +7730,10 @@ type RepositoryStats {
     The number of indexed repositories
     """
     indexed: Int!
+    """
+    The number of repositories that are currently corrupt
+    """
+    corrupted: Int!
 }
 
 """
