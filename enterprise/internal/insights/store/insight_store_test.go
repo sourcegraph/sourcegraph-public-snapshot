@@ -795,7 +795,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test exclude insight ids results", func(t *testing.T) {
+	t.Run("exclude insight ids from results", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{ExcludeIDs: []string{"b", "e"}})
 		if err != nil {
