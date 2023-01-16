@@ -1195,10 +1195,8 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 				if r.err != nil {
 					return
 				}
-
 				insightIDs = append(insightIDs, unique)
 			}
-
 			args.ExcludeIDs = insightIDs
 		}
 
