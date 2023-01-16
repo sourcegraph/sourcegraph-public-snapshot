@@ -77,8 +77,6 @@ func (r *schemaResolver) BackgroundJobs(ctx context.Context, args *backgroundJob
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		after = ""
 	}
 
 	return &backgroundJobConnectionResolver{
