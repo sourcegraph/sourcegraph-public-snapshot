@@ -22,7 +22,7 @@ func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int32, 
 	for _, jobName := range knownJobNames {
 		job, err := GetBackgroundJobInfo(c, jobName, recentRunCount, dayCountForStats)
 		if err != nil {
-			return nil, errors.Wrap(err, "get job info for "+jobName)
+			return nil, errors.Wrapf(err, "get job info for %q", jobName)
 		}
 		jobs = append(jobs, job)
 	}
