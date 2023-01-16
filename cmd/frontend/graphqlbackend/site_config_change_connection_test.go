@@ -100,23 +100,24 @@ func setupSiteConfigStubs() *siteConfigStubs {
 	conf := database.NewMockConfStore()
 	db.ConfFunc.SetDefaultReturn(conf)
 
-	// conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
 	conf.ListSiteConfigsFunc.SetDefaultHook(
 		func(ctx context.Context, opt database.SiteConfigListOptions) ([]*database.SiteConfig, error) {
-			var dataSet = siteConfigs
+			var input []*database.SiteConfig
 			if opt.OrderByDirection == database.DescendingOrderByDirection {
 				// Reverse the result set if ORDER BY DESC is being used.
 				for i := len(siteConfigs) - 1; i >= 0; i-- {
-					dataSet = append(dataSet, siteConfigs[i])
+					input = append(input, siteConfigs[i])
 				}
+			} else {
+				input = siteConfigs
 			}
 
 			if opt.LimitOffset != nil {
 				limit := math.Min(float64(len(siteConfigs)), float64(opt.LimitOffset.Limit))
-				dataSet = dataSet[:int(limit)]
+				input = input[:int(limit)]
 			}
 
-			return dataSet, nil
+			return input, nil
 		})
 
 	return &siteConfigStubs{
@@ -135,7 +136,7 @@ func TestSiteConfigConnection(t *testing.T) {
 
 	stubs.conf.SiteGetLatestFunc.SetDefaultReturn(siteConfigs[len(siteConfigs)-1], nil)
 	stubs.conf.GetSiteConfigCountFunc.SetDefaultReturn(len(siteConfigs), nil)
-	stubs.conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
+	// stubs.conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
 
 	expectedNow := stubs.now.Format("2006-01-02T15:04:05Z")
 
