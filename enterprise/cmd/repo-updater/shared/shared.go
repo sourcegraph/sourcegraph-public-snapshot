@@ -73,6 +73,10 @@ func EnterpriseInit(
 		return nil
 	}
 
+	if server != nil {
+		server.PermsSyncer = permsSyncer
+	}
+
 	workerStore := authz.MakeStore(observationCtx, db.Handle())
 	worker := authz.MakeWorker(ctx, observationCtx, workerStore, permsSyncer)
 	resetter := authz.MakeResetter(observationCtx, workerStore)
