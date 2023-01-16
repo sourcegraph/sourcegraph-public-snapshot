@@ -168,6 +168,95 @@ func TestRepoStatistics(t *testing.T) {
 	})
 }
 
+func TestRepoStatistics_RecloneAndCorruption(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	shards := []string{
+		"shard-1",
+		"shard-2",
+		"shard-3",
+	}
+	repos := types.Repos{
+		&types.Repo{Name: "repo1"},
+		&types.Repo{Name: "repo2"},
+	}
+
+	createTestRepos(ctx, t, db, repos)
+
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, NotCloned: 2, SoftDeleted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: "", Total: 2, NotCloned: 2},
+	})
+	// Repos start cloning, all onto shard-1
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloning: 2, SoftDeleted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 2, Cloning: 2},
+	})
+	// Cloning complete
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
+	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloned)
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloned: 2, SoftDeleted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 2, Cloned: 2},
+	})
+	// both repos get corrupted
+	logCorruption(t, db, repos[0].Name, shards[0], "shard-1 corruption")
+	logCorruption(t, db, repos[1].Name, shards[0], "shard-1 corruption")
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 2,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 2, Cloned: 2, Corrupted: 2},
+	})
+	// We reclone repo 0 on shard-1 and repo-1 on shard-2
+	// Why don't we set the status directly to cloned? A status update requires
+	// the status to be distinct from the current status
+	//
+	// Corrupted should now be 0 for all shards
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloning)
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloning: 2, SoftDeleted: 0, Corrupted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 1, Cloning: 1, Corrupted: 0},
+		{ShardID: "shard-2", Total: 1, Cloning: 1, Corrupted: 0},
+	})
+	// Done cloning!
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
+	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloned)
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 0,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 1, Cloned: 1, Corrupted: 0},
+		{ShardID: "shard-2", Total: 1, Cloned: 1, Corrupted: 0},
+	})
+	// Repo 1 now gets corrupted AGAIN on shard-2
+	logCorruption(t, db, repos[1].Name, shards[1], "shard-2 corruption")
+	assertRepoStatistics(t, ctx, s, RepoStatistics{
+		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 1,
+	}, []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: "shard-1", Total: 1, Cloned: 1, Corrupted: 0},
+		{ShardID: "shard-2", Total: 1, Cloned: 1, Corrupted: 1},
+	})
+}
+
 func TestRepoStatistics_DeleteAndUndelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

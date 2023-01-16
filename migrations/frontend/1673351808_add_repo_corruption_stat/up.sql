@@ -62,7 +62,7 @@ $$;
 CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     -------------------------------------------------
-    -- IMPORTANT: THIS IS CHANGED
+    -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
     -------------------------------------------------
     AS $$ BEGIN
       INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
@@ -89,7 +89,7 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       ;
 
       -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
       -------------------------------------------------
       WITH moved AS (
         SELECT
@@ -119,7 +119,7 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       WHERE moved.shard_id = grs.shard_id;
 
       -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
       -------------------------------------------------
       WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (

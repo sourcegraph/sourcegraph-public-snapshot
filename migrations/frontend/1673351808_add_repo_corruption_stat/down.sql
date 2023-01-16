@@ -55,9 +55,6 @@ $$;
 CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
       INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
       SELECT
         newtab.shard_id AS shard_id,
@@ -79,9 +76,6 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
         failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
       ;
 
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
       WITH moved AS (
         SELECT
           oldtab.shard_id AS shard_id,
@@ -107,9 +101,6 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS
       FROM moved
       WHERE moved.shard_id = grs.shard_id;
 
-      -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED
-      -------------------------------------------------
       WITH diff(not_cloned, cloning, cloned, failed_fetch) AS (
         VALUES (
           (
