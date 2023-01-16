@@ -95,39 +95,39 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 		wantContent string
 	}{
 		{
-			startLine:   int32(2),
-			endLine:     int32(6),
+			startLine:   2,
+			endLine:     6,
 			wantContent: "2\n3\n4\n5\n6",
 		},
 		{
-			startLine:   int32(0),
-			endLine:     int32(2),
+			startLine:   0,
+			endLine:     2,
 			wantContent: "1\n2",
 		},
 		{
-			startLine:   int32(0),
-			endLine:     int32(0),
+			startLine:   0,
+			endLine:     0,
 			wantContent: "",
 		},
 		{
-			startLine:   int32(6),
-			endLine:     int32(6),
+			startLine:   6,
+			endLine:     6,
 			wantContent: "6",
 		},
 		{
-			startLine:   int32(-1),
-			endLine:     int32(-1),
+			startLine:   -1,
+			endLine:     -1,
 			wantContent: fullContent,
 		},
 		{
-			startLine:   int32(7),
-			endLine:     int32(7),
+			startLine:   7,
+			endLine:     7,
 			wantContent: "",
 		},
 		{
-			startLine:   int32(5),
-			endLine:     int32(2),
-			wantContent: "1\n2\n3\n4\n5\n6",
+			startLine:   5,
+			endLine:     2,
+			wantContent: fullContent,
 		},
 	}
 
