@@ -33,6 +33,7 @@ js_library(
 
 go_library(
     name = "schema",
+    visibility = ["//visibility:public"],
     srcs = [
         "bitbucket_server_util.go",
         "extension_schema.go",
