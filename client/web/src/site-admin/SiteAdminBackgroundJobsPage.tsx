@@ -11,6 +11,7 @@ import {
     mdiNumeric,
     mdiShape,
 } from '@mdi/js'
+import format from 'date-fns/format'
 import { RouteComponentProps } from 'react-router'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -32,7 +33,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { BackgroundJobsResult, BackgroundJobsVariables } from '../graphql-operations'
+import { BackgroundJobsResult, BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
 import { formatDurationLong } from '../util/time'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
@@ -153,13 +154,10 @@ const JobList: React.FunctionComponent<{
                                 aria-label="Filter for problematic routines"
                                 onChange={value => setOnlyShowProblematic(value.target.value !== 'all')}
                                 selectClassName={styles.filterSelect}
+                                defaultValue={onlyShowProblematic ? 'problematic' : 'all'}
                             >
-                                <option value="all" selected={!onlyShowProblematic}>
-                                    Show all routines
-                                </option>
-                                <option value="problematic" selected={onlyShowProblematic}>
-                                    Only show problematic routines
-                                </option>
+                                <option value="all">Show all routines</option>
+                                <option value="problematic">Only show problematic routines</option>
                             </Select>
                         </div>
                         <div className="text-center">Fastest / avg / slowest run (ms)</div>
@@ -311,41 +309,12 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
     )
     const recentRunsWithErrors = routine.recentRuns.filter(run => run.errorMessage)
 
-    const latestStartDateString = routine.instances.reduce(
-        (mostRecent, instance) =>
-            instance.lastStartedAt && (!mostRecent || instance.lastStartedAt > mostRecent)
-                ? instance.lastStartedAt
-                : mostRecent,
-        ''
-    )
-    const earliestStopDateString = routine.instances.reduce(
-        (earliest, instance) =>
-            instance.lastStoppedAt && (!earliest || instance.lastStoppedAt < earliest)
-                ? instance.lastStoppedAt
-                : earliest,
-        ''
-    )
-    const lastRecentRunDate =
-        routine.recentRuns.length && new Date(routine.recentRuns[routine.recentRuns.length - 1].at)
-    const isAlive =
-        !earliestStopDateString ||
-        earliestStopDateString >= latestStartDateString ||
-        (lastRecentRunDate && lastRecentRunDate.getTime() + routine.intervalMs + 5000 < Date.now())
-
     return (
         <div className={styles.routine}>
             <div className={styles.nameAndDescription}>
                 <Text className="mb-1 ml-4">
                     <span className="mr-2">
-                        {isAlive ? (
-                            <Tooltip content="This routine is currently started.">
-                                <Icon aria-label="started" svgPath={mdiCheck} className="text-success" />
-                            </Tooltip>
-                        ) : (
-                            <Tooltip content="This routine is currently stopped.">
-                                <Icon aria-label="stopped" svgPath={mdiClose} className="text-danger" />
-                            </Tooltip>
-                        )}
+                        <StartedStoppedIndicator routine={routine} />
                     </span>
                     <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
                         {routineIcon}
@@ -419,6 +388,56 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
     )
 }
 
+const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
+    const latestStartDateString = routine.instances.reduce(
+        (mostRecent, instance) =>
+            instance.lastStartedAt && (!mostRecent || instance.lastStartedAt > mostRecent)
+                ? instance.lastStartedAt
+                : mostRecent,
+        ''
+    )
+    const earliestStopDateString = routine.instances.reduce(
+        (earliest, instance) =>
+            instance.lastStoppedAt && (!earliest || instance.lastStoppedAt < earliest)
+                ? instance.lastStoppedAt
+                : earliest,
+        ''
+    )
+    const lastRecentRunDate =
+        routine.recentRuns.length && new Date(routine.recentRuns[routine.recentRuns.length - 1].at)
+    const isStopped = earliestStopDateString && earliestStopDateString >= latestStartDateString
+    const isUnseenInAWhile =
+        routine.intervalMs &&
+        routine.type !== BackgroundRoutineType.DB_BACKED &&
+        (!lastRecentRunDate ||
+            lastRecentRunDate.getTime() + routine.intervalMs + routine.stats.maxDurationMs + 5000 <= Date.now())
+
+    const tooltip = isStopped
+        ? `This routine is currently stopped.
+Started at ${format(new Date(latestStartDateString), 'yyyy-MM-dd HH:mm:ss')},
+Stopped at: ${format(new Date(earliestStopDateString), 'yyyy-MM-dd HH:mm:ss')}`
+        : isUnseenInAWhile
+        ? lastRecentRunDate
+            ? `This routine has not been seen in a while. It should've run at ${format(
+                  new Date(lastRecentRunDate.getTime() + (routine.intervalMs || 0)),
+                  'yyyy-MM-dd HH:mm:ss'
+              )}.`
+            : 'This routine was started but it has never been seen running.'
+        : `This routine is currently started.${
+              lastRecentRunDate ? `\nLast seen running at ${format(lastRecentRunDate, 'yyyy-MM-dd HH:mm:ss')}.` : ''
+          }`
+
+    return isStopped || isUnseenInAWhile ? (
+        <Tooltip content={tooltip}>
+            <Icon aria-label="stopped" svgPath={mdiClose} className="text-danger" />
+        </Tooltip>
+    ) : (
+        <Tooltip content={tooltip}>
+            <Icon aria-label="started" svgPath={mdiCheck} className="text-success" />
+        </Tooltip>
+    )
+}
+
 function isRoutineProblematic(routine: BackgroundJob['routines'][0]): boolean {
     return (
         routine.stats.errorCount > 0 ||
@@ -432,7 +451,7 @@ function isRoutineProblematic(routine: BackgroundJob['routines'][0]): boolean {
 }
 
 // Contains some magic numbers
-function categorizeRunDuration(durationMs: number, routineIntervalMs: number): RunLengthCategory {
+function categorizeRunDuration(durationMs: number, routineIntervalMs: number | null): RunLengthCategory {
     if (!routineIntervalMs) {
         return durationMs > 5000 ? 'long' : 'short'
     }
@@ -448,7 +467,7 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number): R
     return 'short'
 }
 
-function getRunDurationTextClass(durationMs: number, routineIntervalMs: number): string {
+function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
     const category = categorizeRunDuration(durationMs, routineIntervalMs)
     if (category === 'dangerous') {
         return 'text-danger'
