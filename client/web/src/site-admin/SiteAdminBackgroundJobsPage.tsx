@@ -85,7 +85,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
                 description={
                     <>
                         This page lists{' '}
-                        <Link to="https://docs.sourcegraph.com/admin/workers" target="_blank" rel="noopener noreferrer">
+                        <Link to="/help/admin/workers" target="_blank" rel="noopener noreferrer">
                             all running jobs
                         </Link>
                         , their routines, recent runs, any errors, timings, and stats.
