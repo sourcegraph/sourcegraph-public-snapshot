@@ -27,7 +27,7 @@ type SlackNotification struct {
 	//SentAt is the time the notification got sent
 	SentAt time.Time
 	// ID is the unique idenfifier which represents this notification in Slack. Typically this is the timestamp as
-	// is returned by the Slack API upon successful send of a notification
+	// is returned by the Slack API upon successful send of a notification.
 	ID string
 	// ChannelID is the channelID as returned by the Slack API after successful sending of a notification. It is NOT
 	// the traditional channel you're use to that starts with a '#'. Instead it's the global ID for that channel used by
