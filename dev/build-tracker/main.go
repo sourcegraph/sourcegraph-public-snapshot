@@ -206,7 +206,7 @@ func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
 		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
-		// we're about to send
+		// we're about to send.
 		build.Lock()
 		defer build.Unlock()
 		var err error
