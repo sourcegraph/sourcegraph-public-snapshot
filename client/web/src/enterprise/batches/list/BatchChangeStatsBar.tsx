@@ -18,12 +18,9 @@ import styles from './BatchChangeStatsBar.module.scss'
 
 interface BatchChangeStatsBarProps {
     className?: string
-    namespaceID?: string
 }
 
-export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = ({
-    namespaceID,
-}) => {
+export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = ({}) => {
     const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] =
         useTemporarySetting('batches.minSavedPerChangeset')
 
