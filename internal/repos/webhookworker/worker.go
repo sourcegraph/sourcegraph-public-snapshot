@@ -20,6 +20,7 @@ import (
 func NewWorker(ctx context.Context, handler workerutil.Handler[*Job], workerStore workerstore.Store[*Job], metrics workerutil.WorkerObservability) *workerutil.Worker[*Job] {
 	options := workerutil.WorkerOptions{
 		Name:              "webhook_build_worker",
+		Description:       "creates webhooks",
 		NumHandlers:       3,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
