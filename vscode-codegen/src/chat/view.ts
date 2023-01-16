@@ -15,6 +15,10 @@ interface ChatMessage extends Omit<Message, "text"> {
 	timestamp: string;
 }
 
+// If the bot message ends with some prefix of the `Human:` stop
+// sequence, trim if from the end.
+const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/;
+
 export class ChatViewProvider implements vscode.WebviewViewProvider {
 	private readonly staticDir = ["out", "static", "chat"];
 	private readonly staticFiles = {
@@ -22,7 +26,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		js: ["index.js"],
 	};
 
-	private timeoutID: NodeJS.Timeout | null = null;
 	private transcript: ChatMessage[] = [];
 	private messageInProgress: ChatMessage | null = null;
 	private closeConnectionInProgress: Promise<() => void> | null = null;
@@ -94,10 +97,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			closeConnection();
 			this.closeConnectionInProgress = null;
 		}
-		if (this.timeoutID) {
-			clearTimeout(this.timeoutID);
-			this.timeoutID = null;
-		}
 		this.messageInProgress = null;
 		this.transcript = [];
 		this.prompt.reset();
@@ -126,29 +125,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private reformatBotMessage(text: string): string {
+		let reformattedMessage = text.trimEnd();
+
+		const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP);
+		if (stopSequenceMatch) {
+			reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index);
+		}
 		// TODO: Detect if bot sent unformatted code without a markdown block.
-		return fixOpenMarkdownCodeBlock(text);
+		return fixOpenMarkdownCodeBlock(reformattedMessage);
 	}
 
 	private onBotMessageChange(text: string, webview: vscode.Webview): void {
-		const isLoading = this.messageInProgress?.displayText.length === 0;
-		if (isLoading) {
-			// Delay the transcript so we can show the loader and accumulate a larger initial message.
-			this.timeoutID = setTimeout(() => {
-				this.sendTranscriptToWebView(webview);
-				this.timeoutID = null;
-			}, 250);
-		}
-
 		this.messageInProgress = {
 			speaker: "bot",
 			displayText: renderMarkdown(text),
 			timestamp: getShortTimestamp(),
 		};
 
-		if (!this.timeoutID) {
-			this.sendTranscriptToWebView(webview);
-		}
+		this.sendTranscriptToWebView(webview);
 	}
 
 	private onBotMessageComplete(text: string, webview: vscode.Webview): void {
@@ -161,11 +155,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		});
 
 		this.prompt.addBotResponse(text);
-
-		if (this.timeoutID) {
-			clearTimeout(this.timeoutID);
-			this.timeoutID = null;
-		}
 
 		this.sendTranscriptToWebView(webview);
 	}

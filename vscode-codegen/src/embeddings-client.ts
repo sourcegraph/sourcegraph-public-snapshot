@@ -1,4 +1,4 @@
-import axios from "axios";
+import fetch from "node-fetch";
 
 export interface EmbeddingSearchResult {
 	filePath: string;
@@ -29,17 +29,17 @@ export class EmbeddingsClient {
 		)}?query=${encodeURIComponent(query)}&codeCount=${encodeURIComponent(
 			codeCount
 		)}&markdownCount=${encodeURIComponent(markdownCount)}`;
-		return axios
-			.get(url)
-			.then((response) => response.data as EmbeddingSearchResults);
+		return fetch(url)
+			.then((response) => response.json())
+			.then((data) => data as EmbeddingSearchResults);
 	}
 
 	async queryNeedsAdditionalContext(query: string): Promise<boolean> {
 		const url = `${
 			this.embeddingsURL
 		}/needs-additional-context?query=${encodeURIComponent(query)}`;
-		return axios
-			.get(url)
-			.then((response) => response.data.needsAdditionalContext as boolean);
+		return fetch(url)
+			.then((response) => response.json())
+			.then((data) => data.needsAdditionalContext as boolean);
 	}
 }

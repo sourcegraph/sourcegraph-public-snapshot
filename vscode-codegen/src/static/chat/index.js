@@ -1,4 +1,4 @@
-const INPUT_HEIGHT = 24;
+const MAX_HEIGHT = 192;
 
 // TODO: We need a design for the chat empty state.
 function onInitialize() {
@@ -6,6 +6,13 @@ function onInitialize() {
 	const inputElement = document.getElementById("input");
 	const submitElement = document.querySelector(".submit-container");
 	const resetElement = document.querySelector(".reset-conversation");
+
+	const resizeInput = () => {
+		inputElement.style.height = 0;
+		const height = Math.min(MAX_HEIGHT, inputElement.scrollHeight);
+		inputElement.style.height = `${height}px`;
+		inputElement.style.overflowY = height >= MAX_HEIGHT ? "auto" : "hidden";
+	};
 
 	inputElement.addEventListener("keydown", (e) => {
 		if (e.key === "Enter" && !e.shiftKey) {
@@ -15,16 +22,12 @@ function onInitialize() {
 			vscode.postMessage({ command: "submit", text: e.target.value });
 			e.target.value = "";
 			e.preventDefault();
-		}
 
-		// Resize the input on each added line up to a maximum height.
-		// TODO: This does not handle long overflowing lines.
-		setTimeout(() => {
-			const lines = inputElement.value.split("\n").length;
-			input.parentNode.style.height =
-				Math.min(8 * INPUT_HEIGHT, lines * INPUT_HEIGHT) + "px";
-		}, 0);
+			setTimeout(resizeInput, 0);
+		}
 	});
+
+	inputElement.addEventListener("input", resizeInput);
 
 	submitElement.addEventListener("click", () => {
 		if (inputElement.value.trim().length === 0) {
@@ -54,7 +57,7 @@ const messageBubbleTemplate = `
 	<div class="bubble {type}-bubble">
 		<div class="bubble-content {type}-bubble-content">{text}</div>
 		<div class="bubble-footer {type}-bubble-footer">
-			{author} &middot; {timestamp}
+			{footer}
 		</div>
 	</div>
 </div>
@@ -65,12 +68,16 @@ function getMessageBubble(author, text, timestamp) {
 	const authorName = author === "bot" ? "Cody" : "Me";
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
-		.replace("{author}", authorName)
 		.replace("{text}", text)
-		.replace("{timestamp}", timestamp);
+		.replace(
+			"{footer}",
+			timestamp
+				? `${authorName} &middot; ${timestamp}`
+				: `<i>${authorName} is writing...</i>`
+		);
 }
 
-function getMessageInProgressBubble(author, text, timestamp) {
+function getMessageInProgressBubble(author, text) {
 	if (text.length === 0) {
 		const loader = `
 		<div class="bubble-loader">
@@ -78,9 +85,9 @@ function getMessageInProgressBubble(author, text, timestamp) {
 			<div class="bubble-loader-dot"></div>
 			<div class="bubble-loader-dot"></div>
 		</div>`;
-		return getMessageBubble(author, loader, timestamp);
+		return getMessageBubble(author, loader, null);
 	}
-	return getMessageBubble(author, `${text}█`, timestamp);
+	return getMessageBubble(author, text, null);
 }
 
 function renderMessages(messages, messageInProgress) {
@@ -99,8 +106,7 @@ function renderMessages(messages, messageInProgress) {
 	const messageInProgressElement = messageInProgress
 		? getMessageInProgressBubble(
 				messageInProgress.speaker,
-				messageInProgress.displayText,
-				messageInProgress.timestamp
+				messageInProgress.displayText
 		  )
 		: "";
 

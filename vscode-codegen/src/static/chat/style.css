@@ -124,6 +124,7 @@ body {
 
 .human-bubble-content {
 	background-color: var(--human-bubble-color);
+	white-space: pre-wrap;
 	border-bottom-right-radius: 0;
 	border-bottom-left-radius: 16px;
 }
@@ -196,12 +197,13 @@ body {
 }
 
 .input-container {
+	display: flex;
+	align-items: center;
 	flex: 1;
 	margin-right: 16px;
 	padding: 16px;
 	border-radius: 16px;
 	background-color: var(--bot-bubble-color);
-	height: 24px;
 }
 
 #input {
@@ -214,4 +216,5 @@ body {
 	color: white;
 	background-color: var(--bot-bubble-color);
 	font-size: 16px;
+	height: 24px;
 }
