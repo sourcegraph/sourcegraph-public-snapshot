@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-See [prerequisites for Kubernetes](../index.md#prerequisites).
+See [prerequisites for deploying Sourcegraph with Kubernetes](../index.md#prerequisites).
 
 ## Configure
 
@@ -12,7 +12,7 @@ Please refer to our [configuration guides](configure.md) for detailed instructio
 
 ## Deploy
 
-Once you have met all the [prerequisites](../index.md#prerequisites):
+Once you have met all the [prerequisites](../index.md#prerequisites) and read through our [configuration guides](configure.md):
 
 **Step 0:** Install an ingress controller for your cluster as instructed in our [configuration guide](configure.md#ingress-controller) if applicable.
 
@@ -34,13 +34,15 @@ Once you have met all the [prerequisites](../index.md#prerequisites):
 
 ## Quick Start
 
+See the quick start examples for the following cloud providers:
+
 - [Amazon EKS](eks.md)
 - [Google GKE](gke.md)
 - [For other cloud providers / hosts...](../index.md#quick-start)
 
 ## Upgrade
 
-To upgrade your instance with Kustomize, please refer to our [upgrade docs](../update.md#upgrades).
+To upgrade your Sourcegraph Kubernetes instance, please refer to our [upgrade docs for Sourcegraph with Kubernetes](../update.md#upgrades).
 
 ---
 
