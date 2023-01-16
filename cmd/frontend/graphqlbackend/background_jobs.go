@@ -106,7 +106,6 @@ func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (
 
 func (r *backgroundJobConnectionResolver) Nodes(context.Context) ([]*BackgroundJobResolver, error) {
 	resolvers, err := r.compute()
-
 	if err != nil {
 		return nil, err
 	}
