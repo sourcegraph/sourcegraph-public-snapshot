@@ -167,12 +167,12 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 
 	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
 
-	reverse := false
+	// reverse := false
 	return graphqlutil.NewConnectionResolver[SiteConfigurationChangeResolver](
 		&connectionStore,
 		args,
 		&graphqlutil.ConnectionResolverOptions{
-			Reverse: &reverse,
+			// Reverse: &reverse,
 		},
 	)
 }
