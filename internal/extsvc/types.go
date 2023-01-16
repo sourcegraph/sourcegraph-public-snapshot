@@ -47,6 +47,10 @@ type AccountData struct {
 	AuthData *EncryptableData
 	Data     *EncryptableData
 }
+
+// PublicAccountData contains a few fields from the AccountData.Data mentioned above.
+// We only expose publicly available fields in this struct.
+// See the GraphQL API's corresponding fields for documentation.
 type PublicAccountData struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	Login       *string `json:"login,omitempty"`
