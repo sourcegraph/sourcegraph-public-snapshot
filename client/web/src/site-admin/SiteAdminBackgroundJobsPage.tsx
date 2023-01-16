@@ -224,7 +224,10 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
         const recentRunErrors = jobs.reduce(
             (acc, job) =>
                 acc +
-                job.routines.reduce((acc, routine) => acc + routine.recentRuns.filter(run => run.error).length, 0),
+                job.routines.reduce(
+                    (acc, routine) => acc + routine.recentRuns.filter(run => run.errorMessage).length,
+                    0
+                ),
             0
         )
         return [
@@ -285,7 +288,11 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
                 {routine.recentRuns.map(run => (
                     <li key={run.at}>
                         <Text className="mb-0">
-                            {run.error ? <Icon aria-hidden={true} svgPath={mdiAlert} className="text-danger" /> : ''}{' '}
+                            {run.errorMessage ? (
+                                <Icon aria-hidden={true} svgPath={mdiAlert} className="text-danger" />
+                            ) : (
+                                ''
+                            )}{' '}
                             <Timestamp date={new Date(run.at)} noAbout={true} />
                             {commonHostName
                                 ? ''
@@ -295,14 +302,14 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
                             <span className={getRunDurationTextClass(run.durationMs, routine.intervalMs)}>
                                 {run.durationMs}ms
                             </span>
-                            .{run.error ? ` Error: ${run.error.message}` : ''}
+                            .{run.errorMessage ? ` Error: ${run.errorMessage}` : ''}
                         </Text>
                     </li>
                 ))}
             </ul>
         </div>
     )
-    const recentRunsWithErrors = routine.recentRuns.filter(run => run.error)
+    const recentRunsWithErrors = routine.recentRuns.filter(run => run.errorMessage)
 
     const latestStartDateString = routine.instances.reduce(
         (mostRecent, instance) =>
@@ -332,11 +339,11 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
                     <span className="mr-2">
                         {isAlive ? (
                             <Tooltip content="This routine is currently started.">
-                                <Icon aria-hidden={true} svgPath={mdiCheck} className="text-success" />
+                                <Icon aria-label="started" svgPath={mdiCheck} className="text-success" />
                             </Tooltip>
                         ) : (
                             <Tooltip content="This routine is currently stopped.">
-                                <Icon aria-hidden={true} svgPath={mdiClose} className="text-danger" />
+                                <Icon aria-label="stopped" svgPath={mdiClose} className="text-danger" />
                             </Tooltip>
                         )}
                     </span>
@@ -416,7 +423,7 @@ function isRoutineProblematic(routine: BackgroundJob['routines'][0]): boolean {
     return (
         routine.stats.errorCount > 0 ||
         routine.recentRuns.some(
-            run => run.error || categorizeRunDuration(run.durationMs, routine.intervalMs) !== 'short'
+            run => run.errorMessage || categorizeRunDuration(run.durationMs, routine.intervalMs) !== 'short'
         ) ||
         categorizeRunDuration(routine.stats.minDurationMs, routine.intervalMs) !== 'short' ||
         categorizeRunDuration(routine.stats.avgDurationMs, routine.intervalMs) !== 'short' ||

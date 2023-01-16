@@ -8330,24 +8330,9 @@ type BackgroundRoutineRecentRun {
     durationMs: Int!
 
     """
-    The error, if any.
+    The error message, if any.
     """
-    error: BackgroundRoutineRunError
-}
-
-"""
-An error that occurred during a background routine run.
-"""
-type BackgroundRoutineRunError {
-    """
-    The error message.
-    """
-    message: String!
-
-    """
-    The stack trace.
-    """
-    stackTrace: String!
+    errorMessage: String
 }
 
 """

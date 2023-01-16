@@ -212,16 +212,12 @@ func (r *RoutineRecentRunResolver) HostName() string { return r.recentRun.HostNa
 
 func (r *RoutineRecentRunResolver) DurationMs() int32 { return r.recentRun.DurationMs }
 
-func (r *RoutineRecentRunResolver) Error() *RoutineRecentRunErrorResolver {
+func (r *RoutineRecentRunResolver) ErrorMessage() *string {
 	if r.recentRun.ErrorMessage == "" {
 		return nil
 	}
-	return &RoutineRecentRunErrorResolver{recentRun: r.recentRun}
+	return &r.recentRun.ErrorMessage
 }
-
-func (r *RoutineRecentRunErrorResolver) Message() string { return r.recentRun.ErrorMessage }
-
-func (r *RoutineRecentRunErrorResolver) StackTrace() string { return r.recentRun.StackTrace }
 
 func (r *RoutineResolver) Stats() *RoutineStatsResolver {
 	return &RoutineStatsResolver{stats: r.routine.Stats}

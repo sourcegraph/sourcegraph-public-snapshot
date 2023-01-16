@@ -50,7 +50,6 @@ type RoutineRun struct {
 	HostName     string    `json:"hostname"`
 	DurationMs   int32     `json:"durationMs"`
 	ErrorMessage string    `json:"errorMessage"`
-	StackTrace   string    `json:"stackTrace"`
 }
 
 // RoutineRunStats contains statistics about a routine.

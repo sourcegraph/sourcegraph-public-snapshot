@@ -156,10 +156,8 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 // saveRun saves a run in the Redis list under the "*:recentRuns" key and trims the list.
 func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
-	stackTrace := ""
 	if err != nil {
 		errorMessage = err.Error()
-		stackTrace = "stack trace goes here"
 	}
 
 	// Create Run
@@ -168,7 +166,6 @@ func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32
 		HostName:     hostName,
 		DurationMs:   durationMs,
 		ErrorMessage: errorMessage,
-		StackTrace:   stackTrace,
 	}
 
 	// Serialize run

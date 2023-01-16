@@ -305,10 +305,7 @@ export const BACKGROUND_JOBS = gql`
                         at
                         hostName
                         durationMs
-                        error {
-                            message
-                            stackTrace
-                        }
+                        errorMessage
                     }
                     stats {
                         since
