@@ -106,19 +106,6 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		})
 	}
 
-	// } else {
-	// We fetched one more than requested, so stop before we reach the end.
-	// 	for _, config := range history[:len(history)-1] {
-	// 		resolvers = append(resolvers, &SiteConfigurationChangeResolver{
-	// 			db:                 s.db,
-	// 			siteConfig:         config,
-	// 			previousSiteConfig: previousSiteConfig,
-	// 		})
-
-	// 		previousSiteConfig = config
-	// 	}
-	// }
-
 	return resolvers, nil
 }
 
