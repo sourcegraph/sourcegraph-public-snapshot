@@ -182,6 +182,9 @@ func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32
 
 	// Trim list
 	err = m.rcache.LTrimList(routineName+":"+hostName+":"+"recentRuns", maxRecentRunsLength)
+	if err != nil {
+		return errors.Wrap(err, "trim list")
+	}
 
 	return nil
 }
