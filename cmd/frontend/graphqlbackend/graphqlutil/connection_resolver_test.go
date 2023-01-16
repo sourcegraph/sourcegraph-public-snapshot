@@ -79,24 +79,24 @@ func (*testConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
 	return &id, nil
 }
 
-func newInt(n int) *int {
-	return &n
-}
-
-func newInt32(n int) *int32 {
+func int32Ptr(n int) *int32 {
 	num := int32(n)
 
 	return &num
 }
 
+func stringPtr(s string) *string {
+	return &s
+}
+
 func withFirstCA(first int, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.First = newInt32(first)
+	a.First = int32Ptr(first)
 
 	return a
 }
 
 func withLastCA(last int, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.Last = newInt32(last)
+	a.Last = int32Ptr(last)
 
 	return a
 }
@@ -277,33 +277,45 @@ func TestConnectionPageInfo(t *testing.T) {
 	}{
 		{
 			name: "default",
-			args: withFirstCA(20, &ConnectionResolverArgs{}),
+			args: &ConnectionResolverArgs{
+				First: int32Ptr(20),
+			},
 			want: &pageInfoResponse{startCursor: "0", endCursor: "1", hasNextPage: false, hasPreviousPage: false},
 		},
 		{
 			name: "first page",
-			args: withFirstCA(1, &ConnectionResolverArgs{}),
+			args: &ConnectionResolverArgs{
+				First: int32Ptr(1),
+			},
 			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: false},
 		},
 		{
 			name: "second page",
-			args: withAfterCA("0", withFirstCA(1, &ConnectionResolverArgs{})),
+			args: &ConnectionResolverArgs{
+				First: int32Ptr(1),
+				After: stringPtr("0"),
+			},
 			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: true},
 		},
 		{
 			name: "backward first page",
-			args: withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
+			args: &ConnectionResolverArgs{
+				Last:   int32Ptr(1),
+				Before: stringPtr("0"),
+			},
 			want: &pageInfoResponse{startCursor: "1", endCursor: "1", hasNextPage: true, hasPreviousPage: true},
 		},
 		{
 			name: "backward first page without cursor",
-			args: withLastCA(1, &ConnectionResolverArgs{}),
+			args: &ConnectionResolverArgs{
+				Last: int32Ptr(1),
+			},
 			want: &pageInfoResponse{startCursor: "1", endCursor: "1", hasNextPage: false, hasPreviousPage: true},
 		},
 		{
 			name: "backward last page",
 			args: &ConnectionResolverArgs{
-				Last:   newInt32(20),
+				Last:   int32Ptr(20),
 				Before: stringPtr("0"),
 			},
 			want: &pageInfoResponse{startCursor: "1", endCursor: "0", hasNextPage: true, hasPreviousPage: false},
@@ -318,8 +330,4 @@ func TestConnectionPageInfo(t *testing.T) {
 			testResolverPageInfoResponse(t, resolver, store, test.want)
 		})
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
