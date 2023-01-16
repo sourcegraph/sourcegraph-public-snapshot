@@ -40,10 +40,6 @@ type RoutineRecentRunResolver struct {
 	recentRun recorder.RoutineRun
 }
 
-type RoutineRecentRunErrorResolver struct {
-	recentRun recorder.RoutineRun
-}
-
 type RoutineStatsResolver struct {
 	stats recorder.RoutineRunStats
 }
@@ -56,7 +52,6 @@ type backgroundJobConnectionResolver struct {
 	first            *int32
 	after            string
 	recentRunCount   *int32
-	dayCountForStats *int32
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
