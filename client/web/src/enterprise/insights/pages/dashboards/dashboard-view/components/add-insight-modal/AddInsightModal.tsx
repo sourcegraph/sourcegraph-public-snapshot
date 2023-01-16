@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useContext, useState, useMemo } from 'react'
+import { FC, ReactElement, ReactNode, useContext, useState, useMemo, FormEvent } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
@@ -46,7 +46,8 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
     const excludeIds = useMemo(() => dashboardInsights.map(insight => insight.id), [dashboardInsights])
     const { connection, loading, fetchMore } = useInsightSuggestions({ search, excludeIds })
 
-    const handleSubmit = async (): Promise<void> => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+        event.preventDefault()
         setSubmittingOrError(true)
 
         try {

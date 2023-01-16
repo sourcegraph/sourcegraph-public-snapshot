@@ -48,8 +48,8 @@ export function getCachedDashboardInsights(client: ApolloClient<unknown>, dashbo
 }
 
 export const GET_INSIGHTS_BY_SEARCH_TERM = gql`
-    query FindInsightsBySearchTerm($search: String!, $first: Int, $after: String) {
-        insightViews(find: $search, first: $first, after: $after) {
+    query FindInsightsBySearchTerm($search: String!, $first: Int, $after: String, $excludeIds: [ID!]) {
+        insightViews(find: $search, first: $first, after: $after, excludeIds: $excludeIds) {
             nodes {
                 ...AssignableInsight
             }
@@ -104,7 +104,7 @@ export function useInsightSuggestions(input: UseInsightSuggestionsInput): UseIns
         AssignableInsight | null
     >({
         query: GET_INSIGHTS_BY_SEARCH_TERM,
-        variables: { first: 20, after: null, search },
+        variables: { first: 20, after: null, search, excludeIds },
         getConnection: result => {
             const { insightViews } = dataOrThrowErrors(result)
 
