@@ -34,5 +34,5 @@ func (p provider) CachedInfo() *providers.Info {
 }
 
 func (p provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	return nil, errors.Errorf("Not an external account, cannot provide external account info")
+	return nil, errors.Errorf("not an external account, cannot provide external account info")
 }
