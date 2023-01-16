@@ -1323,6 +1323,10 @@ type Query {
         """
         failedFetch: Boolean = false
         """
+        Include repositories that are corrupt
+        """
+        corrupted: Boolean = false
+        """
         Return repositories that are associated with the given external service.
         """
         externalService: ID
