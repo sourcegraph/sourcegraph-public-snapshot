@@ -56,59 +56,49 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		return nil, err
 	}
 
-	// Iterate from the end if the ORDER BY DESC was used so that we can retrieve the previousSiteConfig easily.
-
-	// // We fetched one more than requested, so stop before we reach the end.
-	// for i := len(history); i >= 1; i-- {
-	// 	resolvers = append(resolvers, &SiteConfigurationChangeResolver{
-	// 		db:                 s.db,
-	// 		siteConfig:         history[i],
-	// 		previousSiteConfig: history[i-1],
-	// 	})
-	// }
-
-	// Now flip it back
-
-	// Reset the state.
+	// Reset the state since we fetched one more than asked for.
 	opt.LimitOffset.Limit -= 1
 
-	// Only truncate the results if we fetched more than the total requested in the API call.
-	// But if we fetched less or equal to the total, keep the entire result set.
-	total := len(history)
-	if total > opt.LimitOffset.Limit {
-		total = len(history) - 1
+	// Limit the results if we fetched more than the upperLimit requested in the API call.
+	// But if we fetched less or equal to the upperLimit, keep the entire result set.
+	upperLimit := len(history)
+	if upperLimit > opt.LimitOffset.Limit {
+		upperLimit = len(history) - 1
 	}
 
 	resolvers := []*SiteConfigurationChangeResolver{}
-	for i := 0; i < total; i++ {
+	for i := 0; i < upperLimit; i++ {
 		var previousSiteConfig *database.SiteConfig
 
+		// FOR ORDER BY DESC, we need to look ahead for the previousSiteConfig.
 		if opt.OrderByDirection == database.DescendingOrderByDirection {
-			//
-			// if i < (limit-1) && limit < len(history) {
-			// 	previousSiteConfig = history[i+1]
-			// }
-
-			// The last element?
-			// if i < (total-1) && total < len(history) {
-			// 	previousSiteConfig = history[i+1]
-			// }
-
-			if opt.LimitOffset.Limit >= len(history) {
-				if i == (total - 1) {
-					previousSiteConfig = nil
-				} else {
+			// But, if the total number of items fetched from the DB is <= the original limit
+			// requested in the API call, this would mean the DB only has that many change entries
+			// and we need to handle the edge case where the very first entry will have no
+			// previousSiteConfig.
+			if len(history) <= opt.LimitOffset.Limit {
+				// Only look ahead if we are not already at the last index to avoid out of bounds error.
+				// For the last index previousSiteConfig is already nil.
+				if i < (upperLimit - 1) {
 					previousSiteConfig = history[i+1]
 				}
 			} else {
+				// There's more in the DB and we fetched one more than the user requested, so safely
+				// look ahead to get the previousSiteConfig. This is safe from out of bounds error
+				// because we only iterate upto the last but one element if we fetched one more than
+				// the original limit in the API call.
 				previousSiteConfig = history[i+1]
 			}
-
-		} else {
-			if i > 0 {
-				previousSiteConfig = history[i-1]
-			}
+		} else if i > 0 {
+			// For ORDDER BY ASC is far simpler.
+			//
+			// We only need to look behind for the previousSiteConfig, but make sure to not do that
+			// if we're at the 0th index to avoid out of bounds errors.
+			//
+			// TODO: This will change as soon as offset comes into play. 😞
+			previousSiteConfig = history[i-1]
 		}
+
 		resolvers = append(resolvers, &SiteConfigurationChangeResolver{
 			db:                 s.db,
 			siteConfig:         history[i],
@@ -130,6 +120,14 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	// }
 
 	return resolvers, nil
+}
+
+func getPreviousSiteConfig(index int, history *[]*database.SiteConfig, opt *database.SiteConfigListOptions) *database.SiteConfig {
+	if history == nil || opt == nil {
+		panic("please do not forget to pass non-nil history and/or no-nil opt")
+	}
+
+	return nil
 }
 
 // FIXME: Implement when paginating.
