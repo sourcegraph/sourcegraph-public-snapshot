@@ -621,10 +621,10 @@ func TestRepos_List_IsCorrupted(t *testing.T) {
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "repo1"})
 	setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
 	assertCount(t, ReposListOptions{}, 1)
-	assertCount(t, ReposListOptions{IsCorrupted: true}, 0)
+	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 0)
 
 	logCorruption(t, db, repo.Name, "", "some corruption")
-	assertCount(t, ReposListOptions{IsCorrupted: true}, 1)
+	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 1)
 	assertCount(t, ReposListOptions{}, 1)
 }
 
