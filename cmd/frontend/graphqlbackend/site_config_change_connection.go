@@ -77,8 +77,8 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 			// and we need to handle the edge case where the very first entry will have no
 			// previousSiteConfig.
 			if len(history) <= opt.LimitOffset.Limit {
-				// Only look ahead if we are not already at the last index to avoid out of bounds error.
-				// For the last index previousSiteConfig is already nil.
+				// Only look ahead if we are not already at the last index to avoid out of bounds
+				// error. For the last index previousSiteConfig is already nil.
 				if i < (upperLimit - 1) {
 					previousSiteConfig = history[i+1]
 				}

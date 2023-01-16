@@ -254,9 +254,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
 										"previousID": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
 										"author": {
-											"id": "VXNlcjoy",
-											"username": "bar",
-											"displayName": "bar user"
+											"id": "VXNlcjox",
+											"username": "foo",
+											"displayName": "foo user"
 										},
 										"createdAt": %[1]q,
 										"updatedAt": %[1]q
