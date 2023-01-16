@@ -7,11 +7,11 @@ import { Link } from '@sourcegraph/wildcard'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { eventLogger } from '../../tracking/eventLogger'
 
-interface CloudCtaHomepageProps {
+interface CloudHomepageCtaProps {
     authenticatedUser?: AuthenticatedUser | null
 }
 
-export const CloudCtaHomepage: React.FunctionComponent<CloudCtaHomepageProps> = ({ authenticatedUser }) => {
+export const CloudHomepageCta: React.FunctionComponent<CloudHomepageCtaProps> = ({ authenticatedUser }) => {
     const [cloudCtaVariant, setCloudCtaVariant] = useState<CloudCtaBanner['variant'] | string>('filled')
     useEffect(() => {
         const searchParams = new URL(window.location.href).searchParams

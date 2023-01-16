@@ -8,7 +8,7 @@ import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/setting
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, Text, H2 } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
 
@@ -85,7 +85,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
         <div className={styles.root}>
             {showQueryExamples && setQueryState && (
                 <>
-                    <H3>Search basics</H3>
+                    <H2 as={H2}>Search basics</H2>
                     <div className={styles.queryExamplesContainer}>
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
