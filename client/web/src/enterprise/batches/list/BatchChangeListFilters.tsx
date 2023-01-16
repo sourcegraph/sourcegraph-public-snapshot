@@ -1,7 +1,7 @@
-import { FC, useId, useState } from 'react'
+import { FC, useCallback, useId, useState } from 'react'
 
 import classNames from 'classnames'
-import { upperFirst } from 'lodash';
+import { upperFirst } from 'lodash'
 
 import {
     H3,
@@ -35,8 +35,23 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
     const id = useId()
     const [searchTerm, setSearchTerm] = useState('')
 
+    const handleFilterChange = useCallback(
+        (newFilters: BatchChangeState[]) => {
+            if (newFilters.length > selectedFilters.length) {
+                // Reset value when we add new filter
+                // see https://github.com/sourcegraph/sourcegraph/pull/46450#discussion_r1070840089
+                setSearchTerm('')
+            }
+
+            onFiltersChange(newFilters)
+        },
+        [selectedFilters, onFiltersChange]
+    )
+
     // Render only non-selected filters and filters that match with search term value
-    const suggestions = filters.filter(filter => !selectedFilters.includes(filter) && filter.toLowerCase().includes(searchTerm.toLowerCase()))
+    const suggestions = filters.filter(
+        filter => !selectedFilters.includes(filter) && filter.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <Label htmlFor={id} className={classNames(className, styles.root)}>
@@ -48,12 +63,14 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
                 selectedItems={selectedFilters}
                 getItemName={format}
                 getItemKey={format}
-                onSelectedItemsChange={onFiltersChange}
+                onSelectedItemsChange={handleFilterChange}
                 aria-label="Select batch change status to filter."
             >
                 <MultiComboboxInput
                     id={id}
                     value={searchTerm}
+                    autoCorrect="false"
+                    autoComplete="off"
                     placeholder="Select filter..."
                     onChange={event => setSearchTerm(event.target.value)}
                 />
@@ -69,11 +86,7 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
 
                     {suggestions.length === 0 && (
                         <MultiComboboxEmptyList>
-                            {!searchTerm ? (
-                                <>All filters are selected</>
-                            ) : (
-                                <>No options</>
-                            )}
+                            {!searchTerm ? <>All filters are selected</> : <>No options</>}
                         </MultiComboboxEmptyList>
                     )}
                 </MultiComboboxPopover>
