@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "monitoring",
+    srcs = [
+        "aggregations.go",
+        "dashboards.go",
+        "doc.go",
+        "documentation.go",
+        "generator.go",
+        "monitoring.go",
+        "multi_instance.go",
+        "panel.go",
+        "panel_options.go",
+        "prometheus.go",
+        "prune.go",
+        "util.go",
+        "variables.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "//monitoring/grafanaclient",
+        "//monitoring/monitoring/internal/grafana",
+        "//monitoring/monitoring/internal/promql",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_grafana_tools_sdk//:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+        "@com_github_prometheus_prometheus//model/labels:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+        "@org_golang_x_text//cases:go_default_library",
+        "@org_golang_x_text//language:go_default_library",
+    ],
+)
+
+go_test(
+    name = "monitoring_test",
+    srcs = [
+        "generator_test.go",
+        "variables_test.go",
+    ],
+    embed = [":monitoring"],
+    deps = [
+        "//monitoring/definitions",
+        "@com_github_prometheus_prometheus//model/labels:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

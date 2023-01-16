@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = [
+        "handler.go",
+        "routes.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//enterprise/internal/executor",
+        "//internal/database",
+        "//internal/metrics/store",
+        "//internal/types",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker/store",
+        "//lib/api",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
+        "@com_github_prometheus_common//expfmt:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = ["handler_test.go"],
+    embed = [":handler"],
+    deps = [
+        "//enterprise/internal/executor",
+        "//internal/database",
+        "//internal/metrics/store",
+        "//internal/types",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker/store",
+        "//internal/workerutil/dbworker/store/mocks",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "debugserver",
+    srcs = [
+        "debug.go",
+        "expvar.go",
+        "metadata.go",
+        "ready.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/debugserver",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/version",
+        "@com_github_felixge_fgprof//:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promhttp:go_default_library",
+        "@org_golang_x_net//trace:go_default_library",
+    ],
+)

@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tracer",
+    srcs = [
+        "doc.go",
+        "otel.go",
+        "should_trace.go",
+        "switchable_ot.go",
+        "switchable_otel.go",
+        "tracer.go",
+        "watch.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/env",
+        "//internal/hostname",
+        "//internal/trace/policy",
+        "//internal/tracer/internal/exporters",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@io_opentelemetry_go_contrib_propagators_jaeger//:go_default_library",
+        "@io_opentelemetry_go_contrib_propagators_ot//:go_default_library",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//propagation:go_default_library",
+        "@io_opentelemetry_go_otel//semconv/v1.4.0:go_default_library",
+        "@io_opentelemetry_go_otel_bridge_opentracing//:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//resource:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@org_uber_go_automaxprocs//maxprocs:go_default_library",
+    ],
+)
+
+go_test(
+    name = "tracer_test",
+    srcs = ["watch_test.go"],
+    embed = [":tracer"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//schema",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+    ],
+)

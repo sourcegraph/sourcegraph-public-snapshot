@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "uploadstore",
+    srcs = [
+        "config.go",
+        "expirer.go",
+        "gcs_api.go",
+        "gcs_client.go",
+        "lazy_client.go",
+        "observability.go",
+        "s3_api.go",
+        "s3_client.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/uploadstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_config//:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_credentials//:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_feature_s3_manager//:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//types:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_google_cloud_go_storage//:go_default_library",
+        "@org_golang_google_api//iterator:go_default_library",
+        "@org_golang_google_api//option:go_default_library",
+    ],
+)
+
+go_test(
+    name = "uploadstore_test",
+    srcs = [
+        "config_test.go",
+        "gcs_client_test.go",
+        "mocks_test.go",
+        "s3_client_test.go",
+        "store_test.go",
+    ],
+    embed = [":uploadstore"],
+    deps = [
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//types:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_google_cloud_go_storage//:go_default_library",
+    ],
+)

@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "errors.go",
+        "helpers.go",
+        "observability.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = [
+        "helpers_test.go",
+        "store_test.go",
+    ],
+    embed = [":store"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "//internal/observation",
+        "//internal/workerutil",
+        "@com_github_derision_test_glock//:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "exporters",
+    srcs = [
+        "jaeger.go",
+        "otlp.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/internal/exporters",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/otlpenv",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_uber_jaeger_client_go//config:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_jaeger//:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace//:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc//:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracehttp//:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+    ],
+)

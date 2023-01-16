@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "permssync",
+    srcs = ["permssync.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/permssync",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/repoupdater",
+        "//internal/repoupdater/protocol",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)

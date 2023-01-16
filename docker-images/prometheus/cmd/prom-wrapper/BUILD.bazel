@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "prom-wrapper_lib",
+    srcs = [
+        "alertmanager.go",
+        "change.go",
+        "cmd.go",
+        "main.go",
+        "receivers.go",
+        "silence.go",
+        "siteconfig.go",
+        "status.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/docker-images/prometheus/cmd/prom-wrapper",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/conf",
+        "//internal/env",
+        "//internal/hostname",
+        "//internal/src-prometheus",
+        "//internal/version",
+        "//lib/errors",
+        "//schema",
+        "@com_github_go_openapi_strfmt//:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_masterminds_semver//:go_default_library",
+        "@com_github_prometheus_alertmanager//api/v2/client:go_default_library",
+        "@com_github_prometheus_alertmanager//api/v2/client/alert:go_default_library",
+        "@com_github_prometheus_alertmanager//api/v2/client/general:go_default_library",
+        "@com_github_prometheus_alertmanager//api/v2/client/silence:go_default_library",
+        "@com_github_prometheus_alertmanager//api/v2/models:go_default_library",
+        "@com_github_prometheus_alertmanager//config:go_default_library",
+        "@com_github_prometheus_common//config:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "prom-wrapper",
+    embed = [":prom-wrapper_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "prom-wrapper_test",
+    srcs = [
+        "receivers_test.go",
+        "silence_test.go",
+    ],
+    embed = [":prom-wrapper_lib"],
+    deps = [
+        "//internal/version",
+        "//schema",
+        "@com_github_prometheus_alertmanager//config:go_default_library",
+    ],
+)

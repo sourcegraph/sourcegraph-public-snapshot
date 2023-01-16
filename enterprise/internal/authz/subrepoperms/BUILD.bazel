@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "subrepoperms",
+    srcs = [
+        "mocks_temp.go",
+        "sub_repo_perms.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
+        "@org_golang_x_sync//singleflight:go_default_library",
+        "@org_uber_go_atomic//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "subrepoperms_test",
+    srcs = ["sub_repo_perms_test.go"],
+    embed = [":subrepoperms"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf",
+        "//schema",
+    ],
+)

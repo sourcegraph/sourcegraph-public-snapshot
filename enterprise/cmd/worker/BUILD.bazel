@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "worker_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/worker/shared",
+        "//enterprise/cmd/worker/shared",
+        "//enterprise/internal/authz/subrepoperms",
+        "//enterprise/internal/database",
+        "//enterprise/internal/oobmigration/migrations",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/env",
+        "//internal/observation",
+        "//internal/oobmigration",
+        "//internal/version",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "worker",
+    embed = [":worker_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = ["shared.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//enterprise/internal/authz/subrepoperms",
+        "//enterprise/internal/database",
+        "//internal/authz",
+        "//internal/database",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)

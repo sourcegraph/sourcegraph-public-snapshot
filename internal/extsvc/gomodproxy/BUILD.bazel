@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gomodproxy",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/errcode",
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "@org_golang_x_mod//module:go_default_library",
+    ],
+)
+
+go_test(
+    name = "gomodproxy_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":gomodproxy"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/lazyregexp",
+        "//internal/testutil",
+        "//schema",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@org_golang_x_mod//module:go_default_library",
+    ],
+)

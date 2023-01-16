@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "analytics",
+    srcs = [
+        "analytics.go",
+        "context.go",
+        "spans.go",
+        "tracer.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/std",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_run//:go_default_library",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel//codes:go_default_library",
+        "@io_opentelemetry_go_otel//semconv/v1.4.0:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace//:go_default_library",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc//:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//resource:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//collector/trace/v1:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//trace/v1:go_default_library",
+        "@org_golang_google_protobuf//encoding/protojson:go_default_library",
+    ],
+)

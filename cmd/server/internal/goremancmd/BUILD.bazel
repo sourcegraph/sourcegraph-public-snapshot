@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "goremancmd_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/server/internal/goremancmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/server/internal/goreman",
+        "//lib/errors",
+    ],
+)
+
+go_binary(
+    name = "goremancmd",
+    embed = [":goremancmd_lib"],
+    visibility = ["//cmd/server:__subpackages__"],
+)

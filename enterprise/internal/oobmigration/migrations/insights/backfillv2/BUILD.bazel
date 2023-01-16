@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backfillv2",
+    srcs = [
+        "migrator.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/backfillv2",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/conf/deploy",
+        "//internal/database/basestore",
+        "//internal/oobmigration",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "backfillv2_test",
+    srcs = ["migrator_test.go"],
+    embed = [":backfillv2"],
+    deps = [
+        "//enterprise/internal/database",
+        "//enterprise/internal/insights/timeseries",
+        "//enterprise/internal/insights/types",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "@com_github_derision_test_glock//:go_default_library",
+        "@com_github_hexops_autogold//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+    ],
+)

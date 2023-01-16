@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "searchcontexts",
+    srcs = ["search_contexts.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/searchcontexts",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/auth",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/lazyregexp",
+        "//internal/search",
+        "//internal/search/query",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@org_golang_x_sync//errgroup:go_default_library",
+        "@org_golang_x_sync//semaphore:go_default_library",
+    ],
+)
+
+go_test(
+    name = "searchcontexts_test",
+    srcs = ["search_contexts_test.go"],
+    embed = [":searchcontexts"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "squirrel",
+    srcs = [
+        "breadcrumbs.go",
+        "hover.go",
+        "http_handlers.go",
+        "lang_java.go",
+        "lang_python.go",
+        "lang_starlark.go",
+        "languages.go",
+        "local_code_intel.go",
+        "service.go",
+        "util.go",
+    ],
+    embedsrcs = ["language-file-extensions.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/symbols/types",
+        "//internal/api",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_fatih_color//:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_smacker_go_tree_sitter//:go_default_library",
+        "@com_github_smacker_go_tree_sitter//cpp:go_default_library",
+        "@com_github_smacker_go_tree_sitter//csharp:go_default_library",
+        "@com_github_smacker_go_tree_sitter//golang:go_default_library",
+        "@com_github_smacker_go_tree_sitter//java:go_default_library",
+        "@com_github_smacker_go_tree_sitter//javascript:go_default_library",
+        "@com_github_smacker_go_tree_sitter//python:go_default_library",
+        "@com_github_smacker_go_tree_sitter//ruby:go_default_library",
+        "@com_github_smacker_go_tree_sitter//typescript/tsx:go_default_library",
+    ],
+)
+
+go_test(
+    name = "squirrel_test",
+    srcs = [
+        "hover_test.go",
+        "local_code_intel_test.go",
+        "service_test.go",
+    ],
+    embed = [":squirrel"],
+    deps = [
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_fatih_color//:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "meta.go",
+        "search.go",
+        "store.go",
+        "symbols.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store",
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//cmd/symbols/parser",
+        "//internal/database/basestore",
+        "//internal/database/batch",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_grafana_regexp//syntax:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@org_golang_x_sync//errgroup:go_default_library",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = [
+        "search_test.go",
+        "symbols_test.go",
+    ],
+    embed = [":store"],
+    deps = ["@com_github_google_go_cmp//cmp:go_default_library"],
+)

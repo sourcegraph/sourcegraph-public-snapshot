@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "shared",
+    srcs = ["shared.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/conf",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/hostname",
+        "//internal/instrumentation",
+        "//internal/trace",
+        "//internal/tracer",
+        "//internal/version",
+        "@com_github_getsentry_sentry_go//:go_default_library",
+        "@com_github_gorilla_handlers//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promhttp:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "shared_test",
+    srcs = ["shared_test.go"],
+    embed = [":shared"],
+    deps = [
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+    ],
+)

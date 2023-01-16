@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "observation",
+    srcs = [
+        "context.go",
+        "fields.go",
+        "observation.go",
+        "snakecase.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/observation",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/honey",
+        "//internal/hostname",
+        "//internal/metrics",
+        "//internal/trace",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "observation_test",
+    srcs = [
+        "snakecase_test.go",
+        "util_test.go",
+    ],
+    embed = [":observation"],
+)

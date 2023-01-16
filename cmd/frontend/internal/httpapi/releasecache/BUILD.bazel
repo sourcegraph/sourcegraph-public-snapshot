@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "releasecache",
+    srcs = [
+        "cache.go",
+        "config.go",
+        "http.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/errcode",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/goroutine",
+        "//lib/errors",
+        "@com_github_coreos_go_semver//semver:go_default_library",
+        "@com_github_google_go_github_v43//github:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "releasecache_test",
+    srcs = [
+        "cache_test.go",
+        "config_test.go",
+        "http_test.go",
+        "main_test.go",
+        "mocks_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":releasecache"],
+    deps = [
+        "//internal/conf",
+        "//internal/errcode",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//internal/testutil",
+        "//lib/errors",
+        "//schema",
+        "@com_github_dnaeon_go_vcr//cassette:go_default_library",
+        "@com_github_dnaeon_go_vcr//recorder:go_default_library",
+        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = ["background.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/background",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/analytics",
+        "//dev/sg/internal/std",
+        "//lib/output",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@org_uber_go_atomic//:go_default_library",
+    ],
+)

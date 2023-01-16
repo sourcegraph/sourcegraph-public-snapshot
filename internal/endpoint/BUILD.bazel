@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "endpoint",
+    srcs = [
+        "endpoint.go",
+        "k8s.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/endpoint",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//lib/errors",
+        "@com_github_cespare_xxhash_v2//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
+        "@com_github_sourcegraph_go_rendezvous//:go_default_library",
+        "@com_github_sourcegraph_log//:go_default_library",
+        "@io_k8s_api//apps/v1:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_client_go//informers:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@io_k8s_client_go//rest:go_default_library",
+        "@io_k8s_client_go//tools/cache:go_default_library",
+    ],
+)
+
+go_test(
+    name = "endpoint_test",
+    srcs = [
+        "endpoint_test.go",
+        "k8s_test.go",
+        "main_test.go",
+    ],
+    embed = [":endpoint"],
+    deps = [
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@io_k8s_api//apps/v1:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@io_k8s_client_go//plugin/pkg/client/auth/gcp:go_default_library",
+        "@io_k8s_client_go//tools/clientcmd:go_default_library",
+        "@io_k8s_client_go//util/homedir:go_default_library",
+    ],
+)

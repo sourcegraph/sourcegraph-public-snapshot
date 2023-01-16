@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "download_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/download",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/codeintel-qa/internal",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool:go_default_library",
+        "@com_google_cloud_go_storage//:go_default_library",
+        "@org_golang_google_api//iterator:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "download",
+    embed = [":download_lib"],
+    visibility = ["//visibility:public"],
+)
