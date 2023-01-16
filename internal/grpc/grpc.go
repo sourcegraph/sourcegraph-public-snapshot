@@ -29,14 +29,20 @@ func MultiplexHandlers(grpcServer *grpc.Server, httpHandler http.Handler) http.H
 	return h2c.NewHandler(newHandler, &http2.Server{})
 }
 
-var DefaultDialOptions = []grpc.DialOption{
-	// Add propagation of opentelemetry tracing
-	grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+func DefaultDialOptions() []grpc.DialOption {
+	// Generate the options dynamically rather than using a static slice
+	// because the tracer will not be initialized during init time.
+	return []grpc.DialOption{
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+	}
 }
 
-var DefaultServerOptions = []grpc.ServerOption{
-	// Add propagation of opentelemetry tracing
-	grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-	grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+func DefaultServerOptions() []grpc.ServerOption {
+	// Generate the options dynamically rather than using a static slice
+	// because the tracer will not be initialized during init time.
+	return []grpc.ServerOption{
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+	}
 }
