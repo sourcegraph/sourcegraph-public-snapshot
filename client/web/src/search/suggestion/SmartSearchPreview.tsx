@@ -88,9 +88,12 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
     }
 
     const findSSResults = () => {
-        const results = aggregateStreamingSearch(of('sourcegraph'), options).pipe(
-            tap(obj => console.log('HERE: ', obj))
-        )
+        //TODO: How to grab search query dynamically
+        //TODO: How to grab pipe obj results
+        //TODO: How to change SmartSearch setting from here
+        const results = aggregateStreamingSearch(of('sourcegraph javascript'), options)
+            .pipe(tap(obj => console.log('HERE: ', obj)))
+            .subscribe()
         console.log(results)
     }
     findSSResults()
