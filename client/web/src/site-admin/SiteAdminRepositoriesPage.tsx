@@ -195,7 +195,7 @@ const FILTERS: FilteredConnectionFilter[] = [
                 label: 'Corrupted',
                 value: 'corrupted',
                 tooltip: 'Show only repositories which are corrupt',
-                args: { isCorrupted: true },
+                args: { corrupted: true },
             },
         ],
     },

@@ -165,7 +165,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
-                $isCorrupted: Boolean
+                $corrupted: Boolean
                 $cloneStatus: CloneStatus
                 $orderBy: RepositoryOrderBy
                 $descending: Boolean
@@ -177,7 +177,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
-                    isCorrupted: $isCorrupted
+                    corrupted: $corrupted
                     cloneStatus: $cloneStatus
                     orderBy: $orderBy
                     descending: $descending
@@ -199,7 +199,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
-            isCorrupted: args.isCorrupted ?? false,
+            corrupted: args.corrupted ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
