@@ -109,14 +109,6 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	return resolvers, nil
 }
 
-func getPreviousSiteConfig(index int, history *[]*database.SiteConfig, opt *database.SiteConfigListOptions) *database.SiteConfig {
-	if history == nil || opt == nil {
-		panic("please do not forget to pass non-nil history and/or no-nil opt")
-	}
-
-	return nil
-}
-
 // FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver) (*string, error) {
 	return nil, nil
