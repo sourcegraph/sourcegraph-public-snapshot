@@ -72,7 +72,7 @@ export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => 
                     {suggestions.length === 0 && (
                         <span className={styles.noFilters}>
                             {!searchTerm ? (
-                                <>All filters are selected, there are no any other filters</>
+                                <>All filters are selected</>
                             ) : (
                                 <>No options</>
                             )}
