@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"k8s.io/utils/strings/slices"
 )
 
 type Recordable interface {
