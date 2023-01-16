@@ -209,8 +209,8 @@ var expectedState = gqltestutil.BatchSpecDeep{
 							Subject: "Append Hello World to all README.md files",
 							Body:    "",
 							Author: gqltestutil.ChangesetSpecCommitAuthor{
-								Name:  "Sourcegraph",
-								Email: "batch-changes@sourcegraph.com",
+								Name:  "sourcegraph",
+								Email: "sourcegraph@sourcegraph.com",
 							},
 						},
 					},
