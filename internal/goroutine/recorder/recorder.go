@@ -120,7 +120,7 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 // LogStart logs the start of a routine.
 func (m *Recorder) LogStart(r Recordable) {
 	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
-	m.logger.Debug("" + r.Name() + " just started! 🚀")
+	m.logger.Debug("Routine just started! 🚀", log.String("routine", r.Name()))
 }
 
 // LogStop logs the stop of a routine.
