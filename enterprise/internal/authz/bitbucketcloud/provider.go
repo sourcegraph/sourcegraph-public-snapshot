@@ -117,7 +117,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	client := p.client.WithAuthenticator(oauthToken)
 
-	repos, _, err := client.Repos(ctx, nil, "", &bitbucketcloud.ReposOptions{RequestOptions: bitbucketcloud.RequestOptions{FetchAll: true}, Role: "member"})
+	repos, _, err := client.Repos(ctx, &bitbucketcloud.PageToken{Pagelen: 100}, "", &bitbucketcloud.ReposOptions{RequestOptions: bitbucketcloud.RequestOptions{FetchAll: true}, Role: "member"})
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	repoOwner := repoNameParts[1]
 	repoName := repoNameParts[2]
 
-	users, _, err := p.client.ListExplicitUserPermsForRepo(ctx, nil, repoOwner, repoName, &bitbucketcloud.RequestOptions{FetchAll: true})
+	users, _, err := p.client.ListExplicitUserPermsForRepo(ctx, &bitbucketcloud.PageToken{Pagelen: 100}, repoOwner, repoName, &bitbucketcloud.RequestOptions{FetchAll: true})
 	if err != nil {
 		return nil, err
 	}
