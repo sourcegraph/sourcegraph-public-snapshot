@@ -174,7 +174,7 @@ func (s *Scheduler) Description() string {
 }
 
 func (s *Scheduler) Interval() time.Duration {
-	return 5 * time.Second // Actually between 5 sec and 1 min, changes dynamically
+	return 1 * time.Minute // Actually between 5 sec and 1 min, changes dynamically
 }
 
 func (s *Scheduler) RegisterRecorder(recorder *recorder.Recorder) {
