@@ -138,9 +138,9 @@ const JobList: React.FunctionComponent<{
     const hostNames = useMemo(
         () =>
             jobs
-                .map(job => job.routines[0]?.instances[0]?.hostName)
-                .filter((host, index, hosts) => hosts.indexOf(host) === index)
-                .filter(host => !!host),
+                .map(job => job.routines[0]?.instances[0]?.hostName) // get the host name of the first routine
+                .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
+                .filter(host => !!host), // remove undefined
         [jobs]
     )
 
