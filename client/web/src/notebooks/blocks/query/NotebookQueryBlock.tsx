@@ -10,7 +10,7 @@ import {
     CodeMirrorQueryInput,
     changeListener,
     createDefaultSuggestions,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

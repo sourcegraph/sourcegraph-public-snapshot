@@ -23,6 +23,33 @@ type NotificationClient struct {
 	logger  log.Logger
 	channel string
 }
+type SlackNotification struct {
+	// SentAt is the time the notification got sent.
+	SentAt time.Time
+	// ID is the unique idenfifier which represents this notification in Slack. Typically this is the timestamp as
+	// is returned by the Slack API upon successful send of a notification.
+	ID string
+	// ChannelID is the channelID as returned by the Slack API after successful sending of a notification. It is NOT
+	// the traditional channel you're use to that starts with a '#'. Instead it's the global ID for that channel used by
+	// Slack.
+	ChannelID string
+}
+
+func (n *SlackNotification) Equals(o *SlackNotification) bool {
+	if o == nil {
+		return false
+	}
+
+	return n.ID == o.ID && n.ChannelID == o.ChannelID && n.SentAt.Equal(o.SentAt)
+}
+
+func NewSlackNotification(id, channel string) *SlackNotification {
+	return &SlackNotification{
+		SentAt:    time.Now(),
+		ID:        id,
+		ChannelID: channel,
+	}
+}
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
@@ -46,25 +73,53 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
-func (c *NotificationClient) sendFailedBuild(build *Build) error {
+func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNotification) (*SlackNotification, error) {
+	if previous == nil {
+		return nil, fmt.Errorf("cannot update message with nil notification")
+	}
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
 	blocks, err := c.createMessageBlocks(logger, build)
 	if err != nil {
-		return err
+		return previous, err
 	}
 
-	logger.Debug("sending notification")
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
+	var id, channel string
+	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	_, _, err = c.slack.PostMessage(c.channel, msgOptBlocks)
+	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
+	channel, id, _, err = c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
+	if err != nil {
+		logger.Error("failed to update message", log.Error(err))
+		return previous, err
+	}
+
+	return NewSlackNotification(id, channel), nil
+}
+
+func (c *NotificationClient) sendNewMessage(build *Build) (*SlackNotification, error) {
+	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+	logger.Debug("creating slack json")
+
+	blocks, err := c.createMessageBlocks(logger, build)
+	if err != nil {
+		return build.Notification, err
+	}
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
+	var id, channel string
+
+	logger.Debug("sending new notification")
+	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
+	channel, id, err = c.slack.PostMessage(c.channel, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to post message", log.Error(err))
-		return err
+		return nil, err
 	}
 
 	logger.Info("notification posted")
-	return nil
+	return NewSlackNotification(id, channel), nil
 }
 
 func commitLink(msg, commit string) string {
@@ -99,6 +154,9 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
 		j := failedJobs[i]
 		jobSection += fmt.Sprintf("• %s", *j.Name)
+		if j.hasTimedOut() {
+			jobSection += "(Timed out)"
+		}
 		if j.WebURL != "" {
 			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
 		}

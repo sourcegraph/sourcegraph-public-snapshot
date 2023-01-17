@@ -36,7 +36,7 @@ type GitserverRepoStore interface {
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 	// LogCorruption sets the corrupted at value and logs the corruption reason. Reason will be truncated if it exceeds
 	// MaxReasonSizeInMB
-	LogCorruption(ctx context.Context, name api.RepoName, reason string) error
+	LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
 	// If the status value hasn't changed, the row will not be updated.
@@ -521,7 +521,7 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string) error {
+func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error {
 	// trim reason to 1 MB so that we don't store huge reasons and run into trouble when it gets too large
 	if len(reason) > MaxReasonSizeInMB {
 		reason = reason[:MaxReasonSizeInMB]
@@ -541,6 +541,7 @@ func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoNam
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos as gtr
 SET
+	shard_id = %s,
 	corrupted_at = NOW(),
 	-- prepend the json and then ensure we only keep 10 items in the resulting json array
 	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
@@ -548,7 +549,7 @@ SET
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
 AND
-	corrupted_at IS NULL`, rawLog, name))
+	corrupted_at IS NULL`, shardID, rawLog, name))
 	if err != nil {
 		return errors.Wrapf(err, "logging repo corruption")
 	}

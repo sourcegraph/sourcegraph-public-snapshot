@@ -85,11 +85,11 @@ commands:
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
-    install: yarn
+    install: pnpm install
     env:
       WEBPACK_DEV_SERVER: 1
       NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=8192"
+      NODE_OPTIONS: '--max_old_space_size=8192'
 
 commandsets:
   minimal:
@@ -135,6 +135,6 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: "http://localhost:3080"
-      EMAIL: "joe@sourcegraph.com"
-      PASSWORD: "12345"
+      BASE_URL: 'http://localhost:3080'
+      EMAIL: 'joe@sourcegraph.com'
+      PASSWORD: '12345'

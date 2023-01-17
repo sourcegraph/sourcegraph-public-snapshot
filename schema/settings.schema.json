@@ -129,14 +129,6 @@
             "pointer": true
           }
         },
-        "enableMergedFileSymbolSidebar": {
-          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeNavigation": {
           "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
           "type": "string",
@@ -255,15 +247,6 @@
           "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "editor": {
-          "description": "Specifies which (code) editor to use for query and text input",
-          "type": "string",
-          "default": "codemirror6",
-          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }

@@ -5,7 +5,17 @@ export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
 export { ErrorMessage, renderError } from './ErrorMessage'
-export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
+export {
+    LineChart,
+    BarChart,
+    PieChart,
+    StackedMeter,
+    LegendList,
+    LegendItem,
+    LegendItemPoint,
+    ScrollBox,
+    ParentSize,
+} from './Charts'
 export {
     Checkbox,
     FlexTextArea,
@@ -62,6 +72,13 @@ export {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxOptionGroup,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
 } from './Combobox'
 
 /**
@@ -84,6 +101,7 @@ export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+export type { MultiComboboxProps } from './Combobox'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

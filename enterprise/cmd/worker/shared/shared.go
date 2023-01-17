@@ -20,13 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 var AdditionalJobs = map[string]job.Job{
 	"codehost-version-syncing":      versions.NewSyncingJob(),
 	"insights-job":                  workerinsights.NewInsightsJob(),
 	"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
+	"insights-data-retention-job":   workerinsights.NewInsightsDataRetentionJob(),
 	"batches-janitor":               batches.NewJanitorJob(),
 	"batches-scheduler":             batches.NewSchedulerJob(),
 	"batches-reconciler":            batches.NewReconcilerJob(),
@@ -37,7 +37,6 @@ var AdditionalJobs = map[string]job.Job{
 	"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 	"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
-	"webhook-build-job":             repos.NewWebhookBuildJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
@@ -57,7 +56,7 @@ var AdditionalJobs = map[string]job.Job{
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
 }
 
-// SetAuthProviders waits for the database to be initialized, then periodically refreshes the
+// SetAuthzProviders waits for the database to be initialized, then periodically refreshes the
 // global authz providers. This changes the repositories that are visible for reads based on the
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch

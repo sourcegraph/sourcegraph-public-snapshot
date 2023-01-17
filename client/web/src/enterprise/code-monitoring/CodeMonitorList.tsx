@@ -69,7 +69,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                                     to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Monitoring' })}
                                 >
                                     try Sourcegraph Cloud
                                 </Link>

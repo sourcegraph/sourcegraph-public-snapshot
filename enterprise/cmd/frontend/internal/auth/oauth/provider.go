@@ -57,6 +57,8 @@ func (p *Provider) CachedInfo() *providers.Info {
 		displayName = p.SourceConfig.Github.DisplayName
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
 		displayName = p.SourceConfig.Gitlab.DisplayName
+	case p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplayName != "":
+		displayName = p.SourceConfig.Bitbucketcloud.DisplayName
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,

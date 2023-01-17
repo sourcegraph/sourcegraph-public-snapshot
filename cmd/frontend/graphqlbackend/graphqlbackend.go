@@ -625,6 +625,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		"OutboundRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.outboundRequestByID(ctx, id)
 		},
+		"BackgroundJob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.backgroundJobByID(ctx, id)
+		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id)
 		},

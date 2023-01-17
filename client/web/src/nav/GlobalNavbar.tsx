@@ -292,7 +292,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             className={styles.signUp}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
                         >
                             Search private code
                         </ButtonLink>

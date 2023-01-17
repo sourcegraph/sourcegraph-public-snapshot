@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,10 +42,18 @@ type Client interface {
 	MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error)
 
 	Repo(ctx context.Context, namespace, slug string) (*Repo, error)
-	Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error)
+	Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) ([]*Repo, *PageToken, error)
 	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
 
+	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string, opts *RequestOptions) ([]*Account, *PageToken, error)
+
 	CurrentUser(ctx context.Context) (*User, error)
+	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
+	AllCurrentUserEmails(ctx context.Context) ([]*UserEmail, error)
+}
+
+type RequestOptions struct {
+	FetchAll bool
 }
 
 // client access a Bitbucket Cloud via the REST API 2.0.
@@ -144,6 +153,21 @@ func (c *client) Ping(ctx context.Context) error {
 	return nil
 }
 
+func fetchAll[T any](ctx context.Context, c *client, results []T, next *PageToken, err error) ([]T, error) {
+	var page []T
+	var nextURL *url.URL
+	for err == nil && next.HasMore() {
+		nextURL, err = url.Parse(next.Next)
+		if err != nil {
+			return nil, err
+		}
+		next, err = c.page(ctx, nextURL.Path, nil, next, &page)
+		results = append(results, page...)
+	}
+
+	return results, err
+}
+
 func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
@@ -200,15 +224,11 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.Auth.Authenticate(req); err != nil {
-		return err
-	}
-
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
 	if err != nil {
 		return err
 	}
@@ -253,6 +273,12 @@ func (t *PageToken) Values() url.Values {
 	v := url.Values{}
 	if t == nil {
 		return v
+	}
+	if t.Next != "" {
+		nextURL, err := url.Parse(t.Next)
+		if err == nil {
+			v = nextURL.Query()
+		}
 	}
 	if t.Pagelen != 0 {
 		v.Set("pagelen", strconv.Itoa(t.Pagelen))

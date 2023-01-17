@@ -21,7 +21,6 @@ export interface OrgSettingsSidebarItemConditionContext extends BatchChangesProp
     org: OrgAreaOrganizationFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
-    newMembersInviteEnabled: boolean
 }
 
 type OrgSettingsSidebarItem = NavItemDescriptor<OrgSettingsSidebarItemConditionContext> & {
@@ -47,7 +46,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
     authenticatedUser,
     className,
     match,
-    newMembersInviteEnabled,
     ...props
 }) => {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
@@ -61,7 +59,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
         org,
         authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        newMembersInviteEnabled,
     }
 
     return (

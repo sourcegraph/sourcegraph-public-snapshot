@@ -28,11 +28,13 @@ type DataRetentionJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
-	SeriesID int
+	InsightSeriesID int
+	SeriesID        string
 }
 
 var dataRetentionJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_data_retention_jobs.series_id"),
+	sqlf.Sprintf("insights_data_retention_jobs.series_id_string"),
 
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
@@ -76,6 +78,7 @@ func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 
 	if err := s.Scan(
+		&job.InsightSeriesID,
 		&job.SeriesID,
 
 		&job.ID,

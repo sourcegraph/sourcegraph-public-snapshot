@@ -29,7 +29,7 @@ type Interface interface {
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
-	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
@@ -121,8 +121,8 @@ type SeriesPointsOpts struct {
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
 
-	// Time ranges to query from/to, if non-nil, in UTC.
-	From, To *time.Time
+	// Time ranges to query from/to (inclusive) or after (exclusive), if non-nil, in UTC.
+	From, To, After *time.Time
 
 	// Whether to augment the series points data with zero values.
 	SupportsAugmentation bool
@@ -401,6 +401,9 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 	if opts.To != nil {
 		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("time > %s", *opts.After))
+	}
 
 	if len(opts.Included) > 0 {
 		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
@@ -647,17 +650,20 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (series types.InsightSeriesRecordingTimes, err error) {
 	series.InsightSeriesID = id
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("insight_series_id = %s", id),
 	}
-	if from != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
+	if opts.From != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", opts.From.UTC()))
 	}
-	if to != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
+	if opts.To != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", opts.To.UTC()))
+	}
+	if opts.After != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time > %s", opts.After.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
@@ -681,6 +687,27 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 
 	return series, nil
 }
+
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int, excludeSnapshot bool) (time.Time, error) {
+	preds := []*sqlf.Query{sqlf.Sprintf("insight_series_id = %s", seriesId)}
+	if excludeSnapshot {
+		preds = append(preds, sqlf.Sprintf("snapshot is false"))
+	}
+
+	var tempTime time.Time
+	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, sqlf.Join(preds, "and"), n)))
+	if err != nil {
+		return tempTime, err
+	}
+	if !got {
+		return tempTime, nil
+	}
+	return oldestTime, nil
+}
+
+const getOffsetNRecordingTimeSql = `
+select recording_time from insight_series_recording_times where %s order by recording_time desc offset %s limit 1
+`
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
 // functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
@@ -709,7 +736,7 @@ func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, 
 	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}

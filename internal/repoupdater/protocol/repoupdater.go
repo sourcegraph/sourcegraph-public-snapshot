@@ -248,6 +248,7 @@ type PermsSyncRequest struct {
 	UserIDs []int32                 `json:"user_ids"`
 	RepoIDs []api.RepoID            `json:"repo_ids"`
 	Options authz.FetchPermsOptions `json:"options"`
+	Reason  string                  `json:"reason"`
 }
 
 // PermsSyncResponse is a response to sync permissions.
