@@ -268,14 +268,11 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
 )
 
 const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
-    const commonHostName =
-        routine.recentRuns.length === 1
-            ? routine.recentRuns[0].hostName
-            : routine.recentRuns.reduce<string | undefined | null>(
-                  (hostName, run) =>
-                      hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null,
-                  undefined
-              )
+    const allHostNames = routine.recentRuns
+        .map(run => run.hostName) // get host name
+        .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
+    const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
+
     const routineIcon =
         routine.type === 'PERIODIC' ? (
             <Icon aria-hidden={true} svgPath={mdiCached} />
