@@ -54,6 +54,14 @@ type RunLengthCategory = 'short' | 'long' | 'dangerous'
 // The maximum number of recent runs to fetch for each routine.
 const recentRunCount = 5
 
+// A map of the routine icons by type
+const routineTypeToIcon: Record<BackgroundRoutineType, string> = {
+    [BackgroundRoutineType.PERIODIC]: mdiCached,
+    [BackgroundRoutineType.PERIODIC_WITH_METRICS]: mdiNumeric,
+    [BackgroundRoutineType.DB_BACKED]: mdiDatabase,
+    [BackgroundRoutineType.CUSTOM]: mdiShape,
+}
+
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminBackgroundJobsPageProps>
 > = ({ telemetryService }) => {
@@ -276,6 +284,8 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
         .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
     const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
 
+    const routineTypeDisplayableName = routine.type.toLowerCase().replace(/_/g, ' ')
+
     const recentRunsTooltipContent = (
         <div>
             {commonHostName ? <Text className="mb-0">All on “{commonHostName}”:</Text> : ''}
@@ -309,10 +319,11 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
                     <span className="mr-2">
                         <StartedStoppedIndicator routine={routine} />
                     </span>
-                    <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
-                        <span>
-                            <RoutineItemIcon type={routine.type} />
-                        </span>
+                    <Tooltip content={routineTypeDisplayableName} placement="top">
+                        <Icon
+                            aria-label={routineTypeDisplayableName}
+                            svgPath={routineTypeToIcon[routine.type] ?? mdiHelp}
+                        />
                     </Tooltip>
                     <span className="ml-2">
                         <strong>{routine.name}</strong>
@@ -381,16 +392,6 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
             </div>
         </div>
     )
-}
-
-const RoutineItemIcon: React.FunctionComponent<{ type: BackgroundRoutineType }> = ({ type }) => {
-    const routineTypeToIcon: Record<BackgroundRoutineType, string> = {
-        [BackgroundRoutineType.PERIODIC]: mdiCached,
-        [BackgroundRoutineType.PERIODIC_WITH_METRICS]: mdiNumeric,
-        [BackgroundRoutineType.DB_BACKED]: mdiDatabase,
-        [BackgroundRoutineType.CUSTOM]: mdiShape,
-    }
-    return <Icon aria-hidden={true} svgPath={routineTypeToIcon[type] ?? mdiHelp} />
 }
 
 const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
