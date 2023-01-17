@@ -47,6 +47,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
+	// Create an insights-DB backed store for retention jobs which live in the insights DB.
+	workerInsightsBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
@@ -58,7 +60,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
 		// Enqueues series to be picked up by the retention worker.
-		newRetentionEnqueuer(ctx, workerBaseStore, insightsMetadataStore),
+		newRetentionEnqueuer(ctx, workerInsightsBaseStore, insightsMetadataStore),
 		// Emits backend pings based on insights data.
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		// Cleans up soft-deleted insight series.

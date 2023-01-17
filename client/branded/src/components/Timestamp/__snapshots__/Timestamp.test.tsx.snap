@@ -30,6 +30,16 @@ exports[`Timestamp noAbout 1`] = `
 </DocumentFragment>
 `;
 
+exports[`Timestamp noAgo 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+  >
+    about 22 hours
+  </span>
+</DocumentFragment>
+`;
+
 exports[`Timestamp with time time 1`] = `
 <DocumentFragment>
   <span
