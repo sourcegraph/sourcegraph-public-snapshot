@@ -20,43 +20,6 @@ import (
 // so we need to account for these roles when accessing the database.
 var numberOfDefaultRoles = 2
 
-func TestRoleGetByID(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.Roles()
-
-	created, err := store.Create(ctx, "OPERATOR", true)
-	if err != nil {
-		t.Fatal(err, "unable to create role")
-	}
-
-	t.Run("no ID", func(t *testing.T) {
-		role, err := store.GetByID(ctx, GetRoleOpts{})
-		assert.Error(t, err)
-		assert.Nil(t, role)
-		assert.Equal(t, err.Error(), "missing id from sql query")
-	})
-
-	t.Run("non-existent role", func(t *testing.T) {
-		role, err := store.GetByID(ctx, GetRoleOpts{ID: 100})
-		assert.Error(t, err)
-		assert.EqualError(t, err, "role with ID 100 not found")
-		assert.Nil(t, role)
-	})
-
-	t.Run("existing role", func(t *testing.T) {
-		role, err := store.GetByID(ctx, GetRoleOpts{ID: created.ID})
-		assert.NoError(t, err)
-		assert.NotNil(t, role)
-		assert.Equal(t, role.ID, created.ID)
-		assert.Equal(t, role.Name, created.Name)
-		assert.Equal(t, role.ReadOnly, created.ReadOnly)
-		assert.Equal(t, role.CreatedAt, created.CreatedAt)
-		assert.Equal(t, role.DeletedAt, created.DeletedAt)
-	})
-}
-
 func TestRoleGet(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -197,7 +160,7 @@ func TestRoleDelete(t *testing.T) {
 		err = store.Delete(ctx, DeleteRoleOpts{ID: role.ID})
 		assert.NoError(t, err)
 
-		r, err := store.GetByID(ctx, GetRoleOpts{ID: role.ID})
+		r, err := store.Get(ctx, GetRoleOpts{ID: role.ID})
 		assert.Error(t, err)
 		assert.Equal(t, err, &RoleNotFoundErr{role.ID})
 		assert.Nil(t, r)

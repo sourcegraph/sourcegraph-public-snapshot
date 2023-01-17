@@ -220,7 +220,7 @@ func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) (
 }
 
 func (r *userRoleStore) GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
-	role, err := RolesWith(r).GetByID(ctx, GetRoleOpts{
+	role, err := RolesWith(r).Get(ctx, GetRoleOpts{
 		ID: opts.RoleID,
 	})
 	if err != nil {
@@ -292,12 +292,12 @@ WHERE %s
 `
 
 func (r *userRoleStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	whereClause := sqlf.Sprintf("%s AND users.deleted_at IS NULL", w)
+	conds := sqlf.Sprintf("%s AND users.deleted_at IS NULL", w)
 	q := sqlf.Sprintf(
 		getUserRoleQueryFmtStr,
 		sqlf.Join(userRoleColumns, ", "),
 		sqlf.Sprintf("INNER JOIN users ON user_roles.user_id = users.id"),
-		whereClause,
+		conds,
 	)
 
 	rows, err := r.Query(ctx, q)

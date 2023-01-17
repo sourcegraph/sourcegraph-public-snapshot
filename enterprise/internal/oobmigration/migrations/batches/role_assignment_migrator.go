@@ -39,11 +39,11 @@ const roleAssignmentMigratorProgressQuery = `
 WITH readonly_roles AS MATERIALIZED (
 	SELECT id FROM roles WHERE readonly
 )
-SELECT 
+SELECT
 	CASE u1.regular_count WHEN 0 THEN 1 ELSE
 		CAST(ur1.count AS FLOAT) / CAST((u1.regular_count + u1.siteadmin_count) AS FLOAT)
 	END
-FROM 
+FROM
 	(SELECT COUNT(1) AS regular_count, COUNT(1) FILTER (WHERE site_admin) AS siteadmin_count from users u) u1,
 	(SELECT COUNT(1) AS count FROM user_roles WHERE role_id IN (SELECT id FROM readonly_roles)) ur1
 `
@@ -65,10 +65,10 @@ site_admin_role AS MATERIALIZED (
     SELECT id FROM roles WHERE name = 'SITE_ADMINISTRATOR'
 ),
 users_without_roles AS MATERIALIZED (
-	SELECT 
-		id, site_admin 
-	FROM users u 
-	WHERE 
+	SELECT
+		id, site_admin
+	FROM users u
+	WHERE
 		u.deleted_at IS NULL AND u.id NOT IN (SELECT user_id from user_roles)
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED

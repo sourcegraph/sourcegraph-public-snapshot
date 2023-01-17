@@ -43,8 +43,6 @@ type RoleStore interface {
 	// Get returns the role matching the given ID or name provided. If no such role exists,
 	// a RoleNotFoundErr is returned.
 	Get(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
-	// GetByID returns the role matching the given ID, or RoleNotFoundErr if no such record exists.
-	GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error)
 	// List returns all roles matching the given options.
 	List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error)
 	// Update updates an existing role in the database.
@@ -99,39 +97,21 @@ func (r *roleStore) Get(ctx context.Context, opts GetRoleOpts) (*types.Role, err
 		return nil, errors.New("missing id or name")
 	}
 
-	if opts.ID > 0 {
-		return r.GetByID(ctx, opts)
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
 	}
 
-	whereClause := sqlf.Sprintf("name = %s AND deleted_at IS NULL", opts.Name)
-	q := sqlf.Sprintf(
-		getRoleFmtStr,
-		sqlf.Join(roleColumns, ", "),
-		whereClause,
-	)
-
-	role, err := scanRole(r.QueryRow(ctx, q))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &RoleNotFoundErr{ID: opts.ID}
-		}
-		return nil, errors.Wrap(err, "scanning role")
+	if opts.Name != "" {
+		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
 
-	return role, nil
-}
-
-func (r *roleStore) GetByID(ctx context.Context, opts GetRoleOpts) (*types.Role, error) {
-	if opts.ID <= 0 {
-		return nil, errors.New("missing id from sql query")
-	}
-
-	whereClause := sqlf.Sprintf("id = %s AND deleted_at IS NULL", opts.ID)
+	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 
 	q := sqlf.Sprintf(
 		getRoleFmtStr,
 		sqlf.Join(roleColumns, ", "),
-		whereClause,
+		sqlf.Join(conds, " AND "),
 	)
 
 	role, err := scanRole(r.QueryRow(ctx, q))
@@ -185,13 +165,13 @@ WHERE %s
 `
 
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var whereClause = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
 	if opts.ReadOnly {
-		whereClause = append(whereClause, sqlf.Sprintf("readonly IS TRUE"))
+		conds = append(conds, sqlf.Sprintf("readonly IS TRUE"))
 	}
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(whereClause, " AND "), orderByQuery)
+	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(conds, " AND "), orderByQuery)
 
 	if opts.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
