@@ -1,5 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
+import { Redirect } from 'react-router-dom'
 
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
@@ -47,6 +48,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/profile',
         exact: true,
         render: lazyComponent(() => import('./profile/UserSettingsProfilePage'), 'UserSettingsProfilePage'),
+    },
+    {
+        path: '/password',
+        exact: true,
+        render: () => <Redirect to="./security" />,
     },
     {
         path: '/emails',
