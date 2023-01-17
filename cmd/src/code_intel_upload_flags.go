@@ -1,19 +1,22 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+	libscip "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/codeintel"
@@ -53,10 +56,15 @@ var (
 	// Used to include the insecure-skip-verify flag in the help output, as we don't use any of the
 	// other api.Client methods, so only the insecureSkipVerify flag is relevant here.
 	dummyflag bool
+
+	// Used to skip the LSIF -> SCIP conversion during the migration. Not expected to be used outside
+	// of codeintel-qa pipelines and not expected to last much longer than a few releases while we
+	// deprecate all LSIF code paths.
+	skipConversionToSCIP bool
 )
 
 func init() {
-	codeintelUploadFlagSet.StringVar(&codeintelUploadFlags.file, "file", "./dump.lsif", `The path to the LSIF dump file.`)
+	codeintelUploadFlagSet.StringVar(&codeintelUploadFlags.file, "file", "", `The path to the LSIF dump file.`)
 
 	// UploadRecordOptions
 	codeintelUploadFlagSet.StringVar(&codeintelUploadFlags.repo, "repo", "", `The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote.`)
@@ -81,6 +89,9 @@ func init() {
 	codeintelUploadFlagSet.BoolVar(&codeintelUploadFlags.json, "json", false, `Output relevant state in JSON on success.`)
 	codeintelUploadFlagSet.BoolVar(&codeintelUploadFlags.open, "open", false, `Open the LSIF upload page in your browser.`)
 	codeintelUploadFlagSet.BoolVar(&dummyflag, "insecure-skip-verify", false, "Skip validation of TLS certificates against trusted chains")
+
+	// Testing flags
+	codeintelUploadFlagSet.BoolVar(&skipConversionToSCIP, "skip-scip", false, "Skip converting LSIF index to SCIP if the instance supports it; this option should only used for debugging")
 }
 
 // parseAndValidateCodeIntelUploadFlags calls codeintelUploadFlagset.Parse, then infers values for
@@ -89,7 +100,7 @@ func init() {
 //
 // On success, the global codeintelUploadFlags object will be populated with valid values. An
 // error is returned on failure.
-func parseAndValidateCodeIntelUploadFlags(args []string) (*output.Output, error) {
+func parseAndValidateCodeIntelUploadFlags(args []string, isSCIPAvailable bool) (*output.Output, error) {
 	if err := codeintelUploadFlagSet.Parse(args); err != nil {
 		return nil, err
 	}
@@ -112,20 +123,41 @@ func parseAndValidateCodeIntelUploadFlags(args []string) (*output.Output, error)
 		return nil, err
 	}
 
-	if err := handleSCIP(out); err != nil {
-		return nil, err
+	if !isFlagSet(codeintelUploadFlagSet, "file") {
+		defaultFile, err := inferDefaultFile()
+		if err != nil {
+			return nil, err
+		}
+		codeintelUploadFlags.file = defaultFile
 	}
 
-	if inferenceErrors := inferMissingCodeIntelUploadFlags(); len(inferenceErrors) > 0 {
-		return nil, errorWithHint{
-			err: inferenceErrors[0].err, hint: strings.Join([]string{
-				fmt.Sprintf(
-					"Unable to determine %s from environment. Check your working directory or supply -%s={value} explicitly",
-					inferenceErrors[0].argument,
-					inferenceErrors[0].argument,
-				),
-			}, "\n"),
+	// Check to see if input file exists
+	if _, err := os.Stat(codeintelUploadFlags.file); os.IsNotExist(err) {
+		if !isFlagSet(codeintelUploadFlagSet, "file") {
+			return nil, formatInferenceError(argumentInferenceError{"file", err})
 		}
+
+		return nil, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
+	}
+
+	if !isSCIPAvailable {
+		if err := handleSCIP(out); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := handleLSIF(out); err != nil {
+			return nil, err
+		}
+	}
+
+	// Check for new file existence after transformation
+	if _, err := os.Stat(codeintelUploadFlags.file); os.IsNotExist(err) {
+		return nil, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
+	}
+
+	// Infer the remaining default arguments (may require reading from new file)
+	if inferenceErrors := inferMissingCodeIntelUploadFlags(); len(inferenceErrors) > 0 {
+		return nil, formatInferenceError(inferenceErrors[0])
 	}
 
 	if err := validateCodeIntelUploadFlags(); err != nil {
@@ -151,6 +183,22 @@ func codeintelUploadOutput() (out *output.Output) {
 	})
 }
 
+func isSCIPAvailable() (bool, error) {
+	client := cfg.apiClient(codeintelUploadFlags.apiFlags, codeintelUploadFlagSet.Output())
+	req, err := client.NewHTTPRequest(context.Background(), "HEAD", "/.api/scip/upload", nil)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 type argumentInferenceError struct {
 	argument string
 	err      error
@@ -174,7 +222,7 @@ func replaceBaseName(oldPath string, newBaseName string) string {
 func handleSCIP(out *output.Output) error {
 	fileExt := path.Ext(codeintelUploadFlags.file)
 	if len(fileExt) == 0 {
-		return errors.Newf("missing file extension for %s; expected .scip", codeintelUploadFlags.file)
+		return errors.Newf("missing file extension for %s; expected .scip or .lsif", codeintelUploadFlags.file)
 	}
 	inputFile := codeintelUploadFlags.file
 	if fileExt == ".scip" || fileExt == ".lsif-typed" {
@@ -251,16 +299,114 @@ func convertSCIPToLSIFGraph(out *output.Output, inputFile, outputFile string) er
 	return nil
 }
 
+func inferDefaultFile() (string, error) {
+	hasSCIP := true
+	const scipFilename = "index.scip"
+	if _, err := os.Stat(scipFilename); err != nil {
+		if os.IsNotExist(err) {
+			hasSCIP = false
+		} else {
+			return "", err
+		}
+	}
+
+	hasLSIF := true
+	const lsifFilename = "dump.lsif"
+	if _, err := os.Stat(lsifFilename); err != nil {
+		if os.IsNotExist(err) {
+			hasLSIF = false
+		} else {
+			return "", err
+		}
+	}
+
+	if hasSCIP && hasLSIF {
+		return "", errors.Newf("both %s and %s exists - cannot determine unambiguous choice", scipFilename, lsifFilename)
+	}
+	if !(hasSCIP || hasLSIF) {
+		return "", formatInferenceError(argumentInferenceError{"file", errors.Newf("neither %s nor %s exists", scipFilename, lsifFilename)})
+	}
+
+	if hasSCIP {
+		return scipFilename, nil
+	}
+
+	return lsifFilename, nil
+}
+
+func formatInferenceError(inferenceErr argumentInferenceError) error {
+	return errorWithHint{
+		err: inferenceErr.err, hint: strings.Join([]string{
+			fmt.Sprintf(
+				"Unable to determine %s from environment. Check your working directory or supply -%s={value} explicitly",
+				inferenceErr.argument,
+				inferenceErr.argument,
+			),
+		}, "\n"),
+	}
+}
+
+func handleLSIF(out *output.Output) error {
+	if skipConversionToSCIP {
+		return nil
+	}
+
+	fileExt := path.Ext(codeintelUploadFlags.file)
+	if len(fileExt) == 0 {
+		return errors.Newf("missing file extension for %s; expected .scip or .lsif", codeintelUploadFlags.file)
+	}
+
+	if fileExt == ".lsif" || fileExt == ".dump" {
+		inputFile := codeintelUploadFlags.file
+		outputFile := replaceExtension(inputFile, ".scip")
+		codeintelUploadFlags.file = outputFile
+		return convertLSIFToSCIP(out, inputFile, outputFile)
+	}
+
+	return nil
+}
+
+// Reads the LSIF encoded input file and writes the corresponding SCIP encoded output file.
+func convertLSIFToSCIP(out *output.Output, inputFile, outputFile string) error {
+	if out != nil {
+		out.Writef("%s  Converting %s into %s", output.EmojiInfo, inputFile, outputFile)
+	}
+
+	ctx := context.Background()
+	uploadID := -time.Now().Nanosecond()
+	root := codeintelUploadFlags.root
+
+	if !isFlagSet(codeintelUploadFlagSet, "root") {
+		// Best-effort infer the root; we have a strange cyclic init order where we're
+		// currently trying to determine the filename that determines the root, but we
+		// need the root when converting from LSIF to SCIP.
+		root, _ = inferIndexRoot()
+	}
+
+	rc, err := os.Open(inputFile)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	index, err := libscip.ConvertLSIF(ctx, uploadID, rc, root)
+	if err != nil {
+		return err
+	}
+	serialized, err := proto.Marshal(index)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(outputFile, serialized, os.ModePerm)
+}
+
 // inferMissingCodeIntelUploadFlags updates the flags values which were not explicitly
 // supplied by the user with default values inferred from the current git state and
 // filesystem.
 //
 // Note: This function must not be called before codeintelUploadFlagset.Parse.
 func inferMissingCodeIntelUploadFlags() (inferErrors []argumentInferenceError) {
-	if _, err := os.Stat(codeintelUploadFlags.file); os.IsNotExist(err) {
-		inferErrors = append(inferErrors, argumentInferenceError{"file", err})
-	}
-
 	indexerName, indexerVersion, readIndexerNameAndVersionErr := readIndexerNameAndVersion()
 	getIndexerName := func() (string, error) { return indexerName, readIndexerNameAndVersionErr }
 	getIndexerVersion := func() (string, error) { return indexerVersion, readIndexerNameAndVersionErr }

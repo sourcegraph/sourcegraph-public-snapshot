@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -70,7 +71,12 @@ Examples:
 func handleCodeIntelUpload(args []string) error {
 	ctx := context.Background()
 
-	out, err := parseAndValidateCodeIntelUploadFlags(args)
+	isSCIPAvailable, err := isSCIPAvailable()
+	if err != nil {
+		return err
+	}
+
+	out, err := parseAndValidateCodeIntelUploadFlags(args, isSCIPAvailable)
 	if !codeintelUploadFlags.json {
 		if out != nil {
 			printInferredArguments(out)
@@ -88,7 +94,7 @@ func handleCodeIntelUpload(args []string) error {
 		Flags: codeintelUploadFlags.apiFlags,
 	})
 
-	uploadID, err := upload.UploadIndex(ctx, codeintelUploadFlags.file, client, codeintelUploadOptions(out))
+	uploadID, err := upload.UploadIndex(ctx, codeintelUploadFlags.file, client, codeintelUploadOptions(out, isSCIPAvailable))
 	if err != nil {
 		return handleUploadError(out, err)
 	}
@@ -132,10 +138,17 @@ func handleCodeIntelUpload(args []string) error {
 }
 
 // codeintelUploadOptions creates a set of upload options given the values in the flags.
-func codeintelUploadOptions(out *output.Output) upload.UploadOptions {
+func codeintelUploadOptions(out *output.Output, isSCIPAvailable bool) upload.UploadOptions {
 	var associatedIndexID *int
 	if codeintelUploadFlags.associatedIndexID != -1 {
 		associatedIndexID = &codeintelUploadFlags.associatedIndexID
+	}
+
+	cfg.AdditionalHeaders["Content-Type"] = "application/x-ndjson+lsif"
+	path := codeintelUploadFlags.uploadRoute
+	if isSCIPAvailable && filepath.Ext(codeintelUploadFlags.file) == ".scip" {
+		cfg.AdditionalHeaders["Content-Type"] = "application/x-protobuf+scip"
+		path = "/.api/scip/upload"
 	}
 
 	logger := upload.NewRequestLogger(
@@ -162,7 +175,7 @@ func codeintelUploadOptions(out *output.Output) upload.UploadOptions {
 			AdditionalHeaders:   cfg.AdditionalHeaders,
 			MaxRetries:          5,
 			RetryInterval:       time.Second,
-			Path:                codeintelUploadFlags.uploadRoute,
+			Path:                path,
 			MaxPayloadSizeBytes: codeintelUploadFlags.maxPayloadSizeMb * 1000 * 1000,
 			GitHubToken:         codeintelUploadFlags.gitHubToken,
 			GitLabToken:         codeintelUploadFlags.gitLabToken,

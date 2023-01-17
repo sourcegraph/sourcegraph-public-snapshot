@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `src codeintel upload` will now upload SCIP indexes (over LSIF indexes) when the target instance supports it. [#897](https://github.com/sourcegraph/src-cli/pull/897)
+
 ### Changed
 
 ### Fixed
@@ -36,7 +38,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Fix network timeout in `src users clean` occuring in instances with many users  [#901](https://github.com/sourcegraph/src-cli/pull/901)
+- Fix network timeout in `src users clean` occuring in instances with many users [#901](https://github.com/sourcegraph/src-cli/pull/901)
 - Aligned parsing of spec file parameter of `src batch repos` with other commands. [#919](https://github.com/sourcegraph/src-cli/pull/919)
 - Remove empty log outputs during batch spec execution. [#923](https://github.com/sourcegraph/src-cli/pull/923)
 
@@ -135,7 +137,6 @@ No noteworthy changes, mechanical release to match Sourcegraph release.
 
 - INTERNAL ONLY: Fixed src batch exec not logging errors.
 
-
 ## 3.42.2
 
 ### Fixed
@@ -178,7 +179,6 @@ No noteworthy changes, mechanical release to match Sourcegraph release.
 ### Fixed
 
 - The preview link shown when running `src batch remote` to create a new batch change no longer 404s. [sourcegraph/src-cli](https://github.com/sourcegraph/src-cli/pull/787)
-
 
 ## 3.40.11
 
