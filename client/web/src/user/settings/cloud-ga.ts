@@ -15,8 +15,6 @@ export interface Owner {
     name?: string
 }
 
-export const externalServiceUserMode = (): 'disabled' | 'public' | 'all' | 'unknown' => 'disabled'
-
 export const externalServiceUserModeFromTags = (tags?: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
     const siteMode = window.context.externalServicesUserMode
     if (siteMode === 'all') {
