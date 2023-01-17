@@ -279,6 +279,11 @@ func (r *NodeResolver) ToOutboundRequest() (*OutboundRequestResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToBackgroundJob() (*BackgroundJobResolver, bool) {
+	n, ok := r.Node.(*BackgroundJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
 	n, ok := r.Node.(WebhookResolver)
 	return n, ok

@@ -122,7 +122,7 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 func logRepoCorruption(t *testing.T, db DB, name api.RepoName, logOutput string) {
 	t.Helper()
 
-	err := db.GitserverRepos().LogCorruption(context.Background(), name, logOutput)
+	err := db.GitserverRepos().LogCorruption(context.Background(), name, logOutput, shardID)
 	if err != nil {
 		t.Fatalf("failed to log repo corruption: %s", err)
 	}
@@ -594,6 +594,37 @@ func TestRepos_List_FailedSync(t *testing.T) {
 
 	setGitserverRepoLastError(t, db, repo.Name, "Oops")
 	assertCount(t, ReposListOptions{FailedFetch: true}, 1)
+	assertCount(t, ReposListOptions{}, 1)
+}
+
+func TestRepos_List_OnlyCorrupted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
+		t.Helper()
+		count, err := db.Repos().Count(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if count != want {
+			t.Fatalf("Expected %d repos, got %d", want, count)
+		}
+	}
+
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "repo1"})
+	setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
+	assertCount(t, ReposListOptions{}, 1)
+	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 0)
+
+	logCorruption(t, db, repo.Name, "", "some corruption")
+	assertCount(t, ReposListOptions{OnlyCorrupted: true}, 1)
 	assertCount(t, ReposListOptions{}, 1)
 }
 

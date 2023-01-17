@@ -15,6 +15,5 @@ export const orgSettingsSideBarItems: OrgSettingsSidebarItems = [
         label: 'Members',
         to: '/members',
         exact: true,
-        condition: context => !context.newMembersInviteEnabled,
     },
 ]
