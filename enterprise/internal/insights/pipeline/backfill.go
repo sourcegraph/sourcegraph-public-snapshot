@@ -149,17 +149,12 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
-		filteredRecordingTimes := make([]time.Time, 0, len(req.SampleTimes))
-		for i := 0; i < len(req.SampleTimes); i++ {
-			if firstHEADCommit.Author.Date.Before(req.SampleTimes[i]) {
-				filteredRecordingTimes = append(filteredRecordingTimes, req.SampleTimes[i])
-			}
-		}
+		// Rate limit starting compression
 		err = rateLimit.Wait(ctx)
 		if err != nil {
 			return &reqContext, jobs, err
 		}
-		searchPlan := compressionPlan.Filter(ctx, filteredRecordingTimes, req.Repo.Name)
+		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
 		var ratio float64 = 1.0
 		if numberOfFrames > 0 {
 			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
