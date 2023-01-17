@@ -5,10 +5,11 @@ import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-oper
 import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
 import TreeView, { INode } from 'react-accessible-treeview'
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 import { useNavigate } from 'react-router-dom-v5-compat'
+import classNames from 'classnames'
 
 const QUERY = gql`
     query FileTreeEntries(
@@ -60,7 +61,7 @@ interface Props {
     initialFilePath: string
     initialFilePathIsDirectory: boolean
 }
-export function RepoRevisionSidebarFileTree(props: Props) {
+export function RepoRevisionSidebarFileTree(props: Props): React.ReactNode {
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(
         props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
@@ -106,19 +107,20 @@ export function RepoRevisionSidebarFileTree(props: Props) {
             : []
 
     const onLoadData = useCallback(
-        async ({ element }: { element: INode }) => {
-            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedPaths.has(element.name)
+        async ({ element }: { element: TreeNode }) => {
+            const fullPath = element.entry?.path ?? ''
+            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedPaths.has(fullPath)
             if (alreadyLoaded || !element.isBranch) {
                 return
             }
 
             await refetch({
                 ...defaultVariables,
-                filePath: element.name,
+                filePath: fullPath,
                 recursiveParents: false,
             })
 
-            setTreeData(treeData => setLoadedPath(treeData!, element.name))
+            setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
         [defaultVariables, refetch, treeData?.loadedPaths]
     )
@@ -172,33 +174,35 @@ export function RepoRevisionSidebarFileTree(props: Props) {
                 isBranch: boolean
                 isExpanded: boolean
                 isSelected: boolean
-                getNodeProps: (any) => {}
+                getNodeProps: (arg: any) => {}
                 level: number
                 handleSelect: (event: any) => {}
                 handleExpand: (event: any) => {}
             }) => (
                 <div
                     {...getNodeProps({ onClick: handleExpand })}
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={{
-                        marginLeft: `${1 * (level - 1)}rem`,
-                        border: isSelected ? '1px solid red' : undefined,
+                        marginLeft: getMarginLeft(level),
+                        minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
                     }}
                     data-tree-node-id={element.id}
+                    className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
                 >
                     {isBranch ? (
-                        isExpanded && element.children.length === 0 ? (
-                            <LoadingSpinner className="mr-1" />
-                        ) : (
-                            <Icon
-                                aria-hidden={true}
-                                svgPath={isExpanded ? mdiMenuRight : mdiMenuDown}
-                                className="mr-1"
-                            />
-                        )
+                        <div className={classNames('mr-1', styles.icon)}>
+                            {isExpanded && element.children.length === 0 ? (
+                                <LoadingSpinner />
+                            ) : (
+                                <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
+                            )}
+                        </div>
                     ) : null}
                     <Icon
-                        svgPath={isBranch ? mdiFolderOutline : mdiFileDocumentOutline}
-                        className="mr-1"
+                        svgPath={
+                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
+                        }
+                        className={classNames('mr-1', styles.icon)}
                         aria-hidden={true}
                     />
                     <Link
@@ -209,12 +213,16 @@ export function RepoRevisionSidebarFileTree(props: Props) {
                             handleSelect(event)
                         }}
                     >
-                        {element.name}
+                        {element.entry?.name}
                     </Link>
                 </div>
             )}
         />
     )
+}
+
+function getMarginLeft(level: number): string {
+    return `${0.75 * (level - 1)}rem`
 }
 
 type TreeNode = INode & { entry: FileTreeEntry | null }
@@ -249,7 +257,7 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[]): TreeData {
         const id = tree.nodes.length
 
         const node: TreeNode = {
-            name: entry.path,
+            name: entry.name,
             id,
             isBranch: entry.isDirectory,
             parent: 0,
@@ -303,21 +311,24 @@ function setLoadedPath(tree: TreeData, path: string): TreeData {
     return tree
 }
 
-function isAParentOfB(a: INode, b: INode): boolean {
+function isAParentOfB(a: TreeNode, b: TreeNode): boolean {
     // B is the root so it can not have a parent
-    if (b.name === '') {
+    const aFullPath = a.entry?.path || ''
+    const bFullPath = b.entry?.path || ''
+    if (bFullPath === '') {
         return false
     }
-    const bParentName = b.name.split('/').slice(0, -1).join('/') || ''
-    return a.name === bParentName
+    const bParentPath = bFullPath.split('/').slice(0, -1).join('/') || ''
+    return aFullPath === bParentPath
 }
 
-function getAllParentsOfNode(tree: TreeData, node: INode): INode[] {
+function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
     const parents = []
 
     let parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, node))
     while (parent) {
         parents.push(parent)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
     }
     return parents
