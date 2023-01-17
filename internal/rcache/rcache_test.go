@@ -284,9 +284,6 @@ func TestCache_ListKeys(t *testing.T) {
 }
 
 func bytes(s ...string) [][]byte {
-	if s == nil {
-		return nil
-	}
 	t := make([][]byte, len(s))
 	for i, v := range s {
 		t[i] = []byte(v)

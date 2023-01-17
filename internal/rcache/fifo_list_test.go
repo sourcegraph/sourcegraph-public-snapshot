@@ -36,6 +36,12 @@ func Test_FIFOList_All_OK(t *testing.T) {
 			inserts: bytes("a1", "a2"),
 			want:    bytes("a2", "a1"),
 		},
+		{
+			key:     "d",
+			size:    0,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+		},
 	}
 
 	for _, c := range cases {
@@ -100,6 +106,14 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 			want:    bytes("a5", "a4"),
 			from:    1,
 			to:      2,
+		},
+		{
+			key:     "d",
+			size:    0,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+			from:    0,
+			to:      -1,
 		},
 		{
 			key:     "e",
