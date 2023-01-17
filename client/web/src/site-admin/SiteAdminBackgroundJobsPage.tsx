@@ -473,13 +473,12 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number | n
 
 function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
     const category = categorizeRunDuration(durationMs, routineIntervalMs)
-    if (category === 'dangerous') {
-        return 'text-danger'
-    }
-
-    if (category === 'long') {
-        return 'text-warning'
-    }
-
-    return 'text-success'
+    switch (category) {
+       case 'dangerous':
+          return 'text-danger'
+       case 'long':
+          return 'text-warning'
+       default:
+          return 'text-success'
+     }
 }
