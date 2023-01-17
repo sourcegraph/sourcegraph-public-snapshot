@@ -22,7 +22,7 @@ jobs:
   protect-pr:
     runs-on: ubuntu-latest
     needs: validate_release_branch
-    if: ${{ needs.validate_release_branch.outputs.releaseBranchExists === 'false' }}
+    if: ${{ needs.validate_release_branch.outputs.releaseBranchExists == 'false' }}
     steps:
       - name: Check date and labels
         id: check-date-and-labels
