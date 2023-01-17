@@ -46,6 +46,10 @@ export const monacoPlugin = ({
             .flatMap(({ entry }) => entry || [])
 
         const skipModulePaths = [...skipLanguageModules, ...skipFeatureModules].map(monacoModulePath)
+        console.log({ skipModulePaths })
+        if (skipModulePaths) {
+            throw new Error(JSON.stringify(skipModulePaths))
+        }
         const filter = new RegExp(`^(${skipModulePaths.join('|')})$`)
 
         // For omitted features and languages, treat their modules as empty files.
