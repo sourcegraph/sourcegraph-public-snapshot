@@ -203,6 +203,7 @@ export function RepoRevisionSidebarFileTree(props: Props) {
                     />
                     <Link
                         to={element.entry?.url ?? '#'}
+                        tabIndex={-1}
                         onClick={event => {
                             event.preventDefault()
                             handleSelect(event)
