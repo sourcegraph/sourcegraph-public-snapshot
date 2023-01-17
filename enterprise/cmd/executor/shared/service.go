@@ -2,10 +2,11 @@ package shared
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,7 +27,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	config := cfg.(*config.Config)
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
-	if os.Getenv("DEPLOY_TYPE") == "single-program" {
+	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
 		otherConfig := *config
 		if config.QueueName == "batches" {
 			otherConfig.QueueName = "codeintel"
