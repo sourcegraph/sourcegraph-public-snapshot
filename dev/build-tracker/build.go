@@ -175,6 +175,10 @@ func (b *Event) isBuildFinished() bool {
 	return b.Name == "build.finished"
 }
 
+func (b *Event) isJobFinished() bool {
+	return b.Name == "job.finished"
+}
+
 func (b *Event) jobName() string {
 	return strp(b.Job.Name)
 }
