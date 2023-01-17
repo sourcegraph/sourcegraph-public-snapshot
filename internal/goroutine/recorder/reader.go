@@ -181,7 +181,7 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 
 	// Collect instances
 	for _, hostName := range allHostNames {
-		instanceInfo, err := getRoutineInstanceInfo(c, r.Name, hostName)
+		instanceInfo, err := getRoutineInstanceInfo(c, r.JobName, r.Name, hostName)
 		if err != nil {
 			return RoutineInfo{}, err
 		}
@@ -191,7 +191,7 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 
 	// Collect recent runs
 	for _, hostName := range allHostNames {
-		recentRunsForHost, err := loadRecentRuns(c, r.Name, hostName, recentRunCount)
+		recentRunsForHost, err := loadRecentRuns(c, r.JobName, r.Name, hostName, recentRunCount)
 		if err != nil {
 			return RoutineInfo{}, err
 		}
@@ -209,7 +209,7 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 	}
 
 	// Collect stats
-	stats, err := loadRunStats(c, r.Name, time.Now(), dayCountForStats)
+	stats, err := loadRunStats(c, r.JobName, r.Name, time.Now(), dayCountForStats)
 	if err != nil {
 		return RoutineInfo{}, errors.Wrap(err, "load run stats")
 	}
@@ -219,11 +219,11 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 }
 
 // getRoutineInstanceInfo returns the info for a single routine instance.
-func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string) (RoutineInstanceInfo, error) {
+func getRoutineInstanceInfo(c *rcache.Cache, jobName string, routineName string, hostName string) (RoutineInstanceInfo, error) {
 	var lastStart *time.Time
 	var lastStop *time.Time
 
-	lastStartBytes, ok := c.Get(routineName + ":" + hostName + ":" + "lastStart")
+	lastStartBytes, ok := c.Get(jobName + ":" + routineName + ":" + hostName + ":" + "lastStart")
 	if ok {
 		t, err := time.Parse(time.RFC3339, string(lastStartBytes))
 		if err != nil {
@@ -232,7 +232,7 @@ func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string
 		lastStart = &t
 	}
 
-	lastStopBytes, ok := c.Get(routineName + ":" + hostName + ":" + "lastStop")
+	lastStopBytes, ok := c.Get(jobName + ":" + routineName + ":" + hostName + ":" + "lastStop")
 	if ok {
 		t, err := time.Parse(time.RFC3339, string(lastStopBytes))
 		if err != nil {
@@ -249,8 +249,8 @@ func getRoutineInstanceInfo(c *rcache.Cache, routineName string, hostName string
 }
 
 // loadRecentRuns loads the recent runs for a routine, in no particular order.
-func loadRecentRuns(c *rcache.Cache, routineName string, hostName string, count int) ([]RoutineRun, error) {
-	recentRuns, err := c.GetLastListItems(routineName+":"+hostName+":"+"recentRuns", count)
+func loadRecentRuns(c *rcache.Cache, jobName string, routineName string, hostName string, count int) ([]RoutineRun, error) {
+	recentRuns, err := c.GetLastListItems(jobName+":"+routineName+":"+hostName+":"+"recentRuns", count)
 	if err != nil {
 		return nil, errors.Wrap(err, "load recent runs")
 	}
@@ -269,12 +269,12 @@ func loadRecentRuns(c *rcache.Cache, routineName string, hostName string, count 
 }
 
 // loadRunStats loads the run stats for a routine.
-func loadRunStats(c *rcache.Cache, routineName string, now time.Time, dayCount int) (RoutineRunStats, error) {
+func loadRunStats(c *rcache.Cache, jobName string, routineName string, now time.Time, dayCount int) (RoutineRunStats, error) {
 	// Get all stats
 	var stats RoutineRunStats
 	for i := 0; i < dayCount; i++ {
 		date := now.AddDate(0, 0, -i).Truncate(24 * time.Hour)
-		statsRaw, found := c.Get(routineName + ":runStats:" + date.Format("2006-01-02"))
+		statsRaw, found := c.Get(jobName + ":" + routineName + ":runStats:" + date.Format("2006-01-02"))
 		if found {
 			var statsForDay RoutineRunStats
 			err := json.Unmarshal(statsRaw, &statsForDay)

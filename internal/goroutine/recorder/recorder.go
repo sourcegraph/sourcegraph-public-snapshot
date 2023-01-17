@@ -111,7 +111,7 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 	}
 
 	// Save/update Routine
-	err = m.rcache.SetHashItem("knownRoutines", r.Name, string(routineJson))
+	err = m.rcache.SetHashItem("knownRoutines", r.JobName+":"+r.Name, string(routineJson))
 	if err != nil {
 		m.logger.Error("failed to save/update known routine", log.Error(err), log.String("routineName", r.Name))
 	}
@@ -119,13 +119,13 @@ func (m *Recorder) saveKnownRoutine(recordable Recordable) {
 
 // LogStart logs the start of a routine.
 func (m *Recorder) LogStart(r Recordable) {
-	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
+	m.rcache.Set(r.JobName()+":"+r.Name()+":"+m.hostName+":"+"lastStart", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("Routine just started! 🚀", log.String("routine", r.Name()))
 }
 
 // LogStop logs the stop of a routine.
 func (m *Recorder) LogStop(r Recordable) {
-	m.rcache.Set(r.Name()+":"+m.hostName+":"+"lastStop", []byte(time.Now().Format(time.RFC3339)))
+	m.rcache.Set(r.JobName()+":"+r.Name()+":"+m.hostName+":"+"lastStop", []byte(time.Now().Format(time.RFC3339)))
 	m.logger.Debug("" + r.Name() + " just stopped! 🛑")
 }
 
@@ -133,13 +133,13 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 	durationMs := int32(duration.Milliseconds())
 
 	// Save the run
-	err := m.saveRun(r.Name(), m.hostName, durationMs, runErr)
+	err := m.saveRun(r.JobName(), r.Name(), m.hostName, durationMs, runErr)
 	if err != nil {
 		m.logger.Error("failed to save run", log.Error(err))
 	}
 
 	// Save run stats
-	err = saveRunStats(m.rcache, r.Name(), durationMs, runErr != nil)
+	err = saveRunStats(m.rcache, r.JobName(), r.Name(), durationMs, runErr != nil)
 	if err != nil {
 		m.logger.Error("failed to save run stats", log.Error(err))
 	}
@@ -152,7 +152,7 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 }
 
 // saveRun saves a run in the Redis list under the "*:recentRuns" key and trims the list.
-func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32, err error) error {
+func (m *Recorder) saveRun(jobName string, routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
 	if err != nil {
 		errorMessage = err.Error()
@@ -173,13 +173,13 @@ func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32
 	}
 
 	// Save run
-	err = m.rcache.AddToList(routineName+":"+hostName+":"+"recentRuns", string(runJson))
+	err = m.rcache.AddToList(jobName+":"+routineName+":"+hostName+":"+"recentRuns", string(runJson))
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}
 
 	// Trim list
-	err = m.rcache.LTrimList(routineName+":"+hostName+":"+"recentRuns", maxRecentRunsLength)
+	err = m.rcache.LTrimList(jobName+":"+routineName+":"+hostName+":"+"recentRuns", maxRecentRunsLength)
 	if err != nil {
 		return errors.Wrap(err, "trim list")
 	}
@@ -188,12 +188,12 @@ func (m *Recorder) saveRun(routineName string, hostName string, durationMs int32
 }
 
 // saveRunStats updates the run stats for a routine in Redis.
-func saveRunStats(c *rcache.Cache, routineName string, durationMs int32, errored bool) error {
+func saveRunStats(c *rcache.Cache, jobName string, routineName string, durationMs int32, errored bool) error {
 	// Prepare data
 	isoDate := time.Now().Format("2006-01-02")
 
 	// Get stats
-	lastStatsRaw, found := c.Get(routineName + ":runStats:" + isoDate)
+	lastStatsRaw, found := c.Get(jobName + ":" + routineName + ":runStats:" + isoDate)
 	var lastStats RoutineRunStats
 	if found {
 		err := json.Unmarshal(lastStatsRaw, &lastStats)
@@ -210,7 +210,7 @@ func saveRunStats(c *rcache.Cache, routineName string, durationMs int32, errored
 	if err != nil {
 		return errors.Wrap(err, "serialize updated stats")
 	}
-	c.Set(routineName+":runStats:"+isoDate, updatedStatsJson)
+	c.Set(jobName+":"+routineName+":runStats:"+isoDate, updatedStatsJson)
 
 	return nil
 }

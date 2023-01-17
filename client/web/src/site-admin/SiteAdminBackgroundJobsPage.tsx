@@ -262,10 +262,14 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
 }
 
 const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
-    const commonHostName = routine.recentRuns.reduce<string | undefined | null>(
-        (hostName, run) => (hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null),
-        undefined
-    )
+    const commonHostName =
+        routine.recentRuns.length === 1
+            ? routine.recentRuns[0].hostName
+            : routine.recentRuns.reduce<string | undefined | null>(
+                  (hostName, run) =>
+                      hostName !== undefined ? run.hostName : run.hostName === hostName ? hostName : null,
+                  undefined
+              )
     const routineIcon =
         routine.type === 'PERIODIC' ? (
             <Icon aria-hidden={true} svgPath={mdiCached} />
@@ -294,11 +298,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
                                 ''
                             )}{' '}
                             <Timestamp date={new Date(run.at)} noAbout={true} />
-                            {commonHostName
-                                ? ''
-                                : `On host
-                                                    called “${run.hostName}”,`}{' '}
-                            for{' '}
+                            {commonHostName ? '' : ` on the host called “${run.hostName}”,`} for{' '}
                             <span className={getRunDurationTextClass(run.durationMs, routine.intervalMs)}>
                                 {run.durationMs}ms
                             </span>
