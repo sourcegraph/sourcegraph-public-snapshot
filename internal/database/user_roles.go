@@ -45,7 +45,7 @@ type UserRoleStore interface {
 
 	// Create inserts the given user and role relationship into the database.
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
-	// CreateMultipleUserRolesForUser assigns multiple role to a single user. THis is useful
+	// BulkCreateForUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
 	BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
