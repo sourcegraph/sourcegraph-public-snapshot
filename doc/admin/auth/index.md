@@ -367,7 +367,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
       "type": "openidconnect",
       "issuer": "https://oidc.example.com",
       "clientID": "my-client-id",
-      "configID":"my-config-id" //An arbitrary value that will be used to reference to this auth provider within the site config 
+      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config 
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
     }
