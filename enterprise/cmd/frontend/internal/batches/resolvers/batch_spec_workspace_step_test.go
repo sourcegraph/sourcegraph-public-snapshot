@@ -51,4 +51,23 @@ func TestBatchSpecWorkspaceOutputLinesResolver(t *testing.T) {
 		}
 	})
 
+	t.Run("offset greater than length of lines", func(t *testing.T) {
+		noOfLines := 150
+		endCursor := int32(50)
+
+		resolver := &batchSpecWorkspaceOutputLinesResolver{
+			lines: lines,
+			first: int32(noOfLines),
+			after: &endCursor,
+		}
+
+		assert.Equal(t, resolver.TotalCount(ctx), totalCount)
+		assert.Len(t, resolver.Nodes(ctx), 50)
+
+		pi := resolver.PageInfo(ctx)
+		assert.Equal(t, pi.HasNextPage(), false)
+		if pi.EndCursor() != nil {
+			t.Fatal("expected cursor to be nil")
+		}
+	})
 }
