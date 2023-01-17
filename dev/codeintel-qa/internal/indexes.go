@@ -7,7 +7,7 @@ import (
 	"github.com/grafana/regexp"
 )
 
-var indexFilenamePattern = regexp.MustCompile(`^([^.]+)\.([^.]+)\.\d+\.([0-9A-Fa-f]{40})\.dump$`)
+var indexFilenamePattern = regexp.MustCompile(`^([^.]+\.)?([^.]+)\.\d+\.([0-9A-Fa-f]{40})\.dump$`)
 
 // CommitsByRepo returns a map from org+repository name to a slice of commits for that repository. The
 // repositories and commits are read from the filesystem state of the index directory supplied by the user.
@@ -22,6 +22,10 @@ func CommitsByRepo(indexDir string) (map[string][]string, error) {
 	for _, info := range infos {
 		if matches := indexFilenamePattern.FindStringSubmatch(info.Name()); len(matches) > 0 {
 			orgRepo := fmt.Sprintf("%s/%s", matches[1], matches[2])
+			if matches[1] == "" {
+				orgRepo = "sourcegraph-testing" + orgRepo
+			}
+
 			commitsByRepo[orgRepo] = append(commitsByRepo[orgRepo], matches[3])
 		}
 	}
