@@ -273,19 +273,6 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
         .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
     const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
 
-    const routineIcon =
-        routine.type === 'PERIODIC' ? (
-            <Icon aria-hidden={true} svgPath={mdiCached} />
-        ) : routine.type === 'PERIODIC_WITH_METRICS' ? (
-            <Icon aria-hidden={true} svgPath={mdiNumeric} />
-        ) : routine.type === 'DB_BACKED' ? (
-            <Icon aria-hidden={true} svgPath={mdiDatabase} />
-        ) : routine.type === 'CUSTOM' ? (
-            <Icon aria-hidden={true} svgPath={mdiShape} />
-        ) : (
-            <Icon aria-hidden={true} svgPath={mdiHelp} />
-        )
-
     const recentRunsReversed = [...routine.recentRuns].reverse()
 
     const recentRunsTooltipContent = (
@@ -322,7 +309,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
                         <StartedStoppedIndicator routine={routine} />
                     </span>
                     <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
-                        {routineIcon}
+                        <RoutineItemIcon type={routine.type} />
                     </Tooltip>
                     <span className="ml-2">
                         <strong>{routine.name}</strong>
@@ -391,6 +378,21 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
             </div>
         </div>
     )
+}
+
+const RoutineItemIcon: React.FunctionComponent<{ type: BackgroundRoutineType }> = ({ type }) => {
+    switch (type) {
+        case 'PERIODIC':
+            return <Icon aria-hidden={true} svgPath={mdiCached} />
+        case 'PERIODIC_WITH_METRICS':
+            return <Icon aria-hidden={true} svgPath={mdiNumeric} />
+        case 'DB_BACKED':
+            return <Icon aria-hidden={true} svgPath={mdiDatabase} />
+        case 'CUSTOM':
+            return <Icon aria-hidden={true} svgPath={mdiShape} />
+        default:
+            return <Icon aria-hidden={true} svgPath={mdiHelp} />
+    }
 }
 
 const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
