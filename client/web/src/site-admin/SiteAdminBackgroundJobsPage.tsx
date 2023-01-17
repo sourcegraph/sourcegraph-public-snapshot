@@ -144,9 +144,11 @@ const JobList: React.FunctionComponent<{
         [jobs]
     )
 
-    const jobsToDisplay = onlyShowProblematic
-        ? jobs.filter(job => job.routines.some(routine => isRoutineProblematic(routine)))
-        : jobs
+    const problematicJobs = useMemo(
+        () => jobs.filter(job => job.routines.some(routine => isRoutineProblematic(routine))),
+        [jobs]
+    )
+    const jobsToDisplay = onlyShowProblematic ? problematicJobs : jobs
 
     return (
         <>
