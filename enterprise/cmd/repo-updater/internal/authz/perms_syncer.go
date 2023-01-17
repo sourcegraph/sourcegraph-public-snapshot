@@ -1192,7 +1192,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		// method, `runSchedule`, will disappear and become a background
 		// routine being run in `cmd/worker`.
 		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger)
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("databased-backed perm syncer", workerEnabled))
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("database-backed perm syncer", workerEnabled))
 
 		if workerEnabled {
 			for _, u := range schedule.Users {
