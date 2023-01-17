@@ -32,6 +32,7 @@ export interface Sequence {
 export enum OperatorKind {
     Or = 'OR',
     And = 'AND',
+    Not = 'NOT',
 }
 
 /**
@@ -108,8 +109,12 @@ const createSequence = (nodes: Node[]): ParseSuccess => {
 const createParameter = (field: string, value: string, negated: boolean, range: CharacterRange): ParseSuccess =>
     createNodes([{ type: 'parameter', field, value, negated, range }])
 
-const createOperator = (nodes: Node[], kind: OperatorKind): ParseSuccess => {
-    return createNodes([{ type: 'operator', operands: nodes, kind, range: rangeFromNodes(nodes) }])
+const createOperator = (nodes: Node[], kind: OperatorKind, rangeStart?: number): ParseSuccess => {
+    const range = rangeFromNodes(nodes)
+    if (rangeStart !== undefined) {
+        range.start = rangeStart
+    }
+    return createNodes([{ type: 'operator', operands: nodes, kind, range }])
 }
 
 const tokenToLeafNode = (token: Token): ParseResult => {
@@ -147,10 +152,43 @@ export const parseParenthesis = (tokens: Token[]): State => {
     return { result: groupNodes.result, tokens }
 }
 
+const parseNot = (tokens: Token[]): State => {
+    const keyword = tokens[0]
+    tokens = tokens.slice(1) // consume NOT
+
+    let nodes: Node[] = []
+    const operand = tokens[0]
+
+    if (!operand) {
+        return { result: createOperator(nodes, OperatorKind.Not), tokens }
+    }
+
+    switch (operand.type) {
+        case 'openingParen':
+            const state = parseParenthesis(tokens)
+            if (state.result.type === 'error') {
+                return { result: state.result, tokens }
+            }
+            nodes = state.result.nodes
+            tokens = state.tokens
+            break
+        default:
+            const node = tokenToLeafNode(operand)
+            if (node.type === 'error') {
+                return { result: node, tokens }
+            }
+            nodes = node.nodes
+            tokens = tokens.slice(1)
+    }
+
+    return { result: createOperator(nodes, OperatorKind.Not, keyword.range.start), tokens }
+}
+
 /**
  * parseSequence parses consecutive tokens. If the sequence has a size smaller
  * than 2 the nodes are returned directly. That means there will never be a
  * sequence of size 1.
+ * This also takes care of parsing the NOT keyword
  */
 const parseSequence = (tokens: Token[]): State => {
     const nodes: Node[] = []
@@ -160,13 +198,30 @@ const parseSequence = (tokens: Token[]): State => {
             break
         }
         if (current.type === 'openingParen') {
-            return parseParenthesis(tokens)
+            const state = parseParenthesis(tokens)
+            if (state.result.type === 'error') {
+                return { result: state.result, tokens: state.tokens }
+            }
+            nodes.push(...state.result.nodes)
+            tokens = state.tokens
+            continue
         }
         if (current.type === 'closingParen') {
             break
         }
-        if (current.type === 'keyword' && (current.kind === KeywordKind.And || current.kind === KeywordKind.Or)) {
-            return { result: createSequence(nodes), tokens } // Caller advances.
+        if (current.type === 'keyword') {
+            if (current.kind === KeywordKind.And || current.kind === KeywordKind.Or) {
+                return { result: createSequence(nodes), tokens } // Caller advances.
+            }
+            if (current.kind === KeywordKind.Not) {
+                const state = parseNot(tokens)
+                if (state.result.type === 'error') {
+                    return { result: state.result, tokens: state.tokens }
+                }
+                nodes.push(...state.result.nodes)
+                tokens = state.tokens
+                continue
+            }
         }
 
         const node = tokenToLeafNode(current)
