@@ -58,8 +58,7 @@
     "string-width": "^4.2.0",
     "term-size": "^2.2.0",
     "ts-node": "^10.7.0",
-    "webpack-dev-server": "^4.11.1",
-    "worker-loader": "^3.0.8"
+    "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
     "@apollo/client": "^3.5.0",

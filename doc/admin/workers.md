@@ -61,11 +61,16 @@ This job contains most of the background processes for Code Insights. These proc
 3. Insight license checker
 4. Insight backfill checker
 5. Data clean up jobs
+6. Retention job enqueuer
 
 #### `insights-query-runner-job`
 
 This job is responsible for processing and running record and snapshot points for Code Insights. Such points are filled by running global searches. 
 This job was split from the other Code Insights background processes so that it could benefit from horizontal scaling. 
+
+#### `insights-data-retention-job`
+
+This job is responsible for periodically archiving code insights data points that are beyond the maximum sample size as specified by the site config setting `insights.maximumSampleSize`. It dequeues jobs which are enqueued from the `insights-job` worker in the retention job enqueuer routine. Data will only be archived if the experimental setting `insightsDataRetention` is enabled.
 
 #### `webhook-log-janitor`
 

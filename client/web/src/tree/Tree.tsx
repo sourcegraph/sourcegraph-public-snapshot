@@ -31,7 +31,6 @@ interface Props extends AbsoluteRepo, TelemetryProps {
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
     repoID: Scalars['ID']
-    enableMergedFileSymbolSidebar: boolean
 }
 
 interface State {
@@ -341,7 +340,6 @@ export class Tree extends React.PureComponent<Props, State> {
                     setActiveNode={this.setActiveNode}
                     sizeKey={this.props.sizeKey}
                     telemetryService={this.props.telemetryService}
-                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
             </div>
         )

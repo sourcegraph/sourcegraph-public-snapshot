@@ -71,6 +71,5 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "window.title": "${activeEditorShort}${separator}${rootName} ${separator} [Branch: contractors/SG-45991.1]"
+  }
 }

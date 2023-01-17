@@ -23,7 +23,13 @@
     "sinon": "^9.0.2"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.1.0",
+    "@codemirror/commands": "^6.0.1",
+    "@codemirror/lint": "^6.0.0",
+    "@codemirror/state": "^6.1.0",
+    "@codemirror/view": "^6.4.0",
     "@mdi/js": "^6.7.96",
+    "@reach/visually-hidden": "^0.16.0",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
@@ -40,6 +46,13 @@
     "react": "18.1.0",
     "react-dom": "18.1.0",
     "react-router": "^5.2.0",
-    "rxjs": "^6.6.3"
+    "react-router-dom-v5-compat": "^6.3.0",
+    "react-sticky-box": "1.0.2",
+    "react-visibility-sensor": "^5.1.1",
+    "rxjs": "^6.6.3",
+    "sanitize-html": "^2.0.0",
+    "ts-key-enum": "^2.0.7",
+    "use-resize-observer": "^9.0.2",
+    "uuid": "^8.3.0"
   }
 }

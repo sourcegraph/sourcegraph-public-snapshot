@@ -15,7 +15,26 @@
     "strict": true,
     "jsx": "react-jsx",
   },
-  "references": [{ "path": "../shared" }, { "path": "../common" }, { "path": "../branded" }, { "path": "../wildcard" }],
+  "references": [
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+  ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
 }

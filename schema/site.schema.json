@@ -1563,7 +1563,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"]
           }
         },
         "oneOf": [
@@ -1572,7 +1572,8 @@
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
-          { "$ref": "#/definitions/GitLabAuthProvider" }
+          { "$ref": "#/definitions/GitLabAuthProvider" },
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2104,6 +2105,43 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        }
+      }
+    },
+    "BitbucketCloudAuthProvider": {
+      "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientKey", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bitbucketcloud"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Bitbucket Cloud instance.",
+          "default": "https://bitbucket.org/"
+        },
+        "clientKey": {
+          "type": "string",
+          "description": "The Key of the Bitbucket OAuth app."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the Bitbucket OAuth app."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "account,email,repository",
+          "enum": ["account", "email", "repository"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
+          "default": true,
+          "type": "boolean"
         }
       }
     },

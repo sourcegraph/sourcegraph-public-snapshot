@@ -11,7 +11,17 @@
     "rootDir": ".",
     "outDir": "./out",
   },
-  "references": [{ "path": "../common" }, { "path": "../testing" }],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../storybook",
+    },
+    {
+      "path": "../testing",
+    },
+  ],
   "include": ["**/*", ".*"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
 }

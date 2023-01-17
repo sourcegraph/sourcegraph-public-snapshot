@@ -17,7 +17,7 @@ on:
 jobs:
   protect-pr:
     runs-on: ubuntu-latest
-    if: github.repository == 'sourcegraph/sourcegraph'
+    if: ${{ github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
     steps:
       - name: Check date and labels
         id: check-date-and-labels

@@ -9,5 +9,12 @@
     "jsx": "react-jsx",
   },
   "include": ["./src/**/*", "./*.ts"],
-  "references": [{ "path": "../common" }],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../shared",
+    },
+  ],
 }

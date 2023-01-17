@@ -304,7 +304,6 @@
     "ts-loader": "^9.4.2",
     "ts-node": "^10.7.0",
     "vsce": "^2.7.0",
-    "worker-loader": "^3.0.8",
     "yauzl": "^2.10.0"
   },
   "dependencies": {

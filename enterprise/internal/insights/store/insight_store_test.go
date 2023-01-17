@@ -795,6 +795,65 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
+	t.Run("exclude insight ids from results", func(t *testing.T) {
+		store := NewInsightStore(insightsDB)
+		got, err := store.GetAll(ctx, InsightQueryArgs{ExcludeIDs: []string{"b", "e"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series1RepoCriteria := "repo:a"
+		want := []types.InsightViewSeries{
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      1,
+				SeriesID:             "series-id-1",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-1",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-1",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				SupportsAugmentation: true,
+				RepositoryCriteria:   &series1RepoCriteria,
+			},
+			{
+				ViewID:               2,
+				UniqueID:             "d",
+				InsightSeriesID:      2,
+				SeriesID:             "series-id-2",
+				Title:                "user can view 1",
+				Description:          "",
+				Query:                "query-2",
+				CreatedAt:            now,
+				OldestHistoricalAt:   now,
+				LastRecordedAt:       now,
+				NextRecordingAfter:   now,
+				LastSnapshotAt:       now,
+				NextSnapshotAfter:    now,
+				Label:                "label2-2",
+				LineColor:            "color",
+				SampleIntervalUnit:   "MONTH",
+				SampleIntervalValue:  1,
+				PresentationType:     types.PresentationType("LINE"),
+				GenerationMethod:     types.GenerationMethod("search"),
+				GroupBy:              &groupByRepo,
+				SupportsAugmentation: true,
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
 }
 
 func TestGetAllOnDashboard(t *testing.T) {
