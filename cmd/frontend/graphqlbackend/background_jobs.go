@@ -49,9 +49,9 @@ type RoutineStatsResolver struct {
 // 🚨 SECURITY: When instantiating a backgroundJobConnectionResolver value, the caller MUST check
 // permissions.
 type backgroundJobConnectionResolver struct {
-	first            *int32
-	after            string
-	recentRunCount   *int32
+	first          *int32
+	after          string
+	recentRunCount *int32
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
