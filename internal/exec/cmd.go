@@ -9,7 +9,7 @@ import (
 )
 
 type Cmd struct {
-	*exec.Cmd
+	cmd         *exec.Cmd
 	ctx         context.Context
 	logger      log.Logger
 	beforeHooks []BeforeHook
@@ -47,7 +47,7 @@ func Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *Cmd {
 		logger = log.NoOp()
 	}
 	return &Cmd{
-		Cmd:    cmd,
+		cmd:    cmd,
 		ctx:    ctx,
 		logger: logger,
 	}
@@ -62,12 +62,12 @@ func (c *Cmd) SetAfterHooks(hooks ...AfterHook) {
 }
 
 func (c *Cmd) Unwrap() *exec.Cmd {
-	return c.Cmd
+	return c.cmd
 }
 
 func (c *Cmd) runBeforeHooks() error {
 	for _, h := range c.beforeHooks {
-		if err := h(c.ctx, c.logger, c.Cmd); err != nil {
+		if err := h(c.ctx, c.logger, c.cmd); err != nil {
 			return err
 		}
 	}
@@ -76,7 +76,7 @@ func (c *Cmd) runBeforeHooks() error {
 
 func (c *Cmd) runAfterHooks() {
 	for _, h := range c.afterHooks {
-		h(c.ctx, c.logger, c.Cmd)
+		h(c.ctx, c.logger, c.cmd)
 	}
 }
 
@@ -85,12 +85,11 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-
-	return c.Cmd.CombinedOutput()
+	return c.cmd.CombinedOutput()
 }
 
 func (c *Cmd) Environ() []string {
-	return c.Cmd.Environ()
+	return c.cmd.Environ()
 }
 
 func (c *Cmd) Output() ([]byte, error) {
@@ -98,7 +97,7 @@ func (c *Cmd) Output() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.Output()
+	return c.cmd.Output()
 }
 
 func (c *Cmd) Run() error {
@@ -106,38 +105,33 @@ func (c *Cmd) Run() error {
 		return err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.Run()
+	return c.cmd.Run()
 }
 
 func (c *Cmd) Start() error {
 	if err := c.runBeforeHooks(); err != nil {
 		return err
 	}
-	defer c.runAfterHooks()
-	return c.Cmd.Start()
+	return c.cmd.Start()
 }
 
 func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
-	return c.Cmd.StderrPipe()
+	return c.cmd.StderrPipe()
 }
 
 func (c *Cmd) StdinPipe() (io.WriteCloser, error) {
-	return c.Cmd.StdinPipe()
+	return c.cmd.StdinPipe()
 }
 
 func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
-	return c.Cmd.StdoutPipe()
+	return c.cmd.StdoutPipe()
 }
 
 func (c *Cmd) String() string {
-	return c.Cmd.String()
+	return c.cmd.String()
 }
 
 func (c *Cmd) Wait() error {
-	if err := c.runBeforeHooks(); err != nil {
-		return err
-	}
 	defer c.runAfterHooks()
-
-	return c.Cmd.Wait()
+	return c.cmd.Wait()
 }
