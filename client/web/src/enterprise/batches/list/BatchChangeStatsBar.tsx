@@ -20,7 +20,7 @@ interface BatchChangeStatsBarProps {
     className?: string
 }
 
-export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = ({}) => {
+export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
     const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] =
         useTemporarySetting('batches.minSavedPerChangeset')
 
