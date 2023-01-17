@@ -56,7 +56,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 				HighPriority:     true,
 				InvalidateCaches: req.Options.InvalidateCaches,
 			}
-			err := db.PermissionSyncJobs().CreateUserSyncJob(ctx, int32(repoID), opts)
+			err := db.PermissionSyncJobs().CreateRepoSyncJob(ctx, repoID, opts)
 			if err != nil {
 				logger.Warn("Error enqueueing permissions sync job", log.Error(err), log.Int32("repo_id", int32(repoID)))
 			}
