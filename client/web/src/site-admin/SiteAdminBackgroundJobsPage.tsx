@@ -384,18 +384,13 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
 }
 
 const RoutineItemIcon: React.FunctionComponent<{ type: BackgroundRoutineType }> = ({ type }) => {
-    switch (type) {
-        case 'PERIODIC':
-            return <Icon aria-hidden={true} svgPath={mdiCached} />
-        case 'PERIODIC_WITH_METRICS':
-            return <Icon aria-hidden={true} svgPath={mdiNumeric} />
-        case 'DB_BACKED':
-            return <Icon aria-hidden={true} svgPath={mdiDatabase} />
-        case 'CUSTOM':
-            return <Icon aria-hidden={true} svgPath={mdiShape} />
-        default:
-            return <Icon aria-hidden={true} svgPath={mdiHelp} />
+    const routineTypeToIcon: Record<BackgroundRoutineType, string> = {
+        [BackgroundRoutineType.PERIODIC]: mdiCached,
+        [BackgroundRoutineType.PERIODIC_WITH_METRICS]: mdiNumeric,
+        [BackgroundRoutineType.DB_BACKED]: mdiDatabase,
+        [BackgroundRoutineType.CUSTOM]: mdiShape,
     }
+    return <Icon aria-hidden={true} svgPath={routineTypeToIcon[type] ?? mdiHelp} />
 }
 
 const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
