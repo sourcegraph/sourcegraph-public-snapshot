@@ -59,6 +59,7 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
             getItemName={identity}
             getItemKey={identity}
             onSelectedItemsChange={handleSelect}
+            className={className}
         >
             <MultiComboboxInput
                 {...attributes}
@@ -66,7 +67,6 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
                 value={search}
                 autoComplete="off"
                 status={loading ? 'loading' : status}
-                className={className}
                 onChange={event => setSearch(event.target.value)}
             />
 
