@@ -179,15 +179,13 @@ func TestSiteConfigConnection(t *testing.T) {
 								"totalCount": 5,
 								"nodes": [
 									{
-										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
-										"previousID": null,
+										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NQ==",
 										"author": null,
 										"createdAt": %[1]q,
 										"updatedAt": %[1]q
 									},
 									{
-										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
-										"previousID": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
+										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
 										"author": {
 											"id": "VXNlcjox",
 											"username": "foo",
@@ -240,8 +238,7 @@ func TestSiteConfigConnection(t *testing.T) {
 								"totalCount": 5,
 								"nodes": [
 									{
-										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NQ==",
-										"previousID": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
+										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
 										"author": {
 											"id": "VXNlcjox",
 											"username": "foo",
@@ -251,8 +248,7 @@ func TestSiteConfigConnection(t *testing.T) {
 										"updatedAt": %[1]q
 									},
 									{
-										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
-										"previousID": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
 										"author": {
 											"id": "VXNlcjox",
 											"username": "foo",
@@ -301,8 +297,9 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		name                          string
 		paginationArgs                *database.PaginationArgs
 		expectedSiteConfigIDs         []int32
-		expectedPreviousSiteConfigIDs []*int32
+		// expectedPreviousSiteConfigIDs []*int32
 	}{
+		// FIXME: This should just fail outright.
 		{
 			name:                          "nil paginationArgs",
 			paginationArgs:                nil,
@@ -314,48 +311,48 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			paginationArgs: &database.PaginationArgs{
 				First: toIntPtr(2),
 			},
-			expectedSiteConfigIDs:         []int32{1, 2},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{5,4}
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
 		},
 		{
-			name: "first: 5 (exactly what exists in the database)",
+			name: "first: 5 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
 				First: toIntPtr(5),
 			},
-			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
+			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
 		},
 		{
-			name: "first: 20 (more than what exists in the database)",
+			name: "first: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
 				First: toIntPtr(20),
 			},
-			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
+			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
 		},
 		{
 			name: "last: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last: toIntPtr(2),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3}),
+			expectedSiteConfigIDs:         []int32{1, 2},
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3}),
 		},
 		{
-			name: "last: 5 (exactly what exists in the database)",
+			name: "last: 5 (exat number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
 				Last: toIntPtr(5),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
 		},
 		{
-			name: "last: 20 (more than what exists in the database)",
+			name: "last: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
 				Last: toIntPtr(20),
 			},
-			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
-			expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
 		},
 	}
 

@@ -109,6 +109,10 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	return resolvers, nil
 }
 
+func (s *SiteConfigurationChangeConnectionStore) ComputeNodes_Reincarnated(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeConnectionResolver, error) {
+
+}
+
 // FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver) (*string, error) {
 	return nil, nil
