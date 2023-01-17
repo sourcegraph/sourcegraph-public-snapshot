@@ -137,7 +137,7 @@ SELECT
 	created_at,
 	updated_at
 FROM critical_and_site_config
-%s
+WHERE (%s)
 `
 
 var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
@@ -162,7 +162,8 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 
 	// This will fetch all site configs.
 	if paginationArgs == nil {
-		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Sprintf("WHERE (%s)", sqlf.Join(where, "AND")))
+		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+
 		rows, err := s.Query(ctx, query)
 		return scanSiteConfigs(rows, err)
 	}
@@ -176,7 +177,7 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 		where = append(where, args.Where)
 	}
 
-	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Sprintf("WHERE (%s)", sqlf.Join(where, "AND")))
+	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
 	query = args.AppendOrderToQuery(query)
 	query = args.AppendLimitToQuery(query)
 
