@@ -903,7 +903,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	if len(excludedRepoIDs) == 0 {
 		repoIDsPred = sqlf.Sprintf("true")
 	} else {
-		repoIDsPred = sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
+		repoIDsPred = sqlf.Sprintf("sp.repo_name_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
 	}
 
 	tx, err := s.Transact(ctx)
@@ -930,6 +930,8 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 		return nil
 	}
 
+	// worth noting if no data exists data won't be augmented
+
 	// start with the oldest archived points and add them to the results
 	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), insightViewId, repoIDsPred), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
@@ -949,7 +951,7 @@ from %s isrt
     join insight_view_series ivs ON i.id = ivs.insight_series_id
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
-    join repo_names rn on sp.repo_id = rn.id
+    left outer join repo_names rn on sp.repo_name_id = rn.id
 	where ivs.insight_view_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `

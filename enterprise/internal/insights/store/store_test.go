@@ -1007,7 +1007,7 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID}
 	newTime := time.Now().Truncate(time.Hour)
 	for i := 1; i <= 2; i++ {
-		newTime = newTime.Add(time.Hour)
+		newTime = newTime.Add(time.Hour).UTC()
 		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
 			Snapshot: false, Timestamp: newTime,
 		})
@@ -1015,6 +1015,24 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
 		t.Fatal(err)
 	}
+
+	t.Run("empty entries for no series points data", func(t *testing.T) {
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes) {
+			t.Fatalf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
+		}
+		for i, rt := range recordingTimes.RecordingTimes {
+			autogold.Want("insight view title is correct", view.Title).Equal(t, got[i].InsightViewTitle)
+			autogold.Want("series query is correct", series.Query).Equal(t, got[i].SeriesQuery)
+			autogold.Want("series label is correct", "label").Equal(t, got[i].SeriesLabel)
+			autogold.Want("series value is correct", 0).Equal(t, got[i].Value)
+			autogold.Want("recording time is correct", rt.Timestamp).Equal(t, got[i].RecordingTime.UTC())
+			autogold.Want("repo and capture are nil", true).Equal(t, got[i].RepoName == nil && got[i].Capture == nil)
+		}
+	})
 
 	// insert series point data
 	_, err = insightsDB.ExecContext(context.Background(), `
@@ -1060,7 +1078,7 @@ SELECT recording_time,
 		}
 	})
 	t.Run("respects repo permissions", func(t *testing.T) {
-		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{2}, nil)
+		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1}, nil)
 		defer func() {
 			// cleanup
 			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
@@ -1071,6 +1089,23 @@ SELECT recording_time,
 		}
 		if len(got) != 0 {
 			t.Errorf("expected 0 results due to repo permissions, got %d", len(got))
+		}
+	})
+	t.Run("adds empty entry for no series points data", func(t *testing.T) {
+		// add new recording time
+		extraTime := newTime.Add(time.Hour).UTC()
+		newRecordingTime := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID, RecordingTimes: []types.RecordingTime{
+			{Timestamp: extraTime},
+		}}
+		if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{newRecordingTime}); err != nil {
+			t.Fatal(err)
+		}
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes)+1 {
+			t.Fatalf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes)+1, len(got))
 		}
 	})
 }
