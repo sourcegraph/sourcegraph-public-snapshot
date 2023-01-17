@@ -26,7 +26,7 @@ func main() {
 }
 
 const (
-	bucketName         = "codeintel-qa-indexes"
+	bucketName         = "precise-code-intel-integration-testdata"
 	relativeIndexesDir = "dev/codeintel-qa/testdata/indexes"
 )
 
