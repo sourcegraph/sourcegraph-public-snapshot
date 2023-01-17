@@ -371,7 +371,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
                         </div>
                     </Tooltip>
                 ) : (
-                    <span className="text-muted">No stats.</span>
+                    <span className="text-muted">No stats yet.</span>
                 )}
             </div>
         </div>
