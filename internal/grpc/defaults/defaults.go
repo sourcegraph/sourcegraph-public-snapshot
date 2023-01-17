@@ -12,6 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
+// DialOptions is a set of default dial options that should be used for all
+// gRPC clients in Sourcegraph. The options can be extended with
+// service-specific options.
 func DialOptions() []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
@@ -28,6 +31,9 @@ func DialOptions() []grpc.DialOption {
 	}
 }
 
+// ServerOptions is a set of default server options that should be used for all
+// gRPC servers in Sourcegrah. The options can be extended with
+// service-specific options.
 func ServerOptions() []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
