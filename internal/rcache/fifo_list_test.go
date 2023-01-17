@@ -158,7 +158,7 @@ func Test_FIFOList_SetMaxSize(t *testing.T) {
 		t.Errorf("expected no error, got %q", err)
 	}
 	if want := bytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
-		t.Errorf("Expected %v, but got %v", _str(want...), _str(got...))
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
 	}
 
 	r.SetMaxSize(2)
@@ -174,7 +174,7 @@ func Test_FIFOList_SetMaxSize(t *testing.T) {
 		t.Errorf("expected no error, got %q", err)
 	}
 	if want := bytes("b", "b"); !reflect.DeepEqual(want, got) {
-		t.Errorf("Expected %v, but got %v", _str(want...), _str(got...))
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
 	}
 }
 
