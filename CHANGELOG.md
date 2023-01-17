@@ -54,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed issue where emails that have never been verified before would be unable to receive resent verification emails. [#46185](https://github.com/sourcegraph/sourcegraph/pull/46185)
 - Resolved issue preventing LSIF uploads larger than 2GiB (gzipped) from uploading successfully. [#46209](https://github.com/sourcegraph/sourcegraph/pull/46209)
 - Local vars in Typescript are now detected as symbols which will positively impact ranking of search results. [go-ctags#10](https://github.com/sourcegraph/go-ctags/pull/10)
+- Fix issue in Gitlab OAuth in which user group membership is set too wide - adds `min_access_level=10` to `/groups` request. [#46480](https://github.com/sourcegraph/sourcegraph/pull/46480)
 
 ### Removed
 
