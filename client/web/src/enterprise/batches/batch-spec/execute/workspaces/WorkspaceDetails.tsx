@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     mdiClose,
@@ -78,6 +78,7 @@ import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import { cloneDeep } from 'lodash'
 
 export interface WorkspaceDetailsProps {
     id: Scalars['ID']
@@ -486,6 +487,12 @@ interface WorkspaceStepProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
+type PageInfo = {
+        __typename?: "PageInfo" | undefined;
+        hasNextPage: boolean;
+        endCursor: string | null;
+}
+
 const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
     workspaceID,
@@ -493,8 +500,16 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
-    const [outputLines, setOutputLines] = useState<string[] | undefined>(step.outputLines?.nodes)
+    const [outputLines, setOutputLines] = useState<string[]>([])
     const [pageInfo, setPageInfo] = useState(step.outputLines?.pageInfo)
+
+    useEffect(() => {
+        if (step.outputLines !== null) {
+            const outputLines = cloneDeep(step.outputLines.nodes)
+            setOutputLines(outputLines)
+            setPageInfo(step.outputLines.pageInfo)
+        }
+    }, [step.outputLines])
 
     const [fetchAdditionalOutputLines, additionalOutputLinesResult] = useLazyQuery<
         BatchSpecWorkspaceStepByIndexResult,
@@ -519,14 +534,14 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
             const newOutputLines = result.node.step.outputLines
             setOutputLines([...previousData, ...newOutputLines.nodes])
             setPageInfo(newOutputLines.pageInfo)
-        }
+        },
     })
 
     const memoizedFetchAdditionalOutputLines = useCallback(() => {
         const variables = {
             workspaceID,
             stepIndex: step.number,
-            after: (pageInfo && pageInfo.endCursor) ? parseInt(pageInfo.endCursor, 10) : 0,
+            after: pageInfo && pageInfo.endCursor ? parseInt(pageInfo.endCursor, 10) : 0,
         }
 
         return fetchAdditionalOutputLines({ variables })
@@ -535,7 +550,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     const stepOutputCommandInfo = useMemo(() => {
         // If outputLines is null or an empty list then we can safely assume that the command did not
         // produce any output. We display this message to the user so they know.
-        if (step.outputLines === null || step.outputLines.nodes.length === 0) {
+        if (step.outputLines && step.outputLines.nodes.length === 0) {
             return 'stdout: This command did not produce any output'
         }
 
@@ -614,7 +629,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                     <TabPanel className="pt-2" key="logs">
                                         {step.startedAt ? (
                                             <>
-                                                {outputLines && outputLines.length > 0 && (
+                                                {outputLines.length > 0 && (
                                                     <>
                                                         <LogOutput text={outputLines.join('\n')} />
                                                         {pageInfo && pageInfo.hasNextPage && (
@@ -624,7 +639,9 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                                                     <Button
                                                                         size="sm"
                                                                         className={styles.stepOutputShowMoreBtn}
-                                                                        onClick={() => memoizedFetchAdditionalOutputLines()}
+                                                                        onClick={() =>
+                                                                            memoizedFetchAdditionalOutputLines()
+                                                                        }
                                                                     >
                                                                         Load more ...
                                                                     </Button>
@@ -633,7 +650,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                                         )}
                                                     </>
                                                 )}
-                                                <LogOutput text={stepOutputCommandInfo} />
+                                                {step.outputLines && <LogOutput text={stepOutputCommandInfo} className={styles.stepCommandInfo} />}
                                             </>
                                         ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>

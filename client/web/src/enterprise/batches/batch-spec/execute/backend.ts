@@ -120,7 +120,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
         ifCondition
         cachedResultFound
         skipped
-        outputLines {
+        outputLines(first: 500) {
             ...BatchSpecWorkspaceStepOutputLines
         }
         startedAt
