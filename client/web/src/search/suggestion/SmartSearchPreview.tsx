@@ -18,22 +18,14 @@
 //     Button,
 // } from '@sourcegraph/wildcard'
 
-// import { SearchPatternType } from '../../graphql-operations'
-import { noop } from 'lodash'
-import { fromEvent, of, Subscriber, Subscription } from 'rxjs'
+import { of } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import {
-    LATEST_VERSION,
-    messageHandlers,
-    MessageHandlers,
-    observeMessages,
-    aggregateStreamingSearch,
-    SearchEvent,
-    switchAggregateSearchResults,
-} from '../../../../shared/src/search/stream'
+import { LATEST_VERSION, aggregateStreamingSearch } from '../../../../shared/src/search/stream'
 import { SearchMode } from '@sourcegraph/shared/src/search'
+
+import { useNavbarQueryState } from '../../stores'
 
 import styles from './QuerySuggestion.module.scss'
 
@@ -41,42 +33,6 @@ interface SmartSearchPreviewProps {
     // alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
     // onDisableSmartSearch: () => void
 }
-
-// const processDescription = (description: string): string => {
-//     const split = description.split(' ⚬ ')
-
-//     split[0] = split[0][0].toUpperCase() + split[0].slice(1)
-//     return split.join(', ')
-// }
-
-// const alertContent: { [key in AlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element } } = {
-//     'smart-search-additional-results': (queryCount: number) => ({
-//         title: (
-//             <>
-//                 <b>Smart Search</b> is also showing <b>additional results</b>.
-//             </>
-//         ),
-//         subtitle: (
-//             <>
-//                 Smart Search added results for the following similar {pluralize('query', queryCount, 'queries')} that
-//                 might interest you:
-//             </>
-//         ),
-//     }),
-//     'smart-search-pure-results': (queryCount: number) => ({
-//         title: (
-//             <>
-//                 <b>Smart Search</b> is showing <b>related results</b> as your query found <b>no results</b>.
-//             </>
-//         ),
-//         subtitle: (
-//             <>
-//                 To get additional results, Smart Search also ran {pluralize('this', queryCount, 'these')}{' '}
-//                 {pluralize('query', queryCount, 'queries')}:
-//             </>
-//         ),
-//     }),
-// }
 
 export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren<SmartSearchPreviewProps>> = () => {
     const options = {
@@ -87,15 +43,14 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
         searchMode: SearchMode.SmartSearch,
     }
 
-    const findSSResults = () => {
-        //TODO: How to grab search query dynamically
-        //TODO: How to grab pipe obj results
-        //TODO: How to change SmartSearch setting from here
-        const results = aggregateStreamingSearch(of('sourcegraph javascript'), options)
-            .pipe(tap(obj => console.log('HERE: ', obj)))
-            .subscribe()
-        console.log(results)
-    }
-    findSSResults()
+    //TODO: How to grab line 50
+    //TODO: How to change SmartSearch setting from here
+    const searchQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const smartSearchResults = aggregateStreamingSearch(of(searchQuery), options)
+        .pipe(tap(obj => console.log('Results: ', obj)))
+        .subscribe()
+    console.log(smartSearchResults)
+
+    //line 50 is results.alert I need, how to capture this value in right order?
     return <div className={styles.root}></div>
 }
