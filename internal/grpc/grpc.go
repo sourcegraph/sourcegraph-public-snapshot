@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -33,8 +34,14 @@ func DefaultDialOptions() []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because the tracer will not be initialized during init time.
 	return []grpc.DialOption{
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithChainStreamInterceptor(
+			StreamClientPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.StreamClientInterceptor(),
+		),
+		grpc.WithChainUnaryInterceptor(
+			UnaryClientPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.UnaryClientInterceptor(),
+		),
 	}
 }
 
@@ -42,7 +49,13 @@ func DefaultServerOptions() []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because the tracer will not be initialized during init time.
 	return []grpc.ServerOption{
-		grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
-		grpc.ChainUnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.ChainStreamInterceptor(
+			StreamServerPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.StreamServerInterceptor(),
+		),
+		grpc.ChainUnaryInterceptor(
+			UnaryServerPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.UnaryServerInterceptor(),
+		),
 	}
 }
