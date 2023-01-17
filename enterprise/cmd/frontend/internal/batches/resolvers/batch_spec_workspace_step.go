@@ -59,7 +59,7 @@ func (r *batchSpecWorkspaceStepV1Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.stepInfo.Skipped
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver {
+func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
 	lines := r.stepInfo.OutputLines
 
 	return &batchSpecWorkspaceOutputLinesResolver{
@@ -215,7 +215,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.skipped
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver {
+func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
 	if !r.logEntryFound {
 		return nil
 	}
@@ -373,7 +373,7 @@ type batchSpecWorkspaceOutputLinesResolver struct {
 	endCursor   int32
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver = &batchSpecWorkspaceOutputLinesResolver{}
+var _ graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver = &batchSpecWorkspaceOutputLinesResolver{}
 
 func (r *batchSpecWorkspaceOutputLinesResolver) compute(ctx context.Context) ([]string, int32, bool) {
 	r.once.Do(func() {

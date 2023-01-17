@@ -907,7 +907,7 @@ type BatchSpecWorkspaceStagesResolver interface {
 	Teardown() []ExecutionLogEntryResolver
 }
 
-type BatchSpecWorkspaceStepOutputLinesResolver interface {
+type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
 	TotalCount(ctx context.Context) int32
 	PageInfo(ctx context.Context) *graphqlutil.PageInfo
 	Nodes(ctx context.Context) []string
@@ -920,7 +920,7 @@ type BatchSpecWorkspaceStepResolver interface {
 	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLinesResolver
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLineConnectionResolver
 
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
