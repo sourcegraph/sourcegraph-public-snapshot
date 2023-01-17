@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     mdiAccountHardHat,
@@ -56,10 +56,12 @@ const recentRunCount = 5
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminBackgroundJobsPageProps>
 > = ({ telemetryService }) => {
+    // Log page view
     useEffect(() => {
         telemetryService.logPageView('SiteAdminBackgroundJobs')
     }, [telemetryService])
 
+    // Data query and polling setting
     const { data, loading, error, stopPolling, startPolling } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(
         BACKGROUND_JOBS,
         {
@@ -68,22 +70,19 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
         }
     )
     const [polling, setPolling] = useState(true)
+    const togglePolling = useCallback(() => {
+        if (polling) {
+            stopPolling()
+        } else {
+            startPolling(BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS)
+        }
+        setPolling(!polling)
+    }, [polling, startPolling, stopPolling])
 
     return (
         <div>
             <PageTitle title="Background jobs - Admin" />
-            <Button
-                variant="secondary"
-                onClick={() => {
-                    if (polling) {
-                        stopPolling()
-                    } else {
-                        startPolling(BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS)
-                    }
-                    setPolling(!polling)
-                }}
-                className="float-right"
-            >
+            <Button variant="secondary" onClick={togglePolling} className="float-right">
                 {polling ? 'Pause polling' : 'Resume polling'}
             </Button>
             <PageHeader
