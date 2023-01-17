@@ -159,7 +159,7 @@ const JobList: React.FunctionComponent<{
                         <div>
                             <Select
                                 aria-label="Filter for problematic routines"
-                                onChange={value => setOnlyShowProblematic(value.target.value !== 'all')}
+                                onChange={value => setOnlyShowProblematic(value.target.value === 'problematic')}
                                 selectClassName={styles.filterSelect}
                                 defaultValue={onlyShowProblematic ? 'problematic' : 'all'}
                             >
