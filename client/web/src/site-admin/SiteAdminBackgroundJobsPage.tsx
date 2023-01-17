@@ -45,6 +45,9 @@ export interface SiteAdminBackgroundJobsPageProps extends RouteComponentProps, T
 
 export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
 
+// "short" runs are displayed with a “success” style.
+// “long” runs are displayed with a “warning” style to make sure they stand out somewhat.
+// “dangerous” runs are displayed with a “danger” style to make sure they stand out even more.
 type RunLengthCategory = 'short' | 'long' | 'dangerous'
 
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
