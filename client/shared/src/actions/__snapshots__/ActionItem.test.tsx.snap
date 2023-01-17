@@ -214,6 +214,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
         aria-label="Loading"
         aria-live="polite"
         class="mdi-icon loadingSpinner"
+        data-loading-spinner="true"
         role="img"
       />
     </div>
@@ -242,6 +243,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
         aria-label="Loading"
         aria-live="polite"
         class="mdi-icon loadingSpinner"
+        data-loading-spinner="true"
         role="img"
       />
     </div>

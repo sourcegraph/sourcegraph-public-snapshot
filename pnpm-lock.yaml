@@ -21,6 +21,7 @@ importers:
       '@babel/preset-react': ^7.18.6
       '@babel/preset-typescript': ^7.18.6
       '@babel/runtime': ^7.20.6
+      '@bessonovs/set-project-references': ^0.0.10
       '@codemirror/autocomplete': ^6.1.0
       '@codemirror/commands': ^6.0.1
       '@codemirror/lang-json': ^6.0.0
@@ -557,6 +558,7 @@ importers:
       '@babel/preset-react': 7.18.6_@babel+core@7.20.5
       '@babel/preset-typescript': 7.18.6_@babel+core@7.20.5
       '@babel/runtime': 7.20.6
+      '@bessonovs/set-project-references': 0.0.10
       '@gql2ts/types': 1.9.0_graphql@15.4.0
       '@graphql-codegen/cli': 2.16.1_hh6lbfhb7qo2hnm4o4l47spzc4
       '@graphql-codegen/typescript': 2.8.5_graphql@15.4.0
@@ -713,7 +715,7 @@ importers:
       expect: 27.5.1
       express: 4.18.2
       express-static-gzip: 2.1.1
-      glob: 7.1.6
+      glob: 7.1.7
       google-auth-library: 5.7.0
       googleapis: 47.0.0
       googleapis-common: 3.2.0
@@ -894,10 +896,8 @@ importers:
   client/http-client:
     specifiers:
       '@sourcegraph/common': workspace:*
-      '@sourcegraph/shared': workspace:*
     dependencies:
       '@sourcegraph/common': link:../common
-      '@sourcegraph/shared': link:../shared
 
   client/jetbrains:
     specifiers:
@@ -934,7 +934,6 @@ importers:
 
   client/shared:
     specifiers:
-      '@sourcegraph/browser': workspace:*
       '@sourcegraph/build-config': workspace:*
       '@sourcegraph/client-api': workspace:*
       '@sourcegraph/codeintellify': workspace:*
@@ -945,7 +944,6 @@ importers:
       '@sourcegraph/testing': workspace:*
       '@sourcegraph/wildcard': workspace:*
     dependencies:
-      '@sourcegraph/browser': link:../browser
       '@sourcegraph/client-api': link:../client-api
       '@sourcegraph/codeintellify': link:../codeintellify
       '@sourcegraph/common': link:../common
@@ -1013,6 +1011,7 @@ importers:
       '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/http-client': workspace:*
       '@sourcegraph/observability-client': workspace:*
+      '@sourcegraph/schema': workspace:*
       '@sourcegraph/shared': workspace:*
       '@sourcegraph/storybook': workspace:*
       '@sourcegraph/testing': workspace:*
@@ -1024,6 +1023,7 @@ importers:
       '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
       '@sourcegraph/observability-client': link:../observability-client
+      '@sourcegraph/schema': link:../../schema
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
@@ -1042,6 +1042,9 @@ importers:
       '@sourcegraph/testing': link:../testing
 
   dev/release:
+    specifiers: {}
+
+  schema:
     specifiers: {}
 
 packages:
@@ -1107,7 +1110,7 @@ packages:
       chalk: 4.1.2
       fb-watchman: 2.0.0
       fbjs: 3.0.0
-      glob: 7.1.6
+      glob: 7.1.7
       graphql: 15.4.0
       immutable: 3.7.6
       invariant: 2.2.4
@@ -2569,6 +2572,18 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
+  /@bessonovs/set-project-references/0.0.10:
+    resolution: {integrity: sha512-71bvk1OBynDxi+DdmJoMLrw3hg/DUv8dYR3VQ+pQAvdEdWZMyPDwNMrzhQ2q5zm8SzOe7ph77m2X7Vh2Acer+w==}
+    hasBin: true
+    dependencies:
+      commander: 7.2.0
+      comment-json: 4.1.0
+      detect-indent: 6.0.0
+      glob: 7.1.7
+      js-yaml: 4.1.0
+      lodash: 4.17.21
+    dev: true
+
   /@braintree/sanitize-url/3.1.0:
     resolution: {integrity: sha512-GcIY79elgB+azP74j8vqkiXz8xLFfIzbQJdlwOPisgbKT00tviJQuEghOXSMVxJ00HoYJbGswr4kcllUc4xCcg==}
     deprecated: Potential XSS vulnerability patched in v6.0.0.
@@ -3938,7 +3953,7 @@ packages:
       chalk: 4.1.2
       collect-v8-coverage: 1.0.0
       exit: 0.1.2
-      glob: 7.1.6
+      glob: 7.1.7
       graceful-fs: 4.2.10
       istanbul-lib-coverage: 3.2.0
       istanbul-lib-instrument: 5.1.0
@@ -5651,7 +5666,7 @@ packages:
       '@react-native-community/cli-tools': 9.2.1
       cosmiconfig: 5.2.1
       deepmerge: 3.3.0
-      glob: 7.1.6
+      glob: 7.1.7
       joi: 17.7.0
     transitivePeerDependencies:
       - encoding
@@ -5707,7 +5722,7 @@ packages:
       chalk: 4.1.2
       execa: 1.0.0
       fs-extra: 8.1.0
-      glob: 7.1.6
+      glob: 7.1.7
       logkitty: 0.7.1
       slash: 3.0.0
     transitivePeerDependencies:
@@ -5720,7 +5735,7 @@ packages:
       '@react-native-community/cli-tools': 9.2.1
       chalk: 4.1.2
       execa: 1.0.0
-      glob: 7.1.6
+      glob: 7.1.7
       ora: 5.4.1
     transitivePeerDependencies:
       - encoding
@@ -6787,7 +6802,7 @@ packages:
       '@types/jest': 26.0.20
       '@types/jest-specific-snapshot': 0.5.4
       core-js: 3.22.8
-      glob: 7.1.6
+      glob: 7.1.7
       global: 4.4.0
       jest: 28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny
       jest-specific-snapshot: 4.0.0_jest@28.1.3
@@ -6957,8 +6972,8 @@ packages:
       file-loader: 6.2.0_webpack@5.75.0
       find-up: 5.0.0
       fork-ts-checker-webpack-plugin: 4.1.6_7nbrhxx5wbdrea3w4d3cjhku4y
-      glob: 7.1.6
-      glob-promise: 3.4.0_glob@7.1.6
+      glob: 7.1.7
+      glob-promise: 3.4.0_glob@7.1.7
       global: 4.4.0
       html-webpack-plugin: 4.5.2_ovbyeo7usi33ah22pzu3dmmfoi
       pnp-webpack-plugin: 1.6.4_typescript@4.9.3
@@ -7025,8 +7040,8 @@ packages:
       core-js: 3.22.8
       css-loader: 5.2.6_webpack@5.75.0
       fork-ts-checker-webpack-plugin: 6.2.4_7nbrhxx5wbdrea3w4d3cjhku4y
-      glob: 7.1.6
-      glob-promise: 3.4.0_glob@7.1.6
+      glob: 7.1.7
+      glob-promise: 3.4.0_glob@7.1.7
       html-webpack-plugin: 5.5.0_webpack@5.75.0
       path-browserify: 1.0.1
       process: 0.11.10
@@ -7217,7 +7232,7 @@ packages:
       find-up: 5.0.0
       fork-ts-checker-webpack-plugin: 6.2.4_7nbrhxx5wbdrea3w4d3cjhku4y
       fs-extra: 9.0.1
-      glob: 7.1.6
+      glob: 7.1.7
       handlebars: 4.7.7
       interpret: 2.2.0
       json5: 2.2.1
@@ -9904,6 +9919,10 @@ packages:
       kind-of: 5.1.0
     dev: true
 
+  /array-timsort/1.0.3:
+    resolution: {integrity: sha512-/+3GRL7dDAGEfM6TseQk/U+mi18TU2Ms9I3UlLdUMhz2hbvGNTKdj9xniwXfUqgYhHxRx0+8UnKkvlNwVU+cWQ==}
+    dev: true
+
   /array-union/1.0.2:
     resolution: {integrity: sha512-Dxr6QJj/RdU/hCaBjOfxW+q6lyuVE6JFWIrAUpuOOhoJJoQ99cUn3igRaHVB5P9WrgFVN0FfArM3x0cueOU8ng==}
     engines: {node: '>=0.10.0'}
@@ -10229,7 +10248,7 @@ packages:
     dependencies:
       '@babel/helper-module-imports': 7.18.6
       '@babel/types': 7.20.7
-      glob: 7.1.6
+      glob: 7.1.7
       lodash: 4.17.21
       require-package-name: 2.0.1
     dev: true
@@ -10741,7 +10760,7 @@ packages:
       commander: 5.1.0
       cosmiconfig: 5.2.1
       figures: 3.2.0
-      glob: 7.1.6
+      glob: 7.1.7
       gzip-size: 5.1.1
       node-fetch: 2.6.7
       plur: 4.0.0
@@ -10776,7 +10795,7 @@ packages:
       '@npmcli/move-file': 1.0.1
       chownr: 2.0.0
       fs-minipass: 2.1.0
-      glob: 7.1.6
+      glob: 7.1.7
       infer-owner: 1.0.4
       lru-cache: 6.0.0
       minipass: 3.3.5
@@ -11639,6 +11658,17 @@ packages:
   /commander/9.4.1:
     resolution: {integrity: sha512-5EEkTNyHNGFPD2H+c/dXXfQZYa/scCKasxWcXJaWnNJ99pnQN9Vnmqow+p+PlFPE63Q6mThaZws1T+HxfpgtPw==}
     engines: {node: ^12.20.0 || >=14}
+
+  /comment-json/4.1.0:
+    resolution: {integrity: sha512-WEghmVYaNq9NlWbrkzQTSsya9ycLyxJxpTQfZEan6a5Jomnjw18zS3Podf8q1Zf9BvonvQd/+Z7Z39L7KKzzdQ==}
+    engines: {node: '>= 6'}
+    dependencies:
+      array-timsort: 1.0.3
+      core-util-is: 1.0.2
+      esprima: 4.0.1
+      has-own-prop: 2.0.0
+      repeat-string: 1.6.1
+    dev: true
 
   /comment-parser/0.7.6:
     resolution: {integrity: sha512-GKNxVA7/iuTnAqGADlTWX4tkhzxZKXp5fLJqKTlQLHkE65XDUKutZ3BHaJC5IGcper2tT3QRD1xr4o3jNpgXXg==}
@@ -15452,14 +15482,14 @@ packages:
     dependencies:
       is-glob: 4.0.3
 
-  /glob-promise/3.4.0_glob@7.1.6:
+  /glob-promise/3.4.0_glob@7.1.7:
     resolution: {integrity: sha512-q08RJ6O+eJn+dVanerAndJwIcumgbDdYiUT7zFQl3Wm1xD6fBKtah7H8ZJChj4wP+8C+QfeVy8xautR7rdmKEw==}
     engines: {node: '>=4'}
     peerDependencies:
       glob: '*'
     dependencies:
       '@types/glob': 7.1.3
-      glob: 7.1.6
+      glob: 7.1.7
     dev: true
 
   /glob-stream/6.1.0:
@@ -15467,7 +15497,7 @@ packages:
     engines: {node: '>= 0.10'}
     dependencies:
       extend: 3.0.2
-      glob: 7.1.6
+      glob: 7.1.7
       glob-parent: 3.1.0
       is-negated-glob: 1.0.0
       ordered-read-streams: 1.0.1
@@ -15501,6 +15531,17 @@ packages:
 
   /glob/7.1.6:
     resolution: {integrity: sha512-LwaxwyZ72Lk7vZINtNNrywX0ZuLyStrdDtabefZKAY5ZGJhVtgdznluResxNmPitE0SAO+O26sWTHeKSI2wMBA==}
+    dependencies:
+      fs.realpath: 1.0.0
+      inflight: 1.0.6
+      inherits: 2.0.4
+      minimatch: 3.1.2
+      once: 1.4.0
+      path-is-absolute: 1.0.1
+    dev: true
+
+  /glob/7.1.7:
+    resolution: {integrity: sha512-OvD9ENzPLbegENnYP5UUfJIirTg4+XwMWGaQfQTY0JenxNvvIKP3U3/tAQSPIu/lHxXYSZmpXlUHeqAIdKzBLQ==}
     dependencies:
       fs.realpath: 1.0.0
       inflight: 1.0.6
@@ -15600,7 +15641,7 @@ packages:
     dependencies:
       array-union: 1.0.2
       dir-glob: 2.2.2
-      glob: 7.1.6
+      glob: 7.1.7
       ignore: 3.3.10
       pify: 3.0.0
       slash: 1.0.0
@@ -15614,7 +15655,7 @@ packages:
       array-union: 1.0.2
       dir-glob: 2.2.2
       fast-glob: 2.2.7
-      glob: 7.1.6
+      glob: 7.1.7
       ignore: 4.0.6
       pify: 4.0.1
       slash: 2.0.0
@@ -15854,7 +15895,7 @@ packages:
       columnify: 1.6.0
       commander: 3.0.2
       cosmiconfig: 5.2.1
-      glob: 7.1.6
+      glob: 7.1.7
       graphql: 15.4.0
     dev: true
 
@@ -16015,6 +16056,11 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       is-glob: 3.1.0
+    dev: true
+
+  /has-own-prop/2.0.0:
+    resolution: {integrity: sha512-Pq0h+hvsVm6dDEa8x82GnLSYHOzNDt7f0ddFa3FqcQlgzEiptPqL+XrOJNavjOzSYiYWIrgeVYYgGlLmnxwilQ==}
+    engines: {node: '>=8'}
     dev: true
 
   /has-property-descriptors/1.0.0:
@@ -17546,7 +17592,7 @@ packages:
       chalk: 4.1.2
       ci-info: 3.3.1
       deepmerge: 4.2.2
-      glob: 7.1.6
+      glob: 7.1.7
       graceful-fs: 4.2.10
       jest-circus: 28.1.3
       jest-environment-node: 28.1.3
@@ -17586,7 +17632,7 @@ packages:
       chalk: 4.1.2
       ci-info: 3.3.1
       deepmerge: 4.2.2
-      glob: 7.1.6
+      glob: 7.1.7
       graceful-fs: 4.2.10
       jest-circus: 28.1.3
       jest-environment-node: 28.1.3
@@ -18002,7 +18048,7 @@ packages:
       cjs-module-lexer: 1.2.2
       collect-v8-coverage: 1.0.0
       execa: 5.1.1
-      glob: 7.1.6
+      glob: 7.1.7
       graceful-fs: 4.2.10
       jest-haste-map: 28.1.3
       jest-message-util: 28.1.3
@@ -18476,8 +18522,8 @@ packages:
       '@types/lodash': 4.14.182
       '@types/prettier': 2.7.2
       cli-color: 2.0.0
-      glob: 7.1.6
-      glob-promise: 3.4.0_glob@7.1.6
+      glob: 7.1.7
+      glob-promise: 3.4.0_glob@7.1.7
       is-glob: 4.0.3
       json-schema-ref-parser: 9.0.6
       json-stringify-safe: 5.0.1
@@ -20465,7 +20511,7 @@ packages:
       find-up: 4.1.0
       foreground-child: 2.0.0
       get-package-type: 0.1.0
-      glob: 7.1.6
+      glob: 7.1.7
       istanbul-lib-coverage: 3.2.0
       istanbul-lib-hook: 3.0.0
       istanbul-lib-instrument: 4.0.3
@@ -22921,7 +22967,7 @@ packages:
   /read-package-json/2.1.1:
     resolution: {integrity: sha512-dAiqGtVc/q5doFz6096CcnXhpYk0ZN8dEKVkGLU0CsASt8SrgF6SF7OTKAYubfvFhWaqofl+Y8HK19GR8jwW+A==}
     dependencies:
-      glob: 7.1.6
+      glob: 7.1.7
       json-parse-better-errors: 1.0.2
       normalize-package-data: 2.5.0
       npm-normalize-package-bin: 1.0.1
@@ -23567,13 +23613,13 @@ packages:
     resolution: {integrity: sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==}
     hasBin: true
     dependencies:
-      glob: 7.1.6
+      glob: 7.1.7
 
   /rimraf/3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     hasBin: true
     dependencies:
-      glob: 7.1.6
+      glob: 7.1.7
 
   /robots-parser/2.3.0:
     resolution: {integrity: sha512-RvuCITckrHM9k8DxCCU9rqWpuuKRfVX9iHG751dC3/EdERxp9gJATxYYdYOT3L0T+TAT4+27lENisk/VbHm47A==}
@@ -23614,7 +23660,7 @@ packages:
       '@babel/types': 7.10.5
       bent: 7.3.7
       chalk: 4.1.2
-      glob: 7.1.6
+      glob: 7.1.7
       prompts: 2.3.2
     transitivePeerDependencies:
       - supports-color
@@ -23998,7 +24044,7 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
     dependencies:
-      glob: 7.1.6
+      glob: 7.1.7
       interpret: 1.2.0
       rechoir: 0.6.2
     dev: true
@@ -25283,7 +25329,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       '@istanbuljs/schema': 0.1.2
-      glob: 7.1.6
+      glob: 7.1.7
       minimatch: 3.1.2
     dev: true
 
@@ -25755,7 +25801,7 @@ packages:
       chalk: 3.0.0
       chokidar: 3.5.3
       css-modules-loader-core: 1.1.0
-      glob: 7.1.6
+      glob: 7.1.7
       param-case: 3.0.4
       path: 0.12.7
       reserved-words: 0.1.2
@@ -26522,7 +26568,7 @@ packages:
       chalk: 2.4.2
       cheerio: 1.0.0-rc.12
       commander: 6.2.1
-      glob: 7.1.6
+      glob: 7.1.7
       hosted-git-info: 4.1.0
       keytar: 7.9.0
       leven: 3.1.0

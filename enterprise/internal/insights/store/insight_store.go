@@ -47,6 +47,7 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 type InsightQueryArgs struct {
 	UniqueIDs   []string
 	UniqueID    string
+	ExcludeIDs  []string
 	UserID      []int
 	OrgID       []int
 	DashboardID int
@@ -54,6 +55,7 @@ type InsightQueryArgs struct {
 	After    string
 	Limit    int
 	IsFrozen *bool
+	Find     string
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -104,6 +106,13 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
+	if len(args.ExcludeIDs) > 0 {
+		exclusions := make([]*sqlf.Query, 0, len(args.UniqueIDs))
+		for _, id := range args.ExcludeIDs {
+			exclusions = append(exclusions, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("iv.unique_id NOT IN (%s)", sqlf.Join(exclusions, ",")))
+	}
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
@@ -119,6 +128,9 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+	if args.Find != "" {
+		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")

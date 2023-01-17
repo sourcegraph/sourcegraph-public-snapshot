@@ -71,9 +71,11 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     displayNamespace,
 }) => {
     const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(
-        () => node.batchSpecs.nodes?.[0],
-        [node.batchSpecs.nodes]
+        () => node.batchSpecs.nodes?.[0] || node.currentSpec,
+        [node.batchSpecs.nodes, node.currentSpec]
     )
+
+    const latestExecutionState = latestExecution?.state
 
     // The URL to follow when a batch change is clicked on depends on the current state
     // and execution state.
@@ -83,8 +85,6 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
         if (!isExecutionEnabled || node.state === BatchChangeState.CLOSED) {
             return node.url
         }
-
-        const latestExecutionState = latestExecution?.state
 
         switch (latestExecutionState) {
             // If the latest spec hasn't been executed yet...
@@ -103,13 +103,13 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             case BatchSpecState.COMPLETED:
                 // If it hasn't been applied, we take you to the preview page. Otherwise,
                 // we just take you to the details page.
-                return node.currentSpec?.id === latestExecution.id
+                return node.currentSpec.id === latestExecution.id
                     ? node.url
                     : `${node.url}/executions/${latestExecution.id}/preview`
             default:
                 return node.url
         }
-    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
+    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution, latestExecutionState])
 
     return (
         <li className={styles.batchChangeNode}>
@@ -117,8 +117,8 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
                     state={node.state}
-                    latestExecutionState={node.batchSpecs.nodes[0]?.state}
-                    currentSpecID={node.currentSpec?.id}
+                    latestExecutionState={latestExecutionState}
+                    currentSpecID={node.currentSpec.id}
                     latestSpecID={latestExecution?.id}
                     className={styles.batchChangeNodePill}
                 />

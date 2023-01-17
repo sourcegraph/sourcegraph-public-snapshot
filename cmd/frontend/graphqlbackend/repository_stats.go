@@ -140,6 +140,14 @@ func (r *repositoryStatsResolver) FailedFetch(ctx context.Context) (int32, error
 	return int32(counts.FailedFetch), nil
 }
 
+func (r *repositoryStatsResolver) Corrupted(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStatistics(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.Corrupted), nil
+}
+
 func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (database.RepoStatistics, error) {
 	r.repoStatisticsOnce.Do(func() {
 		r.repoStatistics, r.repoStatisticsErr = r.db.RepoStatistics().GetRepoStatistics(ctx)

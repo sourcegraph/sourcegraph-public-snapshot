@@ -968,7 +968,12 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	// requirements on what a valid URL is we should treat bad requests,
 	// etc as not found.
 	notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
-	return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
+	return &RepoNotCloneableErr{
+		repo:     repo,
+		reason:   resp.Reason,
+		notFound: notFound,
+		cloned:   resp.Cloned,
+	}
 }
 
 // RepoNotCloneableErr is the error that happens when a repository can not be cloned.
@@ -976,6 +981,7 @@ type RepoNotCloneableErr struct {
 	repo     api.RepoName
 	reason   string
 	notFound bool
+	cloned   bool // Has the repo ever been cloned in the past
 }
 
 // NotFound returns true if the repo could not be cloned because it wasn't found.
@@ -986,7 +992,11 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not cloneable (name=%q notfound=%v) because %s", e.repo, e.notFound, e.reason)
+	msg := "unable to clone repo"
+	if e.cloned {
+		msg = "unable to update repo"
+	}
+	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
