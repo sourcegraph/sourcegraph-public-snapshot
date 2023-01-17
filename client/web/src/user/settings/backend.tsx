@@ -33,6 +33,19 @@ export const CREATE_PASSWORD = gql`
     }
 `
 
+export const userExternalAccountFragment = gql`
+    fragment UserExternalAccountFields on ExternalAccount {
+        id
+        serviceID
+        serviceType
+        publicAccountData {
+            displayName
+            login
+            url
+        }
+    }
+`
+
 export const USER_EXTERNAL_ACCOUNTS = gql`
     query UserExternalAccountsWithAccountData($username: String!) {
         user(username: $username) {

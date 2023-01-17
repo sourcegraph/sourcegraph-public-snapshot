@@ -21,13 +21,13 @@ import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    UserAreaUserFields,
-    ExternalAccountFields,
-    MinExternalAccountsVariables,
-    UpdatePasswordVariables,
-    UpdatePasswordResult,
-    CreatePasswordVariables,
     CreatePasswordResult,
+    CreatePasswordVariables,
+    UpdatePasswordResult,
+    UpdatePasswordVariables,
+    UserAreaUserFields,
+    UserExternalAccountFields,
+    UserExternalAccountsWithAccountDataVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -37,7 +37,10 @@ import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../bac
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
-export type UserExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'publicAccountData'>
+export type UserExternalAccount = Pick<
+    UserExternalAccountFields,
+    'id' | 'serviceID' | 'serviceType' | 'publicAccountData'
+>
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
@@ -62,7 +65,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [oldPassword, setOldPassword] = useState<string>('')
     const [newPassword, setNewPassword] = useState<string>('')
     const [newPasswordConfirmation, setNewPasswordConfirmation] = useState<string>('')
-    const [accounts, setAccounts] = useState<{ fetched?: MinExternalAccount[]; lastRemoved?: string }>({
+    const [accounts, setAccounts] = useState<{ fetched?: UserExternalAccount[]; lastRemoved?: string }>({
         fetched: [],
         lastRemoved: '',
     })
@@ -75,7 +78,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         return []
     }
 
-    const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
+    const { data, loading } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(
         USER_EXTERNAL_ACCOUNTS,
         {
             variables: { username: props.user.username },
