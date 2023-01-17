@@ -36,9 +36,9 @@ export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChild
                 </>
             )} */}
 
-                <div className="col-12">
-                    <BatchChangesUnlicensedAlert />
-                </div>
+            <div className="col-12">
+                <BatchChangesUnlicensedAlert />
+            </div>
         </div>
     )
 }
