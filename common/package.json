@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc --declaration",
     "dev": "concurrently \"tsc --declaration -w\" \"nodemon out/index.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +26,8 @@
   "homepage": "https://github.com/sourcegraph/codebot#readme",
   "description": "",
   "devDependencies": {
-    "concurrently": "^7.6.0"
+    "@sourcegraph/prettierrc": "^3.0.3",
+    "concurrently": "^7.6.0",
+    "prettier": "^2.8.3"
   }
 }

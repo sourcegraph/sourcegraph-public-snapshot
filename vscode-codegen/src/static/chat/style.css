@@ -279,7 +279,7 @@ button {
 	font-size: 1rem;
 }
 
-.recipes-container > button {
+.recipes-container>button {
 	margin-top: 1rem;
 	margin-left: 1rem;
 	margin-right: 1rem;

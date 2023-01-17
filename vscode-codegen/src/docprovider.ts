@@ -1,152 +1,125 @@
-import * as vscode from "vscode";
-import {
-	Completion,
-	LLMDebugInfo,
-	CompletionLogProbs,
-} from "@sourcegraph/cody-common";
+import * as vscode from 'vscode'
+import { Completion, LLMDebugInfo, CompletionLogProbs } from '@sourcegraph/cody-common'
 
-export class CompletionsDocumentProvider
-	implements vscode.TextDocumentContentProvider, vscode.HoverProvider
-{
+export class CompletionsDocumentProvider implements vscode.TextDocumentContentProvider, vscode.HoverProvider {
 	completionsByUri: {
 		[uri: string]: {
-			groups: CompletionGroup[];
-			status: "done" | "notdone";
-		};
-	} = {};
+			groups: CompletionGroup[]
+			status: 'done' | 'notdone'
+		}
+	} = {}
 
 	private isDebug(): boolean {
-		return (
-			vscode.workspace.getConfiguration().get<boolean>("conf.codebot.debug") ===
-			true
-		);
+		return vscode.workspace.getConfiguration().get<boolean>('conf.codebot.debug') === true
 	}
 
 	private fireDocumentChanged(uri: vscode.Uri): void {
-		this.onDidChangeEmitter.fire(uri);
+		this.onDidChangeEmitter.fire(uri)
 	}
 
 	clearCompletions(uri: vscode.Uri) {
-		delete this.completionsByUri[uri.toString()];
-		this.fireDocumentChanged(uri);
+		delete this.completionsByUri[uri.toString()]
+		this.fireDocumentChanged(uri)
 	}
 
-	addCompletions(
-		uri: vscode.Uri,
-		lang: string,
-		completions: Completion[],
-		debug?: LLMDebugInfo
-	) {
+	addCompletions(uri: vscode.Uri, lang: string, completions: Completion[], debug?: LLMDebugInfo) {
 		if (!this.completionsByUri[uri.toString()]) {
-			this.completionsByUri[uri.toString()] = { groups: [], status: "notdone" };
+			this.completionsByUri[uri.toString()] = { groups: [], status: 'notdone' }
 		}
 		this.completionsByUri[uri.toString()].groups.push({
 			lang,
-			completions: completions.map((c) => {
+			completions: completions.map(c => {
 				return {
 					...c,
 					insertText: `${c.prefixText}🡆${c.insertText}`,
-				};
+				}
 			}),
 			debug,
-		});
-		this.fireDocumentChanged(uri);
+		})
+		this.fireDocumentChanged(uri)
 	}
 
 	setCompletionsDone(uri: vscode.Uri) {
-		const completions = this.completionsByUri[uri.toString()];
+		const completions = this.completionsByUri[uri.toString()]
 		if (!completions) {
-			return;
+			return
 		}
-		completions.status = "done";
-		this.fireDocumentChanged(uri);
+		completions.status = 'done'
+		this.fireDocumentChanged(uri)
 	}
 
-	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-	onDidChange = this.onDidChangeEmitter.event;
+	onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+	onDidChange = this.onDidChangeEmitter.event
 
 	provideTextDocumentContent(uri: vscode.Uri): string {
-		const completionGroups = this.completionsByUri[uri.toString()];
+		const completionGroups = this.completionsByUri[uri.toString()]
 		if (!completionGroups) {
-			return "Loading...";
+			return 'Loading...'
 		}
 		return (
-			(completionGroups.status === "notdone"
-				? "Loading additional...\n\n"
-				: "") +
+			(completionGroups.status === 'notdone' ? 'Loading additional...\n\n' : '') +
 			completionGroups.groups
 				.map(({ completions, lang }) =>
 					completions
 						.map((completion, i) => {
-							let sectionText = `${headerize(
-								`${completion.label} (${i + 1}/${completions.length})`,
-								60
-							)}`;
+							let sectionText = `${headerize(`${completion.label} (${i + 1}/${completions.length})`, 60)}`
 							if (this.isDebug()) {
 								if (completion.finishReason) {
-									sectionText += "\n> Finish reason:" + completion.finishReason;
+									sectionText += '\n> Finish reason:' + completion.finishReason
 								}
 							}
-							sectionText +=
-								"\n```" + lang + "\n" + `${completion.insertText}` + "\n```";
-							return sectionText;
+							sectionText += '\n```' + lang + '\n' + `${completion.insertText}` + '\n```'
+							return sectionText
 						})
 						.join(`\n\n`)
 				)
 				.join(`\n\n`)
-		);
+		)
 	}
 
-	provideHover(
-		document: vscode.TextDocument,
-		position: vscode.Position
-	): vscode.ProviderResult<vscode.Hover> {
-		const completionGroups = this.completionsByUri[document.uri.toString()];
+	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.ProviderResult<vscode.Hover> {
+		const completionGroups = this.completionsByUri[document.uri.toString()]
 		if (!completionGroups) {
-			return null;
+			return null
 		}
 
-		const wordRange = document.getWordRangeAtPosition(position, /[\w\-:]+/);
+		const wordRange = document.getWordRangeAtPosition(position, /[\w\-:]+/)
 		if (!wordRange) {
-			return null;
+			return null
 		}
-		const word = document.getText(wordRange);
+		const word = document.getText(wordRange)
 		for (const { completions, debug } of completionGroups.groups) {
 			if (!debug) {
-				continue;
+				continue
 			}
 			for (const { label } of completions) {
 				if (label === word) {
-					const rawPrompt = new vscode.MarkdownString(
-						`<pre>${debug.prompt}</pre>`
-					);
-					rawPrompt.supportHtml = true;
+					const rawPrompt = new vscode.MarkdownString(`<pre>${debug.prompt}</pre>`)
+					rawPrompt.supportHtml = true
 					return new vscode.Hover([
-						"Options:",
-						new vscode.MarkdownString(
-							`\`\`\`\n${JSON.stringify(debug.llmOptions, null, 2)}\n\`\`\``
-						),
-						"Prompt:",
+						'Options:',
+						new vscode.MarkdownString(`\`\`\`\n${JSON.stringify(debug.llmOptions, null, 2)}\n\`\`\``),
+						'Prompt:',
 						rawPrompt,
-					]);
+					])
 				}
 			}
 		}
-		return null;
+		return null
 	}
 }
 
 export interface CompletionGroup {
-	lang: string;
-	completions: (vscode.InlineCompletionItem & Completion)[];
-	debug?: LLMDebugInfo;
+	lang: string
+	completions: (vscode.InlineCompletionItem & Completion)[]
+	debug?: LLMDebugInfo
 }
 
 function headerize(s: string, width: number): string {
-	const prefix = "# ======= ";
-	let buffer = width - s.length - prefix.length - 1;
+	const prefix = '# ======= '
+	let buffer = width - s.length - prefix.length - 1
 	if (buffer < 0) {
-		buffer = 0;
+		buffer = 0
 	}
-	return `${prefix}${s} ${"=".repeat(buffer)}`;
+	return `${prefix}${s} ${'='.repeat(buffer)}`
 }

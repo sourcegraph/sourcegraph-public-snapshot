@@ -1,72 +1,61 @@
-import * as vscode from "vscode";
-import { CompletionsDocumentProvider } from "./docprovider";
-import { History } from "./history";
-import { getReferences } from "./autocomplete/completion-provider";
+import * as vscode from 'vscode'
+import { CompletionsDocumentProvider } from './docprovider'
+import { History } from './history'
+import { getReferences } from './autocomplete/completion-provider'
 import {
 	Completion,
 	CompletionsArgs,
 	LLMDebugInfo,
 	WSCompletionResponse,
 	WSCompletionsRequest,
-} from "@sourcegraph/cody-common";
-import { WSClient } from "./wsclient";
+} from '@sourcegraph/cody-common'
+import { WSClient } from './wsclient'
 
 interface CompletionCallbacks {
-	onCompletions(completions: Completion[], debugInfo?: LLMDebugInfo): void;
-	onMetadata(metadata: any): void;
-	onDone(): void;
-	onError(err: string): void;
+	onCompletions(completions: Completion[], debugInfo?: LLMDebugInfo): void
+	onMetadata(metadata: any): void
+	onDone(): void
+	onError(err: string): void
 }
 
 export class WSCompletionsClient {
 	static async new(addr: string): Promise<WSCompletionsClient> {
-		const wsclient = await WSClient.new<
-			Omit<WSCompletionsRequest, "requestId">,
-			WSCompletionResponse
-		>(addr);
-		return new WSCompletionsClient(wsclient);
+		const wsclient = await WSClient.new<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>(addr)
+		return new WSCompletionsClient(wsclient)
 	}
 
-	private constructor(
-		private wsclient: WSClient<
-			Omit<WSCompletionsRequest, "requestId">,
-			WSCompletionResponse
-		>
-	) {}
+	private constructor(private wsclient: WSClient<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>) {}
 
-	async getCompletions(
-		args: CompletionsArgs,
-		callbacks: CompletionCallbacks
-	): Promise<void> {
+	async getCompletions(args: CompletionsArgs, callbacks: CompletionCallbacks): Promise<void> {
 		await this.wsclient.sendRequest(
 			{
-				kind: "getCompletions",
+				kind: 'getCompletions',
 				args,
 			},
-			(resp) => {
+			resp => {
 				try {
 					switch (resp.kind) {
-						case "completion":
-							callbacks.onCompletions(resp.completions, resp.debugInfo);
-							return false;
-						case "metadata":
-							callbacks.onMetadata(resp.metadata);
-							return false;
-						case "error":
-							callbacks.onError(resp.error);
-							return false;
-						case "done":
-							callbacks.onDone();
-							return true;
+						case 'completion':
+							callbacks.onCompletions(resp.completions, resp.debugInfo)
+							return false
+						case 'metadata':
+							callbacks.onMetadata(resp.metadata)
+							return false
+						case 'error':
+							callbacks.onError(resp.error)
+							return false
+						case 'done':
+							callbacks.onDone()
+							return true
 						default:
-							return false;
+							return false
 					}
 				} catch (error: any) {
-					vscode.window.showErrorMessage(error);
-					return false;
+					vscode.window.showErrorMessage(error)
+					return false
 				}
 			}
-		);
+		)
 	}
 }
 
@@ -75,18 +64,16 @@ async function getCompletionsArgs(
 	document: vscode.TextDocument,
 	position: vscode.Position
 ): Promise<CompletionsArgs> {
-	const prefixRange = new vscode.Range(0, 0, position.line, position.character);
-	const prefix = document.getText(prefixRange);
-	const historyInfo = await history.getInfo();
-	const references = await getReferences(document, position, [
-		new vscode.Location(document.uri, prefixRange),
-	]);
+	const prefixRange = new vscode.Range(0, 0, position.line, position.character)
+	const prefix = document.getText(prefixRange)
+	const historyInfo = await history.getInfo()
+	const references = await getReferences(document, position, [new vscode.Location(document.uri, prefixRange)])
 	return {
 		history: historyInfo,
 		prefix,
 		references,
 		uri: document.uri.toString(),
-	};
+	}
 }
 
 export async function fetchAndShowCompletions(
@@ -94,68 +81,51 @@ export async function fetchAndShowCompletions(
 	documentProvider: CompletionsDocumentProvider,
 	history: History
 ) {
-	const currentEditor = vscode.window.activeTextEditor;
-	if (!currentEditor || currentEditor?.document.uri.scheme === "codegen") {
-		return;
+	const currentEditor = vscode.window.activeTextEditor
+	if (!currentEditor || currentEditor?.document.uri.scheme === 'codegen') {
+		return
 	}
-	const filename = currentEditor.document.fileName;
-	const ext = filename.split(".").pop() || "";
-	const completionsUri = vscode.Uri.parse(`codegen:Completions.md`);
-	documentProvider.clearCompletions(completionsUri);
-	vscode.workspace.openTextDocument(completionsUri).then((doc) => {
+	const filename = currentEditor.document.fileName
+	const ext = filename.split('.').pop() || ''
+	const completionsUri = vscode.Uri.parse(`codegen:Completions.md`)
+	documentProvider.clearCompletions(completionsUri)
+	vscode.workspace.openTextDocument(completionsUri).then(doc => {
 		vscode.window.showTextDocument(doc, {
 			preview: false,
 			viewColumn: 2,
-		});
-	});
+		})
+	})
 
 	try {
-		const currentEditor = vscode.window.activeTextEditor;
+		const currentEditor = vscode.window.activeTextEditor
 		if (!currentEditor) {
-			throw new Error("no current active editor");
+			throw new Error('no current active editor')
 		}
 		await wsclient.getCompletions(
-			await getCompletionsArgs(
-				history,
-				currentEditor.document,
-				currentEditor.selection.active
-			),
+			await getCompletionsArgs(history, currentEditor.document, currentEditor.selection.active),
 			{
-				onCompletions: function (
-					completions: Completion[],
-					debug?: LLMDebugInfo | undefined
-				): void {
-					documentProvider.addCompletions(
-						completionsUri,
-						ext,
-						completions,
-						debug
-					);
+				onCompletions: function (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+					documentProvider.addCompletions(completionsUri, ext, completions, debug)
 				},
 				onMetadata: function (metadata: any): void {
-					console.log(`received metadata ${metadata}`);
+					console.log(`received metadata ${metadata}`)
 				},
 				onDone: function (): void {
-					console.log("received done");
-					documentProvider.setCompletionsDone(completionsUri);
+					console.log('received done')
+					documentProvider.setCompletionsDone(completionsUri)
 				},
 				onError: function (err: string): void {
-					console.error(`received error ${err}`);
+					console.error(`received error ${err}`)
 				},
 			}
-		);
+		)
 	} catch (error: any) {
-		vscode.window.showErrorMessage(error);
+		vscode.window.showErrorMessage(error)
 	}
 }
 
-export class CodyCompletionItemProvider
-	implements vscode.InlineCompletionItemProvider
-{
-	constructor(
-		private wsclient: WSCompletionsClient,
-		private history: History
-	) {}
+export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+	constructor(private wsclient: WSCompletionsClient, private history: History) {}
 
 	async provideInlineCompletionItems(
 		document: vscode.TextDocument,
@@ -164,51 +134,34 @@ export class CodyCompletionItemProvider
 		token: vscode.CancellationToken
 	): Promise<vscode.InlineCompletionItem[]> {
 		// debounce
-		await new Promise((resolve) => setTimeout(resolve, 2000));
+		await new Promise(resolve => setTimeout(resolve, 2000))
 		if (token.isCancellationRequested) {
-			console.log("cancelled");
-			return [];
+			console.log('cancelled')
+			return []
 		}
 
-		return new Promise<vscode.InlineCompletionItem[]>(
-			async (resolve, reject) => {
-				const allCompletions: Completion[] = [];
-				await this.wsclient.getCompletions(
-					await getCompletionsArgs(this.history, document, position),
-					{
-						onCompletions: function (
-							completions: Completion[],
-							debug?: LLMDebugInfo | undefined
-						): void {
-							allCompletions.push(
-								...completions.map((c) => ({
-									// Limit inline completions to one line for now
-									...c,
-									insertText: c.insertText.substring(
-										0,
-										c.insertText.indexOf("\n")
-									),
-								}))
-							);
-						},
-						onMetadata: function (metadata: any): void {
-							console.log(`received metadata ${metadata}`);
-						},
-						onDone: function (): void {
-							resolve(
-								allCompletions.map(
-									(c) => new vscode.InlineCompletionItem(c.insertText)
-								)
-							);
-						},
-						onError: function (err: string): void {
-							reject(
-								`CodyComplemtionItemProvider: error fetching completions: ${err}`
-							);
-						},
-					}
-				);
-			}
-		);
+		return new Promise<vscode.InlineCompletionItem[]>(async (resolve, reject) => {
+			const allCompletions: Completion[] = []
+			await this.wsclient.getCompletions(await getCompletionsArgs(this.history, document, position), {
+				onCompletions: function (completions: Completion[], debug?: LLMDebugInfo | undefined): void {
+					allCompletions.push(
+						...completions.map(c => ({
+							// Limit inline completions to one line for now
+							...c,
+							insertText: c.insertText.substring(0, c.insertText.indexOf('\n')),
+						}))
+					)
+				},
+				onMetadata: function (metadata: any): void {
+					console.log(`received metadata ${metadata}`)
+				},
+				onDone: function (): void {
+					resolve(allCompletions.map(c => new vscode.InlineCompletionItem(c.insertText)))
+				},
+				onError: function (err: string): void {
+					reject(`CodyComplemtionItemProvider: error fetching completions: ${err}`)
+				},
+			})
+		})
 	}
 }

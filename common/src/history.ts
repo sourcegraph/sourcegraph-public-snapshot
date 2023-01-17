@@ -1,18 +1,18 @@
-import * as vscode from "vscode";
-import { DocumentSymbol } from "vscode";
+import * as vscode from 'vscode'
+import { DocumentSymbol } from 'vscode'
 
 export interface InflatedSymbol {
-	symbol: DocumentSymbol;
-	text: string;
+	symbol: DocumentSymbol
+	text: string
 }
 
 export interface InflatedHistoryItem {
-	item: HistoryItem;
-	snippet: string;
-	symbols: InflatedSymbol[];
+	item: HistoryItem
+	snippet: string
+	symbols: InflatedSymbol[]
 }
 
 export interface HistoryItem {
-	uri: vscode.Uri;
-	selection: vscode.Selection;
+	uri: vscode.Uri
+	selection: vscode.Selection
 }

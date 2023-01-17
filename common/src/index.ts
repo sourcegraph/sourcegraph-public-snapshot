@@ -1,27 +1,27 @@
-import { InflatedHistoryItem } from './history';
-export * from './history';
+import { InflatedHistoryItem } from './history'
+export * from './history'
 
 export interface ReferenceInfo {
-	text: string;
-	filename: string;
+	text: string
+	filename: string
 }
 
 export interface LLMDebugInfo {
-	elapsedMillis: number;
-	prompt: string;
-	llmOptions: any;
+	elapsedMillis: number
+	prompt: string
+	llmOptions: any
 }
 
 export interface Message {
-	speaker: "you" | "bot";
-	text: string;
+	speaker: 'you' | 'bot'
+	text: string
 }
 
 export interface CompletionLogProbs {
-    'tokens'?: string[]
-    'tokenLogprobs'?: number[]
-    'topLogprobs'?: object[]
-    'textOffset'?: number[]
+	tokens?: string[]
+	tokenLogprobs?: number[]
+	topLogprobs?: object[]
+	textOffset?: number[]
 }
 
 export interface Completion {
@@ -50,13 +50,13 @@ export interface Completion {
 	finishReason?: string
 }
 export interface CompletionsArgs {
-	uri: string;
-	prefix: string;
-	history: InflatedHistoryItem[];
-	references: ReferenceInfo[];
+	uri: string
+	prefix: string
+	history: InflatedHistoryItem[]
+	references: ReferenceInfo[]
 }
 export interface WSResponse {
-	requestId?: number;
+	requestId?: number
 }
 export interface WSCompletionsRequest {
 	requestId: number
@@ -79,17 +79,21 @@ export interface WSCompletionResponseMetadata extends WSResponse {
 export interface WSCompletionResponseDone extends WSResponse {
 	kind: 'done'
 }
-export type WSCompletionResponse = WSCompletionResponseCompletion | WSCompletionResponseError | WSCompletionResponseMetadata | WSCompletionResponseDone;
+export type WSCompletionResponse =
+	| WSCompletionResponseCompletion
+	| WSCompletionResponseError
+	| WSCompletionResponseMetadata
+	| WSCompletionResponseDone
 
 export interface WSChatMessage {
 	kind: 'request' | 'response:change' | 'response:complete' | 'response:error'
-	requestId: number;
+	requestId: number
 }
 export interface WSChatRequest extends WSChatMessage {
 	kind: 'request'
 	messages: Message[]
 }
-export type WSChatResponse = WSChatResponseChange | WSChatResponseComplete | WSChatResponseError;
+export type WSChatResponse = WSChatResponseChange | WSChatResponseComplete | WSChatResponseError
 export interface WSChatResponseChange extends WSChatMessage {
 	kind: 'response:change'
 	message: string

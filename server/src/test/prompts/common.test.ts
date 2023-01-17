@@ -1,15 +1,15 @@
-import * as assert from 'assert';
-import { enhanceCompletion } from '../../prompts/common';
+import * as assert from 'assert'
+import { enhanceCompletion } from '../../prompts/common'
 
 suite('postprocessing', () => {
 	test('enhanceCompletion2', () => {
 		interface TestCase {
-			prefix: string,
-			completion: string,
-			stopPatterns?: RegExp[],
+			prefix: string
+			completion: string
+			stopPatterns?: RegExp[]
 			expected: {
-				prefixText: string,
-				insertText: string,
+				prefixText: string
+				insertText: string
 			}
 		}
 		const cases: TestCase[] = [

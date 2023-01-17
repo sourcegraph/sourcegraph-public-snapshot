@@ -79,9 +79,11 @@
     "test": "node ./out/test/runTest.js",
     "unittest": "mocha ./out/test/unittest",
     "copy-static": "mkdir -p ./out/static && rsync -r ./src/static/ ./out/static",
-    "watch:copy-static": "nodemon --watch ./src/static/ -e js,css,html -x \"npm run copy-static\""
+    "watch:copy-static": "nodemon --watch ./src/static/ -e js,css,html -x \"npm run copy-static\"",
+    "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write"
   },
   "devDependencies": {
+    "@sourcegraph/prettierrc": "^3.0.3",
     "@types/chai": "^4.3.4",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
@@ -95,6 +97,7 @@
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
     "nodemon": "^2.0.20",
+    "prettier": "^2.8.3",
     "typescript": "^4.8.4"
   },
   "dependencies": {

@@ -1,34 +1,25 @@
-import { InflatedSymbol, LLMDebugInfo, CompletionsArgs, Completion, CompletionLogProbs } from "@sourcegraph/cody-common";
+import { InflatedSymbol, LLMDebugInfo, CompletionsArgs, Completion, CompletionLogProbs } from '@sourcegraph/cody-common'
 
 export interface CompletionsBackend {
-  expectedResponses: number;
-  getCompletions({
-    uri,
-    prefix,
-    history,
-    references,
-  }: CompletionsArgs): Promise<{
-    debug: LLMDebugInfo;
-    completions: string[];
-  }>;
+	expectedResponses: number
+	getCompletions({ uri, prefix, history, references }: CompletionsArgs): Promise<{
+		debug: LLMDebugInfo
+		completions: string[]
+	}>
 }
 
 export function getCondensedText(s: InflatedSymbol): string {
-  const lines = s.text.split("\n");
-  if (lines.length < 10) {
-    return s.text;
-  }
-  return [
-    ...lines.slice(0, 5),
-    "// (omitted code)",
-    ...lines.slice(lines.length - 5, lines.length),
-  ].join("\n");
+	const lines = s.text.split('\n')
+	if (lines.length < 10) {
+		return s.text
+	}
+	return [...lines.slice(0, 5), '// (omitted code)', ...lines.slice(lines.length - 5, lines.length)].join('\n')
 }
 
-export const charsPerTokenOpenAI = 3;
+export const charsPerTokenOpenAI = 3
 
 export function tokenCost(s: string, assumeExtraNewlines?: number): number {
-  return Math.ceil(s.length + (assumeExtraNewlines || 0) / charsPerTokenOpenAI);
+	return Math.ceil(s.length + (assumeExtraNewlines || 0) / charsPerTokenOpenAI)
 }
 
 export function tokenCountToChars(tokenCount: number): number {
@@ -38,14 +29,19 @@ export function tokenCountToChars(tokenCount: number): number {
 const indentWithContentRegex = /^(\s*)[^\s]/
 const maxPrefixLines = 5
 
-export function enhanceCompletion(prefix: string, rawCompletion: string, stopPatterns: RegExp[]): {
+export function enhanceCompletion(
+	prefix: string,
+	rawCompletion: string,
+	stopPatterns: RegExp[]
+): {
 	prefixText: string
 	insertText: string
 } {
 	const completion = dontRamble(rawCompletion, stopPatterns)
 	const completionLines = completion.split('\n')
 	let minCompletionIndent: string | null = null
-	for (const line of completionLines.slice(1)) { // ignore the first line because completion might start mid-line
+	for (const line of completionLines.slice(1)) {
+		// ignore the first line because completion might start mid-line
 		const match = indentWithContentRegex.exec(line)
 		if (!match || match.length !== 2) {
 			continue
@@ -104,10 +100,13 @@ function dontRamble(s: string, stopPatterns: RegExp[]): string {
 	return s.substring(0, completionEndIndex)
 }
 
-export function truncateByProbability(minLogprob: number, logprobs?: CompletionLogProbs): {
-	truncatedInsertText: string,
+export function truncateByProbability(
+	minLogprob: number,
+	logprobs?: CompletionLogProbs
+): {
+	truncatedInsertText: string
 	removed: string
- } {
+} {
 	if (!logprobs) {
 		throw new Error('logprobs undefined')
 	}
@@ -135,7 +134,7 @@ export function truncateByProbability(minLogprob: number, logprobs?: CompletionL
 }
 
 export function getCharCountLimitedPrefixAtLineBreak(prefix: string, charLimit: number): string {
-	const lines = prefix.split("\n")
+	const lines = prefix.split('\n')
 	const chosen: string[] = []
 	let totalBytes = 0
 	for (let i = lines.length - 1; i >= 0; i--) {
@@ -145,7 +144,7 @@ export function getCharCountLimitedPrefixAtLineBreak(prefix: string, charLimit: 
 		}
 
 		chosen.push(lines[i])
-		totalBytes+= lines[i].length + 1
+		totalBytes += lines[i].length + 1
 	}
 	return chosen.reverse().join('\n')
 }
