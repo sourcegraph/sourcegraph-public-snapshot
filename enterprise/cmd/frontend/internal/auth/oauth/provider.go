@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -84,6 +85,8 @@ func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 		return github.GetPublicExternalAccountData(ctx, &account.AccountData)
 	case extsvc.TypeGitLab:
 		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeBitbucketCloud:
+		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
 	}
 
 	// TODO: add bitbucket cloud when the bitbucket oauth provider is merged
