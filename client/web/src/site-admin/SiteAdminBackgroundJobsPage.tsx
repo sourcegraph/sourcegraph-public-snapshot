@@ -317,7 +317,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
                 <Text className="mb-0 ml-4 text-muted">
                     {routine.intervalMs ? (
                         <>
-                            {routine.type !== 'DB_BACKED' ? 'Runs ' : 'Checks queue '}every{' '}
+                            {routine.type === 'DB_BACKED' ? 'Checks queue ' : 'Runs '}every{' '}
                             <strong>{formatDurationLong(routine.intervalMs)}</strong>.{' '}
                         </>
                     ) : null}
