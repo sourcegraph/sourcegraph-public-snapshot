@@ -15,7 +15,7 @@ export interface BatchChangesListIntroProps {
 export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChildren<BatchChangesListIntroProps>> = ({
     isLicensed,
 }) => {
-    if (isLicensed === undefined) {
+    if (isLicensed === undefined || isLicensed === true) {
         return null
     }
 
