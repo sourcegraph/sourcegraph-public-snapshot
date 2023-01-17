@@ -885,7 +885,7 @@ type SeriesPointForExport struct {
 	SeriesLabel      string
 	SeriesQuery      string
 	RecordingTime    time.Time
-	RepoID           *int
+	RepoName         *string
 	Value            int
 	Capture          *string
 }
@@ -920,7 +920,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 			&tmp.SeriesLabel,
 			&tmp.SeriesQuery,
 			&tmp.RecordingTime,
-			&tmp.RepoID,
+			&tmp.RepoName,
 			&tmp.Value,
 			&tmp.Capture,
 		); err != nil {
@@ -943,12 +943,13 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 }
 
 const exportCodeInsightsDataSql = `
-select iv.title, ivs.label, i.query, isrt.recording_time, sp.repo_id, coalesce(sp.value, 0) as value, sp.capture 
+select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture 
 from %s isrt
     join insight_series i on i.id = isrt.insight_series_id
     join insight_view_series ivs ON i.id = ivs.insight_series_id
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
+    join repo_names rn on sp.repo_id = rn.id
 	where ivs.insight_view_id = %s and %s
-    order by iv.title, isrt.recording_time, ivs.label;
+    order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `

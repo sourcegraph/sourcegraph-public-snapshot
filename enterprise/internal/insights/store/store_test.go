@@ -1031,7 +1031,7 @@ INSERT INTO series_points(
 SELECT recording_time,
     'series1',
     11,
-    2,
+    1,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
 	FROM insight_series_recording_times WHERE insight_series_id = 1;
@@ -1049,13 +1049,13 @@ SELECT recording_time,
 			t.Errorf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
 		}
 		for _, sp := range got {
-			repoID := 2
+			repo := "github.com/gorilla/mux-original"
 			var capture *string
 			autogold.Want("insight view title is correct", view.Title).Equal(t, sp.InsightViewTitle)
 			autogold.Want("series query is correct", series.Query).Equal(t, sp.SeriesQuery)
 			autogold.Want("series label is correct", "label").Equal(t, sp.SeriesLabel)
 			autogold.Want("series value is correct", 11).Equal(t, sp.Value)
-			autogold.Want("series repo ID is correct", &repoID).Equal(t, sp.RepoID)
+			autogold.Want("series repo ID is correct", &repo).Equal(t, sp.RepoName)
 			autogold.Want("nil capture", capture).Equal(t, sp.Capture)
 		}
 	})
