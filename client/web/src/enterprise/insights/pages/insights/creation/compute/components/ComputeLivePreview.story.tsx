@@ -82,7 +82,7 @@ export const ComputeLivePreview: Story = () => (
         <div className="m-3 px-4 py-5 bg-white">
             <ComputeLivePreviewComponent
                 disabled={false}
-                repositories="sourcegraph/sourcegraph"
+                repositories={['sourcegraph/sourcegraph']}
                 series={MOCK_SERIES}
                 groupBy={GroupByField.AUTHOR}
             />
