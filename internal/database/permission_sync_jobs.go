@@ -20,6 +20,7 @@ type PermissionSyncJobOpts struct {
 	HighPriority     bool
 	InvalidateCaches bool
 	NextSyncAt       time.Time
+	Reason           string
 }
 
 type PermissionSyncJobStore interface {
@@ -68,6 +69,7 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 		UserID:           int(user),
 		HighPriority:     opts.HighPriority,
 		InvalidateCaches: opts.InvalidateCaches,
+		Reason:           opts.Reason,
 	}
 	if !opts.NextSyncAt.IsZero() {
 		job.ProcessAfter = opts.NextSyncAt
@@ -80,6 +82,7 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api
 		RepositoryID:     int(repo),
 		HighPriority:     opts.HighPriority,
 		InvalidateCaches: opts.InvalidateCaches,
+		Reason:           opts.Reason,
 	}
 	if !opts.NextSyncAt.IsZero() {
 		job.ProcessAfter = opts.NextSyncAt
@@ -89,6 +92,7 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api
 
 const permissionSyncJobCreateQueryFmtstr = `
 INSERT INTO permission_sync_jobs (
+	reason,
 	process_after,
 	repository_id,
 	user_id,
@@ -96,6 +100,7 @@ INSERT INTO permission_sync_jobs (
 	invalidate_caches
 )
 VALUES (
+	%s,
 	%s,
 	%s,
 	%s,
@@ -108,6 +113,7 @@ RETURNING %s
 func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
+		job.Reason,
 		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(job.RepositoryID),
 		dbutil.NewNullInt(job.UserID),
@@ -123,6 +129,7 @@ type ListPermissionSyncJobOpts struct {
 	ID     int
 	UserID int
 	RepoID int
+	Reason string
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
@@ -136,6 +143,9 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	}
 	if opts.RepoID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+	}
+	if opts.Reason != "" {
+		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
 
 	return conds
@@ -186,6 +196,7 @@ type PermissionSyncJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
+	Reason          string
 	QueuedAt        time.Time
 	StartedAt       time.Time
 	FinishedAt      time.Time
@@ -209,6 +220,7 @@ func (j *PermissionSyncJob) RecordID() int { return j.ID }
 var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
 	sqlf.Sprintf("permission_sync_jobs.state"),
+	sqlf.Sprintf("permission_sync_jobs.reason"),
 	sqlf.Sprintf("permission_sync_jobs.failure_message"),
 	sqlf.Sprintf("permission_sync_jobs.queued_at"),
 	sqlf.Sprintf("permission_sync_jobs.started_at"),
@@ -242,6 +254,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	if err := s.Scan(
 		&job.ID,
 		&job.State,
+		&job.Reason,
 		&job.FailureMessage,
 		&job.QueuedAt,
 		&dbutil.NullTime{Time: &job.StartedAt},

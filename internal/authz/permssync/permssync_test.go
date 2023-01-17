@@ -26,10 +26,12 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
-	SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{UserIDs: []int32{1}})
+	SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{UserIDs: []int32{1}, Reason: ReasonManualUserSync})
 	assert.Len(t, permsSyncStore.CreateUserSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateRepoSyncJobFunc.History())
 	assert.Equal(t, int32(1), permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg1)
+	assert.NotNil(t, permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2)
+	assert.Equal(t, ReasonManualUserSync, permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2.Reason)
 }
 
 func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
@@ -47,8 +49,10 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
-	SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}})
+	SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}, Reason: ReasonManualRepoSync})
 	assert.Len(t, permsSyncStore.CreateRepoSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateUserSyncJobFunc.History())
 	assert.Equal(t, api.RepoID(1), permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg1)
+	assert.NotNil(t, permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg1)
+	assert.Equal(t, ReasonManualRepoSync, permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg2.Reason)
 }
