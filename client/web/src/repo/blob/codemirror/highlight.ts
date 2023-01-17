@@ -5,6 +5,7 @@ import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { BlobInfo } from '../Blob'
+import { isInteractiveOccurrence } from './occurrence-utils'
 
 import { positionToOffset } from './utils'
 
@@ -132,6 +133,7 @@ class SyntaxHighlightManager implements PluginValue {
                         this.decorationCache[occurrence.kind] ||
                         (this.decorationCache[occurrence.kind] = Decoration.mark({
                             class: `hl-typed-${SyntaxKind[occurrence.kind]}`,
+                            attributes: occurrenceAttributes(occurrence),
                         }))
                     builder.add(from, to, decoration)
                 }
@@ -141,6 +143,10 @@ class SyntaxHighlightManager implements PluginValue {
         }
         return builder.finish()
     }
+}
+
+function occurrenceAttributes(occurrence: Occurrence): {} {
+    return isInteractiveOccurrence(occurrence) ? { tabindex: 0 } : {}
 }
 
 /**
