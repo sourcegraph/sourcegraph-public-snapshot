@@ -1,4 +1,5 @@
 .root {
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
@@ -12,11 +13,40 @@
         border-color: var(--input-focus-border-color);
         box-shadow: var(--input-focus-box-shadow);
     }
+
+    &:has(:global(.is-valid)) {
+        border-color: var(--success);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-3);
+        }
+    }
+
+    &:has(:global(.is-invalid)) {
+        border-color: var(--danger);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-3);
+        }
+    }
+
+    &:has(:global(.form-control):disabled) {
+        color: var(--text-disabled);
+        background-color: var(--input-disabled-bg);
+    }
 }
 
 .input-container {
     flex-grow: 1;
-    min-width: 10rem;
+    min-width: 10rem !important;
 
     // override standard spinner position in order to fit it
     // in non standard input size
