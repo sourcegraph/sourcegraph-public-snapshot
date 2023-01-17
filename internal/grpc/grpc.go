@@ -32,7 +32,8 @@ func MultiplexHandlers(grpcServer *grpc.Server, httpHandler http.Handler) http.H
 
 func DefaultDialOptions() []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
-	// because the tracer will not be initialized during init time.
+	// because these options depend on some globals (tracer, trace sampling)
+	// that are not initialized during init time.
 	return []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(
 			StreamClientPropagator(policy.ShouldTracePropagator{}),
@@ -47,7 +48,8 @@ func DefaultDialOptions() []grpc.DialOption {
 
 func DefaultServerOptions() []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
-	// because the tracer will not be initialized during init time.
+	// because these options depend on some globals (tracer, trace sampling)
+	// that are not initialized during init time.
 	return []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
 			StreamServerPropagator(policy.ShouldTracePropagator{}),

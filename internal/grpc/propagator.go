@@ -7,11 +7,24 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// Propagator is a type that can extract some information from a context.Context,
+// returning it in the form of metadata.MD and can also inject that same metadata
+// back into a context on the server side of an RPC call.
 type Propagator interface {
+	// ExtractContext extracts the information to be propagated from a context,
+	// converting it to a metadata.MD. This will be called on the client side
+	// of an RPC.
 	ExtractContext(context.Context) metadata.MD
+
+	// InjectContext takes a context and some metadata and creates a new context
+	// with the information from the metadata injected into the context.
+	// This will be called on the server side of an RPC.
 	InjectContext(context.Context, metadata.MD) context.Context
 }
 
+// StreamClientPropagator returns an interceptor that will use the given propagator
+// to forward some information from the context across the RPC call. The server
+// should be configured with an interceptor that uses the same propagator.
 func StreamClientPropagator(prop Propagator) grpc.StreamClientInterceptor {
 	return func(
 		ctx context.Context,
@@ -31,6 +44,9 @@ func StreamClientPropagator(prop Propagator) grpc.StreamClientInterceptor {
 	}
 }
 
+// UnaryClientPropagator returns an interceptor that will use the given propagator
+// to forward some information from the context across the RPC call. The server
+// should be configured with an interceptor that uses the same propagator.
 func UnaryClientPropagator(prop Propagator) grpc.UnaryClientInterceptor {
 	return func(
 		ctx context.Context,
@@ -50,6 +66,9 @@ func UnaryClientPropagator(prop Propagator) grpc.UnaryClientInterceptor {
 	}
 }
 
+// StreamServerPropagator returns an interceptor that will use the given propagator
+// to translate some metadata back into the context for the RPC handler. The client
+// should be configured with an interceptor that uses the same propagator.
 func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
@@ -67,6 +86,9 @@ func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
 	}
 }
 
+// StreamServerPropagator returns an interceptor that will use the given propagator
+// to translate some metadata back into the context for the RPC handler. The client
+// should be configured with an interceptor that uses the same propagator.
 func UnaryServerPropagator(prop Propagator) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,

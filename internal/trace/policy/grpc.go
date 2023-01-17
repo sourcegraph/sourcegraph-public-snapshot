@@ -9,6 +9,8 @@ import (
 
 const traceMetadataKey = "sg-should-trace"
 
+// ShouldTracePropagator implements (internal/grpc).Propagator so that the
+// ShouldTrace key can be propagated across gRPC API calls.
 type ShouldTracePropagator struct{}
 
 func (ShouldTracePropagator) ExtractContext(ctx context.Context) metadata.MD {
