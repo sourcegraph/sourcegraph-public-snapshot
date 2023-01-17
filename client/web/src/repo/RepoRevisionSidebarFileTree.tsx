@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { Alert, ErrorMessage, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
-import { useCallback, useState } from 'react'
+import { Alert, ErrorMessage, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { useCallback, useRef, useState } from 'react'
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
@@ -8,6 +8,7 @@ import TreeView, { INode } from 'react-accessible-treeview'
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 const QUERY = gql`
     query FileTreeEntries(
@@ -64,15 +65,16 @@ export function RepoRevisionSidebarFileTree(props: Props) {
     const [initialFilePath] = useState(
         props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
     )
-
     const [treeData, setTreeData] = useState<TreeData | null>(null)
 
-    const defaultVariables = {
+    const navigate = useNavigate()
+
+    const [defaultVariables] = useState({
         repoName: props.repoName,
         revision: props.revision,
         commitID: props.commitID,
         first: MAX_TREE_ENTRIES,
-    }
+    })
 
     const { error, loading, refetch } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
         variables: {
@@ -83,7 +85,6 @@ export function RepoRevisionSidebarFileTree(props: Props) {
         },
         fetchPolicy: 'cache-and-network',
         onCompleted(data) {
-            console.log('onCompleted', data)
             const tree = data?.repository?.commit?.tree?.entries
             if (!tree) {
                 throw new Error('No tree data')
@@ -100,26 +101,29 @@ export function RepoRevisionSidebarFileTree(props: Props) {
     const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
     const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
     const defaultExpandedIds =
-        treeData && defaultNode
+        treeData && defaultNode && defaultNodeId
             ? [defaultNodeId, ...getAllParentsOfNode(treeData, defaultNode).map(node => node.id)]
             : []
 
-    const onLoadData = useCallback(async ({ element }: { element: INode }) => {
-        console.log('onLoadData', element)
-        const alreadyLoaded = element.children?.length > 0 || treeData?.loadedPaths.has(element.name)
+    const onLoadData = useCallback(
+        async ({ element }: { element: INode }) => {
+            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedPaths.has(element.name)
+            if (alreadyLoaded || !element.isBranch) {
+                return
+            }
 
-        if (alreadyLoaded) {
-            return
-        }
+            await refetch({
+                ...defaultVariables,
+                filePath: element.name,
+                recursiveParents: false,
+            })
 
-        await refetch({
-            ...defaultVariables,
-            filePath: element.name,
-            recursiveParents: false,
-        })
+            setTreeData(treeData => setLoadedPath(treeData!, element.name))
+        },
+        [defaultVariables, refetch, treeData?.loadedPaths]
+    )
 
-        setTreeData(treeData => setLoadedPath(treeData!, element.name))
-    }, [])
+    const defaultSelectFiredRef = useRef<boolean>(false)
 
     if (error) {
         return (
@@ -137,6 +141,20 @@ export function RepoRevisionSidebarFileTree(props: Props) {
             data={treeData.nodes}
             aria-label="file tree"
             defaultSelectedIds={defaultSelectedIds}
+            onSelect={({ element, isSelected }: { element: TreeNode; isSelected: boolean }) => {
+                if (!isSelected) {
+                    return
+                }
+
+                if (defaultSelectFiredRef.current === false && element.id === defaultNodeId) {
+                    defaultSelectFiredRef.current = true
+                    return
+                }
+
+                if (element.entry) {
+                    navigate(element.entry.url)
+                }
+            }}
             defaultExpandedIds={defaultExpandedIds}
             onLoadData={onLoadData}
             className={styles.fileTree}
@@ -149,48 +167,59 @@ export function RepoRevisionSidebarFileTree(props: Props) {
                 level,
                 handleSelect,
                 handleExpand,
-            }) => {
-                const branchNode = (isExpanded: boolean, element: INode) =>
-                    isExpanded && element.children.length === 0 ? (
-                        <LoadingSpinner className="mr-1" />
-                    ) : (
-                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuRight : mdiMenuDown} className="mr-1" />
-                    )
-                return (
-                    <div
-                        {...getNodeProps({ onClick: handleExpand })}
-                        style={{ marginLeft: `${1 * (level - 1)}rem`, background: isSelected ? 'red' : undefined }}
-                        data-tree-node-id={element.id}
+            }: {
+                element: TreeNode
+                isBranch: boolean
+                isExpanded: boolean
+                isSelected: boolean
+                getNodeProps: (any) => {}
+                level: number
+                handleSelect: (event: any) => {}
+                handleExpand: (event: any) => {}
+            }) => (
+                <div
+                    {...getNodeProps({ onClick: handleExpand })}
+                    style={{
+                        marginLeft: `${1 * (level - 1)}rem`,
+                        border: isSelected ? '1px solid red' : undefined,
+                    }}
+                    data-tree-node-id={element.id}
+                >
+                    {isBranch ? (
+                        isExpanded && element.children.length === 0 ? (
+                            <LoadingSpinner className="mr-1" />
+                        ) : (
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isExpanded ? mdiMenuRight : mdiMenuDown}
+                                className="mr-1"
+                            />
+                        )
+                    ) : null}
+                    <Icon
+                        svgPath={isBranch ? mdiFolderOutline : mdiFileDocumentOutline}
+                        className="mr-1"
+                        aria-hidden={true}
+                    />
+                    <Link
+                        to={element.entry?.url ?? '#'}
+                        onClick={event => {
+                            event.preventDefault()
+                            handleSelect(event)
+                        }}
                     >
-                        {isBranch && branchNode(isExpanded, element)}
-                        <Icon
-                            svgPath={isBranch ? mdiFolderOutline : mdiFileDocumentOutline}
-                            className="mr-1"
-                            onClick={e => {
-                                handleSelect(e)
-                                e.stopPropagation()
-                            }}
-                            aria-hidden={true}
-                        />
-                        <span
-                            className="name"
-                            onClick={e => {
-                                handleSelect(e)
-                                e.stopPropagation()
-                            }}
-                        >
-                            {element.name}
-                        </span>
-                    </div>
-                )
-            }}
+                        {element.name}
+                    </Link>
+                </div>
+            )}
         />
     )
 }
 
+type TreeNode = INode & { entry: FileTreeEntry | null }
 interface TreeData {
     // The flat nodes list used by react-accessible-treeview
-    nodes: INode[]
+    nodes: TreeNode[]
 
     // A map to quickly find the number ID for a node by its path
     pathToId: Map<string, number>
@@ -218,22 +247,17 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[]): TreeData {
 
         const id = tree.nodes.length
 
-        if (entry.path === undefined) {
-            debugger
-        }
-
-        const node: INode = {
+        const node: TreeNode = {
             name: entry.path,
             id,
             isBranch: entry.isDirectory,
             parent: 0,
             children: [],
+            entry,
         }
 
         const children = tree.nodes.filter(potentialChild => isAParentOfB(node, potentialChild))
         const parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, node))
-
-        console.log({ node: node.name, children, parent: parent?.name })
 
         // Fix all children references
         node.children = children.map(child => child.id)
@@ -261,6 +285,7 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[]): TreeData {
             isBranch: true,
             parent: null,
             children: [],
+            entry: null,
         })
     }
 
