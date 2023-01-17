@@ -1669,6 +1669,26 @@ type Query {
     ): OutboundRequestConnection!
 
     """
+    Get a list of background jobs that are currently known in the system.
+    """
+    backgroundJobs(
+        """
+        Returns the first n jobs. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        The maximum number of recent runs to return for each routine.
+        """
+        recentRunCount: Int
+    ): BackgroundJobConnection!
+
+    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
@@ -8191,6 +8211,191 @@ type HTTPHeader {
     Can be multiple values
     """
     values: [String!]!
+}
+
+"""
+A list of background jobs that are currently known in the system
+"""
+type BackgroundJobConnection {
+    """
+    A list of outbound requests.
+    """
+    nodes: [BackgroundJob!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single background job.
+"""
+type BackgroundJob implements Node {
+    """
+    The background job ID.
+    """
+    id: ID!
+
+    """
+    The name of the job.
+    """
+    name: String!
+
+    """
+    The routines that run inside this job.
+    """
+    routines: [BackgroundRoutine!]!
+}
+
+"""
+A routine that runs inside a background job.
+"""
+type BackgroundRoutine {
+    """
+    The name of the routine.
+    """
+    name: String!
+
+    """
+    Tells whether this is a periodic goroutine, a DB worker, or something else
+    """
+    type: BackgroundRoutineType!
+
+    """
+    Explains what the routine does.
+    """
+    description: String!
+
+    """
+    The interval at which the routine runs, if it's periodic.
+    """
+    intervalMs: Int
+
+    """
+    The instances of this routine that are running or ran recently. An instance means one routine on one host.
+    """
+    instances: [BackgroundRoutineInstance!]!
+
+    """
+    The recent runs of this routine.
+    """
+    recentRuns: [BackgroundRoutineRecentRun!]!
+
+    """
+    Some stats of the runs of this routine in the past few days.
+    """
+    stats: BackgroundRoutineStats!
+}
+
+"""
+Enum of the possible background routine types
+"""
+enum BackgroundRoutineType {
+    """
+    Periodic routine
+    """
+    PERIODIC
+
+    """
+    Periodic routine with metrics set up
+    """
+    PERIODIC_WITH_METRICS
+
+    """
+    DB-backed worker
+    """
+    DB_BACKED
+
+    """
+    Custom routine
+    """
+    CUSTOM
+}
+
+"""
+One instance of the background routine, running on a host.
+"""
+type BackgroundRoutineInstance {
+    """
+    The ID of the instance.
+    """
+    hostName: String!
+
+    """
+    The time the instance was last started. (If it's unknown, this will be null.)
+    """
+    lastStartedAt: DateTime
+
+    """
+    The time the instance was last stopped. (If it's unknown, this will be null.)
+    """
+    lastStoppedAt: DateTime
+}
+
+"""
+A single run of the routine. A run is not the start/stop event but the actual execution of the routine handler.
+"""
+type BackgroundRoutineRecentRun {
+    """
+    The time the run started.
+    """
+    at: DateTime!
+
+    """
+    The name of the host that ran the routine.
+    """
+    hostName: String!
+
+    """
+    The duration of the run.
+    """
+    durationMs: Int!
+
+    """
+    The error message, if any.
+    """
+    errorMessage: String
+}
+
+"""
+Holds statistics about a background routine.
+"""
+type BackgroundRoutineStats {
+    """
+    The start of the earliest day for which we have any runs registered.
+    """
+    since: DateTime
+
+    """
+    The number of times the routine ran in the period.
+    """
+    runCount: Int!
+
+    """
+    The number of times the routine run ended with an error.
+    """
+    errorCount: Int!
+
+    """
+    The minimum duration of a run, in milliseconds.
+    """
+    minDurationMs: Int!
+
+    """
+    The average duration of a run, in milliseconds.
+    """
+    avgDurationMs: Int!
+
+    """
+    The maximum duration of a run, in milliseconds.
+    """
+    maxDurationMs: Int!
 }
 
 """
