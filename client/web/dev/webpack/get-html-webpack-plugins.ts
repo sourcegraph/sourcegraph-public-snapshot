@@ -25,6 +25,8 @@ export interface WebpackManifest {
     'opentelemetry.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
+    /** The node env value production | development*/
+    environment?: 'development' | 'production'
 }
 
 /**
