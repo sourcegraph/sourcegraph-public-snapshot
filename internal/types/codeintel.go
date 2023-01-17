@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 )
 
 // CodeIntelAggregatedEvent represents the total events and unique users within
@@ -139,8 +141,47 @@ func (r RepoCommitPath) String() string {
 	return fmt.Sprintf("%s %s %s", r.Repo, r.Commit, r.Path)
 }
 
+func (r *RepoCommitPath) ToProto() *proto.LocalCodeIntelRequest {
+	return &proto.LocalCodeIntelRequest{
+		Repo:   r.Repo,
+		Commit: r.Commit,
+		Path:   r.Path,
+	}
+}
+
+func (r *RepoCommitPath) FromProto(p *proto.LocalCodeIntelRequest) {
+	r.Repo = p.Repo
+	r.Commit = p.Commit
+	r.Path = p.Path
+}
+
 type LocalCodeIntelPayload struct {
 	Symbols []Symbol `json:"symbols"`
+}
+
+func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
+	var symbols []*proto.LocalCodeIntelSymbol
+
+	for _, s := range p.Symbols {
+		symbols = append(symbols, s.ToProto())
+	}
+
+	return &proto.LocalCodeIntelResponse{
+		Symbols: symbols,
+	}
+}
+
+func (p *LocalCodeIntelPayload) FromProto(r *proto.LocalCodeIntelResponse) {
+	var symbols []Symbol
+
+	for _, s := range r.Symbols {
+		var symbol Symbol
+		symbol.FromProto(s)
+
+		symbols = append(symbols, symbol)
+	}
+
+	p.Symbols = symbols
 }
 
 type RepoCommitPathRange struct {
@@ -170,6 +211,37 @@ type Symbol struct {
 	Refs  []Range `json:"refs,omitempty"`
 }
 
+func (s *Symbol) ToProto() *proto.LocalCodeIntelSymbol {
+	var refs []*proto.Range
+
+	for _, r := range s.Refs {
+		refs = append(refs, r.ToProto())
+	}
+
+	return &proto.LocalCodeIntelSymbol{
+		Name:  s.Name,
+		Hover: s.Hover,
+		Def:   s.Def.ToProto(),
+		Refs:  refs,
+	}
+}
+
+func (s *Symbol) FromProto(p *proto.LocalCodeIntelSymbol) {
+	s.Name = p.Name
+	s.Hover = p.Hover
+
+	s.Def.FromProto(p.Def)
+
+	var refs []Range
+
+	for _, r := range p.Refs {
+		var ref Range
+		ref.FromProto(r)
+
+		refs = append(refs, ref)
+	}
+}
+
 func (s Symbol) String() string {
 	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", s.Hover, s.Def, s.Refs)
 }
@@ -178,6 +250,20 @@ type Range struct {
 	Row    int `json:"row"`
 	Column int `json:"column"`
 	Length int `json:"length"`
+}
+
+func (r *Range) ToProto() *proto.Range {
+	return &proto.Range{
+		Row:    int32(r.Row),
+		Column: int32(r.Column),
+		Length: int32(r.Length),
+	}
+}
+
+func (r *Range) FromProto(p *proto.Range) {
+	r.Row = int(p.Row)
+	r.Column = int(p.Column)
+	r.Length = int(p.Length)
 }
 
 func (r Range) String() string {

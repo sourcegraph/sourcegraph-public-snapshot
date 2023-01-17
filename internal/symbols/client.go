@@ -181,27 +181,16 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 }
 
 func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	rawURL, err := c.url(args.Repo)
+	conn, err := c.dialGRPC(args.Repo)
 	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "getting symbols service URL")
+		return search.SymbolsResponse{}, errors.Wrap(err, "dialing GRPC service")
 	}
 
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "parsing symbols service URL")
-	}
-
-	conn, err := grpc.Dial(u.Host, grpc.WithInsecure())
-	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "dialing symbols GRPC service")
-	}
 	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsClient(conn)
-	var params search.SymbolsParameters
-	params.ToProto()
 
-	protoResponse, err := grpcClient.Search(ctx, params.ToProto())
+	protoResponse, err := grpcClient.Search(ctx, args.ToProto())
 	if err != nil {
 		return search.SymbolsResponse{}, err
 	}
@@ -253,6 +242,31 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 	span.SetTag("Repo", args.Repo)
 	span.SetTag("CommitID", args.Commit)
 
+	return c.localCodeIntelGRPC(ctx, args) // TODO:@ggilmore - refactor with feature flag
+}
+
+func (c *Client) localCodeIntelGRPC(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
+	conn, err := c.dialGRPC(api.RepoName(args.Repo))
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing GRPC symbols server endpoint")
+	}
+
+	defer conn.Close()
+
+	grpcClient := proto.NewSymbolsClient(conn)
+
+	protoResponse, err := grpcClient.LocalCodeIntel(ctx, args.ToProto())
+	if err != nil {
+		return nil, err
+	}
+
+	var response types.LocalCodeIntelPayload
+	response.FromProto(protoResponse)
+
+	return &response, nil
+}
+
+func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
 	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
 	if err != nil {
 		return nil, err
@@ -386,4 +400,25 @@ func (c *Client) httpPost(
 	defer ht.Finish()
 
 	return c.HTTPClient.Do(req)
+}
+
+// dialGRPC establishes a GRPC connection with the symbols server instance that handles
+// the named repository.
+func (c *Client) dialGRPC(repository api.RepoName) (*grpc.ClientConn, error) {
+	rawURL, err := c.url(repository)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting symbols service URL")
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing symbols service URL")
+	}
+
+	conn, err := grpc.Dial(u.Host, grpc.WithInsecure())
+	if err != nil {
+		return nil, errors.Wrap(err, "dialing symbols GRPC service")
+	}
+
+	return conn, nil
 }

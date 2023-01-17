@@ -47,6 +47,21 @@ func (s *Symbol) FromProto(p *proto.Symbol) {
 	s.FileLimited = p.FileLimited
 }
 
+func (s *Symbol) ToProto() *proto.Symbol {
+	return &proto.Symbol{
+		Name:        s.Name,
+		Path:        s.Path,
+		Line:        int32(s.Line),
+		Character:   int32(s.Character),
+		Kind:        s.Kind,
+		Language:    s.Language,
+		Parent:      s.Parent,
+		ParentKind:  s.ParentKind,
+		Signature:   s.Signature,
+		FileLimited: s.FileLimited,
+	}
+}
+
 // NewSymbolMatch returns a new SymbolMatch. Passing -1 as the character will make NewSymbolMatch infer
 // the column from the line and symbol name.
 func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {

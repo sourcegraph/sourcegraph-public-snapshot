@@ -5,7 +5,8 @@ package symbols.v1;
 option go_package = "github.com/sourcegraph/sourcegraph/cmd/symbols/proto";
 
 service Symbols {
-  rpc Search(SearchRequest) returns (SymbolsResponse) {}
+  rpc Search(SearchRequest) returns (SymbolsResponse) {};
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {};
 }
 
 message SearchRequest {
@@ -64,7 +65,42 @@ message Symbol {
   bool file_limited = 10;
 }
 
+
+// LocalCodeIntelRequest represents symbol information returned from the
+// LocalCodeIntel RPC method.
+message LocalCodeIntelSymbol { // TODO@ggilmore: figure how to deal with two different symbols definitions
+    // name is the name of the symbol
+    string name = 1;
+
+    // hover is the hover text of the symbol
+    string hover = 2;
+
+    // def is the location of the symbol definition
+    Range def = 3;
+
+    // refs is the list of locations of references for the given symbol
+    repeated Range refs = 4;
+}
+
+// Range describes the location and length of text associated with a symbol.
+message Range {
+    int32 row = 1;
+    int32 column = 2;
+    int32 length = 3;
+}
+
 message SymbolsResponse {
   repeated Symbol symbols  = 1;
   optional string error = 2; // TODO@ggilmore: Custom error type?
+}
+
+// LocalCodeIntelRequest is the request to the LocalCodeIntel method.
+message LocalCodeIntelRequest {
+    string repo = 1;
+    string commit = 2;
+    string path = 3;
+}
+
+message LocalCodeIntelResponse {
+    repeated LocalCodeIntelSymbol symbols = 1;
 }

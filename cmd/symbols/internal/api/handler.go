@@ -22,7 +22,8 @@ import (
 )
 
 type grpcServer struct {
-	searchFunc types.SearchFunc
+	searchFunc   types.SearchFunc
+	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	proto.UnimplementedSymbolsServer
 }
 
@@ -51,8 +52,10 @@ func NewHandler(
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
+
 	tempGRPCserver := &grpcServer{
-		searchFunc: searchFunc,
+		searchFunc:   searchFunc,
+		readFileFunc: readFileFunc,
 	}
 
 	// Initialize the gRPC server

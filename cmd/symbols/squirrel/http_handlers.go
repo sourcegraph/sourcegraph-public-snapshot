@@ -41,7 +41,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 		defer squirrel.Close()
 
 		// Compute the local code intel payload.
-		payload, err := squirrel.localCodeIntel(r.Context(), args)
+		payload, err := squirrel.LocalCodeIntel(r.Context(), args)
 		if payload != nil && os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}
 			fmt.Fprintln(debugStringBuilder, "👉 /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
@@ -158,7 +158,7 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 
 	rangeToSymbolIx := map[types.Range]int{}
 	symbolIxToColor := map[int]string{}
-	payload, err := squirrel.localCodeIntel(r.Context(), path)
+	payload, err := squirrel.LocalCodeIntel(r.Context(), path)
 	if err != nil {
 		fmt.Fprintf(w, "failed to generate local code intel payload: %s\n\n", err)
 	} else {
