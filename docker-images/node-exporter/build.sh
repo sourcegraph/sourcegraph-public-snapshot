@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 set -ex
 
 # Retag the upstream node-exporter release
-VERSION="v1.4.0@sha256:4dc469c325388dee18dd0a9e53ea30194abed43abc6330d4ffd6d451727ba3e6"
+VERSION="v1.5.0@sha256:fa8e5700b7762fffe0674e944762f44bb787a7e44d97569fe55348260453bf80"
 
 docker pull prom/node-exporter:$VERSION
 docker tag prom/node-exporter:$VERSION "$IMAGE"

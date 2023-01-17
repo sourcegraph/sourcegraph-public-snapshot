@@ -268,12 +268,22 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 func (s *Server) processEvent(event *Event) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
 	s.store.Add(event)
-	if event.isBuildFinished() {
-		build := s.store.GetByBuildNumber(event.buildNumber())
+	build := s.store.GetByBuildNumber(event.buildNumber())
+	if s.shouldNotify(build, event) {
 		if err := s.notifyIfFailed(build); err != nil {
 			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.buildNumber()), log.Error(err))
 		}
 	}
+}
+
+func (s *Server) shouldNotify(build *Build, event *Event) bool {
+	// If this is a build.finished event = notify!
+	//
+	// OR
+	//
+	// This might not be a build finished event, but it could be a failed job event
+	// for a Build that has failed!
+	return event.isBuildFinished() || (build.hasFailed() && event.isJobFinished())
 }
 
 // Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"

@@ -1605,6 +1605,7 @@ query {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
+		entry := workerutil.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
 				ID:                1,
@@ -1617,7 +1618,7 @@ query {
 				NumResets:         1,
 				NumFailures:       2,
 				LastHeartbeatAt:   mustParseTime("2020-01-05"),
-				ExecutionLogs:     []workerutil.ExecutionLogEntry{{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}},
+				ExecutionLogs:     []types.ExecutionLogEntry{&entry},
 				WorkerHostname:    "worker-hostname",
 				ProjectKey:        "project-key",
 				ExternalServiceID: 1,

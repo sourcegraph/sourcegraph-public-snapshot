@@ -129,14 +129,6 @@
             "pointer": true
           }
         },
-        "enableMergedFileSymbolSidebar": {
-          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeNavigation": {
           "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
           "type": "string",
