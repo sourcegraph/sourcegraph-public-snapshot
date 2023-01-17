@@ -20,7 +20,7 @@ export interface CodeInsightsRouterProps extends TelemetryProps {
 export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
     const { authenticatedUser, isSourcegraphDotCom, telemetryService } = props
 
-    if (isSourcegraphDotCom) {
+    if (isSourcegraphDotCom || window.context.deployType === 'docker-container') {
         return (
             <CodeInsightsDotComGetStartedLazy
                 telemetryService={telemetryService}

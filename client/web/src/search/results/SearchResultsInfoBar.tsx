@@ -98,6 +98,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [globalTypeFilter]
     )
 
+    const isSourcegraphDotComOrLocalInstall =
+        window.context.sourcegraphDotComMode || window.AudioContext.deployType === 'docker-container'
+
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
     const createActions = useMemo(
@@ -117,7 +120,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 getInsightsCreateAction(
                     props.query,
                     props.patternType,
-                    props.authenticatedUser,
+                    isSourcegraphDotComOrLocalInstall,
                     props.enableCodeInsights
                 ),
             ].filter((button): button is CreateAction => button !== null),

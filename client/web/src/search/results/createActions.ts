@@ -43,10 +43,10 @@ export function getSearchContextCreateAction(
 export function getInsightsCreateAction(
     query: string | undefined,
     patternType: SearchPatternType,
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
+    isSourcegraphDotComOrLocalInstall: boolean | undefined,
     enableCodeInsights: boolean | undefined
 ): CreateAction | null {
-    if (!enableCodeInsights || !query || !authenticatedUser) {
+    if (!enableCodeInsights || !query || isSourcegraphDotComOrLocalInstall) {
         return null
     }
 
