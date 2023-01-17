@@ -20,10 +20,14 @@ type Cmd struct {
 // BeforeHook are called before the execution of a command. Returning an error within a before
 // hook prevents subsequent hooks and the command to be executed; all "running" commands such as Start, Run, Wait
 // and others will return that error.
+//
+// The passed context is the one that was used to create the Cmd.
 type BeforeHook func(context.Context, log.Logger, *exec.Cmd) error
 
 // AfterHook are called once the execution of the command is completed, from a Go perspective. It means if
 // a command were to be started with Start but Wait was never called, the after hook would never be called.
+//
+// The passed context is the one that was used to create the Cmd.
 type AfterHook func(context.Context, log.Logger, *exec.Cmd)
 
 // Cmder provides an interface modeled after os/exec.Cmd that enables to operate a level higher and to
