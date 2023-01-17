@@ -45,7 +45,7 @@ export function formatDurationLong(millis: number): string {
     return description || '0 milliseconds'
 }
 
-export function formatDurationStructured(millis: number): StructuredDuration[] {
+function formatDurationStructured(millis: number): StructuredDuration[] {
     const parts: { amount: number; unit: string }[] = []
 
     // Construct a list of parts like `1 day` or `7 hours` in descending
