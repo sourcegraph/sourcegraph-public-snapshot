@@ -55,6 +55,7 @@ func NewDependencyIndexingScheduler(
 
 	return dbworker.NewWorker[shared.DependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
+		Description:       "queues code-intel auto-indexing jobs for dependency packages",
 		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
 		Metrics:           metrics,

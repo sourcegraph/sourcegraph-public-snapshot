@@ -46,6 +46,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore *workerStoreE
 
 	options := workerutil.WorkerOptions{
 		Name:              "insights_query_runner_worker",
+		Description:       "runs code insights queries for daily snapshots and new recordings",
 		NumHandlers:       numHandlers,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
@@ -318,7 +319,7 @@ func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seri
 }
 
 const queryJobsStatusSql = `
-SELECT state, COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
+SELECT state, COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s GROUP BY state
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {

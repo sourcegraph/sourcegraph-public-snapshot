@@ -32,6 +32,7 @@ const (
 func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.TriggerJob] {
 	options := workerutil.WorkerOptions{
 		Name:                 "code_monitors_trigger_jobs_worker",
+		Description:          "runs trigger queries for code monitors",
 		NumHandlers:          4,
 		Interval:             5 * time.Second,
 		HeartbeatInterval:    15 * time.Second,
@@ -84,6 +85,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 func newActionRunner(ctx context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.ActionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
+		Description:       "runs actions for code monitors",
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,

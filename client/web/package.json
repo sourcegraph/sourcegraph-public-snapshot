@@ -15,7 +15,7 @@
     "test:regression:integrations": "pnpm task:mocha ./src/regression/integrations.test.ts",
     "test:regression:onboarding": "pnpm task:mocha ./src/regression/onboarding.test.ts",
     "test:regression:search": "pnpm task:mocha ./src/regression/search.test.ts",
-    "storybook": "STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm workspace @sourcegraph/storybook run start",
+    "storybook": "STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
     "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
@@ -46,6 +46,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
+    "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*"
   }

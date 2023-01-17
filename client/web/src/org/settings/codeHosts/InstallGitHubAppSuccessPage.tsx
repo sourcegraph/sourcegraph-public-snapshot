@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react'
 
 import { mdiPlus, mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router'
 
 import { SourcegraphIcon, Card, CardBody, Link, H2, Text, Icon } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { useQueryStringParameters } from '../../members/utils'
 
 import styles from './InstallGitHubAppSuccessPage.module.scss'
 
@@ -22,7 +22,9 @@ interface GitHubAppInstallation {
 export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()
 
-    const installationID = useQueryStringParameters().get('installation_id')
+    const { search } = useLocation()
+
+    const installationID = React.useMemo(() => new URLSearchParams(search).get('installation_id'), [search])
 
     useEffect(() => {
         if (installationID !== null) {
