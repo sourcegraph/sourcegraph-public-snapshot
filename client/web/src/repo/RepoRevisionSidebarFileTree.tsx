@@ -1,15 +1,18 @@
+import { useCallback, useRef, useState } from 'react'
+
+import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
+import classNames from 'classnames'
+import TreeView, { INode } from 'react-accessible-treeview'
+import { useNavigate } from 'react-router-dom-v5-compat'
+
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Alert, ErrorMessage, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
-import { useCallback, useRef, useState } from 'react'
+
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { MAX_TREE_ENTRIES } from '../tree/constants'
 import { dirname } from '../util/path'
-import TreeView, { INode } from 'react-accessible-treeview'
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
-import { useNavigate } from 'react-router-dom-v5-compat'
-import classNames from 'classnames'
 
 const QUERY = gql`
     query FileTreeEntries(
@@ -42,8 +45,8 @@ const QUERY = gql`
     }
 `
 
-// TODO(philipp-spiess): Figure out why we can't use a real fragment here. The
-// issue is that on `TreeEntry` does not match because the type is either
+// TODO(philipp-spiess): Figure out why we can't use a GraphQL fragment here.
+// The issue is that on `TreeEntry` does not match because the type is either
 // `GitTree` or `GitBlob` and it needs to match?
 interface FileTreeEntry {
     name: string
@@ -61,7 +64,7 @@ interface Props {
     initialFilePath: string
     initialFilePathIsDirectory: boolean
 }
-export function RepoRevisionSidebarFileTree(props: Props): React.ReactNode {
+export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(
         props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
@@ -126,6 +129,25 @@ export function RepoRevisionSidebarFileTree(props: Props): React.ReactNode {
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
+    const onSelect = useCallback(
+        ({ element, isSelected }: { element: TreeNode; isSelected: boolean }) => {
+            if (!isSelected) {
+                return
+            }
+
+            // On the initial rendering, an onSelect event is fired for the
+            // default node. We don't want to navigate to that node though.
+            if (defaultSelectFiredRef.current === false && element.id === defaultNodeId) {
+                defaultSelectFiredRef.current = true
+                return
+            }
+
+            if (element.entry) {
+                navigate(element.entry.url)
+            }
+        },
+        [defaultNodeId, navigate]
+    )
 
     if (error) {
         return (
@@ -143,86 +165,79 @@ export function RepoRevisionSidebarFileTree(props: Props): React.ReactNode {
             data={treeData.nodes}
             aria-label="file tree"
             defaultSelectedIds={defaultSelectedIds}
-            onSelect={({ element, isSelected }: { element: TreeNode; isSelected: boolean }) => {
-                if (!isSelected) {
-                    return
-                }
-
-                if (defaultSelectFiredRef.current === false && element.id === defaultNodeId) {
-                    defaultSelectFiredRef.current = true
-                    return
-                }
-
-                if (element.entry) {
-                    navigate(element.entry.url)
-                }
-            }}
             defaultExpandedIds={defaultExpandedIds}
-            onLoadData={onLoadData}
             className={styles.fileTree}
-            nodeRenderer={({
-                element,
-                isBranch,
-                isExpanded,
-                isSelected,
-                getNodeProps,
-                level,
-                handleSelect,
-                handleExpand,
-            }: {
-                element: TreeNode
-                isBranch: boolean
-                isExpanded: boolean
-                isSelected: boolean
-                getNodeProps: (arg: any) => {}
-                level: number
-                handleSelect: (event: any) => {}
-                handleExpand: (event: any) => {}
-            }) => (
-                <div
-                    {...getNodeProps({ onClick: handleExpand })}
-                    // eslint-disable-next-line react/forbid-dom-props
-                    style={{
-                        marginLeft: getMarginLeft(level),
-                        minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
-                    }}
-                    data-tree-node-id={element.id}
-                    className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
-                >
-                    {isBranch ? (
-                        <div className={classNames('mr-1', styles.icon)}>
-                            {isExpanded && element.children.length === 0 ? (
-                                <LoadingSpinner />
-                            ) : (
-                                <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
-                            )}
-                        </div>
-                    ) : null}
-                    <Icon
-                        svgPath={
-                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
-                        }
-                        className={classNames('mr-1', styles.icon)}
-                        aria-hidden={true}
-                    />
-                    <Link
-                        to={element.entry?.url ?? '#'}
-                        tabIndex={-1}
-                        onClick={event => {
-                            event.preventDefault()
-                            handleSelect(event)
-                        }}
-                    >
-                        {element.entry?.name}
-                    </Link>
-                </div>
-            )}
+            // TreeView expects nodes to be INode but ours are extending this type.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+            onSelect={onSelect as any}
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+            onLoadData={onLoadData as any}
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+            nodeRenderer={renderNode as any}
         />
     )
 }
 
 function getMarginLeft(level: number): string {
     return `${0.75 * (level - 1)}rem`
+}
+
+function renderNode({
+    element,
+    isBranch,
+    isExpanded,
+    isSelected,
+    getNodeProps,
+    level,
+    handleSelect,
+    handleExpand,
+}: {
+    element: TreeNode
+    isBranch: boolean
+    isExpanded: boolean
+    isSelected: boolean
+    getNodeProps: (props: { onClick: (event: Event) => {} }) => {}
+    level: number
+    handleSelect: (event: React.MouseEvent) => {}
+    handleExpand: (event: Event) => {}
+}): React.ReactNode {
+    return (
+        <div
+            {...getNodeProps({ onClick: handleExpand })}
+            // eslint-disable-next-line react/forbid-dom-props
+            style={{
+                marginLeft: getMarginLeft(level),
+                minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
+            }}
+            data-tree-node-id={element.id}
+            className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
+        >
+            {isBranch ? (
+                <div className={classNames('mr-1', styles.icon)}>
+                    {isExpanded && element.children.length === 0 ? (
+                        <LoadingSpinner />
+                    ) : (
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
+                    )}
+                </div>
+            ) : null}
+            <Icon
+                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
+                className={classNames('mr-1', styles.icon)}
+                aria-hidden={true}
+            />
+            <Link
+                to={element.entry?.url ?? '#'}
+                tabIndex={-1}
+                onClick={event => {
+                    event.preventDefault()
+                    handleSelect(event)
+                }}
+            >
+                {element.entry?.name}
+            </Link>
+        </div>
+    )
 }
 
 type TreeNode = INode & { entry: FileTreeEntry | null }

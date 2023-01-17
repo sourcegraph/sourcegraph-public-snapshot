@@ -27,10 +27,10 @@ import { AuthenticatedUser } from '../auth'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
+import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
-import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 
 interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCascadeProps {
     repoID?: Scalars['ID']

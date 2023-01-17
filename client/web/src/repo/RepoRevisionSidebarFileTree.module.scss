@@ -26,13 +26,17 @@
 .node {
     padding: 0 0.25rem;
     margin-right: 0.25rem;
-    margin-top: 1px;
     min-height: 1.75rem;
     border-radius: 0.25rem;
     color: var(--text-muted);
     user-select: none;
     display: flex;
     align-items: center;
+
+    // Hairline margin top to avoid the awkward touching when one node is
+    // focused and the one next to it is hovered
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    margin-top: 1px;
 
     &:hover,  &.selected{
         background-color: var(--color-bg-2);
