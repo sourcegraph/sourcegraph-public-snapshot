@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -141,48 +141,79 @@ func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings
 
 func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
-type MembersConnectionArgs struct {
-	First *int32
-	After *string
+func (o *OrgResolver) Members(ctx context.Context, args struct {
+	graphqlutil.ConnectionResolverArgs
 	Query *string
-}
-
-func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) (*userConnectionResolver, error) {
+}) (*graphqlutil.ConnectionResolver[UserResolver], error) {
 	// 🚨 SECURITY: Only org members can list other org members.
 	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
-	// For backward compatibility, the query needs to work with no pagination
-	limitOffset := &database.LimitOffset{
-		Limit: 1000,
+	connectionStore := &membersConnectionStore{
+		db:    o.db,
+		orgID: o.org.ID,
+		query: args.Query,
 	}
 
-	if args.First != nil {
-		limitOffset.Limit = int(*args.First)
-	}
+	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+}
 
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
-		if err != nil {
-			return nil, err
-		}
-		limitOffset.Offset = int(cursor)
-	}
+type membersConnectionStore struct {
+	db    database.DB
+	orgID int32
+	query *string
+}
 
+func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
 	query := ""
-	if args.Query != nil {
-		query = *args.Query
+	if s.query != nil {
+		query = *s.query
 	}
 
-	return &userConnectionResolver{
-		db: o.db,
-		opt: database.UsersListOptions{
-			Query:       query,
-			OrgID:       o.org.ID,
-			LimitOffset: limitOffset,
-		},
-	}, nil
+	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := int32(result)
+
+	return &totalCount, nil
+}
+
+func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
+	users, err := s.db.Users().ListByOrg(ctx, s.orgID, args, s.query)
+	if err != nil {
+		return nil, err
+	}
+
+	var userResolvers []*UserResolver
+	for _, user := range users {
+		userResolvers = append(userResolvers, NewUserResolver(s.db, user))
+	}
+
+	return userResolvers, nil
+}
+
+func (s *membersConnectionStore) MarshalCursor(node *UserResolver) (*string, error) {
+	if node == nil {
+		return nil, errors.New(`node is nil`)
+	}
+
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *membersConnectionStore) UnmarshalCursor(cusror string) (*int, error) {
+	nodeID, err := UnmarshalUserID(graphql.ID(cusror))
+	if err != nil {
+		return nil, err
+	}
+
+	id := int(nodeID)
+
+	return &id, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
