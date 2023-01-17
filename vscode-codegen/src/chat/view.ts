@@ -10,7 +10,7 @@ import { WSChatClient } from "./ws";
 import { Prompt } from "./prompt";
 import { renderMarkdown } from "./markdown";
 
-interface ChatMessage extends Omit<Message, "text"> {
+export interface ChatMessage extends Omit<Message, "text"> {
 	displayText: string;
 	timestamp: string;
 }
@@ -66,39 +66,81 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 				this.sendTranscriptToWebView(webview);
 				break;
 			case "reset":
-				this.onResetChat(webview);
+				this.onResetChat(webview, []);
 				break;
 			case "submit":
-				if (this.messageInProgress) {
-					return;
-				}
-
-				const promptMessages = await this.onHumanMessageSubmitted(
-					message.text,
-					webview
-				);
-
-				this.closeConnectionInProgress = this.wsclient.chat(promptMessages, {
-					onChange: (text) =>
-						this.onBotMessageChange(this.reformatBotMessage(text), webview),
-					onComplete: (text) =>
-						this.onBotMessageComplete(this.reformatBotMessage(text), webview),
-					onError: (err) => {
-						vscode.window.showErrorMessage(err);
-					},
-				});
+				this.submit(webview, message.text);
+				break;
+			case "executeRecipe":
+				this.executeRecipe(webview, message.recipe);
 				break;
 		}
 	}
 
-	private async onResetChat(webview: vscode.Webview): Promise<void> {
+	private async executeRecipe(webview: vscode.Webview, recipe: string): Promise<void> {
+		switch (recipe) {
+			case 'generateTest':
+				await vscode.commands.executeCommand('codebot.generate-test', async (userMessage: string) => {
+					await this.onResetChat(webview, []);
+					await this.submit(webview, userMessage);
+					await webview.postMessage({
+						type: 'showTab',
+						tab: 'chat',
+					});
+				});
+				break;
+			case 'explainCode':
+				await vscode.commands.executeCommand('codebot.explain-code', async (userMessage: string) => {
+					await this.onResetChat(webview, []);
+					await this.submit(webview, userMessage);
+					await webview.postMessage({
+						type: 'showTab',
+						tab: 'chat',
+					});
+				});
+				break;
+			case 'explainCodeHighLevel':
+				await vscode.commands.executeCommand('codebot.explain-code-high-level', async (userMessage: string) => {
+					await this.onResetChat(webview, []);
+					await this.submit(webview, userMessage);
+					await webview.postMessage({
+						type: 'showTab',
+						tab: 'chat',
+					});
+				});
+				break;
+			}
+	}
+
+	private async submit(webview: vscode.Webview, newHumanMessage: string): Promise<void> {
+		if (this.messageInProgress) {
+			return;
+		}
+
+		const promptMessages = await this.onHumanMessageSubmitted(
+			newHumanMessage,
+			webview
+		);
+
+		this.closeConnectionInProgress = this.wsclient.chat(promptMessages, {
+			onChange: (text) =>
+				this.onBotMessageChange(this.reformatBotMessage(text), webview),
+			onComplete: (text) =>
+				this.onBotMessageComplete(this.reformatBotMessage(text), webview),
+			onError: (err) => {
+				vscode.window.showErrorMessage(err);
+			},
+		});
+	}
+
+	private async onResetChat(webview: vscode.Webview, transcript: ChatMessage[]): Promise<void> {
 		if (this.closeConnectionInProgress) {
 			const closeConnection = await this.closeConnectionInProgress;
 			closeConnection();
 			this.closeConnectionInProgress = null;
 		}
 		this.messageInProgress = null;
-		this.transcript = [];
+		this.transcript = transcript;
 		this.prompt.reset();
 		this.sendTranscriptToWebView(webview);
 	}

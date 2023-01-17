@@ -3,6 +3,7 @@ import { CompletionsDocumentProvider } from "./docprovider";
 import { History } from "./history";
 import { getReferences } from "./autocomplete/completion-provider";
 import {
+	Completion,
 	CompletionsArgs,
 	LLMDebugInfo,
 	WSCompletionResponse,
@@ -11,7 +12,7 @@ import {
 import { WSClient } from "./wsclient";
 
 interface CompletionCallbacks {
-	onCompletions(completions: string[], debugInfo?: LLMDebugInfo): void;
+	onCompletions(completions: Completion[], debugInfo?: LLMDebugInfo): void;
 	onMetadata(metadata: any): void;
 	onDone(): void;
 	onError(err: string): void;
@@ -69,23 +70,17 @@ export class WSCompletionsClient {
 	}
 }
 
-async function getCompletionsArgs(history: History): Promise<CompletionsArgs> {
-	const currentEditor = vscode.window.activeTextEditor;
-	if (!currentEditor) {
-		throw new Error("no current active editor");
-	}
-
-	const document = currentEditor.document;
-
-	const position = currentEditor.selection.active;
+async function getCompletionsArgs(
+	history: History,
+	document: vscode.TextDocument,
+	position: vscode.Position
+): Promise<CompletionsArgs> {
 	const prefixRange = new vscode.Range(0, 0, position.line, position.character);
-
 	const prefix = document.getText(prefixRange);
 	const historyInfo = await history.getInfo();
 	const references = await getReferences(document, position, [
 		new vscode.Location(document.uri, prefixRange),
 	]);
-
 	return {
 		history: historyInfo,
 		prefix,
@@ -104,8 +99,8 @@ export async function fetchAndShowCompletions(
 		return;
 	}
 	const filename = currentEditor.document.fileName;
-	const ext = filename.split(".").pop();
-	const completionsUri = vscode.Uri.parse(`codegen:completions.${ext}`);
+	const ext = filename.split(".").pop() || "";
+	const completionsUri = vscode.Uri.parse(`codegen:Completions.md`);
 	documentProvider.clearCompletions(completionsUri);
 	vscode.workspace.openTextDocument(completionsUri).then((doc) => {
 		vscode.window.showTextDocument(doc, {
@@ -115,30 +110,105 @@ export async function fetchAndShowCompletions(
 	});
 
 	try {
-		await wsclient.getCompletions(await getCompletionsArgs(history), {
-			onCompletions: function (
-				completions: string[],
-				debug?: LLMDebugInfo | undefined
-			): void {
-				const name = "openai-completions";
-				documentProvider.addCompletions(
-					completionsUri,
-					name,
-					completions,
-					debug
-				);
-			},
-			onMetadata: function (metadata: any): void {
-				console.log(`received metadata ${metadata}`);
-			},
-			onDone: function (): void {
-				console.log("received done");
-			},
-			onError: function (err: string): void {
-				console.error(`received error ${err}`);
-			},
-		});
+		const currentEditor = vscode.window.activeTextEditor;
+		if (!currentEditor) {
+			throw new Error("no current active editor");
+		}
+		await wsclient.getCompletions(
+			await getCompletionsArgs(
+				history,
+				currentEditor.document,
+				currentEditor.selection.active
+			),
+			{
+				onCompletions: function (
+					completions: Completion[],
+					debug?: LLMDebugInfo | undefined
+				): void {
+					documentProvider.addCompletions(
+						completionsUri,
+						ext,
+						completions,
+						debug
+					);
+				},
+				onMetadata: function (metadata: any): void {
+					console.log(`received metadata ${metadata}`);
+				},
+				onDone: function (): void {
+					console.log("received done");
+					documentProvider.setCompletionsDone(completionsUri);
+				},
+				onError: function (err: string): void {
+					console.error(`received error ${err}`);
+				},
+			}
+		);
 	} catch (error: any) {
 		vscode.window.showErrorMessage(error);
+	}
+}
+
+export class CodyCompletionItemProvider
+	implements vscode.InlineCompletionItemProvider
+{
+	constructor(
+		private wsclient: WSCompletionsClient,
+		private history: History
+	) {}
+
+	async provideInlineCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		token: vscode.CancellationToken
+	): Promise<vscode.InlineCompletionItem[]> {
+		// debounce
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		if (token.isCancellationRequested) {
+			console.log("cancelled");
+			return [];
+		}
+
+		return new Promise<vscode.InlineCompletionItem[]>(
+			async (resolve, reject) => {
+				const allCompletions: Completion[] = [];
+				await this.wsclient.getCompletions(
+					await getCompletionsArgs(this.history, document, position),
+					{
+						onCompletions: function (
+							completions: Completion[],
+							debug?: LLMDebugInfo | undefined
+						): void {
+							allCompletions.push(
+								...completions.map((c) => ({
+									// Limit inline completions to one line for now
+									...c,
+									insertText: c.insertText.substring(
+										0,
+										c.insertText.indexOf("\n")
+									),
+								}))
+							);
+						},
+						onMetadata: function (metadata: any): void {
+							console.log(`received metadata ${metadata}`);
+						},
+						onDone: function (): void {
+							resolve(
+								allCompletions.map(
+									(c) => new vscode.InlineCompletionItem(c.insertText)
+								)
+							);
+						},
+						onError: function (err: string): void {
+							reject(
+								`CodyComplemtionItemProvider: error fetching completions: ${err}`
+							);
+						},
+					}
+				);
+			}
+		);
 	}
 }

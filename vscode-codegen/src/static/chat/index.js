@@ -1,5 +1,61 @@
 const MAX_HEIGHT = 192;
 
+class Controller {
+	constructor(vscode, model) {
+		this.vscode = vscode;
+		this.model = model;
+		this.chatContainer = document.querySelector(".chat-container");
+		this.recipesContainer = document.querySelector(".recipes-container");
+		this.chatMenuItem = document.querySelector("#tab-menu-item-chat");
+		this.recipesMenuItem = document.querySelector("#tab-menu-item-recipes");
+		this.recipeButtons = [...document.querySelectorAll('.btn-recipe')];
+
+		this.init();
+	}
+
+	init() {
+		this.chatMenuItem.addEventListener('click', () => {
+			this.setSelectedTab('chat');
+		});
+		this.recipesMenuItem.addEventListener('click', () => {
+			this.setSelectedTab('recipes');
+		});
+		for (const recipeButton of this.recipeButtons) {
+			recipeButton.addEventListener('click', (event) => {
+				this.vscode.postMessage({ command: "executeRecipe", recipe: event.target.dataset.recipe });
+			});
+		}
+		this.renderTab();
+	}
+
+	setSelectedTab(newSelectedTab) {
+		const changed = this.model.selectedTab !== newSelectedTab;
+		if (changed) {
+			this.model.selectedTab = newSelectedTab;
+			this.renderTab();
+		}
+	}
+
+	renderTab() {
+		switch (this.model.selectedTab) {
+			case 'chat':
+				this.chatContainer.style.display = 'flex';
+				this.recipesContainer.style.display = 'none';
+				this.chatMenuItem.classList.add('tab-menu-item-selected');
+				this.recipesMenuItem.classList.remove('tab-menu-item-selected');
+				break;
+			case 'recipes':
+				this.chatContainer.style.display = 'none';
+				this.recipesContainer.style.display = 'flex';
+				this.recipesMenuItem.classList.add('tab-menu-item-selected');
+				this.chatMenuItem.classList.remove('tab-menu-item-selected');
+				break;
+		}
+	}
+}
+
+let controller = null;
+
 // TODO: We need a design for the chat empty state.
 function onInitialize() {
 	const vscode = acquireVsCodeApi();
@@ -13,6 +69,10 @@ function onInitialize() {
 		inputElement.style.height = `${height}px`;
 		inputElement.style.overflowY = height >= MAX_HEIGHT ? "auto" : "hidden";
 	};
+
+	controller = new Controller(vscode, {
+		selectedTab: 'chat',
+	});
 
 	inputElement.addEventListener("keydown", (e) => {
 		if (e.key === "Enter" && !e.shiftKey) {
@@ -48,6 +108,11 @@ function onMessage(event) {
 	switch (event.data.type) {
 		case "transcript":
 			renderMessages(event.data.messages, event.data.messageInProgress);
+			break;
+		case "showTab":
+			if (controller) {
+				controller.setSelectedTab(event.data.tab);
+			}
 			break;
 	}
 }

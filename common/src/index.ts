@@ -17,6 +17,38 @@ export interface Message {
 	text: string;
 }
 
+export interface CompletionLogProbs {
+    'tokens'?: string[]
+    'tokenLogprobs'?: number[]
+    'topLogprobs'?: object[]
+    'textOffset'?: number[]
+}
+
+export interface Completion {
+	/**
+	 * The label to display for this completion.
+	 */
+	label: string
+	/**
+	 * The text that should be prepended to the insertText to arrive at a "well-formed" (e.g., mostly balanced) completion.
+	 */
+	prefixText: string
+
+	/**
+	 * The text to insert at the point of completion.
+	 */
+	insertText: string
+
+	/**
+	 * Log probabilities of the completion tokens
+	 */
+	logprobs?: CompletionLogProbs
+
+	/**
+	 * The reason the completion terminated
+	 */
+	finishReason?: string
+}
 export interface CompletionsArgs {
 	uri: string;
 	prefix: string;
@@ -33,7 +65,7 @@ export interface WSCompletionsRequest {
 }
 export interface WSCompletionResponseCompletion extends WSResponse {
 	kind: 'completion'
-	completions: string[]
+	completions: Completion[]
 	debugInfo?: LLMDebugInfo
 }
 export interface WSCompletionResponseError extends WSResponse {

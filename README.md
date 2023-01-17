@@ -23,13 +23,16 @@ Coming soon:
 
 ## Dev
 
-There are three separate components within one node workspace:
+There are four separate components:
 - `vscode-codegen`: the VS Code extension
-- `server`: the server that speaks to the VS Code extension and in turn speaks to the LLM API
+- `server`: the server that serves the completion and chat endpoints
+- `embeddings`: generates the embeddings and serves the embeddings endpoint
 - `common`: a library shared by the extension and server with common types
 
 To run in development,
 - `cd server && CLAUDE_KEY=<claude api key> OPENAI_KEY=<openai api key> npm run dev`
+- `cd server && npm run watch:copy-static`
+- `cd embeddings && export OPENAI_API_KEY=<open api key> export EMBEDDINGS_DIR=<path to embeddings dir>; export CODEBASE_IDS=<comma delimited codebase ids>; uvicorn api:app --reload`
 - `cd vscode-codegen && npm run watch`
 - `cd common && npm run dev`
 - Launch the extension by opening VS Code to the `vscode-codegen`
