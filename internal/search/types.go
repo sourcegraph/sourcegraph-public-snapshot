@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
@@ -110,9 +111,43 @@ type SymbolsParameters struct {
 	Timeout int
 }
 
+func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
+	return &proto.SearchRequest{
+		Repo:     string(s.Repo),
+		CommitId: string(s.CommitID),
+
+		Query:           s.Query,
+		IsRegExp:        s.IsRegExp,
+		IsCaseSensitive: s.IsCaseSensitive,
+		IncludePatterns: s.IncludePatterns,
+		ExcludePattern:  s.ExcludePattern,
+
+		First:   int32(s.First),
+		Timeout: int32(s.Timeout),
+	}
+}
+
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
+}
+
+func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
+	var symbols []result.Symbol
+
+	for _, s := range p.Symbols {
+		var symbol result.Symbol
+		symbol.FromProto(s)
+		symbols = append(symbols, symbol)
+	}
+
+	var err string
+	if p.Error != nil {
+		err = *p.Error
+	}
+
+	r.Symbols = symbols
+	r.Err = err
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global

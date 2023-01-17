@@ -55,10 +55,12 @@ func NewHandler(
 		searchFunc: searchFunc,
 	}
 
+	// Initialize the gRPC server
 	s := grpc.NewServer()
 	s.RegisterService(&proto.Symbols_ServiceDesc, tempGRPCserver)
 	reflection.Register(s)
 
+	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
@@ -69,11 +71,13 @@ func NewHandler(
 	}
 
 	handler := h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If the request is for the gRPC server, serve it.
 		if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
 			s.ServeHTTP(w, r)
 			return
 		}
 
+		// Otherwise, serve the JSON API server.
 		mux.ServeHTTP(w, r)
 	}), &http2.Server{})
 
@@ -153,7 +157,7 @@ func symbolsResponseToProto(r *search.SymbolsResponse) *proto.SymbolsResponse {
 	}
 
 	return &proto.SymbolsResponse{
-		Symbols: &proto.SymbolsList{Symbols: symbolsList},
+		Symbols: symbolsList,
 	}
 }
 

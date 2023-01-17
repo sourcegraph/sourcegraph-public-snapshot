@@ -64,12 +64,7 @@ message Symbol {
   bool file_limited = 10;
 }
 
-// Symbol is the result of a search on the symbols service.
-message SymbolsList {
-  repeated Symbol symbols = 1;
-}
-
 message SymbolsResponse {
-  SymbolsList symbols = 1;
+  repeated Symbol symbols  = 1;
   optional string error = 2; // TODO@ggilmore: Custom error type?
 }

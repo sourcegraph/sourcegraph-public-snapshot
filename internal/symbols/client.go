@@ -198,63 +198,18 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 	defer conn.Close()
 
 	grpcClient := proto.NewSymbolsClient(conn)
-	params := paramsToProto(args)
+	var params search.SymbolsParameters
+	params.ToProto()
 
-	response, err := grpcClient.Search(ctx, &params)
+	protoResponse, err := grpcClient.Search(ctx, params.ToProto())
 	if err != nil {
 		return search.SymbolsResponse{}, err
 	}
 
-	return protoToResponse(response), nil
-}
+	var response search.SymbolsResponse
+	response.FromProto(protoResponse)
 
-func paramsToProto(p search.SymbolsParameters) proto.SearchRequest {
-	return proto.SearchRequest{
-		Repo:     string(p.Repo),
-		CommitId: string(p.CommitID),
-
-		Query:           p.Query,
-		IsRegExp:        p.IsRegExp,
-		IsCaseSensitive: p.IsCaseSensitive,
-		IncludePatterns: p.IncludePatterns,
-		ExcludePattern:  p.ExcludePattern,
-
-		First:   int32(p.First),
-		Timeout: int32(p.Timeout),
-	}
-}
-
-func protoToResponse(p *proto.SymbolsResponse) search.SymbolsResponse {
-	var symbols []result.Symbol
-	for _, s := range p.Symbols.Symbols {
-
-		symbols = append(symbols, result.Symbol{
-			Name: s.Name,
-			Path: s.Path,
-
-			Line:      int(s.Line),
-			Character: int(s.Character),
-
-			Kind:     s.Kind,
-			Language: s.Language,
-
-			Parent:     s.Parent,
-			ParentKind: s.ParentKind,
-
-			Signature:   s.Signature,
-			FileLimited: s.FileLimited,
-		})
-	}
-
-	var err string
-	if p.Error != nil {
-		err = *p.Error
-	}
-
-	return search.SymbolsResponse{
-		Symbols: symbols,
-		Err:     err,
-	}
+	return response, nil
 }
 
 func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
