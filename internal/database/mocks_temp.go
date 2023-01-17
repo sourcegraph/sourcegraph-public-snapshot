@@ -47691,6 +47691,9 @@ type MockUserStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *UserStoreListFunc
+	// ListByOrgFunc is an instance of a mock function object controlling
+	// the behavior of the method ListByOrg.
+	ListByOrgFunc *UserStoreListByOrgFunc
 	// ListDatesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListDates.
 	ListDatesFunc *UserStoreListDatesFunc
@@ -47848,6 +47851,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		ListFunc: &UserStoreListFunc{
 			defaultHook: func(context.Context, *UsersListOptions) (r0 []*types.User, r1 error) {
+				return
+			},
+		},
+		ListByOrgFunc: &UserStoreListByOrgFunc{
+			defaultHook: func(context.Context, int32, *PaginationArgs, *string) (r0 []*types.User, r1 error) {
 				return
 			},
 		},
@@ -48033,6 +48041,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.List")
 			},
 		},
+		ListByOrgFunc: &UserStoreListByOrgFunc{
+			defaultHook: func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error) {
+				panic("unexpected invocation of MockUserStore.ListByOrg")
+			},
+		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: func(context.Context) ([]types.UserDates, error) {
 				panic("unexpected invocation of MockUserStore.ListDates")
@@ -48166,6 +48179,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		ListFunc: &UserStoreListFunc{
 			defaultHook: i.List,
+		},
+		ListByOrgFunc: &UserStoreListByOrgFunc{
+			defaultHook: i.ListByOrg,
 		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: i.ListDates,
@@ -50770,6 +50786,119 @@ func (c UserStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreListByOrgFunc describes the behavior when the ListByOrg method
+// of the parent MockUserStore instance is invoked.
+type UserStoreListByOrgFunc struct {
+	defaultHook func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error)
+	hooks       []func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error)
+	history     []UserStoreListByOrgFuncCall
+	mutex       sync.Mutex
+}
+
+// ListByOrg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserStore) ListByOrg(v0 context.Context, v1 int32, v2 *PaginationArgs, v3 *string) ([]*types.User, error) {
+	r0, r1 := m.ListByOrgFunc.nextHook()(v0, v1, v2, v3)
+	m.ListByOrgFunc.appendCall(UserStoreListByOrgFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListByOrg method of
+// the parent MockUserStore instance is invoked and the hook queue is empty.
+func (f *UserStoreListByOrgFunc) SetDefaultHook(hook func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListByOrg method of the parent MockUserStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreListByOrgFunc) PushHook(hook func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreListByOrgFunc) SetDefaultReturn(r0 []*types.User, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreListByOrgFunc) PushReturn(r0 []*types.User, r1 error) {
+	f.PushHook(func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreListByOrgFunc) nextHook() func(context.Context, int32, *PaginationArgs, *string) ([]*types.User, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreListByOrgFunc) appendCall(r0 UserStoreListByOrgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreListByOrgFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreListByOrgFunc) History() []UserStoreListByOrgFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreListByOrgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreListByOrgFuncCall is an object that describes an invocation of
+// method ListByOrg on an instance of MockUserStore.
+type UserStoreListByOrgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *PaginationArgs
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.User
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreListByOrgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreListByOrgFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

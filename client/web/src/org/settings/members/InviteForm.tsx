@@ -126,7 +126,6 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                         spellCheck={false}
                         size={30}
                         className="mb-0 w-auto flex-column align-items-start"
-                        label={viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
                     />
                     <div className="d-block d-md-inline mb-sm-2">
                         {viewerCanAddUserToOrganization && (

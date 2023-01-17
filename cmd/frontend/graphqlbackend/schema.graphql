@@ -5555,6 +5555,26 @@ type UserConnection {
 }
 
 """
+A paginated connection for users.
+"""
+type NewUsersConnection implements Connection {
+    """
+    A list of users.
+    """
+    nodes: [User!]!
+
+    """
+    The total number of users in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
 A user.
 """
 type User implements Node & SettingsSubject & Namespace {
@@ -6015,18 +6035,26 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     members(
         """
-        Number of users to return after the given cursor.
+        The limit argument for forward pagination.
         """
         first: Int
         """
-        Opaque pagination cursor.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
         """
         Return users whose usernames or display names match the query.
         """
         query: String
-    ): UserConnection!
+    ): NewUsersConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.
@@ -8396,6 +8424,7 @@ type SlowRequest {
     """
     filepath: String
 }
+
 """
 An object with totalCount and PageInfo.
 """

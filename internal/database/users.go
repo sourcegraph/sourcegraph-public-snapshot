@@ -78,6 +78,7 @@ type UserStore interface {
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
+	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
@@ -868,6 +869,32 @@ func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ e
 	return dates, nil
 }
 
+func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error) {
+	where := []*sqlf.Query{
+		sqlf.Sprintf(orgMembershipCond, orgID),
+		sqlf.Sprintf("u.deleted_at IS NULL"),
+	}
+
+	if cond := newQueryCond(query); cond != nil {
+		where = append(where, cond)
+	}
+
+	p, err := paginationArgs.SQL()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+
+	q := sqlf.Sprintf("WHERE %s", sqlf.Join(where, "AND"))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
+
+	return u.getBySQL(ctx, q)
+}
+
 const listDatesQuery = `
 SELECT id, created_at, deleted_at
 FROM users
@@ -893,21 +920,33 @@ EXISTS (
 		AND org_members.org_id = %d)
 `
 
-func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-	if opt.Query != "" {
-		query := "%" + opt.Query + "%"
+func newQueryCond(query *string) *sqlf.Query {
+	if query != nil && *query != "" {
+		q := "%" + *query + "%"
+
 		items := []*sqlf.Query{
-			sqlf.Sprintf("username ILIKE %s", query),
-			sqlf.Sprintf("display_name ILIKE %s", query),
+			sqlf.Sprintf("username ILIKE %s", q),
+			sqlf.Sprintf("display_name ILIKE %s", q),
 		}
+
 		// Query looks like an ID
-		if id, ok := maybeQueryIsID(opt.Query); ok {
+		if id, ok := maybeQueryIsID(*query); ok {
 			items = append(items, sqlf.Sprintf("id = %d", id))
 		}
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
+
+		return sqlf.Sprintf("(%s)", sqlf.Join(items, " OR "))
 	}
+
+	return nil
+}
+
+func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
+	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+
+	if cond := newQueryCond(&opt.Query); cond != nil {
+		conds = append(conds, cond)
+	}
+
 	if opt.UserIDs != nil {
 		if len(opt.UserIDs) == 0 {
 			// Must return empty result set.
