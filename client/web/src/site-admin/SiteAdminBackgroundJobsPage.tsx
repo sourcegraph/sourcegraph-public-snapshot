@@ -394,6 +394,7 @@ const RoutineItemIcon: React.FunctionComponent<{ type: BackgroundRoutineType }> 
 }
 
 const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
+    // The last time this job was started
     const latestStartDateString = routine.instances.reduce(
         (mostRecent, instance) =>
             instance.lastStartedAt && (!mostRecent || instance.lastStartedAt > mostRecent)
@@ -401,6 +402,8 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
                 : mostRecent,
         ''
     )
+
+    // The earliest time this job was stopped
     const earliestStopDateString = routine.instances.reduce(
         (earliest, instance) =>
             instance.lastStoppedAt && (!earliest || instance.lastStoppedAt < earliest)
@@ -408,27 +411,36 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
                 : earliest,
         ''
     )
-    const lastRecentRunDate = routine.recentRuns.length && new Date(routine.recentRuns[0].at)
-    const isStopped = earliestStopDateString && earliestStopDateString >= latestStartDateString
-    const isUnseenInAWhile =
+
+    // The date of the most recent run
+    const mostRecentRunDate = routine.recentRuns.length ? new Date(routine.recentRuns[0].at) : null
+
+    // See if this routine is stopped or not seen recently
+    const isStopped = earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
+    const isUnseenInAWhile = !!(
         routine.intervalMs &&
         routine.type !== BackgroundRoutineType.DB_BACKED &&
-        (!lastRecentRunDate ||
-            lastRecentRunDate.getTime() + routine.intervalMs + routine.stats.maxDurationMs + 5000 <= Date.now())
+        (!mostRecentRunDate ||
+            mostRecentRunDate.getTime() +
+                routine.intervalMs +
+                routine.stats.maxDurationMs +
+                BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS <=
+                Date.now())
+    )
 
     const tooltip = isStopped
         ? `This routine is currently stopped.
 Started at ${format(new Date(latestStartDateString), 'yyyy-MM-dd HH:mm:ss')},
 Stopped at: ${format(new Date(earliestStopDateString), 'yyyy-MM-dd HH:mm:ss')}`
         : isUnseenInAWhile
-        ? lastRecentRunDate
+        ? mostRecentRunDate
             ? `This routine has not been seen in a while. It should've run at ${format(
-                  new Date(lastRecentRunDate.getTime() + (routine.intervalMs || 0)),
+                  new Date(mostRecentRunDate.getTime() + (routine.intervalMs || 0)),
                   'yyyy-MM-dd HH:mm:ss'
               )}.`
             : 'This routine was started but it has never been seen running.'
         : `This routine is currently started.${
-              lastRecentRunDate ? `\nLast seen running at ${format(lastRecentRunDate, 'yyyy-MM-dd HH:mm:ss')}.` : ''
+              mostRecentRunDate ? `\nLast seen running at ${format(mostRecentRunDate, 'yyyy-MM-dd HH:mm:ss')}.` : ''
           }`
 
     return isStopped || isUnseenInAWhile ? (
@@ -456,19 +468,27 @@ function isRoutineProblematic(routine: BackgroundRoutine): boolean {
 
 // Contains some magic numbers
 function categorizeRunDuration(durationMs: number, routineIntervalMs: number | null): RunLengthCategory {
-    if (!routineIntervalMs) {
-        return durationMs > 5000 ? 'long' : 'short'
-    }
-    if (durationMs > routineIntervalMs * 0.7) {
+    // Recognize dangerously long runs
+    const dangerouslyLongRunRelativeCutoff = 0.7
+    if (routineIntervalMs && durationMs > routineIntervalMs * dangerouslyLongRunRelativeCutoff) {
         return 'dangerous'
     }
-    // Uses both a relative and an absolute filter:
-    // If the run is more than 10% longer than the interval, it's long, except for intervals of 1s or less where 500ms+ is long.
-    // Also, any run longer than 5s is long.
-    if (durationMs > routineIntervalMs * (durationMs > 1000 ? 0.1 : 0.5) || durationMs > 5000) {
+
+    // Recognize long runs
+    const longRunCutoffMs = 5000
+    if (durationMs > longRunCutoffMs) {
         return 'long'
     }
-    return 'short'
+
+    // Shorter runs of non-periodic routines are always “short”
+    if (!routineIntervalMs) {
+        return 'short'
+    }
+
+    // If the run is more than 10% longer than the interval, it's long. (the cutoff is 50% for very short intervals)
+    const veryShortIntervalCutoffMs = 1000
+    const relativeLongRunCutoffMs = routineIntervalMs * (routineIntervalMs <= veryShortIntervalCutoffMs ? 0.5 : 0.1)
+    return durationMs > relativeLongRunCutoffMs ? 'long' : 'short'
 }
 
 function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
