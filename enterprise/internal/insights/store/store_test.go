@@ -970,7 +970,7 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 }
 
 func TestGetAllDataForInsightViewId(t *testing.T) {
-	//ctx := context.Background()
+	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
@@ -978,11 +978,69 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	// no repo restrictions by default
 	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
 
-	_ = NewInsightStore(insightsDB)
-	_ = New(insightsDB, permissionStore)
+	insightStore := NewInsightStore(insightsDB)
+	seriesStore := New(insightsDB, permissionStore)
+
+	// insert all view and series metadata
+	view, err := insightStore.CreateView(ctx, types.InsightView{
+		Title:            "my view",
+		Description:      "my view description",
+		UniqueID:         "1",
+		PresentationType: types.Line,
+	}, []InsightViewGrant{GlobalGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	series := setupSeries(ctx, insightStore, t)
+	if series.SeriesID != "series1" {
+		t.Fatal("series setup is incorrect, series id should be series1")
+	}
+
+	err = insightStore.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+		Label:  "label",
+		Stroke: "blue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID}
+	newTime := time.Now().Truncate(time.Hour)
+	for i := 1; i <= 2; i++ {
+		newTime = newTime.Add(time.Hour)
+		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snapshot: false, Timestamp: newTime,
+		})
+	}
+	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+		t.Fatal(err)
+	}
+
+	// insert series point data
+	_, err = insightsDB.ExecContext(context.Background(), `
+SELECT setseed(0.5);
+INSERT INTO series_points(
+    time,
+	series_id,
+    value
+)
+SELECT recording_time,
+    'series1',
+    11
+	FROM insight_series_recording_times WHERE insight_series_id = 1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("only live data", func(t *testing.T) {
-
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(recordingTimes.RecordingTimes) {
+			t.Errorf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
+		}
 	})
 	t.Run("get all data", func(t *testing.T) {
 
@@ -992,7 +1050,7 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	})
 }
 
-func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
+func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) types.InsightSeries {
 	now := time.Now()
 	series := types.InsightSeries{
 		SeriesID:           "series1",
@@ -1013,4 +1071,5 @@ func setupSeries(ctx context.Context, tx *InsightStore, t *testing.T) {
 	if got.ID != 1 {
 		t.Errorf("expected first series to have id 1")
 	}
+	return got
 }

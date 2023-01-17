@@ -32,6 +32,7 @@ type Interface interface {
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
+	GetAllDataForInsightViewID(ctx context.Context, insightViewId string) ([]SeriesPointForExport, error)
 }
 
 var _ Interface = &Store{}
@@ -825,6 +826,8 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
+var quote = sqlf.Sprintf
+
 // LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
 // remove any repository granularity information from the result.
 func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
@@ -882,7 +885,7 @@ type SeriesPointForExport struct {
 	SeriesLabel      string
 	SeriesQuery      string
 	RecordingTime    time.Time
-	RepoID           int
+	RepoID           *int
 	Value            int
 	Capture          *string
 }
@@ -928,11 +931,11 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	}
 
 	// start with the oldest archived points and add them to the results
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, recordingTableArchive, recordingTimesTableArchive, insightViewId, repoIDsPred), exportScanner); err != nil {
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), insightViewId, repoIDsPred), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
 	}
 	// then add live points
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, recordingTable, recordingTimesTable, insightViewId, repoIDsPred), exportScanner); err != nil {
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote(recordingTable), insightViewId, repoIDsPred), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
