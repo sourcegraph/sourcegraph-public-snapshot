@@ -56,6 +56,7 @@
     "signale": "^1.4.0",
     "sinon": "^9.0.2",
     "string-width": "^4.2.0",
+    "style-loader": "^3.3.1",
     "term-size": "^2.2.0",
     "ts-node": "^10.7.0",
     "webpack-dev-server": "^4.11.1"
@@ -65,7 +66,6 @@
     "@codemirror/language": "^6.2.0",
     "@codemirror/state": "^6.1.0",
     "@codemirror/view": "^6.4.0",
-    "@lezer/common": "^1.0.0",
     "@lezer/highlight": "^1.0.0",
     "@mdi/js": "^6.7.96",
     "@microsoft/fetch-event-source": "^2.0.1",

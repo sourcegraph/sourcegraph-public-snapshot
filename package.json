@@ -293,6 +293,18 @@
       "webpack": "5",
       "tslib": "2.1.0",
       "jsprim": "1.4.2"
+    },
+    "packageExtensions": {
+      "@codemirror/lang-html": {
+        "dependencies": {
+          "@codemirror/view": "*"
+        }
+      },
+      "@lezer/html": {
+        "dependencies": {
+          "@lezer/common": "*"
+        }
+      }
     }
   }
 }

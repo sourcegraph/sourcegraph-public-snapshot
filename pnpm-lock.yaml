@@ -8,6 +8,8 @@ overrides:
   tslib: 2.1.0
   jsprim: 1.4.2
 
+packageExtensionsChecksum: f704b7f24a405e2d82922df50fb1babd
+
 importers:
 
   .:
@@ -402,7 +404,7 @@ importers:
       '@codemirror/lint': ^6.0.0
       '@codemirror/state': ^6.1.0
       '@codemirror/view': ^6.4.0
-      '@mdi/js': ^6.7.96
+      '@mdi/js': 7.1.96
       '@reach/visually-hidden': ^0.16.0
       '@sourcegraph/client-api': workspace:*
       '@sourcegraph/codeintellify': workspace:*
@@ -443,7 +445,7 @@ importers:
       '@codemirror/lint': 6.0.0
       '@codemirror/state': 6.1.0
       '@codemirror/view': 6.4.0
-      '@mdi/js': 6.9.96
+      '@mdi/js': 7.1.96
       '@reach/visually-hidden': 0.16.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@sourcegraph/client-api': link:../client-api
       '@sourcegraph/codeintellify': link:../codeintellify
@@ -559,6 +561,7 @@ importers:
       jsonc-parser: 3.0.0
       lodash: 4.17.21
       mdi-react: 8.1.0_react@18.1.0
+      monaco-editor: 0.24.0
       path-browserify: 1.0.1
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
@@ -588,7 +591,6 @@ importers:
       jsdom: 16.7.0
       latest-version: 5.1.0
       mini-css-extract-plugin: 2.7.2_webpack@5.75.0
-      monaco-editor: 0.24.0
       mz: 2.7.0
       process: 0.11.10
       puppeteer: 13.7.0
@@ -886,7 +888,6 @@ importers:
       '@codemirror/state': ^6.1.0
       '@codemirror/view': ^6.4.0
       '@graphql-codegen/cli': ^2.16.1
-      '@lezer/common': ^1.0.0
       '@lezer/highlight': ^1.0.0
       '@mdi/js': ^6.7.96
       '@microsoft/fetch-event-source': ^2.0.1
@@ -966,6 +967,7 @@ importers:
       sourcegraph: workspace:*
       string-score: ^1.0.1
       string-width: ^4.2.0
+      style-loader: ^3.3.1
       tabbable: ^5.1.5
       tagged-template-noop: ^2.1.1
       term-size: ^2.2.0
@@ -983,7 +985,6 @@ importers:
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.1.0
       '@codemirror/view': 6.4.0
-      '@lezer/common': 1.0.0
       '@lezer/highlight': 1.0.0
       '@mdi/js': 6.9.96
       '@microsoft/fetch-event-source': 2.0.1
@@ -1076,6 +1077,7 @@ importers:
       signale: 1.4.0
       sinon: 9.0.2
       string-width: 4.2.3
+      style-loader: 3.3.1_webpack@5.75.0
       term-size: 2.2.0
       ts-node: 10.9.1_xgevdmisu3khuza2izxq47gxuu
       webpack-dev-server: 4.11.1_webpack@5.75.0
@@ -3327,7 +3329,7 @@ packages:
       - '@lezer/common'
     dev: false
 
-  /@codemirror/lang-html/6.1.0_@codemirror+view@6.4.0:
+  /@codemirror/lang-html/6.1.0:
     resolution: {integrity: sha512-gA7NmJxqvnhwza05CvR7W/39Ap9r/4Vs9uiC0IeFYo1hSlJzc/8N6Evviz6vTW1x8SpHcRYyqKOf6rpl6LfWtg==}
     dependencies:
       '@codemirror/autocomplete': 6.1.0_uspiuo4fymplpkahvcq3f4oddy
@@ -3335,10 +3337,9 @@ packages:
       '@codemirror/lang-javascript': 6.0.1
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.1.0
+      '@codemirror/view': 6.4.0
       '@lezer/common': 1.0.0
       '@lezer/html': 1.0.0
-    transitivePeerDependencies:
-      - '@codemirror/view'
     dev: false
 
   /@codemirror/lang-javascript/6.0.1:
@@ -3363,7 +3364,7 @@ packages:
   /@codemirror/lang-markdown/6.0.0:
     resolution: {integrity: sha512-ozJaO1W4WgGlwWOoYCSYzbVhhM0YM/4lAWLrNsBbmhh5Ztpl0qm4CgEQRl3t8/YcylTZYBIXiskui8sHNGd4dg==}
     dependencies:
-      '@codemirror/lang-html': 6.1.0_@codemirror+view@6.4.0
+      '@codemirror/lang-html': 6.1.0
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.1.0
       '@codemirror/view': 6.4.0
@@ -5228,6 +5229,7 @@ packages:
   /@lezer/html/1.0.0:
     resolution: {integrity: sha512-wZHBcieArLTxEi198hqRBBHMySzDKo5suWaESdUw0t44IXp01vkSRwX2brG1qBbKdwJ+C6U0iMl00vWNiyAROg==}
     dependencies:
+      '@lezer/common': 1.0.0
       '@lezer/highlight': 1.0.0
       '@lezer/lr': 1.2.0
     dev: false
@@ -5311,6 +5313,10 @@ packages:
 
   /@mdi/js/6.9.96:
     resolution: {integrity: sha512-rK0/vLFaiItYS2W7uVmaKPKnhNQE4XVkylpk5njtVwENnp8elwY5uRL6qvdj2esuvUHG7DwygE4Qu3eKxxuJiQ==}
+    dev: false
+
+  /@mdi/js/7.1.96:
+    resolution: {integrity: sha512-wlrJs6Ryhaa5CqhK3FjTfMRnb/s7HeLkKMFqwQySkK86cdN1TGdzpSM3O4tsmzCA1dYBeTbXvOwSE/Y42cUrvA==}
     dev: false
 
   /@mdx-js/mdx/1.6.22:
