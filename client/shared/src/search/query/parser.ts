@@ -18,6 +18,17 @@ export interface Parameter {
     range: CharacterRange
 }
 
+/**
+ * A Sequence represent a sequence of nodes, i.e. 'a b c'. While such as
+ * sequence is often thought about as "implicit AND", it's usually _not_
+ * equivalent to 'a AND b AND c', which is why this gets its own node type.
+ */
+export interface Sequence {
+    type: 'sequence'
+    nodes: Node[]
+    range: CharacterRange
+}
+
 export enum OperatorKind {
     Or = 'OR',
     And = 'AND',
@@ -31,11 +42,13 @@ export interface Operator {
     operands: Node[]
     kind: OperatorKind
     range: CharacterRange
-    // Position in the query string including parenthesis if used
+    /**
+     * Position in the query string including parenthesis if used
+     */
     groupRange?: CharacterRange
 }
 
-export type Node = Operator | Parameter | Pattern
+export type Node = Sequence | Operator | Parameter | Pattern
 
 interface ParseError {
     type: 'error'
@@ -57,21 +70,8 @@ interface State {
     tokens: Token[]
 }
 
-const createNodes = (nodes: Node[]): ParseSuccess => ({ type: 'success', nodes })
-
-const createPattern = (
-    value: string,
-    kind: PatternKind,
-    quoted: boolean,
-    negated: boolean,
-    range: CharacterRange
-): ParseSuccess => createNodes([{ type: 'pattern', kind, value, quoted, negated, range }])
-
-const createParameter = (field: string, value: string, negated: boolean, range: CharacterRange): ParseSuccess =>
-    createNodes([{ type: 'parameter', field, value, negated, range }])
-
-const createOperator = (nodes: Node[], kind: OperatorKind): ParseSuccess => {
-    const range: CharacterRange = nodes.reduce(
+const rangeFromNodes = (nodes: Node[]): CharacterRange =>
+    nodes.reduce(
         (range, node) => {
             const nodeRange = node.type === 'operator' ? node.groupRange ?? node.range : node.range
             if (nodeRange.start < range.start) {
@@ -85,7 +85,31 @@ const createOperator = (nodes: Node[], kind: OperatorKind): ParseSuccess => {
         { start: Infinity, end: -Infinity }
     )
 
-    return createNodes([{ type: 'operator', operands: nodes, kind, range }])
+const createNodes = (nodes: Node[]): ParseSuccess => ({ type: 'success', nodes })
+
+const createPattern = (
+    value: string,
+    kind: PatternKind,
+    quoted: boolean,
+    negated: boolean,
+    range: CharacterRange
+): ParseSuccess => createNodes([{ type: 'pattern', kind, value, quoted, negated, range }])
+
+const createSequence = (nodes: Node[]): ParseSuccess => {
+    switch (nodes.length) {
+        case 0:
+        case 1:
+            return createNodes(nodes)
+        default:
+            return createNodes([{ type: 'sequence', nodes, range: rangeFromNodes(nodes) }])
+    }
+}
+
+const createParameter = (field: string, value: string, negated: boolean, range: CharacterRange): ParseSuccess =>
+    createNodes([{ type: 'parameter', field, value, negated, range }])
+
+const createOperator = (nodes: Node[], kind: OperatorKind): ParseSuccess => {
+    return createNodes([{ type: 'operator', operands: nodes, kind, range: rangeFromNodes(nodes) }])
 }
 
 const tokenToLeafNode = (token: Token): ParseResult => {
@@ -123,7 +147,12 @@ export const parseParenthesis = (tokens: Token[]): State => {
     return { result: groupNodes.result, tokens }
 }
 
-export const parseLeaves = (tokens: Token[]): State => {
+/**
+ * parseSequence parses consecutive tokens. If the sequence has a size smaller
+ * than 2 the nodes are returned directly. That means there will never be a
+ * sequence of size 1.
+ */
+const parseSequence = (tokens: Token[]): State => {
     const nodes: Node[] = []
     while (true) {
         const current = tokens[0]
@@ -137,7 +166,7 @@ export const parseLeaves = (tokens: Token[]): State => {
             break
         }
         if (current.type === 'keyword' && (current.kind === KeywordKind.And || current.kind === KeywordKind.Or)) {
-            return { result: createNodes(nodes), tokens } // Caller advances.
+            return { result: createSequence(nodes), tokens } // Caller advances.
         }
 
         const node = tokenToLeafNode(current)
@@ -147,7 +176,7 @@ export const parseLeaves = (tokens: Token[]): State => {
         nodes.push(...node.nodes)
         tokens = tokens.slice(1)
     }
-    return { result: createNodes(nodes), tokens }
+    return { result: createSequence(nodes), tokens }
 }
 
 /**
@@ -155,7 +184,7 @@ export const parseLeaves = (tokens: Token[]): State => {
  * (a and b or c) => ((a and b) or c).
  */
 export const parseAnd = (tokens: Token[]): State => {
-    const left = parseLeaves(tokens)
+    const left = parseSequence(tokens)
     if (left.result.type === 'error') {
         return { result: left.result, tokens }
     }
