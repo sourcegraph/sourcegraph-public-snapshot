@@ -602,7 +602,16 @@ func computeIndexedEndpoints() *endpoint.Map {
 }
 
 func zoektAddr(environ []string) string {
+	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
+	if !ok {
+		deployType = deploy.Default
+	}
+
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		if addrs, ok := replicaAddrs(deployType, addr); ok {
+			return addrs
+		}
+
 		return addr
 	}
 
@@ -611,36 +620,32 @@ func zoektAddr(environ []string) string {
 		return addr
 	}
 
-	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
-	if !ok {
-		deployType = deploy.Default
-	}
-
-	if countStr, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_COUNT"); ok {
-		// TODO don't ignore error
-		count, _ := strconv.Atoi(countStr)
-
-		var fmtStr string
-		switch deployType {
-		case deploy.Kubernetes, deploy.Helm:
-			fmtStr = "indexed-search-%d.indexed-search:6070"
-		case deploy.DockerCompose:
-			fmtStr = "zoekt-webserver-%d:6070"
-		}
-
-		// TODO what do if envvar is specified but we don't have a fmtStr?
-		if fmtStr != "" && count > 0 {
-			var addrs []string
-			for i := 0; i < count; i++ {
-				addrs = append(addrs, fmt.Sprintf(fmtStr, i))
-			}
-			return strings.Join(addrs, " ")
-		}
-	}
-
 	// Not set, use the default (service discovery on the indexed-search
 	// statefulset)
 	return "k8s+rpc://indexed-search:6070?kind=sts"
+}
+
+func replicaAddrs(deployType string, countStr string) (string, bool) {
+	count, err := strconv.Atoi(countStr)
+	if err != nil {
+		return "", false
+	}
+
+	var fmtStr string
+	switch deployType {
+	case deploy.Kubernetes, deploy.Helm:
+		fmtStr = "indexed-search-%d.indexed-search:6070"
+	case deploy.DockerCompose:
+		fmtStr = "zoekt-webserver-%d:6070"
+	default:
+		return "", false
+	}
+
+	var addrs []string
+	for i := 0; i < count; i++ {
+		addrs = append(addrs, fmt.Sprintf(fmtStr, i))
+	}
+	return strings.Join(addrs, " "), true
 }
 
 func getEnv(environ []string, key string) (string, bool) {

@@ -191,21 +191,21 @@ func TestZoektAddr(t *testing.T) {
 	}, {
 		name: "replicas",
 		environ: []string{
-			"INDEXED_SEARCH_REPLICA_COUNT=2",
+			"INDEXED_SEARCH_SERVERS=2",
 		},
 		want: "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
 	}, {
 		name: "replicas helm",
 		environ: []string{
 			"DEPLOY_TYPE=helm",
-			"INDEXED_SEARCH_REPLICA_COUNT=2",
+			"INDEXED_SEARCH_SERVERS=2",
 		},
 		want: "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
 	}, {
 		name: "replicas docker-compose",
 		environ: []string{
 			"DEPLOY_TYPE=docker-compose",
-			"INDEXED_SEARCH_REPLICA_COUNT=2",
+			"INDEXED_SEARCH_SERVERS=2",
 		},
 		want: "zoekt-webserver-0:6070 zoekt-webserver-1:6070",
 	}, {
