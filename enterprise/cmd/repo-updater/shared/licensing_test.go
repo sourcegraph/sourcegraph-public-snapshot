@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -119,6 +120,13 @@ func TestEnterpriseUpdateRepoHook(t *testing.T) {
 			existingRepo:    &types.Repo{Private: true},
 			newRepo:         &types.Repo{Private: false},
 			wantErr:         false,
+		},
+		"from private deleted to private not deleted, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: true, DeletedAt: time.Now()},
+			newRepo:         &types.Repo{Private: true, DeletedAt: time.Time{}},
+			wantErr:         true,
 		},
 		"from public to private, max private repos not reached": {
 			maxPrivateRepos: 2,
