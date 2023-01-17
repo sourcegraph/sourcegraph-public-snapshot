@@ -13,10 +13,12 @@ import {
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
+import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
+import { useLazyQuery } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Badge,
@@ -77,8 +79,6 @@ import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
-import { useLazyQuery } from '@sourcegraph/http-client'
-import { cloneDeep } from 'lodash'
 
 export interface WorkspaceDetailsProps {
     id: Scalars['ID']
@@ -485,12 +485,6 @@ interface WorkspaceStepProps {
     workspaceID: Scalars['ID']
     /** For testing purposes only */
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
-}
-
-type PageInfo = {
-        __typename?: "PageInfo" | undefined;
-        hasNextPage: boolean;
-        endCursor: string | null;
 }
 
 const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({

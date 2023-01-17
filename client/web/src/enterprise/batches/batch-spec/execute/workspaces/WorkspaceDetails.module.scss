@@ -70,8 +70,6 @@
     line-height: 0.75rem;
 }
 
-
-
 .step-diff-stat {
     // Bringing the element above the button so the tooltip is triggered on-hover
     isolation: isolate;
@@ -109,7 +107,6 @@
 }
 
 .step-tabs {
-
     [data-reach-tab],
     [data-reach-tab]:hover,
     [data-reach-tab][data-selected] {
