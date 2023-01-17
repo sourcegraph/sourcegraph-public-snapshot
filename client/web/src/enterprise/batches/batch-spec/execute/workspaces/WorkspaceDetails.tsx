@@ -650,7 +650,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                                         )}
                                                     </>
                                                 )}
-                                                {step.outputLines && <LogOutput text={stepOutputCommandInfo} className={styles.stepCommandInfo} />}
+                                                {step.outputLines && <LogOutput text={stepOutputCommandInfo} />}
                                             </>
                                         ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>

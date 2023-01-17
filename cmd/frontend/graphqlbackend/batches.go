@@ -908,9 +908,9 @@ type BatchSpecWorkspaceStagesResolver interface {
 }
 
 type BatchSpecWorkspaceStepOutputLinesResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]string, error)
+	TotalCount(ctx context.Context) int32
+	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+	Nodes(ctx context.Context) []string
 }
 
 type BatchSpecWorkspaceStepResolver interface {
