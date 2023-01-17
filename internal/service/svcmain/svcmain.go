@@ -41,7 +41,7 @@ func Main(services []service.Service, config Config) {
 	)
 	logger := log.Scoped("sourcegraph", "Sourcegraph")
 	singleprogram.Init(logger)
-	run(liblog, logger, services, config)
+	run(liblog, logger, services, config, true)
 }
 
 // DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
@@ -49,7 +49,7 @@ func Main(services []service.Service, config Config) {
 //
 // DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
 // is deprecated.
-func DeprecatedSingleServiceMain(svc service.Service, config Config) {
+func DeprecatedSingleServiceMain(svc service.Service, config Config, validateConfig bool) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -63,10 +63,10 @@ func DeprecatedSingleServiceMain(svc service.Service, config Config) {
 		),
 	)
 	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	run(liblog, logger, []service.Service{svc}, config)
+	run(liblog, logger, []service.Service{svc}, config, validateConfig)
 }
 
-func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Service, config Config) {
+func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Service, config Config, validateConfig bool) {
 	defer liblog.Sync()
 
 	// Initialize log15. Even though it's deprecated, it's still fairly widely used.
@@ -95,12 +95,16 @@ func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Se
 	}
 
 	// Validate each service's configuration.
-	for i, c := range serviceConfigs {
-		if c == nil {
-			continue
-		}
-		if err := c.Validate(); err != nil {
-			logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
+	//
+	// This cannot be done for executor, see the executorcmd package for details.
+	if validateConfig {
+		for i, c := range serviceConfigs {
+			if c == nil {
+				continue
+			}
+			if err := c.Validate(); err != nil {
+				logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
+			}
 		}
 	}
 

@@ -26,5 +26,5 @@ func MainOSS(services []service.Service) {
 //
 // DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
 func DeprecatedSingleServiceMainOSS(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config)
+	svcmain.DeprecatedSingleServiceMain(service, config, true)
 }

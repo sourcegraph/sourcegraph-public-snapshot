@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd/nodbcmd"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd/executorcmd"
 )
 
 func main() {
-	nodbcmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
+	executorcmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
 }
