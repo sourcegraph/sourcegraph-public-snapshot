@@ -26,7 +26,7 @@ import {
 } from '../../../../graphql-operations'
 
 export const batchSpecWorkspaceStepOutputLinesFieldsFragment = gql`
-    fragment BatchSpecWorkspaceStepOutputLines on BatchSpecWorkspaceStepOutputLines {
+    fragment BatchSpecWorkspaceStepOutputLines on BatchSpecWorkspaceStepOutputLineConnection {
         nodes
         totalCount
         pageInfo {

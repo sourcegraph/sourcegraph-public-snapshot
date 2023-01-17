@@ -532,33 +532,23 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
         return fetchAdditionalOutputLines({ variables })
     }, [fetchAdditionalOutputLines, workspaceID, step.number, pageInfo])
 
-    const additionalOutputLines = useMemo(() => {
-        const outputLines: string[] = []
-
-        if (step.outputLines !== null) {
-            if (
-                step.outputLines.nodes.every(
-                    line =>
-                        line
-                            .replaceAll(/'^std(out|err):'/g, '')
-                            .replaceAll('\n', '')
-                            .trim() === ''
-                )
-            ) {
-                outputLines.push('stdout: This command did not produce any output')
-            }
-
-            if (step.exitCode === 0) {
-                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
-            }
-
-            if (step.exitCode !== null && step.exitCode !== 0) {
-                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
-            }
+    const stepOutputCommandInfo = useMemo(() => {
+        // If outputLines is null or an empty list then we can safely assume that the command did not
+        // produce any output. We display this message to the user so they know.
+        if (step.outputLines === null || step.outputLines.nodes.length === 0) {
+            return 'stdout: This command did not produce any output'
         }
 
-        return outputLines
+        // If the command doesn't produce an exitCode or the exitCode isn't 0 (successful),
+        // we display an error message here.
+        if (step.exitCode !== null && step.exitCode !== 0) {
+            return `stderr: Command failed with status ${step.exitCode}`
+        }
+
+        // Command exited successfully with a 0 status code.
+        return `stdout: \nstdout: Command exited successfully with status ${step.exitCode}`
     }, [step.exitCode, step.outputLines])
+
     const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
     const isFetchingOutputLines = additionalOutputLinesResult.loading
 
@@ -643,9 +633,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                                         )}
                                                     </>
                                                 )}
-                                                {additionalOutputLines.length > 0 && (
-                                                    <LogOutput text={additionalOutputLines.join('\n')} />
-                                                )}
+                                                <LogOutput text={stepOutputCommandInfo} />
                                             </>
                                         ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
