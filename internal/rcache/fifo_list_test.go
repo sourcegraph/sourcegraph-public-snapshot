@@ -144,6 +144,40 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 	}
 }
 
+func Test_FIFOList_SetMaxSize(t *testing.T) {
+	r := NewFIFOList("a", 3)
+	for i := 0; i < 10; i++ {
+		err := r.Insert([]byte("a"))
+		if err != nil {
+			t.Errorf("expected no error, got %q", err)
+		}
+	}
+
+	got, err := r.Slice(context.Background(), 0, -1)
+	if err != nil {
+		t.Errorf("expected no error, got %q", err)
+	}
+	if want := bytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
+	}
+
+	r.SetMaxSize(2)
+	for i := 0; i < 10; i++ {
+		err := r.Insert([]byte("b"))
+		if err != nil {
+			t.Errorf("expected no error, got %q", err)
+		}
+	}
+
+	got, err = r.Slice(context.Background(), 0, -1)
+	if err != nil {
+		t.Errorf("expected no error, got %q", err)
+	}
+	if want := bytes("b", "b"); !reflect.DeepEqual(want, got) {
+		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
+	}
+}
+
 func Test_FIOListContextCancellation(t *testing.T) {
 	r := NewFIFOList("a", 3)
 	err := r.Insert([]byte("a"))
