@@ -106,5 +106,5 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
             </div>
         </div>
-    ) : null
+    )
 }
