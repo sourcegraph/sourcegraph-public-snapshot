@@ -163,7 +163,6 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 	// This will fetch all site configs.
 	if paginationArgs == nil {
 		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
-
 		rows, err := s.Query(ctx, query)
 		return scanSiteConfigs(rows, err)
 	}
