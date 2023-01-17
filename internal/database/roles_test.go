@@ -16,7 +16,7 @@ import (
 // - DEFAULT
 // - SITE_ADMINISTRATOR
 //
-// These roles come by default on all sourcegraph instance and will always exist in the database,
+// These roles come by default on any sourcegraph instance and will always exist in the database,
 // so we need to account for these roles when accessing the database.
 var numberOfDefaultRoles = 2
 
