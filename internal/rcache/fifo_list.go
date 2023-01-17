@@ -33,6 +33,16 @@ func (l *FIFOList) Insert(b []byte) error {
 	}
 	key := l.globalPrefixKey()
 
+	// Special case maxSize 0 to mean keep the list empty. Used to handle
+	// disabling.
+	if l.maxSize == 0 {
+		_, err := c.Do("LTRIM", key, 0, 0)
+		if err != nil {
+			return errors.Wrap(err, "failed to execute redis command LTRIM")
+		}
+		return nil
+	}
+
 	// O(1) because we're just adding a single element.
 	_, err := c.Do("LPUSH", key, b)
 	if err != nil {
