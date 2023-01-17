@@ -433,7 +433,7 @@ Stopped at: ${format(new Date(earliestStopDateString), 'yyyy-MM-dd HH:mm:ss')}`
 
     return isStopped || isUnseenInAWhile ? (
         <Tooltip content={tooltip}>
-            <Icon aria-label="stopped" svgPath={mdiClose} className="text-danger" />
+            <Icon aria-label="stopped or unseen" svgPath={mdiClose} className="text-danger" />
         </Tooltip>
     ) : (
         <Tooltip content={tooltip}>
