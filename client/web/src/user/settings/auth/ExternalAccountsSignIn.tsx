@@ -15,11 +15,8 @@ export interface NormalizedExternalAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     // some data may be missing if account is not setup
-    external?: {
+    external?: UserExternalAccount['publicAccountData'] & {
         id: string
-        displayName?: string
-        login?: string
-        url?: string
     }
 }
 
