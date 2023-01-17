@@ -1018,15 +1018,22 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 
 	// insert series point data
 	_, err = insightsDB.ExecContext(context.Background(), `
+INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 SELECT setseed(0.5);
 INSERT INTO series_points(
-    time,
+	time,
 	series_id,
-    value
+	value,
+	repo_id,
+	repo_name_id,
+	original_repo_name_id
 )
 SELECT recording_time,
     'series1',
-    11
+    11,
+    2,
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original'),
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
 	FROM insight_series_recording_times WHERE insight_series_id = 1;
 `)
 	if err != nil {
@@ -1041,12 +1048,30 @@ SELECT recording_time,
 		if len(got) != len(recordingTimes.RecordingTimes) {
 			t.Errorf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
 		}
-	})
-	t.Run("get all data", func(t *testing.T) {
-
+		for _, sp := range got {
+			repoID := 2
+			var capture *string
+			autogold.Want("insight view title is correct", view.Title).Equal(t, sp.InsightViewTitle)
+			autogold.Want("series query is correct", series.Query).Equal(t, sp.SeriesQuery)
+			autogold.Want("series label is correct", "label").Equal(t, sp.SeriesLabel)
+			autogold.Want("series value is correct", 11).Equal(t, sp.Value)
+			autogold.Want("series repo ID is correct", &repoID).Equal(t, sp.RepoID)
+			autogold.Want("nil capture", capture).Equal(t, sp.Capture)
+		}
 	})
 	t.Run("respects repo permissions", func(t *testing.T) {
-
+		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{2}, nil)
+		defer func() {
+			// cleanup
+			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+		}()
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("expected 0 results due to repo permissions, got %d", len(got))
+		}
 	})
 }
 

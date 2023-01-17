@@ -917,7 +917,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 		var tmp SeriesPointForExport
 		if err = sc.Scan(
 			&tmp.InsightViewTitle,
-			&tmp.SeriesQuery,
+			&tmp.SeriesLabel,
 			&tmp.SeriesQuery,
 			&tmp.RecordingTime,
 			&tmp.RepoID,
