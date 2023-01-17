@@ -13,6 +13,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 4.4.0
+
+### Added
+
 - `src validate` has an added check to determine if an instance is able to create a basic code insight. [#912](https://github.com/sourcegraph/src-cli/pull/912)
 - Add visual feedback to `src validate install` CLI [#921](https://github.com/sourcegraph/src-cli/pull/921)
 - Add insight cleanup as per [#912](https://github.com/sourcegraph/src-cli/pull/912#issuecomment-1377084768)
@@ -28,7 +38,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - Fix network timeout in `src users clean` occuring in instances with many users  [#901](https://github.com/sourcegraph/src-cli/pull/901)
 - Aligned parsing of spec file parameter of `src batch repos` with other commands. [#919](https://github.com/sourcegraph/src-cli/pull/919)
-- batches: Remove empty log outputs. [#923](https://github.com/sourcegraph/src-cli/pull/923)
+- Remove empty log outputs during batch spec execution. [#923](https://github.com/sourcegraph/src-cli/pull/923)
 
 ### Removed
 
