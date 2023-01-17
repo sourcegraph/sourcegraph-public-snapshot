@@ -4,13 +4,13 @@ import { Remote } from 'comlink'
 import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
-import { EndpointPair, PlatformContext } from '../../platform/context'
-import { createExtensionHostClientConnection } from '../client/connection'
-import { ExposedToClient } from '../client/mainthread-api'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
-import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { WorkspaceRootWithMetadata } from '../extension/extensionHostApi'
-import { TextDocumentData, ViewerData } from '../viewerTypes'
+import { createExtensionHostClientConnection } from '../api/client/connection'
+import { ExposedToClient } from '../api/client/mainthread-api'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../api/contract'
+import { InitData, startExtensionHost } from '../api/extension/extensionHost'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { TextDocumentData, ViewerData } from '../api/viewerTypes'
+import { EndpointPair, PlatformContext } from '../platform/context'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
