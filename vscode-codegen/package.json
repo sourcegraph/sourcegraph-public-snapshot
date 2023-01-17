@@ -99,7 +99,7 @@
   },
   "dependencies": {
     "@completion/sampling": "^0.1.1",
-    "@sourcegraph/cody-common": "^0.0.0",
+    "@sourcegraph/cody-common": "^0.0.1",
     "@types/escape-html": "^1.0.2",
     "@types/highlight.js": "^10.1.0",
     "@types/marked": "^4.0.8",
