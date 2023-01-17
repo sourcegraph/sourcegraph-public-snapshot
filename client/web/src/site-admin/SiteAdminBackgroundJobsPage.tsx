@@ -171,43 +171,14 @@ const JobList: React.FunctionComponent<{
                         <div className="text-center">Fastest / avg / slowest run (ms)</div>
                     </div>
                     <ul className="list-group list-group-flush">
-                        {jobsToDisplay.map(job => {
-                            const jobHostNames = [
-                                ...new Set(
-                                    job.routines
-                                        .map(routine => routine.instances.map(instance => instance.hostName))
-                                        .flat()
-                                ),
-                            ].sort()
-                            return (
-                                <li key={job.name} className="list-group-item px-0 py-2">
-                                    <div className="d-flex align-items-center justify-content-between mb-2">
-                                        <div className="d-flex flex-row align-items-center mb-0">
-                                            <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
-                                            <Text className="mb-0 ml-2">
-                                                <strong>{job.name}</strong>{' '}
-                                                <span className="text-muted">
-                                                    (starts {job.routines.length}{' '}
-                                                    {pluralize('routine', job.routines.length)}
-                                                    {hostNames.length > 1
-                                                        ? ` on ${jobHostNames.length} ${pluralize(
-                                                              'instance',
-                                                              jobHostNames.length
-                                                          )}`
-                                                        : ''}
-                                                    )
-                                                </span>
-                                            </Text>
-                                        </div>
-                                    </div>
-                                    {job.routines
-                                        .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
-                                        .map(routine => (
-                                            <RoutineItem routine={routine} key={routine.name} />
-                                        ))}
-                                </li>
-                            )
-                        })}
+                        {jobsToDisplay.map(job => (
+                            <JobItem
+                                key={job.name}
+                                job={job}
+                                hostNames={hostNames}
+                                onlyShowProblematic={onlyShowProblematic}
+                            />
+                        ))}
                     </ul>
                 </>
             ) : (
@@ -216,6 +187,38 @@ const JobList: React.FunctionComponent<{
         </>
     )
 }
+
+const JobItem: React.FunctionComponent<{ job: BackgroundJob; hostNames: string[]; onlyShowProblematic: boolean }> =
+    React.memo(function JobItem({ job, hostNames, onlyShowProblematic }) {
+        const jobHostNames = [
+            ...new Set(job.routines.map(routine => routine.instances.map(instance => instance.hostName)).flat()),
+        ].sort()
+
+        return (
+            <li key={job.name} className="list-group-item px-0 py-2">
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                    <div className="d-flex flex-row align-items-center mb-0">
+                        <Icon aria-hidden={true} svgPath={mdiAccountHardHat} />{' '}
+                        <Text className="mb-0 ml-2">
+                            <strong>{job.name}</strong>{' '}
+                            <span className="text-muted">
+                                (starts {job.routines.length} {pluralize('routine', job.routines.length)}
+                                {hostNames.length > 1
+                                    ? ` on ${jobHostNames.length} ${pluralize('instance', jobHostNames.length)}`
+                                    : ''}
+                                )
+                            </span>
+                        </Text>
+                    </div>
+                </div>
+                {job.routines
+                    .filter(routine => (onlyShowProblematic ? isRoutineProblematic(routine) : true))
+                    .map(routine => (
+                        <RoutineItem routine={routine} key={routine.name} />
+                    ))}
+            </li>
+        )
+    })
 
 const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount: number }> = React.memo(
     ({ jobs, hostNameCount }) => {
@@ -494,11 +497,11 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number | n
 function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
     const category = categorizeRunDuration(durationMs, routineIntervalMs)
     switch (category) {
-       case 'dangerous':
-          return 'text-danger'
-       case 'long':
-          return 'text-warning'
-       default:
-          return 'text-success'
-     }
+        case 'dangerous':
+            return 'text-danger'
+        case 'long':
+            return 'text-warning'
+        default:
+            return 'text-success'
+    }
 }
