@@ -13,6 +13,14 @@ const (
 	Helm          = "helm"
 )
 
+// Default to Kubernetes cluster so that every Kubernetes
+// cluster deployment doesn't need to be configured with Deplo.
+const Default = Kubernetes
+
+// DeployTypeEnvName is the environment variable name that users can use to
+// specify the deployment type.
+const DeployTypeEnvName = "DEPLOY_TYPE"
+
 var mock string
 
 // Type tells the deployment type.
@@ -20,12 +28,10 @@ func Type() string {
 	if mock != "" {
 		return mock
 	}
-	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
+	if e := os.Getenv(DeployTypeEnvName); e != "" {
 		return e
 	}
-	// Default to Kubernetes cluster so that every Kubernetes
-	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
-	return Kubernetes
+	return Default
 }
 
 func Mock(val string) {

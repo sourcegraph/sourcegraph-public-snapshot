@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -607,6 +609,33 @@ func zoektAddr(environ []string) string {
 	// Backwards compatibility: We used to call this variable ZOEKT_HOST
 	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
 		return addr
+	}
+
+	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
+	if !ok {
+		deployType = deploy.Default
+	}
+
+	if countStr, ok := getEnv(environ, "INDEXED_SEARCH_REPLICA_COUNT"); ok {
+		// TODO don't ignore error
+		count, _ := strconv.Atoi(countStr)
+
+		var fmtStr string
+		switch deployType {
+		case deploy.Kubernetes, deploy.Helm:
+			fmtStr = "indexed-search-%d.indexed-search:6070"
+		case deploy.DockerCompose:
+			fmtStr = "zoekt-webserver-%d:6070"
+		}
+
+		// TODO what do if envvar is specified but we don't have a fmtStr?
+		if fmtStr != "" && count > 0 {
+			var addrs []string
+			for i := 0; i < count; i++ {
+				addrs = append(addrs, fmt.Sprintf(fmtStr, i))
+			}
+			return strings.Join(addrs, " ")
+		}
 	}
 
 	// Not set, use the default (service discovery on the indexed-search
