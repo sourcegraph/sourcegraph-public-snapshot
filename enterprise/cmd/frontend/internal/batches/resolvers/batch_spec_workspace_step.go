@@ -59,14 +59,14 @@ func (r *batchSpecWorkspaceStepV1Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.stepInfo.Skipped
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver, error) {
+func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver {
 	lines := r.stepInfo.OutputLines
 
 	return &batchSpecWorkspaceOutputLiinesResolver{
 		lines: lines,
 		first: args.First,
 		after: args.After,
-	}, nil
+	}
 }
 
 func (r *batchSpecWorkspaceStepV1Resolver) StartedAt() *gqlutil.DateTime {
@@ -215,9 +215,9 @@ func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.skipped
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver, error) {
+func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLinesResolver {
 	if !r.logEntryFound {
-		return nil, nil
+		return nil
 	}
 
 	lines := strings.Split(r.logEntry.Out, "\n")
@@ -225,7 +225,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args
 		lines: lines,
 		first: args.First,
 		after: args.After,
-	}, nil
+	}
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) StartedAt() *gqlutil.DateTime {
