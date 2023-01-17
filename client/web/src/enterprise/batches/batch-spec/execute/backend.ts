@@ -257,7 +257,7 @@ export const BATCH_SPEC_WORKSPACE_STEP_BY_INDEX = gql`
             __typename
             ... on VisibleBatchSpecWorkspace {
                 step(index: $stepIndex) {
-                    outputLines(after: $after) {
+                    outputLines(first: 500, after: $after) {
                         ...BatchSpecWorkspaceStepOutputLines
                     }
                 }
