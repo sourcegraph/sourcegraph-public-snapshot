@@ -44,6 +44,7 @@ import styles from './SiteAdminBackgroundJobsPage.module.scss'
 export interface SiteAdminBackgroundJobsPageProps extends RouteComponentProps, TelemetryProps {}
 
 export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
+export type BackgroundRoutine = BackgroundJob['routines'][0]
 
 // "short" runs are displayed with a “success” style.
 // “long” runs are displayed with a “warning” style to make sure they stand out somewhat.
@@ -266,7 +267,7 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
     }
 )
 
-const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
+const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
     const commonHostName =
         routine.recentRuns.length === 1
             ? routine.recentRuns[0].hostName
@@ -395,7 +396,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][
     )
 }
 
-const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
+const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ routine }) => {
     const latestStartDateString = routine.instances.reduce(
         (mostRecent, instance) =>
             instance.lastStartedAt && (!mostRecent || instance.lastStartedAt > mostRecent)
@@ -445,7 +446,7 @@ Stopped at: ${format(new Date(earliestStopDateString), 'yyyy-MM-dd HH:mm:ss')}`
     )
 }
 
-function isRoutineProblematic(routine: BackgroundJob['routines'][0]): boolean {
+function isRoutineProblematic(routine: BackgroundRoutine): boolean {
     return (
         routine.stats.errorCount > 0 ||
         routine.recentRuns.some(
