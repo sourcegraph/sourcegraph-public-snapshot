@@ -3030,7 +3030,7 @@ func NewMockConfStore() *MockConfStore {
 			},
 		},
 		ListSiteConfigsFunc: &ConfStoreListSiteConfigsFunc{
-			defaultHook: func(context.Context, SiteConfigListOptions) (r0 []*SiteConfig, r1 error) {
+			defaultHook: func(context.Context, *PaginationArgs) (r0 []*SiteConfig, r1 error) {
 				return
 			},
 		},
@@ -3072,7 +3072,7 @@ func NewStrictMockConfStore() *MockConfStore {
 			},
 		},
 		ListSiteConfigsFunc: &ConfStoreListSiteConfigsFunc{
-			defaultHook: func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+			defaultHook: func(context.Context, *PaginationArgs) ([]*SiteConfig, error) {
 				panic("unexpected invocation of MockConfStore.ListSiteConfigs")
 			},
 		},
@@ -3430,15 +3430,15 @@ func (c ConfStoreHandleFuncCall) Results() []interface{} {
 // ConfStoreListSiteConfigsFunc describes the behavior when the
 // ListSiteConfigs method of the parent MockConfStore instance is invoked.
 type ConfStoreListSiteConfigsFunc struct {
-	defaultHook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
-	hooks       []func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	defaultHook func(context.Context, *PaginationArgs) ([]*SiteConfig, error)
+	hooks       []func(context.Context, *PaginationArgs) ([]*SiteConfig, error)
 	history     []ConfStoreListSiteConfigsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListSiteConfigs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockConfStore) ListSiteConfigs(v0 context.Context, v1 SiteConfigListOptions) ([]*SiteConfig, error) {
+func (m *MockConfStore) ListSiteConfigs(v0 context.Context, v1 *PaginationArgs) ([]*SiteConfig, error) {
 	r0, r1 := m.ListSiteConfigsFunc.nextHook()(v0, v1)
 	m.ListSiteConfigsFunc.appendCall(ConfStoreListSiteConfigsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3447,7 +3447,7 @@ func (m *MockConfStore) ListSiteConfigs(v0 context.Context, v1 SiteConfigListOpt
 // SetDefaultHook sets function that is called when the ListSiteConfigs
 // method of the parent MockConfStore instance is invoked and the hook queue
 // is empty.
-func (f *ConfStoreListSiteConfigsFunc) SetDefaultHook(hook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)) {
+func (f *ConfStoreListSiteConfigsFunc) SetDefaultHook(hook func(context.Context, *PaginationArgs) ([]*SiteConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -3455,7 +3455,7 @@ func (f *ConfStoreListSiteConfigsFunc) SetDefaultHook(hook func(context.Context,
 // ListSiteConfigs method of the parent MockConfStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ConfStoreListSiteConfigsFunc) PushHook(hook func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)) {
+func (f *ConfStoreListSiteConfigsFunc) PushHook(hook func(context.Context, *PaginationArgs) ([]*SiteConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3464,19 +3464,19 @@ func (f *ConfStoreListSiteConfigsFunc) PushHook(hook func(context.Context, SiteC
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ConfStoreListSiteConfigsFunc) SetDefaultReturn(r0 []*SiteConfig, r1 error) {
-	f.SetDefaultHook(func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+	f.SetDefaultHook(func(context.Context, *PaginationArgs) ([]*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ConfStoreListSiteConfigsFunc) PushReturn(r0 []*SiteConfig, r1 error) {
-	f.PushHook(func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+	f.PushHook(func(context.Context, *PaginationArgs) ([]*SiteConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ConfStoreListSiteConfigsFunc) nextHook() func(context.Context, SiteConfigListOptions) ([]*SiteConfig, error) {
+func (f *ConfStoreListSiteConfigsFunc) nextHook() func(context.Context, *PaginationArgs) ([]*SiteConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3514,7 +3514,7 @@ type ConfStoreListSiteConfigsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 SiteConfigListOptions
+	Arg1 *PaginationArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*SiteConfig

@@ -43,7 +43,7 @@ type ConfStore interface {
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	ListSiteConfigs(context.Context, SiteConfigListOptions) ([]*SiteConfig, error)
+	ListSiteConfigs(context.Context, *PaginationArgs) ([]*SiteConfig, error)
 
 	// GetSiteConfig will return the total count of all configs of type "site".
 	//
@@ -72,13 +72,6 @@ type SiteConfig struct {
 
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
-}
-
-type SiteConfigListOptions struct {
-	*LimitOffset
-
-	// Ascending order by default.
-	OrderByDirection OrderByDirection
 }
 
 var siteConfigColumns = []*sqlf.Query{
@@ -144,9 +137,7 @@ SELECT
 	created_at,
 	updated_at
 FROM critical_and_site_config
-WHERE type = 'site'
-%s
-%s
+WHERE (%s)
 `
 
 var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
@@ -166,16 +157,30 @@ func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
 	return &c, nil
 }
 
-func (s *confStore) ListSiteConfigs(ctx context.Context, opt SiteConfigListOptions) ([]*SiteConfig, error) {
-	// Ascending order by default.
-	orderByClause := sqlf.Sprintf("ORDER BY id ASC")
-	if opt.OrderByDirection == DescendingOrderByDirection {
-		orderByClause = sqlf.Sprintf("ORDER BY id DESC")
+func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
+	where := []*sqlf.Query{sqlf.Sprintf(`type = 'site'`)}
+
+	// This will fetch all site configs.
+	if paginationArgs == nil {
+		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+		rows, err := s.Query(ctx, query)
+		return scanSiteConfigs(rows, err)
 	}
 
-	q := sqlf.Sprintf(listSiteConfigsFmtStr, orderByClause, opt.LimitOffset.SQL())
+	args, err := paginationArgs.SQL()
+	if err != nil {
+		return []*SiteConfig{}, nil
+	}
 
-	rows, err := s.Query(ctx, q)
+	if args.Where != nil {
+		where = append(where, args.Where)
+	}
+
+	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
+	query = args.AppendOrderToQuery(query)
+	query = args.AppendLimitToQuery(query)
+
+	rows, err := s.Query(ctx, query)
 	return scanSiteConfigs(rows, err)
 }
 
