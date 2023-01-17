@@ -273,13 +273,11 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
         .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
     const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
 
-    const recentRunsReversed = [...routine.recentRuns].reverse()
-
     const recentRunsTooltipContent = (
         <div>
             {commonHostName ? <Text className="mb-0">All on “{commonHostName}”:</Text> : ''}
             <ul className="pl-4">
-                {recentRunsReversed.map(run => (
+                {routine.recentRuns.map(run => (
                     <li key={run.at}>
                         <Text className="mb-0">
                             {run.errorMessage ? (
@@ -410,8 +408,7 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
                 : earliest,
         ''
     )
-    const lastRecentRunDate =
-        routine.recentRuns.length && new Date(routine.recentRuns[routine.recentRuns.length - 1].at)
+    const lastRecentRunDate = routine.recentRuns.length && new Date(routine.recentRuns[0].at)
     const isStopped = earliestStopDateString && earliestStopDateString >= latestStartDateString
     const isUnseenInAWhile =
         routine.intervalMs &&

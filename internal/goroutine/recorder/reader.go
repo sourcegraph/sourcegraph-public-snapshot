@@ -199,9 +199,9 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 		routineInfo.RecentRuns = append(routineInfo.RecentRuns, recentRunsForHost...)
 	}
 
-	// Sort recent runs ascending by start time
+	// Sort recent runs descending by start time
 	sort.Slice(routineInfo.RecentRuns, func(i, j int) bool {
-		return routineInfo.RecentRuns[i].At.Before(routineInfo.RecentRuns[j].At)
+		return routineInfo.RecentRuns[i].At.After(routineInfo.RecentRuns[j].At)
 	})
 	// Limit to recentRunCount
 	if len(routineInfo.RecentRuns) > recentRunCount {
