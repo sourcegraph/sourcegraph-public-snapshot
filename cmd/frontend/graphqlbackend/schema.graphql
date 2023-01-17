@@ -8910,3 +8910,92 @@ type ConnectionPageInfo {
     """
     hasPreviousPage: Boolean!
 }
+
+extend type Repository {
+    """
+    Ownership summary for this repository.
+    """
+    ownership(
+        """
+        Return only owners for the given reasons.
+        """
+        reasons: [OwnershipReasonType!]
+        first: Int
+        after: String
+    ): [Ownership!]!
+}
+
+extend type GitTree {
+    """
+    Ownership summary for this tree.
+    """
+    ownership(
+        """
+        Return only owners for the given reasons.
+        """
+        reasons: [OwnershipReasonType!]
+        first: Int
+        after: String
+    ): [Ownership!]!
+}
+
+extend type GitBlob {
+    """
+    Ownership summary for this file.
+    Use this to query ownership information for a definition.
+    """
+    ownership(
+        """
+        Return only owners for the given reasons.
+        """
+        reasons: [OwnershipReasonType!]
+        first: Int
+        after: String
+    ): [Ownership!]!
+}
+
+interface Owner {
+    # TODO: Determine useful fields.
+    id: ID!
+}
+
+extend type Person implements Owner {}
+extend type User implements Owner {}
+extend type Team implements Owner {}
+
+type Ownership {
+    handle: String!
+    owner: Owner!
+    reasons: [OwnershipReason!]!
+}
+
+"""
+This can also be used in search using `file:has.owner(@eseliger reason:<REASON>)`,
+the default is `CODEOWNERS_FILE` for now.
+"""
+enum OwnershipReasonType {
+    CODEOWNERS_FILE_ENTRY
+    RECENT_CONTRIBUTOR
+    LANGUAGE_EXPERT
+}
+union OwnershipReason = CodeownersFileEntry | RecentContributor | LanguageExpert
+
+type CodeownersFileEntry {
+    title: String!
+    description: String!
+    ingested: Boolean!
+    """
+    Either GitBlob or VirtualFile.
+    """
+    codeownersFile: File2!
+}
+
+type RecentContributor {
+    title: String!
+    description: String!
+}
+
+type LanguageExpert {
+    title: String!
+    description: String!
+}
