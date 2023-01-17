@@ -2047,7 +2047,7 @@
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE"
+          "ConstraintDefinition": "FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
