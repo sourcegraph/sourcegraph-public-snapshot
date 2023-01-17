@@ -169,7 +169,8 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 	}
 
 	// 🚨 SECURITY: Only site admins can trigger repository permissions syncs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	user, err := auth.CheckCurrentUserIsSiteAdminAndReturn(ctx, r.db)
+	if err != nil {
 		return nil, err
 	}
 
@@ -178,7 +179,12 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync}
+	userID := int32(0)
+	// user is nil in case of internal actor
+	if user != nil {
+		userID = user.ID
+	}
+	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync, TriggeredByUserID: userID}
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -199,7 +205,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: userID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
