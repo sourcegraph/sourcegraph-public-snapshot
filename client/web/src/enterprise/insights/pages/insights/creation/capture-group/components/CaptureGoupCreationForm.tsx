@@ -68,11 +68,49 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
         formAPI: { submitErrors, submitting },
     } = form
     const { licensed } = useUiFeatures()
+    const { value: repositoriesValue, ...repositoriesAttributes } = getDefaultInputProps(repositories)
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
             <RepoSettingSection repositories={repositories} repoQuery={repoQuery} repoMode={repoMode} />
+            <FormGroup
+                name="insight repositories"
+                title="Targeted repositories"
+                subtitle="Create a list of repositories to run your search over"
+            >
+                <Label htmlFor="repositories-id">Repositories</Label>
+                <RepositoriesField
+                    id="repositories-id"
+                    autoFocus={true}
+                    required={true}
+                    description="Find and choose up to 1 repository to run insight"
+                    placeholder={allReposMode.input.value ? 'All repositories' : 'Search repositories...'}
+                    value={allReposMode.input.value ? [] : repositoriesValue}
+                    {...repositoriesAttributes}
+                />
+
+                <Checkbox
+                    {...allReposMode.input}
+                    wrapperClassName="mb-1 mt-3 font-weight-normal"
+                    id="RunInsightsOnAllRepoInput"
+                    type="checkbox"
+                    value="all-repos-mode"
+                    checked={allReposMode.input.value}
+                    label="Run your insight over all your repositories"
+                />
+
+                <small className="w-100 mt-2 text-muted">
+                    This feature is actively in development. Read about the{' '}
+                    <Link
+                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        limitations here.
+                    </Link>
+                </small>
+            </FormGroup>
 
             <hr aria-hidden={true} className="my-4 w-100" />
 
