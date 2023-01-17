@@ -42,7 +42,7 @@ func DefaultServerOptions() []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because the tracer will not be initialized during init time.
 	return []grpc.ServerOption{
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		grpc.ChainUnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 	}
 }

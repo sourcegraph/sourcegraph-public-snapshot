@@ -9,6 +9,8 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"go.uber.org/atomic"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type TracePolicy string
@@ -62,8 +64,9 @@ func WithShouldTrace(ctx context.Context, shouldTrace bool) context.Context {
 }
 
 const (
-	traceHeader = "X-Sourcegraph-Should-Trace"
-	traceQuery  = "trace"
+	traceHeader      = "X-Sourcegraph-Should-Trace"
+	traceQuery       = "trace"
+	traceMetadataKey = "should-trace"
 )
 
 // Transport wraps an underlying HTTP RoundTripper, injecting the X-Sourcegraph-Should-Trace header
@@ -93,4 +96,45 @@ func RequestWantsTracing(r *http.Request) bool {
 		return b
 	}
 	return false
+}
+
+func ShouldTraceStreamClientInterceptor() grpc.StreamClientInterceptor {
+	return func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		ctx = metadata.AppendToOutgoingContext(
+			ctx,
+			traceMetadataKey,
+			strconv.FormatBool(ShouldTrace(ctx)),
+		)
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+}
+
+func ShouldTraceStreamServerInterceptor() grpc.StreamServerInterceptor {
+	return func(
+		srv interface{},
+		ss grpc.ServerStream,
+		info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler,
+	) error {
+		v := metadata.ValueFromIncomingContext(ss.Context(), traceMetadataKey)
+		ctx := WithShouldTrace(ss.Context(), len(v) > 0 && v[0] == "true")
+		ss = contextedServerStream{ss, ctx}
+		return handler(srv, ss)
+	}
+}
+
+type contextedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (css contextedServerStream) Context() context.Context {
+	return css.ctx
 }
