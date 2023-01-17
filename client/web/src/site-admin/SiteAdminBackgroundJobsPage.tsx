@@ -50,6 +50,9 @@ export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
 // “dangerous” runs are displayed with a “danger” style to make sure they stand out even more.
 type RunLengthCategory = 'short' | 'long' | 'dangerous'
 
+// The maximum number of recent runs to fetch for each routine.
+const recentRunCount = 5
+
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminBackgroundJobsPageProps>
 > = ({ telemetryService }) => {
@@ -60,7 +63,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     const { data, loading, error, stopPolling, startPolling } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(
         BACKGROUND_JOBS,
         {
-            variables: { recentRunCount: 5 },
+            variables: { recentRunCount },
             pollInterval: BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS,
         }
     )
