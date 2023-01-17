@@ -13,21 +13,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased (4.5)
+## Unreleased
 
 ### Added
 
 - Added out-of-band migration that will migrate all existing data from LSIF to SCIP (see additional [migration documentation](https://docs.sourcegraph.com/admin/how-to/lsif_scip_migration)). [#45106](https://github.com/sourcegraph/sourcegraph/pull/45106)
-
-### Changed
-
-### Removed
-
-## Unreleased (4.4)
-
-### Added
-
--
 
 ### Changed
 
