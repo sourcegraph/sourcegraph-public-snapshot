@@ -134,7 +134,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 			return &reqContext, jobs, errors.New("backfill request provided")
 		}
 		req := reqContext.backfillRequest
-		buildJob := makeHistoricalSearchJobFunc(logger, commitClient, rateLimit)
+		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
 		logger.Debug("making search plan")
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Name)
@@ -149,7 +149,17 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
-		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
+		filteredRecordingTimes := make([]time.Time, 0, len(req.SampleTimes))
+		for i := 0; i < len(req.SampleTimes); i++ {
+			if firstHEADCommit.Author.Date.Before(req.SampleTimes[i]) {
+				filteredRecordingTimes = append(filteredRecordingTimes, req.SampleTimes[i])
+			}
+		}
+		err = rateLimit.Wait(ctx)
+		if err != nil {
+			return &reqContext, jobs, err
+		}
+		searchPlan := compressionPlan.Filter(ctx, filteredRecordingTimes, req.Repo.Name)
 		var ratio float64 = 1.0
 		if numberOfFrames > 0 {
 			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
@@ -208,7 +218,7 @@ type buildSeriesContext struct {
 
 type searchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs)
 
-func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient, limiter *ratelimit.InstrumentedLimiter) searchJobFunc {
+func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient) searchJobFunc {
 	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs) {
 		logger.Debug("making search job")
 		rawQuery := bctx.series.Query
@@ -231,10 +241,6 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 
 		revision := bctx.execution.Revision
 		if len(bctx.execution.Revision) == 0 {
-			err = limiter.Wait(ctx)
-			if err != nil {
-				return
-			}
 			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime, "")
 			if revErr != nil {
 				if errors.HasType(revErr, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(revErr) {
