@@ -36,7 +36,7 @@ import { PageTitle } from '../components/PageTitle'
 import { BackgroundJobsResult, BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
 import { formatDurationLong } from '../util/time'
 
-import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { ValueLegendList } from './analytics/components/ValueLegendList'
 import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backend'
 
 import styles from './SiteAdminBackgroundJobsPage.module.scss'
@@ -216,11 +216,8 @@ const JobList: React.FunctionComponent<{
     )
 }
 
-const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount: number }> = ({
-    jobs,
-    hostNameCount,
-}) => {
-    const legends = useMemo<ValueLegendListProps['items']>(() => {
+const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount: number }> = React.memo(
+    ({ jobs, hostNameCount }) => {
         const routineCount = jobs.reduce((acc, job) => acc + job.routines.length, 0)
         const routineInstanceCount = jobs.reduce(
             (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.instances.length, 0),
@@ -235,7 +232,8 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
                 ),
             0
         )
-        return [
+
+        const legends = [
             {
                 value: jobs.length,
                 description: pluralize('Job', jobs.length),
@@ -263,10 +261,10 @@ const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount
                 tooltip: 'The total number of errors across all runs across all routine instances.',
             },
         ]
-    }, [jobs, hostNameCount])
 
-    return legends && <ValueLegendList className="mb-3" items={legends} />
-}
+        return <ValueLegendList className="mb-3" items={legends} />
+    }
+)
 
 const RoutineItem: React.FunctionComponent<{ routine: BackgroundJob['routines'][0] }> = ({ routine }) => {
     const commonHostName =
