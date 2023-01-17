@@ -167,11 +167,14 @@ const (
 	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
 	TypePhabricator = "phabricator"
 
-	// TypeJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
-	TypeJVMPackages = "jvmPackages"
-
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
+
+	// ======= Start Package Repo Hosts =======
+	// must match the values in (*ExternalRepoSec).IsPackageRepo(), not importing here due to import cycle
+
+	// TypeJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
+	TypeJVMPackages = "jvmPackages"
 
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
@@ -187,6 +190,8 @@ const (
 
 	// TypeRubyPackages is the (api.ExternalRepoSpec).ServiceType value for Ruby packages.
 	TypeRubyPackages = "rubyPackages"
+
+	// ======= End Package Repo Hosts =======
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"

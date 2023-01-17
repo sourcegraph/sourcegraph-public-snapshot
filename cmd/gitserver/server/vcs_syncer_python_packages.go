@@ -53,6 +53,10 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
+func (s *pythonPackagesSyncer) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
+	return nil, nil
+}
+
 func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return reposource.ParseVersionedPackage(string(name) + "==" + version)
 }

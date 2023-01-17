@@ -198,7 +198,8 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev, !repo.ExternalRepo.IsPackageRepo())
+	fmt.Printf("SEARCHING FOR COMMIT %q %v package repo? %v commitID %s err %v\n", args.Rev, args.InputRevspec, repo.ExternalRepo.IsPackageRepo(), commitID, err)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -207,6 +208,10 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	}
 
 	return r.CommitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) Tag(ctx context.Context, rev string) (*GitTagResolver, error) {
+	return NewGitTagResolver(r.db, r.gitserverClient, r, api.TagID(rev)), nil
 }
 
 func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
@@ -266,7 +271,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "", true)
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err

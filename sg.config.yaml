@@ -613,9 +613,9 @@ commands:
       chmod u+rwx $BLOBSTORE_LOGS $BLOBSTORE_DISK
       CACHE=true ./docker-images/blobstore/build.sh >$BLOBSTORE_LOG_FILE 2>&1
     env:
-      BLOBSTORE_DISK: $HOME/.sourcegraph-dev/data/blobstore
-      BLOBSTORE_LOGS: $HOME/.sourcegraph-dev/logs/blobstore
-      BLOBSTORE_LOG_FILE: $HOME/.sourcegraph-dev/logs/blobstore/blobstore.log
+      BLOBSTORE_DISK: $HOME/.sourcegraph/data/blobstore
+      BLOBSTORE_LOGS: $HOME/.sourcegraph/logs/blobstore
+      BLOBSTORE_LOG_FILE: $HOME/.sourcegraph/logs/blobstore/blobstore.log
       IMAGE: sourcegraph/blobstore
       CONTAINER: blobstore
 
@@ -641,7 +641,7 @@ commands:
     install_func: installJaeger
     env:
       JAEGER_VERSION: 1.36.0
-      JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
+      JAEGER_DISK: $HOME/.sourcegraph/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
 
@@ -677,15 +677,15 @@ commands:
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       ./docker-images/grafana/build.sh
     env:
-      GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
+      GRAFANA_DISK: $HOME/.sourcegraph/data/grafana
       # Log file location: since we log outside of the Docker container, we should
-      # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
+      # log somewhere that's _not_ ~/.sourcegraph/data/grafana, since that gets
       # volume mounted into the container and therefore has its own ownership
       # semantics.
       # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
-      GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
+      GRAFANA_LOG_FILE: $HOME/.sourcegraph/logs/grafana/grafana.log
       IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
@@ -733,9 +733,9 @@ commands:
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
       CACHE=true ./docker-images/prometheus/build.sh
     env:
-      PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
+      PROMETHEUS_DISK: $HOME/.sourcegraph/data/prometheus
       # See comment above for `grafana`
-      PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
+      PROMETHEUS_LOG_FILE: $HOME/.sourcegraph/logs/prometheus/prometheus.log
       IMAGE: sourcegraph/prometheus:dev
       CONTAINER: prometheus
       PORT: 9090
@@ -770,9 +770,9 @@ commands:
       mkdir -p "$(dirname ${LOKI_LOG_FILE})"
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
-      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
+      LOKI_DISK: $HOME/.sourcegraph/data/loki
       LOKI_VERSION: '2.3.0'
-      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
+      LOKI_LOG_FILE: $HOME/.sourcegraph/logs/loki/loki.log
 
   otel-collector:
     install: docker-images/opentelemetry-collector/build.sh

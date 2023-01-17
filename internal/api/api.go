@@ -48,6 +48,8 @@ func (c CommitID) Short() string {
 	return string(c)
 }
 
+type TagID = CommitID
+
 // RevSpec is a revision range specifier suitable for passing to git. See
 // the manpage gitrevisions(7).
 type RevSpec string
@@ -87,6 +89,14 @@ type ExternalRepoSpec struct {
 	//
 	// Example: "https://github.com/", "https://github-enterprise.example.com/"
 	ServiceID string
+}
+
+func (c *ExternalRepoSpec) IsPackageRepo() bool {
+	switch c.ServiceType {
+	case "npmPackages", "jvmPackages", "goModules", "pythonPackages", "rustPackages", "rubyPackages":
+		return true
+	}
+	return false
 }
 
 // Equal returns true if r is equal to s.

@@ -119,11 +119,20 @@ func (r *GitRefResolver) Target() interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Commit(context.Context) (*GitCommitResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
+	Tag(context.Context) (*GitTagResolver, error)
+	//lint:ignore U1000 is used by graphql via reflection
 	Type(context.Context) (GitObjectType, error)
 } {
-	if r.target != "" {
+	fmt.Printf("GIT REF TARGET %q %q\n", r.name, r.target)
+
+	if r.Type() == gitRefTypeBranch && r.target != "" {
 		return &gitObject{repo: r.repo, oid: r.target, typ: GitObjectTypeCommit}
 	}
+
+	if r.Type() == gitRefTypeTag && r.target != "" {
+		return &gitObject{repo: r.repo, oid: r.target, typ: GitObjectTypeTag}
+	}
+
 	r.gitObjectResolverOnce.Do(func() {
 		r.gitObjectResolver = &gitObjectResolver{repo: r.repo, revspec: r.name}
 	})

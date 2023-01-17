@@ -125,6 +125,9 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		refs[i] = &GitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: GitObjectID(b.Head)}
 	}
 	for i, t := range tags {
+		if t.CommitID == gitdomain.EmptyGitObject {
+			t.CommitID = ""
+		}
 		refs[i+len(branches)] = &GitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: GitObjectID(t.CommitID)}
 	}
 

@@ -191,6 +191,11 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToGitTag() (*GitTagResolver, bool) {
+	n, ok := r.Node.(*GitTagResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	if NodeToRegistryExtension == nil {
 		return nil, false

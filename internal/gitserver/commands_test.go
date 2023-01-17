@@ -2018,7 +2018,7 @@ func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { //KEEP
+func TestParseBranchesContaining(t *testing.T) { // KEEP
 	names := parseBranchesContaining([]string{
 		"refs/tags/v0.7.0",
 		"refs/tags/v0.5.1",
@@ -2636,7 +2636,8 @@ func TestRead(t *testing.T) {
 }
 
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
-	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
+	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte),
+) {
 	t.Helper()
 	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {

@@ -59,5 +59,5 @@ type PolicyMatcher interface {
 
 type RepoStore interface {
 	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string, fetchMissing bool) (api.CommitID, error)
 }

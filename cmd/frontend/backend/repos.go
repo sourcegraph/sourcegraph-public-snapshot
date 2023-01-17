@@ -40,8 +40,9 @@ type ReposService interface {
 	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
 	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string, fetchIfMissing bool) (api.CommitID, error)
 	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
+	GetTag(ctx context.Context, repo *types.Repo, tagID api.TagID) (*gitdomain.Tag, error)
 }
 
 // NewRepos uses the provided `database.DB` to initialize a new RepoService.
@@ -295,7 +296,7 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string, fetchIfMissing bool) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
@@ -303,7 +304,9 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{
+		// NoEnsureRevision: !fetchIfMissing,
+	})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
@@ -317,6 +320,21 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	}
 
 	return s.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, gitserver.ResolveRevisionOptions{})
+}
+
+func (s *repos) GetTag(ctx context.Context, repo *types.Repo, tagID api.TagID) (res *gitdomain.Tag, err error) {
+	ctx, done := trace(ctx, "Repos", "GetTag", map[string]any{"repo": repo.Name, "tagID": tagID}, &err)
+	defer done()
+
+	s.logger.Debug("GetTag", log.String("repo", string(repo.Name)), log.String("tagID", string(tagID)))
+
+	var tags []*gitdomain.Tag
+	tags, err = s.gitserverClient.ListTags(ctx, repo.Name, string(tagID))
+	if len(tags) > 0 {
+		return tags[0], err
+	}
+
+	return nil, err
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph

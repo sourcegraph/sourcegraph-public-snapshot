@@ -541,7 +541,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		}
 		return &types.Repo{ID: repoID}, nil
 	})
-	mockRepoStore.ResolveRevFunc.SetDefaultHook(func(ctx context.Context, repo *types.Repo, _ string) (api.CommitID, error) {
+	mockRepoStore.ResolveRevFunc.SetDefaultHook(func(ctx context.Context, repo *types.Repo, _ string, _ bool) (api.CommitID, error) {
 		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	})
 

@@ -1197,7 +1197,7 @@ func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, com
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)%00%(taggername)%00%(taggeremail:trim)"}
 
 	for _, commit := range commitObjs {
 		args = append(args, "--points-at", commit)
@@ -1223,9 +1223,9 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 	lines := bytes.Split(in, []byte("\n"))
 	tags := make([]*gitdomain.Tag, len(lines))
 	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		parts := bytes.SplitN(line, []byte("\x00"), 5)
+		if len(parts) != 4 && len(parts) != 5 {
+			return nil, errors.Errorf("invalid git tag list output line of length %d: %q", len(parts), line)
 		}
 
 		tag := &gitdomain.Tag{
@@ -1236,6 +1236,14 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
 		if err == nil {
 			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		if len(parts) == 5 {
+			tag.Tagger = &gitdomain.Signature{
+				Name:  string(parts[3]),
+				Email: string(parts[4]),
+				Date:  tag.CreatorDate,
+			}
 		}
 
 		tags[i] = tag

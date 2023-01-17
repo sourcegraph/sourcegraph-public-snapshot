@@ -44,7 +44,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	})
 
 	// (no rev/branch specified)
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
+	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		return api.CommitID(want), nil
 	})
 
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
+	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "b", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 		return api.CommitID(want), nil
 	})
 
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 		return "", errors.New("x")
 	})
 
-	_, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	_, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40), true)
 	if !errors.Is(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}

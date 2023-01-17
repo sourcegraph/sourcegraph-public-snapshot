@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const EmptyGitObject = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
 // OID is a Git OID (40-char hex-encoded).
 type OID [20]byte
 
@@ -35,7 +37,7 @@ const (
 // To avoid being reported as a regular file mode by (os.FileMode).IsRegular, it sets other bits
 // (os.ModeDevice) beyond the Git "160000" commit mode bits. The choice of os.ModeDevice is
 // arbitrary.
-const ModeSubmodule = 0160000 | os.ModeDevice
+const ModeSubmodule = 0o160000 | os.ModeDevice
 
 // Submodule holds information about a Git submodule and is
 // returned in the FileInfo's Sys field by Stat/ReadDir calls.
@@ -162,6 +164,7 @@ func (p *ContributorCount) String() string {
 type Tag struct {
 	Name         string `json:"Name,omitempty"`
 	api.CommitID `json:"CommitID,omitempty"`
+	Tagger       *Signature `json:"Tagger,omitempty"`
 	CreatorDate  time.Time
 }
 

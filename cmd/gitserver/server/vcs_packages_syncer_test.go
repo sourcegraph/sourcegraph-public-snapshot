@@ -260,6 +260,10 @@ type fakeDepsSource struct {
 	downloadCount map[string]int
 }
 
+func (s *fakeDepsSource) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
+	return nil, nil
+}
+
 func (s *fakeDepsSource) Add(deps ...string) {
 	for _, d := range deps {
 		dep, _ := parseFakeDependency(d)
@@ -280,12 +284,13 @@ func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposourc
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0666)
+	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0o666)
 }
 
 func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(string(name) + "@" + version)
 }
+
 func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(dep)
 }

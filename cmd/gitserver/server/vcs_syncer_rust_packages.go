@@ -48,6 +48,10 @@ type rustDependencySource struct {
 	client *crates.Client
 }
 
+func (s *rustDependencySource) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
+	return nil, nil
+}
+
 func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return reposource.ParseRustVersionedPackage(string(name) + "@" + version)
 }

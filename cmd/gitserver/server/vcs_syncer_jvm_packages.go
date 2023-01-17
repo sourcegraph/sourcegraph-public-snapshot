@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -54,13 +55,14 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  configDeps,
-		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
+		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources, versions: coursier.Versions},
 	}
 }
 
 type jvmPackagesSyncer struct {
-	config *schema.JVMPackagesConnection
-	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
+	config   *schema.JVMPackagesConnection
+	fetch    func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
+	versions func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenModule) (versions []string, err error)
 }
 
 func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
@@ -119,6 +121,24 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	}
 
 	return nil
+}
+
+func (s *jvmPackagesSyncer) ListVersions(ctx context.Context, dep reposource.Package) (versions []reposource.VersionedPackage, err error) {
+	mavenDep := dep.(*reposource.MavenVersionedPackage)
+	versionStrings, err := s.versions(ctx, s.config, mavenDep.MavenModule)
+	if err != nil {
+		return nil, err
+	}
+
+	versions = make([]reposource.VersionedPackage, 0, len(versionStrings))
+	for _, str := range versionStrings {
+		versions = append(versions, &reposource.MavenVersionedPackage{
+			MavenModule: mavenDep.MavenModule,
+			Version:     str,
+		})
+	}
+
+	return
 }
 
 func unzipJarFile(jarPath, destination string) (err error) {

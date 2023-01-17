@@ -17,6 +17,7 @@ type operations struct {
 	fetchSources  *observation.Operation
 	exists        *observation.Operation
 	fetchByteCode *observation.Operation
+	versions      *observation.Operation
 	runCommand    *observation.Operation
 }
 
@@ -46,6 +47,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		fetchSources:  op("FetchSources"),
 		exists:        op("Exists"),
 		fetchByteCode: op("FetchByteCode"),
+		versions:      op("Versions"),
 		runCommand:    op("RunCommand"),
 
 		Logger: observationCtx.Logger,

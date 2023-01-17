@@ -54,10 +54,11 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     ariaLabel,
 }) => {
     const mostRecentSig =
-        node.target.commit &&
-        (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
-            ? node.target.commit.committer
-            : node.target.commit.author)
+        (node.target.tag && node.target.tag.tagger && node.target.tag.tagger) ||
+        (node.target.commit &&
+            (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
+                ? node.target.commit.committer
+                : node.target.commit.author))
     const behindAhead = node.target.commit?.behindAhead
     url = url !== undefined ? url : node.url
 
@@ -116,6 +117,11 @@ export const gitReferenceFragments = gql`
                 behindAhead(revspec: "HEAD") @include(if: $withBehindAhead) {
                     behind
                     ahead
+                }
+            }
+            tag {
+                tagger {
+                    ...SignatureFieldsForReferences
                 }
             }
         }

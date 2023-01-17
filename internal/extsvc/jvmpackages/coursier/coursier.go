@@ -150,6 +150,31 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 	return nil
 }
 
+func Versions(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenModule) (versions []string, err error) {
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("dependency", dependency.CoursierSyntax()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// if dependency.IsJDK() {
+	// 	_, err = FetchSources(ctx, config, dependency)
+	// } else {
+	versions, err = runCoursierCommand(
+		ctx,
+		config,
+		"complete-dep",
+		"--quiet", dependency.CoursierSyntax()+":",
+	)
+	// }
+
+	if err != nil {
+		return nil, &coursierError{err}
+	}
+	return versions, err
+}
+
 type coursierError struct{ error }
 
 func (e coursierError) NotFound() bool {

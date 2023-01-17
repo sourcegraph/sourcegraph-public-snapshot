@@ -4414,6 +4414,10 @@ type GitObject {
     """
     commit: GitCommit
     """
+    The tag object, if it is a tag and it exists; otherwise null.
+    """
+    tag: GitTag
+    """
     The Git object's type.
     """
     type: GitObjectType!
@@ -4761,6 +4765,45 @@ type GitCommit implements Node {
         """
         base: String
     ): RepositoryComparison!
+}
+
+type GitTag implements Node {
+    """
+    The globally addressable ID for this tag.
+    """
+    id: ID!
+    """
+    The repository that contains this tag.
+    """
+    repository: Repository!
+    """
+    This tags's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this tag's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The commit the tag points to, if it points to a commit; otherwise null.
+    """
+    commit: GitCommit
+    """
+    This tag's author.
+    """
+    tagger: Signature!
+    """
+    The full tag message.
+    """
+    message: String!
+    """
+    The first line of the tag message.
+    """
+    subject: String!
+    """
+    The contents of the tag message after the first line.
+    """
+    body: String
 }
 
 """

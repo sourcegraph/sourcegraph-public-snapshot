@@ -42,11 +42,11 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
+	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "", true)
 	if err != nil {
 		return "@" + rev
 	}
-	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
+	branchCommitID, err := repos.ResolveRev(ctx, repo, rev, true)
 	if err != nil {
 		return "@" + rev
 	}

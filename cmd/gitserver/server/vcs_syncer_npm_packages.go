@@ -53,6 +53,10 @@ var (
 	_ packagesDownloadSource = &npmPackagesSyncer{}
 )
 
+func (s *npmPackagesSyncer) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
+	return nil, nil
+}
+
 func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return reposource.ParseNpmVersionedPackage(string(name) + "@" + version)
 }

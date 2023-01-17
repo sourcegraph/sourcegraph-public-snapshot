@@ -105,7 +105,7 @@ func NewMockReposService() *MockReposService {
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, *types.Repo, string, bool) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -162,7 +162,7 @@ func NewStrictMockReposService() *MockReposService {
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (api.CommitID, error) {
+			defaultHook: func(context.Context, *types.Repo, string, bool) (api.CommitID, error) {
 				panic("unexpected invocation of MockReposService.ResolveRev")
 			},
 		},
@@ -1186,24 +1186,24 @@ func (c ReposServiceRequestRepositoryCloneFuncCall) Results() []interface{} {
 // ReposServiceResolveRevFunc describes the behavior when the ResolveRev
 // method of the parent MockReposService instance is invoked.
 type ReposServiceResolveRevFunc struct {
-	defaultHook func(context.Context, *types.Repo, string) (api.CommitID, error)
-	hooks       []func(context.Context, *types.Repo, string) (api.CommitID, error)
+	defaultHook func(context.Context, *types.Repo, string, bool) (api.CommitID, error)
+	hooks       []func(context.Context, *types.Repo, string, bool) (api.CommitID, error)
 	history     []ReposServiceResolveRevFuncCall
 	mutex       sync.Mutex
 }
 
 // ResolveRev delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 string) (api.CommitID, error) {
-	r0, r1 := m.ResolveRevFunc.nextHook()(v0, v1, v2)
-	m.ResolveRevFunc.appendCall(ReposServiceResolveRevFuncCall{v0, v1, v2, r0, r1})
+func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 string, v3 bool) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevFunc.nextHook()(v0, v1, v2, v3)
+	m.ResolveRevFunc.appendCall(ReposServiceResolveRevFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ResolveRev method of
 // the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string, bool) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -1211,7 +1211,7 @@ func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *
 // ResolveRev method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.Repo, string, bool) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1220,19 +1220,19 @@ func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceResolveRevFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, string, bool) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceResolveRevFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.PushHook(func(context.Context, *types.Repo, string, bool) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, *types.Repo, string) (api.CommitID, error) {
+func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, *types.Repo, string, bool) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1274,6 +1274,9 @@ type ReposServiceResolveRevFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.CommitID
@@ -1285,7 +1288,7 @@ type ReposServiceResolveRevFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ReposServiceResolveRevFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

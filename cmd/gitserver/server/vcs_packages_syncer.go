@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -18,6 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var emptyTreeObject string
+
+func init() {
+	stdout, err := exec.Command("git", "hash-object", "-t", "tree", "/dev/null").Output()
+	if target := (*exec.ExitError)(nil); err != nil && errors.As(err, &target) {
+		panic(fmt.Sprintf("failed to get empty-tree git hash: %s", target.Stderr))
+	}
+	emptyTreeObject = string(bytes.TrimSpace(stdout))
+}
 
 // vcsPackagesSyncer implements the VCSSyncer interface for dependency repos
 // of different types.
@@ -49,6 +61,8 @@ type packagesSource interface {
 	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
 	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
 	ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error)
+
+	ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error)
 }
 
 type packagesDownloadSource interface {
@@ -103,16 +117,61 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 	name := pkg.PackageSyntax()
 
-	versions, err := s.versions(ctx, name)
+	versionsToSync, err := s.versionsToSync(ctx, name)
 	if err != nil {
 		return err
 	}
 
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		allPackageVersions, listErr := s.source.ListVersions(ctx, pkg)
+		if listErr != nil {
+			err = errors.Append(err, listErr)
+			return
+		}
+
+		if len(allPackageVersions) == 0 {
+			return
+		}
+
+		out, listTagErr := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
+		if listTagErr != nil {
+			err = errors.Append(err, listTagErr)
+			return
+		}
+
+		tags := map[string]struct{}{}
+		for _, line := range strings.Split(out, "\n") {
+			if len(line) == 0 {
+				continue
+			}
+
+			tags[line] = struct{}{}
+		}
+
+		fmt.Printf("ALL VERSIONS %v, EXISTING %v\n", allPackageVersions, tags)
+
+		for _, version := range allPackageVersions {
+			if _, exists := tags[version.GitTagFromVersion()]; !exists {
+				cmd := exec.CommandContext(ctx, "git", "tag", "-m", version.GitTagFromVersion(), version.GitTagFromVersion(), emptyTreeObject)
+				out, createTagErr := runCommandInDirectory(ctx, cmd, string(dir), version)
+				if createTagErr != nil {
+					fmt.Printf("WHOOPSY for version %s %v '%s'\n", version, createTagErr, string(out))
+				}
+			}
+		}
+	}()
+
+	fmt.Printf("FETCHING %q %q\n", revspec, dir)
+
 	if revspec != "" {
-		return s.fetchRevspec(ctx, name, dir, versions, revspec)
+		return s.fetchRevspec(ctx, name, dir, versionsToSync, revspec)
 	}
 
-	return s.fetchVersions(ctx, name, dir, versions)
+	return s.fetchVersions(ctx, name, dir, versionsToSync)
 }
 
 // fetchRevspec fetches the given revspec if it's not contained in
@@ -172,10 +231,10 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 // fetchVersions checks whether the given versions are all valid version
 // specifiers, then checks whether they've already been downloaded and, if not,
 // downloads them.
-func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versions []string) error {
+func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versionsToSync []string) error {
 	var errs errors.MultiError
-	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
-	for _, version := range versions {
+	cloneable := make([]reposource.VersionedPackage, 0, len(versionsToSync))
+	for _, version := range versionsToSync {
 		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(name, version); err != nil {
 			errs = errors.Append(errs, err)
 		} else {
@@ -191,37 +250,38 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 		return cloneable[i].Less(cloneable[j])
 	})
 
-	// Create set of existing tags. We want to skip the download of a package if the
-	// tag already exists.
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
+	// Create set of existing tags. We want to skip the download of a package if the tag already exists.
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "for-each-ref", "--format='%(*objectname):%(refname:lstrip=2)'", "refs/tags/"), string(dir), s.placeholder)
 	if err != nil {
 		return err
 	}
 
-	tags := map[string]struct{}{}
+	tagsInRepo := map[string]string{}
 	for _, line := range strings.Split(out, "\n") {
 		if len(line) == 0 {
 			continue
 		}
-		tags[line] = struct{}{}
+
+		parts := strings.Split(line, ":")
+		tagsInRepo[parts[1]] = parts[0]
 	}
 
-	var cloned []reposource.VersionedPackage
+	var alreadyCloned []reposource.VersionedPackage
 	for _, dependency := range cloneable {
-		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
-			cloned = append(cloned, dependency)
+		if gitObject, tagExists := tagsInRepo[dependency.GitTagFromVersion()]; tagExists && gitObject != emptyTreeObject {
+			alreadyCloned = append(alreadyCloned, dependency)
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
 			errs = errors.Append(errs, errors.Wrapf(err, "error pushing dependency %q", dependency))
 		} else {
-			cloned = append(cloned, dependency)
+			alreadyCloned = append(alreadyCloned, dependency)
 		}
 	}
 
 	// Set the latest version as the default branch, if there was a successful download.
-	if len(cloned) > 0 {
-		latest := cloned[0]
+	if len(alreadyCloned) > 0 {
+		latest := alreadyCloned[0]
 		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
 		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
 			return errors.Append(errs, err)
@@ -233,30 +293,36 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 		return errs
 	}
 
-	// Delete tags for versions we no longer track if there were no errors so far.
-	dependencyTags := make(map[string]struct{}, len(cloneable))
-	for _, dependency := range cloneable {
-		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
-	}
+	// ========================================================
+	// 		THIS WILL BE MOVED TO BACKGROUND CLEANUP JOB
+	// ========================================================
 
-	for tag := range tags {
-		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
-			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-				s.logger.Error("failed to delete git tag",
-					log.Error(err),
-					log.String("tag", tag),
-				)
-				continue
-			}
-		}
-	}
+	// fmt.Println("CLONEABLE", cloneable)
+	// // Delete tags for versions we no longer track if there were no errors so far.
+	// dependencyTags := make(map[string]struct{}, len(cloneable))
+	// for _, dependency := range cloneable {
+	// 	dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
+	// }
 
-	if len(cloneable) == 0 {
-		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
-		// Best-effort branch deletion since we don't know if this branch has been created yet.
-		_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
-	}
+	// for tag, commitObj := range tagsInRepo {
+	// 	// only delete tags that
+	// 	if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag && commitObj != emptyTreeObject {
+	// 		cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
+	// 		if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
+	// 			s.logger.Error("failed to delete git tag",
+	// 				log.Error(err),
+	// 				log.String("tag", tag),
+	// 			)
+	// 			continue
+	// 		}
+	// 	}
+	// }
+
+	// if len(cloneable) == 0 {
+	// 	cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
+	// 	// Best-effort branch deletion since we don't know if this branch has been created yet.
+	// 	_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
+	// }
 
 	return nil
 }
@@ -322,7 +388,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
+func (s *vcsPackagesSyncer) versionsToSync(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
 	var versions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)

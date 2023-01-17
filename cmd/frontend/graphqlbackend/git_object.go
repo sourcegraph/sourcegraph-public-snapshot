@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -63,6 +64,12 @@ func (o *gitObject) AbbreviatedOID(ctx context.Context) (string, error) {
 func (o *gitObject) Commit(ctx context.Context) (*GitCommitResolver, error) {
 	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(o.oid)})
 }
+
+// TODO: nsc this seems to be used for commits only?
+func (o *gitObject) Tag(context.Context) (*GitTagResolver, error) {
+	return nil, nil
+}
+
 func (o *gitObject) Type(context.Context) (GitObjectType, error) { return o.typ, nil }
 
 type gitObjectResolver struct {
@@ -76,6 +83,7 @@ type gitObjectResolver struct {
 }
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, GitObjectType, error) {
+	fmt.Printf("RESOLVING OBJECT %q\n", o.revspec)
 	o.once.Do(func() {
 		obj, err := gitserver.NewClient(o.repo.db).GetObject(ctx, o.repo.RepoName(), o.revspec)
 		if err != nil {
@@ -84,6 +92,7 @@ func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, GitObject
 		}
 		o.oid = GitObjectID(obj.ID.String())
 		o.typ = toGitObjectType(obj.Type)
+		fmt.Printf("RESOLVED OBJECT %q %q %q\n", o.revspec, obj.ID.String(), obj.Type)
 	})
 	return o.oid, o.typ, o.err
 }
@@ -102,11 +111,23 @@ func (o *gitObjectResolver) AbbreviatedOID(ctx context.Context) (string, error) 
 }
 
 func (o *gitObjectResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	oid, _, err := o.resolve(ctx)
-	if err != nil {
+	fmt.Printf("SEARCHING FOR COMMIT %q\n", o.revspec)
+	oid, typ, err := o.resolve(ctx)
+	fmt.Printf("SEARCHED FOR COMMIT %q %q %q\n", o.revspec, typ, GitObjectTypeCommit)
+	if err != nil || typ != GitObjectTypeCommit {
 		return nil, err
 	}
 	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(oid)})
+}
+
+func (o *gitObjectResolver) Tag(ctx context.Context) (*GitTagResolver, error) {
+	fmt.Printf("SEARCHING FOR TAG %q\n", o.revspec)
+	oid, typ, err := o.resolve(ctx)
+	fmt.Printf("SEARCHED FOR TAG %q %q %q %q\n", oid, o.revspec, typ, GitObjectTypeTag)
+	if err != nil || typ != GitObjectTypeTag {
+		return nil, err
+	}
+	return o.repo.Tag(ctx, string(oid))
 }
 
 func (o *gitObjectResolver) Type(ctx context.Context) (GitObjectType, error) {

@@ -47,6 +47,10 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
+func (s *goModulesSyncer) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
+	return nil, nil
+}
+
 func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return reposource.ParseGoVersionedPackage(string(name) + "@" + version)
 }
@@ -81,7 +85,7 @@ func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposour
 // valid according to modzip.CheckZip or that are potentially malicious.
 func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 	zipFile := path.Join(workDir, "mod.zip")
-	err := os.WriteFile(zipFile, zipBytes, 0666)
+	err := os.WriteFile(zipFile, zipBytes, 0o666)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create go module zip file %q", zipFile)
 	}
