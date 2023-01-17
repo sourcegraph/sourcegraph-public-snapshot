@@ -310,7 +310,9 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
                         <StartedStoppedIndicator routine={routine} />
                     </span>
                     <Tooltip content={routine.type.toLowerCase().replace(/_/g, ' ')} placement="top">
-                        <RoutineItemIcon type={routine.type} />
+                        <span>
+                            <RoutineItemIcon type={routine.type} />
+                        </span>
                     </Tooltip>
                     <span className="ml-2">
                         <strong>{routine.name}</strong>
