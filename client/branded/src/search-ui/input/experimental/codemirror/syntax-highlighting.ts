@@ -99,19 +99,19 @@ export const filterHighlight = [
     // ViewPlugin handling decorating context: filters
     ViewPlugin.fromClass(
         class implements PluginValue {
-            decorations: DecorationSet
+            public decorations: DecorationSet
 
             constructor(view: EditorView) {
                 this.decorations = this.createDecorations(view)
             }
 
-            update(update: ViewUpdate) {
+            public update(update: ViewUpdate): void {
                 if (update.focusChanged || update.selectionSet || update.docChanged) {
                     this.decorations = this.createDecorations(update.view)
                 }
             }
 
-            private createDecorations(view: EditorView) {
+            private createDecorations(view: EditorView): DecorationSet {
                 const query = view.state.facet(queryTokens)
                 const builder = new RangeSetBuilder<Decoration>()
                 for (const token of query.tokens) {
