@@ -805,6 +805,13 @@ type User struct {
 	Searchable            bool
 }
 
+type SystemRole string
+
+var (
+	UserSystemRole              SystemRole = "USER"
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
 type Role struct {
 	ID        int32
 	Name      string

@@ -26,11 +26,6 @@ var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("readonly"),
 }
 
-var (
-	DefaultRole           string = "DEFAULT"
-	SiteAdministratorRole string = "SITE_ADMINISTRATOR"
-)
-
 type RoleStore interface {
 	basestore.ShareableStore
 
