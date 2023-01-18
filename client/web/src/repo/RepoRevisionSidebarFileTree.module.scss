@@ -38,7 +38,8 @@
     // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin-top: 1px;
 
-    &:hover,  &.selected{
+    &:hover,
+    &.selected {
         background-color: var(--color-bg-2);
         color: var(--body-color);
     }
@@ -61,7 +62,7 @@
     box-shadow: none;
 }
 :global(.focus-visible) > .node {
-    outline: 0.125rem solid var(--primary-2)
+    outline: 0.125rem solid var(--primary-2);
 }
 
 .icon {
