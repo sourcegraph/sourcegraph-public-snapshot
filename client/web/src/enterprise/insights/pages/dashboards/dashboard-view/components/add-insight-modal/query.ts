@@ -16,7 +16,7 @@ import {
 
 import { DashboardInsight, InsightSuggestion, InsightType } from './types'
 
-export const SYNC_DASHBOARD_INSIGHTS = gql`
+const SYNC_DASHBOARD_INSIGHTS = gql`
     fragment DashboardInsights on InsightsDashboard {
         views {
             nodes {
@@ -35,6 +35,10 @@ export const SYNC_DASHBOARD_INSIGHTS = gql`
     }
 `
 
+/**
+ * This cache function returns a minimal data object from the apollo cache about
+ * insights that the currently viewed dashboard has see {@link GET_DASHBOARD_INSIGHTS_GQL}
+ */
 export function getCachedDashboardInsights(client: ApolloClient<unknown>, dashboardId: string): DashboardInsight[] {
     const dashboardInsights =
         client
