@@ -356,7 +356,9 @@ type Server struct {
 	// dereferencs.
 	operations *operations
 
-	// TODO
+	// recordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
+	// The factory creates recordable commands with a set predicate, which is used to determine whether a
+	// particular command should be recorded or not.
 	recordingCommandFactory *rexec.RecordingCommandFactory
 }
 
@@ -446,6 +448,8 @@ func (s *Server) Handler() http.Handler {
 
 	s.recordingCommandFactory = rexec.NewRecordingCommandFactory(nil)
 	conf.Watch(func() {
+		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
+		// to determine whether a command should be recorded or not.
 		s.recordingCommandFactory.Update(func(ctx context.Context, cmd *exec.Cmd) bool {
 			ignoredGitCommands := map[string]struct{}{
 				"show":      {},
@@ -459,9 +463,8 @@ func (s *Server) Handler() http.Handler {
 			if base != "git" {
 				return false
 			}
-			return true
-			if len(cmd.Args) > 1 {
-				if _, ok := ignoredGitCommands[cmd.Args[1]]; ok {
+			for _, arg := range cmd.Args {
+				if _, ok := ignoredGitCommands[arg]; ok {
 					return false
 				}
 			}
