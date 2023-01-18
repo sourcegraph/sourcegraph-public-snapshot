@@ -6,11 +6,11 @@ import { Button, Link, H3 } from '@sourcegraph/wildcard'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'
 
-import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
+import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
 import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 
 interface Props {
-    account: NormalizedMinAccount
+    account: NormalizedExternalAccount
     authProvider: AuthProvider
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
@@ -45,16 +45,16 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     switch (authProvider.serviceType) {
         case 'openidconnect':
         case 'saml':
-            accountConnection = account.external ? account.external.userName : 'Not connected'
+            accountConnection = account.external?.displayName || 'Not connected'
             break
         default:
             accountConnection = (
                 <>
-                    {account.external?.userUrl ? (
+                    {account.external?.url ? (
                         <>
-                            {account.external.userName} (
-                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                @{account.external.userLogin}
+                            {account.external.displayName} (
+                            <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
+                                @{account.external.login}
                             </Link>
                             )
                         </>

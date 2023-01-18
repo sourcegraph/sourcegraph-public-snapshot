@@ -1905,6 +1905,18 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
+func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	d, _, err := GetExternalAccountData(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	return &extsvc.PublicAccountData{
+		DisplayName: d.Name,
+		Login:       d.Login,
+		URL:         d.URL,
+	}, nil
+}
+
 func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
 	serializedUser, err := json.Marshal(user)
 	if err != nil {

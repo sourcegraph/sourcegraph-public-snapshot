@@ -424,7 +424,7 @@ func NewSchema(
 	webhooksResolver WebhooksResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient)
-	schemas := []string{mainSchema}
+	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
@@ -639,6 +639,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorSecretAccessLogByID(ctx, db, id)
+		},
+		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return OutboundWebhookByID(ctx, db, id)
 		},
 	}
 	return r
