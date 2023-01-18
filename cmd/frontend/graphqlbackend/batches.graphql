@@ -1852,7 +1852,7 @@ extend type Query {
         """
         Exclude the empty batch specs that are initially created and applied to draft batch changes.
         """
-        excludeEmptySpecs: Boolean @deprecated(reason: "No longer required, as these specs don't exist anymore")
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2579,7 +2579,6 @@ type BatchChange implements Node {
     """
     The user who last updated the batch change by applying a spec to this batch change.
     If the batch change hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
-    Also null, if the batch change is a draft.
     """
     lastApplier: User
 
@@ -2690,9 +2689,10 @@ type BatchChange implements Node {
     diffStat: DiffStat!
 
     """
-    The last batch spec applied to this batch change, or null if the batch change has never had a spec applied. (ie. is draft)
+    The last batch spec applied to this batch change, or an "empty" spec if the batch
+    change has never had a spec applied.
     """
-    currentSpec: BatchSpec
+    currentSpec: BatchSpec!
 
     """
     The bulk operations that have been run over this batch change.
@@ -2734,7 +2734,7 @@ type BatchChange implements Node {
         """
         Exclude the empty batch specs that are initially created and applied to draft batch changes.
         """
-        excludeEmptySpecs: Boolean @deprecated(reason: "No longer required, as these specs don't exist anymore")
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 

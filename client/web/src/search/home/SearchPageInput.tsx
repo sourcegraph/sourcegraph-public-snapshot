@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -37,7 +37,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { suggestions } from '../input/suggestions'
+import { createSuggestionsSource } from '../input/suggestions'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
@@ -90,12 +90,22 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     patternType,
                     caseSensitive,
                     searchMode,
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    // In the new query input, context is either omitted (-> global)
+                    // or explicitly specified.
+                    selectedSearchContextSpec: experimentalQueryInput ? undefined : props.selectedSearchContextSpec,
                     ...parameters,
                 })
             }
         },
-        [props.queryState.query, props.selectedSearchContextSpec, props.history, patternType, caseSensitive, searchMode]
+        [
+            props.queryState.query,
+            props.selectedSearchContextSpec,
+            props.history,
+            patternType,
+            caseSensitive,
+            searchMode,
+            experimentalQueryInput,
+        ]
     )
 
     const onSubmit = useCallback(
@@ -113,6 +123,22 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const isTouchOnlyDevice =
         !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
+    const suggestionSource = useMemo(
+        () =>
+            createSuggestionsSource({
+                platformContext: props.platformContext,
+                authenticatedUser: props.authenticatedUser,
+                fetchSearchContexts: props.fetchSearchContexts,
+                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+            }),
+        [
+            props.platformContext,
+            props.authenticatedUser,
+            props.fetchSearchContexts,
+            props.getUserSearchContextNamespaces,
+        ]
+    )
+
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}
@@ -122,7 +148,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             onSubmit={onSubmit}
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
-            suggestionSource={suggestions}
+            suggestionSource={suggestionSource}
             history={props.history}
         />
     ) : (

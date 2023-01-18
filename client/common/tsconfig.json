@@ -8,4 +8,9 @@
     "baseUrl": "./src",
   },
   "include": ["./src/**/*", "./*.ts"],
+  "references": [
+    {
+      "path": "../extension-api-types",
+    },
+  ],
 }

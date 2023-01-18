@@ -132,6 +132,14 @@ func TestHandle_ErrorDuringTransaction(t *testing.T) {
 	baseWorkerStore := basestore.NewWithHandle(insightsDB.Handle())
 	workerStore := CreateDBWorkerStore(observation.TestContextTB(t), baseWorkerStore)
 
+	boolTrue := true
+	conf.Get().ExperimentalFeatures.InsightsDataRetention = &boolTrue
+	conf.Get().InsightsMaximumSampleSize = 2
+	t.Cleanup(func() {
+		conf.Get().InsightsMaximumSampleSize = 0
+		conf.Get().ExperimentalFeatures.InsightsDataRetention = nil
+	})
+
 	handler := &dataRetentionHandler{
 		baseWorkerStore: workerStore,
 		insightsStore:   seriesStore,
@@ -166,11 +174,6 @@ DROP TABLE IF EXISTS series_points
 		t.Fatal(err)
 	}
 	job.ID = id
-
-	conf.Get().InsightsMaximumSampleSize = 2
-	t.Cleanup(func() {
-		conf.Get().InsightsMaximumSampleSize = 0
-	})
 
 	err = handler.Handle(ctx, logger, job)
 	if err == nil {

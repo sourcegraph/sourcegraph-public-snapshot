@@ -17,6 +17,45 @@ import {
 } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
+export const ORGANIZATION_MEMBERS_QUERY = gql`
+    query OrganizationSettingsMembers(
+        $id: ID!
+        $first: Int
+        $after: String
+        $last: Int
+        $before: String
+        $query: String
+    ) {
+        node(id: $id) {
+            ... on Org {
+                __typename
+                viewerCanAdminister
+                members(query: $query, first: $first, after: $after, last: $last, before: $before) {
+                    nodes {
+                        ...OrganizationMemberNode
+                    }
+                    totalCount
+                    pageInfo {
+                        startCursor
+                        endCursor
+                        hasNextPage
+                        hasPreviousPage
+                    }
+                }
+            }
+        }
+    }
+
+    fragment OrganizationMemberNode on User {
+        __typename
+        id
+        username
+        displayName
+        avatarURL
+        siteAdmin
+    }
+`
+
 /**
  * Sends a GraphQL mutation to create an organization and returns an Observable that emits the new organization,
  * then completes.
@@ -52,6 +91,14 @@ export function createOrganization(args: {
         .toPromise()
 }
 
+export const REMOVE_USER_FROM_ORGANIZATION_QUERY = gql`
+    mutation RemoveUserFromOrganization($user: ID!, $organization: ID!) {
+        removeUserFromOrganization(user: $user, organization: $organization) {
+            alwaysNil
+        }
+    }
+`
+
 /**
  * Sends a GraphQL mutation to remove a user from an organization.
  *
@@ -64,13 +111,7 @@ export function removeUserFromOrganization(args: {
     organization: Scalars['ID']
 }): Observable<void> {
     return requestGraphQL<RemoveUserFromOrganizationResult, RemoveUserFromOrganizationVariables>(
-        gql`
-            mutation RemoveUserFromOrganization($user: ID!, $organization: ID!) {
-                removeUserFromOrganization(user: $user, organization: $organization) {
-                    alwaysNil
-                }
-            }
-        `,
+        REMOVE_USER_FROM_ORGANIZATION_QUERY,
         args
     ).pipe(
         mergeMap(({ errors }) => {

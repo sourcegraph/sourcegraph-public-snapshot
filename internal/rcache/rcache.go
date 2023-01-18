@@ -53,7 +53,7 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 func (r *Cache) GetMulti(keys ...string) [][]byte {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if len(keys) == 0 {
@@ -87,7 +87,7 @@ func (r *Cache) GetMulti(keys ...string) [][]byte {
 }
 
 func (r *Cache) SetMulti(keyvals ...[2]string) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if len(keyvals) == 0 {
@@ -117,7 +117,7 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	b, err := redis.Bytes(c.Do("GET", r.rkeyPrefix()+key))
@@ -130,7 +130,7 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
@@ -148,7 +148,7 @@ func (r *Cache) Set(key string, b []byte) {
 }
 
 func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
@@ -162,7 +162,7 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 func (r *Cache) Increase(key string) {
-	c := pool.Get()
+	c := poolGet()
 	defer func() { _ = c.Close() }()
 
 	_, err := c.Do("INCR", r.rkeyPrefix()+key)
@@ -183,7 +183,7 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
-	c := pool.Get()
+	c := poolGet()
 	defer func() { _ = c.Close() }()
 
 	ttl, err := redis.Int(c.Do("TTL", r.rkeyPrefix()+key))
@@ -192,6 +192,55 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 		return -1, false
 	}
 	return ttl, ttl >= 0
+}
+
+// SetHashItem sets a key in a HASH.
+// If the HASH does not exist, it is created.
+// If the key already exists and is a different type, an error is returned.
+// If the hash key does not exist, it is created. If it exists, the value is overwritten.
+func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
+	c := poolGet()
+	defer c.Close()
+	_, err := c.Do("HSET", r.rkeyPrefix()+key, hashKey, hashValue)
+	return err
+}
+
+// GetHashItem gets a key in a HASH.
+func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
+	c := poolGet()
+	defer c.Close()
+	return redis.String(c.Do("HGET", r.rkeyPrefix()+key, hashKey))
+}
+
+// GetHashAll returns the members of the HASH stored at `key`, in no particular order.
+func (r *Cache) GetHashAll(key string) (map[string]string, error) {
+	c := poolGet()
+	defer c.Close()
+	return redis.StringMap(c.Do("HGETALL", r.rkeyPrefix()+key))
+}
+
+// AddToList adds a value to the end of a list.
+// If the list does not exist, it is created.
+func (r *Cache) AddToList(key string, value string) error {
+	c := poolGet()
+	defer c.Close()
+	_, err := c.Do("RPUSH", r.rkeyPrefix()+key, value)
+	return err
+}
+
+// GetLastListItems returns the last `count` items in the list.
+func (r *Cache) GetLastListItems(key string, count int) ([]string, error) {
+	c := poolGet()
+	defer c.Close()
+	return redis.Strings(c.Do("LRANGE", r.rkeyPrefix()+key, -count, -1))
+}
+
+// LTrimList trims the list to the last `count` items.
+func (r *Cache) LTrimList(key string, count int) error {
+	c := poolGet()
+	defer c.Close()
+	_, err := c.Do("LTRIM", r.rkeyPrefix()+key, -count, -1)
+	return err
 }
 
 // DeleteMulti deletes the given keys.
@@ -203,7 +252,7 @@ func (r *Cache) DeleteMulti(keys ...string) {
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	c := pool.Get()
+	c := poolGet()
 	defer func(c redis.Conn) {
 		_ = c.Close()
 	}(c)
@@ -218,7 +267,7 @@ func (r *Cache) Delete(key string) {
 // Use with care if you have long TTLs or no TTL configured.
 func (r *Cache) ListKeys(ctx context.Context) (results []string, err error) {
 	var c redis.Conn
-	c, err = pool.GetContext(ctx)
+	c, err = poolGetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
 	}
@@ -277,7 +326,7 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	pool = &redis.Pool{
+	pool = redispool.RedisKeyValue(&redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -287,10 +336,10 @@ func SetupForTest(t TB) {
 			_, err := c.Do("PING")
 			return err
 		},
-	}
+	})
 
 	globalPrefix = "__test__" + t.Name()
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.

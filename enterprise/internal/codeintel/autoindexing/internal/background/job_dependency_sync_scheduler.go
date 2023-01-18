@@ -45,6 +45,7 @@ func NewDependencySyncScheduler(
 
 	return dbworker.NewWorker[shared.DependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
+		Description:       "reads dependency package references from code-intel uploads to be synced to the instance",
 		NumHandlers:       1,
 		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
