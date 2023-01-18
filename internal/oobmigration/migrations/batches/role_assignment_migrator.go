@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type roleAssignmentMigrator struct {
@@ -49,7 +50,7 @@ FROM
 `
 
 func (m *roleAssignmentMigrator) Up(ctx context.Context) (err error) {
-	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, m.batchSize))
+	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, string(types.UserSystemRole), string(types.SiteAdministratorSystemRole), m.batchSize))
 }
 
 func (m *roleAssignmentMigrator) Down(ctx context.Context) error {
@@ -58,11 +59,11 @@ func (m *roleAssignmentMigrator) Down(ctx context.Context) error {
 }
 
 const userRolesMigratorUpQuery = `
-WITH user_role AS MATERIALIZED (
-    SELECT id FROM roles WHERE name = 'USER'
+WITH user_system_role AS MATERIALIZED (
+    SELECT id FROM roles WHERE name = %s
 ),
-site_admin_role AS MATERIALIZED (
-    SELECT id FROM roles WHERE name = 'SITE_ADMINISTRATOR'
+site_admin_system_role AS MATERIALIZED (
+    SELECT id FROM roles WHERE name = %s
 ),
 users_without_roles AS MATERIALIZED (
 	SELECT
@@ -74,8 +75,8 @@ users_without_roles AS MATERIALIZED (
 	FOR UPDATE SKIP LOCKED
 )
 INSERT INTO user_roles (user_id, role_id)
-	SELECT id, (SELECT id FROM user_role) FROM users_without_roles
+	SELECT id, (SELECT id FROM user_system_role) FROM users_without_roles
 		UNION ALL
-	SELECT id, (SELECT id FROM site_admin_role) FROM users_without_roles uwr WHERE uwr.site_admin
+	SELECT id, (SELECT id FROM site_admin_system_role) FROM users_without_roles uwr WHERE uwr.site_admin
 ON CONFLICT DO NOTHING
 `
