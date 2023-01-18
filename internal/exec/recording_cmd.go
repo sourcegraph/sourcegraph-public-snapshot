@@ -15,6 +15,10 @@ import (
 // TTL sets the default time to live of recorded command in the redis database.
 const TTL = time.Hour * 24 * 7
 
+// KeyPrefix is the prefix that will be used to initialise the redis database with.
+// All keys stored will have this prefix.
+const KeyPrefix = "recording-cmd"
+
 // RecordedCommand stores a command record in Redis.
 type RecordedCommand struct {
 	Start    time.Time `json:"start"`
@@ -47,7 +51,7 @@ func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord Shoul
 	cmd := Command(ctx, logger, name, args...)
 	rc := &RecordingCmd{
 		Cmd:          cmd,
-		r:            rcache.New("recording-cmd"),
+		r:            rcache.New(KeyPrefix),
 		shouldRecord: shouldRecord,
 	}
 	rc.Cmd.SetBeforeHooks(rc.before)
@@ -66,6 +70,13 @@ func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRe
 	rc.Cmd.SetBeforeHooks(rc.before)
 	rc.Cmd.SetAfterHooks(rc.after)
 	return rc
+}
+
+// Key returns the key used to store the recording in redis
+func (rc *RecordingCmd) Key() string {
+	// Using %p here, because timestamp + cmd address makes it unique. Your own command can't be
+	// ran multiple time.
+	return fmt.Sprintf("%v:%p", time.Now().Unix(), rc.Cmd)
 }
 
 func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec.Cmd) error {
@@ -108,9 +119,7 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 		logger.Warn("failed to marshal recordingCmd", log.Error(err))
 	}
 
-	// Using %p here, because timestamp + cmd address makes it unique. Your own command can't be
-	// ran multiple time.
-	rc.r.SetWithTTL(fmt.Sprintf("%v:%p", time.Now().Unix(), cmd), data, int(TTL.Seconds())) // TODO
+	rc.r.SetWithTTL(rc.Key(), data, int(TTL.Seconds())) // TODO
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
