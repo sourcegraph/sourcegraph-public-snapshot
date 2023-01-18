@@ -504,6 +504,8 @@ func gitserverAddr(environ []string) string {
 		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
 			return addrs
 		}
+
+		return addr
 	}
 
 	// Detect 'go test' and setup default addresses in that case.
