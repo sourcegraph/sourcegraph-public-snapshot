@@ -14,15 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-func init() {
-	// Always overwrite this, even if already set, because it is intrinsic to this deployment
-	// method.
-	//
-	// TODO(sqs): TODO(single-binary): this is not actually taking effect in all cases because the value is consulted
-	// before this runs, unfortunately, so we are using go build ldflags value injection as well.
-	os.Setenv("DEPLOY_TYPE", "single-program")
-}
-
 func Init(logger log.Logger) {
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
 	// eventually.
