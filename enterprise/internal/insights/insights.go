@@ -31,7 +31,7 @@ func Init(
 ) error {
 	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db)
 
-	if !enterprise.IsCodeInsightsEnabled() {
+	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights are not available on single-container deployments")
 		} else {
