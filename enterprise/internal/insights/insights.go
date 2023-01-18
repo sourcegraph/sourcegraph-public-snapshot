@@ -15,6 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func IsEnabled() bool {
+	return enterprise.IsCodeInsightsEnabled()
+}
+
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(
 	ctx context.Context,
