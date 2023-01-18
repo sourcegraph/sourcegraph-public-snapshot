@@ -82,7 +82,7 @@ At the moment we support four types of insights:
 These can all be created from the UI and get resolved through the [GraphQL API](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:graphqlbackend/insights+createLineChartSearchInsight&patternType=lucky).
 
 #### Unique ID
-An Insight View is defined to have a globally unique referencable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
+An Insight View is defined to have a globally unique referenceable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
 
 [Read more about Insight Views](./insight_view.md)
 
@@ -108,7 +108,7 @@ one for each unique result.
 
 If we only record data starting when the series were created, it would take months or longer for users to get any value out of insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
 
-Backfilling relys on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_. 
+Backfilling relies on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_. 
 
 When an insight is created a new Backfill record is created for each series in the `new` state.
 
@@ -183,7 +183,7 @@ The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `fr
 1. A GraphQL resolver `insightViewResolver` returns all the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+insightViewResolver+struct&patternType=literal))
 2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L141:31&popover=pinned) depending on the type of series, and whether or not dynamic search results need to be expanded.
 3. A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
-4. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the database to get the datapoints ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
+4. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the database to get the data points ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
 
 Note: There are other better developer docs which explain the general reasoning for why we have a "store" abstraction. Insights usage of it is pretty minimal, we mostly follow it to separate SQL operations from GraphQL resolver code and to remain consistent with the rest of Sourcegraph's architecture.
 
@@ -208,7 +208,7 @@ This may not be suitable for Sourcegraph installations with highly controlled re
 The code insights time series are currently stored entirely within Postgres. 
 
 As a design, insight data is stored as a full vector of match results per unique time point. This means that for some time `T`, all of the unique timeseries that fall under
-one insight series can be aggregated to form the total result. Given that the processing system will execute every query at-least once, the possiblity of duplicates
+one insight series can be aggregated to form the total result. Given that the processing system will execute every query at-least once, the possibility of duplicates
 exist within a unique timeseries. A simple deduplication is performed at query time.
 
 Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/23690) of this format.
