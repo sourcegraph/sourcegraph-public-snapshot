@@ -1,11 +1,11 @@
-CREATE SEQUENCE webhook_build_jobs_id_seq
+CREATE SEQUENCE IF NOT EXISTS webhook_build_jobs_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE webhook_build_jobs (
+CREATE TABLE IF NOT EXISTS webhook_build_jobs (
     repo_id integer,
     repo_name text,
     extsvc_kind text,
@@ -26,5 +26,5 @@ CREATE TABLE webhook_build_jobs (
     cancel boolean DEFAULT false NOT NULL
 );
 
-CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
-CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
+CREATE INDEX IF NOT EXISTS webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
+CREATE INDEX IF NOT EXISTS webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
