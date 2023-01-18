@@ -446,27 +446,22 @@ func (s *Server) Handler() http.Handler {
 
 	s.recordingCommandFactory = rexec.NewRecordingCommandFactory(nil)
 	conf.Watch(func() {
-		// cfg := conf.Get().SiteConfig().GitRecorder
-		// if cfg != nil {
-		println("🍓")
 		s.recordingCommandFactory.Update(func(ctx context.Context, cmd *exec.Cmd) bool {
 			ignoredGitCommands := map[string]struct{}{
-				"show":      struct{}{},
-				"rev-parse": struct{}{},
-				"log":       struct{}{},
-				"diff":      struct{}{},
-				"ls-tree":   struct{}{},
+				"show":      {},
+				"rev-parse": {},
+				"log":       {},
+				"diff":      {},
+				"ls-tree":   {},
 			}
 
 			base := filepath.Base(cmd.Path)
-			println("🍓", base)
 			if base != "git" {
 				return false
 			}
 			return true
 			if len(cmd.Args) > 1 {
 				if _, ok := ignoredGitCommands[cmd.Args[1]]; ok {
-					println("🍓 ignored")
 					return false
 				}
 			}
