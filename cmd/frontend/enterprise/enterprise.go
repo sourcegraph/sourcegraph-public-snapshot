@@ -3,7 +3,6 @@ package enterprise
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
