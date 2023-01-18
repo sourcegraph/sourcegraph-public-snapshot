@@ -197,12 +197,12 @@ INSERT INTO
 
 `
 
-func (r *roleStore) Create(ctx context.Context, name string, system bool) (_ *types.Role, err error) {
+func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) (_ *types.Role, err error) {
 	q := sqlf.Sprintf(
 		roleCreateQueryFmtStr,
 		sqlf.Join(roleInsertColumns, ", "),
 		name,
-		system,
+		isSystemRole,
 		// Returning
 		sqlf.Join(roleColumns, ", "),
 	)
