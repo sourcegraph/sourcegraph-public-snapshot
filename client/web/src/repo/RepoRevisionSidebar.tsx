@@ -147,6 +147,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                             commitID={props.commitID}
                                             initialFilePath={props.filePath}
                                             initialFilePathIsDirectory={props.isDir}
+                                            telemetryService={props.telemetryService}
                                         />
                                     ) : (
                                         <Tree

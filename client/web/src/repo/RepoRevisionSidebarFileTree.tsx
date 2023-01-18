@@ -6,6 +6,7 @@ import TreeView, { INode } from 'react-accessible-treeview'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, ErrorMessage, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
@@ -63,6 +64,7 @@ interface Props {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
+    telemetryService: TelemetryService
 }
 export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
     // Ensure that the initial file path does not update when the props change
@@ -117,6 +119,7 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
                 return
             }
 
+            props.telemetryService.log('FileTreeLoadDirectory')
             await refetch({
                 ...defaultVariables,
                 filePath: fullPath,
@@ -125,7 +128,7 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
-        [defaultVariables, refetch, treeData?.loadedPaths]
+        [defaultVariables, refetch, treeData?.loadedPaths, props.telemetryService]
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
@@ -143,10 +146,11 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
             }
 
             if (element.entry) {
+                props.telemetryService.log('FileTreeClick')
                 navigate(element.entry.url)
             }
         },
-        [defaultNodeId, navigate]
+        [defaultNodeId, navigate, props.telemetryService]
     )
 
     usePatchFocusToFixScrollIssues()
@@ -345,8 +349,8 @@ function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
     let parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, node))
     while (parent) {
         parents.push(parent)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
+
+        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent))
     }
     return parents
 }
