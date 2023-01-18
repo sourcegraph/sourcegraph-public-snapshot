@@ -192,7 +192,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             )}
             {selectedTab === 'batchChanges' && (
                 <>
-                    <BatchChangeStatsBar className="mb-4" />
+                    {!namespaceID && <BatchChangeStatsBar className="mb-4" />}
                     <Container className="mb-4">
                         <ConnectionContainer>
                             <div className={styles.filtersRow}>
