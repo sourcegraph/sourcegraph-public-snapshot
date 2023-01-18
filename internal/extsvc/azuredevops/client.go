@@ -131,7 +131,7 @@ type RepositoriesValue struct {
 	APIURL     string `json:"url"`
 	SSHURL     string `json:"sshUrl"`
 	WebURL     string `json:"webUrl"`
-	isDisabled string `json:"isDisabled"`
+	IsDisabled string `json:"isDisabled"`
 }
 
 type Pagination struct {
