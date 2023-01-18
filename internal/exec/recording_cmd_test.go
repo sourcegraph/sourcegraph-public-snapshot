@@ -3,7 +3,6 @@ package exec_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	osexec "os/exec"
 	"testing"
 
@@ -13,29 +12,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *exec.RecordedCommand) (bool, error) {
 	t.Helper()
 
 	if !cmp.Equal(cmd.Dir, recording.Dir) {
-		return false, fmt.Errorf("recording and command Dir differ, got %s wanted %s", recording.Dir, cmd.Dir)
+		return false, errors.Errorf("recording and command Dir differ, got %s wanted %s", recording.Dir, cmd.Dir)
 	}
 
 	if !cmp.Equal(cmd.Path, recording.Path) {
-		return false, fmt.Errorf("recording and command Path differ, got %s wanted %s", recording.Path, cmd.Path)
+		return false, errors.Errorf("recording and command Path differ, got %s wanted %s", recording.Path, cmd.Path)
 	}
 
 	if diff := cmp.Diff(cmd.Args, recording.Args); diff != "" {
-		return false, fmt.Errorf("recording and command args differ: %s", diff)
+		return false, errors.Errorf("recording and command args differ: %s", diff)
 	}
 
 	if recording.Start.IsZero() {
-		return false, fmt.Errorf("recording has zero start time")
+		return false, errors.Errorf("recording has zero start time")
 	}
 
 	if recording.Duration == 0 {
-		return false, fmt.Errorf("recording has no duration")
+		return false, errors.Errorf("recording has no duration")
 	}
 
 	return true, nil

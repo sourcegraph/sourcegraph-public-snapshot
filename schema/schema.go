@@ -2437,7 +2437,6 @@ type SiteConfiguration struct {
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
 	Additional     map[string]any  `json:"-"` // additionalProperties not explicitly defined in the schema
-	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 }
 
 func (v SiteConfiguration) MarshalJSON() ([]byte, error) {
@@ -2694,9 +2693,4 @@ type WorkspaceConfiguration struct {
 	OnlyFetchWorkspace bool `json:"onlyFetchWorkspace,omitempty"`
 	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
 	RootAtLocationOf string `json:"rootAtLocationOf"`
-}
-
-type GitRecorder struct { 
-	// TODO
-	OnlyRepos []string `json:"filterRepos,omitempty"`
 }
