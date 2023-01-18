@@ -1,0 +1,22 @@
+.tab-menu-container {
+	display: flex;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	min-width: 10rem;
+	background-color: var(--background-color-dark);
+}
+
+.tab-menu-item {
+	padding: 12px 16px;
+	margin: 0;
+	border-right: 1px solid var(--bot-bubble-color);
+	background-color: var(--background-color-dark);
+	color: var(--muted-text);
+	cursor: pointer;
+	user-select: none;
+}
+
+.tab-menu-item:first {
+	border-left: 1px solid var(--bot-bubble-color);
+}

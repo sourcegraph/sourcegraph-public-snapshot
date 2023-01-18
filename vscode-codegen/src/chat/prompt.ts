@@ -3,10 +3,14 @@ import path from 'path'
 import { Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
+import { getRecipeContextOptions, getRecipePrompt, RecipeInput } from './recipes'
+import { ContextSearchOptions } from './context-search-options'
 
 const MAX_PROMPT_TOKEN_LENGTH = 7000
 const SOLUTION_TOKEN_LENGTH = 1000
 const MAX_HUMAN_INPUT_TOKENS = 1000
+const MAX_RECIPE_INPUT_TOKENS = 2000
+const MAX_RECIPE_SURROUNDING_TOKENS = 500
 const MAX_AVAILABLE_PROMPT_LENGTH = MAX_PROMPT_TOKEN_LENGTH - SOLUTION_TOKEN_LENGTH
 const CHARS_PER_TOKEN = 4
 
@@ -18,21 +22,17 @@ export class Prompt {
 	// We split the context into multiple messages instead of joining them into a single giant message.
 	// We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
 	// when we run out of tokens.
-	private async getContextMessages(query: string): Promise<Message[]> {
-		// TODO: Add context from currently active text editor if embeddingsClient is not available
-		const queryNeedsAdditionalContext = await this.embeddingsClient.queryNeedsAdditionalContext(query)
+	private async getContextMessages(query: string, options: ContextSearchOptions): Promise<Message[]> {
+		const embeddingsSearchResults = await this.embeddingsClient.search(
+			query,
+			options.numCodeResults,
+			options.numMarkdownResults
+		)
 
-		if (!queryNeedsAdditionalContext) {
-			return []
-		}
-
-		// Load more context at the start of a chat to give the model as much information as possible.
-		// On subsequent messages load less context to avoid too many duplicates and overwhelming
-		// the conversation with context messages.
-		const numCodeResults = this.messages.length === 0 ? 4 : 1
-		const numMarkdownResults = 1
-		const embeddingsSearchResults = await this.embeddingsClient.search(query, numCodeResults, numMarkdownResults)
-		const combinedResults = embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.markdownResults)
+		const filterFn = options.filterResults ? options.filterResults : () => true
+		const combinedResults = embeddingsSearchResults.codeResults
+			.concat(embeddingsSearchResults.markdownResults)
+			.filter(filterFn)
 
 		return groupResultsByFile(combinedResults)
 			.reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
@@ -41,49 +41,37 @@ export class Prompt {
 					? populateMarkdownContextTemplate
 					: populateCodeContextTemplate
 
-				return groupedResults.results.flatMap<Message>(text => {
-					return [
-						{
-							speaker: 'you',
-							text: contextTemplateFn(text, groupedResults.filePath),
-						},
-						{
-							speaker: 'bot',
-							text: 'Ok, adding previous message to my knowledge base.',
-						},
-					]
-				})
+				return groupedResults.results.flatMap<Message>(text =>
+					getContextMessageWithResponse(contextTemplateFn(text, groupedResults.filePath))
+				)
 			})
 	}
 
-	private truncateHumanInput(humanInput: string): string {
-		const maxLength = MAX_HUMAN_INPUT_TOKENS * CHARS_PER_TOKEN
-		return humanInput.length <= maxLength ? humanInput : humanInput.slice(0, maxLength)
+	private truncateText(text: string, maxTokens: number): string {
+		const maxLength = maxTokens * CHARS_PER_TOKEN
+		return text.length <= maxLength ? text : text.slice(0, maxLength)
+	}
+
+	private truncateTextStart(text: string, maxTokens: number): string {
+		const maxLength = maxTokens * CHARS_PER_TOKEN
+		return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 	}
 
 	private addInstructionsToHumanInput(humanInput: string): string {
 		return `Answer the following question or statement only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.\n\n${humanInput}`
 	}
 
-	async constructPrompt(humanInput: string): Promise<Message[]> {
-		const truncatedHumanInput = this.truncateHumanInput(humanInput)
-		const contextMessages = await this.getContextMessages(truncatedHumanInput)
-
-		const humanMessage: Message = {
-			speaker: 'you',
-			text: contextMessages.length > 0 ? this.addInstructionsToHumanInput(humanInput) : truncatedHumanInput,
-		}
-		const humanMessageTokensUsage = estimateTokensUsage(humanMessage)
-
+	async getPromptForMessage(message: Message, contextMessages: Message[]): Promise<Message[]> {
+		const messageTokensUsage = estimateTokensUsage(message)
 		// Since we are limited by the amount of tokens we can send to the backend, we have to truncate the prompt.
 		// In order of priority, we have to fit in:
-		//   1. The latest human input message.
-		//   2. The context messages related to the latest human message.
+		//   1. The latest message.
+		//   2. The context messages related to the message.
 		//   3. Older chat messages.
 		const newPromptMessages = []
 		// We always want to include the human message in the prompt, so we decrease the available tokens budget
 		// by the amount of tokens in the human message.
-		let availablePromptTokensBudget = MAX_AVAILABLE_PROMPT_LENGTH - humanMessageTokensUsage
+		let availablePromptTokensBudget = MAX_AVAILABLE_PROMPT_LENGTH - messageTokensUsage
 
 		// The available messages for the next prompt consist of the older messages and the new context messages.
 		// Since we traverse the available messages in reverse order (newer -> older) the context messages take a
@@ -111,9 +99,50 @@ export class Prompt {
 		// Reverse the prompt messages, so they appear in chat order (older -> newer).
 		this.messages = newPromptMessages.reverse()
 		// Finally, add the human message at the end.
-		this.messages.push(humanMessage)
+		this.messages.push(message)
 
 		return this.messages
+	}
+
+	async constructPromptForHumanInput(humanInput: string): Promise<Message[]> {
+		const truncatedHumanInput = this.truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
+
+		// TODO: Add context from currently active text editor if embeddingsClient is not available
+		const inputNeedsAdditionalContext = await this.embeddingsClient.queryNeedsAdditionalContext(truncatedHumanInput)
+
+		// Load more context at the start of a chat to give the model as much information as possible.
+		// On subsequent messages load less context to avoid too many duplicates and overwhelming
+		// the conversation with context messages.
+		const numCodeResults = this.messages.length === 0 ? 4 : 1
+		const contextMessages = inputNeedsAdditionalContext
+			? await this.getContextMessages(truncatedHumanInput, {
+					numCodeResults,
+					numMarkdownResults: 1,
+			  })
+			: []
+		const humanMessage: Message = {
+			speaker: 'you',
+			text: contextMessages.length > 0 ? this.addInstructionsToHumanInput(humanInput) : truncatedHumanInput,
+		}
+		return this.getPromptForMessage(humanMessage, contextMessages)
+	}
+
+	async constructPromptForRecipe(recipe: string, recipeInput: RecipeInput): Promise<Message[]> {
+		const truncatedSelectedText = this.truncateText(recipeInput.selectedText, MAX_RECIPE_INPUT_TOKENS)
+		const contextMessages = (
+			await this.getContextMessages(truncatedSelectedText, getRecipeContextOptions(recipe))
+		).concat(
+			[
+				this.truncateTextStart(recipeInput.precedingText, MAX_RECIPE_SURROUNDING_TOKENS),
+				this.truncateText(recipeInput.followingText, MAX_RECIPE_SURROUNDING_TOKENS),
+			].flatMap(text => getContextMessageWithResponse(populateCodeContextTemplate(text, recipeInput.fileName)))
+		)
+
+		const recipeMessage: Message = {
+			speaker: 'you',
+			text: getRecipePrompt(recipe, { ...recipeInput, selectedText: truncatedSelectedText }),
+		}
+		return this.getPromptForMessage(recipeMessage, contextMessages)
 	}
 
 	addBotResponse(text: string): void {
@@ -192,4 +221,11 @@ const MARKDOWN_CONTEXT_TEMPLATE = `Add the following text from file \`{filePath}
 
 function populateMarkdownContextTemplate(md: string, filePath: string): string {
 	return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
+}
+
+function getContextMessageWithResponse(text: string): Message[] {
+	return [
+		{ speaker: 'you', text: text },
+		{ speaker: 'bot', text: 'Ok, adding previous message to my knowledge base.' },
+	]
 }

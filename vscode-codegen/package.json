@@ -37,14 +37,43 @@
         "title": "View AI suggestions"
       },
       {
-        "command": "codebot.generate-test-from-selection",
-        "title": "Generate a unit test from a selection"
+        "command": "cody.recipe.explain-code",
+        "title": "Ask Cody: Explain selected code in detail"
       },
       {
-        "command": "codebot.generate-test",
-        "title": "Generate a unit test"
+        "command": "cody.recipe.explain-code-high-level",
+        "title": "Ask Cody: Explain selected code at a high level"
+      },
+      {
+        "command": "cody.recipe.generate-unit-test",
+        "title": "Ask Cody: Generate a unit test"
       }
     ],
+    "submenus": [
+      {
+        "label": "Ask Cody",
+        "id": "cody.submenu"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "cody.submenu",
+          "group": "7_modification"
+        }
+      ],
+      "cody.submenu": [
+        {
+          "command": "cody.recipe.explain-code"
+        },
+        {
+          "command": "cody.recipe.explain-code-high-level"
+        },
+        {
+          "command": "cody.recipe.generate-unit-test"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "vscode-codegen.ai-suggest",

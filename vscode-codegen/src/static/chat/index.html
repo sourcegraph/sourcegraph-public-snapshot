@@ -13,20 +13,15 @@
 <body>
 	<div class="outer-container">
 		<ul class="tab-menu-container">
-			<li id="tab-menu-item-chat" class="tab-menu-item">Chat</li>
-			<li id="tab-menu-item-recipes" class="tab-menu-item">Recipes</li>
+			<li id="tab-menu-item-chat" class="tab-menu-item" data-tab="chat">Chat</li>
+			<li id="tab-menu-item-recipes" class="tab-menu-item" data-tab="recipes">Recipes</li>
 		</ul>
-		<div class="inner-container recipes-container">
-			<button class="btn-recipe" data-recipe="generateTest">Generate unit test</button>
-			<button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain code (high level)</button>
-			<button class="btn-recipe" data-recipe="explainCode">Explain code (detailed)</button>
-			<button class="btn-recipe">Find common bugs</button>
-			<button class="btn-recipe">Translate to $LANG</button>
-			<button class="btn-recipe">Pseudocode to code</button>
-			<button class="btn-recipe">Generate client/server boilerplate</button>
-			<button class="btn-recipe" data-recipe="generateBoilerplate">Generate UI stub</button>
+		<div class="inner-container" data-tab-target="recipes">
+			<button class="btn-recipe" data-recipe="generateUnitTest">Generate a unit test</button>
+			<button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain selected code (high level)</button>
+			<button class="btn-recipe" data-recipe="explainCode">Explain selected code (detailed)</button>
 		</div>
-		<div class="inner-container chat-container">
+		<div class="inner-container" data-tab-target="chat">
 			<div class="header-container">
 				<div class="header-container-left">
 					<div class="header-logo">

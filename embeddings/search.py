@@ -25,6 +25,9 @@ class EmbeddingsSearchIndex:
         self.index.add(self.embeddings)
 
     def search(self, query: str, n_results: int) -> List[Dict[str, Any]]:
+        if n_results == 0:
+            return []
+
         query_embedding = embed_query(query)
         _, indices = self.index.search(query_embedding, n_results)
         return [self.metadata[i] for i in indices[0]]

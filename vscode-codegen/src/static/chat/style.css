@@ -29,36 +29,12 @@ body {
 	width: 100%;
 	height: 100%;
 	min-height: 0;
-	display: flex;
+	display: none;
 	flex-direction: column;
 }
 
-.tab-menu-container {
+.inner-container.show {
 	display: flex;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	min-width: 10rem;
-
-	background-color: var(--background-color-dark);
-}
-
-.tab-menu-item {
-	padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-	margin: 0;
-
-	border-top: 1px solid var(--bot-bubble-color);
-	border-right: 1px solid var(--bot-bubble-color);
-
-	background-color: var(--background-color-dark);
-	color: var(--muted-text);
-
-	cursor: pointer;
-	user-select: none;
-}
-
-.tab-menu-item:first {
-	border-left: 1px solid var(--bot-bubble-color);
 }
 
 .tab-menu-item-selected {
@@ -265,11 +241,7 @@ body {
 	height: 24px;
 }
 
-.recipes-container {
-	display: flex;
-}
-
-button {
+.btn-recipe {
 	background-color: var(--human-bubble-color);
 	border-radius: 0.5rem;
 	border: 1px solid var(--bot-bubble-color);
@@ -277,9 +249,6 @@ button {
 	cursor: pointer;
 	color: white;
 	font-size: 1rem;
-}
-
-.recipes-container>button {
 	margin-top: 1rem;
 	margin-left: 1rem;
 	margin-right: 1rem;
