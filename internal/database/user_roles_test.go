@@ -81,12 +81,17 @@ func TestUserRoleBulkCreateForUser(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
+		roleIDs := []int32{role.ID, role2.ID}
 		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{
 			UserID:  user.ID,
-			RoleIDs: []int32{role.ID, role2.ID},
+			RoleIDs: roleIDs,
 		})
 		assert.NoError(t, err)
 		assert.Len(t, urs, 2)
+		for i, ur := range urs {
+			assert.Equal(t, ur.UserID, user.ID)
+			assert.Equal(t, ur.RoleID, roleIDs[i])
+		}
 	})
 }
 

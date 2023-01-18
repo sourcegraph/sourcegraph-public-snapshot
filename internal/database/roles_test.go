@@ -69,12 +69,12 @@ func TestRoleList(t *testing.T) {
 		assert.Len(t, allRoles, total+numberOfDefaultRoles)
 	})
 
-	t.Run("readonly roles", func(t *testing.T) {
-		allReadOnlyRoles, err := store.List(ctx, RolesListOptions{
+	t.Run("system roles", func(t *testing.T) {
+		allSystemRoles, err := store.List(ctx, RolesListOptions{
 			System: true,
 		})
 		assert.NoError(t, err)
-		assert.Len(t, allReadOnlyRoles, numberOfDefaultRoles)
+		assert.Len(t, allSystemRoles, numberOfDefaultRoles)
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
@@ -185,7 +185,7 @@ func createTestRoles(ctx context.Context, t *testing.T, store RoleStore) int {
 	return totalRoles
 }
 
-func createTestRole(ctx context.Context, name string, readonly bool, t *testing.T, store RoleStore) (*types.Role, error) {
+func createTestRole(ctx context.Context, name string, isSystemRole bool, t *testing.T, store RoleStore) (*types.Role, error) {
 	t.Helper()
-	return store.Create(ctx, name, readonly)
+	return store.Create(ctx, name, isSystemRole)
 }
