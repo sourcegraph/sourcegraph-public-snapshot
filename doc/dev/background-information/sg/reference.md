@@ -495,7 +495,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:
