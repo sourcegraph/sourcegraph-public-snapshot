@@ -171,6 +171,9 @@ func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRe
 	// limit, we likely need to think of an alternative way to do pagination
 	// against lists / or also store the items so we can look up by key
 	rawItems, err := outboundRequestsRedisFIFOList.All(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "list all log items")
+	}
 
 	var items []*types.OutboundRequestLogItem
 	for _, rawItem := range rawItems {
