@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -13,23 +12,23 @@ import (
 const siteConfigurationChangeKind = "SiteConfigurationChange"
 
 type SiteConfigurationChangeResolver struct {
-	db                 database.DB
-	siteConfig         *database.SiteConfig
-	previousSiteConfig *database.SiteConfig
+	db         database.DB
+	siteConfig *database.SiteConfig
+	// previousSiteConfig *database.SiteConfig
 }
 
 func (r SiteConfigurationChangeResolver) ID() graphql.ID {
 	return relay.MarshalID(siteConfigurationChangeKind, r.siteConfig.ID)
 }
 
-func (r SiteConfigurationChangeResolver) PreviousID() *graphql.ID {
-	if r.previousSiteConfig != nil {
-		id := relay.MarshalID(siteConfigurationChangeKind, r.previousSiteConfig.ID)
-		return &id
-	}
+// func (r SiteConfigurationChangeResolver) PreviousID() *graphql.ID {
+// 	if r.previousSiteConfig != nil {
+// 		id := relay.MarshalID(siteConfigurationChangeKind, r.previousSiteConfig.ID)
+// 		return &id
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResolver, error) {
 	if r.siteConfig.AuthorUserID == 0 {
@@ -47,11 +46,13 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 // TODO: Implement redaction.
 func (r SiteConfigurationChangeResolver) Diff() string {
 	// FIXME
-	if r.previousSiteConfig == nil {
-		return ""
-	}
+	// if r.previousSiteConfig == nil {
+	// 	return ""
+	// }
 
-	return cmp.Diff(r.siteConfig.Contents, r.previousSiteConfig.Contents)
+	// return cmp.Diff(r.siteConfig.Contents, r.previousSiteConfig.Contents)
+	//
+	return ""
 }
 
 // FIXME: Doesn't look like its returning the correct value.

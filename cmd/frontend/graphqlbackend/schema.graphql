@@ -6607,12 +6607,6 @@ type SiteConfigurationChange implements Node {
     """
     id: ID!
     """
-    The ID of the previous site config against which this diff is generated. If
-    empty, this indicates that this is the initial config that was applied at
-    instance creation so there is nothing before this to compare to.
-    """
-    previousID: ID
-    """
     The user who made this change. If empty, it indicates that either the
     author's information is not available or the change in the site config was applied
     via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
