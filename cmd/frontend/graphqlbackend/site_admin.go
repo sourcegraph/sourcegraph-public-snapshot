@@ -38,6 +38,35 @@ func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
 
 	return &userConnectionResolver{users: user}, nil
 }
+
+func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
+	Users []graphql.ID
+}) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can recover users.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if len(args.Users) == 0 {
+		return nil, errors.New("must specify at least one user ID")
+	}
+
+	ids := make([]int32, len(args.Users))
+	for index, user := range args.Users {
+		id, err := UnmarshalUserID(user)
+		if err != nil {
+			return nil, err
+		}
+		ids[index] = id
+	}
+
+	users, err := r.db.Users().RecoverList(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userConnectionResolver{users: users}, nil
+}
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
