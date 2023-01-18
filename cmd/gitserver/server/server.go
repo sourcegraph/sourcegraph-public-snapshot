@@ -1473,7 +1473,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 		cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
 		dir.Set(cmd.Unwrap())
-		cmd.Stdout = &buf
+		cmd.Unwrap().Stdout = &buf
 
 		if _, err := runCommand(ctx, cmd); err != nil {
 			return "", true, err
@@ -1800,9 +1800,9 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	cmdStart = time.Now()
 	cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
 	dir.Set(cmd.Unwrap())
-	cmd.Stdout = stdoutW
-	cmd.Stderr = stderrW
-	cmd.Stdin = bytes.NewReader(req.Stdin)
+	cmd.Unwrap().Stdout = stdoutW
+	cmd.Unwrap().Stderr = stderrW
+	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
 
 	exitStatus, execErr = runCommand(ctx, cmd)
 
