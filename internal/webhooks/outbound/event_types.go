@@ -15,14 +15,20 @@ type eventTypes struct {
 var registeredEventTypes = eventTypes{types: []EventType{}}
 
 func GetRegisteredEventTypes() (types []EventType) {
+	if MockGetRegisteredEventTypes != nil {
+		return MockGetRegisteredEventTypes()
+	}
+
 	registeredEventTypes.RLock()
 	defer registeredEventTypes.RUnlock()
 
 	return append(types, registeredEventTypes.types...)
 }
 
-// RegisterEventType registers a new outbound webhook event type, thereby making it
-// available in the webhook admin UI.
+var MockGetRegisteredEventTypes func() []EventType
+
+// RegisterEventType registers a new outbound webhook event type, thereby making
+// it available in the webhook admin UI.
 //
 // It is generally expected that this will be invoked from init() functions. It MUST NOT
 // be invoked before init().
