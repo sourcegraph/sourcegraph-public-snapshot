@@ -27,7 +27,7 @@ func queueDisableAccessTokenDefault() string {
 	return "false"
 }
 
-var queueDisableAccessToken = env.Get("EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN", queueDisableAccessTokenDefault(), "Disable usage of an access token between executors and Sourcegraph")
+var queueDisableAccessToken = env.Get("EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE", queueDisableAccessTokenDefault(), "Disable usage of an access token between executors and Sourcegraph (DANGEROUS")
 
 // Init initializes the executor endpoints required for use with the executor service.
 func Init(
@@ -47,16 +47,16 @@ func Init(
 		token = conf.SiteConfig().ExecutorsAccessToken
 		wantDisableAccessToken, _ := strconv.ParseBool(queueDisableAccessToken)
 
-		isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
 		if wantDisableAccessToken {
-			allowedDeployType := isSingleProgram || env.InsecureDev
+			isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+			isSingleDockerContainer := deploy.IsDeployTypeSingleDockerContainer(deploy.Type())
+			allowedDeployType := isSingleProgram || isSingleDockerContainer || env.InsecureDev
 			if allowedDeployType && token == "" {
 				// Disable the access token.
 				return "", false
 			}
-
 			// Respect the access token.
-			logger.Warn("access token may only be disabled if executors.accessToken is empty in site config AND the deployment type is single-program or a dev environment.")
+			logger.Warn("access token may only be disabled if executors.accessToken is empty in site config AND the deployment type is single-program, single-docker-container, or dev")
 			return token, true
 		}
 

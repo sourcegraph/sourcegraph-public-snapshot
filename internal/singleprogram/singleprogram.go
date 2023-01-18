@@ -113,7 +113,7 @@ func Init(logger log.Logger) {
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", "none")
-	setDefaultEnv(logger, "EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN", "true")
+	setDefaultEnv(logger, "EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE", "true")
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you

@@ -100,7 +100,7 @@ env:
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
   EXECUTOR_FRONTEND_PASSWORD: none
-  EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN: true
+  EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE: true
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
