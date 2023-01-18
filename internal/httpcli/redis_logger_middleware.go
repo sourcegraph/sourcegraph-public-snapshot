@@ -166,10 +166,11 @@ func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error
 // getOutboundRequestLogItems returns all items where pred returns true,
 // sorted by ID ascending.
 func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRequestLogItem) bool) ([]*types.OutboundRequestLogItem, error) {
-	// We fetch all values from redis, then just return those in after. Given
-	// the max size is enforced as 500, this is fine. But if we ever raise the
-	// limit, we likely need to think of an alternative way to do pagination
-	// against lists / or also store the items so we can look up by key
+	// We fetch all values from redis, then just return those matching pred.
+	// Given the max size is enforced as 500, this is fine. But if we ever
+	// raise the limit, we likely need to think of an alternative way to do
+	// pagination against lists / or also store the items so we can look up by
+	// key
 	rawItems, err := outboundRequestsRedisFIFOList.All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "list all log items")
