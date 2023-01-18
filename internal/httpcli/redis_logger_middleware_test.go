@@ -144,18 +144,32 @@ func TestRedisLoggerMiddleware_multiple(t *testing.T) {
 	// Updated want by what is actually kept
 	wantURLs = wantURLs[len(wantURLs)-limit:]
 
+	gotURLs := func(items []*types.OutboundRequestLogItem) []string {
+		var got []string
+		for _, item := range items {
+			got = append(got, item.URL)
+		}
+		return got
+	}
+
 	// Check logged request
 	logged, err := GetOutboundRequestLogItems(context.Background(), "")
 	if err != nil {
 		t.Fatalf("couldnt get logged requests: %s", err)
 	}
-
-	var gotURLs []string
-	for _, item := range logged {
-		gotURLs = append(gotURLs, item.URL)
-	}
-	if diff := cmp.Diff(wantURLs, gotURLs); diff != "" {
+	if diff := cmp.Diff(wantURLs, gotURLs(logged)); diff != "" {
 		t.Fatalf("unexpected logged URLs (-want, +got):\n%s", diff)
+	}
+
+	// Check that after works
+	after := logged[limit/2-1].ID
+	wantURLs = wantURLs[limit/2:]
+	afterLogged, err := GetOutboundRequestLogItems(context.Background(), after)
+	if err != nil {
+		t.Fatalf("couldnt get logged requests: %s", err)
+	}
+	if diff := cmp.Diff(wantURLs, gotURLs(afterLogged)); diff != "" {
+		t.Fatalf("unexpected logged with after URLs (-want, +got):\n%s", diff)
 	}
 
 	// Check that GetOutboundRequestLogItem works
