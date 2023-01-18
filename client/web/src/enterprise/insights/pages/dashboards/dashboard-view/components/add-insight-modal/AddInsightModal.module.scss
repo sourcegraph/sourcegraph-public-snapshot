@@ -1,9 +1,9 @@
 .modal {
     display: flex;
     flex-direction: column;
+    width: 80vw;
     height: 80vh;
     max-height: 850px;
-    width: 80vw !important;
     max-width: 900px;
     background-color: var(--body-bg);
     padding: 1rem;

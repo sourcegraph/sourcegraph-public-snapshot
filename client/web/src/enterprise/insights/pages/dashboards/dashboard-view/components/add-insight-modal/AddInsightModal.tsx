@@ -191,7 +191,9 @@ function InsightSuggestionCard(props: InsightSuggestionCardProps): ReactElement 
 
     return (
         <MultiComboboxOption value={getInsightTitle(item)} index={index} className={styles.suggestionCard}>
-            <MultiComboboxOptionText />
+            <span>
+                <MultiComboboxOptionText />
+            </span>
             <small className={styles.suggestionCardDescription}>
                 {item.type} insight {getInsightDetails(item)}
             </small>
