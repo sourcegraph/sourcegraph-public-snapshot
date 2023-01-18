@@ -24739,16 +24739,16 @@ To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` 
 
 <p class="subtitle">Spans received per receiver per minute</p>
 
-								Shows the rate of spans accepted by the configured reveiver
-								
-								A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
-								The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
-								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
-								
-								See the Exporters section see spans that have made it through the pipeline and are exported.
-								
-								Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
-								https://opentelemetry.io/docs/collector/configuration/#processors.
+Shows the rate of spans accepted by the configured reveiver
+
+A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
+The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
+For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+
+See the Exporters section see spans that have made it through the pipeline and are exported.
+
+Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
+https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 
@@ -24769,12 +24769,7 @@ Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans[1m]))`
 
 <p class="subtitle">Spans refused per receiver</p>
 
-								Shows the amount of spans that have been refused by a receiver.
-								
-								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-								
- 								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
-								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+
 
 Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-refused) for 1 alert related to this panel.
 
@@ -24797,12 +24792,12 @@ Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))`
 
 <p class="subtitle">Spans exported per exporter per minute</p>
 
-								Shows the rate of spans being sent by the exporter
-								
-								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+Shows the rate of spans being sent by the exporter
+
+A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
+The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24823,9 +24818,9 @@ Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans[1m]))`
 
 <p class="subtitle">Span export failures by exporter</p>
 
-								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-export-failures) for 1 alert related to this panel.
 
@@ -24848,7 +24843,7 @@ Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
 
 <p class="subtitle">Cpu usage of the collector</p>
 
-								Shows the cpu usage of the OpenTelemetry collector
+Shows CPU usage as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
@@ -24869,7 +24864,7 @@ Query: `sum by (job) (rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m]))`
 
 <p class="subtitle">Memory allocated to the otel collector</p>
 
-								Shows the memory Resident Set Size (RSS) allocated to the OpenTelemetry collector
+Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
@@ -24890,13 +24885,13 @@ Query: `sum by (job) (rate(otelcol_process_memory_rss{job=~"^.*"}[1m]))`
 
 <p class="subtitle">Memory used by the collector</p>
 
-								Shows how much memory is being used by the otel collector.
-								
-								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
-								* Spans failing to be sent and the exporter is configured to retry
-								* A high batch count by using a batch processor
-								
-								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
+Shows how much memory is being used by the otel collector.
+
+* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
+* Spans failing to be sent and the exporter is configured to retry
+* A high batch count by using a batch processor
+
+For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 

@@ -245,9 +245,11 @@ type ChangesetSyncResponse struct {
 // PermsSyncRequest is a request to sync permissions. The provided options are used to
 // sync all provided users and repos - to use different options, make a separate request.
 type PermsSyncRequest struct {
-	UserIDs []int32                 `json:"user_ids"`
-	RepoIDs []api.RepoID            `json:"repo_ids"`
-	Options authz.FetchPermsOptions `json:"options"`
+	UserIDs           []int32                 `json:"user_ids"`
+	RepoIDs           []api.RepoID            `json:"repo_ids"`
+	Options           authz.FetchPermsOptions `json:"options"`
+	Reason            string                  `json:"reason"`
+	TriggeredByUserID int32                   `json:"triggered_by_user_id"`
 }
 
 // PermsSyncResponse is a response to sync permissions.

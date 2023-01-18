@@ -24,7 +24,7 @@ export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
         ThemeProps,
         TelemetryProps {
-    repo?: { id: string }
+    repo?: { id: string; name: string }
     indexingEnabled?: boolean
     history: H.History
 }
@@ -165,14 +165,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
 
             <Container className="container form mb-3">
                 <BranchTargetSettings
-                    repoId={repo?.id}
-                    policy={policy}
+                    policy={{ ...policy, ...(!policy.id ? { repository: repo } : {}) }}
                     setPolicy={setPolicy}
                     disabled={policy.protected}
                 />
-
                 <RetentionSettings policy={policy} setPolicy={setPolicy} />
-
                 {indexingEnabled && <IndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />}
             </Container>
 

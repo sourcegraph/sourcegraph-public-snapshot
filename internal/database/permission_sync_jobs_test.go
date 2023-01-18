@@ -8,9 +8,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+)
+
+const (
+	// ReasonManualRepoSync and ReasonManualUserSync are copied from permssync
+	// package to avoid import cycles.
+	ReasonManualRepoSync = "REASON_MANUAL_REPO_SYNC"
+	ReasonManualUserSync = "REASON_MANUAL_USER_SYNC"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
@@ -22,6 +28,10 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -34,13 +44,13 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("jobs returned even though database is empty")
 	}
 
-	opts := PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: true}
+	opts := PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: true, Reason: ReasonManualRepoSync, TriggeredByUserID: user.ID}
 	if err := store.CreateRepoSyncJob(ctx, 99, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	nextSyncAt := clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, NextSyncAt: nextSyncAt}
+	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, NextSyncAt: nextSyncAt, Reason: ReasonManualUserSync}
 	if err := store.CreateUserSyncJob(ctx, 77, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -56,11 +66,13 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	wantJobs := []*PermissionSyncJob{
 		{
-			ID:               jobs[0].ID,
-			State:            "queued",
-			RepositoryID:     99,
-			HighPriority:     true,
-			InvalidateCaches: true,
+			ID:                jobs[0].ID,
+			State:             "queued",
+			RepositoryID:      99,
+			HighPriority:      true,
+			InvalidateCaches:  true,
+			Reason:            ReasonManualRepoSync,
+			TriggeredByUserID: user.ID,
 		},
 		{
 			ID:               jobs[1].ID,
@@ -68,6 +80,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			UserID:           77,
 			InvalidateCaches: true,
 			ProcessAfter:     nextSyncAt,
+			Reason:           ReasonManualUserSync,
 		},
 	}
 	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {

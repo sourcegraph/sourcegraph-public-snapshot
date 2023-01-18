@@ -19,27 +19,11 @@ import (
 )
 
 const (
-	testLSIFUploadID = 1
 	testSCIPUploadID = 2408562
 )
 
 func TestDatabaseDefinitions(t *testing.T) {
 	store := populateTestStore(t)
-
-	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
-	//                   ^^^^^^^^^
-	// -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
-	//                             ^^^^^^^^^
-	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
-	//                              ^^^^^^^^^
-
-	lsifDefinitionLocations := []shared.Location{
-		{
-			DumpID: testLSIFUploadID,
-			Path:   "protocol/writer.go",
-			Range:  newRange(85, 17, 85, 26),
-		},
-	}
 
 	// `const lru = new LRU<string, V>(cacheOptions)`
 	//        ^^^
@@ -80,11 +64,6 @@ func TestDatabaseDefinitions(t *testing.T) {
 		offset          int
 		expected        []shared.Location
 	}{
-		// LSIF
-		{testLSIFUploadID, "internal/index/indexer.go", 380, 25, 1, 1, 0, lsifDefinitionLocations},
-		{testLSIFUploadID, "internal/index/indexer.go", 529, 25, 1, 1, 0, lsifDefinitionLocations},
-		{testLSIFUploadID, "protocol/writer.go", 85, 20, 1, 1, 0, lsifDefinitionLocations},
-
 		// SCIP (local)
 		{testSCIPUploadID, "template/src/lsif/util.ts", 7, 12, 1, 1, 0, scipDefinitionLocations},
 		{testSCIPUploadID, "template/src/lsif/util.ts", 10, 13, 1, 1, 0, scipDefinitionLocations},
@@ -126,19 +105,6 @@ func TestDatabaseDefinitions(t *testing.T) {
 func TestDatabaseReferences(t *testing.T) {
 	store := populateTestStore(t)
 
-	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
-	//                   ^^^^^^^^^
-	// -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
-	//                             ^^^^^^^^^
-	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
-	//                              ^^^^^^^^^
-
-	lsifExpected := []shared.Location{
-		{DumpID: testLSIFUploadID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
-		{DumpID: testLSIFUploadID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
-		{DumpID: testLSIFUploadID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
-	}
-
 	// `const lru = new LRU<string, V>(cacheOptions)`
 	//        ^^^
 	// -> `    if (lru.has(key)) {`
@@ -177,12 +143,6 @@ func TestDatabaseReferences(t *testing.T) {
 		offset          int
 		expected        []shared.Location
 	}{
-		// LSIF
-		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 5, 0, lsifExpected},
-		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 2, 0, lsifExpected[:2]},
-		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 2, 1, lsifExpected[1:]},
-		{testLSIFUploadID, "protocol/writer.go", 85, 20, 3, 5, 5, lsifExpected[:0]},
-
 		// SCIP (local)
 		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 5, 0, scipExpected},
 		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 2, 0, scipExpected[:2]},
@@ -226,7 +186,6 @@ func populateTestStore(t testing.TB) LsifStore {
 	store := New(&observation.TestContext, codeIntelDB)
 
 	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
-	loadTestFile(t, codeIntelDB, "./testdata/lsif-go@ad3507cb.sql")
 	return store
 }
 

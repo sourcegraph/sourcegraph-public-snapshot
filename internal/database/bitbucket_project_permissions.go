@@ -187,7 +187,8 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		logEntry := workerutil.ExecutionLogEntry(entry)
+		job.ExecutionLogs = append(job.ExecutionLogs, &logEntry)
 	}
 
 	for _, perm := range permissions {

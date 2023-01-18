@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -47,17 +48,13 @@ type batchChangeResolver struct {
 
 const batchChangeIDKind = "BatchChange"
 
-func marshalBatchChangeID(id int64) graphql.ID {
-	return relay.MarshalID(batchChangeIDKind, id)
-}
-
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
 }
 
 func (r *batchChangeResolver) ID() graphql.ID {
-	return marshalBatchChangeID(r.batchChange.ID)
+	return bgql.MarshalBatchChangeID(r.batchChange.ID)
 }
 
 func (r *batchChangeResolver) Name() string {

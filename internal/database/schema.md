@@ -143,7 +143,7 @@ Indexes:
     "batch_spec_resolution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
-    "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
+    "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1512,6 +1512,7 @@ Triggers:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 Indexes:
     "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
 
@@ -1520,6 +1521,8 @@ Indexes:
 **cloned**: Number of repositories in gitserver_repos table on this shard that are cloned
 
 **cloning**: Number of repositories in gitserver_repos table on this shard that cloning
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
 
@@ -2533,14 +2536,34 @@ Stores errors that occurred while performing an out-of-band migration.
 
 **migration_id**: The identifier of the migration.
 
-# Table "public.permission_sync_jobs"
+# Table "public.outbound_webhook_event_types"
 ```
-      Column       |           Type           | Collation | Nullable |                     Default                      
--------------------+--------------------------+-----------+----------+--------------------------------------------------
- id                | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
+       Column        |  Type  | Collation | Nullable |                         Default                          
+---------------------+--------+-----------+----------+----------------------------------------------------------
+ id                  | bigint |           | not null | nextval('outbound_webhook_event_types_id_seq'::regclass)
+ outbound_webhook_id | bigint |           | not null | 
+ event_type          | text   |           | not null | 
+ scope               | text   |           |          | 
+Indexes:
+    "outbound_webhook_event_types_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_event_types_event_type_idx" btree (event_type, scope)
+Foreign-key constraints:
+    "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhook_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                      Default                      
+-------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                | bigint                   |           | not null | nextval('outbound_webhook_jobs_id_seq'::regclass)
+ event_type        | text                     |           | not null | 
+ scope             | text                     |           |          | 
+ encryption_key_id | text                     |           |          | 
+ payload           | bytea                    |           | not null | 
+ state             | text                     |           | not null | 'queued'::text
  failure_message   | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
+ queued_at         | timestamp with time zone |           | not null | now()
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
  process_after     | timestamp with time zone |           |          | 
@@ -2550,18 +2573,98 @@ Stores errors that occurred while performing an out-of-band migration.
  execution_logs    | json[]                   |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
- repository_id     | integer                  |           |          | 
- user_id           | integer                  |           |          | 
- high_priority     | boolean                  |           | not null | false
- invalidate_caches | boolean                  |           | not null | false
+Indexes:
+    "outbound_webhook_jobs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_jobs_state_idx" btree (state)
+    "outbound_webhook_payload_process_after_idx" btree (process_after)
+Referenced by:
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhook_logs"
+```
+       Column        |           Type           | Collation | Nullable |                      Default                      
+---------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                  | bigint                   |           | not null | nextval('outbound_webhook_logs_id_seq'::regclass)
+ job_id              | bigint                   |           | not null | 
+ outbound_webhook_id | bigint                   |           | not null | 
+ sent_at             | timestamp with time zone |           | not null | now()
+ status_code         | integer                  |           | not null | 
+ encryption_key_id   | text                     |           |          | 
+ request             | bytea                    |           | not null | 
+ response            | bytea                    |           | not null | 
+ error               | bytea                    |           | not null | 
+Indexes:
+    "outbound_webhook_logs_pkey" PRIMARY KEY, btree (id)
+    "outbound_webhook_logs_outbound_webhook_id_idx" btree (outbound_webhook_id)
+    "outbound_webhooks_logs_status_code_idx" btree (status_code)
+Foreign-key constraints:
+    "outbound_webhook_logs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.outbound_webhooks"
+```
+      Column       |           Type           | Collation | Nullable |                    Default                    
+-------------------+--------------------------+-----------+----------+-----------------------------------------------
+ id                | bigint                   |           | not null | nextval('outbound_webhooks_id_seq'::regclass)
+ created_by        | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_by        | integer                  |           |          | 
+ updated_at        | timestamp with time zone |           | not null | now()
+ encryption_key_id | text                     |           |          | 
+ url               | bytea                    |           | not null | 
+ secret            | bytea                    |           | not null | 
+Indexes:
+    "outbound_webhooks_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "outbound_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "outbound_webhook_event_types" CONSTRAINT "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.permission_sync_jobs"
+```
+        Column        |           Type           | Collation | Nullable |                     Default                      
+----------------------+--------------------------+-----------+----------+--------------------------------------------------
+ id                   | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
+ state                | text                     |           |          | 'queued'::text
+ failure_message      | text                     |           |          | 
+ queued_at            | timestamp with time zone |           |          | now()
+ started_at           | timestamp with time zone |           |          | 
+ finished_at          | timestamp with time zone |           |          | 
+ process_after        | timestamp with time zone |           |          | 
+ num_resets           | integer                  |           | not null | 0
+ num_failures         | integer                  |           | not null | 0
+ last_heartbeat_at    | timestamp with time zone |           |          | 
+ execution_logs       | json[]                   |           |          | 
+ worker_hostname      | text                     |           | not null | ''::text
+ cancel               | boolean                  |           | not null | false
+ repository_id        | integer                  |           |          | 
+ user_id              | integer                  |           |          | 
+ high_priority        | boolean                  |           | not null | false
+ invalidate_caches    | boolean                  |           | not null | false
+ reason               | text                     |           |          | 
+ triggered_by_user_id | integer                  |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_process_after" btree (process_after)
     "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
     "permission_sync_jobs_user_id" btree (user_id)
+Foreign-key constraints:
+    "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
 ```
+
+**reason**: Specifies why permissions sync job was triggered.
+
+**triggered_by_user_id**: Specifies an ID of a user who triggered a sync.
 
 # Table "public.permissions"
 ```
@@ -2825,12 +2928,15 @@ Indexes:
  cloning      | bigint |           | not null | 0
  cloned       | bigint |           | not null | 0
  failed_fetch | bigint |           | not null | 0
+ corrupted    | bigint |           | not null | 0
 
 ```
 
 **cloned**: Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver
 
 **cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
+
+**corrupted**: Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table
 
 **failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
 
@@ -3289,7 +3395,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
+    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspace_execution_last_dequeues" CONSTRAINT "batch_spec_workspace_execution_last_dequeues_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -3324,6 +3430,9 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
@@ -3719,6 +3828,25 @@ Foreign-key constraints:
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
+```
+
+# View "public.outbound_webhooks_with_event_types"
+
+## View query:
+
+```sql
+ SELECT outbound_webhooks.id,
+    outbound_webhooks.created_by,
+    outbound_webhooks.created_at,
+    outbound_webhooks.updated_by,
+    outbound_webhooks.updated_at,
+    outbound_webhooks.encryption_key_id,
+    outbound_webhooks.url,
+    outbound_webhooks.secret,
+    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object
+           FROM outbound_webhook_event_types
+          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
+   FROM outbound_webhooks;
 ```
 
 # View "public.reconciler_changesets"

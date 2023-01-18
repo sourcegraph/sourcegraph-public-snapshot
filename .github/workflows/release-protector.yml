@@ -1,23 +1,28 @@
 name: Release protector
 on:
   pull_request:
-    types:
-      [
-        edited,
-        opened,
-        synchronize,
-        ready_for_review,
-        labeled,
-        unlabeled,
-      ]
+    types: [edited, opened, synchronize, ready_for_review, labeled, unlabeled]
     branches:
       # only run on branches targeting the `main` branch.
       - main
 
 jobs:
-  protect-pr:
+  validate_release_branch:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'sourcegraph/sourcegraph' && !github.event.pull_request.draft }}
+    outputs:
+      releaseBranchExists: ${{ steps.checkout.outputs.exists }}
+    steps:
+      - name: Checkout new release branch
+        id: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: 4.4 # update this before releasing or something - find a way to automate
+
+  protect-pr:
+    runs-on: ubuntu-latest
+    needs: validate_release_branch
+    if: ${{ needs.validate_release_branch.outputs.releaseBranchExists == 'false' }}
     steps:
       - name: Check date and labels
         id: check-date-and-labels
@@ -113,33 +118,33 @@ jobs:
         uses: actions/github-script@v6
         # We need always() otherwise, the step won't run if the previous one exited, regardless of the predicate value when evaluated.
         #
-        # Because we have other actions labeling the PR, they can trigger the entire job to run twice simultaneously, preventing the 
-        # code ensuring that we're not commenting again if a comment has been posted by us. Basically, with cla-bot labels being instant 
+        # Because we have other actions labeling the PR, they can trigger the entire job to run twice simultaneously, preventing the
+        # code ensuring that we're not commenting again if a comment has been posted by us. Basically, with cla-bot labels being instant
         # means that this job is ran twice at the same time, but always second.
-        # To fix that, we specifically check the event.label.name value and the event.action. 
+        # To fix that, we specifically check the event.label.name value and the event.action.
         #
-        # In essence, we're always running the check, but only commenting if we really need to. This can't be done at the job level, because 
-        # it would be mean the job would be first run by the pr creation, but then skipped when the cla-bot triggered job completes, which 
-        # is very confusing for the user in the UI (you get a comment about a failure, but it appears skipped). 
-        if: |- 
-          always() 
-          && 
-          steps.check-date-and-labels.outcome != 'success' 
+        # In essence, we're always running the check, but only commenting if we really need to. This can't be done at the job level, because
+        # it would be mean the job would be first run by the pr creation, but then skipped when the cla-bot triggered job completes, which
+        # is very confusing for the user in the UI (you get a comment about a failure, but it appears skipped).
+        if: |-
+          always()
+          &&
+          steps.check-date-and-labels.outcome != 'success'
           &&
           (
             (
-              contains(fromJSON('["labeled", "unlabeled"]'), github.event.action) 
-              && 
+              contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
+              &&
               github.event.label.name == 'i-acknowledge-this-goes-into-the-release'
-            ) 
-            || 
+            )
+            ||
             !contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
           )
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             let d = new Date()
-            d.setHours(d.getHours() -1) // Yes, this handles properly midnight. 
+            d.setHours(d.getHours() -1) // Yes, this handles properly midnight.
 
             let body = "❌ **Problem**: the label `i-acknowledge-this-goes-into-the-release` is absent.\n👉 **What to do**: we're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with `i-acknowledge-this-goes-into-the-release`."
             let skip = false
@@ -159,7 +164,7 @@ jobs:
               }))
             }
 
-            if (!skip) { 
+            if (!skip) {
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
