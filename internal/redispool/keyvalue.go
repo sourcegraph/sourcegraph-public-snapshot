@@ -72,11 +72,11 @@ type redisKeyValue struct {
 //
 // Note: RedisKeyValue additionally implements
 //
-//   interface {
-//     // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
-//     // prefix + ":".
-//     WithPrefix(prefix string) KeyValue
-//   }
+//	interface {
+//	  // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
+//	  // prefix + ":".
+//	  WithPrefix(prefix string) KeyValue
+//	}
 func RedisKeyValue(pool *redis.Pool) KeyValue {
 	return &redisKeyValue{pool: pool}
 }
