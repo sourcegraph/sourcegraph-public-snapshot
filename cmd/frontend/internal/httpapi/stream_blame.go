@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -135,10 +136,19 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 
 				var blameHunkUserResponse *BlameHunkUserResponse
 				if user != nil {
+					displayName := &user.DisplayName
+					if *displayName == "" {
+						displayName = nil
+					}
+					avatarURL := &user.AvatarURL
+					if *avatarURL == "" {
+						avatarURL = nil
+					}
+
 					blameHunkUserResponse = &BlameHunkUserResponse{
 						Username:    user.Username,
-						DisplayName: user.DisplayName,
-						AvatarURL:   user.AvatarURL,
+						DisplayName: displayName,
+						AvatarURL:   avatarURL,
 					}
 				}
 
@@ -185,7 +195,7 @@ type BlameHunkCommitResponse struct {
 }
 
 type BlameHunkUserResponse struct {
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
-	AvatarURL   string `json:"avatarURL"`
+	Username    string  `json:"username"`
+	DisplayName *string `json:"displayName"`
+	AvatarURL   *string `json:"avatarURL"`
 }

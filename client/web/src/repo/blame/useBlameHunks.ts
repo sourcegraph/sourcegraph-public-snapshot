@@ -150,9 +150,9 @@ interface RawStreamHunk {
     filename: string
     message: string
     user?: {
-      username: string,
-      displayName: string,
-      avatarURL: string,
+        username: string
+        displayName: string | null
+        avatarURL: string | null
     }
 }
 
@@ -203,11 +203,6 @@ const fetchBlameViaStreaming = memoizeObservable(
                         if (event.event === 'hunk') {
                             const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
                             for (const rawHunk of rawHunks) {
-                              // TODO: remove this, it's just a thing to highlight when we have the user while I'm passing this PR 
-                              // to Phillip.
-                              if (rawHunk.user != null) {
-                                console.log(rawHunk.user)
-                              }
                                 const hunk: Omit<BlameHunk, 'displayInfo'> = {
                                     startLine: rawHunk.startLine,
                                     endLine: rawHunk.endLine,
@@ -216,10 +211,10 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
-                                            email: rawHunk.user?.email,
-                                            displayName: rawHunk.user?.displayName,
-                                            avatarURL: rawHunk.user?.avatarURL,
-                                            user: null,
+                                            email: rawHunk.author?.Email,
+                                            displayName: rawHunk.author.Name,
+                                            avatarURL: rawHunk.user?.avatarURL ?? null,
+                                            user: rawHunk.user ?? null,
                                         },
                                     },
                                     commit: {
