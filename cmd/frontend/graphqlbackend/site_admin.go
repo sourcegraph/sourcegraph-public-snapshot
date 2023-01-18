@@ -21,22 +21,11 @@ import (
 func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
 	User graphql.ID
 }) (*userConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins can recover users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	id, err := UnmarshalUserID(args.User)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := r.db.Users().RecoverUserByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &userConnectionResolver{users: user}, nil
+	return r.RecoverUsers(ctx, &struct {
+		Users []graphql.ID
+	}{
+		Users: []graphql.ID{args.User},
+	})
 }
 
 func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
@@ -51,11 +40,17 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
 		return nil, errors.New("must specify at least one user ID")
 	}
 
+	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
+	a := actor.FromContext(ctx)
+
 	ids := make([]int32, len(args.Users))
 	for index, user := range args.Users {
 		id, err := UnmarshalUserID(user)
 		if err != nil {
 			return nil, err
+		}
+		if a.UID == id {
+			return nil, errors.New("unable to delete current user")
 		}
 		ids[index] = id
 	}
