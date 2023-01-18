@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -148,6 +148,8 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
         },
         [defaultNodeId, navigate]
     )
+
+    usePatchFocusToFixScrollIssues()
 
     if (error) {
         return (
@@ -347,4 +349,36 @@ function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
         parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
     }
     return parents
+}
+
+// By default, react-accessible-tree uses .focus() on the `<li>` to scroll to
+// the element. In case of a larger nested list, this is causing unexpected
+// jumps in the UI because the browser wants to fit as much content from the
+// `<li>` into the viewport as possible.
+//
+// This is not what we want though, because we only render the focus outline
+// on the folder name as well and thus the jumping is unexpected. To fix this,
+// we have to patch `.focus()` and handle the case ourselves.
+//
+// TODO: This should be fixed upstream in react-accessible-treeview.
+function usePatchFocusToFixScrollIssues(): void {
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        const originalFocus = HTMLElement.prototype.focus
+        HTMLElement.prototype.focus = function (...args) {
+            const isBranch = this.nodeName === 'LI' && this.classList.contains('tree-branch-wrapper')
+            const isNode = this.nodeName === 'DIV' && this.classList.contains(styles.node)
+            if (isBranch || isNode) {
+                const focusableNode = isNode ? this : this.querySelector(`.${styles.node}`)
+                if (focusableNode) {
+                    focusableNode.scrollIntoView({ block: 'nearest' })
+                    return originalFocus.call(this, { preventScroll: true })
+                }
+            }
+            return originalFocus.call(this, ...args)
+        }
+        return () => {
+            HTMLElement.prototype.focus = originalFocus
+        }
+    }, [])
 }
