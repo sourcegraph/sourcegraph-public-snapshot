@@ -17,5 +17,5 @@ var config = svcmain.Config{}
 //
 // DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
 func DeprecatedSingleServiceMainEnterprise(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, false)
+	svcmain.DeprecatedSingleServiceMain(service, config, false, false)
 }

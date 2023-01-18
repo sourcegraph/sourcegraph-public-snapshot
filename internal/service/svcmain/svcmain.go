@@ -41,7 +41,7 @@ func Main(services []service.Service, config Config) {
 	)
 	logger := log.Scoped("sourcegraph", "Sourcegraph")
 	singleprogram.Init(logger)
-	run(liblog, logger, services, config, true)
+	run(liblog, logger, services, config, true, true)
 }
 
 // DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
@@ -49,7 +49,7 @@ func Main(services []service.Service, config Config) {
 //
 // DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
 // is deprecated.
-func DeprecatedSingleServiceMain(svc service.Service, config Config, validateConfig bool) {
+func DeprecatedSingleServiceMain(svc service.Service, config Config, validateConfig, useConfPackage bool) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -63,19 +63,27 @@ func DeprecatedSingleServiceMain(svc service.Service, config Config, validateCon
 		),
 	)
 	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	run(liblog, logger, []service.Service{svc}, config, validateConfig)
+	run(liblog, logger, []service.Service{svc}, config, validateConfig, useConfPackage)
 }
 
-func run(liblog *log.PostInitCallbacks, logger log.Logger, services []service.Service, config Config, validateConfig bool) {
+func run(
+	liblog *log.PostInitCallbacks,
+	logger log.Logger,
+	services []service.Service,
+	config Config,
+	validateConfig bool,
+	useConfPackage bool,
+) {
 	defer liblog.Sync()
 
 	// Initialize log15. Even though it's deprecated, it's still fairly widely used.
 	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
 
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	if useConfPackage {
+		conf.Init()
+		go conf.Watch(liblog.Update(conf.GetLogSinks))
+		tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	}
 	profiler.Init()
 
 	obctx := observation.NewContext(logger)

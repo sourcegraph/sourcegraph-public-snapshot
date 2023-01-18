@@ -21,7 +21,7 @@ func MainEnterprise(services []service.Service) {
 //
 // DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
 func DeprecatedSingleServiceMainEnterprise(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, true)
+	svcmain.DeprecatedSingleServiceMain(service, config, true, true)
 }
 
 func init() {
