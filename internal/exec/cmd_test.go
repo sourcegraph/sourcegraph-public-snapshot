@@ -71,25 +71,21 @@ func TestCombinedOutput(t *testing.T) {
 
 	t.Run("OK", func(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -103,21 +99,18 @@ func TestEnviron(t *testing.T) {
 
 	t.Run("OK", func(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are NOT called", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -132,25 +125,21 @@ func TestOutput(t *testing.T) {
 
 	t.Run("OK", func(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -165,21 +154,18 @@ func TestRun(t *testing.T) {
 
 	t.Run("OK", func(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -194,21 +180,18 @@ func TestStart(t *testing.T) {
 
 	t.Run("OK", func(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are NOT called", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -248,21 +231,18 @@ func TestStdoutPipe(t *testing.T) {
 			t.Fatal("expected to get some output")
 		}
 		if diff := cmp.Diff(string(gb), string(wb)); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are NOT called", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
@@ -316,21 +296,18 @@ func TestStderrPipe(t *testing.T) {
 			t.Fatal("expected to get some output")
 		}
 		if diff := cmp.Diff(string(gb), string(wb)); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are NOT called", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 
@@ -343,8 +320,7 @@ func TestStderrPipe(t *testing.T) {
 		}
 		t.Run("after hooks are  called", func(t *testing.T) {
 			if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
-				t.Log(diff)
-				t.Fail()
+				t.Error(diff)
 			}
 		})
 	})
@@ -422,14 +398,12 @@ func TestStdinPipe(t *testing.T) {
 
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 	t.Run("after hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
-			t.Log(diff)
-			t.Fail()
+			t.Error(diff)
 		}
 	})
 }
@@ -574,16 +548,14 @@ func TestHooks(t *testing.T) {
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) error {
 			want, got := 1, ctx.Value("my-key")
 			if want != got {
-				t.Logf("want my-key to be 1, got %v", got)
-				t.Fail()
+				t.Errorf("want my-key to be 1, got %v", got)
 			}
 			return nil
 		})
 		cmd.SetAfterHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) {
 			want, got := 1, ctx.Value("my-key")
 			if want != got {
-				t.Logf("want my-key to be 1, got %v", got)
-				t.Fail()
+				t.Errorf("want my-key to be 1, got %v", got)
 			}
 		})
 	})
