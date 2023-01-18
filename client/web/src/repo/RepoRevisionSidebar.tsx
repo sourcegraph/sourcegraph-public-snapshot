@@ -24,6 +24,7 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
@@ -42,8 +43,6 @@ interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCas
     isSourcegraphDotCom: boolean
 }
 
-const USE_NEW_FILE_TREE = true
-
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
 const TABS_KEY = 'repo-revision-sidebar-last-tab'
 const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
@@ -58,6 +57,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
+    const [enableAccessibleFileTree] = useFeatureFlag('accessible-file-tree')
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -140,7 +140,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                         {props.repoID && props.commitID && (
                             <TabPanels>
                                 <TabPanel>
-                                    {USE_NEW_FILE_TREE ? (
+                                    {enableAccessibleFileTree ? (
                                         <RepoRevisionSidebarFileTree
                                             repoName={props.repoName}
                                             revision={props.revision}
