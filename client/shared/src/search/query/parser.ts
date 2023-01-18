@@ -154,6 +154,11 @@ export const parseParenthesis = (tokens: Token[]): State => {
 
 const parseNot = (tokens: Token[]): State => {
     const keyword = tokens[0]
+
+    if (!(keyword.type === 'keyword' && keyword.kind === KeywordKind.Not)) {
+        throw new Error('parseNot is called at an invalid token position')
+    }
+
     tokens = tokens.slice(1) // consume NOT
 
     let nodes: Node[] = []
@@ -213,7 +218,7 @@ const parseSequence = (tokens: Token[]): State => {
         }
         if (current.type === 'keyword') {
             if (current.kind === KeywordKind.And || current.kind === KeywordKind.Or) {
-                return { result: createSequence(nodes), tokens } // Caller advances.
+                break // Caller advances.
             }
             if (current.kind === KeywordKind.Not) {
                 const state = parseNot(tokens)
