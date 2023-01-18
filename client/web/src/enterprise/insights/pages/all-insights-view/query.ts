@@ -21,6 +21,15 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
 
     fragment InsightViewNode on InsightView {
         id
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         defaultSeriesDisplayOptions {
             limit
             sortOptions {
@@ -71,9 +80,6 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
             ... on SearchInsightDataSeriesDefinition {
                 seriesId
                 query
-                repositoryScope {
-                    repositories
-                }
                 timeScope {
                     ... on InsightIntervalTimeScope {
                         unit

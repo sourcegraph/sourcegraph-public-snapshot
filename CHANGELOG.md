@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Code Insights has a new UI for the "Add or remove insights" view, which now allows you to search code insights by series label in addition to insight title. [#46538](https://github.com/sourcegraph/sourcegraph/pull/46538)
 
 ### Fixed
 
