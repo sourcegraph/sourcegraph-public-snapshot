@@ -24,7 +24,7 @@ type RecordedCommand struct {
 	Path     string    `json:"path"`
 }
 
-// RecordingCmd is a Cmder that allows to record the executed commands with their arguments when
+// RecordingCmd is a Cmder that allows one to record the executed commands with their arguments when
 // the given ShouldRecordFunc predicate is true.
 type RecordingCmd struct {
 	*Cmd
@@ -42,7 +42,7 @@ type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 // RecordingCommand contructs a RecordingCommand that implements Cmder. The predicate shouldRecord can be passed to decide on whether
 // or not the command should be recorded.
 //
-// The recording only after once the commands is considered finished (.ie after Wait, Run, ...).
+// The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
 func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, name string, args ...string) *RecordingCmd {
 	cmd := Command(ctx, logger, name, args...)
 	rc := &RecordingCmd{
@@ -55,7 +55,7 @@ func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord Shoul
 	return rc
 }
 
-// RecordingWrap wraps an existing os/exec.Cmd into a RecorgingCommand.
+// RecordingWrap wraps an existing os/exec.Cmd into a RecordingCommand.
 func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, cmd *exec.Cmd) *RecordingCmd {
 	c := Wrap(ctx, logger, cmd)
 	rc := &RecordingCmd{
@@ -97,7 +97,7 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 	// record this command in redis
 	val := RecordedCommand{
 		Start:    rc.start,
-		Duration: time.Now().Sub(rc.start).Seconds(),
+		Duration: time.Since(rc.start).Seconds(),
 		Args:     cmd.Args,
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
@@ -113,7 +113,7 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 	rc.r.SetWithTTL(fmt.Sprintf("%v:%p", time.Now().Unix(), cmd), data, int(TTL.Seconds())) // TODO
 }
 
-// RecordingCommandFactory stores a ShouldRecord that can will used to to create new RecordingCommand
+// RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
 // while being externally updated by the caller, through the Update method.
 type RecordingCommandFactory struct {
 	shouldRecord ShouldRecordFunc

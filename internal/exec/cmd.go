@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 )
 
-// Cmd wraps an os/exec.Cmd into a thin layer than enables to set hooks for before and after the commands.
+// Cmd wraps an os/exec.Cmd into a thin layer than enables one to set hooks for before and after the commands.
 type Cmd struct {
 	cmd         *exec.Cmd
 	ctx         context.Context
@@ -30,10 +30,10 @@ type BeforeHook func(context.Context, log.Logger, *exec.Cmd) error
 // The passed context is the one that was used to create the Cmd.
 type AfterHook func(context.Context, log.Logger, *exec.Cmd)
 
-// Cmder provides an interface modeled after os/exec.Cmd that enables to operate a level higher and to
-// pass around various implementation, such as RecordingCommand, without having the receiver to know about it.
+// Cmder provides an interface modeled after os/exec.Cmd that enables one to operate a level higher and to
+// pass around various implementations, such as RecordingCommand, without having the receiver know about it.
 //
-// The only new method is Unwrap() which allows to grab the underlying os/exec.Cmd if needed.
+// The only new method is Unwrap() which allows one to grab the underlying os/exec.Cmd if needed.
 type Cmder interface {
 	CombinedOutput() ([]byte, error)
 	Environ() []string
