@@ -29,6 +29,9 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	user, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
