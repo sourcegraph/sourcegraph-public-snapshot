@@ -2,9 +2,6 @@ package insights
 
 import (
 	"context"
-	"os"
-	"strconv"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -18,28 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IsEnabled tells if code insights are enabled or not.
-func IsEnabled() bool {
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
-		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
-		// Insights.
-		return false
-	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
-		return false
-	}
-	return true
-}
-
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(
 	ctx context.Context,
@@ -51,7 +26,7 @@ func Init(
 ) error {
 	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db)
 
-	if !IsEnabled() {
+	if !enterprise.IsCodeInsightsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights are not available on single-container deployments")
 		} else {
