@@ -212,6 +212,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
         }
 
         if (event.key === Key.Enter) {
+            event.preventDefault()
             onItemSelect(navigationValue)
 
             // Prevent any single combobox UI state machine updates
