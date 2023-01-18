@@ -193,7 +193,6 @@ require github.com/XSAM/otelsql v0.15.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
-	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/cloudflare/circl v1.3.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
@@ -216,6 +215,7 @@ require (
 require (
 	code.gitea.io/gitea v1.18.0
 	cuelang.org/go v0.4.3
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
 	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a

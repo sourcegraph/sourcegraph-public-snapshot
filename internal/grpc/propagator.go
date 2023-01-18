@@ -77,7 +77,7 @@ func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
 		handler grpc.StreamHandler,
 	) error {
 		ctx := ss.Context()
-		md, ok := metadata.FromIncomingContext(ss.Context())
+		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
 			ctx = prop.InjectContext(ss.Context(), md)
 			ss = contextedServerStream{ss, ctx}
