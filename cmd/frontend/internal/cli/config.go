@@ -481,31 +481,39 @@ var (
 )
 
 func gitservers() *endpoint.Map {
-	const (
-		s = "gitserver"
-		p = "3178"
-		h = ""
-	)
 	gitserversOnce.Do(func() {
-		v := os.Getenv("SRC_GIT_SERVERS")
-		r := os.Getenv("GITSERVER_REPLICA_COUNT")
-		if r != "" && v != "" {
-			gitserversVal = endpoint.NewReplicas(v, s, r, p, h)
-		} else {
-			gitserversVal = endpoint.New(func() string {
-				if v == "" {
-					// Detect 'go test' and setup default addresses in that case.
-					p, err := os.Executable()
-					if err == nil && strings.HasSuffix(p, ".test") {
-						return "gitserver:3178"
-					}
-					return "k8s+rpc://gitserver:3178?kind=sts"
-				}
-				return v
-			}())
+		if addr := gitserverAddr(os.Environ()); addr != "" {
+			gitserversVal = endpoint.New(addr)
 		}
 	})
 	return gitserversVal
+}
+
+func gitserverAddr(environ []string) string {
+	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
+	if !ok {
+		deployType = deploy.Default
+	}
+
+	const (
+		serviceName = "gitserver"
+		port        = "3178"
+	)
+
+	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
+		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
+			return addrs
+		}
+	}
+
+	// Detect 'go test' and setup default addresses in that case.
+	p, err := os.Executable()
+	if err == nil && strings.HasSuffix(p, ".test") {
+		return "gitserver:3178"
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+rpc://gitserver:3178?kind=sts"
 }
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
@@ -533,6 +541,12 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
 	}
 
+	symbolsMap := computeSymbolsEndpoints()
+	symbolsAddrs, err := symbolsMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
+	}
+
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
 	if err != nil {
@@ -545,20 +559,18 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 		Searchers:            searcherAddrs,
+		Symbols:              symbolsAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
 }
 
 var (
-	searcherURL      = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-	searcherReplicas = env.Get("SEARCHER_REPLICA_COUNT", "", "searcher replica count")
-
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
-	indexedReplicas = env.Get("INDEXED_SEARCH_REPLICA_COUNT", "", "indexed-search replica count")
-	indexedBasename = env.Get("INDEXED_SEARCH_BASENAME", "indexed-search", "indexed-search base name")
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -576,26 +588,70 @@ var (
 	}()
 )
 
-func computeSearcherEndpoints() *endpoint.Map {
+func computeSymbolsEndpoints() *endpoint.Map {
+	symbolsURLsOnce.Do(func() {
+		if addr := symbolsAddr(os.Environ()); addr != "" {
+			symbolsURLs = endpoint.New(addr)
+		}
+	})
+	return symbolsURLs
+}
+
+func symbolsAddr(environ []string) string {
+	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
+	if !ok {
+		deployType = deploy.Default
+	}
+
 	const (
-		s = "searcher"
-		p = "3181"
-		h = "http://"
+		serviceName = "symbols"
+		port        = "3184"
 	)
+
+	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
+		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
+			return addrs
+		}
+	}
+
+	// Not set, use the default (non-service discovery on searcher)
+	return "http://symbols:3184"
+}
+
+func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		searcherURLs = endpoint.NewReplicas(searcherURL, s, searcherReplicas, p, h)
+		if addr := searcherAddr(os.Environ()); addr != "" {
+			searcherURLs = endpoint.New(addr)
+		}
 	})
 	return searcherURLs
 }
 
-func computeIndexedEndpoints() *endpoint.Map {
+func searcherAddr(environ []string) string {
+	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
+	if !ok {
+		deployType = deploy.Default
+	}
+
 	const (
-		p = "6070"
-		h = ""
+		serviceName = "searcher"
+		port        = "3181"
 	)
+
+	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
+		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
+			return addrs
+		}
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+http://searcher:3181"
+}
+
+func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.NewReplicas(addr, indexedBasename, indexedReplicas, p, h)
+			indexedEndpoints = endpoint.New(addr)
 		}
 	})
 	return indexedEndpoints
@@ -607,12 +663,16 @@ func zoektAddr(environ []string) string {
 		deployType = deploy.Default
 	}
 
+	const port = "6070"
+	var baseName = "indexed-search"
+	if deployType == deploy.DockerCompose {
+		baseName = "zoekt-webserver"
+	}
+
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
-		if addrs, ok := replicaAddrs(deployType, addr); ok {
+		if addrs, ok := replicaAddrs(deployType, addr, baseName, port); ok {
 			return addrs
 		}
-
-		return addr
 	}
 
 	// Backwards compatibility: We used to call this variable ZOEKT_HOST
@@ -625,25 +685,32 @@ func zoektAddr(environ []string) string {
 	return "k8s+rpc://indexed-search:6070?kind=sts"
 }
 
-func replicaAddrs(deployType string, countStr string) (string, bool) {
+// Generate endpoints if replica number is used
+func replicaAddrs(deployType, countStr, serviceName, port string) (string, bool) {
 	count, err := strconv.Atoi(countStr)
 	if err != nil {
-		return "", false
+		return countStr, countStr != ""
 	}
 
-	var fmtStr string
+	fmtStrHead := ""
+	switch serviceName {
+	case "searcher", "symbols":
+		fmtStrHead = "http://"
+	}
+
+	var fmtStrTail string
 	switch deployType {
 	case deploy.Kubernetes, deploy.Helm:
-		fmtStr = "indexed-search-%d.indexed-search:6070"
+		fmtStrTail = fmt.Sprintf(".%s:%s", serviceName, port)
 	case deploy.DockerCompose:
-		fmtStr = "zoekt-webserver-%d:6070"
+		fmtStrTail = fmt.Sprintf(":%s", port)
 	default:
 		return "", false
 	}
 
 	var addrs []string
 	for i := 0; i < count; i++ {
-		addrs = append(addrs, fmt.Sprintf(fmtStr, i))
+		addrs = append(addrs, fmt.Sprintf(fmtStrHead+"%s-%d"+fmtStrTail, serviceName, i))
 	}
 	return strings.Join(addrs, " "), true
 }

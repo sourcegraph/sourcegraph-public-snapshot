@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -32,8 +32,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
-var symbolsReplicas = env.Get("SYMBOLS_REPLICA_COUNT", "", "symbols service replicas")
+var (
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
+)
+
+func SearcherURLs() string {
+	symbolsURLsOnce.Do(func() {
+		symbolsURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+			return conns.Symbols
+		})
+	})
+	return symbolsURLs.String()
+}
 
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
@@ -46,8 +57,7 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:                 symbolsURL,
-	ReplicaCount:        symbolsReplicas,
+	URL:                 SearcherURLs(),
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -79,17 +89,14 @@ type Client struct {
 	langMappingCache map[string][]glob.Glob
 }
 
-// Compute endpoints based on the provided env vars
 func (c *Client) url(repo api.RepoName) (string, error) {
-	const (
-		s = "symbols"
-		p = "3184"
-		h = "http://"
-	)
 	c.endpointOnce.Do(func() {
-		c.endpoint = endpoint.NewReplicas(c.URL, s, c.ReplicaCount, p, h)
+		if len(strings.Fields(c.URL)) == 0 {
+			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
+		} else {
+			c.endpoint = endpoint.New(c.URL)
+		}
 	})
-
 	return c.endpoint.Get(string(repo))
 }
 

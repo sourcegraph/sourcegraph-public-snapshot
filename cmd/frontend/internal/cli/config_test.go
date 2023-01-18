@@ -22,9 +22,10 @@ func TestServiceConnections(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 
 	// We override the URLs so service discovery doesn't try and talk to k8s
-	oldSearcherURL := searcherURL
-	t.Cleanup(func() { searcherURL = oldSearcherURL })
-	searcherURL = "http://searcher:3181"
+	searcherKey := "SEARCHER_URL"
+	oldSearcherURL := os.Getenv(searcherKey)
+	t.Cleanup(func() { os.Setenv(searcherKey, oldSearcherURL) })
+	os.Setenv(searcherKey, "http://searcher:3181")
 
 	indexedKey := "INDEXED_SEARCH_SERVERS"
 	oldIndexedSearchServers := os.Getenv(indexedKey)
@@ -160,6 +161,168 @@ func TestReadSiteConfigFile(t *testing.T) {
 			got = bytes.ReplaceAll(got, []byte(dir), []byte("$tmp"))
 			if d := cmp.Diff(c.Want, string(got)); d != "" {
 				t.Fatalf("unexpected merge (-want, +got):\n%s", d)
+			}
+		})
+	}
+}
+
+func TestGitserverAddr(t *testing.T) {
+	cases := []struct {
+		name    string
+		environ []string
+		want    string
+	}{{
+		name: "test default",
+		want: "gitserver:3178",
+	}, {
+		name:    "default",
+		environ: []string{"SRC_GIT_SERVERS=k8s+rpc://gitserver:3178?kind=sts"},
+		want:    "k8s+rpc://gitserver:3178?kind=sts",
+	}, {
+		name:    "exact",
+		environ: []string{"SRC_GIT_SERVERS=gitserver-0:3178 gitserver-1:3178"},
+		want:    "gitserver-0:3178 gitserver-1:3178",
+	}, {
+		name: "replicas",
+		environ: []string{
+			"SRC_GIT_SERVERS=2",
+		},
+		want: "gitserver-0.gitserver:3178 gitserver-1.gitserver:3178",
+	}, {
+		name: "replicas helm",
+		environ: []string{
+			"DEPLOY_TYPE=helm",
+			"SRC_GIT_SERVERS=2",
+		},
+		want: "gitserver-0.gitserver:3178 gitserver-1.gitserver:3178",
+	}, {
+		name: "replicas docker-compose",
+		environ: []string{
+			"DEPLOY_TYPE=docker-compose",
+			"SRC_GIT_SERVERS=2",
+		},
+		want: "gitserver-0:3178 gitserver-1:3178",
+	}, {
+		name: "unset",
+		environ: []string{
+			"SRC_GIT_SERVERS=",
+		},
+		want: "gitserver:3178",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gitserverAddr(tc.environ)
+			if got != tc.want {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestSearcherAddr(t *testing.T) {
+	cases := []struct {
+		name    string
+		environ []string
+		want    string
+	}{{
+		name: "default",
+		want: "k8s+http://searcher:3181",
+	}, {
+		name:    "stateful",
+		environ: []string{"SEARCHER_URL=k8s+rpc://searcher:3181?kind=sts"},
+		want:    "k8s+rpc://searcher:3181?kind=sts",
+	}, {
+		name:    "exact",
+		environ: []string{"SEARCHER_URL=http://searcher-0:3181 http://searcher-1:3181"},
+		want:    "http://searcher-0:3181 http://searcher-1:3181",
+	}, {
+		name: "replicas",
+		environ: []string{
+			"SEARCHER_URL=2",
+		},
+		want: "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
+	}, {
+		name: "replicas helm",
+		environ: []string{
+			"DEPLOY_TYPE=helm",
+			"SEARCHER_URL=2",
+		},
+		want: "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
+	}, {
+		name: "replicas docker-compose",
+		environ: []string{
+			"DEPLOY_TYPE=docker-compose",
+			"SEARCHER_URL=2",
+		},
+		want: "http://searcher-0:3181 http://searcher-1:3181",
+	}, {
+		name: "unset",
+		environ: []string{
+			"SEARCHER_URL=",
+		},
+		want: "k8s+http://searcher:3181",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := searcherAddr(tc.environ)
+			if got != tc.want {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestSymbolsAddr(t *testing.T) {
+	cases := []struct {
+		name    string
+		environ []string
+		want    string
+	}{{
+		name: "default",
+		want: "http://symbols:3184",
+	}, {
+		name:    "stateful",
+		environ: []string{"SYMBOLS_URL=k8s+rpc://symbols:3184?kind=sts"},
+		want:    "k8s+rpc://symbols:3184?kind=sts",
+	}, {
+		name:    "exact",
+		environ: []string{"SYMBOLS_URL=http://symbols-0:3184 http://symbols-1:3184"},
+		want:    "http://symbols-0:3184 http://symbols-1:3184",
+	}, {
+		name: "replicas",
+		environ: []string{
+			"SYMBOLS_URL=2",
+		},
+		want: "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
+	}, {
+		name: "replicas helm",
+		environ: []string{
+			"DEPLOY_TYPE=helm",
+			"SYMBOLS_URL=2",
+		},
+		want: "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
+	}, {
+		name: "replicas docker-compose",
+		environ: []string{
+			"DEPLOY_TYPE=docker-compose",
+			"SYMBOLS_URL=2",
+		},
+		want: "http://symbols-0:3184 http://symbols-1:3184",
+	}, {
+		name: "unset",
+		environ: []string{
+			"SYMBOLS_URL=",
+		},
+		want: "http://symbols:3184",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := symbolsAddr(tc.environ)
+			if got != tc.want {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
 		})
 	}
