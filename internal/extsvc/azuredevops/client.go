@@ -34,6 +34,8 @@ type Client struct {
 type ADOConnection struct {
 	Username string
 	Token    string
+	Projects []string
+	Orgs     []string
 }
 
 // NewClient returns an authenticated ADO API client with
@@ -128,6 +130,7 @@ type ListRepositoriesResponse struct {
 type RepositoriesValue struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
+	CloneURL   string `json:"remoteUrl"`
 	APIURL     string `json:"url"`
 	SSHURL     string `json:"sshUrl"`
 	WebURL     string `json:"webUrl"`

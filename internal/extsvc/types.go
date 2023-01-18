@@ -128,6 +128,7 @@ const (
 	KindRubyPackages    = "RUBYPACKAGES"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
+	KindADO             = "AZUREDEVOPS"
 	KindOther           = "OTHER"
 )
 
@@ -172,6 +173,9 @@ const (
 
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
+
+	// TypeADO is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	TypeADO = "azuredevops"
 
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
@@ -228,6 +232,8 @@ func KindToType(kind string) string {
 		return TypeGoModules
 	case KindPagure:
 		return TypePagure
+	case KindADO:
+		return TypeADO
 	case KindOther:
 		return TypeOther
 	default:
@@ -271,6 +277,8 @@ func TypeToKind(t string) string {
 		return KindGoPackages
 	case TypePagure:
 		return KindPagure
+	case TypeADO:
+		return KindADO
 	case TypeOther:
 		return KindOther
 	default:
@@ -326,6 +334,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeRubyPackages, true
 	case TypePagure:
 		return TypePagure, true
+	case TypeADO:
+		return TypeADO, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -367,6 +377,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindRubyPackages, true
 	case KindPagure:
 		return KindPagure, true
+	case KindADO:
+		return KindADO, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -381,6 +393,7 @@ var supportsRepoExclusion = map[string]bool{
 	KindGitHub:          true,
 	KindGitLab:          true,
 	KindGitolite:        true,
+	KindADO:             true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports
@@ -465,6 +478,7 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
+	// TODO: @varsanojidan add for ADO once the schema is implemented.
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
@@ -773,6 +787,7 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return KindRubyPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
+	// TODO: @varsanojidan add ADO once the schema is implemented.
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
