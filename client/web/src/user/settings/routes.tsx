@@ -1,6 +1,7 @@
+import { Redirect } from 'react-router-dom'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
-import { Redirect } from 'react-router-dom'
 
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
