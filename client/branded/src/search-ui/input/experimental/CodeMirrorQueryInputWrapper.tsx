@@ -18,8 +18,9 @@ import { Icon } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
-import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 
+import { filterHighlight } from './codemirror/syntax-highlighting'
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
