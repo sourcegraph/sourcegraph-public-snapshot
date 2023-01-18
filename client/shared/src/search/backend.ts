@@ -13,8 +13,6 @@ import {
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
-    FetchSearchContextResult,
-    FetchSearchContextVariables,
     CreateSearchContextResult,
     CreateSearchContextVariables,
     UpdateSearchContextVariables,
@@ -27,13 +25,15 @@ import {
     highlightCodeResult,
     highlightCodeVariables,
     SearchContextsOrderBy,
-    SearchContextFields,
+    // SearchContextFields,
     DefaultSearchContextSpecResult,
     DefaultSearchContextSpecVariables,
 } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
+import { graphql, useFragment } from '../gql'
+import { useQuery } from '@apollo/client'
 
-const searchContextFragment = gql`
+const SearchContextFields = graphql(/* GraphQL */ `
     fragment SearchContextFields on SearchContext {
         __typename
         id
@@ -53,17 +53,22 @@ const searchContextFragment = gql`
         viewerHasAsDefault
         query
         repositories {
-            ...SearchContextRepositoryRevisionsFields
+            repository {
+                name
+            }
+            revisions
         }
     }
+`)
 
+export const SearchContextRepositoryRevisionsFragment = graphql(/* GraphQL */ `
     fragment SearchContextRepositoryRevisionsFields on SearchContextRepositoryRevisions {
         repository {
             name
         }
         revisions
     }
-`
+`)
 
 const searchContextWithSkippableFieldsFragment = gql`
     fragment SearchContextMinimalFields on SearchContext {
@@ -170,264 +175,34 @@ export function fetchSearchContexts({
         )
 }
 
-export const fetchSearchContext = (
-    id: Scalars['ID'],
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<SearchContextFields> => {
-    const query = gql`
-        query FetchSearchContext($id: ID!) {
-            node(id: $id) {
-                ... on SearchContext {
-                    ...SearchContextFields
-                }
-            }
-        }
-        ${searchContextFragment}
-    `
-
-    return platformContext
-        .requestGraphQL<FetchSearchContextResult, FetchSearchContextVariables>({
-            request: query,
-            variables: {
-                id,
-            },
-            mightContainPrivateInfo: true,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(data => data.node as SearchContextFields)
-        )
-}
-
-export const fetchSearchContextBySpec = (
-    spec: string,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<SearchContextFields> => {
-    const query = gql`
+export const fetchSearchContextBySpec = (spec: string, platformContext: Pick<PlatformContext, 'requestGraphQL'>) => {
+    // This is a bit annoying that the comment is required in VSCode to enable syntax highlighting.
+    // Maybe we can figure out a solution that would make it obsolete.
+    // But we have a `TypedDocumentNode` a  results of the `graphql` call!
+    // When we pass it to Apollo Client hook it already know how to infer TData and TVariables.
+    const query = graphql(/* GraphQL */ `
         query FetchSearchContextBySpec($spec: String!) {
             searchContextBySpec(spec: $spec) {
                 ...SearchContextFields
             }
         }
-        ${searchContextFragment}
-    `
+    `)
 
-    return platformContext
-        .requestGraphQL<FetchSearchContextBySpecResult, FetchSearchContextBySpecVariables>({
-            request: query,
-            variables: {
-                spec,
-            },
-            mightContainPrivateInfo: true,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(data => data.searchContextBySpec as SearchContextFields)
-        )
-}
+    // No need to pass generated types here as generics `useQuery<TData, TVariables>`.
+    // `data` type is already inferred as `FetchSearchContextBySpecQuery | undefined`.
+    const { data } = useQuery(query, { variables: { spec: 'wow' } })
 
-export function createSearchContext(
-    variables: CreateSearchContextVariables,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<SearchContextFields> {
-    return platformContext
-        .requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>({
-            request: gql`
-                mutation CreateSearchContext(
-                    $searchContext: SearchContextInput!
-                    $repositories: [SearchContextRepositoryRevisionsInput!]!
-                ) {
-                    createSearchContext(searchContext: $searchContext, repositories: $repositories) {
-                        ...SearchContextFields
-                    }
-                }
-                ${searchContextFragment}
-            `,
-            variables,
-            mightContainPrivateInfo: true,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(data => data.createSearchContext as SearchContextFields)
-        )
-}
+    if (data) {
+        // TS fails here because initially we do not have access to type fields defined in the fragment.
+        console.log(data.searchContextBySpec?.query)
 
-export function updateSearchContext(
-    variables: UpdateSearchContextVariables,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<SearchContextFields> {
-    return platformContext
-        .requestGraphQL<UpdateSearchContextResult, UpdateSearchContextVariables>({
-            request: gql`
-                mutation UpdateSearchContext(
-                    $id: ID!
-                    $searchContext: SearchContextEditInput!
-                    $repositories: [SearchContextRepositoryRevisionsInput!]!
-                ) {
-                    updateSearchContext(id: $id, searchContext: $searchContext, repositories: $repositories) {
-                        ...SearchContextFields
-                    }
-                }
-                ${searchContextFragment}
-            `,
-            variables,
-            mightContainPrivateInfo: true,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(data => data.updateSearchContext as SearchContextFields)
-        )
-}
+        // Now we can access `res.data.searchContextBySpec.query`.
+        // const fragmentFields: SearchContextFieldsFragment | null | undefined
+        const fragmentFields = useFragment(SearchContextFields, data.searchContextBySpec)
 
-export function deleteSearchContext(
-    id: Scalars['ID'],
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<DeleteSearchContextResult> {
-    return platformContext
-        .requestGraphQL<DeleteSearchContextResult, DeleteSearchContextVariables>({
-            request: gql`
-                mutation DeleteSearchContext($id: ID!) {
-                    deleteSearchContext(id: $id) {
-                        alwaysNil
-                    }
-                }
-            `,
-            variables: { id },
-            mightContainPrivateInfo: false,
-        })
-        .pipe(map(dataOrThrowErrors))
-}
-
-export function isSearchContextAvailable(
-    spec: string,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<IsSearchContextAvailableResult['isSearchContextAvailable']> {
-    return platformContext
-        .requestGraphQL<IsSearchContextAvailableResult, IsSearchContextAvailableVariables>({
-            request: gql`
-                query IsSearchContextAvailable($spec: String!) {
-                    isSearchContextAvailable(spec: $spec)
-                }
-            `,
-            variables: { spec },
-            mightContainPrivateInfo: true,
-        })
-        .pipe(map(result => result.data?.isSearchContextAvailable ?? false))
-}
-
-export const highlightCode = memoizeObservable(
-    ({
-        platformContext,
-        ...context
-    }: {
-        code: string
-        fuzzyLanguage: string
-        disableTimeout: boolean
-        platformContext: Pick<PlatformContext, 'requestGraphQL'>
-    }): Observable<string> =>
-        platformContext
-            .requestGraphQL<highlightCodeResult, highlightCodeVariables>({
-                request: gql`
-                    query highlightCode($code: String!, $fuzzyLanguage: String!, $disableTimeout: Boolean!) {
-                        highlightCode(code: $code, fuzzyLanguage: $fuzzyLanguage, disableTimeout: $disableTimeout)
-                    }
-                `,
-                variables: context,
-                mightContainPrivateInfo: true,
-            })
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || !data.highlightCode) {
-                        throw createAggregateError(errors)
-                    }
-                    return data.highlightCode
-                })
-            ),
-    context => `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}`
-)
-
-export interface EventLogResult {
-    totalCount: number
-    nodes: { argument: string | null; timestamp: string; url: string }[]
-    pageInfo: { hasNextPage: boolean }
-}
-
-function fetchEvents(
-    userId: Scalars['ID'],
-    first: number,
-    eventName: string,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<EventLogResult | null> {
-    if (!userId) {
-        return of(null)
+        // Typescript is happy and tells use that `fragmentFields?.query` is `string | undefined`.
+        console.log(fragmentFields?.query)
     }
 
-    const result = platformContext.requestGraphQL<EventLogsDataResult, EventLogsDataVariables>({
-        request: gql`
-            query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
-                node(id: $userId) {
-                    ... on User {
-                        __typename
-                        eventLogs(first: $first, eventName: $eventName) {
-                            nodes {
-                                argument
-                                timestamp
-                                url
-                            }
-                            pageInfo {
-                                hasNextPage
-                            }
-                            totalCount
-                        }
-                    }
-                }
-            }
-        `,
-        variables: { userId, first: first ?? null, eventName },
-        mightContainPrivateInfo: true,
-    })
-
-    return result.pipe(
-        map(dataOrThrowErrors),
-        map((data: EventLogsDataResult): EventLogResult => {
-            if (!data.node || data.node.__typename !== 'User') {
-                throw new Error('User not found')
-            }
-            return data.node.eventLogs
-        })
-    )
-}
-
-export function fetchRecentSearches(
-    userId: Scalars['ID'],
-    first: number,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<EventLogResult | null> {
-    return fetchEvents(userId, first, 'SearchResultsQueried', platformContext)
-}
-
-export function fetchRecentFileViews(
-    userId: Scalars['ID'],
-    first: number,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<EventLogResult | null> {
-    return fetchEvents(userId, first, 'ViewBlob', platformContext)
-}
-
-export function fetchDefaultSearchContextSpec(
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<string | null> {
-    return platformContext
-        .requestGraphQL<DefaultSearchContextSpecResult, DefaultSearchContextSpecVariables>({
-            request: gql`
-                query DefaultSearchContextSpec {
-                    defaultSearchContext {
-                        spec
-                    }
-                }
-            `,
-            variables: {},
-            mightContainPrivateInfo: true,
-        })
-        .pipe(map(result => (isErrorGraphQLResult(result) ? null : result.data?.defaultSearchContext?.spec ?? null)))
+    return data
 }

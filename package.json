@@ -57,7 +57,7 @@
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
-    "postinstall":  "set-project-references --save && pnpm run format:tsconfig",
+    "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
   "nyc": {
@@ -101,10 +101,12 @@
     "@babel/runtime": "^7.20.6",
     "@bessonovs/set-project-references": "^0.0.10",
     "@gql2ts/types": "^1.9.0",
-    "@graphql-codegen/cli": "^2.16.1",
+    "@graphql-codegen/cli": "^2.16.4",
+    "@graphql-codegen/client-preset": "^1.2.6",
     "@graphql-codegen/typescript": "2.8.5",
     "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.6",
     "@graphql-codegen/typescript-operations": "2.5.10",
+    "@graphql-typed-document-node/core": "^3.1.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^28.1.0",
     "@lhci/cli": "0.8.1",

@@ -13,7 +13,12 @@ const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`]
+const SHARED_DOCUMENTS_GLOB = [
+  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
+  `!${SHARED_FOLDER}/src/**/*.d.ts`,
+  `!${SHARED_FOLDER}/src/gql/**/*.*`,
+  `!${SHARED_FOLDER}/src/graphql-operations.ts`,
+]
 
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
@@ -68,26 +73,26 @@ const PRETTIER = path.join(path.dirname(require.resolve('prettier')), 'bin-prett
 async function generateGraphQlOperations() {
   try {
     await _generateGraphQlOperations([
-      {
-        interfaceNameForOperations: 'BrowserGraphQlOperations',
-        outputPath: path.join(BROWSER_FOLDER, './src/graphql-operations.ts'),
-      },
-      {
-        interfaceNameForOperations: 'WebGraphQlOperations',
-        outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
-      },
+      // {
+      //   interfaceNameForOperations: 'BrowserGraphQlOperations',
+      //   outputPath: path.join(BROWSER_FOLDER, './src/gql/'),
+      // },
+      // {
+      //   interfaceNameForOperations: 'WebGraphQlOperations',
+      //   outputPath: path.join(WEB_FOLDER, './src/gql/'),
+      // },
       {
         interfaceNameForOperations: 'SharedGraphQlOperations',
-        outputPath: path.join(SHARED_FOLDER, './src/graphql-operations.ts'),
+        outputPath: path.join(SHARED_FOLDER, './src/gql/'),
       },
-      {
-        interfaceNameForOperations: 'VSCodeGraphQlOperations',
-        outputPath: path.join(VSCODE_FOLDER, './src/graphql-operations.ts'),
-      },
-      {
-        interfaceNameForOperations: 'JetBrainsGraphQlOperations',
-        outputPath: path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts'),
-      },
+      // {
+      //   interfaceNameForOperations: 'VSCodeGraphQlOperations',
+      //   outputPath: path.join(VSCODE_FOLDER, './src/gql/'),
+      // },
+      // {
+      //   interfaceNameForOperations: 'JetBrainsGraphQlOperations',
+      //   outputPath: path.join(JETBRAINS_FOLDER, './webview/src/gql/'),
+      // },
     ])
   } catch (error) {
     console.log(error)
@@ -96,56 +101,65 @@ async function generateGraphQlOperations() {
 
 async function _generateGraphQlOperations(operations) {
   const generates = operations.reduce((generates, operation) => {
+    // const documents = GLOBS[operation.interfaceNameForOperations].flatMap(pattern => glob.sync(pattern))
+    // console.log(documents)
+
     generates[operation.outputPath] = {
       documents: GLOBS[operation.interfaceNameForOperations],
-      config: {
-        onlyOperationTypes: true,
-        noExport: false,
-        enumValues:
-          operation.interfaceNameForOperations === 'SharedGraphQlOperations'
-            ? undefined
-            : '@sourcegraph/shared/src/graphql-operations',
-        interfaceNameForOperations: operation.interfaceNameForOperations,
-      },
-      plugins: [...SHARED_PLUGINS, ...(EXTRA_PLUGINS[operation.interfaceNameForOperations] || [])],
+      // config: {
+      //   onlyOperationTypes: true,
+      //   noExport: false,
+      //   ignoreNoDocuments: true,
+      //   enumValues:
+      //     operation.interfaceNameForOperations === 'SharedGraphQlOperations'
+      //       ? undefined
+      //       : '@sourcegraph/shared/src/graphql-operations',
+      //   interfaceNameForOperations: operation.interfaceNameForOperations,
+      // },
+      plugins: [],
+      preset: 'client',
     }
     return generates
   }, {})
 
   await generate(
     {
+      verbose: true,
       schema: SCHEMA_PATH,
       hooks: {
         afterOneFileWrite: `${PRETTIER} --write`,
       },
       errorsOnly: true,
-      config: {
-        // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
-        arrayInputCoercion: false,
-        preResolveTypes: true,
-        operationResultSuffix: 'Result',
-        omitOperationSuffix: true,
-        namingConvention: {
-          typeNames: 'keep',
-          enumValues: 'keep',
-          transformUnderscore: true,
-        },
-        declarationKind: 'interface',
-        avoidOptionals: {
-          field: true,
-          inputValue: false,
-          object: true,
-        },
-        scalars: {
-          DateTime: 'string',
-          JSON: 'object',
-          JSONValue: 'unknown',
-          GitObjectID: 'string',
-          JSONCString: 'string',
-          PublishedValue: "boolean | 'draft'",
-          BigInt: 'string',
-        },
-      },
+      // config: {
+      //   // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+      //   arrayInputCoercion: false,
+      //   dedupeOperationSuffix: true,
+      //   dedupeFragments: true,
+      //   ignoreNoDocuments: true,
+      //   preResolveTypes: true,
+      //   operationResultSuffix: 'Result',
+      //   omitOperationSuffix: true,
+      //   namingConvention: {
+      //     typeNames: 'keep',
+      //     enumValues: 'keep',
+      //     transformUnderscore: true,
+      //   },
+      //   declarationKind: 'interface',
+      //   avoidOptionals: {
+      //     field: true,
+      //     inputValue: false,
+      //     object: true,
+      //   },
+      //   scalars: {
+      //     DateTime: 'string',
+      //     JSON: 'object',
+      //     JSONValue: 'unknown',
+      //     GitObjectID: 'string',
+      //     JSONCString: 'string',
+      //     PublishedValue: "boolean | 'draft'",
+      //     BigInt: 'string',
+      //   },
+      // },
       generates,
     },
     true
@@ -162,13 +176,13 @@ module.exports = {
 // Bazel entry point to generate a single graphql operations file; the legacy build
 // continues to import `generateGraphQlOperations` and generate all operations files.
 async function main(args) {
-  if (args.length !== 2) {
-    throw new Error('Usage: <schemaName> <outputPath>')
-  }
+  // if (args.length !== 2) {
+  //   throw new Error('Usage: <schemaName> <outputPath>')
+  // }
 
   const [interfaceNameForOperations, outputPath] = args
 
-  await _generateGraphQlOperations([{ interfaceNameForOperations, outputPath }])
+  await generateGraphQlOperations()
 }
 
 if (require.main === module) {
