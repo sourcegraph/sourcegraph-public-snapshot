@@ -207,7 +207,7 @@ func TestGitserverAddr(t *testing.T) {
 		environ: []string{
 			"SRC_GIT_SERVERS=",
 		},
-		want: "gitserver:3178",
+		want: "",
 	}}
 
 	for _, tc := range cases {
@@ -261,7 +261,7 @@ func TestSearcherAddr(t *testing.T) {
 		environ: []string{
 			"SEARCHER_URL=",
 		},
-		want: "k8s+http://searcher:3181",
+		want: "",
 	}}
 
 	for _, tc := range cases {
@@ -315,7 +315,7 @@ func TestSymbolsAddr(t *testing.T) {
 		environ: []string{
 			"SYMBOLS_URL=",
 		},
-		want: "http://symbols:3184",
+		want: "",
 	}}
 
 	for _, tc := range cases {

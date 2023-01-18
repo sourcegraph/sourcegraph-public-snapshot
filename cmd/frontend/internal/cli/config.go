@@ -612,6 +612,8 @@ func symbolsAddr(environ []string) string {
 		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
 			return addrs
 		}
+
+		return addr
 	}
 
 	// Not set, use the default (non-service discovery on searcher)
@@ -642,6 +644,8 @@ func searcherAddr(environ []string) string {
 		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
 			return addrs
 		}
+
+		return addr
 	}
 
 	// Not set, use the default (service discovery on searcher)
@@ -673,6 +677,7 @@ func zoektAddr(environ []string) string {
 		if addrs, ok := replicaAddrs(deployType, addr, baseName, port); ok {
 			return addrs
 		}
+		return addr
 	}
 
 	// Backwards compatibility: We used to call this variable ZOEKT_HOST
@@ -689,7 +694,7 @@ func zoektAddr(environ []string) string {
 func replicaAddrs(deployType, countStr, serviceName, port string) (string, bool) {
 	count, err := strconv.Atoi(countStr)
 	if err != nil {
-		return countStr, countStr != ""
+		return "", false
 	}
 
 	fmtStrHead := ""
