@@ -183,7 +183,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		urs, err := store.GetByRoleID(ctx, GetUserRoleOpts{})
 		assert.Error(t, err)
 		assert.Nil(t, urs)
-		assert.Equal(t, err.Error(), "missing id from sql query")
+		assert.Equal(t, err.Error(), "missing id or name")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {
