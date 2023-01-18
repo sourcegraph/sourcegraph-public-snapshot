@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { InputHTMLAttributes } from 'react'
 
 import * as H from 'history'
 
