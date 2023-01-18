@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRoleAssignmentMigrator(t *testing.T) {
@@ -32,7 +34,7 @@ func TestRoleAssignmentMigrator(t *testing.T) {
 
 	if err = store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO users (username, display_name, created_at, site_admin)
-		VALUES 
+		VALUES
 			(%s, %s, NOW(), %s),
 			(%s, %s, NOW(), %s)
 	`,
@@ -68,7 +70,27 @@ func TestRoleAssignmentMigrator(t *testing.T) {
 	// 1. For testuser-0 with DEFAULT role
 	// 2. For testuser-0 WITH SITE_ADMINISTRATOR role
 	// 3. For testuser-1 WITH DEFAULT role
-	count, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("SELECT COUNT(1) FROM user_roles")))
+	q := `SELECT role_id, user_id FROM user_roles ORDER BY user_id, role_id`
+	rows, err := db.QueryContext(ctx, q)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, count)
+	defer rows.Close()
+	var have []*types.UserRole
+	for rows.Next() {
+		var ur = types.UserRole{}
+		if err := rows.Scan(&ur.RoleID, &ur.UserID); err != nil {
+			t.Fatal(err, "error scanning user role")
+		}
+		have = append(have, &ur)
+	}
+
+	want := []*types.UserRole{
+		{UserID: 1, RoleID: 1},
+		{UserID: 1, RoleID: 2},
+		{UserID: 2, RoleID: 1},
+	}
+
+	assert.Len(t, have, 3)
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Error(diff)
+	}
 }

@@ -1,4 +1,4 @@
--- read only roles that come with every sourcegraph instance
+-- system roles that come with every sourcegraph instance
 INSERT INTO
     roles
 VALUES
