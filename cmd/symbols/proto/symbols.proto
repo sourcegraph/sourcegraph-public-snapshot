@@ -2,11 +2,16 @@ syntax = "proto3";
 
 package symbols.v1;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "github.com/sourcegraph/sourcegraph/cmd/symbols/proto";
 
 service Symbols {
-  rpc Search(SearchRequest) returns (SymbolsResponse) {};
-  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {};
+  rpc Search(SearchRequest) returns (SymbolsResponse) {}
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
+  rpc ListLanguages(google.protobuf.Empty) returns (ListLanguagesResponse) {}
+  rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
+  rpc Healthz(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 message SearchRequest {
@@ -46,61 +51,132 @@ message SearchRequest {
   int32 timeout = 9;
 }
 
-// Symbol is a code symbol
-message Symbol {
-  string name = 1;
+message SymbolsResponse {
+  // Symbol is a code symbol
+  message Symbol {
+    // name is the name of the symbol
+    string name = 1;
 
-  string path = 2;
-  int32 line = 3; // TODO@ggilmore: check to see if an int32 is sufficiently large
-  int32 character = 4;
+    // path is the file path that the symbol occurs in
+    string path = 2;
+    // line is the line number in the file that the symbol occurs on
+    int32 line = 3;
+    // character is the character offset in the line that the symbol occurs at
+    int32 character = 4;
 
-  string kind = 5;
-  string language = 6;
+    // kind is the kind of symbol
+    string kind = 5;
+    // language is the language (e.g. Go, TypeScript, Python) of the symbol
+    string language = 6;
 
-  string parent = 7;
-  string parentKind = 8;
+    // parent is the name of the symbol's parent
+    string parent = 7;
+    // parent_kind is the kind of the symbol's parent
+    string parent_kind = 8;
 
-  string signature = 9;
+    // signature is the signature of the symbol (TODO@ggilmore - what is this?)
+    string signature = 9;
 
-  bool file_limited = 10;
+    // file_limited indicates that the symbol is file-limited (e.g. private in Java) (TODO@ggilmore - this is a guess)
+    bool file_limited = 10;
+  }
+
+  // symbols is the list of symbols that matched the search query
+  repeated Symbol symbols = 1;
+
+  // error is the error message if the search failed
+  optional string error = 2; // TODO@ggilmore: Custom error type?
 }
 
+// LocalCodeIntelRequest is the request to the LocalCodeIntel method.
+message LocalCodeIntelRequest {
+  // repo_commit_path is the
+  RepoCommitPath repo_commit_path = 1;
+}
 
-// LocalCodeIntelRequest represents symbol information returned from the
-// LocalCodeIntel RPC method.
-message LocalCodeIntelSymbol { // TODO@ggilmore: figure how to deal with two different symbols definitions
+message LocalCodeIntelResponse {
+  message Symbol {
     // name is the name of the symbol
     string name = 1;
 
     // hover is the hover text of the symbol
     string hover = 2;
 
-    // def is the location of the symbol definition
+    // def is the location of the symbol's definition
     Range def = 3;
 
     // refs is the list of locations of references for the given symbol
     repeated Range refs = 4;
+  }
+
+  repeated Symbol symbols = 1;
+}
+
+// ListLanguagesResponse is the response from the ListLanguages method.
+message ListLanguagesResponse {
+  message GlobFilePatterns {
+    repeated string patterns = 1;
+  }
+
+  // language_file_name_map is a of map of language names to
+  // glob patterns that match files of that language.
+  //
+  // Example: "Ruby" -> ["*.rb", "*.ruby"]
+  map<string, GlobFilePatterns> language_file_name_map = 1;
+}
+
+message SymbolInfoRequest {
+  // repo_commit_path is the repo, commit, and path to the file to get symbol information for
+  RepoCommitPath repo_commit_path = 1;
+
+  // point is the point in the file to get symbol information for
+  Point point = 2;
+}
+
+// SymbolInfoResponse is the response from the SymbolInfo method.
+message SymbolInfoResponse {
+  message Definition {
+    // repo_commit_path is the repository name, commit, and file path for the symbol's definition.
+    RepoCommitPath repo_commit_path = 1;
+
+    // range is the range of the symbol's definition, if it is known.
+    optional Range range = 2;
+  }
+
+  // definition is the information associated with the symbol's definition
+  Definition definition = 1;
+
+  // hover is the hover text associated with the symbol
+  optional string hover = 2;
+}
+
+// RepoCommitPath is an identifier that is  combination of a repository's name,
+// git commit SHA, and a file path.
+message RepoCommitPath {
+  // repo is the repository's name
+  string repo = 1;
+
+  // commit is the git commit SHA
+  string commit = 2;
+
+  // path is the file path
+  string path = 3;
 }
 
 // Range describes the location and length of text associated with a symbol.
 message Range {
-    int32 row = 1;
-    int32 column = 2;
-    int32 length = 3;
+  // row is the line number of the range
+  int32 row = 1;
+  // col is the character offset of the range
+  int32 column = 2;
+  // length is the length (in number of characters) of the range
+  int32 length = 3;
 }
 
-message SymbolsResponse {
-  repeated Symbol symbols  = 1;
-  optional string error = 2; // TODO@ggilmore: Custom error type?
-}
-
-// LocalCodeIntelRequest is the request to the LocalCodeIntel method.
-message LocalCodeIntelRequest {
-    string repo = 1;
-    string commit = 2;
-    string path = 3;
-}
-
-message LocalCodeIntelResponse {
-    repeated LocalCodeIntelSymbol symbols = 1;
+// Point describes a cursor's location within a file.
+message Point {
+  // row is the line number of the point
+  int32 row = 1;
+  // col is the character offset of the point
+  int32 column = 2;
 }

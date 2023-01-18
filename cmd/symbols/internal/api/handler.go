@@ -8,10 +8,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -21,29 +22,57 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+const maxNumSymbolResults = 500
+
 type grpcServer struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
+	ctagsBinary  string
 	proto.UnimplementedSymbolsServer
 }
 
 func (s *grpcServer) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
-	args := searchParamsFromProto(r)
+	var params search.SymbolsParameters
+	params.FromProto(r)
 
-	// TODO@ggilmore: do better than just copying this logic.
-	if args.First < 0 || args.First > maxNumSymbolResults {
-		args.First = maxNumSymbolResults
-	}
-
-	result, err := s.searchFunc(ctx, args)
+	result, err := s.searchFunc(ctx, params)
 	if err != nil {
 		// How do we handle client disconnections? Can we test this?
 
-		log15.Error("Symbol search failed", "args", args, "error", err) // straight up copying this for now, find another abstraction
-		return symbolsResponseToProto(&search.SymbolsResponse{Err: err.Error()}), nil
+		log15.Error("Symbol search failed", "args", params, "error", err) // straight up copying this for now, find another abstraction
+
+		response := search.SymbolsResponse{Err: err.Error()}
+		return response.ToProto(), nil
 
 	}
-	return symbolsResponseToProto(&search.SymbolsResponse{Symbols: result}), nil
+
+	response := search.SymbolsResponse{Symbols: result}
+	return response.ToProto(), nil
+}
+
+func (s *grpcServer) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {
+	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list language mappings")
+	}
+
+	mapping := make(map[string]*proto.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
+	for language, filePatterns := range rawMapping {
+		mapping[language] = &proto.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
+	}
+
+	return &proto.ListLanguagesResponse{
+		LanguageFileNameMap: mapping,
+	}, nil
+}
+
+func (s *grpcServer) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
+	// that we probably need the old non-GRPC healthcheck endpoint for a while.
+	//
+	// See https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-grpc-liveness-probe
+	// for more information.
+	return &emptypb.Empty{}, nil
 }
 
 func NewHandler(
@@ -53,19 +82,27 @@ func NewHandler(
 	ctagsBinary string,
 ) http.Handler {
 
-	tempGRPCserver := &grpcServer{
-		searchFunc:   searchFunc,
-		readFileFunc: readFileFunc,
+	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
+		// Massage the arguments to ensure that First is set to a reasonable value.
+		if args.First < 0 || args.First > maxNumSymbolResults {
+			args.First = maxNumSymbolResults
+		}
+
+		return searchFunc(ctx, args)
 	}
 
 	// Initialize the gRPC server
 	s := grpc.NewServer()
-	s.RegisterService(&proto.Symbols_ServiceDesc, tempGRPCserver)
+	s.RegisterService(&proto.Symbols_ServiceDesc, &grpcServer{
+		searchFunc:   searchFuncWrapper,
+		readFileFunc: readFileFunc,
+		ctagsBinary:  ctagsBinary,
+	})
 	reflection.Register(s)
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/search", handleSearchWith(searchFunc))
+	mux.HandleFunc("/search", handleSearchWith(searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
 	addHandlers(mux, searchFunc, readFileFunc)
@@ -87,18 +124,12 @@ func NewHandler(
 	return handler
 }
 
-const maxNumSymbolResults = 500
-
 func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var args search.SymbolsParameters
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
-		}
-
-		if args.First < 0 || args.First > maxNumSymbolResults {
-			args.First = maxNumSymbolResults
 		}
 
 		result, err := searchFunc(r.Context(), args)
@@ -118,49 +149,6 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: result}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	}
-}
-
-// searchParamsFromProto converts a proto.SearchParameters to a search.SymbolsParameters.
-// TODO: Find a better place for this logic to live.
-func searchParamsFromProto(r *proto.SearchRequest) search.SymbolsParameters {
-	return search.SymbolsParameters{
-		Repo:            api.RepoName(r.Repo), // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
-		CommitID:        api.CommitID(r.CommitId),
-		Query:           r.Query,
-		IsRegExp:        r.IsRegExp,
-		IsCaseSensitive: r.IsCaseSensitive,
-		IncludePatterns: r.IncludePatterns,
-		ExcludePattern:  r.ExcludePattern,
-		First:           int(r.First),
-		Timeout:         int(r.Timeout),
-	}
-}
-
-func symbolsResponseToProto(r *search.SymbolsResponse) *proto.SymbolsResponse {
-	if r.Err != "" {
-		return &proto.SymbolsResponse{Error: &r.Err}
-	}
-
-	var symbolsList []*proto.Symbol
-
-	for _, r := range r.Symbols {
-		symbolsList = append(symbolsList, &proto.Symbol{
-			Name:        r.Name,
-			Path:        r.Path,
-			Line:        int32(r.Line),
-			Character:   int32(r.Character),
-			Kind:        r.Kind,
-			Language:    r.Language,
-			Parent:      r.Parent,
-			ParentKind:  r.ParentKind,
-			Signature:   r.Signature,
-			FileLimited: r.FileLimited,
-		})
-	}
-
-	return &proto.SymbolsResponse{
-		Symbols: symbolsList,
 	}
 }
 

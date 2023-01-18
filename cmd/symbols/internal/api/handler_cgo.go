@@ -29,7 +29,7 @@ func (s *grpcServer) LocalCodeIntel(ctx context.Context, request *proto.LocalCod
 	defer squirrelService.Close()
 
 	var args internaltypes.RepoCommitPath
-	args.FromProto(request)
+	args.FromProto(request.RepoCommitPath)
 
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
@@ -37,4 +37,26 @@ func (s *grpcServer) LocalCodeIntel(ctx context.Context, request *proto.LocalCod
 	}
 
 	return payload.ToProto(), nil
+}
+
+// SymbolInfo returns information about the symbols specified by the given request.
+func (s *grpcServer) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+	squirrelService := squirrel.New(s.readFileFunc, s.searchFunc)
+	defer squirrelService.Close()
+
+	var args internaltypes.RepoCommitPathPoint
+	args.RepoCommitPath.FromProto(request.RepoCommitPath)
+	args.Point.FromProto(request.Point)
+
+	info, err := squirrelService.SymbolInfo(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	var response proto.SymbolInfoResponse
+	response.Hover = info.Hover
+	response.Definition.RepoCommitPath = info.Definition.RepoCommitPath.ToProto()
+	response.Definition.Range = info.Definition.Range.ToProto()
+
+	return &response, nil
 }

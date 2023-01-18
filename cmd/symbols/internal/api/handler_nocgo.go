@@ -26,7 +26,7 @@ func addHandlers(
 	}
 
 	mux.HandleFunc("/localCodeIntel", jsonResponseHandler(internaltypes.LocalCodeIntelPayload{Symbols: []internaltypes.Symbol{}}))
-	mux.HandleFunc("/debugLocalCodeIntel", notEnabledHandler)
+	mux.HandleFunc("/debugLocalCodeIntel", notEnabledHandler) // TODO@ggilmore: delete this endpoint
 	mux.HandleFunc("/symbolInfo", jsonResponseHandler(internaltypes.SymbolInfo{}))
 }
 
@@ -45,4 +45,9 @@ func jsonResponseHandler(v any) http.HandlerFunc {
 // LocalCodeIntel is a no-op in the non-cgo variant.
 func (s *grpcServer) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
 	return &proto.LocalCodeIntelResponse{}, nil
+}
+
+// SymbolInfo is a no-op in the non-cgo variant.
+func (s *grpcServer) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+	return &proto.SymbolInfoResponse{}, nil
 }

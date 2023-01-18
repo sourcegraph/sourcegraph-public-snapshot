@@ -30,7 +30,7 @@ type Symbol struct {
 }
 
 // FromProto converts a proto.Symbol to a result.Symbol.
-func (s *Symbol) FromProto(p *proto.Symbol) {
+func (s *Symbol) FromProto(p *proto.SymbolsResponse_Symbol) {
 	s.Name = p.Name
 	s.Path = p.Path
 
@@ -47,8 +47,8 @@ func (s *Symbol) FromProto(p *proto.Symbol) {
 	s.FileLimited = p.FileLimited
 }
 
-func (s *Symbol) ToProto() *proto.Symbol {
-	return &proto.Symbol{
+func (s *Symbol) ToProto() *proto.SymbolsResponse_Symbol {
+	return &proto.SymbolsResponse_Symbol{
 		Name:        s.Name,
 		Path:        s.Path,
 		Line:        int32(s.Line),

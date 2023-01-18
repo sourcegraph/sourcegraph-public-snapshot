@@ -141,15 +141,15 @@ func (r RepoCommitPath) String() string {
 	return fmt.Sprintf("%s %s %s", r.Repo, r.Commit, r.Path)
 }
 
-func (r *RepoCommitPath) ToProto() *proto.LocalCodeIntelRequest {
-	return &proto.LocalCodeIntelRequest{
+func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
+	return &proto.RepoCommitPath{
 		Repo:   r.Repo,
 		Commit: r.Commit,
 		Path:   r.Path,
 	}
 }
 
-func (r *RepoCommitPath) FromProto(p *proto.LocalCodeIntelRequest) {
+func (r *RepoCommitPath) FromProto(p *proto.RepoCommitPath) {
 	r.Repo = p.Repo
 	r.Commit = p.Commit
 	r.Path = p.Path
@@ -160,7 +160,7 @@ type LocalCodeIntelPayload struct {
 }
 
 func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
-	var symbols []*proto.LocalCodeIntelSymbol
+	var symbols []*proto.LocalCodeIntelResponse_Symbol
 
 	for _, s := range p.Symbols {
 		symbols = append(symbols, s.ToProto())
@@ -204,6 +204,18 @@ type Point struct {
 	Column int `json:"column"`
 }
 
+func (p *Point) ToProto() *proto.Point {
+	return &proto.Point{
+		Row:    int32(p.Row),
+		Column: int32(p.Column),
+	}
+}
+
+func (p *Point) FromProto(pp *proto.Point) {
+	p.Row = int(pp.Row)
+	p.Column = int(pp.Column)
+}
+
 type Symbol struct {
 	Name  string  `json:"name"`
 	Hover string  `json:"hover,omitempty"`
@@ -211,14 +223,14 @@ type Symbol struct {
 	Refs  []Range `json:"refs,omitempty"`
 }
 
-func (s *Symbol) ToProto() *proto.LocalCodeIntelSymbol {
+func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
 	var refs []*proto.Range
 
 	for _, r := range s.Refs {
 		refs = append(refs, r.ToProto())
 	}
 
-	return &proto.LocalCodeIntelSymbol{
+	return &proto.LocalCodeIntelResponse_Symbol{
 		Name:  s.Name,
 		Hover: s.Hover,
 		Def:   s.Def.ToProto(),
@@ -226,7 +238,7 @@ func (s *Symbol) ToProto() *proto.LocalCodeIntelSymbol {
 	}
 }
 
-func (s *Symbol) FromProto(p *proto.LocalCodeIntelSymbol) {
+func (s *Symbol) FromProto(p *proto.LocalCodeIntelResponse_Symbol) {
 	s.Name = p.Name
 	s.Hover = p.Hover
 
@@ -273,6 +285,28 @@ func (r Range) String() string {
 type SymbolInfo struct {
 	Definition RepoCommitPathMaybeRange `json:"definition"`
 	Hover      *string                  `json:"hover,omitempty"`
+}
+
+func (si *SymbolInfo) ToProto() *proto.SymbolInfoResponse {
+	var response proto.SymbolInfoResponse
+
+	response.Definition.RepoCommitPath = si.Definition.RepoCommitPath.ToProto()
+	if si.Definition.Range != nil {
+		response.Definition.Range = si.Definition.Range.ToProto()
+	}
+
+	response.Hover = si.Hover
+
+	return &response
+}
+
+func (si *SymbolInfo) FromProto(p *proto.SymbolInfoResponse) {
+	si.Definition.RepoCommitPath.FromProto(p.Definition.RepoCommitPath)
+	if p.Definition.Range != nil {
+		si.Definition.Range.FromProto(p.Definition.Range)
+	}
+
+	si.Hover = p.Hover
 }
 
 func (s SymbolInfo) String() string {

@@ -111,6 +111,18 @@ type SymbolsParameters struct {
 	Timeout int
 }
 
+func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
+	s.Repo = api.RepoName(p.Repo) // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
+	s.CommitID = api.CommitID(p.CommitId)
+	s.Query = p.Query
+	s.IsRegExp = p.IsRegExp
+	s.IsCaseSensitive = p.IsCaseSensitive
+	s.IncludePatterns = p.IncludePatterns
+	s.ExcludePattern = p.ExcludePattern
+	s.First = int(p.First)
+	s.Timeout = int(p.Timeout)
+}
+
 func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
 	return &proto.SearchRequest{
 		Repo:     string(s.Repo),
@@ -148,6 +160,23 @@ func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
 
 	r.Symbols = symbols
 	r.Err = err
+}
+
+func (r *SymbolsResponse) ToProto() *proto.SymbolsResponse {
+	var response proto.SymbolsResponse
+
+	var symbols []*proto.SymbolsResponse_Symbol
+	for _, s := range r.Symbols {
+		symbols = append(symbols, s.ToProto())
+	}
+
+	response.Symbols = symbols
+
+	if r.Err != "" {
+		response.Error = &r.Err
+	}
+
+	return &response
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global
