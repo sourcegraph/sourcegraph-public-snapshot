@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
@@ -81,13 +82,19 @@ func (h *handler) sendWebhook(
 	// to break it down — in classic Go style, much of its weight is really just
 	// repetitive error handling.
 
-	logger.Debug("sending webhook payload")
+	logger.Debug("preparing to send webhook payload")
 
 	// First, we need to decrypt the values we need that may be encrypted.
 	url, err := webhook.URL.Decrypt(ctx)
 	if err != nil {
 		logger.Error("cannot decrypt webhook URL", log.Error(err))
 		return errors.Wrap(err, "decrypting webhook URL")
+	}
+
+	err = outbound.CheckAddress(url)
+	if err != nil {
+		logger.Error("webhook URL is not allowed", log.Error(err))
+		return errors.Wrap(err, "checking webhook URL")
 	}
 
 	secret, err := webhook.Secret.Decrypt(ctx)
