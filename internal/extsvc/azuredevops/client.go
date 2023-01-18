@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-// Client access a ADO via the REST API.
+// Client used to access an ADO code host via the REST API.
 type Client struct {
-	// HTTP Client used to communicate with the API
+	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
-	// Config is the code host connection config for this client
+	// Config is the code host connection config for this client.
 	Config *ADOConnection
 
 	// URL is the base URL of ADO.
@@ -63,7 +63,7 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 	ProjectOrOrgName string
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (projects *ListRepositoriesResponse, err error) {
+func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (*ListRepositoriesResponse, error) {
 	qs := make(url.Values)
 
 	// TODO: @varsanojidan look into which API version/s we want to support.
@@ -132,10 +132,6 @@ type RepositoriesValue struct {
 	SSHURL     string `json:"sshUrl"`
 	WebURL     string `json:"webUrl"`
 	IsDisabled bool   `json:"isDisabled"`
-}
-
-type Pagination struct {
-	ContinuationToken string
 }
 
 type httpError struct {
