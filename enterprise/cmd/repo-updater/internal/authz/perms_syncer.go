@@ -173,9 +173,9 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 		return
 	}
 
-	repos := make([]scheduledRepo, numberOfRepos)
+	repositories := make([]scheduledRepo, numberOfRepos)
 	for i := range repoIDs {
-		repos[i] = scheduledRepo{
+		repositories[i] = scheduledRepo{
 			priority: priorityHigh,
 			repoID:   repoIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
@@ -184,7 +184,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	}
 
 	scheduleReposCounter.Add(float64(numberOfRepos))
-	s.scheduleRepos(ctx, repos...)
+	s.scheduleRepos(ctx, repositories...)
 	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
 	s.collectQueueSize()
 }
@@ -1196,16 +1196,24 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 
 		if workerEnabled {
 			for _, u := range schedule.Users {
-				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
+				reason := permssync.ReasonUserOutdatedPermissions
+				if u.noPerms {
+					reason = permssync.ReasonUserNoPermissions
+				}
+				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt, Reason: reason}
 				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
 					logger.Error("failed to create user sync job", log.Error(err))
 					continue
 				}
 			}
 
-			for _, u := range schedule.Repos {
-				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt}
-				if err := store.CreateRepoSyncJob(ctx, u.repoID, opts); err != nil {
+			for _, r := range schedule.Repos {
+				reason := permssync.ReasonRepoOutdatedPermissions
+				if r.noPerms {
+					reason = permssync.ReasonRepoNoPermissions
+				}
+				opts := database.PermissionSyncJobOpts{NextSyncAt: r.nextSyncAt, Reason: reason}
+				if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
 					logger.Error("failed to create repo sync job", log.Error(err))
 					continue
 				}

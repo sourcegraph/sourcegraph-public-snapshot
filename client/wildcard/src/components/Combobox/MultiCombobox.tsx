@@ -172,6 +172,7 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
             selectOnClick={false}
             autocomplete={false}
             value={value.toString()}
+            byPassValue={value.toString()}
             {...attributes}
         />
     )
@@ -179,12 +180,13 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
 
 interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
+    byPassValue: string
 }
 
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
 const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLInputElement>) => {
-    const { onKeyDown, onFocus, onBlur, value, ...attributes } = props
+    const { onKeyDown, onFocus, onBlur, byPassValue, value, ...attributes } = props
 
     const {
         setInputElement,
@@ -201,7 +203,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     const listRef = useMergeRefs<HTMLUListElement>([setInputElement])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-        if (value === '' && event.key === Key.Backspace) {
+        if (byPassValue === '' && event.key === Key.Backspace) {
             onSelectedItemsChange(selectedItems.slice(0, -1))
 
             // Prevent any single combobox UI state machine updates
@@ -265,6 +267,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
             ))}
             <Input
                 {...attributes}
+                value={byPassValue}
                 ref={inputRef}
                 className={styles.inputContainer}
                 inputClassName={styles.input}
@@ -324,6 +327,14 @@ export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactEle
             {children(items)}
         </ComboboxList>
     )
+}
+
+interface MultiComboboxEmptyListProps extends HTMLAttributes<HTMLSpanElement> {}
+
+export function MultiComboboxEmptyList(props: MultiComboboxEmptyListProps): ReactElement {
+    const { className, ...attributes } = props
+
+    return <span {...attributes} className={classNames(className, styles.zeroState)} />
 }
 
 interface MultiComboboxOptionProps extends ComboboxOptionProps {

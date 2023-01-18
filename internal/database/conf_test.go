@@ -285,6 +285,8 @@ func TestGetSiteConfigCount(t *testing.T) {
 }
 
 func TestListSiteConfigs(t *testing.T) {
+	toIntPtr := func(n int) *int { return &n }
+
 	if testing.Short() {
 		t.Skip()
 	}
@@ -296,83 +298,124 @@ func TestListSiteConfigs(t *testing.T) {
 	s := db.Conf()
 	createDummySiteConfigs(t, ctx, s)
 
+	if _, err := s.ListSiteConfigs(ctx, &PaginationArgs{}); err != nil {
+		t.Error("Expected non-nil error but got nil")
+	}
+
 	testCases := []struct {
 		name        string
-		listOptions SiteConfigListOptions
+		listOptions *PaginationArgs
 		expectedIDs []int32
 	}{
 		{
-			name:        "empty list options",
-			listOptions: SiteConfigListOptions{},
+			name:        "nil pagination args",
 			expectedIDs: []int32{1, 2, 3, 4},
 		},
 		{
-			name: "order by asc",
-			listOptions: SiteConfigListOptions{
-				OrderByDirection: AscendingOrderByDirection,
+			name: "first: 2 (subset of data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(2),
 			},
-			expectedIDs: []int32{1, 2, 3, 4},
+			expectedIDs: []int32{4, 3},
 		},
 		{
-			name: "order by desc",
-			listOptions: SiteConfigListOptions{
-				OrderByDirection: DescendingOrderByDirection,
+			name: "last: 2 (subset of data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(2),
+			},
+			expectedIDs: []int32{1, 2},
+		},
+		{
+			name: "first: 4 (all of data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(4),
 			},
 			expectedIDs: []int32{4, 3, 2, 1},
 		},
 		{
-			name: "limit",
-			listOptions: SiteConfigListOptions{
-				LimitOffset: &LimitOffset{
-					Limit: 3,
-				},
+			name: "last: 4 (all of data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(4),
+			},
+			expectedIDs: []int32{1, 2, 3, 4},
+		},
+		{
+			name: "first: 10 (more than data)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(10),
+			},
+			expectedIDs: []int32{4, 3, 2, 1},
+		},
+		{
+			name: "last: 4 (more than data)",
+			listOptions: &PaginationArgs{
+				Last: toIntPtr(10),
+			},
+			expectedIDs: []int32{1, 2, 3, 4},
+		},
+		{
+			name: "first: 2, after: 3",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(2),
+				After: toIntPtr(3),
+			},
+			expectedIDs: []int32{2, 1},
+		},
+		{
+			name: "first: 5, after: 3 (overflow)",
+			listOptions: &PaginationArgs{
+				First: toIntPtr(5),
+				After: toIntPtr(3),
+			},
+			expectedIDs: []int32{2, 1},
+		},
+		{
+			name: "last: 2, after: 4",
+			listOptions: &PaginationArgs{
+				Last:  toIntPtr(2),
+				After: toIntPtr(4),
+			},
+			expectedIDs: []int32{1, 2},
+		},
+		{
+			name: "last: 5, after: 4 (overflow)",
+			listOptions: &PaginationArgs{
+				Last:  toIntPtr(5),
+				After: toIntPtr(4),
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
 		{
-			name: "offset",
-			listOptions: SiteConfigListOptions{
-				LimitOffset: &LimitOffset{
-					Offset: 1,
-				},
+			name: "first: 2, before: 1",
+			listOptions: &PaginationArgs{
+				First:  toIntPtr(2),
+				Before: toIntPtr(1),
 			},
-			// NOTE: Current implementation of LimitOffset.SQL() will use the default Go value if
-			// Limit is not set but Offset is. Which means it adds a LIMIT 0 clause to the query. We
-			// should revisit that choice in a separate PR and when we do, this test should start
-			// failing.
-			expectedIDs: []int32{},
+			expectedIDs: []int32{4, 3},
 		},
 		{
-			name: "limit and offset",
-			listOptions: SiteConfigListOptions{
-				LimitOffset: &LimitOffset{
-					Limit:  5,
-					Offset: 1,
-				},
+			name: "first: 5, before: 1 (overflow)",
+			listOptions: &PaginationArgs{
+				First:  toIntPtr(5),
+				Before: toIntPtr(1),
+			},
+			expectedIDs: []int32{4, 3, 2},
+		},
+		{
+			name: "last: 2, before: 1",
+			listOptions: &PaginationArgs{
+				Last:   toIntPtr(2),
+				Before: toIntPtr(1),
+			},
+			expectedIDs: []int32{2, 3},
+		},
+		{
+			name: "last: 5, before: 1 (overflow)",
+			listOptions: &PaginationArgs{
+				Last:   toIntPtr(5),
+				Before: toIntPtr(1),
 			},
 			expectedIDs: []int32{2, 3, 4},
-		},
-		{
-			name: "order by asc limit and offset",
-			listOptions: SiteConfigListOptions{
-				OrderByDirection: AscendingOrderByDirection,
-				LimitOffset: &LimitOffset{
-					Limit:  5,
-					Offset: 1,
-				},
-			},
-			expectedIDs: []int32{2, 3, 4},
-		},
-		{
-			name: "order by desc limit and offset",
-			listOptions: SiteConfigListOptions{
-				OrderByDirection: DescendingOrderByDirection,
-				LimitOffset: &LimitOffset{
-					Limit:  5,
-					Offset: 1,
-				},
-			},
-			expectedIDs: []int32{3, 2, 1},
 		},
 	}
 

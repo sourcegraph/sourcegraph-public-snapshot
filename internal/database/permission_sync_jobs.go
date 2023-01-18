@@ -17,9 +17,11 @@ import (
 )
 
 type PermissionSyncJobOpts struct {
-	HighPriority     bool
-	InvalidateCaches bool
-	NextSyncAt       time.Time
+	HighPriority      bool
+	InvalidateCaches  bool
+	NextSyncAt        time.Time
+	Reason            string
+	TriggeredByUserID int32
 }
 
 type PermissionSyncJobStore interface {
@@ -65,9 +67,11 @@ func (s *permissionSyncJobStore) Done(err error) error {
 
 func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
-		UserID:           int(user),
-		HighPriority:     opts.HighPriority,
-		InvalidateCaches: opts.InvalidateCaches,
+		UserID:            int(user),
+		HighPriority:      opts.HighPriority,
+		InvalidateCaches:  opts.InvalidateCaches,
+		Reason:            opts.Reason,
+		TriggeredByUserID: opts.TriggeredByUserID,
 	}
 	if !opts.NextSyncAt.IsZero() {
 		job.ProcessAfter = opts.NextSyncAt
@@ -77,9 +81,11 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 
 func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
-		RepositoryID:     int(repo),
-		HighPriority:     opts.HighPriority,
-		InvalidateCaches: opts.InvalidateCaches,
+		RepositoryID:      int(repo),
+		HighPriority:      opts.HighPriority,
+		InvalidateCaches:  opts.InvalidateCaches,
+		Reason:            opts.Reason,
+		TriggeredByUserID: opts.TriggeredByUserID,
 	}
 	if !opts.NextSyncAt.IsZero() {
 		job.ProcessAfter = opts.NextSyncAt
@@ -89,6 +95,8 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api
 
 const permissionSyncJobCreateQueryFmtstr = `
 INSERT INTO permission_sync_jobs (
+	reason,
+	triggered_by_user_id,
 	process_after,
 	repository_id,
 	user_id,
@@ -96,6 +104,8 @@ INSERT INTO permission_sync_jobs (
 	invalidate_caches
 )
 VALUES (
+	%s,
+	%s,
 	%s,
 	%s,
 	%s,
@@ -108,6 +118,8 @@ RETURNING %s
 func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
 	q := sqlf.Sprintf(
 		permissionSyncJobCreateQueryFmtstr,
+		job.Reason,
+		dbutil.NewNullInt32(job.TriggeredByUserID),
 		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(job.RepositoryID),
 		dbutil.NewNullInt(job.UserID),
@@ -123,6 +135,7 @@ type ListPermissionSyncJobOpts struct {
 	ID     int
 	UserID int
 	RepoID int
+	Reason string
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
@@ -136,6 +149,9 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	}
 	if opts.RepoID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+	}
+	if opts.Reason != "" {
+		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
 
 	return conds
@@ -183,19 +199,21 @@ ORDER BY id ASC
 `
 
 type PermissionSyncJob struct {
-	ID              int
-	State           string
-	FailureMessage  *string
-	QueuedAt        time.Time
-	StartedAt       time.Time
-	FinishedAt      time.Time
-	ProcessAfter    time.Time
-	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
+	ID                int
+	State             string
+	FailureMessage    *string
+	Reason            string
+	TriggeredByUserID int32
+	QueuedAt          time.Time
+	StartedAt         time.Time
+	FinishedAt        time.Time
+	ProcessAfter      time.Time
+	NumResets         int
+	NumFailures       int
+	LastHeartbeatAt   time.Time
+	ExecutionLogs     []workerutil.ExecutionLogEntry
+	WorkerHostname    string
+	Cancel            bool
 
 	RepositoryID int
 	UserID       int
@@ -209,6 +227,8 @@ func (j *PermissionSyncJob) RecordID() int { return j.ID }
 var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
 	sqlf.Sprintf("permission_sync_jobs.state"),
+	sqlf.Sprintf("permission_sync_jobs.reason"),
+	sqlf.Sprintf("permission_sync_jobs.triggered_by_user_id"),
 	sqlf.Sprintf("permission_sync_jobs.failure_message"),
 	sqlf.Sprintf("permission_sync_jobs.queued_at"),
 	sqlf.Sprintf("permission_sync_jobs.started_at"),
@@ -242,6 +262,8 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	if err := s.Scan(
 		&job.ID,
 		&job.State,
+		&job.Reason,
+		&dbutil.NullInt32{N: &job.TriggeredByUserID},
 		&job.FailureMessage,
 		&job.QueuedAt,
 		&dbutil.NullTime{Time: &job.StartedAt},

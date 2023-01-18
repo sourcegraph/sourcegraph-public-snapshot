@@ -279,6 +279,11 @@ func (r *NodeResolver) ToOutboundRequest() (*OutboundRequestResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToBackgroundJob() (*BackgroundJobResolver, bool) {
+	n, ok := r.Node.(*BackgroundJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
 	n, ok := r.Node.(WebhookResolver)
 	return n, ok
@@ -311,5 +316,10 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 
 func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
 	n, ok := r.Node.(PermissionsSyncJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
+	n, ok := r.Node.(OutboundWebhookResolver)
 	return n, ok
 }

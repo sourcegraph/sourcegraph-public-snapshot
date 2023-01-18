@@ -40,6 +40,11 @@ func newHandler(
 			return uploads.UploadMetadata{}, statusCode, err
 		}
 
+		contentType := r.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/x-ndjson+lsif"
+		}
+
 		// Populate state from request
 		return uploads.UploadMetadata{
 			RepositoryID:      repositoryID,
@@ -48,7 +53,7 @@ func newHandler(
 			Indexer:           getQuery(r, "indexerName"),
 			IndexerVersion:    getQuery(r, "indexerVersion"),
 			AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
-			ContentType:       r.Header.Get("Content-Type"),
+			ContentType:       contentType,
 		}, 0, nil
 	}
 
