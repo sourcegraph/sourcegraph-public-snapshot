@@ -189,8 +189,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                 headingElement="h2"
                 path={[{ text: 'Account security' }]}
                 description="Connect your account with a third-party login service to make signing in easier."
-                className="mb-3"
-                data-testid="user-settings-account-security-page"
+                className="mb-3 user-settings-account-security-page"
             />
 
             {/* external accounts not fetched yet */}

@@ -164,7 +164,7 @@ describe('User Different Settings Page', () => {
             }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/user/settings/account-security')
-        await driver.page.waitForSelector('[data-testid="user-settings-account-security-page"]')
+        await driver.page.waitForSelector('.user-settings-account-security-page')
         await percySnapshotWithVariants(driver.page, 'User Account Security Settings Page')
         await accessibilityAudit(driver.page)
     })
