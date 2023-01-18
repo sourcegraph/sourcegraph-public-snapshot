@@ -25,13 +25,12 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 
 	ctx := context.Background()
 
-	opts := ListRepositoriesArgs{
+	opts := ListRepositoriesByProjectOrOrgArgs{
 		// TODO: use an sg owned org rather than a personal.
-		OrgOrProjectName: "sgadotest",
-		Cursor:           &Pagination{ContinuationToken: ""},
+		ProjectOrOrgName: "sgadotest",
 	}
 
-	resp, _, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
+	resp, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
 	if err != nil {
 		t.Fatal(err)
 	}

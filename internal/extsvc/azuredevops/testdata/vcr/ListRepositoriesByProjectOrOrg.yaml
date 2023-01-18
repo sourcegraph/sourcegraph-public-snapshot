@@ -5,7 +5,7 @@ interactions:
     body: ""
     form: {}
     headers: {}
-    url: https://dev.azure.com/sgadotest/_apis/git/repositories?api-version=7.1-preview.1&continuationToken=
+    url: https://dev.azure.com/sgadotest/_apis/git/repositories?api-version=7.0
     method: GET
   response:
     body: '{"value":[{"id":"d43b669c-d6da-4c9e-9952-11f411153cf9","name":"sgadotest","url":"https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9","project":{"id":"889cc0c6-c7ed-40f0-b6f1-053acfc1397d","name":"sgadotest","url":"https://dev.azure.com/sgadotest/_apis/projects/889cc0c6-c7ed-40f0-b6f1-053acfc1397d","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-17T22:13:58.063Z"},"size":0,"remoteUrl":"https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/sgadotest","sshUrl":"git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest","webUrl":"https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest","isDisabled":false,"isInMaintenance":false},{"id":"47c49ea1-5dc8-468e-ae6d-52410a1084a7","name":"idano","url":"https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7","project":{"id":"889cc0c6-c7ed-40f0-b6f1-053acfc1397d","name":"sgadotest","url":"https://dev.azure.com/sgadotest/_apis/projects/889cc0c6-c7ed-40f0-b6f1-053acfc1397d","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-17T22:13:58.063Z"},"defaultBranch":"refs/heads/main","size":726,"remoteUrl":"https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/idano","sshUrl":"git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano","webUrl":"https://dev.azure.com/sgadotest/sgadotest/_git/idano","isDisabled":false,"isInMaintenance":false}],"count":2}'
@@ -13,13 +13,13 @@ interactions:
       Access-Control-Expose-Headers:
       - Request-Context
       Activityid:
-      - 832e26e3-bda3-4958-ae95-acd08f9cbf47
+      - d85faa91-5972-4e73-b6c1-b28aed90d85a
       Cache-Control:
       - no-cache, no-store, must-revalidate
       Content-Type:
-      - application/json; charset=utf-8; api-version=7.1-preview.1
+      - application/json; charset=utf-8; api-version=7.0
       Date:
-      - Tue, 17 Jan 2023 23:19:57 GMT
+      - Wed, 18 Jan 2023 00:40:47 GMT
       Expires:
       - "-1"
       P3p:
@@ -38,13 +38,13 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Msedge-Ref:
-      - 'Ref A: 3D0BC6404A1944498809F1680032ABC9 Ref B: YTO01EDGE0521 Ref C: 2023-01-17T23:19:57Z'
+      - 'Ref A: 6D63C7552DAE4E17AFD96F1866CDD73A Ref B: YTO01EDGE0519 Ref C: 2023-01-18T00:40:47Z'
       X-Tfs-Processid:
-      - 2bc149d7-6826-4e7c-bcac-02a72811e3d3
+      - fedcf78f-094a-4a84-b53e-21d8a77fbada
       X-Tfs-Session:
-      - 832e26e3-bda3-4958-ae95-acd08f9cbf47
+      - d85faa91-5972-4e73-b6c1-b28aed90d85a
       X-Vss-E2eid:
-      - 832e26e3-bda3-4958-ae95-acd08f9cbf47
+      - d85faa91-5972-4e73-b6c1-b28aed90d85a
       X-Vss-Senderdeploymentid:
       - 4ff21e82-8865-0b2e-ffe8-9598818f8190
       X-Vss-Userdata:

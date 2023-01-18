@@ -30,7 +30,7 @@ type Client struct {
 	rateLimit *ratelimit.InstrumentedLimiter
 }
 
-// TODO: remove this when the shcema is updated to include ADO: https://github.com/sourcegraph/sourcegraph/issues/46266.
+// TODO: @varsanojidan remove this when the shcema is updated to include ADO: https://github.com/sourcegraph/sourcegraph/issues/46266.
 type ADOConnection struct {
 	Username string
 	Token    string
@@ -57,56 +57,48 @@ func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Cli
 	}, nil
 }
 
-// ListRepositoriesArgs defines options to be set on the ListRepositories methods' calls.
-type ListRepositoriesArgs struct {
-	// Should be in the form of org/project for projects and org for orgs.
-	OrgOrProjectName string
-	Cursor           *Pagination
+// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
+type ListRepositoriesByProjectOrOrgArgs struct {
+	// Should be in the form of 'org/project' for projects and 'org' for orgs.
+	ProjectOrOrgName string
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesArgs) (projects *ListRepositoriesResponse, continuationToken string, err error) {
+func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (projects *ListRepositoriesResponse, err error) {
 	qs := make(url.Values)
 
-	if opts.Cursor == nil {
-		opts.Cursor = &Pagination{ContinuationToken: ""}
-	}
-
 	// TODO: @varsanojidan look into which API version/s we want to support.
-	qs.Set("api-version", "7.1-preview.1")
-	qs.Set("continuationToken", opts.Cursor.ContinuationToken)
+	qs.Set("api-version", "7.0")
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.OrgOrProjectName), RawQuery: qs.Encode()}
+	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: qs.Encode()}
 
 	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	var repos ListRepositoriesResponse
-	if _, continuationToken, err = c.do(ctx, req, &repos); err != nil {
-		return nil, "", err
+	if _, err = c.do(ctx, req, &repos); err != nil {
+		return nil, err
 	}
 
-	return &repos, continuationToken, nil
+	return &repos, nil
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (resp *http.Response, continuationToken string, err error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
 	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Token)))
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	fmt.Printf("Request: %+v\n", req)
-
-	resp, err = c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
@@ -114,21 +106,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (resp *h
 	bs, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, "", &httpError{
+		return nil, &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
 		}
 	}
 
-	// Set if there is another page
-	continuationToken = resp.Header.Get("x-ms-continuationtoken")
-
-	return resp, continuationToken, json.Unmarshal(bs, result)
+	return resp, json.Unmarshal(bs, result)
 }
 
 type ListRepositoriesResponse struct {
