@@ -350,7 +350,7 @@ function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
     while (parent) {
         parents.push(parent)
 
-        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent))
+        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
     }
     return parents
 }
