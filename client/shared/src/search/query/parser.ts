@@ -164,7 +164,7 @@ const parseNot = (tokens: Token[]): State => {
     }
 
     switch (operand.type) {
-        case 'openingParen':
+        case 'openingParen': {
             const state = parseParenthesis(tokens)
             if (state.result.type === 'error') {
                 return { result: state.result, tokens }
@@ -172,13 +172,15 @@ const parseNot = (tokens: Token[]): State => {
             nodes = state.result.nodes
             tokens = state.tokens
             break
-        default:
+        }
+        default: {
             const node = tokenToLeafNode(operand)
             if (node.type === 'error') {
                 return { result: node, tokens }
             }
             nodes = node.nodes
             tokens = tokens.slice(1)
+        }
     }
 
     return { result: createOperator(nodes, OperatorKind.Not, keyword.range.start), tokens }
