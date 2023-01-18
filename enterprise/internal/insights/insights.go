@@ -2,6 +2,7 @@ package insights
 
 import (
 	"context"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
