@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -70,9 +71,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// Enable the feature
-			old := OutboundRequestLogLimit()
-			SetOutboundRequestLogLimit(1)
-			t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
+			setOutboundRequestLogLimit(t, 1)
 
 			// Build client with middleware
 			cli := redisLoggerMiddleware()(tc.cli)
@@ -108,7 +107,73 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestRedisLoggerMiddleware_multiple(t *testing.T) {
+	// This test ensures that we correctly apply limits bigger than 1, as well
+	// as ensuring GetOutboundRequestLogItem works.
+	requests := 10
+	limit := requests / 2
+
+	rcache.SetupForTest(t)
+
+	// Enable the feature
+	setOutboundRequestLogLimit(t, int32(limit))
+
+	// Build client with middleware
+	cli := redisLoggerMiddleware()(newFakeClient(http.StatusOK, []byte(`{"responseBody":true}`), nil))
+
+	// Send requests and track the URLs we send so we can compare later to
+	// what was stored.
+	var wantURLs []string
+	for i := 0; i < requests; i++ {
+		u := fmt.Sprintf("http://dev/%d", i)
+		wantURLs = append(wantURLs, u)
+
+		req, _ := http.NewRequest("GET", u, strings.NewReader("horse"))
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Our keys are based on time, so we add a tiny sleep to ensure we
+		// don't duplicate keys.
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Updated want by what is actually kept
+	wantURLs = wantURLs[len(wantURLs)-limit:]
+
+	// Check logged request
+	logged, err := GetOutboundRequestLogItems(context.Background(), "")
+	if err != nil {
+		t.Fatalf("couldnt get logged requests: %s", err)
+	}
+
+	var gotURLs []string
+	for _, item := range logged {
+		gotURLs = append(gotURLs, item.URL)
+	}
+	if diff := cmp.Diff(wantURLs, gotURLs); diff != "" {
+		t.Fatalf("unexpected logged URLs (-want, +got):\n%s", diff)
+	}
+
+	// Check that GetOutboundRequestLogItem works
+	for _, want := range logged {
+		got, err := GetOutboundRequestLogItem(want.ID)
+		if err != nil {
+			t.Fatalf("failed to find log item %+v", want)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unexpected item returned via GetOutboundRequestLogItem (-want, +got):\n%s", diff)
+		}
+	}
+
+	// Finally check we return an error if the item key doesn't exist.
+	_, err = GetOutboundRequestLogItem("does not exist")
+	if got, want := fmt.Sprintf("%s", err), "item not found"; got != want {
+		t.Fatalf("unexpected error for GetOutboundRequestLogItem(\"does not exist\") got=%q want=%q", got, want)
+	}
 }
 
 func TestRedisLoggerMiddleware_redactSensitiveHeaders(t *testing.T) {
@@ -183,4 +248,10 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setOutboundRequestLogLimit(t *testing.T, limit int32) {
+	old := OutboundRequestLogLimit()
+	SetOutboundRequestLogLimit(limit)
+	t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
 }
