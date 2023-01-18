@@ -26,8 +26,9 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		{Username: "bar", DisplayName: "bar user"},
 	}
 
-	for _, u := range usersToCreate {
-		user, err := db.Users().Create(ctx, u)
+	var users []*types.User
+	for _, input := range usersToCreate {
+		user, err := db.Users().Create(ctx, input)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,6 +36,8 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
 			t.Fatal(err)
 		}
+
+		users = append(users, user)
 	}
 
 	conf := db.Conf()
@@ -86,8 +89,8 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	}
 
 	return &siteConfigStubs{
-		db: db,
-		// users:       users,
+		db:    db,
+		users: users,
 		// siteConfigs: siteConfigs,
 	}
 }
