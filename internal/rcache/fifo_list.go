@@ -26,7 +26,7 @@ func NewFIFOList(key string, size int) *FIFOList {
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
 func (l *FIFOList) Insert(b []byte) error {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	if !utf8.Valid(b) {
@@ -59,7 +59,7 @@ func (l *FIFOList) Insert(b []byte) error {
 }
 
 func (l *FIFOList) Size() (int, error) {
-	c := pool.Get()
+	c := poolGet()
 	defer c.Close()
 
 	key := l.globalPrefixKey()
@@ -93,7 +93,7 @@ func (l *FIFOList) All(ctx context.Context) ([][]byte, error) {
 //
 // This a O(n) operation, where n is the list size.
 func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
-	c, err := pool.GetContext(ctx)
+	c, err := poolGetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
 	}
