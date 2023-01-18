@@ -169,7 +169,7 @@ const config = {
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
         seed: {
-          environment: NODE_ENV
+          environment: NODE_ENV,
         },
         // Only output files that are required to run the application.
         filter: ({ isInitial, name }) =>
