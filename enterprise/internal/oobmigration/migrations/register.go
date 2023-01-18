@@ -32,7 +32,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 	}
 
 	var insightsStore *basestore.Store
-	if enterprise.IsCodeInsightsEnabled() {
+	if internalInsights.IsEnabled() {
 		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err

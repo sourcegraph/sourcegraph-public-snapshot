@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,7 +31,7 @@ func (m *recordingTimesMigrator) ID() int                 { return 17 }
 func (m *recordingTimesMigrator) Interval() time.Duration { return time.Second * 10 }
 
 func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	if !enterprise.IsCodeInsightsEnabled() {
+	if !insights.IsEnabled() {
 		return 1, nil
 	}
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
@@ -55,7 +55,7 @@ type seriesMetadata struct {
 }
 
 func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
-	if !enterprise.IsCodeInsightsEnabled() {
+	if !insights.IsEnabled() {
 		return nil
 	}
 	tx, err := m.store.Transact(ctx)
@@ -161,7 +161,7 @@ func selectExistingRecordingTimes(ctx context.Context, tx *basestore.Store, seri
 }
 
 func (m *recordingTimesMigrator) Down(ctx context.Context) error {
-	if !enterprise.IsCodeInsightsEnabled() {
+	if !insights.IsEnabled() {
 		return nil
 	}
 	tx, err := m.store.Transact(ctx)
@@ -172,7 +172,7 @@ func (m *recordingTimesMigrator) Down(ctx context.Context) error {
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		`WITH deleted AS (
-			DELETE FROM insight_series_recording_times
+			DELETE FROM insight_series_recording_times 
 			WHERE insight_series_id IN (SELECT id FROM insight_series WHERE supports_augmentation = TRUE LIMIT %s)
             RETURNING insight_series_id
 		)
