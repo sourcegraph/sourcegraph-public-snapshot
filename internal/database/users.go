@@ -80,6 +80,8 @@ type UserStore interface {
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
+	RecoverUserByID(context.Context, int32) (_ []*types.User, err error)
+	RecoverList(context.Context, []int32) (_ []*types.User, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -673,6 +675,60 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
+}
+
+// RecoverUserByID recovers a user by their ID.
+func (u *userStore) RecoverUserByID(ctx context.Context, id int32) (_ []*types.User, err error) {
+	return u.RecoverList(ctx, []int32{id})
+}
+
+// RecoverList recovers a list of users by their IDs.
+func (u *userStore) RecoverList(ctx context.Context, ids []int32) (_ []*types.User, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+
+	idsCond := sqlf.Join(userIDs, ",")
+
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL", idsCond))
+	if err != nil {
+		return nil, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows != int64(len(ids)) {
+		return nil, userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to recover %d users, but deleted only %d", +len(ids), rows)}}
+	}
+	users, err := u.getBySQL(ctx, sqlf.Sprintf("id IN (%s)", idsCond))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if err := u.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) VALUES(%s, %s)", user.Username, user.ID)); err != nil {
+			return nil, err
+		}
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=NULL, updated_at=now() WHERE user_id IN (%s) AND deleted_at IS NOT NULL", idsCond)); err != nil {
+		return nil, err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL, updated_at=now() WHERE deleted_at IS NOT NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL, updated_at=now() WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
