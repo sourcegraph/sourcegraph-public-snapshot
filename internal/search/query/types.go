@@ -147,7 +147,11 @@ func (q Q) Repositories() (repos []ParsedRepoFilter, negatedRepos []string) {
 		if negated {
 			negatedRepos = append(negatedRepos, value)
 		} else {
-			repoFilter := ParseRepositoryRevisions(value)
+			repoFilter, err := ParseRepositoryRevisions(value)
+			// Should never happen because the repo name is already validated
+			if err != nil {
+				panic(fmt.Sprintf("repo field %q is an invalid regex: %v", value, err))
+			}
 			repos = append(repos, repoFilter)
 		}
 	})
@@ -565,7 +569,11 @@ func (p Parameters) Repositories() (repos []ParsedRepoFilter, negatedRepos []str
 		if negated {
 			negatedRepos = append(negatedRepos, value)
 		} else {
-			repoFilter := ParseRepositoryRevisions(value)
+			repoFilter, err := ParseRepositoryRevisions(value)
+			// Should never happen because the repo name is already validated
+			if err != nil {
+				panic(fmt.Sprintf("repo field %q is an invalid regex: %v", value, err))
+			}
 			repos = append(repos, repoFilter)
 		}
 	})

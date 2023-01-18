@@ -159,8 +159,13 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             source: 'server',
         },
         {
-            label: 'Slow Requests',
+            label: 'Slow requests',
             to: '/site-admin/slow-requests',
+            source: 'server',
+        },
+        {
+            label: 'Background jobs',
+            to: '/site-admin/background-jobs',
             source: 'server',
         },
     ],

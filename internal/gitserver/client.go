@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -32,7 +31,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -282,10 +279,6 @@ type Client interface {
 	// RemoveFrom removes the repository clone from the given gitserver.
 	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
 
-	// RendezvousAddrForRepo returns the gitserver address to use for the given
-	// repo name using the Rendezvous hashing scheme.
-	RendezvousAddrForRepo(api.RepoName) string
-
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -310,10 +303,6 @@ type Client interface {
 	// Note: If the statistics for a gitserver have not been computed, the
 	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
-
-	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to make
-	// gitserver instances clone a repo from one instance to another
-	RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -472,17 +461,6 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	})
 }
 
-func (c *clientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), c.pinned()); repoPinned {
-		return addr
-	}
-	return RendezvousAddrForRepo(repo, addrs)
-}
-
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
@@ -495,16 +473,8 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
+	if repoPinned, addr := getPinnedRepoAddr(rs, addresses.PinnedServers); repoPinned {
 		return addr, nil
-	}
-
-	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
-	if err != nil {
-		return "", err
-	}
-	if useRendezvous {
-		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
 
 	return addrForKey(rs, addresses.Addresses), nil
@@ -513,15 +483,6 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 type GitServerAddresses struct {
 	Addresses     []string
 	PinnedServers map[string]string
-}
-
-// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
-// Rendezvous hashing scheme.
-//
-// It should never be called with an empty slice.
-func RendezvousAddrForRepo(repo api.RepoName, addrs []string) string {
-	r := rendezvous.New(addrs, xxhash.Sum64String)
-	return r.Lookup(string(protocol.NormalizeRepo(repo)))
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -951,41 +912,6 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	return info, err
 }
 
-func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error) {
-	// We do not need to set a value for the attribute "Since" because the repo is not expected to
-	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
-	// ignored.
-	req := &protocol.RepoUpdateRequest{
-		Repo:           repo,
-		CloneFromShard: "http://" + from,
-	}
-
-	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
-	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
-	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
-	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
-	// on the existing hashing scheme.
-	uri := "http://" + to + "/repo-update"
-	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoMigrate",
-			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var info *protocol.RepoUpdateResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-
-	return info, err
-}
-
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
 	req := &protocol.RepoCloneRequest{
@@ -1042,7 +968,12 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	// requirements on what a valid URL is we should treat bad requests,
 	// etc as not found.
 	notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
-	return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
+	return &RepoNotCloneableErr{
+		repo:     repo,
+		reason:   resp.Reason,
+		notFound: notFound,
+		cloned:   resp.Cloned,
+	}
 }
 
 // RepoNotCloneableErr is the error that happens when a repository can not be cloned.
@@ -1050,6 +981,7 @@ type RepoNotCloneableErr struct {
 	repo     api.RepoName
 	reason   string
 	notFound bool
+	cloned   bool // Has the repo ever been cloned in the past
 }
 
 // NotFound returns true if the repo could not be cloned because it wasn't found.
@@ -1060,7 +992,11 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
+	msg := "unable to clone repo"
+	if e.cloned {
+		msg = "unable to update repo"
+	}
+	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
@@ -1202,8 +1138,7 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
-// to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
-// httpPostWithURI.
+// to which the HTTP POST request is sent.
 func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
@@ -1215,18 +1150,6 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 	uri := "http://" + addrForRepo + "/" + op
-	return c.do(ctx, repo, "POST", uri, b)
-}
-
-// httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
-// use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
-// instance to which the HTTP POST request is sent.
-func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload any) (resp *http.Response, err error) {
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
@@ -1406,21 +1329,6 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 	return args
 }
 
-// shouldUseRendezvousHashing returns true if rendezvous hashing is to be used to find
-// an address of gitserver instance for a given repo
-func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string) (bool, error) {
-	cursor, err := migration.GetCursor(ctx, db)
-	if err != nil {
-		return false, err
-	}
-	if cursor == "" {
-		return false, nil
-	}
-
-	// Migration is in progress or finished, if the name is less than or equal to cursor -- use rendezvous
-	return repo <= cursor, nil
-}
-
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
 // Otherwise, if repo is not pinned -- false and empty string are returned
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
@@ -1447,7 +1355,7 @@ func readResponseBody(body io.Reader) string {
 
 	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
 	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escapted into a \n
+	// the error message. And in translation that newline gets escaped into a \n
 	// character.  For what the error message would look in the UI without
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.

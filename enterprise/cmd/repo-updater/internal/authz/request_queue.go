@@ -19,6 +19,16 @@ const (
 	priorityHigh
 )
 
+func (p priority) String() string {
+	switch p {
+	case priorityLow:
+		return "low"
+	case priorityHigh:
+		return "high"
+	}
+	return "unknown"
+}
+
 // requestType is the type of the permissions syncing request. It defines the
 // permissions syncing is either repository-centric or user-centric.
 type requestType int

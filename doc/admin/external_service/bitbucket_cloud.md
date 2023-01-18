@@ -33,6 +33,11 @@ If enabled, the default rate is set at 7200 per hour (2 per second), which can b
 
 **NOTE** Internal rate limiting is only currently applied when synchronizing changesets in [batch changes](../../batch_changes/index.md), repository permissions, and repository metadata from code hosts.
 
+## User authentication
+
+To configure Bitbucket Cloud as an authentication provider (which will enable sign-in via Bitbucket Cloud), see the
+[authentication documentation](../auth/index.md#bitbucket-cloud).
+
 ## Configuration
 
 Bitbucket Cloud connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.

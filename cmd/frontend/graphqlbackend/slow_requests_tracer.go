@@ -37,9 +37,7 @@ func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
 	slowRequestConfWatchOnce.Do(func() {
 		conf.Watch(func() {
 			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
-			if limit != slowRequestRedisFIFOList.MaxSize() {
-				slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
-			}
+			slowRequestRedisFIFOList.SetMaxSize(limit)
 		})
 	})
 

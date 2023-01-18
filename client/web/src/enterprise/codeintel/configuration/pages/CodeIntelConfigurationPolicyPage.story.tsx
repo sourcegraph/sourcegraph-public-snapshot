@@ -174,7 +174,7 @@ GlobalPage.args = {
 export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     ...defaults,
-    repo: { id: '42' },
+    repo: { id: '42', name: 'github.com/test/repo' },
 }
 RepositoryPage.parameters = {
     // Keep snapshots for one variant

@@ -118,6 +118,8 @@ type JSContext struct {
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
+
+	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -254,6 +256,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		LicenseInfo: licenseInfo,
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
+
+		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
 	}
 }
 
