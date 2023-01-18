@@ -934,9 +934,9 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), insightViewId, repoIDsPred), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
 	}
-	// todo add union all to include snapshot points
 	// then add live points
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote(recordingTable), insightViewId, repoIDsPred), exportScanner); err != nil {
+	// we join both series points tables
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), insightViewId, repoIDsPred), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 
