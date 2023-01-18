@@ -99,7 +99,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     )
 
     const isSourcegraphDotComOrLocalInstall =
-        window.context.sourcegraphDotComMode || window.AudioContext.deployType === 'docker-container'
+        window.context.sourcegraphDotComMode || window.context.deployType === 'docker-container'
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
