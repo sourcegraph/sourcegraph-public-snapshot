@@ -17,10 +17,10 @@ import {
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
+import { dirname } from '../../util/path'
 import { RenderedFile } from '../blob/RenderedFile'
 
 import styles from './TreePagePanels.module.scss'
-import { dirname } from '../../util/path'
 
 interface ReadmePreviewCardProps {
     readmeHTML: string
