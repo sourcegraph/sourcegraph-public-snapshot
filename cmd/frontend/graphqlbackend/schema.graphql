@@ -248,6 +248,14 @@ type Mutation {
     """
     deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
     """
+    Recover a deleted user account. Only site admins may perform this mutation.
+    """
+    recoverUser(user: ID!): UserConnection!
+    """
+    Bulk "recoverUser" action.
+    """
+    recoverUsers(users: [ID!]!): UserConnection!
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse

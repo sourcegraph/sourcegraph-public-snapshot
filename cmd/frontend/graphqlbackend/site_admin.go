@@ -18,6 +18,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
+	User graphql.ID
+}) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can recover users.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := r.db.Users().RecoverUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userConnectionResolver{users: user}, nil
+}
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
