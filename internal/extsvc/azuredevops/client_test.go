@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -40,9 +39,6 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
-	}
 	os.Exit(m.Run())
 }
 
