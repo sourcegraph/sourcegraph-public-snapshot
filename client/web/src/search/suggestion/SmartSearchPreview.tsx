@@ -41,6 +41,7 @@ interface SmartSearchPreviewProps {
 export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren<SmartSearchPreviewProps>> = () => {
     let test = null
 
+    //TODO: How to access results data in tap() outside fn / reassign, etc
     //TODO: How to change SmartSearch setting from here
     const searchQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     aggregateStreamingSearch(of(searchQuery), {
