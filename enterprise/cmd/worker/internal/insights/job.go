@@ -2,6 +2,7 @@ package insights
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -23,7 +24,7 @@ func (s *insightsJob) Config() []env.Config {
 }
 
 func (s *insightsJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !insights.IsEnabled() {
+	if !enterprise.IsCodeInsightsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling background jobs.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}

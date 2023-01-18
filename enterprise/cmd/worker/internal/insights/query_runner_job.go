@@ -2,6 +2,7 @@ package insights
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -25,7 +26,7 @@ func (s *insightsQueryRunnerJob) Config() []env.Config {
 }
 
 func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !insights.IsEnabled() {
+	if !enterprise.IsCodeInsightsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}

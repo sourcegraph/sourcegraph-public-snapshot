@@ -3,6 +3,7 @@ package migrations
 import (
 	"context"
 	"database/sql"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
@@ -31,7 +32,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 	}
 
 	var insightsStore *basestore.Store
-	if internalInsights.IsEnabled() {
+	if enterprise.IsCodeInsightsEnabled() {
 		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err
