@@ -24,7 +24,6 @@ export {
     LoaderInput,
     RadioButton,
     Select,
-    MultiSelect,
     TextArea,
     InputStatus,
     getInputStatus,
@@ -76,6 +75,7 @@ export {
     MultiComboboxInput,
     MultiComboboxPopover,
     MultiComboboxList,
+    MultiComboboxEmptyList,
     MultiComboboxOptionGroup,
     MultiComboboxOption,
     MultiComboboxOptionText,
@@ -87,9 +87,9 @@ export {
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
+export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
 export type { PopoverOpenEvent, Rectangle } from './Popover'
