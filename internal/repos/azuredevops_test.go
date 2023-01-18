@@ -12,8 +12,8 @@ import (
 
 func TestADOSource_ListRepos(t *testing.T) {
 	conf := &azuredevops.ADOConnection{
-		Username: "varsanojidan",
-		Token:    "5zeaqzyaxpbam23u5jqf35oz6wcqgkmf63xuiyrbusjduwyuzrea",
+		Username: "testuser",
+		Token:    "testtoken",
 		Projects: []string{"sgadotest/sgadotest"},
 	}
 	cf, save := newClientFactory(t, t.Name())
