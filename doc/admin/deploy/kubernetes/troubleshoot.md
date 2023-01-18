@@ -104,13 +104,13 @@ livenessProbe:
 
 ## Service mesh
 
-Known issues related to service mesh. E.g. Istio, Linkerd, etc. 
+Known issues when using a service mesh (e.g. Istio, Linkerd, etc.)
 
 #### Error message: `Git command [git rev-parse HEAD] failed (stderr: ""): strconv.Atoi: parsing "": invalid syntax`
 
 <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/178506378-3d047bc5-d672-487a-920f-8f228ae5cb27.png"/>
 
-This error occurs when the service mesh, like istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. 
+This error occurs when a service mesh, like Istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. 
 
 See our examples on applying the EnvoyFilter in [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) for details.
 
