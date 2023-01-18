@@ -92,12 +92,6 @@ describe('Code insight edit insight page', () => {
                     },
                 }),
 
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                    repoSearch1: { name: 'github.com/sourcegraph/about' },
-                }),
-
                 // Mocks live preview chart
                 GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
@@ -258,11 +252,6 @@ describe('Code insight edit insight page', () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                }),
-
                 // Mocks live preview chart
                 GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 

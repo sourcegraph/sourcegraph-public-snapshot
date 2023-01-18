@@ -114,7 +114,9 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
                     className="mt-3 mb-0"
                 />
 
-                <Label htmlFor="repositories-id" className="mt-3" >Repositories</Label>
+                <Label htmlFor="repositories-id" className="mt-3">
+                    Repositories
+                </Label>
                 <RepositoriesField
                     id="repositories-id"
                     autoFocus={true}
