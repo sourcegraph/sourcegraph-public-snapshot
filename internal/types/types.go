@@ -815,7 +815,7 @@ var (
 type Role struct {
 	ID        int32
 	Name      string
-	ReadOnly  bool
+	System    bool
 	CreatedAt time.Time
 	DeletedAt time.Time
 }

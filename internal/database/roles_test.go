@@ -71,7 +71,7 @@ func TestRoleList(t *testing.T) {
 
 	t.Run("readonly roles", func(t *testing.T) {
 		allReadOnlyRoles, err := store.List(ctx, RolesListOptions{
-			ReadOnly: true,
+			System: true,
 		})
 		assert.NoError(t, err)
 		assert.Len(t, allReadOnlyRoles, numberOfDefaultRoles)

@@ -16,14 +16,14 @@ import (
 var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.id"),
 	sqlf.Sprintf("roles.name"),
-	sqlf.Sprintf("roles.readonly"),
+	sqlf.Sprintf("roles.system"),
 	sqlf.Sprintf("roles.created_at"),
 	sqlf.Sprintf("roles.deleted_at"),
 }
 
 var roleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
-	sqlf.Sprintf("readonly"),
+	sqlf.Sprintf("system"),
 }
 
 type RoleStore interface {
@@ -32,7 +32,7 @@ type RoleStore interface {
 	// Count counts all roles in the database.
 	Count(ctx context.Context, opts RolesListOptions) (int, error)
 	// Create inserts the given role into the database.
-	Create(ctx context.Context, name string, readonly bool) (*types.Role, error)
+	Create(ctx context.Context, name string, system bool) (*types.Role, error)
 	// Delete removes an existing role from the database.
 	Delete(ctx context.Context, opts DeleteRoleOpts) error
 	// Get returns the role matching the given ID or name provided. If no such role exists,
@@ -60,7 +60,7 @@ type (
 
 type RolesListOptions struct {
 	*LimitOffset
-	ReadOnly bool
+	System bool
 }
 
 type RoleNotFoundErr struct {
@@ -125,7 +125,7 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 	if err := sc.Scan(
 		&role.ID,
 		&role.Name,
-		&role.ReadOnly,
+		&role.System,
 		&role.CreatedAt,
 		&dbutil.NullTime{Time: &role.DeletedAt},
 	); err != nil {
@@ -162,8 +162,8 @@ WHERE %s
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
 	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
-	if opts.ReadOnly {
-		conds = append(conds, sqlf.Sprintf("readonly IS TRUE"))
+	if opts.System {
+		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
 	}
 
 	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(conds, " AND "), orderByQuery)
@@ -197,12 +197,12 @@ INSERT INTO
 
 `
 
-func (r *roleStore) Create(ctx context.Context, name string, readonly bool) (_ *types.Role, err error) {
+func (r *roleStore) Create(ctx context.Context, name string, system bool) (_ *types.Role, err error) {
 	q := sqlf.Sprintf(
 		roleCreateQueryFmtStr,
 		sqlf.Join(roleInsertColumns, ", "),
 		name,
-		readonly,
+		system,
 		// Returning
 		sqlf.Join(roleColumns, ", "),
 	)
@@ -250,7 +250,7 @@ const roleDeleteQueryFmtStr = `
 UPDATE roles
 SET
 	deleted_at = NOW()
-WHERE id = %s AND NOT readonly
+WHERE id = %s AND NOT system
 `
 
 func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
@@ -258,7 +258,7 @@ func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {
 		return errors.New("missing id from sql query")
 	}
 
-	// We don't allow deletion of readonly roles such as DEFAULT & SITE_ADMINISTRATOR
+	// We don't allow deletion of system roles such as USER & SITE_ADMINISTRATOR
 	q := sqlf.Sprintf(roleDeleteQueryFmtStr, opts.ID)
 	result, err := r.ExecResult(ctx, q)
 	if err != nil {
