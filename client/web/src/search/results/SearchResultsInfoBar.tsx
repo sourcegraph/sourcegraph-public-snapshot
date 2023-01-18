@@ -132,6 +132,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
             canCreateBatchChangeFromQuery,
+            isSourcegraphDotComOrLocalInstall,
         ]
     )
 
