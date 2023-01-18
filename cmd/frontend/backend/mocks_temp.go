@@ -41,6 +41,9 @@ type MockReposService struct {
 	// GetInventoryFunc is an instance of a mock function object controlling
 	// the behavior of the method GetInventory.
 	GetInventoryFunc *ReposServiceGetInventoryFunc
+	// GetTagFunc is an instance of a mock function object controlling the
+	// behavior of the method GetTag.
+	GetTagFunc *ReposServiceGetTagFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ReposServiceListFunc
@@ -86,6 +89,11 @@ func NewMockReposService() *MockReposService {
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
+				return
+			},
+		},
+		GetTagFunc: &ReposServiceGetTagFunc{
+			defaultHook: func(context.Context, *types.Repo, api.CommitID) (r0 *gitdomain.Tag, r1 error) {
 				return
 			},
 		},
@@ -146,6 +154,11 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.GetInventory")
 			},
 		},
+		GetTagFunc: &ReposServiceGetTagFunc{
+			defaultHook: func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error) {
+				panic("unexpected invocation of MockReposService.GetTag")
+			},
+		},
 		ListFunc: &ReposServiceListFunc{
 			defaultHook: func(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
 				panic("unexpected invocation of MockReposService.List")
@@ -191,6 +204,9 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: i.GetInventory,
+		},
+		GetTagFunc: &ReposServiceGetTagFunc{
+			defaultHook: i.GetTag,
 		},
 		ListFunc: &ReposServiceListFunc{
 			defaultHook: i.List,
@@ -860,6 +876,116 @@ func (c ReposServiceGetInventoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ReposServiceGetInventoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ReposServiceGetTagFunc describes the behavior when the GetTag method of
+// the parent MockReposService instance is invoked.
+type ReposServiceGetTagFunc struct {
+	defaultHook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error)
+	hooks       []func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error)
+	history     []ReposServiceGetTagFuncCall
+	mutex       sync.Mutex
+}
+
+// GetTag delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockReposService) GetTag(v0 context.Context, v1 *types.Repo, v2 api.CommitID) (*gitdomain.Tag, error) {
+	r0, r1 := m.GetTagFunc.nextHook()(v0, v1, v2)
+	m.GetTagFunc.appendCall(ReposServiceGetTagFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetTag method of the
+// parent MockReposService instance is invoked and the hook queue is empty.
+func (f *ReposServiceGetTagFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetTag method of the parent MockReposService instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ReposServiceGetTagFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ReposServiceGetTagFunc) SetDefaultReturn(r0 *gitdomain.Tag, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ReposServiceGetTagFunc) PushReturn(r0 *gitdomain.Tag, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error) {
+		return r0, r1
+	})
+}
+
+func (f *ReposServiceGetTagFunc) nextHook() func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Tag, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ReposServiceGetTagFunc) appendCall(r0 ReposServiceGetTagFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ReposServiceGetTagFuncCall objects
+// describing the invocations of this function.
+func (f *ReposServiceGetTagFunc) History() []ReposServiceGetTagFuncCall {
+	f.mutex.Lock()
+	history := make([]ReposServiceGetTagFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ReposServiceGetTagFuncCall is an object that describes an invocation of
+// method GetTag on an instance of MockReposService.
+type ReposServiceGetTagFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gitdomain.Tag
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ReposServiceGetTagFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ReposServiceGetTagFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

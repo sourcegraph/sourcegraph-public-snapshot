@@ -13,14 +13,14 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -47,14 +47,14 @@ const (
 func createPlaceholderJar(t *testing.T, dir string, contents []byte, jarName, contentPath string) {
 	t.Helper()
 	jarPath, err := os.Create(path.Join(dir, jarName))
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	zipWriter := zip.NewWriter(jarPath)
 	exampleWriter, err := zipWriter.Create(contentPath)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	_, err = exampleWriter.Write(contents)
-	assert.Nil(t, err)
-	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, jarPath.Close())
+	require.Nil(t, err)
+	require.Nil(t, zipWriter.Close())
+	require.Nil(t, jarPath.Close())
 }
 
 func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
@@ -70,21 +70,28 @@ func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName st
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
 	t.Helper()
 	cmd.Dir = workingDir
-	showOut, err := cmd.Output()
-	assert.Nil(t, errors.Wrapf(err, "cmd=%q", cmd))
-	if string(showOut) != expectedOut {
-		t.Fatalf("got %q, want %q", showOut, expectedOut)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("unexpected error running command %q: %v with output: %q", cmd.String(), err, out)
+	}
+	if string(out) != expectedOut {
+		t.Fatalf("unexpected command output: want=%q, got=%q", expectedOut, out)
 	}
 }
 
 func coursierScript(t *testing.T, dir string) string {
-	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 07777)
-	assert.Nil(t, err)
+	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 0o7777)
+	require.Nil(t, err)
 	defer coursierPath.Close()
+
 	script := fmt.Sprintf(`#!/usr/bin/env bash
 ARG="$5"
 CLASSIFIER="$7"
-if [[ "$ARG" =~ "%s" ]]; then
+
+if [[ $1 =~ "complete-dep" ]]; then
+	echo "%s"
+	echo "%s"
+elif [[ "$ARG" =~ "%s" ]]; then
   if [[ "$CLASSIFIER" =~ "sources" ]]; then
     echo "%s"
   else
@@ -101,11 +108,12 @@ else
   exit 1
 fi
 `,
+		exampleVersion, exampleVersion2,
 		exampleVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
 		exampleVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
 	)
 	_, err = coursierPath.WriteString(script)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	return coursierPath.Name()
 }
 
@@ -126,7 +134,7 @@ func TestNoMaliciousFiles(t *testing.T) {
 	dir := t.TempDir()
 
 	extractPath := path.Join(dir, "extracted")
-	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
+	require.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
 	s := jvmPackagesSyncer{
 		config: &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
@@ -141,13 +149,13 @@ func TestNoMaliciousFiles(t *testing.T) {
 	cancel() // cancel now  to prevent any network IO
 	dep := &reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{}}
 	err := s.Download(ctx, extractPath, dep)
-	assert.NotNil(t, err)
+	require.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	_, err = filepath.EvalSymlinks(filepath.Join(extractPath, "symlink"))
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	paths := map[string]int{}
@@ -161,14 +169,14 @@ func TestNoMaliciousFiles(t *testing.T) {
 
 func createMaliciousJar(t *testing.T, name string) {
 	f, err := os.Create(name)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	defer f.Close()
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
 	for _, filepath := range maliciousPaths {
 		_, err = writer.Create(filepath)
-		assert.Nil(t, err)
+		require.Nil(t, err)
 	}
 
 	os.Symlink("/etc/passwd", "symlink")
@@ -178,10 +186,10 @@ func createMaliciousJar(t *testing.T, name string) {
 	header, _ := zip.FileInfoHeader(fi)
 	_, err = writer.CreateRaw(header)
 
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	_, err = writer.Create(harmlessPath)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 }
 
 func TestJVMCloneCommand(t *testing.T) {
@@ -203,9 +211,9 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
+		exec.Command("git", "tag", "--list", "--format=%(*objectname):%(refname:short)"),
 		bareGitDirectory,
-		"v1.0.0\n",
+		"9d94a147bd5968393e189540e50dd4d315704cc3:v1.0.0\n"+gitdomain.EmptyGitObject+":v2.0.0\n",
 	)
 	assertCommandOutput(t,
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
@@ -215,9 +223,9 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
 	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
+		exec.Command("git", "tag", "--list", "--format=%(*objectname):%(refname:short)"),
 		bareGitDirectory,
-		"v1.0.0\nv2.0.0\n", // verify that the v2.0.0 tag got added
+		"9d94a147bd5968393e189540e50dd4d315704cc3:v1.0.0\n7b2e2f2b8910b0ad20a8b0f745ad50eb57ad6d7d:v2.0.0\n",
 	)
 
 	assertCommandOutput(t,
@@ -250,10 +258,5 @@ func TestJVMCloneCommand(t *testing.T) {
 		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
-	)
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
 	)
 }

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -46,14 +46,18 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	dir := GitDir(t.TempDir())
 	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error preparing package clone directory: %v", err)
+	}
 
 	depsService.Add("foo@0.0.1")
 	depsSource.Add("foo@0.0.1")
 
 	t.Run("one version from service", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 
 		s.assertRefs(t, dir, map[string]string{
 			"refs/heads/latest":   "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
@@ -76,7 +80,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	t.Run("two versions, service and config", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 
 		s.assertRefs(t, dir, allVersionsHaveRefs)
 		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
@@ -86,7 +92,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 
 		// v0.0.2 is still present in the git repo because we didn't send a second download request.
 		s.assertRefs(t, dir, allVersionsHaveRefs)
@@ -97,9 +105,10 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
 
 	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
-		err := s.Fetch(ctx, remoteURL, dir, "")
+		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 		// v0.0.1 is still present in the git repo because we didn't send a second download request.
-		require.NoError(t, err)
 		s.assertRefs(t, dir, allVersionsHaveRefs)
 		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
 	})
@@ -112,8 +121,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	}
 
 	t.Run("service version deleted", func(t *testing.T) {
-		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.NoError(t, err)
+		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 
 		s.assertRefs(t, dir, onlyV2Refs)
 		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
@@ -122,8 +132,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	s.configDeps = []string{}
 
 	t.Run("all versions deleted", func(t *testing.T) {
-		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.NoError(t, err)
+		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 
 		s.assertRefs(t, dir, map[string]string{})
 		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
@@ -176,8 +187,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	t.Run("lazy-sync error version via revspec", func(t *testing.T) {
 		// the v0.0.4 tag cannot be created on-demand because it returns a "0.0.4 not found" error
-		err := s.Fetch(ctx, remoteURL, dir, "v0.0.4^0")
-		require.Nil(t, err)
+		if err := s.Fetch(ctx, remoteURL, dir, "v0.0.4^0"); err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
 		// // the 0.0.4 error is silently ignored, we only return the error for v0.0.1.
 		// require.Equal(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unauthorized")
 		// the 0.0.4 dependency was not stored in the database because the download failed.
@@ -335,14 +347,20 @@ func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bar
 	}
 	s.configDeps = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &u, bareGitDirectory)
-	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
+	if err != nil {
+		t.Fatalf("unexpected error building clone command: %s", err)
+	}
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("unexpected error running clone command: %s", err)
+	}
 }
 
 func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
 	t.Helper()
 
-	require.Equal(t, want, depsSource.downloadCount)
+	if diff := cmp.Diff(want, depsSource.downloadCount); diff != "" {
+		t.Fatalf("unexpected difference in download counts (-want +got):\n%s", diff)
+	}
 }
 
 func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
@@ -360,6 +378,11 @@ func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string
 		have[fs[1]] = fs[0]
 	}
 
-	require.NoError(t, sc.Err())
-	require.Equal(t, want, have)
+	if sc.Err() != nil {
+		t.Fatalf("unexpected error while scanning: %v", sc.Err())
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("unexpected difference in git refs (-want +got):\n%s", diff)
+	}
 }
