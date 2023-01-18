@@ -1,13 +1,19 @@
 import { Optional } from 'utility-types'
 
-import { MultiSelectState } from '@sourcegraph/wildcard'
-
 import { BatchChangeState } from '../../graphql-operations'
 
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 import { TourListState } from './tourState'
+
+// Prior to this type we store in settings list of MultiSelectState
+// we no longer use MultiSelect UI but for backward compatibility we still
+// have to store and parse the old version of batch changes filters
+export interface LegacyBatchChangesFilter {
+    label: string
+    value: BatchChangeState
+}
 
 /**
  * Schema for temporary settings.
@@ -31,7 +37,7 @@ export interface TemporarySettingsSchema {
     'user.themePreference': string
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
-    'batches.defaultListFilters': MultiSelectState<BatchChangeState>
+    'batches.defaultListFilters': LegacyBatchChangesFilter[]
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean

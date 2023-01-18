@@ -89,7 +89,7 @@ func main() {
 				Type:              "branch",
 				DiffStatAdded:     5,
 				DiffStatDeleted:   5,
-				BatchSpecID:       1,
+				BatchSpecID:       2,
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",

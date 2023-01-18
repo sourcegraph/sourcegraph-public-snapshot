@@ -1,18 +1,13 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
 import { isEqual } from 'lodash'
-import { BehaviorSubject, Observable } from 'rxjs'
-import { CodeEditor, TextDocumentDecoration } from 'sourcegraph'
+import { BehaviorSubject } from 'rxjs'
+import { CodeEditor } from 'sourcegraph'
 
-import { Range, Selection } from '@sourcegraph/extension-api-classes'
-import * as clientType from '@sourcegraph/extension-api-types'
+import { Selection } from '@sourcegraph/extension-api-classes'
 
-import type { TextDocumentDecorationType } from '../../../codeintel/legacy-extensions/api'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
 
-import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
-
-const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
 export class ExtensionCodeEditor implements CodeEditor, ProxyMarked {
@@ -45,28 +40,6 @@ export class ExtensionCodeEditor implements CodeEditor, ProxyMarked {
         return this.selectionsChanges.value
     }
 
-    private _decorationsByType = new Map<TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
-
-    private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
-
-    public get mergedDecorations(): Observable<clientType.TextDocumentDecoration[]> {
-        return this._mergedDecorations
-    }
-
-    public setDecorations(
-        decorationType: TextDocumentDecorationType | null,
-        decorations: TextDocumentDecoration[]
-    ): void {
-        // Backcompat: extensions developed against an older version of the API
-        // may not supply a decorationType
-        decorationType = decorationType || DEFAULT_DECORATION_TYPE
-        // Replace previous decorations for this decorationType
-        this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
-        this._mergedDecorations.next(
-            [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
-        )
-    }
-
     public update(data: Pick<CodeEditorData, 'selections'>): void {
         const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
 
@@ -89,13 +62,3 @@ const isEmptyObjectDeep = (value: any): boolean =>
         : typeof value === 'object' && value !== null
         ? Object.values(value).every(isEmptyObjectDeep)
         : !value
-
-const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
-    isEmptyObjectDeep(contents)
-
-function fromTextDocumentDecoration(decoration: TextDocumentDecoration): clientType.TextDocumentDecoration {
-    return {
-        ...decoration,
-        range: (decoration.range as Range).toJSON(),
-    }
-}

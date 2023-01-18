@@ -24,6 +24,16 @@ interface GitLabExternalData {
     web_url: string
 }
 
+interface BitbucketCloudExternalData {
+    display_name: string
+    username: string
+    links: {
+        self: {
+            href: string
+        }
+    }
+}
+
 export interface SamlExternalData {
     Values: {
         emailaddress?: Attribute
@@ -148,6 +158,21 @@ const getNormalizedAccount = (
                             userName: gitlabExternalData.name,
                             userLogin: gitlabExternalData.username,
                             userUrl: gitlabExternalData.web_url,
+                        },
+                    }
+                }
+                break
+            case 'bitbucketCloud':
+                {
+                    const bbCloudExternalData = accountExternalData as BitbucketCloudExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            // map Bitbucket Cloud fields
+                            userName: bbCloudExternalData.display_name,
+                            userLogin: bbCloudExternalData.username,
+                            userUrl: bbCloudExternalData.links.self.href,
                         },
                     }
                 }

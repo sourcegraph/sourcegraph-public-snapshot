@@ -134,13 +134,17 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	return g.Wait()
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+func (cs *CommitSearcher) gitArgs() []string {
 	revArgs := revsToGitArgs(cs.Revisions)
 	args := append(logArgs, revArgs...)
 	if cs.IncludeModifiedFiles {
-		args = append(args, "--name-only")
+		args = append(args, "--name-status")
 	}
-	cmd := exec.CommandContext(ctx, "git", args...)
+	return args
+}
+
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -352,6 +356,16 @@ func (c *CommitScanner) Scan() bool {
 		return false
 	}
 
+	// Filter out empty modified files, which can happen due to how
+	// --name-status formats its output. Also trim spaces on the files
+	// for the same reason.
+	modifiedFiles := parts[11:11]
+	for _, part := range parts[11:] {
+		if len(part) > 0 {
+			modifiedFiles = append(modifiedFiles, bytes.TrimSpace(part))
+		}
+	}
+
 	c.next = &RawCommit{
 		Hash:           parts[0],
 		RefNames:       parts[1],
@@ -364,7 +378,7 @@ func (c *CommitScanner) Scan() bool {
 		CommitterDate:  parts[8],
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
-		ModifiedFiles:  parts[11:],
+		ModifiedFiles:  modifiedFiles,
 	}
 
 	return true

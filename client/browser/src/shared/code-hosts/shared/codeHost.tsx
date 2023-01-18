@@ -46,7 +46,6 @@ import {
     Hoverifier,
     HoverState,
     MaybeLoadingResult,
-    DiffPart,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -59,11 +58,10 @@ import {
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
-import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
@@ -116,7 +114,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
-import { applyDecorations, initializeExtensions, renderCommandPalette } from './extensions'
+import { initializeExtensions, renderCommandPalette } from './extensions'
 import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
@@ -1256,7 +1254,6 @@ export async function handleCodeHost({
                         // For diffs, both editors are created (for head and base)
                         // but only one of them is passed into
                         // the `scope` of the CodeViewToolbar component.
-                        // Both are used to listen for text decorations.
                         const [headEditor, baseEditor] = await Promise.all([
                             initializeModelAndViewerForFileInfo(diffOrFileInfo.head),
                             initializeModelAndViewerForFileInfo(diffOrFileInfo.base),
@@ -1317,62 +1314,6 @@ export async function handleCodeHost({
                         target.closest('.sourcegraph-extension-element') !== null
                             ? null
                             : codeViewEvent.dom.getCodeElementFromTarget(target),
-                }
-
-                const applyDecorationsForFileInfo = (editor: CodeEditorWithPartialModel, diffPart?: DiffPart): void => {
-                    let decorationsByLine: DecorationMapByLine = new Map()
-                    let previousIsLightTheme = true
-                    const update = (decorations?: TextDocumentDecoration[] | null, isLightTheme?: boolean): void => {
-                        try {
-                            decorationsByLine = applyDecorations(
-                                domFunctions,
-                                element,
-                                decorations ?? [],
-                                decorationsByLine,
-                                isLightTheme ?? true,
-                                previousIsLightTheme,
-                                diffPart
-                            )
-                            previousIsLightTheme = isLightTheme ?? true
-                        } catch (error) {
-                            console.error('Could not apply decorations to code view', codeViewEvent.element, error)
-                        }
-                    }
-
-                    codeViewEvent.subscriptions.add(
-                        combineLatest([
-                            from(extensionsController.extHostAPI).pipe(
-                                switchMap(extensionHostAPI =>
-                                    wrapRemoteObservable(
-                                        extensionHostAPI.getTextDecorations({
-                                            viewerId: editor.viewerId,
-                                        })
-                                    )
-                                )
-                            ),
-                            codeHost.isLightTheme ?? of(true),
-                        ])
-                            // Make sure extensions get cleaned up un unsubscription
-                            .pipe(finalize(update))
-                            // The nested subscribe cannot be replaced with a switchMap()
-                            // We manage the subscription correctly.
-                            // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
-                    )
-                }
-
-                // Apply decorations coming from extensions
-                if (!minimalUI) {
-                    if ('blob' in diffOrFileInfoWithEditor) {
-                        applyDecorationsForFileInfo(diffOrFileInfoWithEditor.blob.editor)
-                    } else {
-                        if (diffOrFileInfoWithEditor.head) {
-                            applyDecorationsForFileInfo(diffOrFileInfoWithEditor.head.editor, 'head')
-                        }
-                        if (diffOrFileInfoWithEditor.base) {
-                            applyDecorationsForFileInfo(diffOrFileInfoWithEditor.base.editor, 'base')
-                        }
-                    }
                 }
 
                 // Add hover code navigation

@@ -4,11 +4,11 @@ import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/branded'
 // The experimental search input should be shown on the search home page
-// eslint-disable-next-line  no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
+// eslint-disable-next-line no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -19,6 +19,7 @@ import {
     canSubmitSearch,
     QueryState,
     SearchModeProps,
+    SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -48,7 +49,8 @@ interface Props
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        SearchContextInputProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -70,9 +72,7 @@ const queryStateSelector = (
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -128,8 +128,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     ) : (
         <SearchBox
             {...props}
-            editorComponent={editorComponent}
-            showSearchContext={showSearchContext}
+            showSearchContext={props.searchContextsEnabled}
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}

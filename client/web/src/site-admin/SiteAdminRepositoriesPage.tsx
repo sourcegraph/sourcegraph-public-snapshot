@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { mdiCloudDownload, mdiCog } from '@mdi/js'
+import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -21,6 +21,7 @@ import {
     Text,
     Tooltip,
     ErrorAlert,
+    LinkOrSpan,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
@@ -71,6 +72,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
+                <Tooltip content="Repository code graph data">
+                    <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                    </Button>
+                </Tooltip>{' '}
                 <Tooltip content="Repository settings">
                     <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
@@ -84,6 +90,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error syncing repository:</Text>
                     <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
+        {node.mirrorInfo.isCorrupted && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="danger">
+                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
                 </Alert>
             </div>
         )}
@@ -183,6 +196,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 tooltip: 'Show only repositories that have failed to fetch or clone',
                 args: { failedFetch: true },
             },
+            {
+                label: 'Corrupted',
+                value: 'corrupted',
+                tooltip: 'Show only repositories which are corrupt',
+                args: { corrupted: true },
+            },
         ],
     },
 ]
@@ -231,7 +250,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         if (!data) {
             return undefined
         }
-        return [
+        const items: ValueLegendListProps['items'] = [
             {
                 value: data.repositoryStats.total,
                 description: 'Repositories',
@@ -280,6 +299,18 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
+        if (data.repositoryStats.corrupted > 0) {
+            items.push({
+                value: data.repositoryStats.corrupted,
+                description: 'Corrupted',
+                color: 'var(--danger)',
+                position: 'right',
+                tooltip:
+                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
+                filter: { name: 'status', value: 'corrupted' },
+            })
+        }
+        return items
     }, [data])
 
     const {
@@ -381,20 +412,22 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
-                <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                    className="mb-0"
-                    listClassName="list-group list-group-flush mb-0"
-                    summaryClassName="mt-2"
-                    withCenteredSummary={true}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={queryRepositories}
-                    nodeComponent={RepositoryNode}
-                    inputClassName="ml-2 flex-1"
-                    filters={filters}
-                    history={history}
-                    location={location}
-                />
+                {extSvcs && (
+                    <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
+                        className="mb-0"
+                        listClassName="list-group list-group-flush mb-0"
+                        summaryClassName="mt-2"
+                        withCenteredSummary={true}
+                        noun="repository"
+                        pluralNoun="repositories"
+                        queryConnection={queryRepositories}
+                        nodeComponent={RepositoryNode}
+                        inputClassName="ml-2 flex-1"
+                        filters={filters}
+                        history={history}
+                        location={location}
+                    />
+                )}
             </Container>
         </div>
     )

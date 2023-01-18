@@ -62,8 +62,6 @@ export function createExtensionHostState(
             readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
         >([]),
 
-        fileDecorationProviders: new BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>([]),
-
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
 
@@ -127,9 +125,6 @@ export interface ExtensionHostState {
     locationProviders: BehaviorSubject<
         readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
     >
-
-    // Decorations
-    fileDecorationProviders: BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>
 
     // Context + Contributions
     context: BehaviorSubject<Context>

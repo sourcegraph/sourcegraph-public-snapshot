@@ -8,10 +8,9 @@ import (
 
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -39,13 +38,25 @@ type Worker[T Record] struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
+	jobName          string
+	recorder         *recorder.Recorder
 }
+
+// dummyType is only for this compile-time test.
+type dummyType struct{}
+
+func (d dummyType) RecordID() int { return 0 }
+
+var _ recorder.Recordable = &Worker[dummyType]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
 	// emitted metrics. The worker constructor will fail if this field is not
 	// supplied.
 	Name string
+
+	// Description describes the worker for logging purposes.
+	Description string
 
 	// WorkerHostname denotes the hostname of the instance/container the worker
 	// is running on. If not supplied, it will be derived from either the `HOSTNAME`
@@ -128,6 +139,9 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker[T]) Start() {
+	if w.recorder != nil {
+		go w.recorder.LogStart(w)
+	}
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -235,9 +249,12 @@ loop:
 }
 
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
-// context passed to the dequeue operations (but not the handler perations). This method blocks until
+// context passed to the dequeue operations (but not the handler operations). This method blocks until
 // all handler goroutines have exited.
 func (w *Worker[T]) Stop() {
+	if w.recorder != nil {
+		go w.recorder.LogStop(w)
+	}
 	w.dequeueCancel()
 	w.Wait()
 }
@@ -370,10 +387,15 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
+	start := time.Now()
 	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
+	}
+	duration := time.Since(start)
+	if w.recorder != nil {
+		go w.recorder.LogRun(w, duration, handleErr)
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
@@ -414,4 +436,32 @@ func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeueable bool, extra
 	}
 
 	return true, nil, nil
+}
+
+func (w *Worker[T]) Name() string {
+	return w.options.Name
+}
+
+func (w *Worker[T]) Type() recorder.RoutineType {
+	return recorder.DBBackedRoutine
+}
+
+func (w *Worker[T]) JobName() string {
+	return w.jobName
+}
+
+func (w *Worker[T]) SetJobName(jobName string) {
+	w.jobName = jobName
+}
+
+func (w *Worker[T]) Description() string {
+	return w.options.Description
+}
+
+func (w *Worker[T]) Interval() time.Duration {
+	return w.options.Interval
+}
+
+func (w *Worker[T]) RegisterRecorder(r *recorder.Recorder) {
+	w.recorder = r
 }

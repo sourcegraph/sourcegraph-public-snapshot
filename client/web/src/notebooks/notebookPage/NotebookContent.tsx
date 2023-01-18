@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -47,7 +47,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
-        showSearchContext,
         settingsCascade,
         platformContext,
         outlineContainerElement,
@@ -88,7 +87,6 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}
-                showSearchContext={showSearchContext}
                 settingsCascade={settingsCascade}
                 platformContext={platformContext}
                 isReadOnly={!viewerCanManage}

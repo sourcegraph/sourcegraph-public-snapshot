@@ -58,38 +58,9 @@ load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
-    data = [
-        # TODO: can remove these package.json labels after switching to a pnpm lockfile.
-        "//:package.json",
-        "//:client/branded/package.json",
-        "//:client/browser/package.json",
-        "//:client/build-config/package.json",
-        "//:client/client-api/package.json",
-        "//:client/codeintellify/package.json",
-        "//:client/common/package.json",
-        "//:client/eslint-plugin-wildcard/package.json",
-        "//:client/extension-api-types/package.json",
-        "//:client/extension-api/package.json",
-        "//:client/http-client/package.json",
-        "//:client/jetbrains/package.json",
-        "//:client/observability-client/package.json",
-        "//:client/observability-server/package.json",
-        "//:client/search-ui/package.json",
-        "//:client/shared/package.json",
-        "//:client/storybook/package.json",
-        "//:client/template-parser/package.json",
-        "//:client/testing/package.json",
-        "//:client/web/package.json",
-        "//:client/wildcard/package.json",
-        "//:client/vscode/package.json",
-        "//:dev/release/package.json",
-        "//:pnpm-workspace.yaml",
-    ],
-    npmrc = "//:.npmrc",
     pnpm_lock = "//:pnpm-lock.yaml",
-    update_pnpm_lock = True,
+    npmrc = "//:.npmrc",
     verify_node_modules_ignored = "//:.bazelignore",
-    yarn_lock = "//:yarn.lock",
 )
 
 # rules_ts npm setup ============================

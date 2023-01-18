@@ -20,7 +20,7 @@ var (
 )
 
 func goLint() *linter {
-	return runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
+	check := runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
 		return root.Run(run.Bash(ctx, "dev/check/go-lint.sh")).
 			Map(func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
 				// Ignore go mod download stuff
@@ -31,6 +31,8 @@ func goLint() *linter {
 			}).
 			StreamLines(out.Write)
 	})
+	check.LegacyAnnotations = true
+	return check
 }
 
 func lintSGExit() *linter {

@@ -9,8 +9,8 @@ import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -33,6 +33,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
+import { NotebookProps } from '../notebooks'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
 import { RouteDescriptor } from '../util/contributions'
@@ -115,7 +116,8 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        NotebookProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -274,6 +276,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
+        if (!window.context.enableLegacyExtensions) {
+            return true
+        }
         const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
         return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
     }, [props.repoContainerRoutes, props.match])

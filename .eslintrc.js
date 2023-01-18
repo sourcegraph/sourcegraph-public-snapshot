@@ -57,12 +57,6 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
-            name: 'zustand',
-            importNames: ['default'],
-            message:
-              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
-          },
-          {
             name: 'chromatic/isChromatic',
             message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
           },
@@ -75,7 +69,7 @@ const config = {
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
           {
-            group: ['@sourcegraph/search-ui/src/experimental'],
+            group: ['@sourcegraph/branded/src/search-ui/experimental'],
             message:
               'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',
           },
@@ -89,7 +83,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/shared/src/*',
               '!@sourcegraph/shared/src/testing/*',
               '!@sourcegraph/web/src/SourcegraphWebApp.scss',
-              '!@sourcegraph/search-ui/src/experimental',
+              '!@sourcegraph/branded/src/search-ui/experimental',
               '!@sourcegraph/*/src/testing',
               '!@sourcegraph/*/src/stories',
             ],

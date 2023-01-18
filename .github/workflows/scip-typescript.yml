@@ -12,10 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7.24.2
+          run_install: false
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Install npm dependencies
-        run: yarn
-      - run: yarn generate
-      - run: yarn dlx -p @sourcegraph/scip-typescript scip-typescript index --yarn-berry-workspaces
+        run: pnpm install --frozen-lockfile
+      - run: pnpm generate
+      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |

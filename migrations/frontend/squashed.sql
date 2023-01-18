@@ -493,17 +493,15 @@ $$;
 CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
-      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
       SELECT
         newtab.shard_id AS shard_id,
         COUNT(*) AS total,
         COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
         COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
         COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
-        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
+        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
       FROM
         newtab
       GROUP BY newtab.shard_id
@@ -514,12 +512,13 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
         not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
         cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
         cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
-        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        corrupted    = grs.corrupted    + (excluded.corrupted    - (SELECT COUNT(*) FILTER(WHERE ot.corrupted_at IS NOT NULL)    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
       ;
 
-      --------------------
-      -- THIS IS UNCHANGED
-      --------------------
+      -------------------------------------------------
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
+      -------------------------------------------------
       WITH moved AS (
         SELECT
           oldtab.shard_id AS shard_id,
@@ -527,7 +526,8 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
           COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,
-          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch
+          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,
+          COUNT(*) FILTER(WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted
         FROM
           oldtab
         JOIN newtab ON newtab.repo_id = oldtab.repo_id
@@ -541,14 +541,15 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
         not_cloned   = grs.not_cloned   - moved.not_cloned,
         cloning      = grs.cloning      - moved.cloning,
         cloned       = grs.cloned       - moved.cloned,
-        failed_fetch = grs.failed_fetch - moved.failed_fetch
+        failed_fetch = grs.failed_fetch - moved.failed_fetch,
+        corrupted    = grs.corrupted    - moved.corrupted
       FROM moved
       WHERE moved.shard_id = grs.shard_id;
 
       -------------------------------------------------
-      -- IMPORTANT: THIS IS CHANGED
+      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`
       -------------------------------------------------
-      WITH diff(not_cloned, cloning, cloned, failed_fetch) AS (
+      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (
           (
             (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
@@ -569,17 +570,24 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
             (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
             -
             (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)
           )
+
         )
       )
-      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)
-      SELECT not_cloned, cloning, cloned, failed_fetch
+      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)
+      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted
       FROM diff
       WHERE
            not_cloned != 0
         OR cloning != 0
         OR cloned != 0
         OR failed_fetch != 0
+        OR corrupted != 0
       ;
 
       RETURN NULL;
@@ -624,7 +632,7 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
       -- Insert diff of changes
-      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch) AS (
+      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted) AS (
         VALUES (
           (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
           (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
@@ -647,12 +655,17 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
             (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.last_error IS NOT NULL)
             -
             (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.corrupted_at IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.corrupted_at IS NOT NULL)
           )
         )
       )
       INSERT INTO
-        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
-      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
+      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted
       FROM diff
       WHERE
            total != 0
@@ -661,6 +674,7 @@ CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
         OR cloning != 0
         OR cloned != 0
         OR failed_fetch != 0
+        OR corrupted != 0
       ;
       RETURN NULL;
   END
@@ -821,7 +835,7 @@ CREATE TABLE batch_changes (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     closed_at timestamp with time zone,
-    batch_spec_id bigint,
+    batch_spec_id bigint NOT NULL,
     last_applier_id bigint,
     last_applied_at timestamp with time zone,
     CONSTRAINT batch_change_name_is_valid CHECK ((name ~ '^[\w.-]+$'::text)),
@@ -1697,8 +1711,11 @@ CREATE TABLE critical_and_site_config (
     type critical_or_site NOT NULL,
     contents text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    author_user_id integer
 );
+
+COMMENT ON COLUMN critical_and_site_config.author_user_id IS 'A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.';
 
 CREATE SEQUENCE critical_and_site_config_id_seq
     START WITH 1
@@ -2175,8 +2192,14 @@ CREATE TABLE gitserver_repos (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_fetched timestamp with time zone DEFAULT now() NOT NULL,
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
-    repo_size_bytes bigint
+    repo_size_bytes bigint,
+    corrupted_at timestamp with time zone,
+    corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL
 );
+
+COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
+
+COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -2184,7 +2207,8 @@ CREATE TABLE gitserver_repos_statistics (
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
-    failed_fetch bigint DEFAULT 0 NOT NULL
+    failed_fetch bigint DEFAULT 0 NOT NULL,
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
@@ -2198,6 +2222,8 @@ COMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories 
 COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';
 
 COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
+
+COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -2838,7 +2864,7 @@ CREATE TABLE lsif_uploads_audit_logs (
     uploaded_at timestamp with time zone NOT NULL,
     indexer text NOT NULL,
     indexer_version text,
-    upload_size integer,
+    upload_size bigint,
     associated_index_id integer,
     transition_columns hstore[],
     reason text DEFAULT ''::text,
@@ -2925,6 +2951,27 @@ CREATE TABLE names (
     org_id integer,
     CONSTRAINT names_check CHECK (((user_id IS NOT NULL) OR (org_id IS NOT NULL)))
 );
+
+CREATE TABLE namespace_permissions (
+    id integer NOT NULL,
+    namespace text NOT NULL,
+    resource_id integer NOT NULL,
+    action text NOT NULL,
+    user_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
+    CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
+);
+
+CREATE SEQUENCE namespace_permissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE namespace_permissions_id_seq OWNED BY namespace_permissions.id;
 
 CREATE TABLE notebook_stars (
     notebook_id integer NOT NULL,
@@ -3132,6 +3179,142 @@ CREATE SEQUENCE out_of_band_migrations_id_seq
     CACHE 1;
 
 ALTER SEQUENCE out_of_band_migrations_id_seq OWNED BY out_of_band_migrations.id;
+
+CREATE TABLE outbound_webhook_event_types (
+    id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text
+);
+
+CREATE SEQUENCE outbound_webhook_event_types_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_event_types_id_seq OWNED BY outbound_webhook_event_types.id;
+
+CREATE TABLE outbound_webhook_jobs (
+    id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text,
+    encryption_key_id text,
+    payload bytea NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_jobs_id_seq OWNED BY outbound_webhook_jobs.id;
+
+CREATE TABLE outbound_webhook_logs (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL,
+    status_code integer NOT NULL,
+    encryption_key_id text,
+    request bytea NOT NULL,
+    response bytea NOT NULL,
+    error bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_logs_id_seq OWNED BY outbound_webhook_logs.id;
+
+CREATE TABLE outbound_webhooks (
+    id bigint NOT NULL,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text,
+    url bytea NOT NULL,
+    secret bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhooks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhooks_id_seq OWNED BY outbound_webhooks.id;
+
+CREATE VIEW outbound_webhooks_with_event_types AS
+ SELECT outbound_webhooks.id,
+    outbound_webhooks.created_by,
+    outbound_webhooks.created_at,
+    outbound_webhooks.updated_by,
+    outbound_webhooks.updated_at,
+    outbound_webhooks.encryption_key_id,
+    outbound_webhooks.url,
+    outbound_webhooks.secret,
+    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object
+           FROM outbound_webhook_event_types
+          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
+   FROM outbound_webhooks;
+
+CREATE TABLE permission_sync_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    repository_id integer,
+    user_id integer,
+    high_priority boolean DEFAULT false NOT NULL,
+    invalidate_caches boolean DEFAULT false NOT NULL,
+    reason text,
+    triggered_by_user_id integer
+);
+
+COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';
+
+COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
+
+CREATE SEQUENCE permission_sync_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE permission_sync_jobs_id_seq OWNED BY permission_sync_jobs.id;
 
 CREATE TABLE permissions (
     id integer NOT NULL,
@@ -3356,7 +3539,8 @@ CREATE TABLE repo_statistics (
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,
     cloned bigint DEFAULT 0 NOT NULL,
-    failed_fetch bigint DEFAULT 0 NOT NULL
+    failed_fetch bigint DEFAULT 0 NOT NULL,
+    corrupted bigint DEFAULT 0 NOT NULL
 );
 
 COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
@@ -3370,6 +3554,8 @@ COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories that are NO
 COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver';
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
+
+COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,
@@ -3929,6 +4115,8 @@ ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id
 
 ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
+ALTER TABLE ONLY namespace_permissions ALTER COLUMN id SET DEFAULT nextval('namespace_permissions_id_seq'::regclass);
+
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
 
 ALTER TABLE ONLY org_invitations ALTER COLUMN id SET DEFAULT nextval('org_invitations_id_seq'::regclass);
@@ -3940,6 +4128,16 @@ ALTER TABLE ONLY orgs ALTER COLUMN id SET DEFAULT nextval('orgs_id_seq'::regclas
 ALTER TABLE ONLY out_of_band_migrations ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_id_seq'::regclass);
 
 ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_errors_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_event_types ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_event_types_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_jobs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
 
@@ -4217,6 +4415,9 @@ ALTER TABLE ONLY lsif_uploads_reference_counts
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_pkey PRIMARY KEY (notebook_id, user_id);
 
@@ -4246,6 +4447,21 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 
 ALTER TABLE ONLY out_of_band_migrations
     ADD CONSTRAINT out_of_band_migrations_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_jobs
+    ADD CONSTRAINT outbound_webhook_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY permission_sync_jobs
+    ADD CONSTRAINT permission_sync_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permissions
     ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
@@ -4321,6 +4537,9 @@ ALTER TABLE ONLY temporary_settings
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
+
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
@@ -4649,6 +4868,24 @@ CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (r
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
 
+CREATE INDEX outbound_webhook_event_types_event_type_idx ON outbound_webhook_event_types USING btree (event_type, scope);
+
+CREATE INDEX outbound_webhook_jobs_state_idx ON outbound_webhook_jobs USING btree (state);
+
+CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_logs USING btree (outbound_webhook_id);
+
+CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
+
+CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
+
+CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
+
+CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING btree (repository_id);
+
+CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
+
+CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
+
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
@@ -4824,7 +5061,7 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_resolution_jobs
-    ADD CONSTRAINT batch_spec_resolution_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE;
+    ADD CONSTRAINT batch_spec_resolution_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
@@ -5063,6 +5300,9 @@ ALTER TABLE ONLY names
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY namespace_permissions
+    ADD CONSTRAINT namespace_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
 ALTER TABLE ONLY notebook_stars
     ADD CONSTRAINT notebook_stars_notebook_id_fkey FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -5101,6 +5341,24 @@ ALTER TABLE ONLY org_stats
 
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_job_id_fkey FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY permission_sync_jobs
+    ADD CONSTRAINT permission_sync_jobs_triggered_by_user_id_fkey FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);

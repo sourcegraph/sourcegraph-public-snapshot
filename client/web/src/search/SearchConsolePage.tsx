@@ -13,7 +13,7 @@ import {
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
@@ -140,7 +140,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 {...props}
                                 allExpanded={false}
                                 results={results}
-                                showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 executedQuery={props.location.search}
                             />

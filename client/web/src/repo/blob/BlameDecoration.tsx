@@ -182,23 +182,34 @@ export const BlameDecoration: React.FunctionComponent<{
                                 <span className={styles.date} data-line-decoration-attachment-content={true}>
                                     {displayInfo.dateString}
                                 </span>
-                                <span className={styles.author} data-line-decoration-attachment-content={true}>
-                                    {blameHunk.author.person ? (
-                                        <UserAvatar
-                                            inline={true}
-                                            className={styles.avatar}
-                                            user={
-                                                blameHunk.author.person.user
-                                                    ? blameHunk.author.person.user
-                                                    : blameHunk.author.person
-                                            }
-                                            size={16}
-                                        />
-                                    ) : (
-                                        `${displayInfo.username}${displayInfo.displayName}`
-                                    )}
-                                </span>
+                                {blameHunk.author.person ? (
+                                    <>
+                                        <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                            <UserAvatar
+                                                inline={true}
+                                                className={styles.avatar}
+                                                style={{ top: 1 }}
+                                                user={
+                                                    blameHunk.author.person.user
+                                                        ? blameHunk.author.person.user
+                                                        : blameHunk.author.person
+                                                }
+                                                size={16}
+                                            />
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                        {`${displayInfo.username}${displayInfo.displayName}`}
+                                    </span>
+                                )}
                                 <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                    {blameHunk.author.person ? (
+                                        <>
+                                            {`${displayInfo.username}${displayInfo.displayName}`.split(' ')[0]}
+                                            {' • '}
+                                        </>
+                                    ) : null}
                                     {displayInfo.message}
                                 </span>
                             </>

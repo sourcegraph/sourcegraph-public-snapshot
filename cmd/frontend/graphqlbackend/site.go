@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -178,10 +179,12 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 	prev.Site = unredacted
-	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev, args.LastID); err != nil {
+
+	server := globals.ConfigurationServerFrontendOnly
+	if err := server.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
 		return false, err
 	}
-	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+	return server.NeedServerRestart(), nil
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

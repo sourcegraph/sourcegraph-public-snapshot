@@ -66,6 +66,7 @@ export const createFileExternalLinksResult = (
 
 export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => ({
     repository: {
+        id: 'a',
         changesetsStats: {
             open: 2,
             merged: 4,

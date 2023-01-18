@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -33,6 +34,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
+
+// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - Permissions user mapping (aka explicit permissions API) is enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisabled() bool {
+	return globals.PermissionsUserMapping().Enabled ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		conf.Get().DisableAutoCodeHostSyncs
+}
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
@@ -161,9 +173,9 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 		return
 	}
 
-	repos := make([]scheduledRepo, numberOfRepos)
+	repositories := make([]scheduledRepo, numberOfRepos)
 	for i := range repoIDs {
-		repos[i] = scheduledRepo{
+		repositories[i] = scheduledRepo{
 			priority: priorityHigh,
 			repoID:   repoIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
@@ -172,7 +184,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	}
 
 	scheduleReposCounter.Add(float64(numberOfRepos))
-	s.scheduleRepos(ctx, repos...)
+	s.scheduleRepos(ctx, repositories...)
 	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
 	s.collectQueueSize()
 }
@@ -1140,24 +1152,17 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	return schedule, nil
 }
 
-// isDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - Permissions user mapping (aka explicit permissions API) is enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func (s *PermsSyncer) isDisabled() bool {
-	return globals.PermissionsUserMapping().Enabled ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
-}
+func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 
 // runSchedule periodically looks for least updated records and schedule syncs
 // for them.
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
-	logger.Debug("started")
+	logger.Info("started")
 	defer logger.Info("stopped")
+
+	store := s.db.PermissionSyncJobs()
 
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
@@ -1170,7 +1175,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() {
-			logger.Debug("disabled")
+			logger.Info("disabled")
 			continue
 		}
 
@@ -1179,8 +1184,45 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			logger.Error("failed to compute schedule", log.Error(err))
 			continue
 		}
-		s.scheduleUsers(ctx, schedule.Users...)
-		s.scheduleRepos(ctx, schedule.Repos...)
+
+		// TODO(sashaostrikov): Yes, you're right. This is obviously spaghetti code:
+		// `PermsSyncer` creates jobs that a worker picks up and then hands to
+		// PermSyncer.
+		// The idea is that once the worker becomes the default then this whole
+		// method, `runSchedule`, will disappear and become a background
+		// routine being run in `cmd/worker`.
+		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger)
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("database-backed perm syncer", workerEnabled))
+
+		if workerEnabled {
+			for _, u := range schedule.Users {
+				reason := permssync.ReasonUserOutdatedPermissions
+				if u.noPerms {
+					reason = permssync.ReasonUserNoPermissions
+				}
+				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt, Reason: reason}
+				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
+					logger.Error("failed to create user sync job", log.Error(err))
+					continue
+				}
+			}
+
+			for _, r := range schedule.Repos {
+				reason := permssync.ReasonRepoOutdatedPermissions
+				if r.noPerms {
+					reason = permssync.ReasonRepoNoPermissions
+				}
+				opts := database.PermissionSyncJobOpts{NextSyncAt: r.nextSyncAt, Reason: reason}
+				if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
+					logger.Error("failed to create repo sync job", log.Error(err))
+					continue
+				}
+			}
+		} else {
+			s.scheduleUsers(ctx, schedule.Users...)
+			s.scheduleRepos(ctx, schedule.Repos...)
+		}
+
 		s.collectMetrics(ctx)
 	}
 }

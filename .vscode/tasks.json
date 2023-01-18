@@ -35,7 +35,7 @@
     },
     {
       "label": "stylelint",
-      "command": "yarn",
+      "command": "pnpm",
       "args": ["run", "lint:css:all", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",

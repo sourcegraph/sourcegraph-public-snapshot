@@ -1,24 +1,4 @@
 """
-A list of insights.
-"""
-type InsightConnection {
-    """
-    A list of insights.
-    """
-    nodes: [Insight!]!
-
-    """
-    The total number of insights in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
 An insight about code.
 """
 type Insight {
@@ -207,6 +187,14 @@ extend type Query {
         first: Int
         after: String
         id: ID
+        """
+        Allow you to exclude subset of insights by their ids.
+        """
+        excludeIds: [ID!]
+        """
+        Allow you to search insight views by their title or data series labels.
+        """
+        find: String
         isFrozen: Boolean
         filters: InsightViewFiltersInput
         seriesDisplayOptions: SeriesDisplayOptionsInput
@@ -367,6 +355,11 @@ type InsightViewConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int
 }
 
 """
@@ -686,6 +679,10 @@ type SeriesDisplayOptions {
     Max number of series to return.
     """
     limit: Int
+    """
+    Max number of samples to return for all the series on the view.
+    """
+    numSamples: Int
 }
 
 """
@@ -700,6 +697,10 @@ input SeriesDisplayOptionsInput {
     Max number of series to return.
     """
     limit: Int
+    """
+    Max number of samples to return.
+    """
+    numSamples: Int
 }
 
 """

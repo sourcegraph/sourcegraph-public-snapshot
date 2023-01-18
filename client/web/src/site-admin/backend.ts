@@ -3,14 +3,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
-import { createAggregateError, repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-    isErrorGraphQLResult,
-    useQuery,
-} from '@sourcegraph/http-client'
+import { repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -49,7 +43,6 @@ import {
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
     SiteAdminSettingsCascadeFields,
-    SiteMonitoringStatisticsResult,
     SiteResult,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
@@ -121,6 +114,10 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        isCorrupted
+        corruptionLogs {
+            timestamp
+        }
         lastError
         byteSize
         shard
@@ -168,6 +165,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
+                $corrupted: Boolean
                 $cloneStatus: CloneStatus
                 $orderBy: RepositoryOrderBy
                 $descending: Boolean
@@ -179,6 +177,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
+                    corrupted: $corrupted
                     cloneStatus: $cloneStatus
                     orderBy: $orderBy
                     descending: $descending
@@ -200,6 +199,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
+            corrupted: args.corrupted ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
@@ -285,8 +285,44 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
+export const BACKGROUND_JOBS = gql`
+    query BackgroundJobs($recentRunCount: Int) {
+        backgroundJobs(recentRunCount: $recentRunCount) {
+            nodes {
+                name
 
-export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+                routines {
+                    name
+                    type
+                    description
+                    intervalMs
+                    instances {
+                        hostName
+                        lastStartedAt
+                        lastStoppedAt
+                    }
+                    recentRuns {
+                        at
+                        hostName
+                        durationMs
+                        errorMessage
+                    }
+                    stats {
+                        since
+                        runCount
+                        errorCount
+                        minDurationMs
+                        avgDurationMs
+                        maxDurationMs
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
+export const BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -547,6 +583,7 @@ export function randomizeUserPassword(
             mutation RandomizeUserPassword($user: ID!) {
                 randomizeUserPassword(user: $user) {
                     resetPasswordURL
+                    emailSent
                 }
             }
         `,
@@ -614,52 +651,6 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
     return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
-    )
-}
-
-/**
- * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
- *
- * @param days number of days of data to fetch
- */
-export function fetchMonitoringStats(
-    days: number
-): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
-    // more details in /internal/srcprometheus.ErrPrometheusUnavailable
-    const errorPrometheusUnavailable = 'prometheus API is unavailable'
-    return queryGraphQL<SiteMonitoringStatisticsResult>(
-        gql`
-            query SiteMonitoringStatistics($days: Int!) {
-                site {
-                    monitoringStatistics(days: $days) {
-                        alerts {
-                            serviceName
-                            name
-                            timestamp
-                            average
-                            owner
-                        }
-                    }
-                }
-            }
-        `,
-        { days }
-    ).pipe(
-        map(result => {
-            if (isErrorGraphQLResult(result)) {
-                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
-                    return false
-                }
-                throw createAggregateError(result.errors)
-            }
-            return result.data
-        }),
-        map(data => {
-            if (data) {
-                return data.site.monitoringStatistics
-            }
-            return data
-        })
     )
 }
 
@@ -750,6 +741,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            corrupted
             indexed
         }
     }

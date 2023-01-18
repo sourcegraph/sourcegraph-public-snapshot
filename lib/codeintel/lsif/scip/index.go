@@ -1,6 +1,7 @@
 package scip
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -8,11 +9,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 )
 
+const unknownIndexer = "lsif-void"
+
 // ConvertLSIF converts the given raw LSIF reader into a SCIP index.
-func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerName string) (*scip.Index, error) {
-	groupedBundleData, err := conversion.Correlate(ctx, r, root, nil)
+func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*scip.Index, error) {
+	var buf bytes.Buffer
+	indexerName, err := upload.ReadIndexerName(io.TeeReader(r, &buf))
+	if err != nil {
+		indexerName = unknownIndexer
+	}
+
+	groupedBundleData, err := conversion.Correlate(ctx, io.MultiReader(bytes.NewReader(buf.Bytes()), r), root, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -22,30 +32,28 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerNa
 		resultChunks[resultChunk.Index] = resultChunk.ResultChunk
 	}
 
-	definitionMatcher := func(
-		targetPath string,
-		targetRangeID precise.ID,
-		definitionResultID precise.ID,
-	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, groupedBundleData.Meta.NumResultChunks)]
+	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+		if resultID == "" {
+			return nil
+		}
+
+		resultChunk, ok := resultChunks[precise.HashKey(resultID, groupedBundleData.Meta.NumResultChunks)]
 		if !ok {
-			return false
+			return nil
 		}
 
-		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[definitionResultID] {
-			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == targetRangeID {
-				return true
-			}
+		for _, pair := range resultChunk.DocumentIDRangeIDs[resultID] {
+			rangeIDs = append(rangeIDs, pair.RangeID)
 		}
 
-		return false
+		return rangeIDs
 	}
 
 	var documents []*scip.Document
 	for document := range groupedBundleData.Documents {
 		documents = append(documents, ConvertLSIFDocument(
 			uploadID,
-			definitionMatcher,
+			targetRangeFetcher,
 			indexerName,
 			document.Path,
 			document.Document,
@@ -55,7 +63,7 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerNa
 	metadata := &scip.Metadata{
 		Version:              0,
 		ToolInfo:             &scip.ToolInfo{Name: indexerName},
-		ProjectRoot:          root,
+		ProjectRoot:          groupedBundleData.ProjectRoot,
 		TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 	}
 

@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
@@ -8,6 +8,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
@@ -62,6 +62,7 @@ import {
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
@@ -153,6 +154,12 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     >
 > = props => {
     const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
+
+    // Scroll blob UI to the selected symbol right after the reference panel is rendered
+    // and shifted the blob UI (scroll into view is needed because there are a few cases
+    // when ref panel may overlap with current symbol)
+    useEffect(() => BlobAPI.scrollIntoView({ line: props.line }), [props.line])
+
     if (loading && !data) {
         return <LoadingCodeIntel />
     }
@@ -743,7 +750,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             nav={props.blobNav}
             history={history}
             location={location}
-            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
@@ -1007,6 +1013,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         <ul className="list-unstyled mb-0">
                             {group.locations.map((reference, index) => {
                                 const isActive = isActiveLocation(reference)
+                                const isFirstInActive =
+                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const selectReference = (
                                     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
@@ -1055,6 +1063,20 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
+                                            {isFirstInActive ? (
+                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                    <Tooltip
+                                                        content="Click again to open line in full view"
+                                                        placement="left"
+                                                    >
+                                                        <Icon
+                                                            aria-label="Open line in full view"
+                                                            size="sm"
+                                                            svgPath={mdiOpenInNew}
+                                                        />
+                                                    </Tooltip>
+                                                </span>
+                                            ) : null}
                                         </div>
                                     </li>
                                 )

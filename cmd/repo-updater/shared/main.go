@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -57,7 +58,17 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) map[string]debugserver.Dumper
+//
+// It returns a debugserver.Dumper and a function with which to enqueue a
+// permission sync for a repository.
+type EnterpriseInit func(
+	observationCtx *observation.Context,
+	db database.DB,
+	store repos.Store,
+	keyring keyring.Ring,
+	cf *httpcli.Factory,
+	server *repoupdater.Server,
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason string) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -152,6 +163,9 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
+		DatabaseBackedPermissionSyncerEnabled: func(ctx context.Context) bool {
+			return permssync.PermissionSyncWorkerEnabled(ctx, db, logger)
+		},
 	}
 
 	// Attempt to perform an initial sync with all external services
@@ -163,8 +177,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
+	var enqueueRepoPerms func(context.Context, api.RepoID, string) error
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
+		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -177,7 +192,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, enqueueRepoPerms, server.ChangesetSyncRegistry)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -368,7 +383,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 	}
 }
 
-func rateLimiterStateHandler(w http.ResponseWriter, r *http.Request) {
+func rateLimiterStateHandler(w http.ResponseWriter, _ *http.Request) {
 	info := ratelimit.DefaultRegistry.LimitInfo()
 	resp, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
@@ -460,17 +475,12 @@ func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.Ha
 	}
 }
 
-type permsSyncer interface {
-	// ScheduleRepos schedules new permissions syncing requests for given repositories.
-	ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
-}
-
 func watchSyncer(
 	ctx context.Context,
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	permsSyncer permsSyncer,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason string) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -484,18 +494,22 @@ func watchSyncer(
 				sched.UpdateFromDiff(diff)
 			}
 
-			// PermsSyncer is only available in enterprise mode.
-			if permsSyncer != nil {
-				// Schedule a repo permissions sync for all private repos that were added or
-				// modified.
-				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
+			// Schedule a repo permissions sync for all private repos that were added or
+			// modified.
+			if enqueueRepoPermsJob != nil {
+				for _, repo := range getPrivateAddedOrModifiedRepos(diff) {
+					err := enqueueRepoPermsJob(ctx, repo, permssync.ReasonRepoUpdatedFromCodeHost)
+					if err != nil {
+						logger.Warn("failed to create repo sync job", log.Error(err), log.Int32("repo", int32(repo)))
+					}
+				}
 			}
 
 			// Similarly, changesetSyncer is only available in enterprise mode.
 			if changesetSyncer != nil {
-				repos := diff.Modified.ReposModified(types.RepoModifiedArchived)
-				if len(repos) > 0 {
-					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repos.IDs()); err != nil {
+				repositories := diff.Modified.ReposModified(types.RepoModifiedArchived)
+				if len(repositories) > 0 {
+					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repositories.IDs()); err != nil {
 						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
 					}
 				}

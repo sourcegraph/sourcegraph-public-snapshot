@@ -398,7 +398,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 				`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "soft deleting organization in not supported on Sourcegraph.com",
+					Message: "soft deleting organization is not supported on Sourcegraph.com",
 					Path:    []any{string("deleteOrganization")},
 				},
 			},
