@@ -28,6 +28,10 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -40,7 +44,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Fatalf("jobs returned even though database is empty")
 	}
 
-	opts := PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: true, Reason: ReasonManualRepoSync}
+	opts := PermissionSyncJobOpts{HighPriority: true, InvalidateCaches: true, Reason: ReasonManualRepoSync, TriggeredByUserID: user.ID}
 	if err := store.CreateRepoSyncJob(ctx, 99, opts); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -62,12 +66,13 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	wantJobs := []*PermissionSyncJob{
 		{
-			ID:               jobs[0].ID,
-			State:            "queued",
-			RepositoryID:     99,
-			HighPriority:     true,
-			InvalidateCaches: true,
-			Reason:           ReasonManualRepoSync,
+			ID:                jobs[0].ID,
+			State:             "queued",
+			RepositoryID:      99,
+			HighPriority:      true,
+			InvalidateCaches:  true,
+			Reason:            ReasonManualRepoSync,
+			TriggeredByUserID: user.ID,
 		},
 		{
 			ID:               jobs[1].ID,
