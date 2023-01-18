@@ -1557,7 +1557,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"]
           }
         },
         "oneOf": [
@@ -1567,7 +1567,8 @@
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" },
-          { "$ref": "#/definitions/BitbucketCloudAuthProvider" }
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
+          { "$ref": "#/definitions/GerritAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2141,6 +2142,23 @@
           "type": "boolean"
         }
       }
+    },
+    "GerritAuthProvider": {
+        "description": "Gerrit auth provider",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "url"],
+        "properties": {
+            "type": {
+                "type": "string",
+                "const": "gerrit"
+            },
+            "url": {
+                "type": "string",
+                "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+                "default": "https://gerrit-review.googlesource.com/"
+            }
+        }
     },
     "AuthProviderCommon": {
       "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",

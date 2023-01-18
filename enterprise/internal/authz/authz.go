@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gerrit"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
@@ -63,6 +64,7 @@ func ProvidersFromConfig(
 			extsvc.KindBitbucketServer,
 			extsvc.KindBitbucketCloud,
 			extsvc.KindPerforce,
+			extsvc.KindGerrit,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -75,6 +77,7 @@ func ProvidersFromConfig(
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
 		bitbucketCloudConns  []*types.BitbucketCloudConnection
+		gerritConns          []*types.GerritConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
@@ -128,6 +131,11 @@ func ProvidersFromConfig(
 				perforceConns = append(perforceConns, &types.PerforceConnection{
 					URN:                svc.URN(),
 					PerforceConnection: c,
+				})
+			case *schema.GerritConnection:
+				gerritConns = append(gerritConns, &types.GerritConnection{
+					URN:              svc.URN(),
+					GerritConnection: c,
 				})
 			default:
 				logger.Error("ProvidersFromConfig", log.Error(errors.Errorf("unexpected connection type: %T", cfg)))
@@ -184,6 +192,11 @@ func ProvidersFromConfig(
 		seriousProblems = append(seriousProblems, bbcloudProblems...)
 		warnings = append(warnings, bbcloudWarnings...)
 		invalidConnections = append(invalidConnections, bbcloudInvalidConnections...)
+	}
+
+	if len(gerritConns) > 0 {
+		gerritProviders := gerrit.NewAuthzProviders(gerritConns)
+		providers = append(providers, gerritProviders...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.

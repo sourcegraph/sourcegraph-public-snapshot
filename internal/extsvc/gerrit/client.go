@@ -3,13 +3,13 @@ package gerrit
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,6 +29,8 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
+
+	auther auth.Authenticator
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -44,15 +46,28 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 		httpClient = httpcli.ExternalDoer
 	}
 
+	auther := &auth.BasicAuth{Username: config.Username, Password: config.Password}
+
 	return &Client{
 		httpClient: httpClient,
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auther:     auther,
 	}, nil
 }
 
 type ListAccountsResponse []Account
+
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		Config:     c.Config,
+		URL:        c.URL,
+		rateLimit:  c.rateLimit,
+		auther:     a,
+	}
+}
 
 func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
@@ -170,8 +185,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
-	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
+	c.auther.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err

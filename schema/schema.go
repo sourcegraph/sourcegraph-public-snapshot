@@ -119,6 +119,7 @@ type AuthProviders struct {
 	Github         *GitHubAuthProvider
 	Gitlab         *GitLabAuthProvider
 	Bitbucketcloud *BitbucketCloudAuthProvider
+	Gerrit         *GerritAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -143,6 +144,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	if v.Bitbucketcloud != nil {
 		return json.Marshal(v.Bitbucketcloud)
 	}
+	if v.Gerrit != nil {
+		return json.Marshal(v.Gerrit)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *AuthProviders) UnmarshalJSON(data []byte) error {
@@ -157,6 +161,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Bitbucketcloud)
 	case "builtin":
 		return json.Unmarshal(data, &v.Builtin)
+	case "gerrit":
+		return json.Unmarshal(data, &v.Gerrit)
 	case "github":
 		return json.Unmarshal(data, &v.Github)
 	case "gitlab":
@@ -168,7 +174,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"})
 }
 
 type BackendInsight struct {
@@ -848,8 +854,23 @@ type FusionClient struct {
 	Retries int `json:"retries,omitempty"`
 }
 
+// GerritAuthProvider description: Gerrit auth provider
+type GerritAuthProvider struct {
+	Type string `json:"type"`
+	// Url description: URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.
+	Url string `json:"url"`
+}
+
+// GerritAuthorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+type GerritAuthorization struct {
+	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
+	IdentityProvider string `json:"identityProvider,omitempty"`
+}
+
 // GerritConnection description: Configuration for a connection to Gerrit.
 type GerritConnection struct {
+	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+	Authorization *GerritAuthorization `json:"authorization,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.

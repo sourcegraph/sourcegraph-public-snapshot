@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -112,7 +113,24 @@ func marshalAccountData(username, email string, acctID int32) (json.RawMessage, 
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPerms"}
+	_, credentials, err := gerrit.GetExternalAccountData(ctx, &account.AccountData)
+	if err != nil {
+		return nil, err
+	}
+
+	client := p.client.WithAuthenticator(&auth.BasicAuth{
+		Username: credentials.Username,
+		Password: credentials.Password,
+	})
+	projects, _, _ := client.ListProjects(ctx, gerrit.ListProjectsArgs{})
+
+	extIDs := make([]extsvc.RepoID, 0, len(*projects))
+	for _, project := range *projects {
+		extIDs = append(extIDs, extsvc.RepoID(project.ID))
+	}
+	return &authz.ExternalUserPermissions{
+		Exacts: extIDs,
+	}, nil
 }
 
 func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {

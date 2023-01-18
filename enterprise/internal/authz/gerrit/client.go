@@ -3,10 +3,12 @@ package gerrit
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 )
 
 type client interface {
+	WithAuthenticator(a auth.Authenticator) *gerrit.Client
 	ListAccountsByEmail(ctx context.Context, email string) (gerrit.ListAccountsResponse, error)
 	ListAccountsByUsername(ctx context.Context, username string) (gerrit.ListAccountsResponse, error)
 	GetGroup(ctx context.Context, groupName string) (gerrit.Group, error)
