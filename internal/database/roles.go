@@ -32,7 +32,7 @@ type RoleStore interface {
 	// Count counts all roles in the database.
 	Count(ctx context.Context, opts RolesListOptions) (int, error)
 	// Create inserts the given role into the database.
-	Create(ctx context.Context, name string, system bool) (*types.Role, error)
+	Create(ctx context.Context, name string, isSystemRole bool) (*types.Role, error)
 	// Delete removes an existing role from the database.
 	Delete(ctx context.Context, opts DeleteRoleOpts) error
 	// Get returns the role matching the given ID or name provided. If no such role exists,
