@@ -4,7 +4,6 @@
 # against the preprod.
 
 set -eux
-
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 SOURCEGRAPH_BASE_URL="https://preview.sgdev.dev"
@@ -21,18 +20,24 @@ export SOURCEGRAPH_SUDO_TOKEN
 echo "--- :go: Building init-sg"
 go build -o init-sg ./internal/cmd/init-sg/...
 
+# TODO - download src-cli
+
 echo "--- :horse: Running init-sg addRepos"
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
+echo "--- :brain: Running the test suite"
 pushd dev/codeintel-qa
 
-echo "--- :brain: Running the test suite"
 echo '--- :zero: downloading test data from GCS'
 go run ./cmd/download
+
 echo '--- :one: clearing existing state'
 go run ./cmd/clear
+
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
 go run ./cmd/upload --timeout=5m
+
+# make queries but do not assert against expected locations
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
-go run ./cmd/query -check-query-result=false # make queries but do not assert against expected locations
+go run ./cmd/query -check-query-result=false
 popd
