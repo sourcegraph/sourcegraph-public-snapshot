@@ -24,7 +24,6 @@
    "Metadata": {
     "id": "d43b669c-d6da-4c9e-9952-11f411153cf9",
     "name": "sgadotest",
-    "remoteUrl": "https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
     "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9",
     "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest",
     "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
@@ -56,7 +55,6 @@
    "Metadata": {
     "id": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
     "name": "idano",
-    "remoteUrl": "https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/idano",
     "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7",
     "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano",
     "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/idano",
