@@ -471,7 +471,6 @@ func (s *Server) Handler() http.Handler {
 
 			repoMatch := false
 			for _, repo := range recordingConf.OnlyRepos {
-				println(cmd.Dir, repo)
 				if strings.Contains(cmd.Dir, repo) {
 					repoMatch = true
 					break
