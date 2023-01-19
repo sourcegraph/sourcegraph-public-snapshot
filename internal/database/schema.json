@@ -19179,7 +19179,7 @@
           "Comment": "The uniquely identifying name of the role."
         },
         {
-          "Name": "readonly",
+          "Name": "system",
           "Index": 5,
           "TypeName": "boolean",
           "IsNullable": false,

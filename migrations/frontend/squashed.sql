@@ -3568,13 +3568,13 @@ CREATE TABLE roles (
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    readonly boolean DEFAULT false NOT NULL,
+    system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
 
 COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
-COMMENT ON COLUMN roles.readonly IS 'This is used to indicate whether a role is read-only or can be modified.';
+COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
 CREATE SEQUENCE roles_id_seq
     AS integer
@@ -5479,3 +5479,8 @@ INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention 
 INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
+
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+
+SELECT pg_catalog.setval('roles_id_seq', 3, true);
