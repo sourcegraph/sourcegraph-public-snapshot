@@ -51,7 +51,11 @@ func TestComputeExcludedJob(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			parsedFilters := make([]query.ParsedRepoFilter, len(tc.repoFilters))
 			for i, repoFilter := range tc.repoFilters {
-				parsedFilters[i] = query.ParseRepositoryRevisions(repoFilter)
+				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+				if err != nil {
+					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+				}
+				parsedFilters[i] = parsedFilter
 			}
 
 			repoStore := database.NewMockRepoStore()

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -16,28 +14,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func EnterpriseInit(
-	logger log.Logger,
+	observationCtx *observation.Context,
 	db ossDB.DB,
 	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers map[string]debugserver.Dumper) {
+) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, string) error) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
-		logger.Info("enterprise edition")
+		observationCtx.Logger.Info("enterprise edition")
 	}
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
@@ -52,16 +54,38 @@ func EnterpriseInit(
 		}
 	}
 
-	permsStore := edb.Perms(logger, db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
-	go startBackgroundPermsSync(ctx, permsSyncer, db)
+	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
+	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+
+	permsJobStore := db.PermissionSyncJobs()
+	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason string) error {
+		if authz.PermissionSyncingDisabled() {
+			return nil
+		}
+
+		// If the feature flag is enabled, create job...
+		if permssync.PermissionSyncWorkerEnabled(ctx, db, observationCtx.Logger) {
+			opts := ossDB.PermissionSyncJobOpts{HighPriority: true, Reason: reason}
+			return permsJobStore.CreateRepoSyncJob(ctx, repo, opts)
+		}
+		// ... otherwise, we just call the PermsSyncer
+		permsSyncer.ScheduleRepos(ctx, repo)
+		return nil
+	}
+
 	if server != nil {
 		server.PermsSyncer = permsSyncer
 	}
 
-	return map[string]debugserver.Dumper{
-		"repoPerms": permsSyncer,
-	}
+	workerStore := authz.MakeStore(observationCtx, db.Handle())
+	worker := authz.MakeWorker(ctx, observationCtx, workerStore, permsSyncer)
+	resetter := authz.MakeResetter(observationCtx, workerStore)
+
+	go goroutine.MonitorBackgroundRoutines(ctx, worker, resetter)
+
+	go startBackgroundPermsSync(ctx, permsSyncer, db)
+
+	return map[string]debugserver.Dumper{"repoPerms": permsSyncer}, enqueueRepoPermsJob
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.

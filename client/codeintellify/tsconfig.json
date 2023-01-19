@@ -7,6 +7,13 @@
     "outDir": "./out",
     "baseUrl": "./src",
   },
-  "references": [{ "path": "../common" }],
+  "references": [
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+  ],
   "include": ["./src/**/*", "./*.ts"],
 }

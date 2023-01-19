@@ -1323,6 +1323,10 @@ type Query {
         """
         failedFetch: Boolean = false
         """
+        Include repositories that are corrupt
+        """
+        corrupted: Boolean = false
+        """
         Return repositories that are associated with the given external service.
         """
         externalService: ID
@@ -1663,6 +1667,26 @@ type Query {
         """
         after: String
     ): OutboundRequestConnection!
+
+    """
+    Get a list of background jobs that are currently known in the system.
+    """
+    backgroundJobs(
+        """
+        Returns the first n jobs. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        The maximum number of recent runs to return for each routine.
+        """
+        recentRunCount: Int
+    ): BackgroundJobConnection!
 
     """
     (experimental)
@@ -5551,6 +5575,26 @@ type UserConnection {
 }
 
 """
+A paginated connection for users.
+"""
+type NewUsersConnection implements Connection {
+    """
+    A list of users.
+    """
+    nodes: [User!]!
+
+    """
+    The total number of users in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
 A user.
 """
 type User implements Node & SettingsSubject & Namespace {
@@ -5890,6 +5934,30 @@ type ExternalAccount implements Node {
     Only site admins may query this field.
     """
     accountData: JSONValue
+    """
+    Public provider-specific data about the external account.
+    Only users that are linked to the external account and site admins
+    may query this field.
+    """
+    publicAccountData: PublicExternalAccountData
+}
+
+"""
+Public provider-specific data about the external account.
+"""
+type PublicExternalAccountData {
+    """
+    The text name the user is using on the external account, if any.
+    """
+    displayName: String
+    """
+    The login or username the user is using on the external account, if any.
+    """
+    login: String
+    """
+    Link to the user profile page for the external account.
+    """
+    url: String
 }
 
 """
@@ -6011,18 +6079,26 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     members(
         """
-        Number of users to return after the given cursor.
+        The limit argument for forward pagination.
         """
         first: Int
         """
-        Opaque pagination cursor.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
         """
         Return users whose usernames or display names match the query.
         """
         query: String
-    ): UserConnection!
+    ): NewUsersConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.
@@ -7730,6 +7806,10 @@ type RepositoryStats {
     The number of indexed repositories
     """
     indexed: Int!
+    """
+    The number of repositories that are currently corrupt
+    """
+    corrupted: Int!
 }
 
 """
@@ -8158,6 +8238,191 @@ type HTTPHeader {
 }
 
 """
+A list of background jobs that are currently known in the system
+"""
+type BackgroundJobConnection {
+    """
+    A list of outbound requests.
+    """
+    nodes: [BackgroundJob!]!
+
+    """
+    The total number of outbound request log items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single background job.
+"""
+type BackgroundJob implements Node {
+    """
+    The background job ID.
+    """
+    id: ID!
+
+    """
+    The name of the job.
+    """
+    name: String!
+
+    """
+    The routines that run inside this job.
+    """
+    routines: [BackgroundRoutine!]!
+}
+
+"""
+A routine that runs inside a background job.
+"""
+type BackgroundRoutine {
+    """
+    The name of the routine.
+    """
+    name: String!
+
+    """
+    Tells whether this is a periodic goroutine, a DB worker, or something else
+    """
+    type: BackgroundRoutineType!
+
+    """
+    Explains what the routine does.
+    """
+    description: String!
+
+    """
+    The interval at which the routine runs, if it's periodic.
+    """
+    intervalMs: Int
+
+    """
+    The instances of this routine that are running or ran recently. An instance means one routine on one host.
+    """
+    instances: [BackgroundRoutineInstance!]!
+
+    """
+    The recent runs of this routine.
+    """
+    recentRuns: [BackgroundRoutineRecentRun!]!
+
+    """
+    Some stats of the runs of this routine in the past few days.
+    """
+    stats: BackgroundRoutineStats!
+}
+
+"""
+Enum of the possible background routine types
+"""
+enum BackgroundRoutineType {
+    """
+    Periodic routine
+    """
+    PERIODIC
+
+    """
+    Periodic routine with metrics set up
+    """
+    PERIODIC_WITH_METRICS
+
+    """
+    DB-backed worker
+    """
+    DB_BACKED
+
+    """
+    Custom routine
+    """
+    CUSTOM
+}
+
+"""
+One instance of the background routine, running on a host.
+"""
+type BackgroundRoutineInstance {
+    """
+    The ID of the instance.
+    """
+    hostName: String!
+
+    """
+    The time the instance was last started. (If it's unknown, this will be null.)
+    """
+    lastStartedAt: DateTime
+
+    """
+    The time the instance was last stopped. (If it's unknown, this will be null.)
+    """
+    lastStoppedAt: DateTime
+}
+
+"""
+A single run of the routine. A run is not the start/stop event but the actual execution of the routine handler.
+"""
+type BackgroundRoutineRecentRun {
+    """
+    The time the run started.
+    """
+    at: DateTime!
+
+    """
+    The name of the host that ran the routine.
+    """
+    hostName: String!
+
+    """
+    The duration of the run.
+    """
+    durationMs: Int!
+
+    """
+    The error message, if any.
+    """
+    errorMessage: String
+}
+
+"""
+Holds statistics about a background routine.
+"""
+type BackgroundRoutineStats {
+    """
+    The start of the earliest day for which we have any runs registered.
+    """
+    since: DateTime
+
+    """
+    The number of times the routine ran in the period.
+    """
+    runCount: Int!
+
+    """
+    The number of times the routine run ended with an error.
+    """
+    errorCount: Int!
+
+    """
+    The minimum duration of a run, in milliseconds.
+    """
+    minDurationMs: Int!
+
+    """
+    The average duration of a run, in milliseconds.
+    """
+    avgDurationMs: Int!
+
+    """
+    The maximum duration of a run, in milliseconds.
+    """
+    maxDurationMs: Int!
+}
+
+"""
 The clone status of a repository.
 """
 enum CloneStatus {
@@ -8388,6 +8653,7 @@ type SlowRequest {
     """
     filepath: String
 }
+
 """
 An object with totalCount and PageInfo.
 """

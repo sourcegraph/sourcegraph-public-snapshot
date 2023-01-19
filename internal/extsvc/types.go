@@ -26,8 +26,9 @@ type Account struct {
 	UserID      int32
 	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
 	AccountData // AuthData, Data
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	PublicAccountData
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // AccountSpec specifies a user external account by its external identifier (i.e., by the
@@ -45,6 +46,15 @@ type AccountSpec struct {
 type AccountData struct {
 	AuthData *EncryptableData
 	Data     *EncryptableData
+}
+
+// PublicAccountData contains a few fields from the AccountData.Data mentioned above.
+// We only expose publicly available fields in this struct.
+// See the GraphQL API's corresponding fields for documentation.
+type PublicAccountData struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Login       *string `json:"login,omitempty"`
+	URL         *string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]

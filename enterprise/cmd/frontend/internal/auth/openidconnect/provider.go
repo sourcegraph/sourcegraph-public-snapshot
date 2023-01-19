@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -61,6 +62,10 @@ func (p *Provider) Refresh(context.Context) error {
 	defer p.mu.Unlock()
 	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer)
 	return p.refreshErr
+}
+
+func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	return GetPublicExternalAccountData(ctx, &account.AccountData)
 }
 
 // oidcVerifier returns the token verifier of the underlying OIDC provider.

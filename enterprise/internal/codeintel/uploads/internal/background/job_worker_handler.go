@@ -63,6 +63,7 @@ func NewUploadProcessorWorker(
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
 		Name:                 "precise_code_intel_upload_worker",
+		Description:          "processes precise code-intel uploads",
 		NumHandlers:          workerConcurrency,
 		Interval:             workerPollInterval,
 		HeartbeatInterval:    time.Second,

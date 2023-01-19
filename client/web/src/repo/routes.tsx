@@ -141,15 +141,17 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 }}
             >
                 <RepositoryFileTreePage {...props} />
-                <ActionItemsBar
-                    repo={props.repo}
-                    useActionItemsBar={props.useActionItemsBar}
-                    location={props.location}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
-                    source={routePath === blobPath ? 'blob' : undefined}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        repo={props.repo}
+                        useActionItemsBar={props.useActionItemsBar}
+                        location={props.location}
+                        extensionsController={props.extensionsController}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                        source={routePath === blobPath ? 'blob' : undefined}
+                    />
+                )}
             </TraceSpanProvider>
         ),
     })),

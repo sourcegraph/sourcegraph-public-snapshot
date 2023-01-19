@@ -5,7 +5,18 @@ import * as H from 'history'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, H4, Text, Input, ErrorAlert, ErrorMessage, Form } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    Alert,
+    H4,
+    Text,
+    Input,
+    ErrorAlert,
+    ErrorMessage,
+    Form,
+    ButtonLink,
+} from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -17,6 +28,7 @@ import { AddExternalServiceOptions } from './externalServices'
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
     input: AddExternalServiceInput
+    externalServiceID?: string
     error?: ErrorLike
     warning?: string | null
     mode: 'edit' | 'create'
@@ -40,6 +52,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     jsonSchema,
     editorActions,
     input,
+    externalServiceID,
     error,
     warning,
     mode,
@@ -123,17 +136,36 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     }
                 />
             </div>
-            <Button
-                type="submit"
-                className={
-                    mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
-                }
-                disabled={loading || disabled}
-                variant="primary"
-            >
-                {loading && <LoadingSpinner />}
-                {submitName ?? (mode === 'edit' ? 'Update configuration' : 'Add repositories')}
-            </Button>
+            {mode === 'edit' ? (
+                <div className="d-flex flex-shrink-0 mt-2">
+                    <div>
+                        <Button
+                            type="submit"
+                            className="test-update-external-service-button"
+                            disabled={loading || disabled}
+                            variant="primary"
+                        >
+                            {loading && <LoadingSpinner />}
+                            {submitName ?? 'Update configuration'}
+                        </Button>
+                    </div>
+                    <div className="ml-1">
+                        <ButtonLink to={`/site-admin/external-services/${externalServiceID}`} variant="secondary">
+                            Cancel
+                        </ButtonLink>
+                    </div>
+                </div>
+            ) : (
+                <Button
+                    type="submit"
+                    className="test-add-external-service-button"
+                    disabled={loading || disabled}
+                    variant="primary"
+                >
+                    {loading && <LoadingSpinner />}
+                    {submitName ?? 'Add repositories'}
+                </Button>
+            )}
         </Form>
     )
 }

@@ -29,6 +29,7 @@ func NewBatchSpecResolutionWorker(
 
 	options := workerutil.WorkerOptions{
 		Name:              "batch_changes_batch_spec_resolution_worker",
+		Description:       "runs the workspace resolutions for batch specs, for batch changes running server-side",
 		NumHandlers:       5,
 		Interval:          1 * time.Second,
 		HeartbeatInterval: 15 * time.Second,

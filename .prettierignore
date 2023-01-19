@@ -40,3 +40,4 @@ client/jetbrains/.gradle
 .browserslistrc
 code-intel-extensions.json
 .direnv
+pnpm-lock.yaml

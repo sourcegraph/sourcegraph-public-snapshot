@@ -818,7 +818,11 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoRevs := query.ParseRepositoryRevisions(repospec)
+		repoRevs, err := query.ParseRepositoryRevisions(repospec)
+		if err != nil {
+			panic(errors.Errorf("unexpected error parsing repo spec %s", repospec))
+		}
+
 		revs := make([]string, 0, len(repoRevs.Revs))
 		for _, revSpec := range repoRevs.Revs {
 			revs = append(revs, revSpec.RevSpec)

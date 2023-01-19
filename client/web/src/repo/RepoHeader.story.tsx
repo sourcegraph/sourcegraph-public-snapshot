@@ -9,6 +9,7 @@ import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphContext } from '../jscontext'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
@@ -24,6 +25,10 @@ const mockUser = {
     emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
+
+if (!window.context) {
+    window.context = { enableLegacyExtensions: false } as SourcegraphContext & Mocha.SuiteFunction
+}
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>

@@ -67,6 +67,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
 		Name:              "repo_sync_worker",
+		Description:       "syncs repos in a streaming fashion",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
 		HeartbeatInterval: 15 * time.Second,

@@ -11,7 +11,6 @@ import { ObjectsMatchingGitPattern } from './ObjectsMatchingGitPattern'
 import { ReposMatchingPatternList } from './ReposMatchingPatternList'
 
 export interface BranchTargetSettingsProps {
-    repoId?: string
     policy: CodeIntelligenceConfigurationPolicyFields
     setPolicy: (
         updater: (
@@ -22,7 +21,6 @@ export interface BranchTargetSettingsProps {
 }
 
 export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<BranchTargetSettingsProps>> = ({
-    repoId,
     policy,
     setPolicy,
     disabled = false,
@@ -46,7 +44,7 @@ export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<Bra
                 message="Required."
             />
 
-            {repoId || policy.repository ? (
+            {policy.repository ? (
                 <div className="mb-3">
                     This configuration policy applies only to {policy.repository?.name || 'the current repository'}.
                 </div>
@@ -73,7 +71,7 @@ export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<Bra
             />
 
             <ObjectsMatchingGitPattern
-                repoId={repoId || policy.repository?.id}
+                repoId={policy.repository?.id}
                 type={policy.type}
                 pattern={policy.pattern}
                 setPattern={pattern => updatePolicy({ ...(policy || nullPolicy), pattern })}

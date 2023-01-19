@@ -23,8 +23,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/template-parser": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*",
-    "@sourcegraph/browser": "workspace:*"
+    "@sourcegraph/codeintellify": "workspace:*"
   },
   "sideEffects": true
 }
