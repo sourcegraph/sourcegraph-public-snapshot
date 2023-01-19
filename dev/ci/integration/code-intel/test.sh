@@ -13,24 +13,24 @@ export PATH
 SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SOURCEGRAPH_BASE_URL
 
-echo "--- :go: Building init-sg"
+echo '--- :go: Building init-sg'
 go build -o init-sg ./internal/cmd/init-sg/...
 
-echo "--- Installing local src-cli"
+echo '--- Installing local src-cli'
 ./dev/ci/integration/code-intel/install-src.sh
 which src
 src version
 
-echo "--- Loading secrets"
+echo '--- Loading secrets'
 set +x # Avoid printing secrets
 # shellcheck disable=SC1091
 source /root/.sg_envrc
 set -x
 
-echo "--- :horse: Running init-sg addRepos"
+echo '--- :horse: Running init-sg addRepos'
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
-echo "--- :brain: Running the test suite"
+echo '--- :brain: Running the test suite'
 pushd dev/codeintel-qa
 
 echo '--- :zero: downloading test data from GCS'

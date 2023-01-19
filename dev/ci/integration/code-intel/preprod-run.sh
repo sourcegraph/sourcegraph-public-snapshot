@@ -21,18 +21,18 @@ export SOURCEGRAPH_SUDO_USER
 export TEST_USER_PASSWORD
 export SOURCEGRAPH_SUDO_TOKEN
 
-echo "--- :go: Building init-sg"
+echo '--- :go: Building init-sg'
 go build -o init-sg ./internal/cmd/init-sg/...
 
-echo "--- Installing local src-cli"
+echo '--- Installing local src-cli'
 ./dev/ci/integration/code-intel/install-src.sh
 which src
 src version
 
-echo "--- :horse: Running init-sg addRepos"
+echo '--- :horse: Running init-sg addRepos'
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
-echo "--- :brain: Running the test suite"
+echo '--- :brain: Running the test suite'
 pushd dev/codeintel-qa
 
 echo '--- :zero: downloading test data from GCS'
