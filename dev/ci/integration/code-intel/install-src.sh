@@ -20,6 +20,6 @@ trap cleanup EXIT
 git clone git@github.com:sourcegraph/src-cli.git "${TEMP}" --depth 1
 pushd "${TEMP}"
 git checkout "${VERSION}"
-mkdir -p ${root_dir}/.bin
+mkdir -p "${root_dir}/.bin"
 go build -o "${root_dir}/.bin" ./cmd/src
 popd

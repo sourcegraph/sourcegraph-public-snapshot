@@ -13,6 +13,9 @@ export SOURCEGRAPH_BASE_URL
 echo '--- :go: Building init-sg'
 go build -o init-sg ./internal/cmd/init-sg/...
 
+echo '--- Initializing instance'
+"${root_dir}/init-sg" initSG
+
 echo '--- Loading secrets'
 set +x # Avoid printing secrets
 # shellcheck disable=SC1091
