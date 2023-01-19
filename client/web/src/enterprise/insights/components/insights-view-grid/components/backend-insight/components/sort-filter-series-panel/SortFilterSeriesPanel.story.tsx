@@ -20,7 +20,8 @@ export default defaultStory
 
 export const Primary: Story = () => {
     const [value, setValue] = useState<DrillDownFiltersFormValues['seriesDisplayOptions']>({
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,
             direction: SeriesSortDirection.DESC,

@@ -25,8 +25,8 @@ export function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     }
 }
 
-type ResponseSeriesDisplayOptions = InsightViewNode['appliedSeriesDisplayOptions']
-type ResponseAppliedFilters = InsightViewNode['appliedFilters']
+type ResponseSeriesDisplayOptions = InsightViewNode['defaultSeriesDisplayOptions']
+type ResponseAppliedFilters = InsightViewNode['defaultFilters']
 
 export function getParsedFilters(
     rawAppliedFilters: ResponseAppliedFilters,

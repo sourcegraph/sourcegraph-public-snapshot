@@ -87,7 +87,8 @@ const ORIGINAL_FILTERS: InsightFilters = {
     excludeRepoRegexp: '',
     context: '',
     seriesDisplayOptions: {
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             direction: SeriesSortDirection.DESC,
             mode: SeriesSortMode.RESULT_COUNT,
@@ -100,7 +101,8 @@ const FILTERS: InsightFilters = {
     excludeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
     context: '',
     seriesDisplayOptions: {
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             direction: SeriesSortDirection.DESC,
             mode: SeriesSortMode.RESULT_COUNT,
