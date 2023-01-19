@@ -6,6 +6,10 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+# Add repo root to path to ensure we always point to our local src cli (installed below)
+PATH="$(pwd):${PATH}"
+export PATH
+
 SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SOURCEGRAPH_BASE_URL
 
@@ -18,7 +22,10 @@ set -x
 echo "--- :go: Building init-sg"
 go build -o init-sg ./internal/cmd/init-sg/...
 
-# TODO - download src-cli
+echo "--- Installing local src-cli"
+./dev/ci/integration/code-intel/install-src.sh
+which src
+src version
 
 echo "--- :horse: Running init-sg addRepos"
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
