@@ -50,11 +50,11 @@ func modifyArgs(args *database.PaginationArgs) bool {
 
 func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
 	if args == nil {
-		return []*SiteConfigurationChangeResolver{}, errors.New("pagintation args cannot be nil")
+		return nil, errors.New("pagination args cannot be nil")
 	}
 
 	// NOTE: Do not modify "args" in-place because it is used by the caller of ComputeNodes to
-	// determine next / previous page. Instead, dereference the values from args first (if
+	// determine next/previous page. Instead, dereference the values from args first (if
 	// they're non-nil) and then assign them address of the new variables.
 	paginationArgs := &database.PaginationArgs{
 		First:  copyIntPtr(args.First),
