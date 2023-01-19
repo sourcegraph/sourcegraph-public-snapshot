@@ -166,11 +166,10 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	// TODO: Here we should call another method to set `NextSyncAt` on the
-	// PermsSyncJob if that feature is enabled.
 	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
-		UserIDs: []int32{externalAccounts[0].UserID},
-		Reason:  reason,
+		UserIDs:    []int32{externalAccounts[0].UserID},
+		Reason:     reason,
+		NextSyncAt: time.Now().Add(sleepTime),
 	})
 
 	return err
@@ -184,11 +183,10 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	// TODO: Here we should call another method to set `NextSyncAt` on the
-	// PermsSyncJob if that feature is enabled.
 	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{repo.ID},
-		Reason:  reason,
+		RepoIDs:    []api.RepoID{repo.ID},
+		Reason:     reason,
+		NextSyncAt: time.Now().Add(sleepTime),
 	})
 
 	return nil

@@ -3,6 +3,7 @@ package permssync
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,7 +27,8 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
-	request := protocol.PermsSyncRequest{UserIDs: []int32{1}, Reason: ReasonManualUserSync, TriggeredByUserID: int32(123)}
+	syncTime := time.Now().Add(13 * time.Second)
+	request := protocol.PermsSyncRequest{UserIDs: []int32{1}, Reason: ReasonManualUserSync, TriggeredByUserID: int32(123), NextSyncAt: syncTime}
 	SchedulePermsSync(ctx, logger, db, request)
 	assert.Len(t, permsSyncStore.CreateUserSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateRepoSyncJobFunc.History())
@@ -34,6 +36,7 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	assert.NotNil(t, permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2)
 	assert.Equal(t, ReasonManualUserSync, permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2.Reason)
 	assert.Equal(t, int32(123), permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2.TriggeredByUserID)
+	assert.Equal(t, syncTime, permsSyncStore.CreateUserSyncJobFunc.History()[0].Arg2.NextSyncAt)
 }
 
 func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
@@ -51,7 +54,8 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
-	request := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}, Reason: ReasonManualRepoSync}
+	syncTime := time.Now().Add(37 * time.Second)
+	request := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}, Reason: ReasonManualRepoSync, NextSyncAt: syncTime}
 	SchedulePermsSync(ctx, logger, db, request)
 	assert.Len(t, permsSyncStore.CreateRepoSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateUserSyncJobFunc.History())
@@ -59,4 +63,5 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	assert.NotNil(t, permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg1)
 	assert.Equal(t, ReasonManualRepoSync, permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg2.Reason)
 	assert.Equal(t, int32(0), permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg2.TriggeredByUserID)
+	assert.Equal(t, syncTime, permsSyncStore.CreateRepoSyncJobFunc.History()[0].Arg2.NextSyncAt)
 }
