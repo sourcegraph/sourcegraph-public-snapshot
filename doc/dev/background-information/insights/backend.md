@@ -142,7 +142,7 @@ this will take vary greatly depending on the commit patterns and size of the Ins
 
 One important piece of information that needs to be surfaced to users is the answer to the question `is my insight still processing?`, this can be determined my examining the Backfill records for all of the series contained in an insight.  When all backfills have reached a terminal state the processing is complete.
 
-`When will my insight finishing processing?` is a non-trivial question to answer because the processing of a series may be paused for an indefinite amount of time if a new insight with a higher priority is created.
+`When will my insight finish processing?` is a non-trivial question to answer because the processing of a series may be paused for an indefinite amount of time if a new insight with a higher priority is created.
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects existing insights that need new data
 
