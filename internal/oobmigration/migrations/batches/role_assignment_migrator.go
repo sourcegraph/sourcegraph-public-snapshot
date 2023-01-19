@@ -34,7 +34,7 @@ func (m *roleAssignmentMigrator) Progress(ctx context.Context, _ bool) (float64,
 	return progress, err
 }
 
-// This query checks the total number of user_roles in the database and compares them against the sum of users in the database and site_administrator.
+// This query checks the total number of user_roles in the database vs. the sum of the total number of users and the total number of users who are site_admin.
 // We use a CTE here to only check for system roles (e.g USER and SITE_ADMINISTRATOR) since those are the two system roles that should be available on every instance.
 const roleAssignmentMigratorProgressQuery = `
 WITH system_roles AS MATERIALIZED (
