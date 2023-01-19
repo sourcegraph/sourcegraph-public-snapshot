@@ -9,6 +9,7 @@ import { Alert, LoadingSpinner, Code, Text, Link, ErrorAlert } from '@sourcegrap
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
 import styles from './StreamingSearchResultsList.module.scss'
+import { SmartSearchPreview } from './SmartSearchPreview'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -50,6 +51,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
                         , or use the tips below to improve your query.
                     </Text>
                 </Alert>
+                <SmartSearchPreview query="sourcegraph javascript" />
             </div>
         )}
 
