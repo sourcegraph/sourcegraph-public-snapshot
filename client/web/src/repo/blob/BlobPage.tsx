@@ -188,6 +188,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      * Intention is to use this whilst we wait for syntax highlighting,
      * so the user has useful content rather than a loading spinner
      */
+
     const formattedBlobInfoOrError = useObservable(
         useMemo(
             () =>

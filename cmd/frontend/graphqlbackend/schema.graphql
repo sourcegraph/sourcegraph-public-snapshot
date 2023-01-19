@@ -4107,7 +4107,16 @@ type CodeIntelGitBlob {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -4931,7 +4940,16 @@ type CodeIntelGitTree {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -5103,11 +5121,24 @@ interface File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5117,7 +5148,16 @@ interface File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -5148,6 +5188,16 @@ interface File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return blob highlight ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5170,11 +5220,24 @@ type VirtualFile implements File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5184,7 +5247,16 @@ type VirtualFile implements File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     Not implemented.
     """
@@ -5215,6 +5287,16 @@ type VirtualFile implements File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5263,11 +5345,24 @@ type GitBlob implements TreeEntry & File2 {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5277,7 +5372,16 @@ type GitBlob implements TreeEntry & File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The Git commit containing this blob.
     """
@@ -5320,6 +5424,16 @@ type GitBlob implements TreeEntry & File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
