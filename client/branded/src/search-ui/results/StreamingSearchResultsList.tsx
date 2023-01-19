@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
@@ -41,6 +42,7 @@ export interface StreamingSearchResultsListProps
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<RouteComponentProps, 'history'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
@@ -92,6 +94,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFile,
     prefetchFileEnabled,
     enableKeyboardNavigation,
+    history,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -279,8 +282,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
+                                history={history}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                setSearchMode={setSearchMode}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}

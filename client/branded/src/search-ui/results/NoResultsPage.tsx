@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -42,7 +43,11 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
+interface NoResultsPageProps
+    extends ThemeProps,
+        TelemetryProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<RouteComponentProps, 'history'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
     /** Available to web app through JS Context */
@@ -56,6 +61,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    history,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -75,7 +81,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <SmartSearchPreview />
+            <SmartSearchPreview history={history} />
 
             <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>

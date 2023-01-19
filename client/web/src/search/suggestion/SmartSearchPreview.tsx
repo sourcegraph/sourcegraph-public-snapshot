@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import { mdiArrowRight } from '@mdi/js'
 
@@ -12,24 +13,26 @@ import { LATEST_VERSION, aggregateStreamingSearch } from '../../../../shared/src
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { Link, Icon, H1, H2, Text, Button, createLinkUrl, useObservable } from '@sourcegraph/wildcard'
 
+import { useNavbarQueryState, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
-import { useNavbarQueryState } from '../../stores'
 
 import styles from './QuerySuggestion.module.scss'
 
-interface SmartSearchPreviewProps {
-    // alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
-    // onDisableSmartSearch: () => void
-}
+interface SmartSearchPreviewProps extends Pick<RouteComponentProps, 'history'> {}
 
-export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren<SmartSearchPreviewProps>> = () => {
+export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren<SmartSearchPreviewProps>> = ({
+    history,
+}) => {
     let resultsNum = 2
 
-    //TODO: Enable SmartSearch setting > submitSearch (parent props??)
     //BE related results count
     //Loading state - If results.state == 'loading' else if 'complete'
     //Polish styling
+    //If no SS results, show nothing
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const patternType = useNavbarQueryState(state => state.searchPatternType)
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+
     const results = useObservable(
         useMemo(() => {
             return aggregateStreamingSearch(of(query), {
@@ -41,19 +44,18 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
             }).pipe(tap(() => {}))
         }, [query])
     )
-    console.log('END', results)
 
-    const enableSmartSearch = useCallback(
-        () =>
-            submitSearch({
-                // ...props,
-                // caseSensitive,
-                patternType: SearchPatternType.standard,
-                query: query,
-                source: 'smartSearchEnabled',
-            }),
-        [query]
-    )
+    const enableSmartSearch = useCallback((): void => {
+        setSearchMode(SearchMode.SmartSearch)
+        submitSearch({
+            history,
+            query,
+            patternType,
+            caseSensitive,
+            searchMode: SearchMode.SmartSearch,
+            source: 'smartSearchDisabled',
+        })
+    }, [])
 
     return (
         <div>
