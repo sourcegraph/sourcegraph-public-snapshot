@@ -463,7 +463,7 @@ func TestModifyArgs(t *testing.T) {
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
 			args:             &database.PaginationArgs{Last: intPtr(5), Before: intPtr(0)},
 			expectedArgs:     &database.PaginationArgs{Last: intPtr(5), Before: intPtr(0)},
-			expectedModified: true,
+			expectedModified: false,
 		},
 	}
 
