@@ -6,6 +6,7 @@ import { debounce } from 'lodash'
 import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useLazyQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
@@ -31,7 +32,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { useLazyQuery } from '@sourcegraph/http-client'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
     CodeIntelligenceConfigurationPolicyFields,
@@ -173,11 +173,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
         },
     })
     useEffect(() => {
-        if (repo && policy) {
+        if (repo && policy?.type) {
             // Update git preview on policy detail changes
-            updateGitPreview({})
+            updateGitPreview({}).catch(() => {})
         }
-    }, [repo, policy?.type, policy?.pattern, policy?.indexCommitMaxAgeHours])
+    }, [repo, updateGitPreview, policy?.type, policy?.pattern, policy?.indexCommitMaxAgeHours])
 
     return loadingPolicyConfig ? (
         <LoadingSpinner />

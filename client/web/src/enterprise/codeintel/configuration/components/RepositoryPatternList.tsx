@@ -1,6 +1,7 @@
 import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 import { debounce } from 'lodash'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -10,7 +11,6 @@ import { ExternalRepositoryIcon } from '../../../../site-admin/components/Extern
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 
 import styles from './RepositoryPatternList.module.scss'
-import classNames from 'classnames'
 
 const DEBOUNCED_WAIT = 250
 
