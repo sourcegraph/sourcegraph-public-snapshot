@@ -16,6 +16,7 @@ export interface AuthProvider {
         | 'sourcegraph-operator'
         | 'saml'
         | 'builtin'
+        | 'gerrit'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string

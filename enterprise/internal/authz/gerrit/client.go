@@ -22,9 +22,18 @@ type ClientAdapter struct {
 }
 
 type mockClient struct {
+	mockWithAuthenticator      func(a auth.Authenticator) *gerrit.Client
 	mockListAccountsByEmail    func(ctx context.Context, email string) (gerrit.ListAccountsResponse, error)
 	mockListAccountsByUsername func(ctx context.Context, username string) (gerrit.ListAccountsResponse, error)
 	mockGetGroup               func(ctx context.Context, groupName string) (gerrit.Group, error)
+}
+
+func (m *mockClient) WithAuthenticator(a auth.Authenticator) *gerrit.Client {
+	if m.mockWithAuthenticator != nil {
+		return m.mockWithAuthenticator(a)
+	}
+
+	return nil
 }
 
 func (m *mockClient) ListAccountsByEmail(ctx context.Context, email string) (gerrit.ListAccountsResponse, error) {

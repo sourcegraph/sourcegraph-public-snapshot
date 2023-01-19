@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -133,6 +138,89 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 
 	deleteOpts := database.ExternalAccountsDeleteOptions{IDs: []int32{account.ID}}
 	if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) AddGerritExternalAccount(ctx context.Context, args *struct {
+	Username  string
+	Password  string
+	ServiceID string
+}) (*EmptyResponse, error) {
+	user, err := auth.CurrentUser(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("not authenticated")
+	}
+
+	// Fetch external service matching ServiceID
+	svcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGerrit},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	serviceURL, err := url.Parse(args.ServiceID)
+	if err != nil {
+		return nil, err
+	}
+	serviceURL = extsvc.NormalizeBaseURL(serviceURL)
+
+	var gerritConn *types.GerritConnection
+	for _, svc := range svcs {
+		cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
+		if err != nil {
+			continue
+		}
+		if c, ok := cfg.(*schema.GerritConnection); ok {
+			connURL, err := url.Parse(c.Url)
+			if err != nil {
+				continue
+			}
+			connURL = extsvc.NormalizeBaseURL(connURL)
+
+			if connURL.String() != serviceURL.String() {
+				continue
+			}
+			gerritConn = &types.GerritConnection{
+				URN:              svc.URN(),
+				GerritConnection: c,
+			}
+			break
+		}
+	}
+	if gerritConn == nil {
+		return nil, errors.New("no gerrit connection found")
+	}
+
+	accountCredentials := &gerrit.AccountCredentials{
+		Username: args.Username,
+		Password: args.Password,
+	}
+
+	gerritAccount, err := gerrit.VerifyAccount(ctx, gerritConn, accountCredentials)
+	if err != nil {
+		return nil, err
+	}
+
+	accountSpec := extsvc.AccountSpec{
+		ServiceType: extsvc.TypeGerrit,
+		ServiceID:   args.ServiceID,
+		ClientID:    "",
+		AccountID:   args.Username,
+	}
+
+	accountData := extsvc.AccountData{}
+	if err = gerrit.SetExternalAccountData(&accountData, gerritAccount, accountCredentials); err != nil {
+		return nil, err
+	}
+
+	if err = r.db.UserExternalAccounts().Insert(ctx, user.ID, accountSpec, accountData); err != nil {
 		return nil, err
 	}
 

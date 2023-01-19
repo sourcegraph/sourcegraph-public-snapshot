@@ -2144,21 +2144,21 @@
       }
     },
     "GerritAuthProvider": {
-        "description": "Gerrit auth provider",
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["type", "url"],
-        "properties": {
-            "type": {
-                "type": "string",
-                "const": "gerrit"
-            },
-            "url": {
-                "type": "string",
-                "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
-                "default": "https://gerrit-review.googlesource.com/"
-            }
+      "description": "Gerrit auth provider",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gerrit"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+          "default": "https://gerrit-review.googlesource.com/"
         }
+      }
     },
     "AuthProviderCommon": {
       "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",
