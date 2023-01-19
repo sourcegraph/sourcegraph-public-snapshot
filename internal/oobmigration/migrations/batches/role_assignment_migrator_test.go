@@ -24,9 +24,7 @@ func TestRoleAssignmentMigrator(t *testing.T) {
 
 	migrator := NewRoleAssignmentMigrator(store, 5)
 	progress, err := migrator.Progress(ctx, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	if have, want := progress, 1.0; have != want {
 		t.Fatalf("got invalid progress with no DB entries, want=%f have=%f", want, have)
