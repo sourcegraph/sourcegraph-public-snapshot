@@ -230,7 +230,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	// Now we're good to insert new low prio job.
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
 	assert.NoError(t, err)
-	
+
 	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	assert.NoError(t, err)
 	// check that we now have 4 jobs for userID=1 in total (low prio (canceled), delayed, high prio (processing), NEW low prio)
