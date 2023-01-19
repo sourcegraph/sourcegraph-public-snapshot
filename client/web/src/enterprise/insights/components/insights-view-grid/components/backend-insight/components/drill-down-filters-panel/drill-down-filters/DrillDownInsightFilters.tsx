@@ -58,6 +58,8 @@ interface DrillDownInsightFilters {
 
     visualMode: FilterSectionVisualMode
 
+    isNumSamplesFilterAvailable: boolean
+
     className?: string
 
     /** Fires whenever the user changes filter value in any form input. */
@@ -80,6 +82,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
+        isNumSamplesFilterAvailable,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
@@ -208,6 +211,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 >
                     <SortFilterSeriesPanel
                         value={seriesDisplayOptionsField.input.value}
+                        isNumSamplesFilterAvailable={isNumSamplesFilterAvailable}
                         onChange={seriesDisplayOptionsField.input.onChange}
                     />
                 </FilterCollapseSection>

@@ -13,11 +13,12 @@ import styles from './SortFilterSeriesPanel.module.scss'
 
 interface SortFilterSeriesPanelProps {
     value: InsightSeriesDisplayOptions
+    isNumSamplesFilterAvailable: boolean
     onChange: (parameter: DrillDownFiltersFormValues['seriesDisplayOptions']) => void
 }
 
 export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
-    const { value, onChange } = props
+    const { value, isNumSamplesFilterAvailable, onChange } = props
 
     const handleToggle = (sortOptions: SeriesSortOptionsInput): void => {
         onChange({ ...value, sortOptions })
@@ -145,23 +146,25 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
                     aria-label="Number of data series"
                 />
             </section>
-            <section className={styles.footer}>
-                <span>
-                    Max number of series points to display <small className="text-muted">(max 90)</small>
-                </span>
-                <Input
-                    type="number"
-                    step="1"
-                    min={1}
-                    max={90}
-                    value={value.numSamples ?? undefined}
-                    placeholder="90"
-                    onChange={handleNumCountChange}
-                    onBlur={handleNumCountBlur}
-                    variant="small"
-                    aria-label="Number of data series"
-                />
-            </section>
+            {isNumSamplesFilterAvailable && (
+                <section className={styles.footer}>
+                    <span>
+                        Max number of series points to display <small className="text-muted">(max 90)</small>
+                    </span>
+                    <Input
+                        type="number"
+                        step="1"
+                        min={1}
+                        max={90}
+                        value={value.numSamples ?? undefined}
+                        placeholder="90"
+                        onChange={handleNumCountChange}
+                        onBlur={handleNumCountBlur}
+                        variant="small"
+                        aria-label="Number of data series"
+                    />
+                </section>
+            )}
         </section>
     )
 }

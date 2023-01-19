@@ -115,6 +115,7 @@ export const DrillDownFiltersShowcase: Story = () => (
         <DrillDownInsightFilters
             initialValues={FILTERS}
             originalValues={ORIGINAL_FILTERS}
+            isNumSamplesFilterAvailable={true}
             visualMode={FilterSectionVisualMode.CollapseSections}
             onFiltersChange={console.log}
             onFilterSave={console.log}
@@ -131,6 +132,7 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
             <DrillDownInsightFilters
                 initialValues={FILTERS}
                 originalValues={ORIGINAL_FILTERS}
+                isNumSamplesFilterAvailable={true}
                 visualMode={mode}
                 onVisualModeChange={setMode}
                 onFiltersChange={console.log}

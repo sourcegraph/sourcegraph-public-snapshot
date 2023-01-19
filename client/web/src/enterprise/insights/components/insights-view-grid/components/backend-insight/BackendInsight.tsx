@@ -15,6 +15,7 @@ import {
     BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
+    isComputeInsight,
     useSaveInsightAsNewView,
 } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
@@ -184,6 +185,9 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             anchor={cardElementRef}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
+                            // It doesn't make sense to have max series per point for compute insights
+                            // because there is always only one point per series
+                            isNumSamplesFilterAvailable={!isComputeInsight(insight)}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
