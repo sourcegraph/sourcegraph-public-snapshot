@@ -8,21 +8,15 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## Unreleased (4.5)
-
-- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
-
-## Unreleased (4.4)
+## Unreleased
 
 <!-- Add changes changes to this section before release. -->
 
 ## v4.3.1 ➔ v4.4
 
-_Upgrade notes for the next version will appear here._
+- This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
 
 ## v4.2 ➔ v4.3.1
-
-<!-- Add changes changes to this section before release. -->
 
 As a template, perform the same actions as the following diffs in your own deployment:
 - [`➔ v4.3.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1a8f9a3d71664bf31a1fae9d2ad99c9074eaebe9)
