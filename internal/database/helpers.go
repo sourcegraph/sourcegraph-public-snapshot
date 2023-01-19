@@ -110,3 +110,21 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 	return queryArgs, nil
 }
+
+// Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
+func (p *PaginationArgs) Clone() *PaginationArgs {
+	copyIntPtr := func(n *int) *int {
+		if n == nil {
+			return nil
+		}
+
+		c := *n
+		return &c
+	}
+	return &PaginationArgs{
+		First:  copyIntPtr(p.First),
+		Last:   copyIntPtr(p.Last),
+		After:  copyIntPtr(p.After),
+		Before: copyIntPtr(p.Before),
+	}
+}

@@ -27,13 +27,7 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	// NOTE: Do not modify "args" in-place because it is used by the caller of ComputeNodes to
 	// determine next/previous page. Instead, dereference the values from args first (if
 	// they're non-nil) and then assign them address of the new variables.
-	paginationArgs := &database.PaginationArgs{
-		First:  copyIntPtr(args.First),
-		Last:   copyIntPtr(args.Last),
-		After:  copyIntPtr(args.After),
-		Before: copyIntPtr(args.Before),
-	}
-
+	paginationArgs := args.Clone()
 	isModifiedPaginationArgs := modifyArgs(paginationArgs)
 
 	history, err := s.db.Conf().ListSiteConfigs(ctx, paginationArgs)
@@ -73,15 +67,6 @@ func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) 
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
 	return &id, err
-}
-
-func copyIntPtr(n *int) *int {
-	if n == nil {
-		return nil
-	}
-
-	c := *n
-	return &c
 }
 
 // modifyArgs will fetch one more than the originally requested number of items because we need one
