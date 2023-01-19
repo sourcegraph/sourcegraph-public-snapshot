@@ -1,4 +1,4 @@
-package gerrit
+package azuredevops
 
 import (
 	"context"
@@ -14,22 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
 
-func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListProjects", *update)
+func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
+	cli, save := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *update)
 	defer save()
 
 	ctx := context.Background()
 
-	args := ListProjectsArgs{
-		Cursor: &Pagination{PerPage: 5, Page: 1},
+	opts := ListRepositoriesByProjectOrOrgArgs{
+		// TODO: use an sg owned org rather than a personal.
+		ProjectOrOrgName: "sgadotest",
 	}
 
-	resp, _, err := cli.ListProjects(ctx, args)
+	resp, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// NewTestClient returns a gerrit.Client that records its interactions
+// NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
 func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	t.Helper()
@@ -58,10 +58,10 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hc = httpcli.GerritUnauthenticateMiddleware(hc)
 
-	c := &schema.GerritConnection{
-		Url: "https://gerrit-review.googlesource.com",
+	c := &ADOConnection{
+		Username: "testuser",
+		Token:    "testpassword",
 	}
 
 	cli, err := NewClient("urn", c, hc)
