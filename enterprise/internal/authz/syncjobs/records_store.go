@@ -24,36 +24,32 @@ type RecordsStore struct {
 
 	mux sync.Mutex
 	// cache is a replaceable abstraction over rcache.FIFOList.
-	cache interface{ Insert(v []byte) error }
+	cache interface {
+		Insert(v []byte) error
+		SetMaxSize(int)
+	}
 }
-
-type noopCache struct{}
-
-func (noopCache) Insert([]byte) error { return nil }
 
 func NewRecordsStore(logger log.Logger) *RecordsStore {
 	return &RecordsStore{
 		logger: logger,
-		cache:  noopCache{},
+		cache:  rcache.NewFIFOList(syncJobsRecordsKey, defaultSyncJobsRecordsLimit),
 		now:    time.Now,
 	}
 }
 
 func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 	c.Watch(func() {
-		r.mux.Lock()
-		defer r.mux.Unlock()
-
 		recordsLimit := c.SiteConfig().AuthzSyncJobsRecordsLimit
 		if recordsLimit == 0 {
 			recordsLimit = defaultSyncJobsRecordsLimit
 		}
 
+		// Setting cache size to 0 disables it
+		r.cache.SetMaxSize(recordsLimit)
 		if recordsLimit > 0 {
-			r.cache = rcache.NewFIFOList(syncJobsRecordsKey, recordsLimit)
 			r.logger.Debug("enabled records store cache", log.Int("limit", recordsLimit))
 		} else {
-			r.cache = noopCache{}
 			r.logger.Debug("disabled records store cache")
 		}
 	})
@@ -62,9 +58,6 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 // Record inserts a record for this job's outcome into the records store.
 func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []ProviderStatus, err error) {
 	completed := r.now()
-
-	r.mux.Lock()
-	defer r.mux.Unlock()
 
 	record := Status{
 		JobType:   jobType,

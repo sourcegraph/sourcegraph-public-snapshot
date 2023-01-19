@@ -24,6 +24,9 @@ func (m *memCache) Insert(v []byte) error {
 	return nil
 }
 
+// no-op
+func (m *memCache) SetMaxSize(int) {}
+
 func (m *memCache) Slice(ctx context.Context, from, to int) (vals [][]byte, err error) {
 	for _, v := range m.values {
 		vals = append(vals, []byte(v))

@@ -17,7 +17,7 @@ func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 	s := NewRecordsStore(logtest.Scoped(t))
 
 	// assert default
-	assert.IsType(t, noopCache{}, s.cache)
+	assert.Equal(t, defaultSyncJobsRecordsLimit, s.cache.(*rcache.FIFOList).MaxSize())
 
 	cw := confWatcher{
 		conf: schema.SiteConfiguration{
