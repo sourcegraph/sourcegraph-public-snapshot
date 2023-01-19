@@ -708,7 +708,7 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) (_ []*types.Us
 	if rows != int64(len(ids)) {
 		return nil, userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to recover %d users, but deleted only %d", +len(ids), rows)}}
 	}
-	users, err := u.getBySQL(ctx, sqlf.Sprintf("id IN (%s)", idsCond))
+	users, err := u.getBySQL(ctx, sqlf.Sprintf("WHERE id IN (%s)", idsCond))
 	if err != nil {
 		return nil, err
 	}
@@ -721,10 +721,10 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) (_ []*types.Us
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=NULL, updated_at=now() WHERE user_id IN (%s) AND deleted_at IS NOT NULL", idsCond)); err != nil {
 		return nil, err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL, updated_at=now() WHERE deleted_at IS NOT NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return nil, err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL, updated_at=now() WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
 		return nil, err
 	}
 
