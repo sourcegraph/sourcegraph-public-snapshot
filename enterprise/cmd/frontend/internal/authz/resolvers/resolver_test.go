@@ -1695,7 +1695,7 @@ query {
 
 type mockRecordsReader []syncjobs.Status
 
-func (m mockRecordsReader) Get(t time.Time) (*syncjobs.Status, error) {
+func (m mockRecordsReader) Get(ctx context.Context, t time.Time) (*syncjobs.Status, error) {
 	for _, r := range m {
 		if r.Completed.Equal(t) {
 			return &r, nil
@@ -1805,6 +1805,28 @@ query {
 		"totalCount": 1
 	}
 }`,
+		}})
+	})
+
+	t.Run("too many entries requested", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first:999) {
+	totalCount
+	pageInfo { hasNextPage }
+    nodes {
+		id
+	}
+  }
+}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{{
+				Message: "cannot retrieve more than 500 records",
+				Path:    []any{"permissionsSyncJobs"},
+			}},
 		}})
 	})
 

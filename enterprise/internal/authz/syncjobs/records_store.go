@@ -2,7 +2,6 @@ package syncjobs
 
 import (
 	"encoding/json"
-	"strconv"
 	"sync"
 	"time"
 
@@ -12,11 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
-// keep in sync with consumer in enterprise/cmd/frontend/internal/authz/resolvers/resolver.go
-const syncJobsRecordsPrefix = "authz/sync-job-records"
+const syncJobsRecordsKey = "authz/sync-job-records"
 
 // default documented in site.schema.json
-const defaultSyncJobsRecordsTTLMinutes = 5
+const defaultSyncJobsRecordsLimit = 100
 
 // RecordsStore is used to record the results of recent permissions syncing jobs for
 // diagnostic purposes.
@@ -25,13 +23,13 @@ type RecordsStore struct {
 	now    func() time.Time
 
 	mux sync.Mutex
-	// cache is a replaceable abstraction over rcache.Cache.
-	cache interface{ Set(key string, v []byte) }
+	// cache is a replaceable abstraction over rcache.FIFOList.
+	cache interface{ Insert(v []byte) error }
 }
 
 type noopCache struct{}
 
-func (noopCache) Set(string, []byte) {}
+func (noopCache) Insert([]byte) error { return nil }
 
 func NewRecordsStore(logger log.Logger) *RecordsStore {
 	return &RecordsStore{
@@ -46,15 +44,14 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 		r.mux.Lock()
 		defer r.mux.Unlock()
 
-		ttlMinutes := c.SiteConfig().AuthzSyncJobsRecordsTTL
-		if ttlMinutes == 0 {
-			ttlMinutes = defaultSyncJobsRecordsTTLMinutes
+		recordsLimit := c.SiteConfig().AuthzSyncJobsRecordsLimit
+		if recordsLimit == 0 {
+			recordsLimit = defaultSyncJobsRecordsLimit
 		}
 
-		if ttlMinutes > 0 {
-			ttlSeconds := ttlMinutes * 60
-			r.cache = rcache.NewWithTTL(syncJobsRecordsPrefix, ttlSeconds)
-			r.logger.Debug("enabled records store cache", log.Int("ttlSeconds", ttlSeconds))
+		if recordsLimit > 0 {
+			r.cache = rcache.NewFIFOList(syncJobsRecordsKey, recordsLimit)
+			r.logger.Debug("enabled records store cache", log.Int("limit", recordsLimit))
 		} else {
 			r.cache = noopCache{}
 			r.logger.Debug("disabled records store cache")
@@ -90,5 +87,5 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	}
 
 	// Key by timestamp for sorting
-	r.cache.Set(strconv.FormatInt(record.Completed.UTC().UnixNano(), 10), val)
+	r.cache.Insert(val)
 }
