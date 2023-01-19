@@ -11,6 +11,6 @@ go_test(
         "//internal/search/result",
         "//internal/search/symbol",
         "//schema",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//assert",
     ],
 )

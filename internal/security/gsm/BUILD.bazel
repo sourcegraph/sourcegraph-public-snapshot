@@ -7,9 +7,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_googleapis_gax_go_v2//:go_default_library",
-        "@com_google_cloud_go_secretmanager//apiv1:go_default_library",
-        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb:go_default_library",
+        "@com_github_googleapis_gax_go_v2//:gax-go",
+        "@com_google_cloud_go_secretmanager//apiv1",
+        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb",
     ],
 )
 
@@ -19,8 +19,8 @@ go_test(
     embed = [":gsm"],
     deps = [
         "//lib/errors",
-        "@com_github_googleapis_gax_go_v2//:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb:go_default_library",
+        "@com_github_googleapis_gax_go_v2//:gax-go",
+        "@com_github_stretchr_testify//assert",
+        "@com_google_cloud_go_secretmanager//apiv1/secretmanagerpb",
     ],
 )

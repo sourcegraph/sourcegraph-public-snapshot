@@ -20,10 +20,10 @@ go_library(
         "//dev/sg/root",
         "//internal/database/postgresdsn",
         "//lib/errors",
-        "@com_github_gomodule_redigo//redis:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_jackc_pgx_v4//:go_default_library",
-        "@com_github_sourcegraph_run//:go_default_library",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_jackc_pgx_v4//:pgx",
+        "@com_github_sourcegraph_run//:run",
     ],
 )
 
@@ -40,7 +40,7 @@ go_test(
         "//dev/sg/internal/check",
         "//dev/sg/internal/std",
         "//dev/sg/internal/usershell",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

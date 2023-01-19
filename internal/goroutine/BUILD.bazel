@@ -12,10 +12,11 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
+        "//internal/goroutine/recorder",
         "//internal/observation",
         "//lib/errors",
-        "@com_github_derision_test_glock//:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -32,7 +33,7 @@ go_test(
     embed = [":goroutine"],
     deps = [
         "//lib/errors",
-        "@com_github_derision_test_glock//:go_default_library",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

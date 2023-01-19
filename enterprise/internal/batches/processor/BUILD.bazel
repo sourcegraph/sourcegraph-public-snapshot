@@ -12,12 +12,13 @@ go_library(
         "//enterprise/internal/batches/state",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/batches/webhooks",
         "//internal/actor",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/types",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -38,6 +39,6 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/github",
         "//internal/observation",
-        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

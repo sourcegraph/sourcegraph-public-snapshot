@@ -25,11 +25,11 @@ go_library(
         "//internal/types",
         "//internal/version",
         "//lib/errors",
-        "@com_github_getsentry_raven_go//:go_default_library",
-        "@com_github_gorilla_mux//:go_default_library",
-        "@com_github_inconshreveable_log15//:go_default_library",
-        "@com_github_neelance_parallel//:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_getsentry_raven_go//:raven-go",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_neelance_parallel//:parallel",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -43,6 +43,6 @@ go_test(
         "//internal/database",
         "//internal/types",
         "//lib/errors",
-        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

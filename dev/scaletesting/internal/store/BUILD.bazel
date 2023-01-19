@@ -8,12 +8,12 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store",
     visibility = ["//dev/scaletesting:__subpackages__"],
-    deps = ["@com_github_mattn_go_sqlite3//:go_default_library"],
+    deps = ["@com_github_mattn_go_sqlite3//:go-sqlite3"],
 )
 
 go_test(
     name = "store_test",
     srcs = ["store_test.go"],
     embed = [":store"],
-    deps = ["@com_github_frankban_quicktest//:go_default_library"],
+    deps = ["@com_github_frankban_quicktest//:quicktest"],
 )

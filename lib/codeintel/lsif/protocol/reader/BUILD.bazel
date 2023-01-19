@@ -13,7 +13,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/lsif/protocol",
-        "@com_github_json_iterator_go//:go_default_library",
+        "@com_github_json_iterator_go//:go",
     ],
 )
 
@@ -27,6 +27,6 @@ go_test(
     embed = [":reader"],
     deps = [
         "//lib/codeintel/lsif/protocol",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

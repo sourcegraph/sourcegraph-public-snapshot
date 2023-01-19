@@ -7,9 +7,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/trace/policy",
-        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:go_default_library",
-        "@io_opentelemetry_go_otel//:go_default_library",
-        "@io_opentelemetry_go_otel//attribute:go_default_library",
-        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

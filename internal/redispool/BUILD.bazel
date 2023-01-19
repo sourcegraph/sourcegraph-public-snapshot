@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "redispool",
     srcs = [
+        "keyvalue.go",
         "redispool.go",
         "sysreq.go",
     ],
@@ -13,12 +14,19 @@ go_library(
         "//internal/lazyregexp",
         "//internal/sysreq",
         "//lib/errors",
-        "@com_github_gomodule_redigo//redis:go_default_library",
+        "@com_github_gomodule_redigo//redis",
     ],
 )
 
 go_test(
     name = "redispool_test",
-    srcs = ["redispool_test.go"],
+    srcs = [
+        "keyvalue_test.go",
+        "redispool_test.go",
+    ],
     embed = [":redispool"],
+    deps = [
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+    ],
 )

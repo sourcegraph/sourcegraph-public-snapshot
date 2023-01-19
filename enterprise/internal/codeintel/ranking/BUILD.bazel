@@ -26,9 +26,9 @@ go_library(
         "//internal/observation",
         "//internal/symbols",
         "//schema",
-        "@com_github_sourcegraph_log//:go_default_library",
-        "@com_google_cloud_go_storage//:go_default_library",
-        "@org_golang_google_api//option:go_default_library",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//option",
     ],
 )
 
@@ -50,7 +50,7 @@ go_test(
         "//internal/search",
         "//internal/search/result",
         "//schema",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

@@ -16,7 +16,7 @@ go_library(
     deps = [
         "//dev/codeintel-qa/internal",
         "//lib/errors",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )
 

@@ -1,4 +1,6 @@
 node_modules
+schema/node_modules
+
 client/branded/node_modules
 client/browser/node_modules
 client/build-config/node_modules

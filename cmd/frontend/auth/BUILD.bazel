@@ -27,8 +27,8 @@ go_library(
         "//internal/lazyregexp",
         "//internal/usagestats",
         "//lib/errors",
-        "@com_github_gorilla_mux//:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -52,9 +52,9 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_davecgh_go_spew//spew:go_default_library",
-        "@com_github_derision_test_go_mockgen//testutil/require:go_default_library",
-        "@com_github_sergi_go_diff//diffmatchpatch:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_davecgh_go_spew//spew",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_sergi_go_diff//diffmatchpatch",
+        "@com_github_stretchr_testify//require",
     ],
 )

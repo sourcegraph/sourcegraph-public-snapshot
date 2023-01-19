@@ -8,13 +8,6 @@ proto_library(
     visibility = ["//:__subpackages__"],
 )
 
-go_proto_library(
-    name = "proto_go_proto",
-    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto/",
-    proto = ":proto_proto",
-    visibility = ["//:__subpackages__"],
-)
-
 go_library(
     name = "proto",
     srcs = [
@@ -31,6 +24,13 @@ go_test(
     srcs = ["find_owners_test.go"],
     deps = [
         ":proto",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//assert",
     ],
+)
+
+go_proto_library(
+    name = "proto_go_proto",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto/",
+    proto = ":proto_proto",
+    visibility = ["//:__subpackages__"],
 )

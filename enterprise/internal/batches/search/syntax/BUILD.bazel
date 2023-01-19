@@ -11,7 +11,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search/syntax",
     visibility = ["//enterprise:__subpackages__"],
-    deps = ["@com_github_grafana_regexp//:go_default_library"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )
 
 go_test(

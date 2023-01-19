@@ -18,9 +18,9 @@ go_library(
         "//internal/encryption/keyring",
         "//internal/observation",
         "//internal/workerutil/dbworker/store",
-        "@com_github_c2h5oh_datasize//:go_default_library",
-        "@com_github_kballard_go_shellquote//:go_default_library",
-        "@org_golang_x_exp//maps:go_default_library",
+        "@com_github_c2h5oh_datasize//:datasize",
+        "@com_github_kballard_go_shellquote//:go-shellquote",
+        "@org_golang_x_exp//maps",
     ],
 )
 
@@ -36,6 +36,6 @@ go_test(
         "//internal/database",
         "//internal/src-cli",
         "//schema",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

@@ -28,10 +28,10 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
-        "@com_github_sourcegraph_zoekt//:go_default_library",
-        "@com_github_sourcegraph_zoekt//query:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//query",
     ],
 )
 
@@ -45,8 +45,8 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/search/query",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_stretchr_testify//require",
     ],
 )

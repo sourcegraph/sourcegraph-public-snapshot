@@ -29,11 +29,11 @@ go_library(
         "//internal/usagestats",
         "//internal/version",
         "//lib/errors",
-        "@com_github_coreos_go_semver//semver:go_default_library",
-        "@com_github_gomodule_redigo//redis:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_coreos_go_semver//semver",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -47,7 +47,7 @@ go_test(
     deps = [
         "//internal/extsvc",
         "//internal/types",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

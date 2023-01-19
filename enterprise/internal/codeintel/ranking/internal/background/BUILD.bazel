@@ -29,12 +29,12 @@ go_library(
         "//internal/search/result",
         "//lib/errors",
         "//lib/group",
-        "@com_github_dcadenas_pagerank//:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
-        "@com_google_cloud_go_storage//:go_default_library",
-        "@org_golang_google_api//iterator:go_default_library",
+        "@com_github_dcadenas_pagerank//:pagerank",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
     ],
 )
 

@@ -34,9 +34,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//monitoring/monitoring",
-        "@com_github_grafana_tools_sdk//:go_default_library",
-        "@com_github_prometheus_common//model:go_default_library",
-        "@org_golang_x_text//cases:go_default_library",
-        "@org_golang_x_text//language:go_default_library",
+        "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_prometheus_common//model",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )

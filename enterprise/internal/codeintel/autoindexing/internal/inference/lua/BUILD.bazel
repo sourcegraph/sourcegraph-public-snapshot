@@ -22,6 +22,7 @@ go_library(
         "test.lua",
         "typescript.lua",
         "util.lua",
+        "BUILD.bazel",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/lua",
     visibility = ["//enterprise:__subpackages__"],

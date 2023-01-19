@@ -24,6 +24,6 @@ go_test(
     embed = [":priority"],
     deps = [
         "//enterprise/internal/insights/query/querybuilder",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//assert",
     ],
 )

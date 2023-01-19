@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 

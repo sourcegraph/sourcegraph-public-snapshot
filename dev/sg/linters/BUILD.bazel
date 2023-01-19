@@ -30,9 +30,9 @@ go_library(
         "//dev/sg/root",
         "//internal/download",
         "//lib/errors",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_masterminds_semver//:go_default_library",
-        "@com_github_sourcegraph_run//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_run//:run",
     ],
 )
 
@@ -46,6 +46,6 @@ go_test(
     deps = [
         "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//assert",
     ],
 )

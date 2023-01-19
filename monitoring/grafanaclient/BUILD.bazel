@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//lib/errors",
         "//monitoring/grafanaclient/headertransport",
-        "@com_github_grafana_tools_sdk//:go_default_library",
+        "@com_github_grafana_tools_sdk//:sdk",
     ],
 )

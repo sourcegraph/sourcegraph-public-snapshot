@@ -17,6 +17,6 @@ go_library(
         "//enterprise/cmd/executor/internal/worker/store",
         "//enterprise/internal/executor",
         "//lib/errors",
-        "@com_github_c2h5oh_datasize//:go_default_library",
+        "@com_github_c2h5oh_datasize//:datasize",
     ],
 )

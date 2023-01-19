@@ -12,9 +12,9 @@ go_library(
     deps = [
         "//internal/conf",
         "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
-        "@org_golang_x_time//rate:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@org_golang_x_time//rate",
     ],
 )
 
@@ -28,7 +28,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//schema",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@org_golang_x_time//rate:go_default_library",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_x_time//rate",
     ],
 )

@@ -8,5 +8,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/adr",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_grafana_regexp//:go_default_library"],
+    deps = ["@com_github_grafana_regexp//:regexp"],
 )

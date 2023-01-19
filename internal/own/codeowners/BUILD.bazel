@@ -18,7 +18,7 @@ go_test(
     deps = [
         ":codeowners",
         "//internal/own/codeowners/proto",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

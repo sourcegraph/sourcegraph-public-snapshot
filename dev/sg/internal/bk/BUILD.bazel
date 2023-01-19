@@ -13,7 +13,7 @@ go_library(
         "//dev/sg/internal/std",
         "//lib/errors",
         "//lib/output",
-        "@com_github_buildkite_go_buildkite_v3//buildkite:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

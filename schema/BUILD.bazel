@@ -33,9 +33,9 @@ js_library(
 
 go_library(
     name = "schema",
-    visibility = ["//visibility:public"],
     srcs = [
         "bitbucket_server_util.go",
+        "bitbucketcloud_util.go",
         "extension_schema.go",
         "gen.go",
         "github_util.go",
@@ -67,5 +67,6 @@ go_library(
         "site.schema.json",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/schema",
-    deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema:go_default_library"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
 )

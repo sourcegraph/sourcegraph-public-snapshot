@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//dev/sg/internal/bk",
         "//lib/errors",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 
@@ -19,6 +19,6 @@ go_test(
     deps = [
         "//dev/sg/internal/bk",
         "//internal/randstring",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

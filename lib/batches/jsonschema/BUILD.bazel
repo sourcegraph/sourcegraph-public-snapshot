@@ -7,6 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
-        "@com_github_xeipuuv_gojsonschema//:go_default_library",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
     ],
 )

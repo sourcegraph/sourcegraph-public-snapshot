@@ -6,7 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers",
     visibility = ["//visibility:public"],
     deps = [
+        "//internal/extsvc",
         "//schema",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )

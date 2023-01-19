@@ -13,8 +13,8 @@ go_library(
     visibility = ["//enterprise/dev/ci:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_ghodss_yaml//:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_ghodss_yaml//:yaml",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )
 
@@ -23,6 +23,6 @@ go_test(
     srcs = ["buildkite_test.go"],
     deps = [
         ":buildkite",
-        "@com_github_ghodss_yaml//:go_default_library",
+        "@com_github_ghodss_yaml//:yaml",
     ],
 )

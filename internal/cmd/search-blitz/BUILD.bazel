@@ -22,11 +22,11 @@ go_library(
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus/promhttp:go_default_library",
-        "@in_gopkg_natefinch_lumberjack_v2//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@in_gopkg_natefinch_lumberjack_v2//:lumberjack_v2",
     ],
 )
 

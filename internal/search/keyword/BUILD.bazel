@@ -20,9 +20,9 @@ go_library(
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/trace",
-        "@com_github_go_enry_go_enry_v2//:go_default_library",
-        "@com_github_kljensen_snowball//:go_default_library",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_kljensen_snowball//:snowball",
+        "@com_github_opentracing_opentracing_go//log",
     ],
 )
 
@@ -36,6 +36,6 @@ go_test(
     deps = [
         "//internal/search/query",
         "//internal/search/result",
-        "@com_github_hexops_autogold//:go_default_library",
+        "@com_github_hexops_autogold//:autogold",
     ],
 )

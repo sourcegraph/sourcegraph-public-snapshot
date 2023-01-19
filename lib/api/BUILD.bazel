@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/api",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_masterminds_semver//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
     ],
 )
 

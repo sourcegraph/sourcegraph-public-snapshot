@@ -14,9 +14,9 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//ext:go_default_library",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
-        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext",
+        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

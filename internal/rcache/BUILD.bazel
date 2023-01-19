@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "rcache",
     srcs = [
+        "backwards.go",
         "fifo_list.go",
         "rcache.go",
     ],
@@ -11,8 +12,9 @@ go_library(
     deps = [
         "//internal/redispool",
         "//lib/errors",
-        "@com_github_gomodule_redigo//redis:go_default_library",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_inconshreveable_log15//:log15",
+        "@org_uber_go_atomic//:atomic",
     ],
 )
 
@@ -23,5 +25,5 @@ go_test(
         "rcache_test.go",
     ],
     embed = [":rcache"],
-    deps = ["@com_github_stretchr_testify//assert:go_default_library"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

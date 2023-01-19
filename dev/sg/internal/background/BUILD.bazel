@@ -9,8 +9,8 @@ go_library(
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/std",
         "//lib/output",
-        "@io_opentelemetry_go_otel//attribute:go_default_library",
-        "@io_opentelemetry_go_otel_trace//:go_default_library",
-        "@org_uber_go_atomic//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_uber_go_atomic//:atomic",
     ],
 )

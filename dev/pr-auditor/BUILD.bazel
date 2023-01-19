@@ -12,9 +12,9 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
-        "@com_github_google_go_github_v41//github:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@org_golang_x_oauth2//:go_default_library",
+        "@com_github_google_go_github_v41//github",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
@@ -33,8 +33,8 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":pr-auditor_lib"],
     deps = [
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

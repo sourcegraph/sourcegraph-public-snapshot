@@ -15,8 +15,8 @@ go_library(
         "//lib/codeintel/lsif/validation",
         "//lib/codeintel/precise",
         "//lib/errors",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -30,5 +30,5 @@ go_test(
     name = "lsif-index-tester_test",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],
-    deps = ["@com_github_google_go_cmp//cmp:go_default_library"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -24,7 +24,7 @@ go_test(
         "//lib/batches",
         "//lib/batches/env",
         "//lib/errors",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -22,7 +22,7 @@ go_library(
     deps = [
         "//internal/workerutil",
         "//lib/errors",
-        "@com_github_sourcegraph_scip//bindings/go/scip:go_default_library",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )
 
@@ -34,7 +34,7 @@ go_test(
     ],
     embed = [":types"],
     deps = [
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_sourcegraph_scip//bindings/go/scip:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )

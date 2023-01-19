@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//internal/observation",
         "//lib/errors",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus/promauto:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -21,6 +21,6 @@ go_test(
         ":blobstore",
         "//internal/observation",
         "//internal/uploadstore",
-        "@com_github_sourcegraph_log//logtest:go_default_library",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

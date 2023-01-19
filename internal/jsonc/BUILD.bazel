@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_sourcegraph_jsonx//:go_default_library",
+        "@com_github_sourcegraph_jsonx//:jsonx",
     ],
 )
 

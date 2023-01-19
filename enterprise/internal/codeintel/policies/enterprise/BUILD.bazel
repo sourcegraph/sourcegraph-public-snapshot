@@ -13,7 +13,7 @@ go_library(
         "//enterprise/internal/codeintel/shared/types",
         "//internal/gitserver/gitdomain",
         "//lib/errors",
-        "@com_github_gobwas_glob//:go_default_library",
+        "@com_github_gobwas_glob//:glob",
     ],
 )
 
@@ -31,6 +31,6 @@ go_test(
         "//enterprise/internal/codeintel/shared/types",
         "//internal/gitserver/gitdomain",
         "//internal/timeutil",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

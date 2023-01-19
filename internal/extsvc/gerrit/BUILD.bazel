@@ -28,7 +28,6 @@ go_test(
         "//internal/lazyregexp",
         "//internal/testutil",
         "//schema",
-        "@com_github_dnaeon_go_vcr//cassette:go_default_library",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_dnaeon_go_vcr//cassette",
     ],
 )

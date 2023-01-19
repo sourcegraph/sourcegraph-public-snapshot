@@ -22,7 +22,7 @@ go_library(
         "//internal/database",
         "//lib/errors",
         "//schema",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -47,9 +47,9 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_coreos_go_oidc//:go_default_library",
-        "@com_github_derision_test_go_mockgen//testutil/require:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_coreos_go_oidc//:go-oidc",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

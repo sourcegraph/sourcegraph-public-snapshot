@@ -17,6 +17,6 @@ go_library(
     deps = [
         "//dev/depgraph/internal/graph",
         "//lib/errors",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

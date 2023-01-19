@@ -17,7 +17,7 @@ go_library(
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )
 
@@ -28,7 +28,7 @@ go_test(
     deps = [
         "//internal/database",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/assert:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_stretchr_testify//assert",
     ],
 )

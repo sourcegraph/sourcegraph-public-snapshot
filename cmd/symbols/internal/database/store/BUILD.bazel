@@ -18,10 +18,10 @@ go_library(
         "//internal/search",
         "//internal/search/result",
         "//lib/errors",
-        "@com_github_grafana_regexp//syntax:go_default_library",
-        "@com_github_inconshreveable_log15//:go_default_library",
-        "@com_github_keegancsmith_sqlf//:go_default_library",
-        "@org_golang_x_sync//errgroup:go_default_library",
+        "@com_github_grafana_regexp//syntax",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@org_golang_x_sync//errgroup",
     ],
 )
 
@@ -32,5 +32,5 @@ go_test(
         "symbols_test.go",
     ],
     embed = [":store"],
-    deps = ["@com_github_google_go_cmp//cmp:go_default_library"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

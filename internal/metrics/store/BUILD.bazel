@@ -11,9 +11,9 @@ go_library(
     deps = [
         "//internal/redispool",
         "//lib/errors",
-        "@com_github_gomodule_redigo//redis:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@com_github_prometheus_client_model//go:go_default_library",
-        "@com_github_prometheus_common//expfmt:go_default_library",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_model//go",
+        "@com_github_prometheus_common//expfmt",
     ],
 )

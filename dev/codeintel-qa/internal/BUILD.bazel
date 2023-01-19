@@ -16,6 +16,6 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/gqltestutil",
-        "@com_github_grafana_regexp//:go_default_library",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

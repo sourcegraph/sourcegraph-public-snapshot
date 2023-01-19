@@ -10,6 +10,6 @@ go_library(
         "//enterprise/internal/database",
         "//internal/authz",
         "//internal/database",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

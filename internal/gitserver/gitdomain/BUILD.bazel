@@ -16,10 +16,10 @@ go_library(
         "//internal/api",
         "//internal/lazyregexp",
         "//lib/errors",
-        "@com_github_gobwas_glob//:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
-        "@io_k8s_utils//strings/slices:go_default_library",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_log//:log",
+        "@io_k8s_utils//strings/slices",
     ],
 )
 
@@ -35,8 +35,8 @@ go_test(
     deps = [
         "//internal/api",
         "//lib/errors",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_sourcegraph_log//logtest:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )

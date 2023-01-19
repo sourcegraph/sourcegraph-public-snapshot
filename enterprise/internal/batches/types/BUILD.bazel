@@ -29,6 +29,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//internal/api",
+        "//internal/api/internalapi",
         "//internal/conf",
         "//internal/database",
         "//internal/extsvc",
@@ -45,15 +46,16 @@ go_library(
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:go_default_library",
-        "@com_github_inconshreveable_log15//:go_default_library",
-        "@com_github_sourcegraph_go_diff//diff:go_default_library",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_go_diff//diff",
     ],
 )
 
 go_test(
     name = "types_test",
     srcs = [
+        "batch_change_test.go",
         "batch_spec_test.go",
         "changeset_event_test.go",
         "changeset_spec_test.go",
@@ -64,6 +66,7 @@ go_test(
     embed = [":types"],
     deps = [
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
@@ -72,8 +75,9 @@ go_test(
         "//internal/timeutil",
         "//internal/workerutil",
         "//lib/batches",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_sourcegraph_go_diff//diff:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_stretchr_testify//assert",
     ],
 )

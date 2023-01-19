@@ -8,6 +8,9 @@ go_library(
         "cursor.go",
         "executors.go",
         "external_services.go",
+        "outbound_webhook_jobs.go",
+        "outbound_webhook_logs.go",
+        "outbound_webhooks.go",
         "saved_searches.go",
         "secret.go",
         "types.go",
@@ -23,9 +26,9 @@ go_library(
         "//internal/workerutil",
         "//lib/errors",
         "//schema",
-        "@com_github_google_uuid//:go_default_library",
-        "@com_github_sourcegraph_jsonx//:go_default_library",
-        "@io_k8s_utils//strings/slices:go_default_library",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_sourcegraph_jsonx//:jsonx",
+        "@io_k8s_utils//strings/slices",
     ],
 )
 
@@ -36,6 +39,6 @@ go_test(
     deps = [
         "//internal/extsvc",
         "//schema",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//assert",
     ],
 )

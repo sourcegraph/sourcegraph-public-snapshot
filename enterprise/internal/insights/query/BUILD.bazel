@@ -21,6 +21,6 @@ go_library(
         "//internal/database",
         "//internal/types",
         "//lib/errors",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

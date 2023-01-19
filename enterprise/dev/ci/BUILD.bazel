@@ -11,9 +11,9 @@ go_library(
         "//enterprise/dev/ci/internal/ci",
         "//enterprise/dev/ci/internal/ci/changed",
         "//internal/hostname",
-        "@com_github_getsentry_sentry_go//:go_default_library",
-        "@com_github_grafana_regexp//:go_default_library",
-        "@com_github_sourcegraph_log//:go_default_library",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

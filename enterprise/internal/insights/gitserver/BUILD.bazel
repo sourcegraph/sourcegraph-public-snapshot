@@ -24,6 +24,6 @@ go_test(
     embed = [":gitserver"],
     deps = [
         "//lib/errors",
-        "@com_github_hexops_autogold//:go_default_library",
+        "@com_github_hexops_autogold//:autogold",
     ],
 )

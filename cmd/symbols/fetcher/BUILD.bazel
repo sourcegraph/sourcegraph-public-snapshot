@@ -14,9 +14,9 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
-        "@com_github_prometheus_client_golang//prometheus:go_default_library",
-        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -34,6 +34,6 @@ go_test(
         "//internal/observation",
         "//internal/search",
         "//internal/types",
-        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

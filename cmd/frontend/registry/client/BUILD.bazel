@@ -13,7 +13,7 @@ go_library(
         "//internal/httpcli",
         "//internal/trace/ot",
         "//lib/errors",
-        "@com_github_google_uuid//:go_default_library",
-        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_opentracing_opentracing_go//ext",
     ],
 )
