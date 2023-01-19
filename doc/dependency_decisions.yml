@@ -476,3 +476,15 @@
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:04:06.690991000 Z
+- - :ignore
+  - tosource
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:25:48.126482000 Z
+- - :ignore
+  - rollup-plugin-dts
+  - :who:
+    :why: dependency from backstage
+    :versions: []
+    :when: 2023-01-19 20:26:01.138835000 Z
