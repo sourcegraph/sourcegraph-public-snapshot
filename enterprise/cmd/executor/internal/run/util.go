@@ -76,10 +76,6 @@ func getSrcVersion(ctx context.Context) (string, error) {
 func getDockerVersion(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx, "docker", "version", "-f", "{{.Server.Version}}")
 	out, _ := cmd.Output()
-	log.Print
-	if err != nil {
-		return "", err
-	}
 	return strings.TrimSpace(string(out)), nil
 }
 
