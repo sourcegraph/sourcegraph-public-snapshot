@@ -61,7 +61,7 @@ type PoliciesServiceResolver interface {
 	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (CodeIntelligenceConfigurationPolicyResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
-	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
+	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (GitObjectFilterPreviewResolver, error)
 	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (RepositoryFilterPreviewResolver, error)
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 }
@@ -98,6 +98,12 @@ type RepositoryResolver interface {
 	CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (GitCommitResolver, error)
 	URL() string
 	URI(ctx context.Context) (string, error)
+	ExternalRepository() ExternalRepositoryResolver
+}
+
+type ExternalRepositoryResolver interface {
+	ServiceType() string
+	ServiceID() string
 }
 
 type GitCommitResolver interface {
@@ -150,7 +156,6 @@ type RepositoryFilterPreviewResolver interface {
 	TotalCount() int32
 	Limit() *int32
 	TotalMatches() int32
-	PageInfo() PageInfo
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -159,8 +164,15 @@ type CodeIntelligenceCommitGraphResolver interface {
 }
 
 type GitObjectFilterPreviewResolver interface {
+	Nodes() []CodeIntelGitObjectResolver
+	TotalCount() int32
+	TotalCountYoungerThanThreshold() *int32
+}
+
+type CodeIntelGitObjectResolver interface {
 	Name() string
 	Rev() string
+	CommittedAt() gqlutil.DateTime
 }
 
 type GitBlobCodeIntelSupportResolver interface {
@@ -648,14 +660,15 @@ type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type PreviewGitObjectFilterArgs struct {
-	Type    GitObjectType
-	Pattern string
+	graphqlutil.ConnectionArgs
+	Type                         GitObjectType
+	Pattern                      string
+	CountObjectsYoungerThanHours *int32
 }
 
 type PreviewRepositoryFilterArgs struct {
 	graphqlutil.ConnectionArgs
 	Patterns []string
-	After    *string
 }
 
 type InferredAvailableIndexersResolver interface {
