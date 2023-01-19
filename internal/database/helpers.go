@@ -1,7 +1,9 @@
 package database
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -77,32 +79,98 @@ func (a *QueryArgs) AppendAllToQuery(query *sqlf.Query) *sqlf.Query {
 	return query
 }
 
+type OrderBy []OrderByOption
+
+func (o OrderBy) Columns() []string {
+	columns := []string{}
+
+	for _, orderOption := range o {
+		columns = append(columns, orderOption.Field)
+	}
+
+	return columns
+}
+
+func (o OrderBy) SQL(descending bool) *sqlf.Query {
+	columns := []*sqlf.Query{}
+
+	for _, orderOption := range o {
+		columns = append(columns, orderOption.SQL(descending))
+	}
+
+	return sqlf.Join(columns, ", ")
+}
+
+type OrderByOption struct {
+	Field string
+	Nulls string
+}
+
+func (o OrderByOption) SQL(descending bool) *sqlf.Query {
+	var sb strings.Builder
+
+	sb.WriteString(string(o.Field))
+
+	if descending {
+		sb.WriteString(" DESC")
+	} else {
+		sb.WriteString(" ASC")
+	}
+
+	if o.Nulls == "FIRST" || o.Nulls == "LAST" {
+		sb.WriteString(" NULLS " + o.Nulls)
+	}
+
+	return sqlf.Sprintf(sb.String())
+}
+
 type PaginationArgs struct {
-	First  *int
-	Last   *int
-	After  *int
-	Before *int
+	First      *int
+	Last       *int
+	After      *string
+	Before     *string
+	OrderBy    OrderBy
+	Descending bool
 }
 
 func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 	queryArgs := &QueryArgs{}
 
 	var conditions []*sqlf.Query
+
+	orderByColumns := p.OrderBy.Columns()
+	if len(orderByColumns) < 1 {
+		return nil, errors.New("Atleast 1 sort column must be provided")
+	}
+
 	if p.After != nil {
-		conditions = append(conditions, sqlf.Sprintf("id < %v", p.After))
+		columnsStr := strings.Join(orderByColumns, ", ")
+		condition := fmt.Sprintf("(%v) >", columnsStr)
+		if p.Descending {
+			condition = fmt.Sprintf("(%v) <", columnsStr)
+		}
+
+		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%v)", *p.After)))
 	}
 	if p.Before != nil {
-		conditions = append(conditions, sqlf.Sprintf("id > %v", p.Before))
+		columnsStr := strings.Join(orderByColumns, ", ")
+		condition := fmt.Sprintf("(%v) <", columnsStr)
+		if p.Descending {
+			condition = fmt.Sprintf("(%v) >", columnsStr)
+		}
+
+		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%v)", *p.Before)))
 	}
+
 	if len(conditions) > 0 {
 		queryArgs.Where = sqlf.Sprintf("%v", sqlf.Join(conditions, "AND "))
 	}
 
 	if p.First != nil {
-		queryArgs.Order = sqlf.Sprintf("id DESC")
+		queryArgs.Order = p.OrderBy.SQL(p.Descending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.First)
 	} else if p.Last != nil {
-		queryArgs.Order = sqlf.Sprintf("id ASC")
+		queryArgs.Order = p.OrderBy.SQL(!p.Descending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)
 	} else {
 		return nil, errors.New("First or Last must be set")

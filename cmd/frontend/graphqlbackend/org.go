@@ -156,7 +156,12 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		OrderBy:    database.OrderBy{{Field: "id"}},
+		Descending: true,
+	}
+
+	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type membersConnectionStore struct {
@@ -195,7 +200,7 @@ func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *databas
 	return userResolvers, nil
 }
 
-func (s *membersConnectionStore) MarshalCursor(node *UserResolver) (*string, error) {
+func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New(`node is nil`)
 	}
@@ -205,13 +210,13 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver) (*string, err
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cusror string) (*int, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cusror string, _ database.OrderBy) (*string, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cusror))
 	if err != nil {
 		return nil, err
 	}
 
-	id := int(nodeID)
+	id := string(nodeID)
 
 	return &id, nil
 }

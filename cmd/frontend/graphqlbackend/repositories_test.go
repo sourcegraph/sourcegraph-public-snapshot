@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,9 +24,9 @@ import (
 
 func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 	mockRepos := []*types.Repo{
-		{Name: "repo1"}, // not_cloned
-		{Name: "repo2"}, // cloning
-		{Name: "repo3"}, // cloned
+		{ID: 1, Name: "repo1"}, // not_cloned
+		{ID: 2, Name: "repo2"}, // cloning
+		{ID: 3, Name: "repo3"}, // cloned
 	}
 
 	repos := database.NewMockRepoStore()
@@ -69,7 +68,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories {
+					repositories(first: 3) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -84,18 +83,11 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": null,
+						"totalCount": 0,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
 			`,
-				ExpectedErrors: []*gqlerrors.QueryError{
-					{
-						Path:          []any{"repositories", "totalCount"},
-						Message:       auth.ErrMustBeSiteAdmin.Error(),
-						ResolverError: auth.ErrMustBeSiteAdmin,
-					},
-				},
 			},
 		})
 	})
@@ -108,7 +100,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories {
+					repositories(first: 3) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -136,7 +128,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				// when setting them explicitly
 				Query: `
 				{
-					repositories(cloned: true, notCloned: true) {
+					repositories(first: 3, cloned: true, notCloned: true) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -183,7 +175,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloned: false) {
+					repositories(first: 3, cloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -205,7 +197,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(notCloned: false) {
+					repositories(first: 3, notCloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -226,7 +218,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(notCloned: false, cloned: false) {
+					repositories(first: 3, notCloned: false, cloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -245,7 +237,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: CLONED) {
+					repositories(first: 3, cloneStatus: CLONED) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -266,7 +258,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: CLONING) {
+					repositories(first: 3, cloneStatus: CLONING) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -287,7 +279,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: NOT_CLONED) {
+					repositories(first: 3, cloneStatus: NOT_CLONED) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -355,7 +347,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories {
+					repositories(first: 5) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -384,7 +376,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			// when setting them explicitly
 			Query: `
 				{
-					repositories(indexed: true, notIndexed: true) {
+					repositories(first: 5, indexed: true, notIndexed: true) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -410,7 +402,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(indexed: false) {
+					repositories(first: 5, indexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -434,7 +426,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(notIndexed: false) {
+					repositories(first: 5, notIndexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -458,7 +450,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(notIndexed: false, indexed: false) {
+					repositories(first: 5, notIndexed: false, indexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -500,24 +492,33 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		return fmt.Sprintf(`{ repositories(%s) { nodes { name } pageInfo { endCursor } } }`, strings.Join(args, ", "))
 	}
 
+	buildCursor := func(node *types.Repo) string {
+		return MarshalRepositoryCursor(
+			&types.Cursor{
+				Column: "name",
+				Value:  fmt.Sprintf("%s@%v", node.Name, node.ID),
+			},
+		)
+	}
+
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(mockRepos[0:2], nil)
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query:  buildQuery(1, ""),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo1"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, buildCursor(mockRepos[0])),
 		})
 	})
 
@@ -526,19 +527,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
-			ExpectedResult: `
+			Query:  buildQuery(1, buildCursor(mockRepos[0])),
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo2"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8zIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, buildCursor(mockRepos[1])),
 		})
 	})
 
@@ -547,19 +548,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoicHJldiJ9"),
-			ExpectedResult: `
+			Query:  buildQuery(1, buildCursor(mockRepos[0])),
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo2"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8zIiwiRGlyZWN0aW9uIjoicHJldiJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, buildCursor(mockRepos[1])),
 		})
 	})
 
@@ -569,7 +570,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query:  buildQuery(3, ""),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
@@ -580,11 +581,11 @@ func TestRepositories_CursorPagination(t *testing.T) {
 							"name": "repo3"
 						}],
 						"pageInfo": {
-						  "endCursor": null
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, buildCursor(mockRepos[2])),
 		})
 	})
 
@@ -616,7 +617,12 @@ func TestRepositories_CursorPagination(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"repositories"},
+					Path:          []any{"repositories", "nodes"},
+					Message:       `cannot unmarshal repository cursor type: ""`,
+					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
+				},
+				{
+					Path:          []any{"repositories", "pageInfo"},
 					Message:       `cannot unmarshal repository cursor type: ""`,
 					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
 				},
@@ -689,11 +695,6 @@ func TestRepositories_Integration(t *testing.T) {
 	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
 
 	tests := []repositoriesQueryTest{
-		// no args
-		{
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
-		},
 		// first
 		{
 			args:           "first: 2",
@@ -703,12 +704,12 @@ func TestRepositories_Integration(t *testing.T) {
 		// cloned
 		{
 			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
-			args:           "cloned: true",
+			args:           "first: 10, cloned: true",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 8,
 		},
 		{
-			args:           "cloned: false",
+			args:           "first: 10, cloned: false",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4"},
 			wantTotalCount: 4,
 		},
@@ -719,18 +720,18 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		// notCloned
 		{
-			args:           "notCloned: true",
+			args:           "first: 10, notCloned: true",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 8,
 		},
 		{
-			args:           "notCloned: false",
+			args:           "first: 10, notCloned: false",
 			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 4,
 		},
 		// failedFetch
 		{
-			args:           "failedFetch: true",
+			args:           "first: 10, failedFetch: true",
 			wantRepos:      []string{"repo2", "repo4", "repo6"},
 			wantTotalCount: 3,
 		},
@@ -740,23 +741,23 @@ func TestRepositories_Integration(t *testing.T) {
 			wantTotalCount: 3,
 		},
 		{
-			args:           "failedFetch: false",
+			args:           "first: 10, failedFetch: false",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 8,
 		},
 		// cloneStatus
 		{
-			args:           "cloneStatus:NOT_CLONED",
+			args:           "first: 10, cloneStatus:NOT_CLONED",
 			wantRepos:      []string{"repo1", "repo2"},
 			wantTotalCount: 2,
 		},
 		{
-			args:           "cloneStatus:CLONING",
+			args:           "first: 10, cloneStatus:CLONING",
 			wantRepos:      []string{"repo3", "repo4"},
 			wantTotalCount: 2,
 		},
 		{
-			args:           "cloneStatus:CLONED",
+			args:           "first: 10, cloneStatus:CLONED",
 			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 4,
 		},
@@ -768,12 +769,12 @@ func TestRepositories_Integration(t *testing.T) {
 		// indexed
 		{
 			// indexed only says whether to "Include indexed repositories.", it doesn't exclude non-indexed.
-			args:           "indexed: true",
+			args:           "first: 10, indexed: true",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 8,
 		},
 		{
-			args:           "indexed: false",
+			args:           "first: 10, indexed: false",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount: 7,
 		},
@@ -784,12 +785,12 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		// notIndexed
 		{
-			args:           "notIndexed: true",
+			args:           "first: 10, notIndexed: true",
 			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
 			wantTotalCount: 8,
 		},
 		{
-			args:           "notIndexed: false",
+			args:           "first: 10, notIndexed: false",
 			wantRepos:      []string{"repo8"},
 			wantTotalCount: 1,
 		},

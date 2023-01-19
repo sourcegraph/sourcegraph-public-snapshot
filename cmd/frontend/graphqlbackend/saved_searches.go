@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -141,7 +142,12 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 		orgID:  &orgID,
 	}
 
-	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		OrderBy:    database.OrderBy{{Field: "id"}},
+		Descending: true,
+	}
+
+	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type savedSearchesConnectionStore struct {
@@ -150,19 +156,19 @@ type savedSearchesConnectionStore struct {
 	orgID  *int32
 }
 
-func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver) (*string, error) {
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, _ database.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
 	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := int(nodeID)
+	id := strconv.Itoa(int(nodeID))
 
 	return &id, nil
 }

@@ -2,6 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +22,6 @@ import (
 )
 
 type repositoryArgs struct {
-	graphqlutil.ConnectionArgs
 	Query *string // Search query
 	Names *[]string
 
@@ -36,42 +38,17 @@ type repositoryArgs struct {
 
 	OrderBy    string
 	Descending bool
-	After      *string
+	graphqlutil.ConnectionResolverArgs
 }
 
 func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, error) {
-	opt := database.ReposListOptions{
-		OrderBy: database.RepoListOrderBy{{
-			Field:      ToDBRepoListColumn(args.OrderBy),
-			Descending: args.Descending,
-		}},
-	}
+	opt := database.ReposListOptions{}
 	if args.Names != nil {
 		opt.Names = *args.Names
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	if args.After != nil {
-		cursor, err := UnmarshalRepositoryCursor(args.After)
-		if err != nil {
-			return opt, err
-		}
-		opt.Cursors = append(opt.Cursors, cursor)
-	} else {
-		cursor := types.Cursor{
-			Column: string(ToDBRepoListColumn(args.OrderBy)),
-		}
-
-		if args.Descending {
-			cursor.Direction = "prev"
-		} else {
-			cursor.Direction = "next"
-		}
-
-		opt.Cursors = append(opt.Cursors, &cursor)
-	}
-	args.Set(&opt.LimitOffset)
 
 	if args.CloneStatus != nil {
 		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
@@ -114,21 +91,159 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 	return opt, nil
 }
 
-func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
+func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*graphqlutil.ConnectionResolver[RepositoryResolver], error) {
 	opt, err := args.toReposListOptions()
-
 	if err != nil {
 		return nil, err
 	}
 
-	return &repositoryConnectionResolver{
+	connectionStore := &repositoriesConnectionStore{
+		ctx:        ctx,
 		db:         r.db,
 		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
 		opt:        opt,
 		indexed:    args.Indexed,
 		notIndexed: args.NotIndexed,
-	}, nil
+	}
+
+	maxPageSize := 1000
+
+	orderBy := "REPOSITORY_NAME"
+	if args.OrderBy != "" {
+		orderBy = args.OrderBy
+	}
+
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		MaxPageSize: &maxPageSize,
+		OrderBy:     database.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
+		Descending:  args.Descending,
+	}
+
+	return graphqlutil.NewConnectionResolver[RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
+
+type repositoriesConnectionStore struct {
+	ctx        context.Context
+	logger     log.Logger
+	db         database.DB
+	opt        database.ReposListOptions
+	indexed    bool
+	notIndexed bool
+}
+
+func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {
+	column := orderBy[0].Field
+	var value string
+
+	switch column {
+	case string(database.RepoListName):
+		value = node.Name()
+	case string(database.RepoListCreatedAt):
+		value = fmt.Sprintf("'%v'", node.RawCreatedAt())
+	case string(database.RepoListSize):
+		size, err := node.DiskSizeBytes(s.ctx)
+		if err != nil {
+			return nil, err
+		}
+		value = strconv.FormatInt(int64(*size), 10)
+	default:
+		return nil, errors.New("Invalid OrderBy Field.")
+	}
+
+	cursor := MarshalRepositoryCursor(
+		&types.Cursor{
+			Column: column,
+			Value:  fmt.Sprintf("%v@%v", value, node.IDInt32()),
+		},
+	)
+
+	return &cursor, nil
+}
+
+func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	column := orderBy[0].Field
+	if repoCursor.Column != column {
+		return nil, errors.New("Invalid cursor.")
+	}
+
+	csv := ""
+	values := strings.Split(repoCursor.Value, "@")
+	if len(values) != 2 {
+		return nil, errors.New("Invalid cursor.")
+	}
+
+	switch column {
+	case string(database.RepoListName):
+		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
+	case string(database.RepoListCreatedAt):
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	case string(database.RepoListSize):
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	default:
+		return nil, errors.New("Invalid OrderBy Field.")
+	}
+
+	return &csv, err
+}
+
+func (r *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
+	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
+	// count does not respect repository permissions.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		val := int32(0)
+		return &val, nil
+	}
+
+	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
+	if envvar.SourcegraphDotComMode() {
+		if len(r.opt.Query) < 4 {
+			return nil, nil
+		}
+
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, 300*time.Millisecond)
+		defer cancel()
+		defer func() {
+			if ctx.Err() == context.DeadlineExceeded {
+				countptr = nil
+				err = nil
+			}
+		}()
+	}
+
+	i32ptr := func(v int32) *int32 { return &v }
+	count, err := r.db.Repos().Count(ctx, r.opt)
+	return i32ptr(int32(count)), err
+}
+
+func (r *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
+	opt := r.opt
+	opt.PaginationArgs = args
+
+	client := gitserver.NewClient(r.db)
+	repos, err := backend.NewRepos(r.logger, r.db, client).List(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	for _, repo := range repos {
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
+	}
+
+	return resolvers, nil
+}
+
+// NOTE(naman): The old resolver `RepositoryConnectionResolver` defined below is
+// depricated and replaced by `graphqlutil.ConnectionResolver` above which implements
+// proper cursor-based pagination and do not support `precise` argument for totalCount.
+// The old resolver is still being used by `AuthorizedUserRepositories` API, therefore
+// the code is not removed yet.
 
 type TotalCountArgs struct {
 	Precise bool
