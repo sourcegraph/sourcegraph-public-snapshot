@@ -932,13 +932,13 @@ func TestFileDiffHighlighter(t *testing.T) {
 
 	file1 := &dummyFileResolver{
 		path: "old.txt",
-		content: func(ctx context.Context) (string, error) {
+		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 			return "old1\nold2\nold3\n", nil
 		},
 	}
 	file2 := &dummyFileResolver{
 		path: "new.txt",
-		content: func(ctx context.Context) (string, error) {
+		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 			return "new1\nnew2\nnew3\n", nil
 		},
 	}
@@ -1002,29 +1002,36 @@ type dummyFileResolver struct {
 	url          string
 	canonicalURL string
 
-	content func(context.Context) (string, error)
+	content func(context.Context, *GitTreeContentPageArgs) (string, error)
 }
 
 func (d *dummyFileResolver) Path() string      { return d.path }
 func (d *dummyFileResolver) Name() string      { return d.name }
 func (d *dummyFileResolver) IsDirectory() bool { return false }
-func (d *dummyFileResolver) Content(ctx context.Context) (string, error) {
-	return d.content(ctx)
+func (d *dummyFileResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+	return d.content(ctx, args)
 }
 
 func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
-	content, err := d.content(ctx)
+	content, err := d.content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len([]byte(content))), nil
+}
+func (d *dummyFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	content, err := d.content(ctx, &GitTreeContentPageArgs{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(strings.Split(content, "\n"))), nil
 }
 
 func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (d *dummyFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (d *dummyFileResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	return d.richHTML, nil
 }
 
