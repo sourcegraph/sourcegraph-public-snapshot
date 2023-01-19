@@ -951,6 +951,6 @@ from %s isrt
     join insight_view iv ON ivs.insight_view_id = iv.id
     left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
     left outer join repo_names rn on sp.repo_name_id = rn.id
-	where ivs.insight_view_id = %s and %s
+	where iv.unique_id = %s and %s
     order by iv.title, isrt.recording_time, ivs.label, sp.capture;
 `

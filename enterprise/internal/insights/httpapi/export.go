@@ -36,7 +36,11 @@ func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) http.HandlerFun
 			return
 		}
 
-		_, _ = w.Write(archive)
+		_, err = w.Write(archive)
+		if err != nil {
+			logger.Error("writing archive errored", log.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -55,18 +59,34 @@ func exportCodeInsightData(ctx context.Context, store *store.Store, id string) (
 
 	dataWriter := csv.NewWriter(dataFile)
 
+	// this needs to be the same number of elements as the number of columns in store.GetAllDataForInsightViewID
 	dataPoint := []string{
-		"check",
+		"title",
+		"label",
+		"query",
+		"recording_time",
+		"repository",
+		"value",
+		"capture",
 	}
 
 	if err := dataWriter.Write(dataPoint); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to write csv header")
 	}
 
-	dataPoints := []string{"this works"}
+	dataPoints, err := store.GetAllDataForInsightViewID(ctx, insightViewId)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch all data for insight view with id %s", insightViewId)
+	}
 
 	for _, d := range dataPoints {
-		dataPoint[0] = d
+		dataPoint[0] = d.InsightViewTitle
+		dataPoint[1] = d.SeriesLabel
+		dataPoint[2] = d.SeriesQuery
+		dataPoint[3] = d.RecordingTime.String()
+		dataPoint[4] = emptyStringIfNil(d.RepoName)
+		dataPoint[5] = fmt.Sprintf("%d", d.Value)
+		dataPoint[6] = emptyStringIfNil(d.Capture)
 
 		if err := dataWriter.Write(dataPoint); err != nil {
 			return nil, err
@@ -79,4 +99,11 @@ func exportCodeInsightData(ctx context.Context, store *store.Store, id string) (
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func emptyStringIfNil(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
