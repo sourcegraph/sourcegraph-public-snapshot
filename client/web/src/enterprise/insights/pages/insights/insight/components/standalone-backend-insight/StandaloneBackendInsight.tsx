@@ -25,7 +25,6 @@ import {
     InsightIncompleteAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
-    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
     BackendInsightData,
@@ -77,7 +76,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        limit: debouncedFilters.seriesDisplayOptions.limit,
+        numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
