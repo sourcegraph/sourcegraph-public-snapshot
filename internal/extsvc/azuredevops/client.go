@@ -14,32 +14,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-// Client used to access an ADO code host via the REST API.
+// Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
 	// Config is the code host connection config for this client.
-	Config *ADOConnection
+	Config *AzureDevOpsConnection
 
-	// URL is the base URL of ADO.
+	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter (since ADO does not have a concept
+	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
 }
 
-// TODO: @varsanojidan remove this when the shcema is updated to include ADO: https://github.com/sourcegraph/sourcegraph/issues/46266.
-type ADOConnection struct {
+// TODO: @varsanojidan remove this when the shcema is updated to include AzureDevOps: https://github.com/sourcegraph/sourcegraph/issues/46266.
+type AzureDevOpsConnection struct {
 	Username string
 	Token    string
+	Projects []string
+	Orgs     []string
 }
 
-// NewClient returns an authenticated ADO API client with
+// NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse("https://dev.azure.com")
 	if err != nil {
 		return nil, err
@@ -141,5 +143,5 @@ type httpError struct {
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("ADO API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("AzureDevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }

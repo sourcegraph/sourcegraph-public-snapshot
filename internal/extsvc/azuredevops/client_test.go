@@ -59,7 +59,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	c := &ADOConnection{
+	c := &AzureDevOpsConnection{
 		Username: "testuser",
 		Token:    "testpassword",
 	}
