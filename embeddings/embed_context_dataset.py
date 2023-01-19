@@ -1,9 +1,82 @@
 import os
 import argparse
+import re
 
 import numpy as np
 
 from embed import get_embeddings, EMBEDDING_ENGINE
+
+
+needs_no_context_message_regexps = [
+    re.compile(r"(previous|above)\s+(message|code|text)", re.IGNORECASE),
+    re.compile(
+        r"(translate|convert|change|for|make|refactor|rewrite|ignore|explain|fix|try|show)\s+(that|this|above|previous|it|again)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(this|that).*?\s+(is|seems|looks)\s+(wrong|incorrect|bad|good)", re.IGNORECASE
+    ),
+    re.compile(r"^(yes|no|correct|wrong|nope|yep|now|cool)(\s|.|,)", re.IGNORECASE),
+]
+
+
+def get_additional_context_embeddings(embeddings_dir: str):
+    return {
+        "yes": np.load(
+            os.path.join(
+                embeddings_dir, "need_additional_context_messages_embeddings.npy"
+            )
+        ),
+        "no": np.load(
+            os.path.join(
+                embeddings_dir, "no_additional_context_messages_embeddings.npy"
+            )
+        ),
+    }
+
+
+def get_mean_similarity(embeddings: np.ndarray, query_embedding: np.ndarray):
+    return np.matmul(embeddings, query_embedding.T).mean()
+
+
+def is_query_similar_to_no_context_messages(
+    query: str, additional_context_embeddings, delta=0.02
+) -> bool:
+    query_embedding = np.array(get_embeddings([query], engine=EMBEDDING_ENGINE))
+    need_context_messages_similarity = get_mean_similarity(
+        additional_context_embeddings["yes"], query_embedding
+    )
+    no_context_messages_similarity = get_mean_similarity(
+        additional_context_embeddings["no"], query_embedding
+    )
+
+    # We have to be really sure that the query requires no context. So we check if the query
+    # is at least `delta` more similar to no context messages compared to messages that need additional context.
+    return (no_context_messages_similarity - need_context_messages_similarity) > delta
+
+
+def query_needs_additional_context(query: str, additional_context_embeddings) -> bool:
+    query = query.strip()
+
+    # Allow the user to ask general questions (not related to the codebase) by prefixing the query with "general:"
+    if query.lower().startswith("general:"):
+        return False
+
+    if len(query) < 15:
+        return False
+
+    # User provided their own code context in the form of a Markdown code block.
+    if "```\n" in query:
+        return False
+
+    for regexp in needs_no_context_message_regexps:
+        if regexp.search(query):
+            return False
+
+    if is_query_similar_to_no_context_messages(query, additional_context_embeddings):
+        return False
+
+    return True
 
 
 NEED_ADDITIONAL_CONTEXT = [

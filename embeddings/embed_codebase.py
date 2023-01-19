@@ -1,8 +1,9 @@
 import os
+import re
 import argparse
-from typing import List, Dict, Any
 import time
 import json
+from typing import List, Dict, Any
 
 import numpy as np
 
@@ -32,6 +33,11 @@ EMBEDDABLE_EXTENSIONS = set(
 EMBEDDABLE_EXTENSIONLESS_FILES = set(["dockerfile", "license"])
 EXCLUDED_PATHS = ["/__fixtures__/", "/testdata/", "/mocks"]
 MAX_FILE_SIZE_BYTES = 1000000  # 1MB
+FILESYSTEM_SAFE_NAME_REGEXP = re.compile(r"[^0-9a-zA-Z]")
+
+
+def get_filesystem_safe_codebase_id(codebase_id: str):
+    return FILESYSTEM_SAFE_NAME_REGEXP.sub("_", codebase_id)
 
 
 def chunk_text(text: str, chunk_size: int) -> List[Dict[str, Any]]:
@@ -111,13 +117,14 @@ if __name__ == "__main__":
 
     print("Total embedding time:", time.time() - t_start)
 
+    fs_safe_codebase_id = get_filesystem_safe_codebase_id(args.codebase_id)
     embeddings_metadata_path = os.path.join(
-        args.output_dir, f"{args.codebase_id}_embeddings_metadata.json"
+        args.output_dir, f"{fs_safe_codebase_id}_embeddings_metadata.json"
     )
     with open(embeddings_metadata_path, "w", encoding="utf-8") as f:
         json.dump(embeddings_metadata, f)
 
     embeddings_path = os.path.join(
-        args.output_dir, f"{args.codebase_id}_embeddings.npy"
+        args.output_dir, f"{fs_safe_codebase_id}_embeddings.npy"
     )
     np.save(embeddings_path, np.array(embeddings))
