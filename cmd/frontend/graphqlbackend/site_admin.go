@@ -53,7 +53,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverListRequ
 		ids[index] = id
 	}
 
-	_, err := r.db.Users().RecoverList(ctx, ids)
+	err := r.db.Users().RecoverList(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -697,16 +698,23 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) error {
 
 	idsCond := sqlf.Join(userIDs, ",")
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL", idsCond))
+	res, err := tx.Handle().QueryContext(ctx, "UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)
 	if err != nil {
 		return err
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
+
+	affectedUserID := []int32{}
+	for res.Next() {
+		var id int32
+		if err := res.Scan(&id); err != nil {
+			return err
+		}
+		affectedUserID = append(affectedUserID, id)
 	}
-	if rows != int64(len(ids)) {
-		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to recover %d users, but deleted only %d", +len(ids), rows)}}
+
+	if len(affectedUserID) != len(ids) {
+		missingUserIds := missingUserIds(ids, affectedUserID)
+		return errors.Wrapf(err, "some users were not found, expected to recover %d, but found only %s", len(userIDs), strings.Join(missingUserIds, ","))
 	}
 	users, err := u.getBySQL(ctx, sqlf.Sprintf("WHERE id IN (%s)", idsCond))
 	if err != nil {
@@ -1424,4 +1432,19 @@ func useFastPasswordMocks() {
 		_, _ = io.WriteString(h, password)
 		return hash == strconv.FormatUint(h.Sum64(), 16)
 	}
+}
+
+func missingUserIds(id, affectedIds []int32) []string {
+	maffectedIds := make(map[int32]struct{}, len(affectedIds))
+	for _, x := range affectedIds {
+		maffectedIds[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range id {
+		if _, found := maffectedIds[x]; !found {
+			strId := strconv.Itoa(int(x))
+			diff = append(diff, strId)
+		}
+	}
+	return diff
 }
