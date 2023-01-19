@@ -222,3 +222,41 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	// check that we now have 4 jobs for userID=1 in total (low prio (canceled), delayed, high prio (processing), NEW low prio)
 	assert.Len(t, allUser1Jobs, 4)
 }
+
+func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := PermissionSyncJobsWith(logger, db)
+
+	// Test that cancelling non-existent job errors out
+	err := store.CancelQueuedJob(ctx, 1)
+	assert.Error(t, err)
+
+	// Adding a job
+	err = store.CreateRepoSyncJob(ctx, 1, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	assert.NoError(t, err)
+
+	// Cancelling a job should be successful now
+	err = store.CancelQueuedJob(ctx, 1)
+	assert.NoError(t, err)
+
+	// Cancelling already cancelled job doesn't make sense and errors out as well
+	err = store.CancelQueuedJob(ctx, 1)
+	assert.Error(t, err)
+
+	// Adding another job and setting it to "processing" state
+	err = store.CreateRepoSyncJob(ctx, 1, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	assert.NoError(t, err)
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET state='processing' WHERE id=2")
+	assert.NoError(t, err)
+
+	// Cancelling it errors out because it is in a state different from "queued"
+	err = store.CancelQueuedJob(ctx, 2)
+	assert.Error(t, err)
+}

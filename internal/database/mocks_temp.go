@@ -35688,9 +35688,9 @@ func (c OutboundWebhookStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockPermissionSyncJobStore struct {
-	// CancelSyncJobFunc is an instance of a mock function object
-	// controlling the behavior of the method CancelSyncJob.
-	CancelSyncJobFunc *PermissionSyncJobStoreCancelSyncJobFunc
+	// CancelQueuedJobFunc is an instance of a mock function object
+	// controlling the behavior of the method CancelQueuedJob.
+	CancelQueuedJobFunc *PermissionSyncJobStoreCancelQueuedJobFunc
 	// CreateRepoSyncJobFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateRepoSyncJob.
 	CreateRepoSyncJobFunc *PermissionSyncJobStoreCreateRepoSyncJobFunc
@@ -35719,8 +35719,8 @@ type MockPermissionSyncJobStore struct {
 // results, unless overwritten.
 func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
-		CancelSyncJobFunc: &PermissionSyncJobStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, CancelPermissionSyncJobOptions) (r0 error) {
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
 				return
 			},
 		},
@@ -35767,9 +35767,9 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 // overwritten.
 func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
-		CancelSyncJobFunc: &PermissionSyncJobStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, CancelPermissionSyncJobOptions) error {
-				panic("unexpected invocation of MockPermissionSyncJobStore.CancelSyncJob")
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CancelQueuedJob")
 			},
 		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
@@ -35815,8 +35815,8 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 // implementation, unless overwritten.
 func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
-		CancelSyncJobFunc: &PermissionSyncJobStoreCancelSyncJobFunc{
-			defaultHook: i.CancelSyncJob,
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: i.CancelQueuedJob,
 		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: i.CreateRepoSyncJob,
@@ -35842,37 +35842,37 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 	}
 }
 
-// PermissionSyncJobStoreCancelSyncJobFunc describes the behavior when the
-// CancelSyncJob method of the parent MockPermissionSyncJobStore instance is
-// invoked.
-type PermissionSyncJobStoreCancelSyncJobFunc struct {
-	defaultHook func(context.Context, CancelPermissionSyncJobOptions) error
-	hooks       []func(context.Context, CancelPermissionSyncJobOptions) error
-	history     []PermissionSyncJobStoreCancelSyncJobFuncCall
+// PermissionSyncJobStoreCancelQueuedJobFunc describes the behavior when the
+// CancelQueuedJob method of the parent MockPermissionSyncJobStore instance
+// is invoked.
+type PermissionSyncJobStoreCancelQueuedJobFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []PermissionSyncJobStoreCancelQueuedJobFuncCall
 	mutex       sync.Mutex
 }
 
-// CancelSyncJob delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) CancelSyncJob(v0 context.Context, v1 CancelPermissionSyncJobOptions) error {
-	r0 := m.CancelSyncJobFunc.nextHook()(v0, v1)
-	m.CancelSyncJobFunc.appendCall(PermissionSyncJobStoreCancelSyncJobFuncCall{v0, v1, r0})
+// CancelQueuedJob delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CancelQueuedJob(v0 context.Context, v1 int) error {
+	r0 := m.CancelQueuedJobFunc.nextHook()(v0, v1)
+	m.CancelQueuedJobFunc.appendCall(PermissionSyncJobStoreCancelQueuedJobFuncCall{v0, v1, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the CancelSyncJob method
-// of the parent MockPermissionSyncJobStore instance is invoked and the hook
-// queue is empty.
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, CancelPermissionSyncJobOptions) error) {
+// SetDefaultHook sets function that is called when the CancelQueuedJob
+// method of the parent MockPermissionSyncJobStore instance is invoked and
+// the hook queue is empty.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) SetDefaultHook(hook func(context.Context, int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CancelSyncJob method of the parent MockPermissionSyncJobStore instance
+// CancelQueuedJob method of the parent MockPermissionSyncJobStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) PushHook(hook func(context.Context, CancelPermissionSyncJobOptions) error) {
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) PushHook(hook func(context.Context, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -35880,20 +35880,20 @@ func (f *PermissionSyncJobStoreCancelSyncJobFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, CancelPermissionSyncJobOptions) error {
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, CancelPermissionSyncJobOptions) error {
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
 		return r0
 	})
 }
 
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) nextHook() func(context.Context, CancelPermissionSyncJobOptions) error {
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) nextHook() func(context.Context, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -35906,33 +35906,34 @@ func (f *PermissionSyncJobStoreCancelSyncJobFunc) nextHook() func(context.Contex
 	return hook
 }
 
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) appendCall(r0 PermissionSyncJobStoreCancelSyncJobFuncCall) {
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) appendCall(r0 PermissionSyncJobStoreCancelQueuedJobFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of PermissionSyncJobStoreCancelSyncJobFuncCall
-// objects describing the invocations of this function.
-func (f *PermissionSyncJobStoreCancelSyncJobFunc) History() []PermissionSyncJobStoreCancelSyncJobFuncCall {
+// History returns a sequence of
+// PermissionSyncJobStoreCancelQueuedJobFuncCall objects describing the
+// invocations of this function.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) History() []PermissionSyncJobStoreCancelQueuedJobFuncCall {
 	f.mutex.Lock()
-	history := make([]PermissionSyncJobStoreCancelSyncJobFuncCall, len(f.history))
+	history := make([]PermissionSyncJobStoreCancelQueuedJobFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// PermissionSyncJobStoreCancelSyncJobFuncCall is an object that describes
-// an invocation of method CancelSyncJob on an instance of
+// PermissionSyncJobStoreCancelQueuedJobFuncCall is an object that describes
+// an invocation of method CancelQueuedJob on an instance of
 // MockPermissionSyncJobStore.
-type PermissionSyncJobStoreCancelSyncJobFuncCall struct {
+type PermissionSyncJobStoreCancelQueuedJobFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 CancelPermissionSyncJobOptions
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -35940,13 +35941,13 @@ type PermissionSyncJobStoreCancelSyncJobFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c PermissionSyncJobStoreCancelSyncJobFuncCall) Args() []interface{} {
+func (c PermissionSyncJobStoreCancelQueuedJobFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c PermissionSyncJobStoreCancelSyncJobFuncCall) Results() []interface{} {
+func (c PermissionSyncJobStoreCancelQueuedJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

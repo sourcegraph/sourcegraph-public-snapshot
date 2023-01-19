@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -37,7 +38,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	CancelSyncJob(ctx context.Context, opts CancelPermissionSyncJobOptions) error
+	CancelQueuedJob(ctx context.Context, id int) error
 }
 
 type permissionSyncJobStore struct {
@@ -145,8 +146,8 @@ func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSync
 	return scanPermissionSyncJob(job, s.QueryRow(ctx, q))
 }
 
-// checkDuplicateAndCreateSyncJob adds a new perms sync job if there is no
-// present duplicate of it.
+// checkDuplicateAndCreateSyncJob adds a new perms sync job with `process_after
+// IS NULL` if there is no present duplicate of it.
 //
 // Duplicates are handled in this way:
 //
@@ -158,7 +159,7 @@ func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSync
 //
 // 3) If there is an existing job with higher priority, we don't insert new job.
 func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Context, job *PermissionSyncJob) (err error) {
-	tx, err := s.Transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -172,7 +173,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	}
 	// Job doesn't exist -- create it
 	if len(syncJobs) == 0 {
-		return s.create(ctx, job)
+		return tx.create(ctx, job)
 	}
 	// Database constraint guarantees that we have at most 1 job with NULL
 	// `process_after` value.
@@ -181,56 +182,32 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	// Existing job with high priority should not be overridden. Existing low
 	// priority job shouldn't be overridden by another low priority job.
 	if existingJob.HighPriority || !job.HighPriority {
-		return nil
+		logField := "repositoryID"
+		id := strconv.Itoa(job.RepositoryID)
+		if job.RepositoryID == 0 {
+			logField = "userID"
+			id = strconv.Itoa(job.UserID)
+		}
+		s.logger.Debug(
+			"Permissions sync job is not added because a job with similar or higher priority already exists",
+			log.String(logField, id),
+		)
 	}
 
-	err = s.CancelSyncJob(ctx, CancelPermissionSyncJobOptions{ID: existingJob.ID})
+	err = tx.CancelQueuedJob(ctx, existingJob.ID)
 	if err != nil {
 		return err
 	}
-	return s.create(ctx, job)
+	return tx.create(ctx, job)
 }
 
-type CancelPermissionSyncJobOptions struct {
-	ID int
-}
-
-func buildCancelQuery(opts CancelPermissionSyncJobOptions) (*sqlf.Query, error) {
-	var conds []*sqlf.Query
-	if opts.ID != 0 {
-		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
-	}
-
-	if len(conds) == 0 {
-		return nil, errors.New("not enough conditions given to build query to permissions sync job")
-	}
-
+func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, id int) error {
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
-UPDATE
-	permission_sync_jobs
-SET
-	cancel = TRUE,
-	-- If the sync job is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can do teardown and, at some point, mark it failed itself.
-	state = CASE WHEN permission_sync_jobs.state = 'processing' THEN permission_sync_jobs.state ELSE 'canceled' END,
-	finished_at = CASE WHEN permission_sync_jobs.state = 'processing' THEN permission_sync_jobs.finished_at ELSE %s END
-WHERE
-	%s
-	AND
-	state IN ('queued', 'processing')
-	AND
-	cancel IS FALSE
-`, now, sqlf.Join(conds, " AND "))
-
-	return q, nil
-}
-
-func (s *permissionSyncJobStore) CancelSyncJob(ctx context.Context, opts CancelPermissionSyncJobOptions) error {
-	q, err := buildCancelQuery(opts)
-	if err != nil {
-		return err
-	}
+UPDATE permission_sync_jobs
+SET cancel = TRUE, state = 'canceled', finished_at = %s
+WHERE id = %s AND state = 'queued' AND cancel IS FALSE
+`, now, id)
 
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -240,10 +217,9 @@ func (s *permissionSyncJobStore) CancelSyncJob(ctx context.Context, opts CancelP
 	if err != nil {
 		return err
 	}
-	if opts.ID != 0 && af != 1 {
-		return errors.Newf("sync job with id %d not found", opts.ID)
+	if af != 1 {
+		return errors.Newf("sync job with id %d not found", id)
 	}
-
 	return nil
 }
 
