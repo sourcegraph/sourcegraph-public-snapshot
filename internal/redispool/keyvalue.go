@@ -27,6 +27,11 @@ type KeyValue interface {
 	HGet(key, field string) Value
 	HSet(key, field string, value any) error
 
+	LPush(key string, value any) error
+	LTrim(key string, start, stop int) error
+	LLen(key string) (int, error)
+	LRange(key string, start, stop int) Value
+
 	Expire(key string, seconds int) error
 
 	// WithContext will return a KeyValue that should respect ctx for all
@@ -56,6 +61,10 @@ func (v Value) Bool() (bool, error) {
 
 func (v Value) Bytes() ([]byte, error) {
 	return redis.Bytes(v.reply, v.err)
+}
+
+func (v Value) ByteSlices() ([][]byte, error) {
+	return redis.ByteSlices(redis.Values(v.reply, v.err))
 }
 
 func (v Value) String() (string, error) {
@@ -103,6 +112,20 @@ func (r *redisKeyValue) HGet(key, field string) Value {
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
 	return r.do("HSET", r.prefix+key, field, val).err
+}
+
+func (r *redisKeyValue) LPush(key string, value any) error {
+	return r.do("LPUSH", r.prefix+key, value).err
+}
+func (r *redisKeyValue) LTrim(key string, start, stop int) error {
+	return r.do("LTRIM", r.prefix+key, start, stop).err
+}
+func (r *redisKeyValue) LLen(key string) (int, error) {
+	raw := r.do("LLEN", r.prefix+key)
+	return redis.Int(raw.reply, raw.err)
+}
+func (r *redisKeyValue) LRange(key string, start, stop int) Value {
+	return r.do("LRANGE", r.prefix+key, start, stop)
 }
 
 func (r *redisKeyValue) Expire(key string, seconds int) error {
