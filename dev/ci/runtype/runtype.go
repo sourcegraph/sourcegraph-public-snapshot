@@ -13,7 +13,8 @@ type RunType int
 const (
 	// RunTypes should be defined by order of precedence.
 
-	PullRequest RunType = iota // pull request build
+	PullRequest    RunType = iota // pull request build
+	BazelExpBranch                // branch that runs specific bazel steps
 
 	// Nightly builds - must be first because they take precedence
 
@@ -130,7 +131,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "main-dry-run/",
 		}
-
+	case BazelExpBranch:
+		return &RunTypeMatcher{
+			Branch: "bzl/",
+		}
 	case ImagePatch:
 		return &RunTypeMatcher{
 			Branch:                 "docker-images-patch/",
@@ -163,7 +167,8 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-
+	case BazelExpBranch:
+		return "Bazel Exp Branch"
 	case ReleaseNightly:
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
