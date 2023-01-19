@@ -145,21 +145,21 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 	if p.After != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
-		condition := fmt.Sprintf("(%v) >", columnsStr)
+		condition := fmt.Sprintf("(%s) >", columnsStr)
 		if p.Descending {
-			condition = fmt.Sprintf("(%v) <", columnsStr)
+			condition = fmt.Sprintf("(%s) <", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%v)", *p.After)))
+		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.After)))
 	}
 	if p.Before != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
-		condition := fmt.Sprintf("(%v) <", columnsStr)
+		condition := fmt.Sprintf("(%s) <", columnsStr)
 		if p.Descending {
-			condition = fmt.Sprintf("(%v) >", columnsStr)
+			condition = fmt.Sprintf("(%s) >", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%v)", *p.Before)))
+		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.Before)))
 	}
 
 	if len(conditions) > 0 {

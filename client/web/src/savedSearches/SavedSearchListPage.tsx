@@ -147,7 +147,6 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
         query: savedSearchesQuery,
         variables: { namespace: props.namespace.id },
         getConnection: ({ data }) => data?.savedSearches || undefined,
-        options: { pageSize: 2 },
     })
 
     return (

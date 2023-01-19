@@ -3088,7 +3088,7 @@ type ExternalServiceSyncJob implements Node {
 """
 A list of repositories.
 
-The old `RepositoryConnection` is depricated and is replaced by
+The old `RepositoryConnection` is deprecated and is replaced by
 this new connection which support proper cursor based pagination.
 The new connection does not include `precise` argument for totalCount.
 """
@@ -3108,7 +3108,7 @@ type NewRepositoryConnection {
 }
 
 """
-Depricated! A list of repositories.
+Deprecated! A list of repositories.
 """
 type RepositoryConnection {
     """

@@ -496,7 +496,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		return MarshalRepositoryCursor(
 			&types.Cursor{
 				Column: "name",
-				Value:  fmt.Sprintf("%s@%v", node.Name, node.ID),
+				Value:  fmt.Sprintf("%s@%d", node.Name, node.ID),
 			},
 		)
 	}

@@ -135,25 +135,25 @@ func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, or
 	column := orderBy[0].Field
 	var value string
 
-	switch column {
-	case string(database.RepoListName):
+	switch database.RepoListColumn(column) {
+	case database.RepoListName:
 		value = node.Name()
-	case string(database.RepoListCreatedAt):
+	case database.RepoListCreatedAt:
 		value = fmt.Sprintf("'%v'", node.RawCreatedAt())
-	case string(database.RepoListSize):
+	case database.RepoListSize:
 		size, err := node.DiskSizeBytes(s.ctx)
 		if err != nil {
 			return nil, err
 		}
 		value = strconv.FormatInt(int64(*size), 10)
 	default:
-		return nil, errors.New("Invalid OrderBy Field.")
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (name, created_at, gr.repo_size_bytes). Actual: %s", column))
 	}
 
 	cursor := MarshalRepositoryCursor(
 		&types.Cursor{
 			Column: column,
-			Value:  fmt.Sprintf("%v@%v", value, node.IDInt32()),
+			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
 		},
 	)
 
@@ -191,32 +191,20 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 	return &csv, err
 }
 
+func i32ptr(v int32) *int32 { return &v }
+
 func (r *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
 	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 	// count does not respect repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		val := int32(0)
-		return &val, nil
+		return i32ptr(int32(0)), nil
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
 	if envvar.SourcegraphDotComMode() {
-		if len(r.opt.Query) < 4 {
-			return nil, nil
-		}
-
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, 300*time.Millisecond)
-		defer cancel()
-		defer func() {
-			if ctx.Err() == context.DeadlineExceeded {
-				countptr = nil
-				err = nil
-			}
-		}()
+		return i32ptr(int32(0)), nil
 	}
 
-	i32ptr := func(v int32) *int32 { return &v }
 	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
@@ -240,7 +228,7 @@ func (r *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 }
 
 // NOTE(naman): The old resolver `RepositoryConnectionResolver` defined below is
-// depricated and replaced by `graphqlutil.ConnectionResolver` above which implements
+// deprecated and replaced by `graphqlutil.ConnectionResolver` above which implements
 // proper cursor-based pagination and do not support `precise` argument for totalCount.
 // The old resolver is still being used by `AuthorizedUserRepositories` API, therefore
 // the code is not removed yet.

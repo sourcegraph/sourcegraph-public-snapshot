@@ -517,7 +517,12 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                                 <RepositoryNode key={node.id} node={node} />
                             ))}
                         </ul>
-                        <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount || 0} />
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-4"
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel="repositories"
+                        />
                     </>
                 )}
             </Container>
