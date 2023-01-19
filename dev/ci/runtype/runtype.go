@@ -167,7 +167,8 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-
+	case BazelExpBranch:
+		return "Bazel Exp Branch"
 	case ReleaseNightly:
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
