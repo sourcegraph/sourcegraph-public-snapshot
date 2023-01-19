@@ -18,17 +18,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RecoverListRequest struct {
-	UserIDs []graphql.ID
+type RecoveryUserRequest struct {
+	UserID graphql.ID
+}
+type RecoverUsersRequest struct {
+	UserIDs []RecoveryUserRequest
 }
 
-func (r *schemaResolver) RecoverUser(ctx context.Context, args *RecoverListRequest) (*EmptyResponse, error) {
-	return r.RecoverUsers(ctx, &RecoverListRequest{
-		UserIDs: []graphql.ID{args.UserIDs[0]},
+func (r *schemaResolver) RecoverUser(ctx context.Context, args *RecoveryUserRequest) (*EmptyResponse, error) {
+	return r.RecoverUsers(ctx, &RecoverUsersRequest{
+		UserIDs: []RecoveryUserRequest{
+			{UserID: args.UserID},
+		},
 	})
 }
 
-func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverListRequest) (*EmptyResponse, error) {
+func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can recover users.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -43,7 +48,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverListRequ
 
 	ids := make([]int32, len(args.UserIDs))
 	for index, user := range args.UserIDs {
-		id, err := UnmarshalUserID(user)
+		id, err := UnmarshalUserID(user.UserID)
 		if err != nil {
 			return nil, err
 		}

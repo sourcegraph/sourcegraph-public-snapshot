@@ -80,6 +80,7 @@ type UserStore interface {
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
+	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RecoverUserByID(context.Context, int32) error
 	RecoverList(context.Context, []int32) error
@@ -695,10 +696,8 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) error {
 	for i := range ids {
 		userIDs[i] = sqlf.Sprintf("%d", ids[i])
 	}
-
 	idsCond := sqlf.Join(userIDs, ",")
-
-	res, err := tx.Handle().QueryContext(ctx, "UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)
+	res, err := tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond))
 	if err != nil {
 		return err
 	}
