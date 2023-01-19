@@ -75,6 +75,8 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
+            <SmartSearchPreview />
+
             <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>
                 <div className="flex-1 flex-shrink-past-contents">
@@ -85,8 +87,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             </div>
                         </Container>
                     )}
-
-                    <SmartSearchPreview />
 
                     <Container title="More resources">
                         <Text>
