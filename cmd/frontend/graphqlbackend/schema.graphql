@@ -6552,6 +6552,7 @@ type SiteConfiguration {
     """
     EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
     configuration.
+    Only site admins may perform this query.
     """
     history(
         """
