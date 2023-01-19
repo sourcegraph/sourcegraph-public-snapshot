@@ -256,65 +256,64 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 	ctx := context.Background()
 	store := SiteConfigurationChangeConnectionStore{db: stubs.db}
 
+	if _, err := store.ComputeNodes(ctx, nil); err == nil {
+		t.Fatalf("expected error but got nil")
+	}
+
 	testCases := []struct {
 		name                  string
 		paginationArgs        *database.PaginationArgs
 		expectedSiteConfigIDs []int32
-		// expectedPreviousSiteConfigIDs []*int32
+		// value of 0 in expectedPreviousSIteConfigIDs means nil in the test assertion.
+		expectedPreviousSiteConfigIDs []int32
 	}{
-		{
-			name:                  "nil paginationArgs (return everything in insertion order)",
-			paginationArgs:        nil,
-			expectedSiteConfigIDs: []int32{1, 2, 3, 4, 5},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
-		},
 		{
 			name: "first: 2",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(2),
 			},
-			expectedSiteConfigIDs: []int32{5, 4},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{5, 4},
+			expectedPreviousSiteConfigIDs: []int32{4, 3},
 		},
 		{
 			name: "first: 5 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(5),
 			},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
+			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
 		},
 		{
 			name: "first: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(20),
 			},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1, 2, 3, 4}),
+			expectedSiteConfigIDs:         []int32{5, 4, 3, 2, 1},
+			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
 		},
 		{
 			name: "last: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last: intPtr(2),
 			},
-			expectedSiteConfigIDs: []int32{1, 2},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3}),
+			expectedSiteConfigIDs:         []int32{1, 2},
+			expectedPreviousSiteConfigIDs: []int32{0, 1},
 		},
 		{
 			name: "last: 5 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
 				Last: intPtr(5),
 			},
-			expectedSiteConfigIDs: []int32{1, 2, 3, 4, 5},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
 		},
 		{
 			name: "last: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
 				Last: intPtr(20),
 			},
-			expectedSiteConfigIDs: []int32{1, 2, 3, 4, 5},
-			// 	// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{4, 3, 2, 1, 0}),
+			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 5},
+			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
 		},
 		{
 			name: "first: 2, after: 4",
@@ -322,8 +321,8 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				First: intPtr(2),
 				After: intPtr(4),
 			},
-			expectedSiteConfigIDs: []int32{3, 2},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{3, 2},
+			expectedPreviousSiteConfigIDs: []int32{2, 1},
 		},
 		{
 			name: "first: 10, after: 4",
@@ -331,8 +330,8 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				First: intPtr(10),
 				After: intPtr(4),
 			},
-			expectedSiteConfigIDs: []int32{3, 2, 1},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{3, 2, 1},
+			expectedPreviousSiteConfigIDs: []int32{2, 1, 0},
 		},
 		{
 			name: "first: 2, after: 1",
@@ -340,8 +339,8 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				First: intPtr(2),
 				After: intPtr(1),
 			},
-			expectedSiteConfigIDs: []int32{},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{},
+			expectedPreviousSiteConfigIDs: []int32{},
 		},
 		{
 			name: "last: 2, before: 2",
@@ -349,8 +348,8 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				Last:   intPtr(2),
 				Before: intPtr(2),
 			},
-			expectedSiteConfigIDs: []int32{3, 4},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{3, 4},
+			expectedPreviousSiteConfigIDs: []int32{2, 3},
 		},
 		{
 			name: "last: 10, before: 2",
@@ -358,8 +357,8 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				Last:   intPtr(10),
 				Before: intPtr(2),
 			},
-			expectedSiteConfigIDs: []int32{3, 4, 5},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{3, 4, 5},
+			expectedPreviousSiteConfigIDs: []int32{2, 3, 4},
 		},
 		{
 			name: "last: 2, before: 5",
@@ -367,14 +366,13 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 				Last:   intPtr(2),
 				Before: intPtr(5),
 			},
-			expectedSiteConfigIDs: []int32{},
-			// expectedPreviousSiteConfigIDs: toListOfIntPtrs([]int32{0, 1}),
+			expectedSiteConfigIDs:         []int32{},
+			expectedPreviousSiteConfigIDs: []int32{},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			siteConfigChangeResolvers, err := store.ComputeNodes(ctx, tc.paginationArgs)
 			if err != nil {
 				t.Errorf("expected nil, but got error: %v", err)
@@ -392,6 +390,23 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(tc.expectedSiteConfigIDs, gotIDs); diff != "" {
+				t.Errorf("mismatched siteConfig.ID, diff %v", diff)
+			}
+
+			if len(tc.expectedPreviousSiteConfigIDs) == 0 {
+				return
+			}
+
+			gotPreviousSiteConfigIDs := make([]int32, gotLength)
+			for i, got := range siteConfigChangeResolvers {
+				if got.previousSiteConfig == nil {
+					gotPreviousSiteConfigIDs[i] = 0
+				} else {
+					gotPreviousSiteConfigIDs[i] = got.previousSiteConfig.ID
+				}
+			}
+
+			if diff := cmp.Diff(tc.expectedPreviousSiteConfigIDs, gotPreviousSiteConfigIDs); diff != "" {
 				t.Errorf("mismatched siteConfig.ID, diff %v", diff)
 			}
 
