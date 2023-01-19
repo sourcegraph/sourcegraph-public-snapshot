@@ -130,7 +130,8 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
             </section>
             <section className={styles.footer}>
                 <span>
-                    Number of data series <small className="text-muted">(max {MAX_NUMBER_OF_SERIES})</small>
+                    Max number of data series to display{' '}
+                    <small className="text-muted">(max {MAX_NUMBER_OF_SERIES})</small>
                 </span>
                 <Input
                     type="number"
@@ -146,7 +147,7 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = props => {
             </section>
             <section className={styles.footer}>
                 <span>
-                    Number of points per series <small className="text-muted">(max 90)</small>
+                    Max number of series points to display <small className="text-muted">(max 90)</small>
                 </span>
                 <Input
                     type="number"

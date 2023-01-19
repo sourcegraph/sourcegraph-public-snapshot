@@ -13,7 +13,9 @@
 
 .toggles-container {
     display: flex;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    column-gap: 0.5rem;
+    row-gap: 1rem;
     padding: 0.5rem;
 }
 
@@ -26,7 +28,7 @@
     display: grid;
     grid-template-columns: 1fr 4rem;
     gap: 0.5rem;
-    align-items: center;
+    align-items: flex-start;
     padding: 0.5rem;
 }
 
