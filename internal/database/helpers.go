@@ -140,7 +140,7 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 	orderByColumns := p.OrderBy.Columns()
 	if len(orderByColumns) < 1 {
-		return nil, errors.New("Atleast 1 sort column must be provided")
+		return nil, errors.New("no sort column provided")
 	}
 
 	if p.After != nil {

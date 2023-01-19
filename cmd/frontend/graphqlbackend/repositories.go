@@ -108,6 +108,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 
 	maxPageSize := 1000
 
+	// `REPOSITORY_NAME` is the enum value in the graphql schema.
 	orderBy := "REPOSITORY_NAME"
 	if args.OrderBy != "" {
 		orderBy = args.OrderBy
@@ -177,12 +178,12 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
 	}
 
-	switch column {
-	case string(database.RepoListName):
+	switch database.RepoListColumn(column) {
+	case database.RepoListName:
 		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case string(database.RepoListCreatedAt):
+	case database.RepoListCreatedAt:
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case string(database.RepoListSize):
+	case database.RepoListSize:
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
 	default:
 		return nil, errors.New("Invalid OrderBy Field.")
