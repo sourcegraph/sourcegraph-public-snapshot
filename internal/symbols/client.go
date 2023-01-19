@@ -172,7 +172,7 @@ func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.Re
 
 	mapping := make(map[string][]string)
 	err = json.NewDecoder(resp.Body).Decode(&mapping)
-	return mapping, nil
+	return mapping, err
 }
 
 // Search performs a symbol search on the symbols service.
