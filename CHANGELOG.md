@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- - The default author and email for changesets will now be pulled from user account details when possible. [#46385](https://github.com/sourcegraph/sourcegraph/pull/46385)
+- The default author and email for changesets will now be pulled from user account details when possible. [#46385](https://github.com/sourcegraph/sourcegraph/pull/46385)
 - Code Insights has a new display option settings "Max number of series points to display". [#46653](https://github.com/sourcegraph/sourcegraph/pull/46653)
 
 ### Changed
