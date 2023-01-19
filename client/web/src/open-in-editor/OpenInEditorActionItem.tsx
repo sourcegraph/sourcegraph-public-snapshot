@@ -1,13 +1,12 @@
 import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiApplicationEditOutline } from '@mdi/js'
 import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { mdiApplicationEditOutline } from '@mdi/js'
-
 import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
