@@ -30,7 +30,7 @@ func TestRoleGet(t *testing.T) {
 	createdRole, err := store.Create(ctx, roleName, true)
 	assert.NoError(t, err)
 
-	t.Run("without userID and roleID", func(t *testing.T) {
+	t.Run("without role ID or name", func(t *testing.T) {
 		_, err := store.Get(ctx, GetRoleOpts{})
 		assert.Error(t, err)
 		assert.Equal(t, err.Error(), "missing id or name")
