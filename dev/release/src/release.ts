@@ -701,7 +701,7 @@ Batch change: ${batchChangeURL}`,
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
-            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker', 'deploy-sourcegraph-docker-customer-replica-1']) {
                 try {
                     await createTag(
                         await getAuthenticatedGitHubClient(),
