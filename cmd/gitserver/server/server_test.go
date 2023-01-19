@@ -556,13 +556,14 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
-		DB:               db,
-		CloneQueue:       NewCloneQueue(list.New()),
-		ctx:              ctx,
-		locker:           &RepositoryLocker{},
-		cloneLimiter:     mutablelimiter.New(1),
-		cloneableLimiter: mutablelimiter.New(1),
-		rpsLimiter:       ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		DB:                      db,
+		CloneQueue:              NewCloneQueue(list.New()),
+		ctx:                     ctx,
+		locker:                  &RepositoryLocker{},
+		cloneLimiter:            mutablelimiter.New(1),
+		cloneableLimiter:        mutablelimiter.New(1),
+		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		recordingCommandFactory: rexec.NewRecordingCommandFactory(nil),
 	}
 
 	s.StartClonePipeline(ctx)
