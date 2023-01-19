@@ -28,7 +28,7 @@ var _ oobmigration.Migrator = &roleAssignmentMigrator{}
 func (m *roleAssignmentMigrator) ID() int                 { return 19 }
 func (m *roleAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
 
-// Progress returns the percentage (ranged [0, 1]) of users without a system role (USER or SITE_ADMINISTRATOR) role.
+// Progress returns the percentage (ranged [0, 1]) of users who have a system role (USER or SITE_ADMINISTRATOR) assigned.
 func (m *roleAssignmentMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(roleAssignmentMigratorProgressQuery)))
 	return progress, err
