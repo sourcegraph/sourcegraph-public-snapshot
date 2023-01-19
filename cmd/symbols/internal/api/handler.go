@@ -24,14 +24,14 @@ import (
 
 const maxNumSymbolResults = 500
 
-type grpcServer struct {
+type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	ctagsBinary  string
 	proto.UnimplementedSymbolsServer
 }
 
-func (s *grpcServer) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
+func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
 	var params search.SymbolsParameters
 	params.FromProto(r)
 
@@ -39,34 +39,33 @@ func (s *grpcServer) Search(ctx context.Context, r *proto.SearchRequest) (*proto
 	if err != nil {
 		// How do we handle client disconnections? Can we test this?
 
-		log15.Error("Symbol search failed", "args", params, "error", err) // straight up copying this for now, find another abstraction
+		log15.Error("GRPC symbol search failed", "args", params, "error", err)
 
 		response := search.SymbolsResponse{Err: err.Error()}
 		return response.ToProto(), nil
-
 	}
 
 	response := search.SymbolsResponse{Symbols: result}
 	return response.ToProto(), nil
 }
 
-func (s *grpcServer) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {
+func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {
 	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list language mappings")
+		return nil, errors.Wrap(err, "listing ctags language mappings")
 	}
 
-	mapping := make(map[string]*proto.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
+	protoMapping := make(map[string]*proto.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
 	for language, filePatterns := range rawMapping {
-		mapping[language] = &proto.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
+		protoMapping[language] = &proto.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
 	}
 
 	return &proto.ListLanguagesResponse{
-		LanguageFileNameMap: mapping,
+		LanguageFileNameMap: protoMapping,
 	}, nil
 }
 
-func (s *grpcServer) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *grpcService) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
 	// that we probably need the old non-GRPC healthcheck endpoint for a while.
 	//
@@ -92,13 +91,13 @@ func NewHandler(
 	}
 
 	// Initialize the gRPC server
-	s := grpc.NewServer()
-	s.RegisterService(&proto.Symbols_ServiceDesc, &grpcServer{
+	grpcServer := grpc.NewServer()
+	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
 	})
-	reflection.Register(s)
+	reflection.Register(grpcServer)
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -113,7 +112,7 @@ func NewHandler(
 	handler := h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If the request is for the gRPC server, serve it.
 		if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
-			s.ServeHTTP(w, r)
+			grpcServer.ServeHTTP(w, r)
 			return
 		}
 

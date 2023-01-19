@@ -24,7 +24,7 @@ func addHandlers(
 }
 
 // LocalCodeIntel returns local code intelligence for the given file and commit
-func (s *grpcServer) LocalCodeIntel(ctx context.Context, request *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
+func (s *grpcService) LocalCodeIntel(ctx context.Context, request *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
 	squirrelService := squirrel.New(s.readFileFunc, nil) // TODO:@ggilmore: why is the symbolsearch field hard-coded to nil?
 	defer squirrelService.Close()
 
@@ -40,7 +40,7 @@ func (s *grpcServer) LocalCodeIntel(ctx context.Context, request *proto.LocalCod
 }
 
 // SymbolInfo returns information about the symbols specified by the given request.
-func (s *grpcServer) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
 	squirrelService := squirrel.New(s.readFileFunc, s.searchFunc)
 	defer squirrelService.Close()
 
@@ -53,10 +53,5 @@ func (s *grpcServer) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRe
 		return nil, err
 	}
 
-	var response proto.SymbolInfoResponse
-	response.Hover = info.Hover
-	response.Definition.RepoCommitPath = info.Definition.RepoCommitPath.ToProto()
-	response.Definition.Range = info.Definition.Range.ToProto()
-
-	return &response, nil
+	return info.ToProto(), nil
 }

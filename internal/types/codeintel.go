@@ -142,6 +142,10 @@ func (r RepoCommitPath) String() string {
 }
 
 func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
+	if r == nil {
+		return nil
+	}
+
 	return &proto.RepoCommitPath{
 		Repo:   r.Repo,
 		Commit: r.Commit,
@@ -150,9 +154,9 @@ func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
 }
 
 func (r *RepoCommitPath) FromProto(p *proto.RepoCommitPath) {
-	r.Repo = p.Repo
-	r.Commit = p.Commit
-	r.Path = p.Path
+	r.Repo = p.GetRepo()
+	r.Commit = p.GetCommit()
+	r.Path = p.GetPath()
 }
 
 type LocalCodeIntelPayload struct {
@@ -160,6 +164,10 @@ type LocalCodeIntelPayload struct {
 }
 
 func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
+	if p == nil {
+		return nil
+	}
+
 	var symbols []*proto.LocalCodeIntelResponse_Symbol
 
 	for _, s := range p.Symbols {
@@ -174,7 +182,7 @@ func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
 func (p *LocalCodeIntelPayload) FromProto(r *proto.LocalCodeIntelResponse) {
 	var symbols []Symbol
 
-	for _, s := range r.Symbols {
+	for _, s := range r.GetSymbols() {
 		var symbol Symbol
 		symbol.FromProto(s)
 
@@ -212,8 +220,8 @@ func (p *Point) ToProto() *proto.Point {
 }
 
 func (p *Point) FromProto(pp *proto.Point) {
-	p.Row = int(pp.Row)
-	p.Column = int(pp.Column)
+	p.Row = int(pp.GetRow())
+	p.Column = int(pp.GetColumn())
 }
 
 type Symbol struct {
@@ -224,6 +232,10 @@ type Symbol struct {
 }
 
 func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
+	if s == nil {
+		return nil
+	}
+
 	var refs []*proto.Range
 
 	for _, r := range s.Refs {
@@ -239,19 +251,21 @@ func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
 }
 
 func (s *Symbol) FromProto(p *proto.LocalCodeIntelResponse_Symbol) {
-	s.Name = p.Name
-	s.Hover = p.Hover
+	s.Name = p.GetName()
+	s.Hover = p.GetHover()
 
-	s.Def.FromProto(p.Def)
+	s.Def.FromProto(p.GetDef())
 
 	var refs []Range
 
-	for _, r := range p.Refs {
-		var ref Range
-		ref.FromProto(r)
+	for _, ref := range p.GetRefs() {
+		var r Range
+		r.FromProto(ref)
 
-		refs = append(refs, ref)
+		refs = append(refs, r)
 	}
+
+	s.Refs = refs
 }
 
 func (s Symbol) String() string {
@@ -265,6 +279,10 @@ type Range struct {
 }
 
 func (r *Range) ToProto() *proto.Range {
+	if r == nil {
+		return nil
+	}
+
 	return &proto.Range{
 		Row:    int32(r.Row),
 		Column: int32(r.Column),
@@ -273,9 +291,9 @@ func (r *Range) ToProto() *proto.Range {
 }
 
 func (r *Range) FromProto(p *proto.Range) {
-	r.Row = int(p.Row)
-	r.Column = int(p.Column)
-	r.Length = int(p.Length)
+	r.Row = int(p.GetRow())
+	r.Column = int(p.GetColumn())
+	r.Length = int(p.GetLength())
 }
 
 func (r Range) String() string {
@@ -288,25 +306,37 @@ type SymbolInfo struct {
 }
 
 func (si *SymbolInfo) ToProto() *proto.SymbolInfoResponse {
-	var response proto.SymbolInfoResponse
-
-	response.Definition.RepoCommitPath = si.Definition.RepoCommitPath.ToProto()
-	if si.Definition.Range != nil {
-		response.Definition.Range = si.Definition.Range.ToProto()
+	if si == nil {
+		return &proto.SymbolInfoResponse{}
 	}
 
-	response.Hover = si.Hover
+	var result proto.SymbolInfoResponse_DefinitionResult
 
-	return &response
+	var definition proto.SymbolInfoResponse_Definition
+	definition.RepoCommitPath = si.Definition.RepoCommitPath.ToProto()
+	if si.Definition.Range != nil {
+		definition.Range = si.Definition.Range.ToProto()
+	}
+
+	result.Definition = &definition
+	result.Hover = si.Hover
+
+	return &proto.SymbolInfoResponse{
+		Result: &result,
+	}
 }
 
 func (si *SymbolInfo) FromProto(p *proto.SymbolInfoResponse) {
-	si.Definition.RepoCommitPath.FromProto(p.Definition.RepoCommitPath)
-	if p.Definition.Range != nil {
-		si.Definition.Range.FromProto(p.Definition.Range)
+	result := p.GetResult()
+
+	if result == nil {
+		return
 	}
 
-	si.Hover = p.Hover
+	si.Definition.RepoCommitPath.FromProto(result.GetDefinition().GetRepoCommitPath())
+	si.Definition.Range.FromProto(result.GetDefinition().GetRange())
+
+	si.Hover = result.Hover // don't use GetHover() because it returns a string, not a pointer to a string
 }
 
 func (s SymbolInfo) String() string {

@@ -31,20 +31,20 @@ type Symbol struct {
 
 // FromProto converts a proto.Symbol to a result.Symbol.
 func (s *Symbol) FromProto(p *proto.SymbolsResponse_Symbol) {
-	s.Name = p.Name
-	s.Path = p.Path
+	s.Name = p.GetName()
+	s.Path = p.GetPath()
 
-	s.Line = int(p.Line)
-	s.Character = int(p.Character)
+	s.Line = int(p.GetLine())
+	s.Character = int(p.GetCharacter())
 
-	s.Kind = p.Kind
-	s.Language = p.Language
+	s.Kind = p.GetKind()
+	s.Language = p.GetLanguage()
 
-	s.Parent = p.Parent
-	s.ParentKind = p.ParentKind
+	s.Parent = p.GetParent()
+	s.ParentKind = p.GetParentKind()
 
-	s.Signature = p.Signature
-	s.FileLimited = p.FileLimited
+	s.Signature = p.GetSignature()
+	s.FileLimited = p.GetFileLimited()
 }
 
 func (s *Symbol) ToProto() *proto.SymbolsResponse_Symbol {

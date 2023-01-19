@@ -112,15 +112,15 @@ type SymbolsParameters struct {
 }
 
 func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
-	s.Repo = api.RepoName(p.Repo) // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
-	s.CommitID = api.CommitID(p.CommitId)
-	s.Query = p.Query
-	s.IsRegExp = p.IsRegExp
-	s.IsCaseSensitive = p.IsCaseSensitive
-	s.IncludePatterns = p.IncludePatterns
-	s.ExcludePattern = p.ExcludePattern
-	s.First = int(p.First)
-	s.Timeout = int(p.Timeout)
+	s.Repo = api.RepoName(p.GetRepo()) // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
+	s.CommitID = api.CommitID(p.GetCommitId())
+	s.Query = p.GetQuery()
+	s.IsRegExp = p.GetIsRegExp()
+	s.IsCaseSensitive = p.GetIsCaseSensitive()
+	s.IncludePatterns = p.GetIncludePatterns()
+	s.ExcludePattern = p.GetExcludePattern()
+	s.First = int(p.GetFirst())
+	s.Timeout = int(p.GetTimeout())
 }
 
 func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
@@ -147,22 +147,21 @@ type SymbolsResponse struct {
 func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
 	var symbols []result.Symbol
 
-	for _, s := range p.Symbols {
+	for _, s := range p.GetSymbols() {
 		var symbol result.Symbol
 		symbol.FromProto(s)
 		symbols = append(symbols, symbol)
 	}
 
-	var err string
-	if p.Error != nil {
-		err = *p.Error
-	}
-
 	r.Symbols = symbols
-	r.Err = err
+	r.Err = p.GetError()
 }
 
 func (r *SymbolsResponse) ToProto() *proto.SymbolsResponse {
+	if r == nil {
+		return nil
+	}
+
 	var response proto.SymbolsResponse
 
 	var symbols []*proto.SymbolsResponse_Symbol

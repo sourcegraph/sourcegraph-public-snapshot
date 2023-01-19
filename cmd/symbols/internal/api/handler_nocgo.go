@@ -43,11 +43,11 @@ func jsonResponseHandler(v any) http.HandlerFunc {
 }
 
 // LocalCodeIntel is a no-op in the non-cgo variant.
-func (s *grpcServer) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
+func (s *grpcService) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
 	return &proto.LocalCodeIntelResponse{}, nil
 }
 
 // SymbolInfo is a no-op in the non-cgo variant.
-func (s *grpcServer) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
 	return &proto.SymbolInfoResponse{}, nil
 }

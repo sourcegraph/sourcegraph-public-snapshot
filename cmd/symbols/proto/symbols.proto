@@ -143,11 +143,17 @@ message SymbolInfoResponse {
     optional Range range = 2;
   }
 
-  // definition is the information associated with the symbol's definition
-  Definition definition = 1;
+  message DefinitionResult {
+    // definition is the information associated with the location of the symbol's definition.
+    Definition definition = 1;
 
-  // hover is the hover text associated with the symbol
-  optional string hover = 2;
+    // hover is the hover text associated with the symbol
+    optional string hover = 2;
+  }
+
+  // result is the definition / hover information  for the symbol at the given point in the file,
+  // if available.
+  optional DefinitionResult result = 1;
 }
 
 // RepoCommitPath is an identifier that is  combination of a repository's name,
