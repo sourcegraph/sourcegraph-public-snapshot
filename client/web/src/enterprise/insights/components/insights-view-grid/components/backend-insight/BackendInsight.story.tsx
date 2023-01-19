@@ -9,13 +9,7 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import {
-    SeriesChartContent,
-    SearchBasedInsight,
-    CaptureGroupInsight,
-    InsightExecutionType,
-    InsightType,
-} from '../../../../core'
+import { SeriesChartContent, SearchBasedInsight, CaptureGroupInsight, InsightType } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 
@@ -42,14 +36,14 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
         { id: 'series_002', query: '', name: 'B metric', stroke: 'var(--warning)' },
     ],
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
     filters: {
         excludeRepoRegexp: '',
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            numSamples: 12,
+            limit: 20,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -58,13 +52,6 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    seriesDisplayOptions: {
-        limit: 20,
-        sortOptions: {
-            direction: SeriesSortDirection.DESC,
-            mode: SeriesSortMode.RESULT_COUNT,
-        },
-    },
     dashboards: [],
 }
 
@@ -253,7 +240,6 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
 
 const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     series: [
@@ -267,7 +253,8 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -282,7 +269,6 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
 
 const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     series: [
@@ -296,7 +282,8 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -311,7 +298,6 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     type: InsightType.CaptureGroup,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     step: { weeks: 2 },
@@ -322,7 +308,8 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,

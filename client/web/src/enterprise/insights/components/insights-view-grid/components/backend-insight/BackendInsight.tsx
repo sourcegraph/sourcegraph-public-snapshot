@@ -8,11 +8,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import {
-    SeriesDisplayOptionsInput,
-    GetInsightViewResult,
-    GetInsightViewVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import {
     BackendInsight,
@@ -36,7 +32,6 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
     InsightIncompleteAlert,
-    parseSeriesLimit,
 } from './components'
 
 import styles from './BackendInsight.module.scss'
@@ -84,7 +79,8 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     searchContexts: [debouncedFilters.context],
                 },
                 seriesDisplayOptions: {
-                    limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+                    numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
+                    limit: debouncedFilters.seriesDisplayOptions.limit,
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
             },
@@ -114,11 +110,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     }
 
     async function handleFilterSave(filters: InsightFilters): Promise<void> {
-        const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-            limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-            sortOptions: filters.seriesDisplayOptions.sortOptions,
-        }
-        const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
+        const insightWithNewFilters = { ...insight, filters }
 
         await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 

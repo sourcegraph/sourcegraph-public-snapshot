@@ -16,7 +16,11 @@ import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInp
 import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
-import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, getSortPreview } from './utils'
+import {
+    getSerializedRepositoriesFilter,
+    getSerializedSearchContextFilter,
+    getSerializedSortAndLimitFilter,
+} from './utils'
 import { createSearchContextValidator, getFilterInputStatus, REPO_FILTER_VALIDATORS } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
@@ -38,7 +42,8 @@ export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
     excludeRepoRegexp: string
     seriesDisplayOptions: {
-        limit: string
+        numSamples: number | null
+        limit: number
         sortOptions: {
             mode: SeriesSortMode
             direction: SeriesSortDirection
@@ -145,6 +150,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
+                <FilterPreviewPill text={getSerializedSortAndLimitFilter(seriesDisplayOptionsField.input.value)} />
 
                 <Button
                     variant="link"
@@ -195,7 +201,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                     title="Sort & Limit"
                     aria-label="sort and limit filter section"
-                    preview={getSortPreview(seriesDisplayOptionsField.input.value)}
+                    preview={getSerializedSortAndLimitFilter(seriesDisplayOptionsField.input.value)}
                     hasActiveFilter={!isEqual(originalValues.seriesDisplayOptions, values.seriesDisplayOptions)}
                     withSeparators={!isHorizontalMode}
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
@@ -339,9 +345,16 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 }
 
 export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
-    const { excludeRepoRegexp, includeRepoRegexp, context } = filters
+    const { excludeRepoRegexp, includeRepoRegexp, context, seriesDisplayOptions } = filters
 
-    return [excludeRepoRegexp, includeRepoRegexp, context].some(hasActiveUnaryFilter)
+    const { numSamples, sortOptions, limit } = seriesDisplayOptions
+    const hasDisplayOptionChanged =
+        numSamples !== null ||
+        limit !== 20 ||
+        sortOptions.mode !== SeriesSortMode.RESULT_COUNT ||
+        sortOptions.direction !== SeriesSortDirection.DESC
+
+    return [excludeRepoRegexp, includeRepoRegexp, context].some(hasActiveUnaryFilter) || hasDisplayOptionChanged
 }
 
 const hasActiveUnaryFilter = (filter: string): boolean => filter.trim() !== ''

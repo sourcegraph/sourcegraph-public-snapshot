@@ -13,7 +13,6 @@
 
 .toggles-container {
     display: flex;
-    flex-direction: column;
     gap: 0.5rem;
     padding: 0.5rem;
 }
@@ -28,7 +27,6 @@
     grid-template-columns: 1fr 4rem;
     gap: 0.5rem;
     align-items: center;
-    border-top: solid 1px var(--border-color-2);
     padding: 0.5rem;
 }
 
