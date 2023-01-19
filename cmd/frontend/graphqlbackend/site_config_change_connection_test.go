@@ -380,22 +380,6 @@ func TestSiteConfigConnection(t *testing.T) {
 	})
 }
 
-func toListOfIntPtrs(input []int32) []*int32 {
-	list := make([]*int32, len(input))
-	for i, item := range input {
-		// Reassign to update the address of item.
-		item := item
-		// ID 0 is not possible. Use this to indicate that this should be 0.
-		if item == 0 {
-			list[i] = nil
-		} else {
-			list[i] = &item
-		}
-	}
-
-	return list
-}
-
 func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
