@@ -109,7 +109,7 @@ type OrderByOption struct {
 func (o OrderByOption) SQL(descending bool) *sqlf.Query {
 	var sb strings.Builder
 
-	sb.WriteString(string(o.Field))
+	sb.WriteString(o.Field)
 
 	if descending {
 		sb.WriteString(" DESC")

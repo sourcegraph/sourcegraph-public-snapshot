@@ -297,7 +297,7 @@ func (r *RepositoryResolver) RawCreatedAt() string {
 		return ""
 	}
 
-	return (*r.innerRepo).CreatedAt.Format(time.RFC3339)
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
 }
 
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
