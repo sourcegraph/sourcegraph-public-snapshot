@@ -542,6 +542,7 @@ func TestHooks(t *testing.T) {
 	})
 
 	t.Run("we can use context in hooks", func(t *testing.T) {
+		//nolint:staticcheck
 		ctx := context.WithValue(context.Background(), "my-key", 1)
 		f := createTmpFile(t, "foobar")
 		cmd := exec.Command(ctx, logger, "md5sum", "-b", f.Name())
