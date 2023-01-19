@@ -926,6 +926,10 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 		); err != nil {
 			return err
 		}
+		// if this is a capture group insight the label will be the capture
+		if tmp.Capture != nil {
+			tmp.SeriesLabel = *tmp.Capture
+		}
 		results = append(results, tmp)
 		return nil
 	}
