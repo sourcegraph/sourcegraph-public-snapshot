@@ -168,13 +168,13 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 
 	column := orderBy[0].Field
 	if repoCursor.Column != column {
-		return nil, errors.New("Invalid cursor.")
+		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, repoCursor.Column))
 	}
 
 	csv := ""
 	values := strings.Split(repoCursor.Value, "@")
 	if len(values) != 2 {
-		return nil, errors.New("Invalid cursor.")
+		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
 	}
 
 	switch column {
