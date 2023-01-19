@@ -17,10 +17,23 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Contex
 }
 
 func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
+	modifiedArgs := false
+	var wanted int
+	if args != nil {
+		modifiedArgs = modifyArgs(args)
+		if args.First != nil {
+			wanted = *args.First
+		} else if args.Last != nil {
+			wanted = *args.Last
+		}
+	}
+
 	history, err := s.db.Conf().ListSiteConfigs(ctx, args)
 	if err != nil {
 		return []*SiteConfigurationChangeResolver{}, err
 	}
+
+	// fmt.Printf("HISTORY\n %#v\n", history)
 
 	resolvers := []*SiteConfigurationChangeResolver{}
 	for i := 0; i < len(history); i++ {
@@ -32,7 +45,35 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		})
 	}
 
+	if modifiedArgs {
+		if args.Last != nil {
+			resolvers = resolvers[1:]
+		} else if args.First != nil && len(history) == wanted {
+			resolvers = resolvers[:len(resolvers)-1]
+		}
+	}
+
 	return resolvers, nil
+}
+
+// modifyArgs will fetch one more than the originally requested number of items because we need one
+// older item to get the diff of the oldes item in the list.
+//
+// A separate function so that this can be tested in isolation.
+func modifyArgs(args *database.PaginationArgs) bool {
+	var modified bool
+	if args.First != nil {
+		*args.First += 1
+		modified = true
+	} else if args.Last != nil && args.Before != nil {
+		if *args.Before > 0 {
+			modified = true
+			*args.Last += 1
+			*args.Before -= 1
+		}
+	}
+
+	return modified
 }
 
 // func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {

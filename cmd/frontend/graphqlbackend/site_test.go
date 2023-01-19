@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -44,66 +45,77 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		expectedSiteConfigIDs []int32
 	}{
 		{
-			name: "first: 2",
-			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(2),
-			},
+			name:                  "first: 2",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(2)},
 			expectedSiteConfigIDs: []int32{5, 4},
 		},
 		{
-			name: "first: 5 (exact number of items that exist in the database)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(5),
-			},
+			name:                  "first: 5 (exact number of items that exist in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(5)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
 		{
-			name: "first: 20 (more items than what exists in the database)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(20),
-			},
+			name:                  "first: 20 (more items than what exists in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(20)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
-
 		{
-			name: "last: 2",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last: int32Ptr(2),
-			},
+			name:                  "last: 2",
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(2)},
 			expectedSiteConfigIDs: []int32{2, 1},
 		},
 		{
-			name: "last: 5 (exact number of items that exist in the database)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last: int32Ptr(5),
-			},
+			name:                  "last: 5 (exact number of items that exist in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(5)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
 		{
-			name: "last: 20 (more items than what exists in the database)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last: int32Ptr(5),
-			},
+			name:                  "last: 20 (more items than what exists in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(5)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+		},
+		{
+			name:                  "first: 2, after: 4",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(2), After: stringPtr("4")},
+			expectedSiteConfigIDs: []int32{3, 2},
+		},
+		{
+			name:                  "first: 10, after: 4 (overflow)",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(10), After: stringPtr("4")},
+			expectedSiteConfigIDs: []int32{3, 2, 1},
 		},
 	}
 
 	for _, tc := range testCases {
-		connectionResolver, err := schemaResolver.History(ctx, tc.args)
-		if err != nil {
-			t.Fatalf("failed to get history: %v", err)
-		}
-
-		siteConfigChangeResolvers, err := connectionResolver.Nodes(ctx)
-		if err != nil {
-			t.Fatalf("failed to get nodes: %v", err)
-		}
-
-		for i, resolver := range siteConfigChangeResolvers {
-			if resolver.siteConfig.ID != tc.expectedSiteConfigIDs[i] {
-				t.Errorf("position %d: expected siteConfig.ID %d, but got %d", i, tc.expectedSiteConfigIDs[i], resolver.siteConfig.ID)
+		t.Run(tc.name, func(t *testing.T) {
+			connectionResolver, err := schemaResolver.History(ctx, tc.args)
+			if err != nil {
+				t.Fatalf("failed to get history: %v", err)
 			}
-		}
+
+			siteConfigChangeResolvers, err := connectionResolver.Nodes(ctx)
+			if err != nil {
+				t.Fatalf("failed to get nodes: %v", err)
+			}
+
+			siteConfigChangeResolverIDs := make([]int32, len(siteConfigChangeResolvers))
+			for i, s := range siteConfigChangeResolvers {
+				siteConfigChangeResolverIDs[i] = s.siteConfig.ID
+			}
+
+			if len(siteConfigChangeResolvers) != len(tc.expectedSiteConfigIDs) {
+				diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs)
+				t.Fatalf(`mismatched number of resolvers, expected %d, got %d\n
+diff in IDs: %s,\n
+`, len(tc.expectedSiteConfigIDs), len(siteConfigChangeResolvers), diff)
+			}
+
+			for i, resolver := range siteConfigChangeResolvers {
+				if resolver.siteConfig.ID != tc.expectedSiteConfigIDs[i] {
+					t.Errorf("position %d: expected siteConfig.ID %d, but got %d", i, tc.expectedSiteConfigIDs[i], resolver.siteConfig.ID)
+				}
+			}
+		})
 	}
 
 }
