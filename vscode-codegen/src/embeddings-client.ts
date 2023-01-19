@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import { Response } from 'node-fetch'
 
 export interface EmbeddingSearchResult {
 	filePath: string
@@ -13,25 +14,36 @@ export interface EmbeddingSearchResults {
 }
 
 export class EmbeddingsClient {
-	private embeddingsURL: string
+	headers: { headers: { authorization: string } }
 
-	constructor(private embeddingsAddr: string, private codebaseID: string) {
-		this.embeddingsURL = `http://${this.embeddingsAddr}`
+	constructor(private embeddingsUrl: string, private accessToken: string, private codebaseID: string) {
+		this.headers = { headers: { authorization: `Bearer ${this.accessToken}` } }
 	}
 
 	async search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
-		const url = `${this.embeddingsURL}/search/${encodeURIComponent(this.codebaseID)}?query=${encodeURIComponent(
-			query
-		)}&codeCount=${encodeURIComponent(codeCount)}&markdownCount=${encodeURIComponent(markdownCount)}`
-		return fetch(url)
+		const url = `${this.embeddingsUrl}/embeddings/search/${encodeURIComponent(
+			this.codebaseID
+		)}?query=${encodeURIComponent(query)}&codeCount=${encodeURIComponent(
+			codeCount
+		)}&markdownCount=${encodeURIComponent(markdownCount)}`
+		return fetch(url, this.headers)
+			.then(verifyResponseCode)
 			.then(response => response.json())
 			.then(data => data as EmbeddingSearchResults)
 	}
 
 	async queryNeedsAdditionalContext(query: string): Promise<boolean> {
-		const url = `${this.embeddingsURL}/needs-additional-context?query=${encodeURIComponent(query)}`
-		return fetch(url)
+		const url = `${this.embeddingsUrl}/embeddings/needs-additional-context?query=${encodeURIComponent(query)}`
+		return fetch(url, this.headers)
+			.then(verifyResponseCode)
 			.then(response => response.json())
 			.then(data => data.needsAdditionalContext as boolean)
 	}
+}
+
+function verifyResponseCode(response: Response): Response {
+	if (!response.ok) {
+		throw new Error('HTTP status code: ' + response.status)
+	}
+	return response
 }

@@ -3,36 +3,43 @@ import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
 import { ChatViewProvider } from './chat/view'
 import { WSChatClient } from './chat/ws'
-import { CodyCompletionItemProvider, WSCompletionsClient, fetchAndShowCompletions } from './completions'
+import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
 import { EmbeddingsClient } from './embeddings-client'
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+const CODY_ENDPOINT = 'cody.sgdev.org'
+
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('codebot extension activated')
+	console.log('Cody extension activated')
+	const isDevelopment = process.env.NODE_ENV === 'development'
+
 	const settings = vscode.workspace.getConfiguration()
 	const documentProvider = new CompletionsDocumentProvider()
 	const history = new History()
 	history.register(context)
 
-	const serverAddr = settings.get('codebot.conf.serverEndpoint')
-	if (!serverAddr) {
-		throw new Error('need to set server endpoint')
-	}
+	const serverAddr = settings.get('cody.serverEndpoint') || CODY_ENDPOINT
+	const serverUrl = `${isDevelopment ? 'ws' : 'wss'}://${serverAddr}`
 
-	const embeddingsAddr: string | undefined = settings.get('codebot.conf.embeddingsEndpoint')
-	if (!embeddingsAddr) {
-		throw new Error('need to set embeddings endpoint')
-	}
+	const embeddingsAddr = settings.get('cody.embeddingsEndpoint') || CODY_ENDPOINT
+	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${embeddingsAddr}`
 
-	const codebaseID: string | undefined = settings.get('codebot.conf.codebaseID')
+	const codebaseID: string = settings.get('cody.codebase', '')
 	if (!codebaseID) {
-		throw new Error('need to set codebaseID')
+		vscode.window.showWarningMessage(
+			'Cody needs a codebase to work with. Please set the "cody.codebase" setting in your workspace settings and reload the editor.'
+		)
 	}
 
-	const wsCompletionsClient = await WSCompletionsClient.new(`ws://${serverAddr}/completions`)
-	const wsChatClient = await WSChatClient.new(`ws://${serverAddr}/chat`)
-	const embeddingsClient = new EmbeddingsClient(embeddingsAddr, codebaseID)
+	const accessToken = (await context.secrets.get('cody.access-token')) ?? ''
+	if (!accessToken) {
+		vscode.window.showWarningMessage(
+			'Cody needs an access token to work. Please set the token using the "Cody: Set access token" command and reload the editor.'
+		)
+	}
+
+	const wsCompletionsClient = WSCompletionsClient.new(`${serverUrl}/completions`, accessToken)
+	const wsChatClient = WSChatClient.new(`${serverUrl}/chat`, accessToken)
+	const embeddingsClient = new EmbeddingsClient(embeddingsUrl, accessToken, codebaseID)
 
 	const chatProvider = new ChatViewProvider(context.extensionPath, wsChatClient, embeddingsClient)
 
@@ -41,11 +48,18 @@ export async function activate(context: vscode.ExtensionContext) {
 		return chatProvider.executeRecipe(recipe)
 	}
 
+	const storeAccessToken = async (accessToken: string | undefined) => {
+		if (!accessToken) {
+			return
+		}
+		context.secrets.store('cody.access-token', accessToken)
+	}
+
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider('codegen', documentProvider),
 		vscode.languages.registerHoverProvider({ scheme: 'codegen' }, documentProvider),
 
-		vscode.commands.registerCommand('vscode-codegen.ai-suggest', async () => {
+		vscode.commands.registerCommand('cody.suggest', async () => {
 			await fetchAndShowCompletions(wsCompletionsClient, documentProvider, history)
 		}),
 
@@ -59,9 +73,13 @@ export async function activate(context: vscode.ExtensionContext) {
 			executeRecipe('generateUnitTest')
 		),
 
-		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider)
+		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider),
+
+		vscode.commands.registerCommand('cody.set-access-token', async () => {
+			const tokenInput = await vscode.window.showInputBox()
+			await storeAccessToken(tokenInput)
+		})
 	)
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}

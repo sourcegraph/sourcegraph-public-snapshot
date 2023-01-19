@@ -5,7 +5,7 @@ Provides natural language code search capabilities using embeddings.
 ## Dependencies
 
 ```
-pip3 install "fastapi[all]" faiss-cpu tenacity
+pip3 install "fastapi[all]" faiss-cpu tenacity numpy openai
 ```
 
 ## Environment variables
@@ -13,11 +13,7 @@ pip3 install "fastapi[all]" faiss-cpu tenacity
 To access the OpenAI embeddings API:
 
 - `export OPENAI_API_KEY=sk-`
-
-To serve the API:
-
 - `export EMBEDDINGS_DIR=/path/to/embeddings`
-- `export CODEBASE_IDS=codebase-id-1,codebase-id-2,...`
 
 ## Embedding a codebase
 

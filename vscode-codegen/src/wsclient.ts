@@ -3,11 +3,18 @@ import { WSResponse } from '@sourcegraph/cody-common'
 import { WebSocket } from 'ws'
 
 export class WSClient<TRequest, TResponse extends WSResponse> {
-	static async new<T1, T2 extends WSResponse>(addr: string): Promise<WSClient<T1, T2>> {
-		const ws = new WebSocket(addr)
-		const c = new WSClient<T1, T2>(ws)
-		await c.waitForConnection(30 * 1000) // 30 seconds
-		return c
+	static async new<T1, T2 extends WSResponse>(addr: string, accessToken: string): Promise<WSClient<T1, T2> | null> {
+		try {
+			const ws = new WebSocket(addr, { headers: { authorization: `Bearer ${accessToken}` } })
+			const c = new WSClient<T1, T2>(ws)
+			await c.waitForConnection(30 * 1000) // 30 seconds
+			return c
+		} catch {
+			vscode.window.showWarningMessage(
+				'Could not connect to the Cody backend. Check that you have set the correct access token.'
+			)
+			return null
+		}
 	}
 
 	private nextRequestId = 1
@@ -37,7 +44,7 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 			}
 		})
 		this.ws.on('error', err => {
-			vscode.window.showErrorMessage(`websocket error: ${err}`)
+			console.error(`websocket error: ${err}`)
 		})
 	}
 

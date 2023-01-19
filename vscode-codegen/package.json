@@ -1,9 +1,9 @@
 {
-  "name": "vscode-codegen",
-  "displayName": "vscode-codegen",
+  "name": "cody",
+  "displayName": "Cody",
   "version": "0.0.0",
   "engines": {
-    "vscode": "^1.73.0"
+    "vscode": "^1.74.0"
   },
   "categories": [
     "Other"
@@ -33,8 +33,8 @@
     },
     "commands": [
       {
-        "command": "vscode-codegen.ai-suggest",
-        "title": "View AI suggestions"
+        "command": "cody.suggest",
+        "title": "Ask Cody: View suggestions"
       },
       {
         "command": "cody.recipe.explain-code",
@@ -47,6 +47,10 @@
       {
         "command": "cody.recipe.generate-unit-test",
         "title": "Ask Cody: Generate a unit test"
+      },
+      {
+        "command": "cody.set-access-token",
+        "title": "Cody: Set access token"
       }
     ],
     "submenus": [
@@ -76,7 +80,7 @@
     },
     "keybindings": [
       {
-        "command": "vscode-codegen.ai-suggest",
+        "command": "cody.suggest",
         "key": "alt+\\"
       }
     ],
@@ -84,16 +88,16 @@
       "type": "object",
       "title": "Cody settings",
       "properties": {
-        "codebot.conf.serverEndpoint": {
+        "cody.serverEndpoint": {
           "type": "string"
         },
-        "codebot.conf.embeddingsEndpoint": {
+        "cody.embeddingsEndpoint": {
           "type": "string"
         },
-        "codebot.conf.codebaseID": {
+        "cody.codebase": {
           "type": "string"
         },
-        "conf.codebot.debug": {
+        "cody.debug": {
           "type": "boolean"
         }
       }

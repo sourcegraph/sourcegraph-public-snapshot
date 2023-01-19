@@ -10,7 +10,7 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
 	} = {}
 
 	private isDebug(): boolean {
-		return vscode.workspace.getConfiguration().get<boolean>('conf.codebot.debug') === true
+		return vscode.workspace.getConfiguration().get<boolean>('cody.debug') === true
 	}
 
 	private fireDocumentChanged(uri: vscode.Uri): void {

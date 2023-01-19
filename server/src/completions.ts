@@ -9,10 +9,8 @@ import {
 } from '@sourcegraph/cody-common'
 import { enhanceCompletion, tokenCountToChars, truncateByProbability } from './prompts/common'
 
-const openaiKey = process.env.OPENAI_KEY
-const openaiConfig = new openai.Configuration({
-	apiKey: openaiKey,
-})
+const openaiKey = process.env.OPENAI_API_KEY
+const openaiConfig = new openai.Configuration({ apiKey: openaiKey })
 const cushmanBasic = new OpenAIBackend(
 	'cushman:prefix-only',
 	openaiConfig,

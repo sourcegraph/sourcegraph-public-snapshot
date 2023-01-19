@@ -9,8 +9,11 @@ interface ChatCallbacks {
 }
 
 export class WSChatClient {
-	static async new(addr: string): Promise<WSChatClient> {
-		const wsclient = await WSClient.new<Omit<WSChatRequest, 'requestId'>, WSChatResponse>(addr)
+	static async new(addr: string, accessToken: string): Promise<WSChatClient | null> {
+		const wsclient = await WSClient.new<Omit<WSChatRequest, 'requestId'>, WSChatResponse>(addr, accessToken)
+		if (!wsclient) {
+			return null
+		}
 		return new WSChatClient(wsclient)
 	}
 

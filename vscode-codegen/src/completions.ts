@@ -19,8 +19,14 @@ interface CompletionCallbacks {
 }
 
 export class WSCompletionsClient {
-	static async new(addr: string): Promise<WSCompletionsClient> {
-		const wsclient = await WSClient.new<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>(addr)
+	static async new(addr: string, accessToken: string): Promise<WSCompletionsClient | null> {
+		const wsclient = await WSClient.new<Omit<WSCompletionsRequest, 'requestId'>, WSCompletionResponse>(
+			addr,
+			accessToken
+		)
+		if (!wsclient) {
+			return null
+		}
 		return new WSCompletionsClient(wsclient)
 	}
 
@@ -77,10 +83,15 @@ async function getCompletionsArgs(
 }
 
 export async function fetchAndShowCompletions(
-	wsclient: WSCompletionsClient,
+	wsclientPromise: Promise<WSCompletionsClient | null>,
 	documentProvider: CompletionsDocumentProvider,
 	history: History
 ) {
+	const wsclient = await wsclientPromise
+	if (!wsclient) {
+		return
+	}
+
 	const currentEditor = vscode.window.activeTextEditor
 	if (!currentEditor || currentEditor?.document.uri.scheme === 'codegen') {
 		return

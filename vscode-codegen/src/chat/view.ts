@@ -35,7 +35,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private extensionPath: string,
-		private wsclient: WSChatClient,
+		private wsclient: Promise<WSChatClient | null>,
 		private embeddingsClient: EmbeddingsClient
 	) {
 		this.prompt = new Prompt(this.embeddingsClient)
@@ -74,9 +74,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private async sendPrompt(promptMessages: Message[]): Promise<void> {
+		const wsclient = await this.wsclient
+		if (!wsclient) {
+			return
+		}
+
 		await this.closeConnectionInProgress()
 
-		this.closeConnectionInProgressPromise = this.wsclient.chat(promptMessages, {
+		this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, {
 			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text)),
 			onComplete: text => this.onBotMessageComplete(this.reformatBotMessage(text)),
 			onError: err => {
