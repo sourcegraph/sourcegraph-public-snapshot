@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -49,6 +51,10 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		return []*SiteConfigurationChangeResolver{}, err
 	}
 
+	if len(history) == 0 {
+		return []*SiteConfigurationChangeResolver{}, nil
+	}
+
 	resolvers := []*SiteConfigurationChangeResolver{}
 	for i := 0; i < len(history); i++ {
 
@@ -90,12 +96,17 @@ func modifyArgs(args *database.PaginationArgs) bool {
 	return modified
 }
 
-// FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver) (*string, error) {
-	return nil, nil
+	cursor := string(node.ID())
+	return &cursor, nil
 }
 
-// FIXME: Implement when paginating.
 func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
-	return nil, nil
+	var id int
+	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, err
 }

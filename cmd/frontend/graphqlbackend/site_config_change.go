@@ -12,13 +12,18 @@ import (
 const siteConfigurationChangeKind = "SiteConfigurationChange"
 
 type SiteConfigurationChangeResolver struct {
-	db         database.DB
-	siteConfig *database.SiteConfig
-	// previousSiteConfig *database.SiteConfig
+	db                 database.DB
+	siteConfig         *database.SiteConfig
+	previousSiteConfig *database.SiteConfig
 }
 
 func (r SiteConfigurationChangeResolver) ID() graphql.ID {
-	return relay.MarshalID(siteConfigurationChangeKind, r.siteConfig.ID)
+	return marshalSiteConfigurationChangeID(r.siteConfig.ID)
+}
+
+// One line wrapper to be able to use in tests as well.
+func marshalSiteConfigurationChangeID(id int32) graphql.ID {
+	return relay.MarshalID(siteConfigurationChangeKind, &id)
 }
 
 // func (r SiteConfigurationChangeResolver) PreviousID() *graphql.ID {

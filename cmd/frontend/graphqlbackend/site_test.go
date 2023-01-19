@@ -75,14 +75,68 @@ func TestSiteConfigurationHistory(t *testing.T) {
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
 		{
-			name:                  "first: 2, after: 4",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(2), After: stringPtr("4")},
+			name: "first: 2, after: 4",
+			args: &graphqlutil.ConnectionResolverArgs{
+				First: int32Ptr(2),
+				After: stringPtr(string(marshalSiteConfigurationChangeID(4))),
+			},
 			expectedSiteConfigIDs: []int32{3, 2},
 		},
 		{
-			name:                  "first: 10, after: 4 (overflow)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(10), After: stringPtr("4")},
+			name: "first: 10, after: 4 (overflow)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				First: int32Ptr(10),
+				After: stringPtr(string(marshalSiteConfigurationChangeID(4))),
+			},
 			expectedSiteConfigIDs: []int32{3, 2, 1},
+		},
+		{
+			name: "first: 10, after: 6 (same as get all items, but latest ID in DB is 5)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				First: int32Ptr(10),
+				After: stringPtr(string(marshalSiteConfigurationChangeID(6))),
+			},
+			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+		},
+		{
+			name: "first: 10, after: 1 (beyond the last cursor in DB which is 1)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				First: int32Ptr(10),
+				After: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+			},
+			expectedSiteConfigIDs: []int32{},
+		},
+		{
+			name: "last: 2, before: 1",
+			args: &graphqlutil.ConnectionResolverArgs{
+				Last:   int32Ptr(2),
+				Before: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+			},
+			expectedSiteConfigIDs: []int32{3, 2},
+		},
+		{
+			name: "last: 10, before: 1 (overflow)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				Last:   int32Ptr(10),
+				Before: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+			},
+			expectedSiteConfigIDs: []int32{5, 4, 3, 2},
+		},
+		{
+			name: "last: 10, before: 0 (same as get all items, but oldest ID in DB is 1)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				Last:   int32Ptr(10),
+				Before: stringPtr(string(marshalSiteConfigurationChangeID(0))),
+			},
+			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+		},
+		{
+			name: "last: 10, before: 6 (beyond the latest cursor in DB which is 5)",
+			args: &graphqlutil.ConnectionResolverArgs{
+				Last:   int32Ptr(10),
+				Before: stringPtr(string(marshalSiteConfigurationChangeID(6))),
+			},
+			expectedSiteConfigIDs: []int32{},
 		},
 	}
 
