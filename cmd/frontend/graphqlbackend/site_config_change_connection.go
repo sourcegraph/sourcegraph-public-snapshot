@@ -19,35 +19,6 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Contex
 	return &c, err
 }
 
-func copyIntPtr(n *int) *int {
-	if n == nil {
-		return nil
-	}
-
-	c := *n
-	return &c
-}
-
-// modifyArgs will fetch one more than the originally requested number of items because we need one
-// older item to get the diff of the oldes item in the list.
-//
-// A separate function so that this can be tested in isolation.
-func modifyArgs(args *database.PaginationArgs) bool {
-	var modified bool
-	if args.First != nil {
-		*args.First += 1
-		modified = true
-	} else if args.Last != nil && args.Before != nil {
-		if *args.Before > 0 {
-			modified = true
-			*args.Last += 1
-			*args.Before -= 1
-		}
-	}
-
-	return modified
-}
-
 func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
 	if args == nil {
 		return nil, errors.New("pagination args cannot be nil")
@@ -126,4 +97,33 @@ func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) 
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
 	return &id, err
+}
+
+func copyIntPtr(n *int) *int {
+	if n == nil {
+		return nil
+	}
+
+	c := *n
+	return &c
+}
+
+// modifyArgs will fetch one more than the originally requested number of items because we need one
+// older item to get the diff of the oldes item in the list.
+//
+// A separate function so that this can be tested in isolation.
+func modifyArgs(args *database.PaginationArgs) bool {
+	var modified bool
+	if args.First != nil {
+		*args.First += 1
+		modified = true
+	} else if args.Last != nil && args.Before != nil {
+		if *args.Before > 0 {
+			modified = true
+			*args.Last += 1
+			*args.Before -= 1
+		}
+	}
+
+	return modified
 }
