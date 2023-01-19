@@ -35,8 +35,7 @@ type GitTreeEntryResolver struct {
 
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat fs.FileInfo
-
+	stat   fs.FileInfo
 	logger log.Logger
 }
 
