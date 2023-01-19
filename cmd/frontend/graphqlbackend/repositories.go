@@ -359,7 +359,6 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	i32ptr := func(v int32) *int32 { return &v }
 	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
