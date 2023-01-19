@@ -168,7 +168,7 @@ message PatternInfo {
 
 	// limit is the cap on the total number of matches returned.
 	// A match is either a path match, or a fragment of a line matched by the query.
-    int32 limit = 10;
+    int64 limit = 10;
 
     // pattern_matches_content is whether the pattern should be matched
     // against the content of files.

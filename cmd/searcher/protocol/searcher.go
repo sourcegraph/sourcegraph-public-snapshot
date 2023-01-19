@@ -183,6 +183,7 @@ func (r *Request) ToProto() *proto.SearchRequest {
 		CommitOid: string(r.Commit),
 		Branch:    r.Branch,
 		Indexed:   r.Indexed,
+		Url:       r.URL,
 		PatternInfo: &proto.PatternInfo{
 			Pattern:                      r.PatternInfo.Pattern,
 			IsNegated:                    r.PatternInfo.IsNegated,
@@ -193,7 +194,7 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			ExcludePattern:               r.PatternInfo.ExcludePattern,
 			IncludePatterns:              r.PatternInfo.IncludePatterns,
 			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
-			Limit:                        int32(r.PatternInfo.Limit),
+			Limit:                        int64(r.PatternInfo.Limit),
 			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
 			CombyRule:                    r.PatternInfo.CombyRule,
@@ -209,7 +210,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 	*r = Request{
 		Repo:   api.RepoName(req.Repo),
 		RepoID: api.RepoID(req.RepoId),
-		URL:    "",
+		URL:    req.Url,
 		Commit: api.CommitID(req.CommitOid),
 		Branch: req.Branch,
 		PatternInfo: PatternInfo{

@@ -48,7 +48,7 @@ func SearchGRPC(
 			ExcludePattern:               p.ExcludePattern,
 			IncludePatterns:              p.IncludePatterns,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			Limit:                        p.FileMatchLimit,
+			Limit:                        int64(p.FileMatchLimit),
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 			CombyRule:                    p.CombyRule,
