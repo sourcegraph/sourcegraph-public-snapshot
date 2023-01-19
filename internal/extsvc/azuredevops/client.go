@@ -3,9 +3,9 @@ package azuredevops
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,6 +28,7 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
+	auth      auth.BasicAuth
 }
 
 // TODO: @varsanojidan remove this when the shcema is updated to include AzureDevOps: https://github.com/sourcegraph/sourcegraph/issues/46266.
@@ -57,6 +58,10 @@ func NewClient(urn string, config *AzureDevOpsConnection, httpClient httpcli.Doe
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auth: auth.BasicAuth{
+			Username: config.Username,
+			Password: config.Token,
+		},
 	}, nil
 }
 
@@ -92,7 +97,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Token)))
+	c.auth.Authenticate(req)
+	
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
