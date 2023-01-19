@@ -488,7 +488,8 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
-	// TODO: @varsanojidan add for ADO once the schema is implemented.
+	case KindAzureDevOps:
+		return nil, errors.New("TODO: @varsanojidan add for ADO once the schema is implemented.")
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}

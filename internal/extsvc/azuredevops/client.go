@@ -32,6 +32,7 @@ type Client struct {
 
 // TODO: @varsanojidan remove this when the shcema is updated to include AzureDevOps: https://github.com/sourcegraph/sourcegraph/issues/46266.
 type AzureDevOpsConnection struct {
+	URL      string
 	Username string
 	Token    string
 	Projects []string
@@ -42,7 +43,7 @@ type AzureDevOpsConnection struct {
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
 func NewClient(urn string, config *AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse("https://dev.azure.com")
+	u, err := url.Parse(config.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 	ProjectOrOrgName string
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (*ListRepositoriesResponse, error) {
+func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]RepositoriesValue, error) {
 	qs := make(url.Values)
 
 	// TODO: @varsanojidan look into which API version/s we want to support.
@@ -83,7 +84,7 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 		return nil, err
 	}
 
-	return &repos, nil
+	return repos.Value, nil
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
@@ -92,13 +93,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	// Add Basic Auth headers for authenticated requests.
 	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Token)))
-
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		return nil, err
 	}
@@ -143,5 +141,5 @@ type httpError struct {
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("AzureDevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }

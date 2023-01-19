@@ -28,7 +28,7 @@ type AzureDevOpsSource struct {
 func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Wrapf(err, "external service id=%d config", svc.ID)
 	}
 	var c azuredevops.AzureDevOpsConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
@@ -67,7 +67,6 @@ func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
 
 // ListRepos returns all Azure DevOps repositories configured with this AzureDevOpsSource's config.
 func (s *AzureDevOpsSource) ListRepos(ctx context.Context, results chan SourceResult) {
-
 	for _, project := range s.config.Projects {
 		s.processReposFromProjectOrOrg(ctx, project, results)
 	}
@@ -86,12 +85,7 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 		return
 	}
 
-	if repos == nil {
-		results <- SourceResult{Source: s, Err: errors.New("got an empty response from Azure DevOps.")}
-		return
-	}
-
-	for _, repo := range repos.Value {
+	for _, repo := range repos {
 		repo, err := s.makeRepo(repo)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}

@@ -5,7 +5,6 @@ import (
 	"flag"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -37,11 +36,6 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
-	os.Exit(m.Run())
-}
-
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
 func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
@@ -60,6 +54,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	}
 
 	c := &AzureDevOpsConnection{
+		URL:      "https://dev.azure.com",
 		Username: "testuser",
 		Token:    "testpassword",
 	}

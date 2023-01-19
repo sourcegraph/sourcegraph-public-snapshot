@@ -12,6 +12,7 @@ import (
 
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	conf := &azuredevops.AzureDevOpsConnection{
+		URL:      "https://dev.azure.com",
 		Username: "testuser",
 		Token:    "testtoken",
 		Projects: []string{"sgadotest/sgadotest"},
