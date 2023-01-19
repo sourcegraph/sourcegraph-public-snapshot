@@ -149,7 +149,7 @@ One important piece of information that needs to be surfaced to users is the ans
 The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
 
 Its job is to periodically schedule a recording of 'current' values for Insights by enqueuing a recording using a global query. This only requires a single global query per insight regardless of the number of repositories,
-and will return results for all the matched repositories. Each repository will still be recorded individually. 
+and will return results for all the matched repositories. Each matched repository will still be recorded individually. 
 
 You can find these search queries for queued jobs on the (primary postgres) table `insights_query_runner_jobs.search_query`
 
