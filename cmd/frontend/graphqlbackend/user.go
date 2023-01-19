@@ -73,7 +73,6 @@ func NewUserResolver(db database.DB, user *types.User) *UserResolver {
 		user:   user,
 		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 	}
-
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
