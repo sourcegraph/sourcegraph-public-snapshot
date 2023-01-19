@@ -2,10 +2,10 @@ package repos
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
