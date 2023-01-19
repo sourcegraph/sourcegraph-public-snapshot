@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -126,6 +127,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	user1, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
 	assert.NoError(t, err)
+
 	user2, err := db.Users().Create(context.Background(), NewUser{Username: "graph"})
 	assert.NoError(t, err)
 	ctx := context.Background()
@@ -136,6 +138,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	user1LowPrioJob := PermissionSyncJobOpts{Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
 	assert.NoError(t, err)
+
 	allJobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
 	assert.NoError(t, err)
 	// check that we have 1 job with userID=1
@@ -146,6 +149,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	user2LowPrioJob := PermissionSyncJobOpts{Reason: ReasonManualUserSync, TriggeredByUserID: user2.ID}
 	err = store.CreateUserSyncJob(ctx, 2, user2LowPrioJob)
 	assert.NoError(t, err)
+
 	allJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	assert.NoError(t, err)
 	// check that we have 2 jobs including job for userID=2. job ID should match user ID
@@ -156,6 +160,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	// 3) Another low priority job without process_after for user1 is dropped
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
 	assert.NoError(t, err)
+
 	allJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	assert.NoError(t, err)
 	// check that we still have 2 jobs. Job ID should match user ID.
@@ -168,10 +173,13 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	tenMinutesLater := clock.Now().Add(10 * time.Minute)
 	user1LowPrioDelayedJob := PermissionSyncJobOpts{NextSyncAt: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 	user2LowPrioDelayedJob := PermissionSyncJobOpts{NextSyncAt: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioDelayedJob)
 	assert.NoError(t, err)
+
 	err = store.CreateUserSyncJob(ctx, 2, user2LowPrioDelayedJob)
 	assert.NoError(t, err)
+
 	allDelayedJobs, err := store.List(ctx, ListPermissionSyncJobOpts{NotNullProcessAfter: true})
 	assert.NoError(t, err)
 	// check that we have 2 delayed jobs in total
@@ -184,6 +192,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	user1HighPrioJob := PermissionSyncJobOpts{HighPriority: true, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 	err = store.CreateUserSyncJob(ctx, 1, user1HighPrioJob)
 	assert.NoError(t, err)
+
 	allUser1Jobs, err := store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	assert.NoError(t, err)
 	// check that we have 3 jobs for userID=1 in total (low prio (canceled), delayed, high prio)
@@ -201,8 +210,10 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	// Check that all of them are dropped since we already have a high prio job.
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
 	assert.NoError(t, err)
+
 	err = store.CreateUserSyncJob(ctx, 1, user1HighPrioJob)
 	assert.NoError(t, err)
+
 	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	assert.NoError(t, err)
 	// check that we still have 3 jobs for userID=1 in total (low prio (canceled), delayed, high prio)
@@ -215,9 +226,11 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	updatedRows, err := result.RowsAffected()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), updatedRows)
+
 	// Now we're good to insert new low prio job.
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
 	assert.NoError(t, err)
+	
 	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	assert.NoError(t, err)
 	// check that we now have 4 jobs for userID=1 in total (low prio (canceled), delayed, high prio (processing), NEW low prio)
@@ -237,7 +250,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 
 	// Test that cancelling non-existent job errors out
 	err := store.CancelQueuedJob(ctx, 1)
-	assert.Error(t, err)
+	assert.True(t, errcode.IsNotFound(err))
 
 	// Adding a job
 	err = store.CreateRepoSyncJob(ctx, 1, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
@@ -249,7 +262,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 
 	// Cancelling already cancelled job doesn't make sense and errors out as well
 	err = store.CancelQueuedJob(ctx, 1)
-	assert.Error(t, err)
+	assert.True(t, errcode.IsNotFound(err))
 
 	// Adding another job and setting it to "processing" state
 	err = store.CreateRepoSyncJob(ctx, 1, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
@@ -259,5 +272,5 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 
 	// Cancelling it errors out because it is in a state different from "queued"
 	err = store.CancelQueuedJob(ctx, 2)
-	assert.Error(t, err)
+	assert.True(t, errcode.IsNotFound(err))
 }

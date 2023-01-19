@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -196,11 +197,15 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	}
 
 	err = tx.CancelQueuedJob(ctx, existingJob.ID)
-	if err != nil {
+	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
 	return tx.create(ctx, job)
 }
+
+type notFoundError struct{ error }
+
+func (e notFoundError) NotFound() bool { return true }
 
 func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, id int) error {
 	now := timeutil.Now()
@@ -219,7 +224,7 @@ WHERE id = %s AND state = 'queued' AND cancel IS FALSE
 		return err
 	}
 	if af != 1 {
-		return errors.Newf("sync job with id %d not found", id)
+		return notFoundError{errors.Newf("sync job with id %d not found", id)}
 	}
 	return nil
 }
