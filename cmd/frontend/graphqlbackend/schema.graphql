@@ -6687,6 +6687,83 @@ type SiteConfiguration {
     on the configuration (that can't be expressed in the JSON Schema).
     """
     validationMessages: [String!]!
+    """
+    EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
+    configuration.
+    Only site admins may perform this query.
+    """
+    history(
+        """
+        The number of nodes to return starting from the beginning (oldest).
+        Note: Use either first or last (see below) in the query. Setting both will
+        return an error.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): SiteConfigurationChangeConnection
+}
+
+"""
+A list of site config diffs.
+"""
+type SiteConfigurationChangeConnection implements Connection {
+    """
+    A list of diffs in the site config
+    """
+    nodes: [SiteConfigurationChange!]!
+    """
+    The total number of diffs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A diff representing the change in the site config compared to the previous version.
+"""
+type SiteConfigurationChange implements Node {
+    """
+    The ID of the site config in the history.
+    """
+    id: ID!
+    """
+    The user who made this change. If empty, it indicates that either the
+    author's information is not available or the change in the site config was applied
+    via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
+    """
+    author: User
+    """
+    The diff string when diffed against the site config at previousID.
+    """
+    diff: String!
+    """
+    The timestamp when this change in the site config was applied.
+    """
+    createdAt: DateTime!
+    """
+    The timestamp when this change in the site config was modified. Usually
+    this should be the same as createdAt as entries in the site config history are
+    considered immutable.
+    """
+    updatedAt: DateTime!
 }
 
 """
