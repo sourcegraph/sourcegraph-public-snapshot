@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { mdiGit } from '@mdi/js'
+import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
@@ -32,7 +32,11 @@ export const ToggleBlameAction: React.FC<Props> = props => {
     }, [isBlameVisible, setIsBlameVisible])
 
     const icon = (
-        <Icon aria-hidden={true} svgPath={mdiGit} className={classNames(isBlameVisible && styles.iconActive)} />
+        <Icon
+            aria-hidden={true}
+            svgPath={isBlameVisible ? mdiAccountDetails : mdiAccountDetailsOutline}
+            className={classNames(isBlameVisible && styles.iconActive)}
+        />
     )
 
     if (props.source === 'actionItemsBar') {
