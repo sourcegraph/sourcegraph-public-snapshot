@@ -143,7 +143,7 @@ func (r RepoCommitPath) String() string {
 
 func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
 	if r == nil {
-		return nil
+		return &proto.RepoCommitPath{}
 	}
 
 	return &proto.RepoCommitPath{
@@ -154,6 +154,10 @@ func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
 }
 
 func (r *RepoCommitPath) FromProto(p *proto.RepoCommitPath) {
+	if r == nil {
+		return
+	}
+
 	r.Repo = p.GetRepo()
 	r.Commit = p.GetCommit()
 	r.Path = p.GetPath()
@@ -165,7 +169,7 @@ type LocalCodeIntelPayload struct {
 
 func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
 	if p == nil {
-		return nil
+		return &proto.LocalCodeIntelResponse{}
 	}
 
 	var symbols []*proto.LocalCodeIntelResponse_Symbol
@@ -213,6 +217,10 @@ type Point struct {
 }
 
 func (p *Point) ToProto() *proto.Point {
+	if p == nil {
+		return &proto.Point{}
+	}
+
 	return &proto.Point{
 		Row:    int32(p.Row),
 		Column: int32(p.Column),
@@ -220,6 +228,10 @@ func (p *Point) ToProto() *proto.Point {
 }
 
 func (p *Point) FromProto(pp *proto.Point) {
+	if p == nil {
+		return
+	}
+
 	p.Row = int(pp.GetRow())
 	p.Column = int(pp.GetColumn())
 }
@@ -233,7 +245,7 @@ type Symbol struct {
 
 func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
 	if s == nil {
-		return nil
+		return &proto.LocalCodeIntelResponse_Symbol{}
 	}
 
 	var refs []*proto.Range
@@ -280,7 +292,7 @@ type Range struct {
 
 func (r *Range) ToProto() *proto.Range {
 	if r == nil {
-		return nil
+		return &proto.Range{}
 	}
 
 	return &proto.Range{
@@ -291,6 +303,10 @@ func (r *Range) ToProto() *proto.Range {
 }
 
 func (r *Range) FromProto(p *proto.Range) {
+	if r == nil {
+		return
+	}
+
 	r.Row = int(p.GetRow())
 	r.Column = int(p.GetColumn())
 	r.Length = int(p.GetLength())
