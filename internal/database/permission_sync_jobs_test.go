@@ -125,6 +125,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	user1, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	assert.NoError(t, err)
 	user2, err := db.Users().Create(context.Background(), NewUser{Username: "graph"})
 	assert.NoError(t, err)
 	ctx := context.Background()

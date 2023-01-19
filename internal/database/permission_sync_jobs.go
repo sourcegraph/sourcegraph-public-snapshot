@@ -192,6 +192,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 			"Permissions sync job is not added because a job with similar or higher priority already exists",
 			log.String(logField, id),
 		)
+		return nil
 	}
 
 	err = tx.CancelQueuedJob(ctx, existingJob.ID)
