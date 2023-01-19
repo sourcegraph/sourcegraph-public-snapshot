@@ -105,7 +105,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	return r.url(ctx).String(), nil
 }
 
-func (r *GitTreeEntryResolver) Submodule() resolverstubs.GitSubmoduleResolver { // HERE
+func (r *GitTreeEntryResolver) Submodule() resolverstubs.GitSubmoduleResolver {
 	if r == nil {
 		r.logger.Error("git tree entry resolver is nil", log.Error(errors.New("git tree entry resolver is nil")))
 		return nil
