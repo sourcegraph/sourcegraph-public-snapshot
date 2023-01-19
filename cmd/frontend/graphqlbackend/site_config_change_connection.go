@@ -125,9 +125,5 @@ func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigu
 func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
-	if err != nil {
-		return nil, err
-	}
-
 	return &id, err
 }
