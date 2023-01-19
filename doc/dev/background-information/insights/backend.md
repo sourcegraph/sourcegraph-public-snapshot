@@ -261,7 +261,7 @@ Logs can be inspected from Grafana with a query like:
 
 ### Inspecting the Code Insights database
 
-In the insights database `series_points` is the table where the actual search result data is stored.
+The table `series_points` in the insights database is the table where the actual search results data is stored.
 
 #### Querying data
 
