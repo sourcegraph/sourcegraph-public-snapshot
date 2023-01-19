@@ -99,18 +99,15 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/uploads',
             label: 'Uploads',
-            exact: false,
         },
         {
             to: '/site-admin/code-graph/indexes',
             label: 'Auto-indexing',
-            exact: false,
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {
             to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
-            exact: false,
         },
         {
             to: '/site-admin/code-graph/inference-configuration',

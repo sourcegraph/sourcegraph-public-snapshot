@@ -26,7 +26,7 @@ type PolicyMatch struct {
 	Name           string
 	PolicyID       *int
 	PolicyDuration *time.Duration
-	CreatedDate    *time.Time
+	CommittedAt    *time.Time
 }
 
 func NewMatcher(
@@ -144,7 +144,7 @@ func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refD
 			Name:           refDescription.Name,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
-			CreatedDate:    refDescription.CreatedDate,
+			CommittedAt:    refDescription.CreatedDate,
 		})
 	}
 
@@ -162,7 +162,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 			Name:           refDescription.Name,
 			PolicyID:       nil,
 			PolicyDuration: nil,
-			CreatedDate:    refDescription.CreatedDate,
+			CommittedAt:    refDescription.CreatedDate,
 		})
 	}
 
@@ -173,7 +173,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 			Name:           refDescription.Name,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
-			CreatedDate:    refDescription.CreatedDate,
+			CommittedAt:    refDescription.CreatedDate,
 		})
 
 		// Build requests to be made in batch via the matchCommitsOnBranch method
@@ -234,7 +234,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 					Name:           branchName,
 					PolicyID:       &localPolicyID,
 					PolicyDuration: policyDuration,
-					CreatedDate:    &commitDate,
+					CommittedAt:    &commitDate,
 				})
 			}
 		}
@@ -267,7 +267,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				Name:           commit,
 				PolicyID:       &id,
 				PolicyDuration: policyDuration,
-				CreatedDate:    &commitDate,
+				CommittedAt:    &commitDate,
 			})
 		}
 	}

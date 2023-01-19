@@ -149,18 +149,15 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             {
                 to: '/uploads',
                 label: 'Uploads',
-                exact: false,
             },
             {
                 to: '/indexes',
                 label: 'Auto-indexing',
-                exact: false,
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
             {
                 to: '/configuration',
                 label: 'Configuration policies',
-                exact: false,
             },
             {
                 to: '/index-configuration',

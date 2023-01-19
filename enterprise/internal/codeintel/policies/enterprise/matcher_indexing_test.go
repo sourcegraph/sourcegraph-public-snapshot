@@ -22,7 +22,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			t.Fatalf("unexpected error finding matches: %s", err)
 		}
 
-		hydrateCreatedAt(expectedPolicyMatches, now)
+		hydrateCommittedAt(expectedPolicyMatches, now)
 		sortPolicyMatchesMap(policyMatches)
 		sortPolicyMatchesMap(expectedPolicyMatches)
 
