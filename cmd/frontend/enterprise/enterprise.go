@@ -34,7 +34,6 @@ type Services struct {
 	ReposBitbucketCloudWebhook  webhooks.Registerer
 
 	// Handler for exporting code insights data.
-	// todo update this to custom handler
 	CodeInsightsDataExportHandler http.Handler
 
 	PermissionsGitHubWebhook    webhooks.Registerer

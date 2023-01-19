@@ -541,10 +541,10 @@ const (
 	SnapshotMode        PersistMode = "snapshot"
 	recordingTable      string      = "series_points"
 	snapshotsTable      string      = "series_points_snapshots"
-	recordingTimesTable             = "insight_series_recording_times"
+	recordingTimesTable string      = "insight_series_recording_times"
 
 	recordingTableArchive      string = "archived_series_points"
-	recordingTimesTableArchive        = "archived_insight_series_recording_times"
+	recordingTimesTableArchive string = "archived_insight_series_recording_times"
 )
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
