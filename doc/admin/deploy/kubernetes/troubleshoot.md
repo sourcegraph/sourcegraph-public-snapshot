@@ -110,7 +110,7 @@ Known issues when using a service mesh (e.g. Istio, Linkerd, etc.)
 
 <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/178506378-3d047bc5-d672-487a-920f-8f228ae5cb27.png"/>
 
-This error occurs because Envoy, the proxy used by Istio, [drops proxied trailers for HTTP/1 by default](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-http1protocoloptions). To resolve this issue, enable trailers in your instance following the examples provided for [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples).
+This error occurs because Envoy, the proxy used by Istio, [drops proxied trailers for the requests made over HTTP/1.1 protocol by default](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#config-core-v3-http1protocoloptions). To resolve this issue, enable trailers in your instance following the examples provided for [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples).
 
 ### Symbols sidebar and hovers are not working
 
