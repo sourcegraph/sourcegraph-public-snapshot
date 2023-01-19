@@ -21,7 +21,7 @@ const QUERY = gql`
         $revision: String!
         $commitID: String!
         $filePath: String!
-        $recursiveParents: Boolean!
+        $ancestors: Boolean!
         $first: Int
     ) {
         repository(name: $repoName) {
@@ -29,7 +29,7 @@ const QUERY = gql`
                 tree(path: $filePath) {
                     isRoot
                     url
-                    entries(first: $first, recursiveParents: $recursiveParents) {
+                    entries(first: $first, ancestors: $ancestors) {
                         name
                         path
                         isDirectory
@@ -86,8 +86,10 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
         variables: {
             ...defaultVariables,
             filePath: initialFilePath,
-            // The initial load should include parents
-            recursiveParents: true,
+            // The initial search should include all parent directories and
+            // their entries, so we can render a collapsed tree view for the
+            // initial file path.
+            ancestors: true,
         },
         fetchPolicy: 'cache-and-network',
         onCompleted(data) {
@@ -123,7 +125,7 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
             await refetch({
                 ...defaultVariables,
                 filePath: fullPath,
-                recursiveParents: false,
+                ancestors: false,
             })
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
@@ -364,7 +366,8 @@ function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
 // on the folder name as well and thus the jumping is unexpected. To fix this,
 // we have to patch `.focus()` and handle the case ourselves.
 //
-// TODO: This should be fixed upstream in react-accessible-treeview.
+// TODO: This can be removed once the upstream fix is landed:
+//       https://github.com/dgreene1/react-accessible-treeview/pull/81
 function usePatchFocusToFixScrollIssues(): void {
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/unbound-method

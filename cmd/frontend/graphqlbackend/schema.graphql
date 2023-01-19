@@ -5004,9 +5004,17 @@ type GitTree implements TreeEntry {
         """
         recursiveSingleChild: Boolean = false
         """
-        Recurse into all parents if the entries are loaded for a sub-tree
+        Includes all parent directories and their entries. For example, if the path is
+        `/client/web/something`, it will return the following entries in this order:
+
+          - `/*`
+          - `/client/*`
+          - `/client/web/*`
+          - `/client/web/something/*`
+
+        This is useful for rendering a collapsed tree view for the entry.
         """
-        recursiveParents: Boolean = false
+        ancestors: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.

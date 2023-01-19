@@ -24,9 +24,9 @@ type gitTreeEntryConnectionArgs struct {
 	// If recurseSingleChild is true, we will return a flat list of every
 	// directory and file in a single-child nest.
 	RecursiveSingleChild bool
-	// If recursiveParents is true and the tree is loaded from a subdirectory,
-	// we will return a flat list of all files in all parent directories.
-	RecursiveParents bool
+	// If Ancestors is true and the tree is loaded from a subdirectory, we will
+	// return a flat list of all entries in all parent directories.
+	Ancestors bool
 }
 
 func (r *GitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
@@ -82,10 +82,13 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		l = append(l, subEntries...)
 	}
 
-	if args.RecursiveParents && !r.IsRoot() {
+	if args.Ancestors && !r.IsRoot() {
 		var parent *GitTreeEntryResolver
-		parent, err = r.Parent(ctx)
-		if err == nil && parent != nil {
+		parent, err = r.parent(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if parent != nil {
 			parentEntries, err := parent.Entries(ctx, args)
 			if err != nil {
 				return nil, err
