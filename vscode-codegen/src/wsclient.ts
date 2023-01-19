@@ -5,8 +5,9 @@ import { WebSocket } from 'ws'
 export class WSClient<TRequest, TResponse extends WSResponse> {
 	static async new<T1, T2 extends WSResponse>(addr: string, accessToken: string): Promise<WSClient<T1, T2> | null> {
 		try {
-			const ws = new WebSocket(addr, { headers: { authorization: `Bearer ${accessToken}` } })
-			const c = new WSClient<T1, T2>(ws)
+			const options = { headers: { authorization: `Bearer ${accessToken}` } }
+			const ws = new WebSocket(addr, options)
+			const c = new WSClient<T1, T2>(ws, options)
 			await c.waitForConnection(30 * 1000) // 30 seconds
 			return c
 		} catch {
@@ -18,13 +19,11 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 	}
 
 	private nextRequestId = 1
-	private ws: WebSocket
 	private readonly responseListeners: {
 		[id: number]: (resp: TResponse) => boolean
 	} = {}
 
-	constructor(ws: WebSocket) {
-		this.ws = ws
+	constructor(private ws: WebSocket, private options: { headers: { authorization: string } }) {
 		this.addHandlers()
 	}
 
@@ -59,7 +58,7 @@ export class WSClient<TRequest, TResponse extends WSResponse> {
 			case WebSocket.CLOSED:
 			case WebSocket.CLOSING:
 				console.log(`reconnecting to ${this.ws.url}`)
-				this.ws = new WebSocket(this.ws.url)
+				this.ws = new WebSocket(this.ws.url, this.options)
 				this.addHandlers()
 				await this.waitForConnection(30 * 1000)
 				return
