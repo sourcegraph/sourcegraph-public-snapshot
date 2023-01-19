@@ -1,55 +1,38 @@
 # Configure Sourcegraph with Kustomize
 
-This guide will show you how to customize your deployment by creating a [Kustomize overlay for Sourcegraph](#overlay). 
+This guide will demonstrate how to customize your Sourcegraph deployment by creating a [Kustomize overlay](#create-an-overlay-for-sourcegraph). 
 
-Once you have an overlay ready, you can then use it to deploy Sourcegraph to your cluster with a simple kubectl command:
+Once you have an overlay ready, you can use it to deploy Sourcegraph to your Kubernetes cluster with a simple kubectl command:
 
 ```bash
 $ kubectl apply -k --prune -l deploy=sourcegraph -f $PATH_TO_OVERLAY
 ```
 
-> NOTE: If you are deploying Sourcegraph with Helm, please refer to the [configuration guide for Helm](helm.md#configuration).
-
 ## Create an overlay for Sourcegraph
 
-⚠️ **IMPORTANT NOTE**: Please create your own sets of overlays within the [new/overlays](index.md#overlays) directory of your reference repository, and refrain from making changes to the other directories to prevent potential conflicts during future updates and ensure a seamless upgrade process.
+**IMPORTANT NOTE**: It is recommended to create your own overlays within the [new/overlays](index.md#overlays) directory of your reference repository and avoid making changes to other directories to prevent potential merge conflicts during future updates.
 
-1. Ensure you have met [all the prerequisites](../kustomize/index.md#prerequisites) with your private reference repository available locally
-2. Understand how the [reference repository is structured](index.md#overview), and the correct [configuration-files](index.md#configuration-files) to use: [overlay.config](configure.md#overlay-config) and [frontend.env](configure.md#frontend-env)
-3. Create a duplicate of the `new/overlays/template` folder within the `new/overlays` directory
-4. Rename the duplicate to the name of your cluster environment (ex. `prod`, `staging`, `aws`, etc) --this would be the name of your overlay: $OVERLAY_NAME
-5. Start configuring your overlay accordingly using the instructions below
+1. Ensure you have met [all the prerequisites](../kustomize/index.md#prerequisites) and have your private reference repository available locally.
+2. Understand the structure of the [reference repository](intro.md#overview), and which [configuration-files](intro.md#configuration-files) to use, such as [overlay.config](intro.md#overlay-config) and [frontend.env](intro.md#frontend-env)
+3. Create a duplicate of the `new/overlays/template` folder within the `new/overlays` subdirectory
+4. Rename the duplicate to the name of your cluster environment (ex. `prod`, `staging`, `aws`, etc) - this will be the name of your overlay: $OVERLAY_NAME
+5. Begin configuring your overlay following the instructions provided below
+
+**Note: All the configuration should take place within the overlay directory created in step 3**
 
 ---
 
+## Non-Privileged
+
+By default, all Sourcegraph services are deployed in a **non-root and non-privileged** mode, as defined in the [base](intro.md#base) layer.
+
 ## RBAC
 
-RBAC must be enabled in your cluster for Sourcegraph to do the following:
+By default, the Sourcegraph monitoring stack includes Role-Based Access Control (RBAC) resources, but the main Sourcegraph app does not. This means that service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap.
 
-- Communicates with the Kubernetes API for service discovery
-- Runs janitor DaemonSets that clean up temporary cache data
+### Privileged
 
-### Non-Privileged
-
-All Sourcegraph services are now defaulted to run as **non-root and non-privileged**. 
-
-### Enabled
-
-The Sourcegraph main app does not include any RBAC-required resources; therefore, service discovery is not available by default, and the endpoints for additional replicas must be added to the frontend ConfigMap. 
-
-To enable service discovery for frontend to discover service endpoint automatically, please add the component below as the last component:
-
-```yaml
-# new/overlays/$OVERLAY_NAME/kustomization.yaml
-components:
-...
-# Add as the last component under components
-- ../../components/enable/service-discovery
-```
-
-#### Privileged
-
-If you have RBAC enabled on your cluster and wish to deploy a Sourcegraph instance with privileged access and root user, you can include the privileged component along with the monitoring component in your overlay.
+If you want to deploy a Sourcegraph instance configured for High Availability (HA) to an RBAC-enabled cluster, you can add the privileged component along with the monitoring component to your components list. This will enable Kubernetes service discovery for the frontend, and all Sourcegraph services will run with privileged access and as the root user. Note that when using the [privileged component](#privileged), it is not necessary to use the [enable/service-discovery component](#service-discovery) to avoid duplication of configurations.
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -58,17 +41,22 @@ components:
 - ../../components/privileged
 ```
 
-This also enables Kubernetes service discovery for frontend and run all Sourcegraph services with privileged access and root user. Do not use the `privileged component` with `enable/service-discovery component` for duplicated configurations.
+### Service discovery
 
-### Disabled
+To enable communication between the frontend and other services through the Kubernetes API, it is necessary to have RBAC enabled in your cluster. To enable service discovery for the frontend, add the following component as the last component in your `kustomization.yaml` file:
 
-By default, RBAC is not required to deploy the Sourcegraph main app; however, RBACs must be enabled for the monitoring stack to be fully functional.
+```yaml
+components:
+...
+# Add as the last component
+- ../../components/enable/service-discovery
+```
 
-If RBAC is not enabled in your cluster, please replace the monitoring component with the [non-privileged Sourcegraph monitoring component](#non-privileged-monitoring) that has all RBAC-resources removed.
+This will allow the frontend to discover the endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
 
 ## Monitoring Stack
 
-Add the `monitoring component` to deploy the Sourcegraph Monitoring Stack:
+Enabling RBAC for the monitoring stack is crucial for the proper functioning of the Sourcegraph janitor DaemonSets that clean up temporary cache data. To deploy the Sourcegraph Monitoring Stack with RBAC resources, add the [monitoring component](#monitoring-stack):
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -78,9 +66,9 @@ components:
 
 > IMPORTANT: RBAC must be enabled for the monitoring stack to be working properly.
 
-### Non-privileged monitoring
+### Remove RBACs
 
-If RBAC is not enabled in your cluster, you can replace the monitoring component with the non-privileged Sourcegraph monitoring component that has all RBAC resources removed:
+If RBAC is not enabled in your cluster and you do not want to use the  [monitoring component](#monitoring-stack) with RBAC resources, you can remove it by using the [non-privileged monitoring component](#remove-rbacs) instead. This will remove all the services that have RBAC resources from the monitoring stack.
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -88,11 +76,11 @@ components:
 - ../../components/monitoring/non-privileged
 ```
 
-All the RBAC-required services will be removed from the monitoring stack. The UI for grafana might still be accessible, but most of the dashboards are expected to be empty.
+While you will still have access to Grafana, most of its dashboards are expected to be empty.
 
 ## Remove DaemonSets
 
-The Sourcegraph monitoring stack includes DaemonSets resources. If you do not have permission to deploy DaemonSets, you can add the `remove/daemonset component` to remove all DaemonSets from your monitoring stack **when deploying the monitoring stack with monitoring component**:
+If you do not have permission to deploy DaemonSets, you can use the remove/daemonset component to remove all DaemonSets from the monitoring stack  **when deploying the monitoring stack with monitoring component**:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -103,11 +91,14 @@ components:
 - ../../components/remove/daemonset
 ```
 
-⚠️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to be removed.
+⚠️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to remove.
 
 ## Namespace
 
-Update the [namespace](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/namespace/) field in your `kustomization.yaml` file will apply/override the namespace on all resources included in your overlay:
+To configure the namespace for your Sourcegraph deployment, you can follow these steps:
+
+1. Open the kustomization.yaml file located in your overlay directory (new/overlays/$OVERLAY_NAME/kustomization.yaml)
+2. Add the namespace field in the file, and set it to the desired namespace in your cluster. For example:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -116,11 +107,11 @@ kind: Kustomization
 namespace: default
 ```
 
-> NOTE: This assumes the namespace exists in your cluster. It does not create a new namespace.
+> Note: This step assumes that the namespace already exists in your cluster. If it does not, you will need to create it before applying the overlay.
 
 ### Create a namespace
 
-Before following the steps listed in the previous step, add the namespace component to your kustomization file to create resources for the new namespace:
+To create a new namespace, you can add the namespace component to your kustomization.yaml file.
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -130,28 +121,28 @@ components:
 
 ## Resources
 
-We recommend setting up your Sourcegraph deployment usisng resouces configured for your [instance size](../../instance-size.md), and then add the `sizes component` for your instance size to your Overlay:
+The standard practice is to configure resource allocation using the `sizes component`, which we have preconfigured based on load test results for each [instance size](../../instance-size.md). This will ensure that your instance size is properly allocated
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
 components:
+# Replace xs with your instance size
 - ../../components/sizes/xs
 ```
 
 ## Storage class
 
-Sourcegraph by default requires a storage class for all persisent volumes claims. By default this storage class is called `sourcegraph`. This storage class must be configured before applying the base configuration to your cluster.
+Sourcegraph requires a storage class for all persistent volume claims by default. The default storage class is called `sourcegraph`. This storage class must be configured before applying the base configuration to your cluster.
 
-See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
+See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about configuring persistent volumes.
 
 **Kubernetes 1.19 and higher required**
 
 ### Google Cloud Platform
 
-1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
+1. Read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
-
-2. Add the gcp storage class component to the kustomization.yaml file for your Kustomize Overlay:
+2. Add the GCP storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -159,13 +150,13 @@ components:
 - ../../components/storage-class/gcp
 ```
 
-[Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
+[Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for more information.
 
 ### Amazon Web Services
 
-1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
+1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the [Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
 
-2. Add the aws storage class component to the kustomization.yaml file for your Kustomize Overlay:
+2. Add the aws storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -173,15 +164,15 @@ components:
 - ../../components/storage-class/aws
 ```
 
-[Additional documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
+[Additional documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) for more information.
 
 ### Azure
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
 
-1. Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
+1. Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the [Container Storage Interface (CSI) drivers](https://learn.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
-2. Add the azure storage class component to the kustomization.yaml file for your Kustomize Overlay:
+2. Add the azure storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -189,14 +180,14 @@ components:
 - ../../components/storage-class/azure
 ```
 
-[Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
+[Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) for more information.
 
 
 ### Trident
 
 If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
 
-Add one of the available `storage-class/trident/$FSTYPE` components to your overlay as a component based on your fsType:
+Add one of the available `storage-class/trident/$FSTYPE` components to the `kustomization.yaml` file for your Kustomize overlay based on your fsType:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -208,7 +199,9 @@ components:
 
 ### Other cloud providers
 
-Add the `new/components/storage-class/cloud` to your overlay:
+To use a storage class provided by other cloud providers, follow these steps:
+
+1. Add the `new/components/storage-class/cloud` component to your overlay:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -216,7 +209,7 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables inside the overlay.config config file for your overlay. Replace them with the correct values according to the instruction provided by your cloud provider:
+Update the following variables in the overlay.config config file for your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```
 DEPLOY_SOURCEGRAPH_STORAGECLASS_NAME=STORAGECLASS_NAME
@@ -224,19 +217,21 @@ DEPLOY_SOURCEGRAPH_STORAGECLASS_PROVISIONER=STORAGECLASS_PROVISIONER
 DEPLOY_SOURCEGRAPH_STORAGECLASS_PARAM_TYPE=STORAGECLASS_PARAM_TYPE
 ```
 
+> IMPORTANT: Make sure to create the storage class in your cluster before deploying Sourcegraph
+
 ## Network access
 
-To enable external users to access the main web server, it is necessary to configure it to be reachable over the network.
+To allow external users to access the main web server, you need to configure it to be reachable over the network. 
 
-As part of our base configuration, the [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) has implemented ingress with the default ingress rules.
+We recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller for production environments.
 
 ### Ingress controller
 
-We **recommend** using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) production environments.
-
 To utilize the sourcegraph-frontend ingress, you'll need to install a NGINX ingress controller (ingress-nginx) in your cluster by following the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/.
 
-You can also install it using one of our ingress-nginx-controller overlays if applicable:
+Follow the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to install the ingress-nginx controller in your cluster.
+
+Alternatively, you can use one of our pre-configured ingress-nginx-controller overlays:
 
   ```bash
   # aws
@@ -245,15 +240,15 @@ You can also install it using one of our ingress-nginx-controller overlays if ap
   $ kubectl apply -k new/quick-start/ingress-nginx-controller/cloud
   ```
 
-Once the controller has been set up successfully, you can check the external address by running the following command and look for the `LoadBalancer` entry:
+Check the external address by running the following command and look for the `LoadBalancer` entry:
 
 ```bash
 kubectl -n ingress-nginx get svc
 ```
 
-If you are having trouble accessing Sourcegraph, ensure ingress-nginx IP is accessible above. Otherwise see [Troubleshooting ingress-nginx](https://kubernetes.github.io/ingress-nginx/troubleshooting/). The namespace of the ingress-controller is `ingress-nginx`.
+Verify that the ingress-nginx IP is accessible. If you are having trouble accessing Sourcegraph, see[Troubleshooting ingress-nginx](https://kubernetes.github.io/ingress-nginx/troubleshooting/) for further assistance. The namespace of the ingress-controller is ingress-nginx.
 
-Once you have [installed Sourcegraph](./index.md#installation), run the following command to confirm an IP address has been assigned to your ingress resource before trying to access Sourcegraph in your browser using the IP address or configured URL.
+Once you have completed the installation process for Sourcegraph, run the following command to check if an IP address has been assigned to your ingress resource. This IP address or the configured URL can then be used to access Sourcegraph in your browser.
 
 ```sh
 kubectl get ingress sourcegraph-frontend
@@ -264,16 +259,16 @@ sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 
 ### Hostname
 
-Use the hostname component to configure your ingress hostname.
+To configure the hostname for your Sourcegraph ingress, follow these steps:
 
-**Step 1**: Add the `HOST_DOMAIN` variable to configure the hostname to your overlay.config file:
+**Step 1**: In your [overlay.config file](intro.md#overlayconfig), add the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/config/overlay.config
 HOST_DOMAIN=sourcegraph.company.com
 ```
 
-**Step 2**: Add the hostname component to your kustomization file:
+**Step 2**: In your kustomization file, add the hostname component by adding the following line:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -281,9 +276,13 @@ components:
 - ../../components/hostname
 ```
 
+This will configure the hostname for the ingress resource, allowing external users to access Sourcegraph using the specified hostname.
+
 ### Annotations
 
-`ingress-nginx` has extensive configuration documented at [NGINX Configuration](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/). We expect most administrators to modify [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/) in [sourcegraph-frontend.Ingress.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml), which can be done by adding the following to your overlay:
+To configure ingress-nginx annotations for the Sourcegraph frontend:
+
+1. In your overlay's `kustomization.yaml` file, add the following under the `components` section:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -298,7 +297,7 @@ patchesJson6902:
   path: config/frontend-ingress.annotations.yaml
 ```
 
-Create a file named `frontend.annotations.yaml` within the `config` directory inside your overlay, and add the additional annotations below at the end:
+Create a file named `frontend-ingress-annotations.yaml` within the config directory inside your overlay, and add the additional annotations you want to include in the file. For example:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/config/frontend.annotations.yaml
@@ -312,17 +311,19 @@ Create a file named `frontend.annotations.yaml` within the `config` directory in
     # ex: nginx.ingress.kubernetes.io/auth-type: basic
 ```
 
+This will add the annotations specified in the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
+
 ### TLS
 
-It is recommended to enable TLS and configure a certificate properly on your Ingress. You can utilize managed certificate solutions provided by Cloud providers, or your own method.
+To ensure secure communication, it is recommended to enable Transport Layer Security (TLS) and properly configure a certificate on your Ingress. This can be done by utilizing managed certificate solutions provided by cloud providers or by manually configuring a certificate.
 
 #### Enable manually
 
-To configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets) manually:
+To manually configure a certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets), follow these steps:
 
-Step 1: Move the tls.cert and tls.key to the env folder inside the overlay directory. Ex. `new/overlays/$OVERLAY_NAME/config`.
+**Step 1**: Move the `tls.crt` and `tls.key` files to the `config` folder within your overlay directory (e.g. `new/overlays/$OVERLAY_NAME/config`).
 
-Step 2: Generate secrets with the provided files using secretGenerator by adding the following to your kustomization file:
+**Step 2**: Use the `secretGenerator` to generate secrets with the provided files by adding the following to your kustomization file:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -336,7 +337,7 @@ secretGenerator:
 ...
 ```
 
-A new Secret resource named sourcegraph-frontend-tls will be created with the cert and key encoded:
+This will create a new Secret resource named sourcegraph-frontend-tls that contains the encoded cert and key.
 
 ```yaml
 # the data is abbreviated in this example
@@ -353,9 +354,7 @@ data:
     LS...SSVZBVEUgS0VZLS0tLS0=
 ```
 
-Step 3: Configure the TLS settings on your Ingress using variables
-
-Add the following variables to your `overlay.config` file:
+**Step 3**: Configure the TLS settings on your Ingress by adding the following variables to your [overlay.config](intro.md#overlayconfig) file:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
@@ -380,7 +379,7 @@ components:
 
 #### Let’s Encrypt
 
-Alternatively, you may consider configuring [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster, and then configure frontend ingress using the same steps listed above, but replace `TLS_CLUSTER_ISSUER=letsencrypt` in your overlay.config file.
+Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to your overlay.config file, replace **TLS_CLUSTER_ISSUER=letsencrypt** to use the cert-manager with Let's Encrypt.
 
 ## Network rule
 
@@ -445,12 +444,11 @@ components:
 
 ## NetworkPolicy
 
-Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
-other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace as described in the [namespace section](#namespace) and then apply the 
-[network-policy component](https://github.com/sourcegraph/deploy-sourcegraph/tree/main/new/components/network-policy) that utilizes the `namespaceSelector` to allow traffic between the Sourcegraph pods. 
-The [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) created by this component will 
-only allow resources that are deployed to this specified namespace that has the `name: sourcegraph-prod` label.
+To configure network policy for your Sourcegraph installation, you will need to follow these steps:
+
+1. Create a namespace for your Sourcegraph deployment as described in the [namespace section](#namespace).
+
+2. Add the network-policy component to your kustomization file:
 
 ```yaml
 # new/overlays/$OVERLAY_NAME/kustomization.yaml
@@ -458,14 +456,15 @@ components:
 - ../../components/network-policy
 ```
 
-> NOTE: You will need to augment this example NetworkPolicy to allow traffic to external services
-> you plan to use (like github.com) and ingress traffic from
-> the outside to the frontend for the users of the Sourcegraph installation.
-> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
+3. Apply the network-policy component to your cluster. This will create a NetworkPolicy resource that only allows traffic between pods in the namespace labeled with name: sourcegraph-prod
+
+4. If you need to allow traffic to external services or ingress traffic from the outside to the frontend, you will need to augment the example NetworkPolicy. You can check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
+
+> NOTE: You should check with your cluster administrator to ensure that NetworkPolicy is supported in your cluster.
 
 ## Environment variables
 
-Update the environment variables for **sourcegraph-frontend** inside the `env/frontend.env` file that is located within your overlay directory. For example:
+To update environment variables for **sourcegraph-frontend**, edit the `env/frontend.env` file located in your overlay directory. For example:
 
 ```sh
 # new/overlays/$OVERLAY_NAME/env/frontend.env
@@ -474,14 +473,13 @@ REDIS_STORE_ENDPOINT=NEW_EDIS_STORE_DSN
 NEW_ENV_VAR=NEW_VALUE
 ```
 
-The values will be automatically merge with the environment variables currently listed in your frontendend's ConfigMap.
-
+These values will be automatically merged with the environment variables currently listed in your frontendend's ConfigMap.
 
 ## External databases
 
-We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcegraph databases, see [this guide](../../postgres.md).
+For optimal performance and resilience, it is recommended to use an external database when deploying Sourcegraph. For more information on database requirements, refer to [this guide](../../postgres.md).
 
-Simply add the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to point them to your existing PostgreSQL instance inside the `new/overlays/$OVERLAY_NAME/env/frontend.env file`:
+To connect to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the `new/overlays/$OVERLAY_NAME/env/frontend.env` file:
 
 ```sh
 # new/overlays/$OVERLAY_NAME/env/frontend.env
