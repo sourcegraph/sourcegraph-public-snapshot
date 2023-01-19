@@ -23,7 +23,7 @@ source /root/.sg_envrc
 set -x
 
 echo '--- :horse: Running init-sg addRepos'
-./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
+"${root_dir}/init-sg" addRepos -config ./dev/ci/integration/code-intel/repos.json
 
 echo '--- Installing local src-cli'
 ./dev/ci/integration/code-intel/install-src.sh
