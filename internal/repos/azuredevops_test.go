@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestADOSource_ListRepos(t *testing.T) {
-	conf := &azuredevops.ADOConnection{
+func TestAzureDevOpsSource_ListRepos(t *testing.T) {
+	conf := &azuredevops.AzureDevOpsConnection{
 		Username: "testuser",
 		Token:    "testtoken",
 		Projects: []string{"sgadotest/sgadotest"},
@@ -20,12 +20,12 @@ func TestADOSource_ListRepos(t *testing.T) {
 	defer save(t)
 
 	svc := &types.ExternalService{
-		Kind:   extsvc.KindADO,
+		Kind:   extsvc.KindAzureDevOps,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
 	}
 
 	ctx := context.Background()
-	src, err := NewADOSource(ctx, svc, cf)
+	src, err := NewAzureDevOpsSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

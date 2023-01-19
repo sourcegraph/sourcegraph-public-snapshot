@@ -2,9 +2,9 @@ package repos
 
 import (
 	"context"
-	"github.com/goware/urlx"
 	"path"
 
+	"github.com/goware/urlx"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -14,23 +14,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// A ADOSource yields repositories from a single ADO connection configured
+// A AzureDevOpsSource yields repositories from a single Azure DevOps connection configured
 // in Sourcegraph via the external services configuration.
-type ADOSource struct {
+type AzureDevOpsSource struct {
 	svc       *types.ExternalService
 	cli       *azuredevops.Client
 	serviceID string
 	perPage   int
-	config    azuredevops.ADOConnection
+	config    azuredevops.AzureDevOpsConnection
 }
 
-// NewADOSource returns a new ADOSource from the given external service.
-func NewADOSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*ADOSource, error) {
+// NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
+func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	var c azuredevops.ADOConnection
+	var c azuredevops.AzureDevOpsConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
@@ -49,7 +49,7 @@ func NewADOSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.F
 		return nil, err
 	}
 
-	return &ADOSource{
+	return &AzureDevOpsSource{
 		svc:       svc,
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
@@ -61,12 +61,12 @@ func NewADOSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.F
 // CheckConnection at this point assumes availability and relies on errors returned
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
-func (s *ADOSource) CheckConnection(ctx context.Context) error {
-	return nil
+func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
+	return checkConnection("https://dev.azure.com")
 }
 
-// ListRepos returns all ADO repositories configured with this ADOSource's config.
-func (s *ADOSource) ListRepos(ctx context.Context, results chan SourceResult) {
+// ListRepos returns all Azure DevOps repositories configured with this AzureDevOpsSource's config.
+func (s *AzureDevOpsSource) ListRepos(ctx context.Context, results chan SourceResult) {
 
 	for _, project := range s.config.Projects {
 		s.processReposFromProjectOrOrg(ctx, project, results)
@@ -77,7 +77,7 @@ func (s *ADOSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	}
 }
 
-func (s *ADOSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult) {
+func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, name string, results chan SourceResult) {
 	repos, err := s.cli.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
 		ProjectOrOrgName: name,
 	})
@@ -87,7 +87,7 @@ func (s *ADOSource) processReposFromProjectOrOrg(ctx context.Context, name strin
 	}
 
 	if repos == nil {
-		results <- SourceResult{Source: s, Err: errors.New("got an empty response from ADO.")}
+		results <- SourceResult{Source: s, Err: errors.New("got an empty response from Azure DevOps.")}
 		return
 	}
 
@@ -102,11 +102,11 @@ func (s *ADOSource) processReposFromProjectOrOrg(ctx context.Context, name strin
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *ADOSource) ExternalServices() types.ExternalServices {
+func (s *AzureDevOpsSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *ADOSource) makeRepo(p azuredevops.RepositoriesValue) (*types.Repo, error) {
+func (s *AzureDevOpsSource) makeRepo(p azuredevops.RepositoriesValue) (*types.Repo, error) {
 	urn := s.svc.URN()
 
 	fullURL, err := urlx.Parse(s.cli.URL.String() + p.Name)
@@ -120,7 +120,7 @@ func (s *ADOSource) makeRepo(p azuredevops.RepositoriesValue) (*types.Repo, erro
 		URI:  name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          p.ID,
-			ServiceType: extsvc.TypeADO,
+			ServiceType: extsvc.TypeAzureDevOps,
 			ServiceID:   s.serviceID,
 		},
 		Sources: map[string]*types.SourceInfo{
