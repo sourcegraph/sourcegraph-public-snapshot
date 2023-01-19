@@ -112,20 +112,25 @@ Known issues when using a service mesh (e.g. Istio, Linkerd, etc.)
 
 This error occurs when a service mesh, like Istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. 
 
-See our examples on applying the EnvoyFilter in [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) for details.
+See our examples on applying the EnvoyFilter in [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) and [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) for details.
 
-### Code Intel hover or Symbols sidebar are not working
+### Symbols sidebar and hovers are not working
 
 <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/212372086-4c53e817-be3d-46b6-9cc1-fc34e695d30c.png"/>
 
-This occurs when the symbols tries to connect using built-in service discovery by Sourcegraph instead of the service discovery provided by the Kubernetes or service mesh. In general, Istio's mTLS (as well as other popular service mesh) relies on inter-service comm being done over DNS name (it's used to identity services/pods). Therefore, when the envoy sidecar intercepts frontend's request toward symbols, it fails to locate the right upstream service (i.e. symbols) because it's using the IP address.
+This issue occurs when the "symbols" component attempts to connect to other services using the built-in service discovery system provided by Sourcegraph, instead of using the service discovery system provided by Kubernetes or a service mesh (such as Istio).
+
+In general, service meshes like Istio use a feature called mutual Transport Layer Security (mTLS) to secure communication between services. mTLS relies on services communicating with each other using DNS names, rather than IP addresses. These DNS names are used to identify the specific services or pods that the communication is intended for.
+
+In this case, when the Envoy sidecar (a component used to manage communication between services) intercepts a request from the "frontend" component to the "symbols" component, it is unable to locate the correct upstream service because it is using the IP address instead of the DNS name.
 
 For example:
 
-- Good request: frontend -> http://symbol:3184 -> envoy -> [look up upstream service] -> envoy -> symbols
-- Bad request:  frontend -> http://symbol_pod_ip:3184 -> envoy -> [who is symbol_pod_ip?] -> envoy -> symbols
+For example, in a good request, the communication flow would be: frontend -> http://symbol:3184/ -> envoy -> [look up upstream service using DNS name] -> envoy -> symbols
 
-The solution is to redeploy frontend after specifying the service address for symbols setting the **SYMBOLS_URL** environment variables in frontend:
+In a bad request, the communication flow would be: frontend -> http://symbol_pod_ip:3184 -> envoy -> [symbol_pod_ip not found since it's an IP address not a DNS name] -> envoy -> symbols
+
+To resolve this issue, the solution is to redeploy the frontend after specifying the service address for symbols by setting the SYMBOLS_URL environment variable in frontend.
 
 ```yaml
 SYMBOLS_URL=http:symbols:3184
@@ -136,7 +141,4 @@ Please make sure the old frontend pods are removed.
 ### Squirrel.LocalCodeIntel http status 502
 
 <img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/212374098-dc2dfe69-4d26-4f5e-a78b-37a53c19ef22.png"/>
-
-Code Intel hover might be stuck in loading or return a 502 error: `Squirrel.LocalCodeIntel http status 502:`
-
-This is due to the same issue discussed in the issue above with the same solution.
+The issue described is related to the Code Intel hover feature, where it may get stuck in a loading state or return a 502 error with the message `Squirrel.LocalCodeIntel http status 502`. This is caused by the same issue as above ("Symbols sidebar and hovers are not working"). See that section for the solution.
