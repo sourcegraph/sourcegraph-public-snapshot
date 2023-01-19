@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useRef, useState } from 'react'
+import React, { FC, useCallback, useRef, useState, useMemo } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,6 +17,7 @@ import {
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
+import { dirname } from '../../util/path'
 import { RenderedFile } from '../blob/RenderedFile'
 
 import styles from './TreePagePanels.module.scss'
@@ -62,13 +63,49 @@ export interface DiffStat {
 }
 
 export interface FilePanelProps {
-    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
+    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path' | 'isSingleChild'>[]
     diffStats?: DiffStat[]
     className?: string
+    filePath: string
 }
 
 export const FilesCard: FC<FilePanelProps> = props => {
-    const { entries, diffStats, className } = props
+    const { entries, diffStats, className, filePath } = props
+
+    const entriesWithSingleChildExpanded = useMemo(
+        () =>
+            entries.flatMap((entry, index) => {
+                // The GraphQL query with "recurse single child" will return entries
+                // that are not in the current directory. We filter them out for the
+                // view here.
+                let parentDir = dirname(entry.path)
+                if (parentDir === '.') {
+                    parentDir = ''
+                }
+                if (parentDir !== filePath) {
+                    return []
+                }
+
+                // Single child nodes may be expanded so we can skip over them more
+                // efficiently.
+                if (entry.isSingleChild) {
+                    // Find the entry before the one that is no longer a single child
+                    // and add this to the list of entries to render instead of the
+                    // entry.
+                    let idx
+                    for (idx = index; idx < entries.length && entries[idx].isSingleChild; idx++) {
+                        // Do nothing
+                    }
+                    if (idx > index && idx < entries.length && idx > 1) {
+                        const lastSingleChild = entries[idx - 1]
+                        return [lastSingleChild]
+                    }
+                }
+
+                return [entry]
+            }),
+        [entries, filePath]
+    )
 
     const [sortColumn, setSortColumn] = useState<{
         column: 'Files' | 'Activity'
@@ -86,7 +123,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
         }
     }
 
-    let sortedEntries = [...entries]
+    let sortedEntries = [...entriesWithSingleChildExpanded]
     const { column, direction } = sortColumn
     switch (column) {
         case 'Files':
@@ -95,7 +132,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
             }
             break
         case 'Activity':
-            sortedEntries = [...entries]
+            sortedEntries = [...entriesWithSingleChildExpanded]
             if (diffStats) {
                 sortedEntries.sort((entry1, entry2) => {
                     const stats1: DiffStat = diffStatsByPath[entry1.name]
@@ -242,7 +279,13 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                             svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
                                             aria-hidden={true}
                                         />
-                                        {entry.name}
+                                        {
+                                            // In case of single child expansion, we need to get the name relative to
+                                            // the start of the directory (to include subdirectories)
+                                        }
+                                        {entry.isSingleChild && filePath !== ''
+                                            ? entry.path.slice(filePath.length + 1)
+                                            : entry.name}
                                         {entry.isDirectory && '/'}
                                     </span>
                                 </div>

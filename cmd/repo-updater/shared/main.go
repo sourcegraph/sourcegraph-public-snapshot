@@ -68,7 +68,7 @@ type EnterpriseInit func(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID) error)
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason string) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -177,7 +177,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID) error
+	var enqueueRepoPerms func(context.Context, api.RepoID, string) error
 	if enterpriseInit != nil {
 		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
@@ -383,7 +383,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 	}
 }
 
-func rateLimiterStateHandler(w http.ResponseWriter, r *http.Request) {
+func rateLimiterStateHandler(w http.ResponseWriter, _ *http.Request) {
 	info := ratelimit.DefaultRegistry.LimitInfo()
 	resp, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
@@ -480,7 +480,7 @@ func watchSyncer(
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID) error,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason string) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -498,7 +498,7 @@ func watchSyncer(
 			// modified.
 			if enqueueRepoPermsJob != nil {
 				for _, repo := range getPrivateAddedOrModifiedRepos(diff) {
-					err := enqueueRepoPermsJob(ctx, repo)
+					err := enqueueRepoPermsJob(ctx, repo, permssync.ReasonRepoUpdatedFromCodeHost)
 					if err != nil {
 						logger.Warn("failed to create repo sync job", log.Error(err), log.Int32("repo", int32(repo)))
 					}
@@ -507,9 +507,9 @@ func watchSyncer(
 
 			// Similarly, changesetSyncer is only available in enterprise mode.
 			if changesetSyncer != nil {
-				repos := diff.Modified.ReposModified(types.RepoModifiedArchived)
-				if len(repos) > 0 {
-					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repos.IDs()); err != nil {
+				repositories := diff.Modified.ReposModified(types.RepoModifiedArchived)
+				if len(repositories) > 0 {
+					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repositories.IDs()); err != nil {
 						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
 					}
 				}

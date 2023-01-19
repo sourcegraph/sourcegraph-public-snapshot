@@ -18,6 +18,5 @@ func addHandlers(
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 ) {
 	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
-	mux.HandleFunc("/debugLocalCodeIntel", squirrel.DebugLocalCodeIntelHandler)
 	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
 }

@@ -67,7 +67,7 @@ WHERE
 	AND user_emails.email ILIKE '%%@sourcegraph.com'
 `
 
-const employeeUserIdsCacheExpiry = int64(300 * time.Second)
+const employeeUserIdsCacheExpirySeconds = 300
 const employeeUserIdsCacheKey = "sourcegraph_employee_user_ids"
 
 func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32, error) {
@@ -100,7 +100,7 @@ func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32,
 		return ids, err
 	}
 
-	if _, err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpiry); err != nil {
+	if _, err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpirySeconds); err != nil {
 		return ids, err
 	}
 

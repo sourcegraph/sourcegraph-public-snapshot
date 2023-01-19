@@ -336,13 +336,13 @@ func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logge
 		dv  dependencyVersions
 	)
 	// get redis cache server version
-	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
+	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache)
 	if err != nil {
 		logFunc("unable to get Redis cache version", log.Error(err))
 	}
 
 	// get redis store server version
-	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
+	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store)
 	if err != nil {
 		logFunc("unable to get Redis store version", log.Error(err))
 	}
@@ -355,7 +355,14 @@ func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logge
 	return json.Marshal(dv)
 }
 
-func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
+func getRedisVersion(kv redispool.KeyValue) (string, error) {
+	pool, ok := kv.Pool()
+	if !ok {
+		return "disabled", nil
+	}
+	dialFunc := pool.Dial
+
+	// TODO(keegancsmith) should be using pool.Get and closing conn?
 	conn, err := dialFunc()
 	if err != nil {
 		return "", err

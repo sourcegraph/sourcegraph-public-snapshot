@@ -1,4 +1,4 @@
-import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import { useRef, forwardRef, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -18,7 +18,7 @@ export enum InputStatus {
     valid = 'valid',
 }
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps {
     /** text label of input. */
     label?: ReactNode
     /** Description block shown below the input. */

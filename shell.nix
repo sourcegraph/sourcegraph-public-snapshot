@@ -51,7 +51,14 @@ pkgs.mkShell {
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.
     nodejs-16_x
-    (yarn.override { nodejs = nodejs-16_x; })
+    (nodePackages.pnpm.override {
+      nodejs = nodejs-16_x;
+      version = "7.24.2";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.24.2.tgz";
+        sha512 = "sha512-XDTYvZf3xF/kaX0pcdh9GWpak9tV5uDGuNCjkN1SFa0UE350mJGpszmM/j2rVyfoOOFzVR73GNdN3Purd4rXlg==";
+      };
+    })
     nodePackages.typescript
 
     # Rust utils for syntax-highlighter service,

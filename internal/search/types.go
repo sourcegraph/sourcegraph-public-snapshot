@@ -337,10 +337,6 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// When true lucky search runs by default. Adding for A/B testing in
-	// 08/2022. To be removed at latest by 12/2022.
-	AbLuckySearch bool `json:"ab-lucky-search"`
-
 	// Ranking when true will use a our new #ranking signals and code paths
 	// for ranking results from Zoekt.
 	Ranking bool `json:"ranking"`

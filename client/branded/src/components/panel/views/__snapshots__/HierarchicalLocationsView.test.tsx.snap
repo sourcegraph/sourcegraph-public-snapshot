@@ -640,6 +640,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
     aria-label="Loading"
     aria-live="polite"
     class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
+    data-loading-spinner="true"
     role="img"
   />
 </DocumentFragment>
@@ -651,6 +652,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty 
     aria-label="Loading"
     aria-live="polite"
     class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
+    data-loading-spinner="true"
     role="img"
   />
 </DocumentFragment>
