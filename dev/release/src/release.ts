@@ -586,6 +586,18 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
+                        repo: 'https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        ...prBodyAndDraftState([
+                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
+                        ]),
+                    },
+                    {
+                        owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${release.version}`,
