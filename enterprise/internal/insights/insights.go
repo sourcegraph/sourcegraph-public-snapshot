@@ -65,7 +65,7 @@ func Init(
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(rawInsightsDB, db)
-	enterpriseServices.CodeInsightsDataExportHandler = httpapi.NewExportHandler(db, rawInsightsDB)
+	enterpriseServices.CodeInsightsDataExportHandler = httpapi.NewExportHandler(db, rawInsightsDB).ExportFunc()
 
 	return nil
 }
