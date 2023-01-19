@@ -6,20 +6,11 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-# Add repo root to path to ensure we always point to our local src cli (installed below)
-PATH="$(pwd):${PATH}"
-export PATH
-
 SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SOURCEGRAPH_BASE_URL
 
 echo '--- :go: Building init-sg'
 go build -o init-sg ./internal/cmd/init-sg/...
-
-echo '--- Installing local src-cli'
-./dev/ci/integration/code-intel/install-src.sh
-which src
-src version
 
 echo '--- Loading secrets'
 set +x # Avoid printing secrets
@@ -29,6 +20,11 @@ set -x
 
 echo '--- :horse: Running init-sg addRepos'
 ./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
+
+echo '--- Installing local src-cli'
+./dev/ci/integration/code-intel/install-src.sh
+which src
+src version
 
 echo '--- :brain: Running the test suite'
 pushd dev/codeintel-qa
@@ -44,7 +40,7 @@ echo '--- :two: Disabling LSIF -> SCIP migration'
 ./init-sg oobmigration -id T3V0T2ZCYW5kTWlncmF0aW9uOjIw -down
 
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/upload'
-go run ./cmd/upload --timeout=5m
+env PATH="$(pwd):${PATH}" go run ./cmd/upload --timeout=5m
 
 echo '--- :four: integration test ./dev/codeintel-qa/cmd/query'
 go run ./cmd/query

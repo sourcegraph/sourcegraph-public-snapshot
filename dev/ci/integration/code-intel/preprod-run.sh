@@ -6,10 +6,6 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-# Add repo root to path to ensure we always point to our local src cli (installed below)
-PATH="$(pwd):${PATH}"
-export PATH
-
 SOURCEGRAPH_BASE_URL="https://preview.sgdev.dev"
 TEST_USER_EMAIL="testadmin@preview.sgdev.dev"
 SOURCEGRAPH_SUDO_USER="admin"
@@ -24,13 +20,13 @@ export SOURCEGRAPH_SUDO_TOKEN
 echo '--- :go: Building init-sg'
 go build -o init-sg ./internal/cmd/init-sg/...
 
+echo '--- :horse: Running init-sg addRepos'
+./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
+
 echo '--- Installing local src-cli'
 ./dev/ci/integration/code-intel/install-src.sh
 which src
 src version
-
-echo '--- :horse: Running init-sg addRepos'
-./init-sg addRepos -config ./dev/ci/integration/code-intel/repos.json
 
 echo '--- :brain: Running the test suite'
 pushd dev/codeintel-qa
@@ -42,7 +38,7 @@ echo '--- :one: clearing existing state'
 go run ./cmd/clear
 
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
-go run ./cmd/upload --timeout=5m
+env PATH="$(pwd):${PATH}" go run ./cmd/upload --timeout=5m
 
 # make queries but do not assert against expected locations
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
