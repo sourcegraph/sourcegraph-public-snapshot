@@ -49,7 +49,6 @@ func (r SiteConfigurationChangeResolver) Diff() string {
 	// }
 
 	// return cmp.Diff(r.siteConfig.Contents, r.previousSiteConfig.Contents)
-	//
 	return ""
 }
 
