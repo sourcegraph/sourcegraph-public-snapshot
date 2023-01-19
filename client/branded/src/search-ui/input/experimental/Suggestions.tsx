@@ -1,4 +1,4 @@
-import React, { MouseEvent, useMemo, useState, useCallback } from 'react'
+import React, { MouseEvent, useMemo, useState, useCallback, useLayoutEffect } from 'react'
 
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
@@ -59,6 +59,12 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
     const flattenedRows = useMemo(() => results.flatMap(group => group.options), [results])
     const focusedItem = flattenedRows[activeRowIndex]
     const show = open && results.length > 0
+
+    useLayoutEffect(() => {
+        if (container) {
+            container.querySelector('[aria-selected="true"]')?.scrollIntoView(false)
+        }
+    }, [container, focusedItem])
 
     if (!show) {
         return null
