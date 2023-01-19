@@ -409,30 +409,6 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			if diff := cmp.Diff(tc.expectedPreviousSiteConfigIDs, gotPreviousSiteConfigIDs); diff != "" {
 				t.Errorf("mismatched siteConfig.ID, diff %v", diff)
 			}
-
-			// Expected nil previousSiteConfig and got nil previousSiteConfig? Test passes, so move on to
-			// the next item.
-			// if tc.expectedPreviousSiteConfigIDs[i] == nil && got.previousSiteConfig == nil {
-			// 	continue
-			// }
-
-			// If we expect no previousSiteConfig, but got got one, error out.
-			// if tc.expectedPreviousSiteConfigIDs[i] == nil && got.previousSiteConfig != nil {
-			// 	t.Fatalf("position %d: expected previousSiteConfig to be nil, but got %v", i, got.previousSiteConfig)
-			// }
-
-			// If we expect previousSiteConfig, but got got nil, error out.
-			// if tc.expectedPreviousSiteConfigIDs[i] != nil && got.previousSiteConfig == nil {
-			// 	t.Fatalf("position %d: expected previousSiteConfig to be non-nil, but got nil", i)
-			// }
-
-			// If we have a mismatched ID of expected previousSiteConfig vs what we got, error out.
-			// 	if got.previousSiteConfig.ID != *tc.expectedPreviousSiteConfigIDs[i] {
-			// 		t.Fatalf(
-			// 			"position %d: expected previousSiteConfig.ID %d, but got %d",
-			// 			i, *tc.expectedPreviousSiteConfigIDs[i], got.previousSiteConfig.ID,
-			// 		)
-			// 	}
 		})
 	}
 }

@@ -50,13 +50,13 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		return []*SiteConfigurationChangeResolver{}, err
 	}
 
-	// totalFetched = len(history)
-	if len(history) == 0 {
+	totalFetched := len(history)
+	if totalFetched == 0 {
 		return []*SiteConfigurationChangeResolver{}, nil
 	}
 
 	resolvers := []*SiteConfigurationChangeResolver{}
-	for i := 0; i < len(history); i++ {
+	for i := 0; i < totalFetched; i++ {
 		var previousSiteConfig *database.SiteConfig
 		// If First is used then "history" is in descending order: 5, 4, 3, 2, 1. So look ahead for
 		// the "previousSiteConfig", but also only if we're not at the end of the slice yet.
@@ -73,7 +73,7 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 		// okay, because we will truncate it from the end result being returned. The user did not
 		// request this. _We_ fetched an extra item to determine the "previousSiteConfig" of all the
 		// items.
-		if paginationArgs.First != nil && i != len(history)-1 {
+		if paginationArgs.First != nil && i != totalFetched-1 {
 			previousSiteConfig = history[i+1]
 		} else if paginationArgs.Last != nil && i > 0 {
 			previousSiteConfig = history[i-1]
@@ -89,7 +89,7 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	if isModifiedPaginationArgs {
 		if paginationArgs.Last != nil {
 			resolvers = resolvers[1:]
-		} else if paginationArgs.First != nil && len(history) == *paginationArgs.First {
+		} else if paginationArgs.First != nil && totalFetched == *paginationArgs.First {
 			resolvers = resolvers[:len(resolvers)-1]
 		}
 	}
