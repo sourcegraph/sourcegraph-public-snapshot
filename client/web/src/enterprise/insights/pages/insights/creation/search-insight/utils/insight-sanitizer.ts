@@ -46,7 +46,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             context: '',
             seriesDisplayOptions: {
                 limit: MAX_NUMBER_OF_SERIES,
-                numSamples: 12,
+                numSamples: null,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
