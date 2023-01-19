@@ -36,10 +36,12 @@ type GitTreeEntryResolver struct {
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
+
+	logger log.Logger
 }
 
 func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, logger: log.Scoped("git tree entry resolver", "")}
 }
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
@@ -47,6 +49,7 @@ func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 func (r *GitTreeEntryResolver) ToGitTree() (resolverstubs.GitTreeEntryResolver, bool) {
 	return r, r.IsDirectory()
 }
+
 func (r *GitTreeEntryResolver) ToGitBlob() (resolverstubs.GitTreeEntryResolver, bool) {
 	return r, !r.IsDirectory()
 }
@@ -103,8 +106,17 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) Submodule() resolverstubs.GitSubmoduleResolver {
+	if r == nil {
+		r.logger.Error("git tree entry resolver is nil", log.Error(errors.New("git tree entry resolver is nil")))
+		return nil
+	}
+
+	if r.stat == nil {
+		r.logger.Error("stat is nil", log.Error(errors.New("stat is nil")))
+		return nil
+	}
+
 	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
-		// return &gitSubmoduleResolver{submodule: submoduleInfo}
 		return NewGitSubmoduleResolver(submoduleInfo)
 	}
 	return nil
