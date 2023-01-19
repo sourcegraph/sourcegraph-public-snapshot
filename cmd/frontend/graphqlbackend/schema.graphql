@@ -8911,61 +8911,150 @@ type ConnectionPageInfo {
     hasPreviousPage: Boolean!
 }
 
-extend type Repository {
+type Team implements Node {
+    id: ID!
+}
+
+interface Ownable {
+    """
+    Ownership summary for this entity.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return only ownership for the given reasons.
+        """
+        reasons: [OwnershipReasonType!]
+    ): OwnershipConnection!
+}
+
+extend type Repository implements Ownable {
     """
     Ownership summary for this repository.
     """
     ownership(
         """
-        Return only owners for the given reasons.
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return only ownership for the given reasons.
         """
         reasons: [OwnershipReasonType!]
-        first: Int
-        after: String
-    ): [Ownership!]!
+    ): OwnershipConnection!
 }
 
-extend type GitTree {
+extend type GitTree implements Ownable {
     """
     Ownership summary for this tree.
     """
     ownership(
         """
-        Return only owners for the given reasons.
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return only ownership for the given reasons.
         """
         reasons: [OwnershipReasonType!]
-        first: Int
-        after: String
-    ): [Ownership!]!
+    ): OwnershipConnection!
 }
 
-extend type GitBlob {
+extend type GitBlob implements Ownable {
     """
     Ownership summary for this file.
-    Use this to query ownership information for a definition.
     """
     ownership(
         """
-        Return only owners for the given reasons.
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return only ownership for the given reasons.
         """
         reasons: [OwnershipReasonType!]
-        first: Int
-        after: String
-    ): [Ownership!]!
+    ): OwnershipConnection!
 }
 
+"""
+A list of ownership entries.
+"""
+type OwnershipConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: ConnectionPageInfo!
+    """
+    The page set of Ownership entries in this connection.
+    """
+    nodes: [Ownership!]!
+}
+
+"""
+An owner is any entity that can own other resources.
+"""
 interface Owner {
-    # TODO: Determine useful fields.
-    id: ID!
+    """
+    For now, this interface just has a displayName property.
+    We make this an interface and not a union because we will want to use the Owner
+    type for adding methods, like `ownedResources` or similar.
+    """
+    displayName: String!
 }
 
-extend type Person implements Owner {}
-extend type User implements Owner {}
-extend type Team implements Owner {}
+extend type Person implements Owner {
+    """
+    For now, this interface just has a displayName property.
+    We make this an interface and not a union because we will want to use the Owner
+    type for adding methods, like `ownedResources` or similar.
+    """
+    displayName: String!
+}
 
+extend type Team implements Owner {
+    """
+    For now, this interface just has a displayName property.
+    We make this an interface and not a union because we will want to use the Owner
+    type for adding methods, like `ownedResources` or similar.
+    """
+    displayName: String!
+}
+
+"""
+Ownership is the collection of data points that make Sourcegraph suggest the contained
+owner as owner of the Ownable this is attached to.
+"""
 type Ownership {
-    handle: String!
+    """
+    The owner this entry refers to. Can be a person or a team.
+    """
     owner: Owner!
+    """
+    The reasons why Sourcegraph determined this entity as an owner.
+    """
     reasons: [OwnershipReason!]!
 }
 
@@ -8978,24 +9067,77 @@ enum OwnershipReasonType {
     RECENT_CONTRIBUTOR
     LANGUAGE_EXPERT
 }
+"""
+Union of all possible types of ownership reasons. Use the individual subtypes to
+get more details on the ownership determination.
+"""
 union OwnershipReason = CodeownersFileEntry | RecentContributor | LanguageExpert
 
+"""
+The entity is an owner because they were mentioned on a codeowners file.
+"""
 type CodeownersFileEntry {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
     title: String!
+    """
+    More detailed description to display in the UI for the determination.
+    """
     description: String!
+    """
+    Codeowners information can either be gathered from reading the CODEOWNERS file
+    in the git repository, or ingested from an external system. This flag indicates
+    which of the two it is.
+    """
     ingested: Boolean!
     """
-    Either GitBlob or VirtualFile.
+    Either GitBlob or VirtualFile. This points to the CODEOWNERS file that yielded the
+    determination.
     """
     codeownersFile: File2!
+    """
+    The line in the CODEOWNERS file that matched for this determination.
+    """
+    ruleLineMatch: Int!
 }
 
+"""
+The entity is an owner because they were a recent contributor to the file.
+"""
 type RecentContributor {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
     title: String!
+    """
+    More detailed description to display in the UI for the determination.
+    """
     description: String!
+    """
+    The timeframe that was considered for this determination.
+    """
+    since: DateTime!
+    """
+    The amount of recent contributions to this file.
+    """
+    count: Int!
 }
 
+"""
+The entity is an owner because they are considered a language expert in the given language.
+"""
 type LanguageExpert {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
     title: String!
+    """
+    More detailed description to display in the UI for the determination.
+    """
     description: String!
+    """
+    The language we determined them to be an expert in.
+    """
+    language: String!
 }
