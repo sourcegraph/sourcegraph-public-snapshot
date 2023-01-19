@@ -1,8 +1,13 @@
 package types
 
 import (
+	"context"
+	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // BatchChangeState defines the possible states of a BatchChange
@@ -49,5 +54,78 @@ func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }
 // yet.
 func (c *BatchChange) IsDraft() bool { return c.LastAppliedAt.IsZero() }
 
+// State returns the user-visible state, collapsing the other state fields into
+// one.
+func (c *BatchChange) State() BatchChangeState {
+	if c.Closed() {
+		return BatchChangeStateClosed
+	} else if c.IsDraft() {
+		return BatchChangeStateDraft
+	}
+	return BatchChangeStateOpen
+}
+
+func (c *BatchChange) URL(ctx context.Context, namespaceName string) (string, error) {
+	// To build the absolute URL, we need to know where Sourcegraph is!
+	extStr, err := internalClient.ExternalURL(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "getting external Sourcegraph URL")
+	}
+
+	extURL, err := url.Parse(extStr)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
+	}
+
+	// This needs to be kept consistent with resolvers.batchChangeURL().
+	// (Refactoring the resolver to use the same function is difficult due to
+	// the different querying and caching behaviour in GraphQL resolvers, so we
+	// simply replicate the logic here.)
+	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(c.NamespaceOrgID, namespaceName) + "/batch-changes/" + c.Name})
+
+	return u.String(), nil
+}
+
 // ToGraphQL returns the GraphQL representation of the state.
 func (s BatchChangeState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+func namespaceURL(orgID int32, namespaceName string) string {
+	prefix := "/users/"
+	if orgID != 0 {
+		prefix = "/organizations/"
+	}
+
+	return prefix + namespaceName
+}
+
+type InternalClient interface {
+	ExternalURL(context.Context) (string, error)
+}
+
+// internalClient is here for mocking reasons.
+var internalClient InternalClient = internalapi.Client
+
+func MockInternalClient(mock InternalClient) {
+	internalClient = mock
+}
+
+func MockInternalClientError(err error) {
+	internalClient = &mockInternalClient{err: err}
+}
+
+func MockInternalClientExternalURL(url string) {
+	internalClient = &mockInternalClient{externalURL: url}
+}
+
+func ResetInternalClient() {
+	internalClient = internalapi.Client
+}
+
+type mockInternalClient struct {
+	externalURL string
+	err         error
+}
+
+func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
+	return c.externalURL, c.err
+}

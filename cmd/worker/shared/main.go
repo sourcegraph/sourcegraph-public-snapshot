@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
@@ -59,6 +60,7 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		"record-encrypter":          encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor": repostatistics.NewCompactor(),
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
+		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 	}
 
 	jobs := map[string]job.Job{}

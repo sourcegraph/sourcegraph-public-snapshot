@@ -85,6 +85,7 @@ export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     selectedItems: T[]
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
+    className?: string
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
@@ -172,6 +173,7 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
             selectOnClick={false}
             autocomplete={false}
             value={value.toString()}
+            byPassValue={value.toString()}
             {...attributes}
         />
     )
@@ -179,12 +181,13 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
 
 interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
+    byPassValue: string
 }
 
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
 const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLInputElement>) => {
-    const { onKeyDown, onFocus, onBlur, value, ...attributes } = props
+    const { onKeyDown, onFocus, onBlur, byPassValue, value, ...attributes } = props
 
     const {
         setInputElement,
@@ -201,7 +204,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     const listRef = useMergeRefs<HTMLUListElement>([setInputElement])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-        if (value === '' && event.key === Key.Backspace) {
+        if (byPassValue === '' && event.key === Key.Backspace) {
             onSelectedItemsChange(selectedItems.slice(0, -1))
 
             // Prevent any single combobox UI state machine updates
@@ -209,6 +212,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
         }
 
         if (event.key === Key.Enter) {
+            event.preventDefault()
             onItemSelect(navigationValue)
 
             // Prevent any single combobox UI state machine updates
@@ -265,6 +269,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
             ))}
             <Input
                 {...attributes}
+                value={byPassValue}
                 ref={inputRef}
                 className={styles.inputContainer}
                 inputClassName={styles.input}
@@ -304,18 +309,19 @@ export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTM
 interface MultiComboboxListProps<T> {
     items: T[]
     children: (items: T[]) => ReactNode
+    renderEmptyList?: boolean
     className?: string
 }
 
 export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactElement | null {
-    const { items, children, className } = props
+    const { items, children, renderEmptyList = false, className } = props
     const { setSuggestOptions } = useContext(MultiComboboxContext)
 
     // Register rendered item in top level object in order to use it
     // when user selects one of these options
     useLayoutEffect(() => setSuggestOptions(items), [items, setSuggestOptions])
 
-    if (items.length === 0) {
+    if (items.length === 0 && !renderEmptyList) {
         return null
     }
 
@@ -324,6 +330,14 @@ export function MultiComboboxList<T>(props: MultiComboboxListProps<T>): ReactEle
             {children(items)}
         </ComboboxList>
     )
+}
+
+interface MultiComboboxEmptyListProps extends HTMLAttributes<HTMLSpanElement> {}
+
+export function MultiComboboxEmptyList(props: MultiComboboxEmptyListProps): ReactElement {
+    const { className, ...attributes } = props
+
+    return <span {...attributes} className={classNames(className, styles.zeroState)} />
 }
 
 interface MultiComboboxOptionProps extends ComboboxOptionProps {

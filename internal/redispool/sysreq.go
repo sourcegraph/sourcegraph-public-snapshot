@@ -6,8 +6,6 @@ import (
 
 	"fmt"
 
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 )
@@ -19,13 +17,18 @@ func init() {
 	sysreq.AddCheck("Redis Cache", redisCheck("Cache", addrCache, timeout, Cache))
 }
 
-func redisCheck(name, addr string, timeout time.Duration, pool *redis.Pool) sysreq.CheckFunc {
+func redisCheck(name, addr string, timeout time.Duration, kv KeyValue) sysreq.CheckFunc {
 	return func(ctx context.Context) (problem, fix string, err error) {
 		check := func() (err error) {
 			// Instead of just a PING, we also use this hook point to force a rewrite of
 			// the AOF file on startup of the frontend as a way to ensure it doesn't
 			// grow out of bounds which slows down future startups.
 			// See https://github.com/sourcegraph/sourcegraph/issues/3300 for more context
+
+			pool, ok := kv.Pool()
+			if !ok { // redis disabled
+				return nil
+			}
 
 			c := pool.Get()
 			defer func() { _ = c.Close() }()

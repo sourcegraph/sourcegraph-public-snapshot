@@ -318,3 +318,8 @@ func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool)
 	n, ok := r.Node.(PermissionsSyncJobResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
+	n, ok := r.Node.(OutboundWebhookResolver)
+	return n, ok
+}

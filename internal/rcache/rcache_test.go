@@ -170,7 +170,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		c.SetMulti([2]string{key, strconv.Itoa(i)})
 	}
 
-	conn := pool.Get()
+	conn := poolGet()
 	defer conn.Close()
 
 	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
