@@ -17016,7 +17016,7 @@
       "Columns": [
         {
           "Name": "cancel",
-          "Index": 13,
+          "Index": 14,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -17029,7 +17029,7 @@
         },
         {
           "Name": "execution_logs",
-          "Index": 11,
+          "Index": 12,
           "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
@@ -17042,7 +17042,7 @@
         },
         {
           "Name": "failure_message",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -17055,7 +17055,7 @@
         },
         {
           "Name": "finished_at",
-          "Index": 6,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17068,7 +17068,7 @@
         },
         {
           "Name": "high_priority",
-          "Index": 16,
+          "Index": 18,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -17094,7 +17094,7 @@
         },
         {
           "Name": "invalidate_caches",
-          "Index": 17,
+          "Index": 19,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -17107,7 +17107,7 @@
         },
         {
           "Name": "last_heartbeat_at",
-          "Index": 10,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17120,7 +17120,7 @@
         },
         {
           "Name": "num_failures",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17133,7 +17133,7 @@
         },
         {
           "Name": "num_resets",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17146,7 +17146,7 @@
         },
         {
           "Name": "process_after",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17159,7 +17159,7 @@
         },
         {
           "Name": "queued_at",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "now()",
@@ -17172,9 +17172,9 @@
         },
         {
           "Name": "reason",
-          "Index": 18,
+          "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -17185,7 +17185,7 @@
         },
         {
           "Name": "repository_id",
-          "Index": 14,
+          "Index": 15,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17198,7 +17198,7 @@
         },
         {
           "Name": "started_at",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17224,7 +17224,7 @@
         },
         {
           "Name": "triggered_by_user_id",
-          "Index": 19,
+          "Index": 17,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17237,7 +17237,7 @@
         },
         {
           "Name": "user_id",
-          "Index": 15,
+          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17250,7 +17250,7 @@
         },
         {
           "Name": "worker_hostname",
-          "Index": 12,
+          "Index": 13,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "''::text",
@@ -17272,6 +17272,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_pkey ON permission_sync_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "permission_sync_jobs_unique",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "permission_sync_jobs_process_after",
@@ -17315,6 +17325,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "permission_sync_jobs_for_repo_or_user",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK ((user_id IS NULL) \u003c\u003e (repository_id IS NULL))"
+        },
         {
           "Name": "permission_sync_jobs_triggered_by_user_id_fkey",
           "ConstraintType": "f",

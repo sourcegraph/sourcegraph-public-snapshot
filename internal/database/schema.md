@@ -2634,6 +2634,7 @@ Referenced by:
 ----------------------+--------------------------+-----------+----------+--------------------------------------------------
  id                   | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
  state                | text                     |           |          | 'queued'::text
+ reason               | text                     |           | not null | 
  failure_message      | text                     |           |          | 
  queued_at            | timestamp with time zone |           |          | now()
  started_at           | timestamp with time zone |           |          | 
@@ -2647,16 +2648,18 @@ Referenced by:
  cancel               | boolean                  |           | not null | false
  repository_id        | integer                  |           |          | 
  user_id              | integer                  |           |          | 
+ triggered_by_user_id | integer                  |           |          | 
  high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
- reason               | text                     |           |          | 
- triggered_by_user_id | integer                  |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
+    "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
     "permission_sync_jobs_process_after" btree (process_after)
     "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
     "permission_sync_jobs_user_id" btree (user_id)
+Check constraints:
+    "permission_sync_jobs_for_repo_or_user" CHECK ((user_id IS NULL) <> (repository_id IS NULL))
 Foreign-key constraints:
     "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
