@@ -18,33 +18,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
-	User graphql.ID
-}) (*EmptyResponse, error) {
-	return r.RecoverUsers(ctx, &struct {
-		Users []graphql.ID
-	}{
-		Users: []graphql.ID{args.User},
+type RecoverListRequest struct {
+	UserIDs []graphql.ID
+}
+
+func (r *schemaResolver) RecoverUser(ctx context.Context, args *RecoverListRequest) (*EmptyResponse, error) {
+	return r.RecoverUsers(ctx, &RecoverListRequest{
+		UserIDs: []graphql.ID{args.UserIDs[0]},
 	})
 }
 
-func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
-	Users []graphql.ID
-}) (*EmptyResponse, error) {
+func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverListRequest) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can recover users.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if len(args.Users) == 0 {
+	if len(args.UserIDs) == 0 {
 		return nil, errors.New("must specify at least one user ID")
 	}
 
 	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
 	a := actor.FromContext(ctx)
 
-	ids := make([]int32, len(args.Users))
-	for index, user := range args.Users {
+	ids := make([]int32, len(args.UserIDs))
+	for index, user := range args.UserIDs {
 		id, err := UnmarshalUserID(user)
 		if err != nil {
 			return nil, err
