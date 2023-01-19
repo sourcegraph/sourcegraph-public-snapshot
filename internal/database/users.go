@@ -713,7 +713,7 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) error {
 
 	if len(affectedUserID) != len(ids) {
 		missingUserIds := missingUserIds(ids, affectedUserID)
-		return errors.Wrapf(err, "some users were not found, expected to recover %d, but found only %s", len(userIDs), strings.Join(missingUserIds, ","))
+		return errors.Errorf("some users were not found, expected to recover %d, but found only %d: %s", len(userIDs), len(affectedUserID), strings.Join(missingUserIds, ","))
 	}
 	users, err := u.getBySQL(ctx, sqlf.Sprintf("WHERE id IN (%s)", idsCond))
 	if err != nil {
@@ -1446,4 +1446,8 @@ func missingUserIds(id, affectedIds []int32) []string {
 		}
 	}
 	return diff
+}
+
+func MarshalUserID(strId string) {
+	panic("unimplemented")
 }
