@@ -104,7 +104,6 @@ func TestSiteConfigConnection(t *testing.T) {
 	// Create a context with an admin user as the actor.
 	context := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	// FIXME: Test for pageInfo: hasNextPage, hasPreviousPage, startCursor, endCursor.
 	RunTests(t, []*Test{
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
@@ -113,25 +112,31 @@ func TestSiteConfigConnection(t *testing.T) {
 			Query: `
 			{
 			  site {
-				  id
-					configuration {
-					  id
-						history(first: 2){
-							totalCount
-							nodes{
-								id
-								author{
-									id,
-									username,
-									displayName
-								}
-							}
-						}
-					}
+				id
+				  configuration {
+					id
+					  history(first: 2){
+						  totalCount
+						  nodes{
+							  id
+							  author{
+								  id,
+								  username,
+								  displayName
+							  }
+						  }
+						  pageInfo {
+							hasNextPage
+							hasPreviousPage
+							endCursor
+							startCursor
+						  }
+					  }
+				  }
 			  }
 			}
 		`,
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 			{
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
@@ -141,7 +146,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"totalCount": 5,
 							"nodes": [
 								{
-									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NQ==",
+									"id": %[1]q,
 									"author": {
 										"id": "VXNlcjox",
 										"username": "foo",
@@ -149,19 +154,25 @@ func TestSiteConfigConnection(t *testing.T) {
 									}
 								},
 								{
-									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
+									"id": %[2]q,
 									"author": {
 										"id": "VXNlcjox",
 										"username": "foo",
 										"displayName": "foo user"
 									}
 								}
-							]
+							],
+							"pageInfo": {
+							  "hasNextPage": true,
+							  "hasPreviousPage": false,
+							  "endCursor": %[2]q,
+							  "startCursor": %[1]q
+							}
 						}
 					}
 				}
 			}
-		`,
+		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4)),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
@@ -171,24 +182,30 @@ func TestSiteConfigConnection(t *testing.T) {
 					{
 						site {
 							id
-							  configuration {
+							configuration {
 								id
-								  history(last: 3){
-									  totalCount
-									  nodes{
-										  id
-										  author{
-											  id,
-											  username,
-											  displayName
-										  }
-									  }
-								  }
-							  }
+								history(last: 3){
+									totalCount
+									nodes{
+										id
+										author{
+											id,
+											username,
+											displayName
+										}
+									}
+									pageInfo {
+									  hasNextPage
+									  hasPreviousPage
+									  endCursor
+									  startCursor
+									}
+								}
+							}
 						}
 					}
 				`,
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 					{
 						"site": {
 							"id": "U2l0ZToic2l0ZSI=",
@@ -198,7 +215,7 @@ func TestSiteConfigConnection(t *testing.T) {
 									"totalCount": 5,
 									"nodes": [
 										{
-											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+											"id": %[1]q,
 											"author": {
 												"id": "VXNlcjoy",
 												"username": "bar",
@@ -206,19 +223,25 @@ func TestSiteConfigConnection(t *testing.T) {
 											}
 										},
 										{
-											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
+											"id": %[2]q,
 											"author": null
 										},
 										{
-											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
+											"id": %[3]q,
 											"author": null
 										}
-									]
+									],
+									"pageInfo": {
+									  "hasNextPage": false,
+									  "hasPreviousPage": true,
+									  "endCursor": %[3]q,
+									  "startCursor": %[1]q
+									}
 								}
 							}
 						}
 					}
-				`,
+				`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2), marshalSiteConfigurationChangeID(1)),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
@@ -226,10 +249,10 @@ func TestSiteConfigConnection(t *testing.T) {
 			Context: context,
 			Query: fmt.Sprintf(`
 			{
-			  site {
-				  id
+				site {
+					id
 					configuration {
-					  id
+						id
 						history(first: 2, after: %q){
 							totalCount
 							nodes{
@@ -240,12 +263,18 @@ func TestSiteConfigConnection(t *testing.T) {
 									displayName
 								}
 							}
+							pageInfo {
+							  hasNextPage
+							  hasPreviousPage
+							  endCursor
+							  startCursor
+							}
 						}
 					}
-			  }
+				}
 			}
 		`, marshalSiteConfigurationChangeID(5)),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 			{
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
@@ -255,7 +284,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"totalCount": 5,
 							"nodes": [
 								{
-									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
+									"id": %[1]q,
 									"author": {
 										"id": "VXNlcjox",
 										"username": "foo",
@@ -263,21 +292,26 @@ func TestSiteConfigConnection(t *testing.T) {
 									}
 								},
 								{
-									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+									"id": %[2]q,
 									"author": {
 										"id": "VXNlcjoy",
 										"username": "bar",
 										"displayName": "bar user"
 									}
 								}
-							]
+							],
+							"pageInfo": {
+							  "hasNextPage": true,
+							  "hasPreviousPage": true,
+							  "endCursor": %[2]q,
+							  "startCursor": %[1]q
+							}
 						}
 					}
 				}
 			}
-		`,
+		`, marshalSiteConfigurationChangeID(4), marshalSiteConfigurationChangeID(3)),
 		},
-
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get last 2 site configuration history based on an offset",
@@ -298,12 +332,18 @@ func TestSiteConfigConnection(t *testing.T) {
 									displayName
 								}
 							}
+							pageInfo {
+							  hasNextPage
+							  hasPreviousPage
+							  endCursor
+							  startCursor
+							}
 						}
 					}
 			  }
 			}
 		`, marshalSiteConfigurationChangeID(1)),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 			{
 				"site": {
 					"id": "U2l0ZToic2l0ZSI=",
@@ -313,7 +353,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"totalCount": 5,
 							"nodes": [
 								 {
-									 "id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+									 "id": %[1]q,
 									 "author": {
 										 "id": "VXNlcjoy",
 										 "username": "bar",
@@ -321,15 +361,21 @@ func TestSiteConfigConnection(t *testing.T) {
 									 }
 								 },
 								 {
-									 "id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
+									 "id": %[2]q,
 									 "author": null
 								 }
-							]
+							],
+							"pageInfo": {
+							  "hasNextPage": true,
+							  "hasPreviousPage": true,
+							  "endCursor": %[2]q,
+							  "startCursor": %[1]q
+							}
 						}
 					}
 				}
 			}
-		`,
+		`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2)),
 		},
 	})
 }
