@@ -5,6 +5,7 @@
 
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+root_dir=$(pwd)
 
 SOURCEGRAPH_BASE_URL="https://preview.sgdev.dev"
 TEST_USER_EMAIL="testadmin@preview.sgdev.dev"
@@ -38,7 +39,7 @@ echo '--- :one: clearing existing state'
 go run ./cmd/clear
 
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
-env PATH="$(pwd):${PATH}" go run ./cmd/upload --timeout=5m
+env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
 
 # make queries but do not assert against expected locations
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'

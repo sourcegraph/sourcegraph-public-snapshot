@@ -5,6 +5,7 @@
 
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+root_dir=$(pwd)
 
 SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SOURCEGRAPH_BASE_URL
@@ -40,7 +41,7 @@ echo '--- :two: Disabling LSIF -> SCIP migration'
 ./init-sg oobmigration -id T3V0T2ZCYW5kTWlncmF0aW9uOjIw -down
 
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/upload'
-env PATH="$(pwd):${PATH}" go run ./cmd/upload --timeout=5m
+env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
 
 echo '--- :four: integration test ./dev/codeintel-qa/cmd/query'
 go run ./cmd/query

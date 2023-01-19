@@ -2,7 +2,7 @@
 
 # This script is called by test.sh and preprod-run.sh to install an up-to-date
 # version of src-cli as required by the codeintel-qa pipeline. The target binary
-# is installed to the repository root as `src`.
+# is installed to {REPO_ROOT}/.bin/src.
 
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
@@ -20,5 +20,6 @@ trap cleanup EXIT
 git clone git@github.com:sourcegraph/src-cli.git "${TEMP}" --depth 1
 pushd "${TEMP}"
 git checkout "${VERSION}"
-go build -o "${root_dir}" ./cmd/src
+mkdir -p ${root_dir}/.bin
+go build -o "${root_dir}/.bin" ./cmd/src
 popd
