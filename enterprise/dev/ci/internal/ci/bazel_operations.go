@@ -19,6 +19,8 @@ func BazelOperations() *operations.Set {
 func build(target string) func(*bk.Pipeline) {
 	bazelCmd := []string{
 		fmt.Sprintf("bazel build %s", target),
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
 		"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
 		"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
 	}
