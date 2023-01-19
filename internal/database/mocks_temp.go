@@ -51975,12 +51975,12 @@ func NewMockUserStore() *MockUserStore {
 			},
 		},
 		RecoverListFunc: &UserStoreRecoverListFunc{
-			defaultHook: func(context.Context, []int32) (r0 []*types.User, r1 error) {
+			defaultHook: func(context.Context, []int32) (r0 error) {
 				return
 			},
 		},
 		RecoverUserByIDFunc: &UserStoreRecoverUserByIDFunc{
-			defaultHook: func(context.Context, int32) (r0 []*types.User, r1 error) {
+			defaultHook: func(context.Context, int32) (r0 error) {
 				return
 			},
 		},
@@ -52172,12 +52172,12 @@ func NewStrictMockUserStore() *MockUserStore {
 			},
 		},
 		RecoverListFunc: &UserStoreRecoverListFunc{
-			defaultHook: func(context.Context, []int32) ([]*types.User, error) {
+			defaultHook: func(context.Context, []int32) error {
 				panic("unexpected invocation of MockUserStore.RecoverList")
 			},
 		},
 		RecoverUserByIDFunc: &UserStoreRecoverUserByIDFunc{
-			defaultHook: func(context.Context, int32) ([]*types.User, error) {
+			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.RecoverUserByID")
 			},
 		},
@@ -55251,24 +55251,24 @@ func (c UserStoreRandomizePasswordAndClearPasswordResetRateLimitFuncCall) Result
 // UserStoreRecoverListFunc describes the behavior when the RecoverList
 // method of the parent MockUserStore instance is invoked.
 type UserStoreRecoverListFunc struct {
-	defaultHook func(context.Context, []int32) ([]*types.User, error)
-	hooks       []func(context.Context, []int32) ([]*types.User, error)
+	defaultHook func(context.Context, []int32) error
+	hooks       []func(context.Context, []int32) error
 	history     []UserStoreRecoverListFuncCall
 	mutex       sync.Mutex
 }
 
 // RecoverList delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockUserStore) RecoverList(v0 context.Context, v1 []int32) ([]*types.User, error) {
-	r0, r1 := m.RecoverListFunc.nextHook()(v0, v1)
-	m.RecoverListFunc.appendCall(UserStoreRecoverListFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockUserStore) RecoverList(v0 context.Context, v1 []int32) error {
+	r0 := m.RecoverListFunc.nextHook()(v0, v1)
+	m.RecoverListFunc.appendCall(UserStoreRecoverListFuncCall{v0, v1, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the RecoverList method
 // of the parent MockUserStore instance is invoked and the hook queue is
 // empty.
-func (f *UserStoreRecoverListFunc) SetDefaultHook(hook func(context.Context, []int32) ([]*types.User, error)) {
+func (f *UserStoreRecoverListFunc) SetDefaultHook(hook func(context.Context, []int32) error) {
 	f.defaultHook = hook
 }
 
@@ -55276,7 +55276,7 @@ func (f *UserStoreRecoverListFunc) SetDefaultHook(hook func(context.Context, []i
 // RecoverList method of the parent MockUserStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *UserStoreRecoverListFunc) PushHook(hook func(context.Context, []int32) ([]*types.User, error)) {
+func (f *UserStoreRecoverListFunc) PushHook(hook func(context.Context, []int32) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -55284,20 +55284,20 @@ func (f *UserStoreRecoverListFunc) PushHook(hook func(context.Context, []int32) 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UserStoreRecoverListFunc) SetDefaultReturn(r0 []*types.User, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int32) ([]*types.User, error) {
-		return r0, r1
+func (f *UserStoreRecoverListFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int32) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreRecoverListFunc) PushReturn(r0 []*types.User, r1 error) {
-	f.PushHook(func(context.Context, []int32) ([]*types.User, error) {
-		return r0, r1
+func (f *UserStoreRecoverListFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int32) error {
+		return r0
 	})
 }
 
-func (f *UserStoreRecoverListFunc) nextHook() func(context.Context, []int32) ([]*types.User, error) {
+func (f *UserStoreRecoverListFunc) nextHook() func(context.Context, []int32) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -55338,10 +55338,7 @@ type UserStoreRecoverListFuncCall struct {
 	Arg1 []int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.User
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -55353,30 +55350,30 @@ func (c UserStoreRecoverListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreRecoverListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // UserStoreRecoverUserByIDFunc describes the behavior when the
 // RecoverUserByID method of the parent MockUserStore instance is invoked.
 type UserStoreRecoverUserByIDFunc struct {
-	defaultHook func(context.Context, int32) ([]*types.User, error)
-	hooks       []func(context.Context, int32) ([]*types.User, error)
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
 	history     []UserStoreRecoverUserByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // RecoverUserByID delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUserStore) RecoverUserByID(v0 context.Context, v1 int32) ([]*types.User, error) {
-	r0, r1 := m.RecoverUserByIDFunc.nextHook()(v0, v1)
-	m.RecoverUserByIDFunc.appendCall(UserStoreRecoverUserByIDFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockUserStore) RecoverUserByID(v0 context.Context, v1 int32) error {
+	r0 := m.RecoverUserByIDFunc.nextHook()(v0, v1)
+	m.RecoverUserByIDFunc.appendCall(UserStoreRecoverUserByIDFuncCall{v0, v1, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the RecoverUserByID
 // method of the parent MockUserStore instance is invoked and the hook queue
 // is empty.
-func (f *UserStoreRecoverUserByIDFunc) SetDefaultHook(hook func(context.Context, int32) ([]*types.User, error)) {
+func (f *UserStoreRecoverUserByIDFunc) SetDefaultHook(hook func(context.Context, int32) error) {
 	f.defaultHook = hook
 }
 
@@ -55384,7 +55381,7 @@ func (f *UserStoreRecoverUserByIDFunc) SetDefaultHook(hook func(context.Context,
 // RecoverUserByID method of the parent MockUserStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *UserStoreRecoverUserByIDFunc) PushHook(hook func(context.Context, int32) ([]*types.User, error)) {
+func (f *UserStoreRecoverUserByIDFunc) PushHook(hook func(context.Context, int32) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -55392,20 +55389,20 @@ func (f *UserStoreRecoverUserByIDFunc) PushHook(hook func(context.Context, int32
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UserStoreRecoverUserByIDFunc) SetDefaultReturn(r0 []*types.User, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) ([]*types.User, error) {
-		return r0, r1
+func (f *UserStoreRecoverUserByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreRecoverUserByIDFunc) PushReturn(r0 []*types.User, r1 error) {
-	f.PushHook(func(context.Context, int32) ([]*types.User, error) {
-		return r0, r1
+func (f *UserStoreRecoverUserByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
 	})
 }
 
-func (f *UserStoreRecoverUserByIDFunc) nextHook() func(context.Context, int32) ([]*types.User, error) {
+func (f *UserStoreRecoverUserByIDFunc) nextHook() func(context.Context, int32) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -55446,10 +55443,7 @@ type UserStoreRecoverUserByIDFuncCall struct {
 	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.User
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -55461,7 +55455,7 @@ func (c UserStoreRecoverUserByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreRecoverUserByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // UserStoreRenewPasswordResetCodeFunc describes the behavior when the
