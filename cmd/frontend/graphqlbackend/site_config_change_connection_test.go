@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -96,143 +98,241 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	}
 }
 
-// func TestSiteConfigConnection(t *testing.T) {
-// 	stubs := setupSiteConfigStubs(t)
+func TestSiteConfigConnection(t *testing.T) {
+	stubs := setupSiteConfigStubs(t)
 
-// 	// siteConfigs := stubs.siteConfigs
+	// Create a context with an admin user as the actor.
+	context := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-// 	// stubs.conf.SiteGetLatestFunc.SetDefaultReturn(siteConfigs[len(siteConfigs)-1], nil)
-// 	// stubs.conf.GetSiteConfigCountFunc.SetDefaultReturn(len(siteConfigs), nil)
-// 	// stubs.conf.ListSiteConfigsFunc.SetDefaultReturn(siteConfigs, nil)
+	// FIXME: Test for pageInfo: hasNextPage, hasPreviousPage, startCursor, endCursor.
+	RunTests(t, []*Test{
+		{
+			Schema:  mustParseGraphQLSchema(t, stubs.db),
+			Label:   "Get first 2 site configuration history",
+			Context: context,
+			Query: `
+			{
+			  site {
+				  id
+					configuration {
+					  id
+						history(first: 2){
+							totalCount
+							nodes{
+								id
+								author{
+									id,
+									username,
+									displayName
+								}
+							}
+						}
+					}
+			  }
+			}
+		`,
+			ExpectedResult: `
+			{
+				"site": {
+					"id": "U2l0ZToic2l0ZSI=",
+					"configuration": {
+						"id": 5,
+						"history": {
+							"totalCount": 5,
+							"nodes": [
+								{
+									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NQ==",
+									"author": {
+										"id": "VXNlcjox",
+										"username": "foo",
+										"displayName": "foo user"
+									}
+								},
+								{
+									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
+									"author": {
+										"id": "VXNlcjox",
+										"username": "foo",
+										"displayName": "foo user"
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		`,
+		},
+		{
+			Schema:  mustParseGraphQLSchema(t, stubs.db),
+			Label:   "Get last 2 site configuration history",
+			Context: context,
+			Query: `
+					{
+						site {
+							id
+							  configuration {
+								id
+								  history(last: 3){
+									  totalCount
+									  nodes{
+										  id
+										  author{
+											  id,
+											  username,
+											  displayName
+										  }
+									  }
+								  }
+							  }
+						}
+					}
+				`,
+			ExpectedResult: `
+					{
+						"site": {
+							"id": "U2l0ZToic2l0ZSI=",
+							"configuration": {
+								"id": 5,
+								"history": {
+									"totalCount": 5,
+									"nodes": [
+										{
+											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+											"author": {
+												"id": "VXNlcjoy",
+												"username": "bar",
+												"displayName": "bar user"
+											}
+										},
+										{
+											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
+											"author": null
+										},
+										{
+											"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
+											"author": null
+										}
+									]
+								}
+							}
+						}
+					}
+				`,
+		},
+		{
+			Schema:  mustParseGraphQLSchema(t, stubs.db),
+			Label:   "Get first 2 site configuration history based on an offset",
+			Context: context,
+			Query: fmt.Sprintf(`
+			{
+			  site {
+				  id
+					configuration {
+					  id
+						history(first: 2, after: %q){
+							totalCount
+							nodes{
+								id
+								author{
+									id,
+									username,
+									displayName
+								}
+							}
+						}
+					}
+			  }
+			}
+		`, marshalSiteConfigurationChangeID(5)),
+			ExpectedResult: `
+			{
+				"site": {
+					"id": "U2l0ZToic2l0ZSI=",
+					"configuration": {
+						"id": 5,
+						"history": {
+							"totalCount": 5,
+							"nodes": [
+								{
+									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
+									"author": {
+										"id": "VXNlcjox",
+										"username": "foo",
+										"displayName": "foo user"
+									}
+								},
+								{
+									"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+									"author": {
+										"id": "VXNlcjoy",
+										"username": "bar",
+										"displayName": "bar user"
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		`,
+		},
 
-// 	// expectedNow := stubs.now.Format("2006-01-02T15:04:05Z")
-
-// 	// FIXME: Test for hasNextPage, hasPreviousPage
-// 	RunTests(t, []*Test{
-// 		{
-// 			Schema: mustParseGraphQLSchema(t, stubs.db),
-// 			Label:  "Get first 2 site configuration history",
-// 			Query: `
-// 			{
-// 			  site {
-// 				  id
-// 					configuration {
-// 					  id
-// 						history(first: 2){
-// 							totalCount
-// 							nodes{
-// 								id
-// 								previousID
-// 								author{
-// 									id,
-// 									username,
-// 									displayName
-// 								}
-// 								createdAt
-// 								updatedAt
-// 							}
-// 						}
-// 					}
-// 			  }
-// 			}
-// 		`,
-// 			ExpectedResult: fmt.Sprintf(`
-// 			{
-// 					"site": {
-// 						"id": "U2l0ZToic2l0ZSI=",
-// 						"configuration": {
-// 							"id": 5,
-// 							"history": {
-// 								"totalCount": 5,
-// 								"nodes": [
-// 									{
-// 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NQ==",
-// 										"author": null,
-// 										"createdAt": %[1]q,
-// 										"updatedAt": %[1]q
-// 									},
-// 									{
-// 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6NA==",
-// 										"author": {
-// 											"id": "VXNlcjox",
-// 											"username": "foo",
-// 											"displayName": "foo user"
-// 										},
-// 										"createdAt": %[1]q,
-// 										"updatedAt": %[1]q
-// 									}
-// 								]
-// 							}
-// 						}
-// 					}
-// 			}
-// 		`, expectedNow),
-// 		},
-// 		{
-// 			Schema: mustParseGraphQLSchema(t, stubs.db),
-// 			Label:  "Get last 2 site configuration history",
-// 			Query: `
-// 			{
-// 			  site {
-// 				  id
-// 					configuration {
-// 					  id
-// 						history(last: 2){
-// 							totalCount
-// 							nodes{
-// 								id
-// 								previousID
-// 								author{
-// 									id,
-// 									username,
-// 									displayName
-// 								}
-// 								createdAt
-// 								updatedAt
-// 							}
-// 						}
-// 					}
-// 			  }
-// 			}
-// 		`,
-// 			ExpectedResult: fmt.Sprintf(`
-// 			{
-// 					"site": {
-// 						"id": "U2l0ZToic2l0ZSI=",
-// 						"configuration": {
-// 							"id": 5,
-// 							"history": {
-// 								"totalCount": 5,
-// 								"nodes": [
-// 									{
-// 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
-// 										"author": {
-// 											"id": "VXNlcjox",
-// 											"username": "foo",
-// 											"displayName": "foo user"
-// 										},
-// 										"createdAt": %[1]q,
-// 										"updatedAt": %[1]q
-// 									},
-// 									{
-// 										"id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6MQ==",
-// 										"author": {
-// 											"id": "VXNlcjox",
-// 											"username": "foo",
-// 											"displayName": "foo user"
-// 										},
-// 										"createdAt": %[1]q,
-// 										"updatedAt": %[1]q
-// 									}
-// 								]
-// 							}
-// 						}
-// 					}
-// 			}
-// 		`, expectedNow),
-// 		},
-// 	})
-// }
+		{
+			Schema:  mustParseGraphQLSchema(t, stubs.db),
+			Label:   "Get last 2 site configuration history based on an offset",
+			Context: context,
+			Query: fmt.Sprintf(`
+			{
+			  site {
+				  id
+					configuration {
+					  id
+						history(last: 2, before: %q){
+							totalCount
+							nodes{
+								id
+								author{
+									id,
+									username,
+									displayName
+								}
+							}
+						}
+					}
+			  }
+			}
+		`, marshalSiteConfigurationChangeID(1)),
+			ExpectedResult: `
+			{
+				"site": {
+					"id": "U2l0ZToic2l0ZSI=",
+					"configuration": {
+						"id": 5,
+						"history": {
+							"totalCount": 5,
+							"nodes": [
+								 {
+									 "id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mw==",
+									 "author": {
+										 "id": "VXNlcjoy",
+										 "username": "bar",
+										 "displayName": "bar user"
+									 }
+								 },
+								 {
+									 "id": "U2l0ZUNvbmZpZ3VyYXRpb25DaGFuZ2U6Mg==",
+									 "author": null
+								 }
+							]
+						}
+					}
+				}
+			}
+		`,
+		},
+	})
+}
 
 func toListOfIntPtrs(input []int32) []*int32 {
 	list := make([]*int32, len(input))

@@ -26,15 +26,6 @@ func marshalSiteConfigurationChangeID(id int32) graphql.ID {
 	return relay.MarshalID(siteConfigurationChangeKind, &id)
 }
 
-// func (r SiteConfigurationChangeResolver) PreviousID() *graphql.ID {
-// 	if r.previousSiteConfig != nil {
-// 		id := relay.MarshalID(siteConfigurationChangeKind, r.previousSiteConfig.ID)
-// 		return &id
-// 	}
-
-// 	return nil
-// }
-
 func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResolver, error) {
 	if r.siteConfig.AuthorUserID == 0 {
 		return nil, nil
@@ -48,9 +39,11 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 	return user, nil
 }
 
-// TODO: Implement redaction.
+// TODO: Implement this.
 func (r SiteConfigurationChangeResolver) Diff() string {
-	// FIXME
+	// TODO: We will do something like this, but for now return an empty string to not leak secrets
+	// until we have implemented redaction.
+	//
 	// if r.previousSiteConfig == nil {
 	// 	return ""
 	// }
@@ -60,9 +53,6 @@ func (r SiteConfigurationChangeResolver) Diff() string {
 	return ""
 }
 
-// FIXME: Doesn't look like its returning the correct value.
-// FIX last and this will be fixed
-// Part of pagination
 func (r SiteConfigurationChangeResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.siteConfig.CreatedAt}
 }
