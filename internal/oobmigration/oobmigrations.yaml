@@ -108,7 +108,7 @@
   introduced_version_minor: 3
   deprecated_version_major: 4
   deprecated_version_minor: 4
-- id: 19
+- id: 20
   team: code-intelligence
   component: codeintel-db.lsif_data_*
   description: Convert LSIF data to SCIP.
