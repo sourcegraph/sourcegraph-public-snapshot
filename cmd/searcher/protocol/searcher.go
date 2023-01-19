@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -47,7 +46,7 @@ type Request struct {
 	//
 	// This only times out how long we wait for the fetch request;
 	// the fetch will still happen in the background so future requests don't have to wait.
-	FetchTimeout string
+	FetchTimeout time.Duration
 
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
@@ -178,10 +177,6 @@ func (p *PatternInfo) String() string {
 }
 
 func (r *Request) ToProto() *proto.SearchRequest {
-	fetchTimeout, err := time.ParseDuration(r.FetchTimeout)
-	if err != nil {
-		panic(errors.Newf("invalid duration %q", r.FetchTimeout))
-	}
 	return &proto.SearchRequest{
 		Repo:      string(r.Repo),
 		RepoId:    uint32(r.RepoID),
@@ -205,7 +200,7 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: durationpb.New(fetchTimeout),
+		FetchTimeout: durationpb.New(r.FetchTimeout),
 		FeatHybrid:   r.FeatHybrid,
 	}
 }
@@ -234,7 +229,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration().String(),
+		FetchTimeout: req.FetchTimeout.AsDuration(),
 		Indexed:      req.Indexed,
 		FeatHybrid:   req.FeatHybrid,
 	}
