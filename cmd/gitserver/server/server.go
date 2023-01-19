@@ -450,19 +450,40 @@ func (s *Server) Handler() http.Handler {
 	conf.Watch(func() {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
+		ignoredGitCommands := map[string]struct{}{
+			"show":      {},
+			"rev-parse": {},
+			"log":       {},
+			"diff":      {},
+			"ls-tree":   {},
+		}
+		recordingConf := conf.Get().SiteConfig().GitRecorder
 		s.recordingCommandFactory.Update(func(ctx context.Context, cmd *exec.Cmd) bool {
-			ignoredGitCommands := map[string]struct{}{
-				"show":      {},
-				"rev-parse": {},
-				"log":       {},
-				"diff":      {},
-				"ls-tree":   {},
+			if recordingConf == nil {
+				// no config so we record nothing
+				return false
 			}
 
 			base := filepath.Base(cmd.Path)
 			if base != "git" {
 				return false
 			}
+
+			repoMatch := false
+			for _, repo := range recordingConf.OnlyRepos {
+				println(cmd.Dir, repo)
+				if strings.Contains(cmd.Dir, repo) {
+					repoMatch = true
+					break
+				}
+			}
+
+			// If the repo doesn't match, no use in checking if it is a command we should record.
+			if !repoMatch {
+				return false
+			}
+			// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
+			// git -c "protocol.version=2" remote show
 			for _, arg := range cmd.Args {
 				if _, ok := ignoredGitCommands[arg]; ok {
 					return false
@@ -470,7 +491,6 @@ func (s *Server) Handler() http.Handler {
 			}
 			return true
 		})
-		// }
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
