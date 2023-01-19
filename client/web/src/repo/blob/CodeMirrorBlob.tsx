@@ -277,7 +277,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Update blame decorations
     useLayoutEffect(() => {
         if (editor) {
-            editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
+            const effects = [blameDecorationsCompartment.reconfigure(blameDecorations)]
+            const firstLine = firstVisibleLine(editor)
+            if (firstLine) {
+                // Avoid jumpy scrollbar when enabling git blame by forcing the
+                // scroll bar to preserve the top line number that's visible.
+                // Details https://github.com/sourcegraph/sourcegraph/issues/41413
+                effects.push(EditorView.scrollIntoView(firstLine.from, { y: 'start' }))
+            }
+            editor.dispatch({ effects })
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
