@@ -250,11 +250,11 @@ type Mutation {
     """
     Recover a deleted user account. Only site admins may perform this mutation.
     """
-    recoverUser(user: ID!): UserConnection!
+    recoverUser(user: ID!): EmptyResponse
     """
     Bulk "recoverUser" action.
     """
-    recoverUsers(users: [ID!]!): UserConnection!
+    recoverUsers(users: [ID!]!): EmptyResponse
     """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
@@ -1131,7 +1131,6 @@ type CheckMirrorRepositoryConnectionResult {
     """
     error: String
 }
-
 """
 The result for Mutation.createUser.
 """

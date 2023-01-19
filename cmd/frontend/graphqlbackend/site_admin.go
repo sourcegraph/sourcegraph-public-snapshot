@@ -20,7 +20,7 @@ import (
 
 func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
 	User graphql.ID
-}) (*userConnectionResolver, error) {
+}) (*EmptyResponse, error) {
 	return r.RecoverUsers(ctx, &struct {
 		Users []graphql.ID
 	}{
@@ -30,7 +30,7 @@ func (r *schemaResolver) RecoverUser(ctx context.Context, args *struct {
 
 func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
 	Users []graphql.ID
-}) (*userConnectionResolver, error) {
+}) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can recover users.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -55,12 +55,12 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *struct {
 		ids[index] = id
 	}
 
-	users, err := r.db.Users().RecoverList(ctx, ids)
+	_, err := r.db.Users().RecoverList(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
 
-	return &userConnectionResolver{users: users}, nil
+	return &EmptyResponse{}, nil
 }
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
