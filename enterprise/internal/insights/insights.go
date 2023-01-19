@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/retention"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -65,7 +65,7 @@ func Init(
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(rawInsightsDB, db)
-	enterpriseServices.CodeInsightsDataExportHandler = retention.NewExportHandler(db, rawInsightsDB)
+	enterpriseServices.CodeInsightsDataExportHandler = httpapi.NewExportHandler(db, rawInsightsDB)
 
 	return nil
 }

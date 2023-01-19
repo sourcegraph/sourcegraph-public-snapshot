@@ -1,4 +1,4 @@
-package retention
+package httpapi
 
 import (
 	"archive/zip"
@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -19,18 +20,18 @@ import (
 )
 
 func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) http.HandlerFunc {
-	fmt.Println("export handler")
 	insightPermStore := store.NewInsightPermissionStore(db)
 	insightsStore := store.New(insightsDB, insightPermStore)
+	logger := log.Scoped("Code insights data exporter", "")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("response writer")
 		id := mux.Vars(r)["id"]
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", "attachment; filename=\"CodeInsightsArchive.zip\"")
 
 		archive, err := exportCodeInsightData(r.Context(), insightsStore, id)
 		if err != nil {
+			logger.Error("exporting data errored", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -44,7 +45,6 @@ func exportCodeInsightData(ctx context.Context, store *store.Store, id string) (
 	if err := relay.UnmarshalSpec(graphql.ID(id), &insightViewId); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal insight view ID")
 	}
-	fmt.Println(id, insightViewId)
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
