@@ -48,7 +48,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         <div className={styles.container}>
             {!isLangStatsInsight(insight) && (
                 <Button as={Link} to={`/api/insights/export/${insight.id}`} variant="secondary">
-                    Export CVS data
+                    Export data as CSV
                 </Button>
             )}
 
