@@ -184,6 +184,10 @@ func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
 }
 
 func (p *LocalCodeIntelPayload) FromProto(r *proto.LocalCodeIntelResponse) {
+	if p == nil {
+		return
+	}
+
 	var symbols []Symbol
 
 	for _, s := range r.GetSymbols() {
