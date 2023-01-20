@@ -23,11 +23,12 @@ type UploadConnectionResolver struct {
 func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &UploadConnectionResolver{
-		uploadsSvc:       uploadsSvc,
-		autoindexingSvc:  autoindexingSvc,
-		policySvc:        policySvc,
-		uploadsResolver:  uploadsResolver,
-		prefetcher:       prefetcher,
+		uploadsSvc:      uploadsSvc,
+		autoindexingSvc: autoindexingSvc,
+		policySvc:       policySvc,
+		uploadsResolver: uploadsResolver,
+		prefetcher:      prefetcher,
+		// TODO - not shared with each upload resolver
 		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		traceErrs:        traceErrs,
 	}
