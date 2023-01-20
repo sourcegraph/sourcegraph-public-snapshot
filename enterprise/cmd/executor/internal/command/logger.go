@@ -93,8 +93,7 @@ type logger struct {
 	done    chan struct{}
 	handles chan *entryHandle
 
-	job      executor.Job
-	recordID int
+	job executor.Job
 
 	replacer *strings.Replacer
 
@@ -121,7 +120,6 @@ func NewLogger(store store.ExecutionLogEntryStore, job executor.Job, recordID in
 	l := &logger{
 		store:    store,
 		job:      job,
-		recordID: recordID,
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
@@ -165,12 +163,12 @@ func (l *logger) writeEntries() {
 	var wg sync.WaitGroup
 	for handle := range l.handles {
 		initialLogEntry := handle.CurrentLogEntry()
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.job, initialLogEntry)
 		if err != nil {
 			// If there is a timeout or cancellation error we don't want to skip
 			// writing these logs as users will often want to see how far something
 			// progressed prior to a timeout.
-			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
+			log15.Warn("Failed to upload executor log entry for job", "id", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 
 			l.appendError(err)
 
@@ -225,7 +223,7 @@ func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexec
 
 		log15.Debug("Updating executor log entry", logArgs...)
 
-		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
+		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.job, entryID, current); err != nil {
 			logMethod := log15.Warn
 			if lastWrite {
 				logMethod = log15.Error

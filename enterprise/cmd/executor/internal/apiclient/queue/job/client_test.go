@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/job"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -52,7 +53,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *job.Client) {
-		entryID, err := client.AddExecutionLogEntry(context.Background(), 42, entry)
+		entryID, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry)
 		if err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
@@ -92,7 +93,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *job.Client) {
-		if _, err := client.AddExecutionLogEntry(context.Background(), 42, entry); err == nil {
+		if _, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -129,7 +130,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *job.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), 42, 99, entry); err != nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
 	})
@@ -166,7 +167,7 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *job.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), 42, 99, entry); err == nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

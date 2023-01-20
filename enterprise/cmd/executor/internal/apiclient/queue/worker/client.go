@@ -85,8 +85,10 @@ func (c *Client) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), executor.MarkCompleteRequest{
-		ExecutorName: c.options.ExecutorName,
-		JobID:        id,
+		JobOperationRequest: executor.JobOperationRequest{
+			ExecutorName: c.options.ExecutorName,
+			JobID:        id,
+		},
 	})
 	if err != nil {
 		return false, err
@@ -106,8 +108,10 @@ func (c *Client) MarkErrored(ctx context.Context, id int, failureMessage string)
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), executor.MarkErroredRequest{
-		ExecutorName: c.options.ExecutorName,
-		JobID:        id,
+		JobOperationRequest: executor.JobOperationRequest{
+			ExecutorName: c.options.ExecutorName,
+			JobID:        id,
+		},
 		ErrorMessage: failureMessage,
 	})
 	if err != nil {
@@ -128,8 +132,10 @@ func (c *Client) MarkFailed(ctx context.Context, id int, failureMessage string) 
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), executor.MarkErroredRequest{
-		ExecutorName: c.options.ExecutorName,
-		JobID:        id,
+		JobOperationRequest: executor.JobOperationRequest{
+			ExecutorName: c.options.ExecutorName,
+			JobID:        id,
+		},
 		ErrorMessage: failureMessage,
 	})
 	if err != nil {

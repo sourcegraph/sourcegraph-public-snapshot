@@ -182,6 +182,24 @@ func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Req
 	return r, nil
 }
 
+// NewJSONJobRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
+// HTTP header is set.
+func (c *BaseClient) NewJSONJobRequest(method, path string, token string, payload any) (*http.Request, error) {
+	u := c.newRelativeURL(path)
+
+	r, err := newJSONRequest(method, u, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(token) > 0 {
+		r.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", token))
+	} else {
+		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	}
+	return r, nil
+}
+
 // newRelativeURL builds the relative URL on the provided base URL and adds any additional paths.
 func (c *BaseClient) newRelativeURL(endpointPath string) *url.URL {
 	// Create a shallow clone
