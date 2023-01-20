@@ -1,31 +1,31 @@
 import { render, RenderResult, within, fireEvent } from '@testing-library/react'
 import * as H from 'history'
+import { unstable_HistoryRouter as HistoryRouter } from 'react-router-dom-v5-compat'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
-import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
+import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
         const { url, requestMocks } = buildReferencePanelMocks()
 
-        const fakeExternalHistory = H.createMemoryHistory()
-        fakeExternalHistory.push(url)
+        const externalHistory = H.createMemoryHistory()
+        externalHistory.push(url)
 
         const result: RenderResult = render(
-            <MockedTestProvider mocks={requestMocks}>
-                <ReferencesPanelWithMemoryRouter
-                    {...defaultProps}
-                    externalHistory={fakeExternalHistory}
-                    externalLocation={fakeExternalHistory.location}
-                />
-            </MockedTestProvider>
+            <HistoryRouter history={externalHistory}>
+                <MockedTestProvider mocks={requestMocks}>
+                    <ReferencesPanel {...defaultProps} />
+                </MockedTestProvider>
+            </HistoryRouter>
         )
         await waitForNextApolloResponse()
         await waitForNextApolloResponse()
-        return { result, externalHistory: fakeExternalHistory }
+
+        return { result, externalHistory }
     }
 
     it('renders definitions correctly', async () => {

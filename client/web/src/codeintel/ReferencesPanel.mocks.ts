@@ -1,14 +1,10 @@
 import { useState } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
-import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
+import { of } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
@@ -319,26 +315,8 @@ const HIGHLIGHTED_FILE_MOCK = {
     },
 }
 
-const NOOP_EXTENSIONS_CONTROLLER: Controller = {
-    executeCommand: () => Promise.resolve(),
-    registerCommand: () => new Subscription(),
-    extHostAPI: Promise.resolve(
-        pretendRemote<FlatExtensionHostAPI>({
-            getContributions: () => pretendProxySubscribable(NEVER),
-            registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as never),
-            haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
-            addTextDocumentIfNotExists: () => {},
-            addViewerIfNotExists: (): ViewerId => ({ viewerId: 'MOCK_VIEWER_ID' }),
-            setEditorSelections: () => {},
-            removeViewer: () => {},
-        })
-    ),
-    commandErrors: EMPTY,
-    unsubscribe: noop,
-}
-
-export const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLocation'> = {
-    extensionsController: NOOP_EXTENSIONS_CONTROLLER,
+export const defaultProps: ReferencesPanelProps = {
+    extensionsController: null,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
         subjects: null,
