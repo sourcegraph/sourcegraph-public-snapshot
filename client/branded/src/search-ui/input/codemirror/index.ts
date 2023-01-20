@@ -14,6 +14,7 @@ import {
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
 export { tokenAt, tokens } from './parsedQuery'
+export { placeholder } from './placeholder'
 
 export { createDefaultSuggestionSources, searchQueryAutocompletion }
 export type { StandardSuggestionSource }

@@ -71,7 +71,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                         kind={service.kind}
                         title={service.displayName}
                         shortDescription="Update this code host configuration to manage repository mirroring."
-                        to={`/site-admin/external-services/${service.id}/edit`}
+                        to={`/site-admin/external-services/${service.id}`}
                         toIcon={null}
                         bordered={false}
                     />

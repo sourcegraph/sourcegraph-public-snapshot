@@ -122,10 +122,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs, errs := findPatternRevs(op.RepoFilters)
-	if errs != nil {
-		return Resolved{}, errs
-	}
+	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -746,10 +743,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, _, err := findPatternRevs(op.RepoFilters)
-	if err != nil {
-		return ExcludedRepos{}, err
-	}
+	includePatterns, _ := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -921,28 +915,19 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 }
 
 // findPatternRevs separates out each repo filter into its repository name
-// pattern and its revision specs (if any). It validates each repository name
-// pattern and applies some small optimizations.
-func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+// pattern and its revision specs (if any). It also applies small optimizations
+// to the repository name.
+func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
-	for _, includePattern := range includePatterns {
-		repoPattern, revs := includePattern.Repo, includePattern.Revs
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
-		}
-		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+	for _, pattern := range includePatterns {
+		repo, repoRegex, revs := pattern.Repo, pattern.RepoRegex, pattern.Revs
+		repo = optimizeRepoPatternWithHeuristics(repo)
+		outputPatterns = append(outputPatterns, repo)
 
-		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + repoPattern + ")")
-			if err != nil {
-				return nil, nil, &badRequestError{err}
-			}
-			patternRev := patternRevspec{includePattern: p, revs: revs}
+			patternRev := patternRevspec{includePattern: repoRegex, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
 		}
 	}

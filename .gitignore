@@ -184,3 +184,8 @@ go.work.sum
 
 # SCIP
 index.scip
+
+# Buildkite helper and cache files
+/an
+/tr
+/cache-*.tar
