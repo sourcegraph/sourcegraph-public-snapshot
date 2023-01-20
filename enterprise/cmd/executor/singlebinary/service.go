@@ -1,4 +1,4 @@
-package shared
+package singlebinary
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -35,13 +36,13 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 			otherConfig.QueueName = "batches"
 		}
 		go func() {
-			if err := Main(ctx, observationCtx, ready, &otherConfig); err != nil {
+			if err := run.StandaloneRunRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
 				observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
 			}
 		}()
 	}
 
-	return Main(ctx, observationCtx, ready, config)
+	return run.StandaloneRunRun(ctx, observationCtx.Logger, config, false)
 }
 
 var Service service.Service = svc{}
