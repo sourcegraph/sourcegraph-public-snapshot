@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -85,23 +85,28 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
 
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore, err := worker.New(observationCtx, options.QueueOptions, gatherer)
+	workerClient, err := worker.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
-		return nil, errors.Wrap(err, "building queue store")
+		return nil, errors.Wrap(err, "building queue worker client")
 	}
+
+	if !connectToFrontend(observationCtx.Logger, workerClient, options) {
+		os.Exit(1)
+	}
+
 	filesStore, err := files.New(observationCtx, options.FilesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "building files store")
 	}
-	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
-	if !connectToFrontend(observationCtx.Logger, queueStore, options) {
-		os.Exit(1)
+	jobClient, err := job.New(observationCtx, options.QueueOptions, gatherer)
+	if err != nil {
+		return nil, errors.Wrap(err, "building queue job client")
 	}
 
 	h := &handler{
 		nameSet:       nameSet,
-		store:         shim,
+		logStore:      jobClient,
 		filesStore:    filesStore,
 		options:       options,
 		operations:    command.NewOperations(observationCtx),
@@ -110,7 +115,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker[executor.Job](ctx, shim, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[executor.Job](ctx, workerClient, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
