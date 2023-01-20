@@ -91,7 +91,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
         <div className={styles.root}>
             <SmartSearchPreview history={history} />
 
-            <H2>Sourcegraph basics</H2>
             {showQueryExamples && setQueryState && (
                 <>
                     <H2 as={H2}>Search basics</H2>

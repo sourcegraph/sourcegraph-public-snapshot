@@ -58,7 +58,7 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
     }, [])
 
     return (
-        <div>
+        <div className="mb-4">
             <H2 className={styles.title} as={H1}>
                 However, Smart Smart found {resultsNum} related results:
             </H2>
