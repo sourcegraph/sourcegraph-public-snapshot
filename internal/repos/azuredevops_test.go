@@ -2,12 +2,12 @@ package repos
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
