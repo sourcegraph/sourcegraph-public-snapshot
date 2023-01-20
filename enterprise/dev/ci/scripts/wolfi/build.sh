@@ -41,12 +41,13 @@ fi
 cd "wolfi-images/${name}"
 
 echo " * Building apko base image '$name'"
-target="sourcegraph-wolfi/${name}-base"
+image_name="sourcegraph-wolfi/${name}-base"
+tarball="sourcegraph-wolfi-${name}-base.tar"
 apko build --debug apko.yaml \
-  "sourcegraph-wolfi/${name}-base:latest" \
-  "sourcegraph-wolfi-${name}-base.tar" ||
+  "$image_name:latest" \
+  "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
 
-docker load < "${target}.tar"
-docker tag "$target" us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
+docker load < "$tarball"
+docker tag "$image_name" us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
 docker push us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
