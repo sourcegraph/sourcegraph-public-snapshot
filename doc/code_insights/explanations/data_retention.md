@@ -2,12 +2,12 @@
 
 > NOTE: This reference is only relevant from the 4.5 release.
 
-On creation a Code Insight will show you 12 data points per series.
-
+On creation a Code Insight will show you 12 data points per series. 
 Your Code Insight will then get an additional ephemeral data point daily, and a persisted additional data point at every interval that was specified on insight creation.
+
 Prior to release 4.5, this growth was unbound. 
-From 4.5, the oldest data points will be truncated according to the sample size as specified in the site configuration with the setting shown below.
-This means that if you have an insight with 50 data points, and a maximum sample size of 30, the oldest 20 points will be truncated.
+From 4.5, the oldest data points will be truncated and stored separately according to the sample size specified in the site configuration with the setting shown below.
+This means that if you have an insight with 50 data points, and a maximum sample size of 30, the oldest 20 points will be truncated and archived in a separate table.
 
 ```json
 {
@@ -46,4 +46,4 @@ You can enable this retention procedure from Sourcegraph *4.4* if you are a site
 }
 ```
 
-You will however **only be able to export all the code insights data from the 4.5 release**, so use this at your own risk.
+You will however **only be able to export all the code insights data from the 4.5 release**, so use the experimental version at your own risk.
