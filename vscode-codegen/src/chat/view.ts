@@ -1,5 +1,4 @@
 import path from 'path'
-import escapeHTML from 'escape-html'
 import * as vscode from 'vscode'
 import { readFileSync } from 'fs'
 
@@ -116,7 +115,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
 		this.transcript.push({
 			speaker: 'you',
-			displayText: escapeHTML(text),
+			displayText: renderMarkdown(text),
 			timestamp: getShortTimestamp(),
 		})
 

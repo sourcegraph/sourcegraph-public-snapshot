@@ -143,12 +143,16 @@ body {
 	margin-bottom: 0 !important;
 }
 
+.bubble-content pre {
+	padding: 8px;
+	background-color: var(--background-color-dark);
+	border-radius: 8px;
+}
+
 .human-bubble-content {
 	background-color: var(--human-bubble-color);
-	white-space: pre-wrap;
 	border-bottom-right-radius: 0;
 	border-bottom-left-radius: 16px;
-	white-space: pre-wrap;
 }
 
 .bot-bubble-content {
