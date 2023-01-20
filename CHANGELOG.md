@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Code Insights has a new UI for the "Add or remove insights" view, which now allows you to search code insights by series label in addition to insight title. [#46538](https://github.com/sourcegraph/sourcegraph/pull/46538)
+- When SMTP is configured, users created by site admins via the "Create user" page will no longer have their email verified by default - users must verify their emails by using the "Set password" link they get sent, or have their emails verified by a site admin via the the "Emails" tab in user settings or the `setUserEmailVerified` mutation. The `createUser` mutation retains the old behaviour of automatically marking emails as verified. [#46187](https://github.com/sourcegraph/sourcegraph/pull/46187)
 
 ### Fixed
 
@@ -63,7 +64,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Git blame view got a user-interface overhaul and now shows data in a more structured way with additional visual hints. [#44397](https://github.com/sourcegraph/sourcegraph/issues/44397)
 - User emails marked as unverified will no longer receive code monitors and account update emails - unverified emails can be verified from the user settings page to continue receiving these emails. [#46184](https://github.com/sourcegraph/sourcegraph/pull/46184)
 - Zoekt by default eagerly unmarshals the symbol index into memory. Previously we would unmarshal on every request for the purposes of symbol searches or ranking. This lead to pressure on the Go garbage collector. On sourcegraph.com we have noticed time spent in the garbage collector halved. In the unlikely event this leads to more OOMs in zoekt-webserver, you can disable by setting the environment variable `ZOEKT_ENABLE_LAZY_DOC_SECTIONS=t`. [zoekt#503](https://github.com/sourcegraph/zoekt/pull/503)
-- When SMTP is configured, users created by site admins via the "Create user" page or `createUser` mutation will no longer have their email verified by default - users must verify their emails by using the "Set password" link they get sent, or have their emails verified by a site admin via the the "Emails" tab in user settings or the `setUserEmailVerified` mutation. [#46187](https://github.com/sourcegraph/sourcegraph/pull/46187)
 - Removes the right side action sidebar that is shown on the code view page and moves the icons into the top nav. [#46339](https://github.com/sourcegraph/sourcegraph/pull/46339)
 - The `sourcegraph/prometheus` image no longer starts with `--web.enable-lifecycle --web.enable-admin-api` by default - these flags can be re-enabled by configuring `PROMETHEUS_ADDITIONAL_FLAGS` on the container. [#46393](https://github.com/sourcegraph/sourcegraph/pull/46393)
 - Renders GitHub pull request references in git blame view. [#46409](https://github.com/sourcegraph/sourcegraph/pull/46409)
