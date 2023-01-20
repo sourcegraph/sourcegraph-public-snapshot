@@ -12,6 +12,7 @@ trap cleanup EXIT
 
 (
   cd $tmpdir
+  mkdir bin
 
   # Install apko
   wget https://github.com/chainguard-dev/apko/releases/download/v0.6.0/apko_0.6.0_linux_amd64.tar.gz
@@ -19,7 +20,6 @@ trap cleanup EXIT
   mv apko_0.6.0_linux_amd64/apko bin/apko
 
   # Install apk
-  mkdir bin
   wget https://gitlab.alpinelinux.org/alpine/apk-tools/-/package_files/62/download -O bin/apk
   chmod +x bin/apk
 )
@@ -28,12 +28,12 @@ export PATH="$tmpdir/bin:$PATH"
 
 name=${1%/}
 
-if [ ! -d "$name" ]; then
+if [ ! -d "wolfi-images/${name}" ]; then
   echo "Directory '$name' does not exist"
   exit 1
 fi
 
-if [ ! -f "$name/apko.yaml" ]; then
+if [ ! -f "wolfi-images/${name}/apko.yaml" ]; then
   echo "File '$name/apko.yaml' does not exist"
   exit 1
 fi
@@ -41,7 +41,12 @@ fi
 cd "wolfi-images/${name}"
 
 echo " * Building apko base image '$name'"
+target="sourcegraph-wolfi/${name}-base"
 apko build --debug apko.yaml \
   "sourcegraph-wolfi/${name}-base:latest" \
   "sourcegraph-wolfi-${name}-base.tar" ||
   (echo "*** Build failed ***" && exit 1)
+
+docker load < "${target}.tar"
+docker tag "$target" us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
+docker push us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
