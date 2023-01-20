@@ -75,7 +75,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 
 	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
 	if err != nil {
-		return nil, errors.New("could not validate user permissions")
+		return nil, errors.New("error with session")
 	}
 
 	visibleViewSeries, err := h.insightStore.GetAll(ctx, store.InsightQueryArgs{
