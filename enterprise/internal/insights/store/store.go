@@ -32,7 +32,7 @@ type Interface interface {
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
-	GetAllDataForInsightViewID(ctx context.Context, insightViewId string) ([]SeriesPointForExport, error)
+	GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
 }
 
 var _ Interface = &Store{}
@@ -890,7 +890,13 @@ type SeriesPointForExport struct {
 	Capture          *string
 }
 
-func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId string) (_ []SeriesPointForExport, err error) {
+type ExportOpts struct {
+	InsightViewUniqueID string
+	IncludeRepoRegex    []string
+	ExcludeRepoRegex    []string
+}
+
+func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
 	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
 	// this user context. This is similar to how `SeriesPoints` works.
 	// We enforce repo permissions here as we store repository data at this level.
@@ -898,15 +904,37 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	if err != nil {
 		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
 	}
-	excludedRepoIDs := make([]*sqlf.Query, 0, len(denylist))
+	excludedRepoIDs := make([]*sqlf.Query, 0)
 	for _, repoID := range denylist {
 		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
 	}
-	var repoIDsPred *sqlf.Query
-	if len(excludedRepoIDs) == 0 {
-		repoIDsPred = sqlf.Sprintf("true")
-	} else {
-		repoIDsPred = sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
+	var preds []*sqlf.Query
+	if len(excludedRepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
+	}
+	if len(opts.IncludeRepoRegex) > 0 {
+		includePreds := []*sqlf.Query{}
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
+		if len(includePreds) > 0 {
+			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
+			preds = append(preds, includes)
+		}
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("true"))
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
 	}
 
 	tx, err := s.Transact(ctx)
@@ -937,13 +965,14 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 		return nil
 	}
 
+	formattedPreds := sqlf.Join(preds, "AND")
 	// start with the oldest archived points and add them to the results
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), insightViewId, repoIDsPred), exportScanner); err != nil {
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching archived code insights data")
 	}
 	// then add live points
 	// we join both series points tables
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), insightViewId, repoIDsPred), exportScanner); err != nil {
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
 		return nil, errors.Wrap(err, "fetching code insights data")
 	}
 

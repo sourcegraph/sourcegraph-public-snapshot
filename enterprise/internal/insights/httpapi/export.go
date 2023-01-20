@@ -119,7 +119,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	}
 
 	timestamp := time.Now().Format(time.RFC3339)
-	dataPoints, err := h.seriesStore.GetAllDataForInsightViewID(ctx, insightViewId)
+	dataPoints, err := h.seriesStore.GetAllDataForInsightViewID(ctx, store.ExportOpts{InsightViewUniqueID: insightViewId})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch all data for insight")
 	}

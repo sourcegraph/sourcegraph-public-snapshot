@@ -1017,7 +1017,7 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 	}
 
 	t.Run("empty entries for no series points data", func(t *testing.T) {
-		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1059,7 +1059,7 @@ SELECT recording_time,
 	}
 
 	t.Run("only live data", func(t *testing.T) {
-		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1083,7 +1083,7 @@ SELECT recording_time,
 			// cleanup
 			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
 		}()
-		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1100,7 +1100,7 @@ SELECT recording_time,
 		if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{newRecordingTime}); err != nil {
 			t.Fatal(err)
 		}
-		got, err := seriesStore.GetAllDataForInsightViewID(ctx, view.UniqueID)
+		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {
 			t.Fatal(err)
 		}
