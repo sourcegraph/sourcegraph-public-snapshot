@@ -23,7 +23,7 @@ import (
 type PermissionSyncJobOpts struct {
 	HighPriority      bool
 	InvalidateCaches  bool
-	NextSyncAt        time.Time
+	ProcessAfter      time.Time
 	Reason            string
 	TriggeredByUserID int32
 }
@@ -78,8 +78,8 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
 	}
-	if !opts.NextSyncAt.IsZero() {
-		job.ProcessAfter = opts.NextSyncAt
+	if !opts.ProcessAfter.IsZero() {
+		job.ProcessAfter = opts.ProcessAfter
 	}
 	return s.createSyncJob(ctx, job)
 }
@@ -92,8 +92,8 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
 	}
-	if !opts.NextSyncAt.IsZero() {
-		job.ProcessAfter = opts.NextSyncAt
+	if !opts.ProcessAfter.IsZero() {
+		job.ProcessAfter = opts.ProcessAfter
 	}
 	return s.createSyncJob(ctx, job)
 }

@@ -44,8 +44,8 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	err = store.CreateRepoSyncJob(ctx, 99, opts)
 	assert.NoError(t, err)
 
-	nextSyncAt := clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, NextSyncAt: nextSyncAt, Reason: ReasonManualUserSync}
+	processAfter := clock.Now().Add(5 * time.Minute)
+	opts = PermissionSyncJobOpts{HighPriority: false, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 	err = store.CreateUserSyncJob(ctx, 77, opts)
 	assert.NoError(t, err)
 
@@ -69,7 +69,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			State:            "queued",
 			UserID:           77,
 			InvalidateCaches: true,
-			ProcessAfter:     nextSyncAt,
+			ProcessAfter:     processAfter,
 			Reason:           ReasonManualUserSync,
 		},
 	}
@@ -171,8 +171,8 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 	// 4) Insert some low priority jobs with process_after for both users. All of them should be inserted.
 	fiveMinutesLater := clock.Now().Add(5 * time.Minute)
 	tenMinutesLater := clock.Now().Add(10 * time.Minute)
-	user1LowPrioDelayedJob := PermissionSyncJobOpts{NextSyncAt: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	user2LowPrioDelayedJob := PermissionSyncJobOpts{NextSyncAt: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user1LowPrioDelayedJob := PermissionSyncJobOpts{ProcessAfter: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	user2LowPrioDelayedJob := PermissionSyncJobOpts{ProcessAfter: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
 
 	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioDelayedJob)
 	assert.NoError(t, err)
