@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -27,10 +27,11 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	placeholder, _ := parseFakeDependency("sourcegraph/placeholder@0.0.0")
 
 	depsSource := &fakeDepsSource{
-		deps:          map[string]reposource.VersionedPackage{},
-		download:      map[string]error{},
-		downloadCount: map[string]int{},
+		availableVersions: []string{"0.0.1", "0.0.2", "0.0.3"},
+		download:          map[string]error{},
+		downloadCount:     map[string]int{},
 	}
+	// contains the versions of packages synced to the "instance"
 	depsService := &fakeDepsService{deps: map[reposource.PackageName][]dependencies.Repo{}}
 
 	s := vcsPackagesSyncer{
@@ -45,160 +46,115 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
 
 	dir := GitDir(t.TempDir())
-	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
-	if err != nil {
+	if _, err := s.CloneCommand(ctx, remoteURL, string(dir)); err != nil {
 		t.Fatalf("unexpected error preparing package clone directory: %v", err)
 	}
 
-	depsService.Add("foo@0.0.1")
-	depsSource.Add("foo@0.0.1")
+	versionRefs := map[string]string{
+		"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
+		"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
+		"refs/tags/v0.0.2":    "ba0ae2f9c0799884212519824ad2e38ae72dee85",
+		"refs/tags/v0.0.2^{}": emptyTreeObject,
+		"refs/tags/v0.0.3":    "ba94b95e16bf902e983ead70dc6ee0edd6b03a3b",
+		"refs/tags/v0.0.3^{}": "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
+		"refs/heads/latest":   "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
+	}
 
-	t.Run("one version from service", func(t *testing.T) {
+	depsService.Add("foo@0.0.1")
+
+	t.Run("0.0.{1,2,3} available, 0.0.{1,3} syncing", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir, "")
 		if err != nil {
 			t.Fatalf("unexpected error fetching package: %v", err)
 		}
 
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-		})
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1})
+		s.assertRefs(t, dir, versionRefs)
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1, "foo@0.0.3": 1})
 	})
 
 	s.configDeps = []string{"foo@0.0.2"}
-	depsSource.Add("foo@0.0.2")
-	allVersionsHaveRefs := map[string]string{
-		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-		"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
+	maps.Copy(versionRefs, map[string]string{
 		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
 		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-	}
-	oneVersionOneDownload := map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
+	})
 
-	t.Run("two versions, service and config", func(t *testing.T) {
+	t.Run("0.0.{1,2,3} available, 0.0.2 syncing, 0.0.{1,3} cached", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir, "")
 		if err != nil {
 			t.Fatalf("unexpected error fetching package: %v", err)
 		}
 
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		s.assertRefs(t, dir, versionRefs)
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1, "foo@0.0.3": 1})
 	})
 
-	depsSource.Delete("foo@0.0.2")
-
-	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
-		err := s.Fetch(ctx, remoteURL, dir, "")
-		if err != nil {
-			t.Fatalf("unexpected error fetching package: %v", err)
-		}
-
-		// v0.0.2 is still present in the git repo because we didn't send a second download request.
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
-	})
-
-	depsSource.Add("foo@0.0.2")
 	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
 
-	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
+	t.Run("0.0.1 401s, 0.0.{1,2,3} cached", func(t *testing.T) {
 		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
 			t.Fatalf("unexpected error fetching package: %v", err)
 		}
-		// v0.0.1 is still present in the git repo because we didn't send a second download request.
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		// v0.0.1 is still present in the git repo because we didn't send a second download request. This may
+		// be something to revisit, but accurately determining whether we should delete or not from response
+		// may be hard to do given artifact host differences
+		s.assertRefs(t, dir, versionRefs)
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1, "foo@0.0.3": 1})
 	})
 
-	depsService.Delete("foo@0.0.1")
-	onlyV2Refs := map[string]string{
-		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-	}
-
-	t.Run("service version deleted", func(t *testing.T) {
-		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
-			t.Fatalf("unexpected error fetching package: %v", err)
-		}
-
-		s.assertRefs(t, dir, onlyV2Refs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+	depsSource.availableVersions = append(depsSource.availableVersions, "0.0.4")
+	maps.Copy(versionRefs, map[string]string{
+		"refs/heads/latest":   "c1150351bcacca8b0b513192da7673702033a519",
+		"refs/tags/v0.0.4":    "fbb95220111fb527f1c58c4ec4f3f9438540a916",
+		"refs/tags/v0.0.4^{}": "c1150351bcacca8b0b513192da7673702033a519",
 	})
 
-	s.configDeps = []string{}
-
-	t.Run("all versions deleted", func(t *testing.T) {
-		if err := s.Fetch(ctx, remoteURL, dir, ""); err != nil {
-			t.Fatalf("unexpected error fetching package: %v", err)
-		}
-
-		s.assertRefs(t, dir, map[string]string{})
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
-	})
-
-	depsService.Add("foo@0.0.1")
-	depsSource.Add("foo@0.0.1")
-	depsService.Add("foo@0.0.2")
-	depsSource.Add("foo@0.0.2")
-	t.Run("error aggregation", func(t *testing.T) {
-		err := s.Fetch(ctx, remoteURL, dir, "")
-		require.ErrorContains(t, err, "401 unauthorized")
-
-		// The foo@0.0.1 tag was not created because of the 401 error.
-		// The foo@0.0.2 tag was created despite the 401 error for foo@0.0.1
-		s.assertRefs(t, dir, onlyV2Refs)
-
-		// We re-downloaded both v0.0.1 and v0.0.2 since their git refs had been deleted.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 2, "foo@0.0.2": 2})
-	})
-
-	bothV2andV3Refs := map[string]string{
-		// latest branch has been updated to point to 0.0.3 instead of 0.0.2
-		"refs/heads/latest":   "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
-		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.3":    "ba94b95e16bf902e983ead70dc6ee0edd6b03a3b",
-		"refs/tags/v0.0.3^{}": "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
-	}
-
-	t.Run("lazy-sync version via revspec", func(t *testing.T) {
-		// the v0.0.3 tag should be created on-demand through the revspec parameter
+	t.Run("lazy-sync 0.0.4 via revspec", func(t *testing.T) {
+		// the v0.0.4 tag should be created on-demand through the revspec parameter
 		// For context, see https://github.com/sourcegraph/sourcegraph/pull/38811
-		err := s.Fetch(ctx, remoteURL, dir, "v0.0.3^0")
-		require.ErrorContains(t, err, "401 unauthorized") // v0.0.1 is still erroring
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.Repo{{
+		err := s.Fetch(ctx, remoteURL, dir, "v0.0.4^0")
+		if err != nil {
+			t.Fatalf("unexpected error fetching package: %v", err)
+		}
+
+		if diff := cmp.Diff(s.svc.(*fakeDepsService).upsertedDeps, []dependencies.Repo{{
 			ID:      0,
 			Scheme:  fakeVersionedPackage{}.Scheme(),
 			Name:    "foo",
-			Version: "0.0.3",
-		}})
-		s.assertRefs(t, dir, bothV2andV3Refs)
+			Version: "0.0.4",
+		}}); diff != "" {
+			t.Errorf("unexpected list of upserted dependencies (-want +got):\n%s", diff)
+		}
+
+		s.assertRefs(t, dir, versionRefs)
 		// We triggered a single download for v0.0.3 since it was lazily requested.
 		// We triggered a v0.0.1 download since it's still erroring.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1})
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1, "foo@0.0.3": 1, "foo@0.0.4": 1})
 	})
 
-	depsSource.download["foo@0.0.4"] = errors.New("0.0.4 not found")
-	s.svc.(*fakeDepsService).upsertedDeps = []dependencies.Repo{}
+	depsSource.availableVersions = append(depsSource.availableVersions, "0.0.5", "0.0.7")
+	depsSource.download["foo@0.0.6"] = errors.New("0.0.6 not found")
+	maps.Copy(versionRefs, map[string]string{
+		"refs/heads/latest":   "b63e479c262c38061fcf8c86ae9284836109331e",
+		"refs/tags/v0.0.5":    "3d8601d3b0f45f43a7366b8948fa9b938a345754",
+		"refs/tags/v0.0.5^{}": emptyTreeObject,
+		"refs/tags/v0.0.7":    "8b77a98c4d9979551b442b0287700442f62cd549",
+		"refs/tags/v0.0.7^{}": "b63e479c262c38061fcf8c86ae9284836109331e",
+	})
 
-	t.Run("lazy-sync error version via revspec", func(t *testing.T) {
-		// the v0.0.4 tag cannot be created on-demand because it returns a "0.0.4 not found" error
-		if err := s.Fetch(ctx, remoteURL, dir, "v0.0.4^0"); err != nil {
+	t.Run("lazy-sync error 0.0.6 via revspec, 0.0.{1,2,3,4,5,7} available", func(t *testing.T) {
+		numUpsertedDeps := len(s.svc.(*fakeDepsService).upsertedDeps)
+
+		// the v0.0.6 tag cannot be created on-demand because it returns a "0.0.6 not found" error
+		if err := s.Fetch(ctx, remoteURL, dir, "v0.0.6^0"); err != nil {
 			t.Fatalf("unexpected error fetching package: %v", err)
 		}
-		// // the 0.0.4 error is silently ignored, we only return the error for v0.0.1.
-		// require.Equal(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unauthorized")
-		// the 0.0.4 dependency was not stored in the database because the download failed.
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.Repo{})
-		// git tags are unchanged, v0.0.2 and v0.0.3 are cached.
-		s.assertRefs(t, dir, bothV2andV3Refs)
-		// We triggered downloads only for v0.0.4.
-		// No new downloads were triggered for cached or other errored versions.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1, "foo@0.0.4": 1})
+		// the 0.0.6 dependency was not stored in the database because the download failed.
+		if numUpsertedDeps != len(s.svc.(*fakeDepsService).upsertedDeps) {
+			t.Errorf("unexpected number of upserted dependencies: want=%d got=%d", numUpsertedDeps, len(s.svc.(*fakeDepsService).upsertedDeps))
+		}
+		s.assertRefs(t, dir, versionRefs)
+		// We triggered downloads only for v0.0.4, no new downloads were triggered for cached or other errored versions.
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1, "foo@0.0.3": 1, "foo@0.0.4": 1, "foo@0.0.6": 1, "foo@0.0.7": 1})
 	})
 
 	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
@@ -209,7 +165,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			t.Fatal("Cannot parse Maven dependency")
 		}
 		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
-		require.NotNil(t, err)
+		if err == nil {
+			t.Fatalf("unexpected nil error for non-existent dependency")
+		}
 	})
 }
 
@@ -239,6 +197,8 @@ func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependen
 	return s.deps[opts.Name], nil
 }
 
+// Add adds a version that should be synced if it hasnt been added already. While the source may have additional versions,
+// they wont be synced unless 1) added via this method 2) they are/were the latest version 3) theyre listed in vcsPackageSyncer.configDeps
 func (s *fakeDepsService) Add(deps ...string) {
 	for _, d := range deps {
 		dep, _ := parseFakeDependency(d)
@@ -255,10 +215,9 @@ func (s *fakeDepsService) Delete(deps ...string) {
 	for _, d := range deps {
 		dep, _ := parseFakeDependency(d)
 		name := dep.PackageSyntax()
-		version := dep.PackageVersion()
 		filtered := s.deps[name][:0]
 		for _, r := range s.deps[name] {
-			if r.Version != version {
+			if r.Version != dep.PackageVersion() {
 				filtered = append(filtered, r)
 			}
 		}
@@ -267,26 +226,19 @@ func (s *fakeDepsService) Delete(deps ...string) {
 }
 
 type fakeDepsSource struct {
-	deps          map[string]reposource.VersionedPackage
-	download      map[string]error
+	// all versions available when listing versions on the package host
+	availableVersions []string
+	download          map[string]error
+	// previously used to track re-downloads of deleted and re-added dependencies.
 	downloadCount map[string]int
 }
 
 func (s *fakeDepsSource) ListVersions(ctx context.Context, dep reposource.Package) (tags []reposource.VersionedPackage, err error) {
-	return nil, nil
-}
-
-func (s *fakeDepsSource) Add(deps ...string) {
-	for _, d := range deps {
-		dep, _ := parseFakeDependency(d)
-		s.deps[d] = dep
+	for _, version := range s.availableVersions {
+		pkg, _ := parseFakeDependency(string(dep.PackageSyntax()) + "@" + version)
+		tags = append(tags, pkg)
 	}
-}
-
-func (s *fakeDepsSource) Delete(deps ...string) {
-	for _, d := range deps {
-		delete(s.deps, d)
-	}
+	return
 }
 
 func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {

@@ -40,7 +40,7 @@ type ReposService interface {
 	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
 	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string, fetchIfMissing bool) (api.CommitID, error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 	GetTag(ctx context.Context, repo *types.Repo, tagID api.TagID) (*gitdomain.Tag, error)
 }
@@ -296,7 +296,7 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string, fetchIfMissing bool) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
@@ -304,9 +304,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string, fe
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{
-		// NoEnsureRevision: !fetchIfMissing,
-	})
+	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {

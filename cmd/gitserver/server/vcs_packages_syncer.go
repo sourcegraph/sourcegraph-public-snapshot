@@ -122,60 +122,79 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		return err
 	}
 
-	defer func() {
-		if err != nil {
-			return
-		}
-
-		allPackageVersions, listErr := s.source.ListVersions(ctx, pkg)
-		if listErr != nil {
-			err = errors.Append(err, listErr)
-			return
-		}
-
-		if len(allPackageVersions) == 0 {
-			return
-		}
-
-		out, listTagErr := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
-		if listTagErr != nil {
-			err = errors.Append(err, listTagErr)
-			return
-		}
-
-		tags := map[string]struct{}{}
-		for _, line := range strings.Split(out, "\n") {
-			if len(line) == 0 {
-				continue
-			}
-
-			tags[line] = struct{}{}
-		}
-
-		fmt.Printf("ALL VERSIONS %v, EXISTING %v\n", allPackageVersions, tags)
-
-		for _, version := range allPackageVersions {
-			if _, exists := tags[version.GitTagFromVersion()]; !exists {
-				cmd := exec.CommandContext(ctx, "git", "tag", "-m", version.GitTagFromVersion(), version.GitTagFromVersion(), emptyTreeObject)
-				out, createTagErr := runCommandInDirectory(ctx, cmd, string(dir), version)
-				if createTagErr != nil {
-					fmt.Printf("WHOOPSY for version %s %v '%s'\n", version, createTagErr, string(out))
-				}
-			}
-		}
-	}()
-
-	fmt.Printf("FETCHING %q %q\n", revspec, dir)
-
 	if revspec != "" {
-		return s.fetchRevspec(ctx, name, dir, versionsToSync, revspec)
+		err = s.fetchRevspec(ctx, name, dir, versionsToSync, revspec)
+
+		// we want to sync available tags and update latest branch regardless of this
+		// particular version failing.
+		if e := s.updateAvailableVersions(ctx, dir, pkg); e != nil {
+			err = errors.Append(err, e)
+			return
+		}
+
+		if e := s.syncAndSetLatest(ctx, dir, name); e != nil {
+			err = errors.Append(err, e)
+			return
+		}
 	}
 
-	return s.fetchVersions(ctx, name, dir, versionsToSync)
+	if err = s.fetchVersions(ctx, name, dir, versionsToSync); err != nil {
+		return err
+	}
+
+	// we dont want to sync available tags and update latest branch if we
+	// failed to fetch non-specific version
+	// TODO: nsc do perform this if only _some_ versions failed to sync
+	if err = s.updateAvailableVersions(ctx, dir, pkg); err != nil {
+		return err
+	}
+
+	if err = s.syncAndSetLatest(ctx, dir, name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *vcsPackagesSyncer) updateAvailableVersions(ctx context.Context, dir GitDir, pkg reposource.Package) (errs error) {
+	allPackageVersions, err := s.source.ListVersions(ctx, pkg)
+	if err != nil {
+		return err
+	}
+
+	if len(allPackageVersions) == 0 {
+		return nil
+	}
+
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
+	if err != nil {
+		return err
+	}
+
+	tags := map[string]struct{}{}
+	for _, line := range strings.Split(out, "\n") {
+		if len(line) == 0 {
+			continue
+		}
+
+		tags[line] = struct{}{}
+	}
+
+	for _, version := range allPackageVersions {
+		if _, exists := tags[version.GitTagFromVersion()]; !exists {
+			cmd := exec.CommandContext(ctx, "git", "tag", "-m", version.GitTagFromVersion(), version.GitTagFromVersion(), emptyTreeObject)
+			_, err := runCommandInDirectory(ctx, cmd, string(dir), version)
+			if err != nil {
+				errs = errors.Append(errs, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // fetchRevspec fetches the given revspec if it's not contained in
-// existingVersions. If download and upserting the new version into database
+// existingVersions. If downloading and upserting the new version into database
 // succeeds, it calls s.fetchVersions with the newly-added version and the old
 // ones, to possibly update the "latest" tag.
 func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir GitDir, existingVersions []string, revspec string) error {
@@ -228,34 +247,28 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 	return s.fetchVersions(ctx, name, dir, existingVersions)
 }
 
-// fetchVersions checks whether the given versions are all valid version
-// specifiers, then checks whether they've already been downloaded and, if not,
-// downloads them.
-func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versionsToSync []string) error {
-	var errs errors.MultiError
-	cloneable := make([]reposource.VersionedPackage, 0, len(versionsToSync))
+// fetchVersions checks whether the given versions are all valid version specifiers, then checks whether they've already been downloaded
+// and, if not, downloads them.
+func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versionsToSync []string) (errs error) {
+	validVersionsToSync := make([]reposource.VersionedPackage, 0, len(versionsToSync))
 	for _, version := range versionsToSync {
 		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(name, version); err != nil {
 			errs = errors.Append(errs, err)
 		} else {
-			cloneable = append(cloneable, d)
+			validVersionsToSync = append(validVersionsToSync, d)
 		}
 	}
 	if errs != nil {
 		return errs
 	}
 
-	// We sort in descending order, so that the latest version is in the first position.
-	sort.SliceStable(cloneable, func(i, j int) bool {
-		return cloneable[i].Less(cloneable[j])
-	})
-
 	// Create set of existing tags. We want to skip the download of a package if the tag already exists.
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "for-each-ref", "--format='%(*objectname):%(refname:lstrip=2)'", "refs/tags/"), string(dir), s.placeholder)
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "for-each-ref", "--format=%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end):%(refname:lstrip=2)", "refs/tags/"), string(dir), s.placeholder)
 	if err != nil {
 		return err
 	}
 
+	// contains all the synced and not-yet-synced tags in the repo
 	tagsInRepo := map[string]string{}
 	for _, line := range strings.Split(out, "\n") {
 		if len(line) == 0 {
@@ -266,29 +279,21 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 		tagsInRepo[parts[1]] = parts[0]
 	}
 
-	var alreadyCloned []reposource.VersionedPackage
-	for _, dependency := range cloneable {
-		if gitObject, tagExists := tagsInRepo[dependency.GitTagFromVersion()]; tagExists && gitObject != emptyTreeObject {
-			alreadyCloned = append(alreadyCloned, dependency)
+	newVersions := make(map[string]bool)
+	for _, dependency := range validVersionsToSync {
+		// does it already exist and is it a synced or a not-yet-synced version?
+		if commitID, tagExists := tagsInRepo[dependency.GitTagFromVersion()]; tagExists && commitID != emptyTreeObject {
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
 			errs = errors.Append(errs, errors.Wrapf(err, "error pushing dependency %q", dependency))
 		} else {
-			alreadyCloned = append(alreadyCloned, dependency)
-		}
-	}
-
-	// Set the latest version as the default branch, if there was a successful download.
-	if len(alreadyCloned) > 0 {
-		latest := alreadyCloned[0]
-		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
-		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
-			return errors.Append(errs, err)
+			newVersions[dependency.PackageVersion()] = true
 		}
 	}
 
 	// Return error if at least one version failed to download.
+	// TODO; do we still need this here? need to factor in possibly re-introducing deletion
 	if errs != nil {
 		return errs
 	}
@@ -323,6 +328,53 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 	// 	// Best-effort branch deletion since we don't know if this branch has been created yet.
 	// 	_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
 	// }
+
+	return nil
+}
+
+func (s *vcsPackagesSyncer) syncAndSetLatest(ctx context.Context, dir GitDir, name reposource.PackageName) error {
+	// Create set of existing tags. We want to skip the download of a package if the tag already exists.
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "for-each-ref", "--format=%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end):%(refname:lstrip=2)", "refs/tags/"), string(dir), s.placeholder)
+	if err != nil {
+		return err
+	}
+
+	// contains all the synced and not-yet-synced tags in the repo
+	var (
+		allVersions []reposource.VersionedPackage
+		tagsInRepo  = map[string]string{}
+	)
+	for _, line := range strings.Split(out, "\n") {
+		if len(line) == 0 {
+			continue
+		}
+
+		parts := strings.Split(line, ":")
+		tagsInRepo[parts[1]] = parts[0]
+
+		dep, _ := s.source.ParseVersionedPackageFromNameAndVersion(name, strings.TrimPrefix(parts[1], "v"))
+		allVersions = append(allVersions, dep)
+	}
+
+	// We sort in descending order, so that the latest version is in the first position.
+	sort.SliceStable(allVersions, func(i, j int) bool {
+		return allVersions[i].Less(allVersions[j])
+	})
+
+	if len(allVersions) > 0 {
+		latest := allVersions[0]
+		newLatestCommitID, latestAlreadySynced := tagsInRepo[latest.GitTagFromVersion()]
+		if !latestAlreadySynced || newLatestCommitID == emptyTreeObject {
+			if err := s.gitPushDependencyTag(ctx, string(dir), latest); err != nil {
+				return errors.Wrapf(err, "error pushing dependency %q", latest)
+			}
+		}
+
+		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
+		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
