@@ -3,7 +3,6 @@ package repos
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"

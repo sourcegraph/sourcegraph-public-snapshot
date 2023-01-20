@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -130,7 +131,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 	case *auth.BasicAuth:
 		break
 	default:
-		return nil, fmt.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
+		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
 	return &Client{
