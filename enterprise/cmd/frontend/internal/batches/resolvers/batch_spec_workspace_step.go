@@ -375,7 +375,7 @@ type batchSpecWorkspaceOutputLinesResolver struct {
 
 var _ graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver = &batchSpecWorkspaceOutputLinesResolver{}
 
-func (r *batchSpecWorkspaceOutputLinesResolver) compute(ctx context.Context) ([]string, int32, bool) {
+func (r *batchSpecWorkspaceOutputLinesResolver) compute() ([]string, int32, bool) {
 	r.once.Do(func() {
 		totalLines := len(r.lines)
 		r.total = int32(totalLines)
@@ -402,20 +402,20 @@ func (r *batchSpecWorkspaceOutputLinesResolver) compute(ctx context.Context) ([]
 	return r.linesSubset, r.total, r.hasNextPage
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount(ctx context.Context) int32 {
-	_, totalCount, _ := r.compute(ctx)
+func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() int32 {
+	_, totalCount, _ := r.compute()
 	return totalCount
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
-	_, _, hasNextPage := r.compute(ctx)
+func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() *graphqlutil.PageInfo {
+	_, _, hasNextPage := r.compute()
 	if hasNextPage {
 		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor)))
 	}
 	return graphqlutil.HasNextPage(hasNextPage)
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) Nodes(ctx context.Context) []string {
-	lines, _, _ := r.compute(ctx)
+func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() []string {
+	lines, _, _ := r.compute()
 	return lines
 }
