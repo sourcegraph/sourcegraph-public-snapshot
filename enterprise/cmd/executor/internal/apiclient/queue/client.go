@@ -19,9 +19,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	executor2 "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,7 +95,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	return c.client.DoAndDecode(ctx, req, &job)
 }
 
-func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
+func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry executor2.ExecutionLogEntry) (entryID int, err error) {
 	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),
 		otlog.Int("jobID", jobID),
@@ -115,7 +115,7 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 	return entryID, err
 }
 
-func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) (err error) {
+func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry executor2.ExecutionLogEntry) (err error) {
 	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),
 		otlog.Int("jobID", jobID),

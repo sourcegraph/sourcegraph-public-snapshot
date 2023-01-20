@@ -10,9 +10,9 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -505,7 +505,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	}
 
 	for _, entry := range executionLogs {
-		wj.ExecutionLogs = append(wj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		wj.ExecutionLogs = append(wj.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 
 	return nil

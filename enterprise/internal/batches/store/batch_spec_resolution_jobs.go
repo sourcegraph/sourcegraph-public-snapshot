@@ -10,8 +10,8 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -247,7 +247,7 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	}
 
 	for _, entry := range executionLogs {
-		rj.ExecutionLogs = append(rj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		rj.ExecutionLogs = append(rj.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 
 	return nil

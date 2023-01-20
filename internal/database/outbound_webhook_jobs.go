@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -169,7 +169,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		job.ExecutionLogs = append(job.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 
 	return nil

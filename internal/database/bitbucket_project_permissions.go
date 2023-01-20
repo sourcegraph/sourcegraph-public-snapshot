@@ -12,8 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -187,7 +187,7 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 	}
 
 	for _, entry := range executionLogs {
-		logEntry := workerutil.ExecutionLogEntry(entry)
+		logEntry := executor.ExecutionLogEntry(entry)
 		job.ExecutionLogs = append(job.ExecutionLogs, &logEntry)
 	}
 

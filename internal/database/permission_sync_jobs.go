@@ -7,7 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -16,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -324,7 +325,7 @@ type PermissionSyncJob struct {
 	NumResets         int
 	NumFailures       int
 	LastHeartbeatAt   time.Time
-	ExecutionLogs     []workerutil.ExecutionLogEntry
+	ExecutionLogs     []executor.ExecutionLogEntry
 	WorkerHostname    string
 	Cancel            bool
 
@@ -399,7 +400,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		job.ExecutionLogs = append(job.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 	return nil
 }

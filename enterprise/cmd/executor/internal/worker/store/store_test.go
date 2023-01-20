@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	executor2 "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,7 +95,7 @@ func TestQueueShim_AddExecutionLogEntry(t *testing.T) {
 
 	exitCode := 0
 	duration := 10
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor2.ExecutionLogEntry{
 		Key:        "abc",
 		Command:    []string{"foo", "bar"},
 		StartTime:  time.Now(),
@@ -122,7 +122,7 @@ func TestQueueShim_UpdateExecutionLogEntry(t *testing.T) {
 
 	exitCode := 0
 	duration := 10
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor2.ExecutionLogEntry{
 		Key:        "abc",
 		Command:    []string{"foo", "bar"},
 		StartTime:  time.Now(),
@@ -253,12 +253,12 @@ func (m *queueStoreMock) Dequeue(ctx context.Context, queueName string, payload 
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *queueStoreMock) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (int, error) {
+func (m *queueStoreMock) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry executor2.ExecutionLogEntry) (int, error) {
 	args := m.Called(ctx, queueName, jobID, entry)
 	return args.Int(0), args.Error(1)
 }
 
-func (m *queueStoreMock) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) error {
+func (m *queueStoreMock) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry executor2.ExecutionLogEntry) error {
 	args := m.Called(ctx, queueName, jobID, entryID, entry)
 	return args.Error(0)
 }

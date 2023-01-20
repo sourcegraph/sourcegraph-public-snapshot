@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -24,7 +24,7 @@ type DataRetentionJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 
@@ -95,7 +95,7 @@ func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		job.ExecutionLogs = append(job.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 
 	return &job, nil

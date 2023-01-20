@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -107,11 +108,11 @@ type Store[T workerutil.Record] interface {
 	// AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 	// used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 	// or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
+	AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
 
 	// UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 	// found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) error
+	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -136,7 +137,7 @@ type Store[T workerutil.Record] interface {
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
 }
 
-type ExecutionLogEntry workerutil.ExecutionLogEntry
+type ExecutionLogEntry executor.ExecutionLogEntry
 
 func (e *ExecutionLogEntry) Scan(value any) error {
 	b, ok := value.([]byte)
@@ -733,7 +734,7 @@ WHERE {id} = %s
 // AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 // used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 // or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
+func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
 	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -783,7 +784,7 @@ RETURNING array_length({execution_logs}, 1)
 
 // UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 // found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
+func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
 	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("recordID", recordID),
 		otlog.Int("entryID", entryID),
