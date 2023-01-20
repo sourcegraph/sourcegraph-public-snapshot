@@ -1,4 +1,4 @@
-package shared
+package singlebinary
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
+	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -25,6 +27,8 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg env.Config) error {
 	config := cfg.(*config.Config)
+	// Always use the in-memory secret.
+	config.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
@@ -35,13 +39,13 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 			otherConfig.QueueName = "batches"
 		}
 		go func() {
-			if err := Main(ctx, observationCtx, ready, &otherConfig); err != nil {
+			if err := run.StandaloneRunRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
 				observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
 			}
 		}()
 	}
 
-	return Main(ctx, observationCtx, ready, config)
+	return run.StandaloneRunRun(ctx, observationCtx.Logger, config, false)
 }
 
 var Service service.Service = svc{}
