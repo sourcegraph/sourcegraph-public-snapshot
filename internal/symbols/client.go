@@ -281,7 +281,7 @@ func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) 
 		return search.SymbolsResponse{}, errors.New(response.Err)
 	}
 
-	return search.SymbolsResponse{}, nil
+	return response, nil
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
