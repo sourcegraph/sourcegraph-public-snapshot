@@ -161,7 +161,7 @@ Here are a few examples on how to use them:
 ```go
 func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	// Scan int
-	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM horses;")))
+	totalCount, found, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM horses;")))
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	}
 
 	// Scan bool
-	ids, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM horses WHERE age < 10;")))
+	exists, found, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM horses WHERE age < 10;")))
 	if err != nil {
 		return err
 	}
