@@ -101,7 +101,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 		}
 
 		if err != nil {
-			err = errors.Wrap(err, "listing language mappings")
+			err = errors.Wrap(err, "fetching language mappings")
 			return
 		}
 
@@ -513,6 +513,8 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 	}
 
 	opts := []grpc.DialOption{
+		// 🚨 SECURITY: We use insecure connections to the symbols service. During the
+		// grpc prototyping phase - we're leaving TLS authentication out of scope.
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 	conn, err := grpc.DialContext(ctx, u.Host, opts...)
