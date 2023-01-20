@@ -8,7 +8,7 @@ import { EmbeddingsClient } from '../embeddings-client'
 import { WSChatClient } from './ws'
 import { Prompt } from './prompt'
 import { renderMarkdown } from './markdown'
-import { getRecipeDisplayText, getRecipeInput } from './recipes'
+import { getRecipeDisplayText, getRecipeInput, getRecipeResponsePrefix } from './recipes'
 
 export interface ChatMessage extends Omit<Message, 'text'> {
 	displayText: string
@@ -72,7 +72,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		}
 	}
 
-	private async sendPrompt(promptMessages: Message[]): Promise<void> {
+	private async sendPrompt(promptMessages: Message[], responsePrefix = ''): Promise<void> {
 		const wsclient = await this.wsclient
 		if (!wsclient) {
 			return
@@ -81,8 +81,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		await this.closeConnectionInProgress()
 
 		this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, {
-			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text)),
-			onComplete: text => this.onBotMessageComplete(this.reformatBotMessage(text)),
+			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
+			onComplete: text => this.onBotMessageComplete(this.reformatBotMessage(text, responsePrefix)),
 			onError: err => {
 				vscode.window.showErrorMessage(err)
 			},
@@ -149,12 +149,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		const displayText = getRecipeDisplayText(recipe, input)
 		this.onNewMessageSubmitted(displayText)
 
-		const promptMessages = await this.prompt.constructPromptForRecipe(recipe, input)
-		return this.sendPrompt(promptMessages)
+		const responsePrefix = getRecipeResponsePrefix(recipe, input)
+		const promptMessages = await this.prompt.constructPromptForRecipe(recipe, input, responsePrefix)
+		return this.sendPrompt(promptMessages, responsePrefix)
 	}
 
-	private reformatBotMessage(text: string): string {
-		let reformattedMessage = text.trimEnd()
+	private reformatBotMessage(text: string, prefix: string): string {
+		let reformattedMessage = prefix + text.trimEnd()
 
 		const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
 		if (stopSequenceMatch) {

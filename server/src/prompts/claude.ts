@@ -10,7 +10,6 @@ export class ClaudeBackend {
 	}
 
 	chat(messages: Message[], callbacks: AnthropicCompletionCallbacks): void {
-		// basic verification
 		let lastSpeaker: 'bot' | 'you' | undefined
 		for (const msg of messages) {
 			if (msg.speaker === lastSpeaker) {
@@ -18,15 +17,16 @@ export class ClaudeBackend {
 			}
 			lastSpeaker = msg.speaker
 		}
-		if (lastSpeaker !== 'you') {
-			throw new Error('last speaker was not human')
-		}
 
 		const promptComponents: string[] = []
 		for (const msg of messages) {
 			promptComponents.push(`\n\n${msg.speaker === 'bot' ? 'Assistant' : 'Human'}: ${msg.text}`)
 		}
-		promptComponents.push('\n\nAssistant: ')
+
+		if (lastSpeaker === 'you') {
+			promptComponents.push('\n\nAssistant: ')
+		}
+
 		const prompt = promptComponents.join('')
 
 		this.client.completion({ ...this.modelParams, prompt }, callbacks)

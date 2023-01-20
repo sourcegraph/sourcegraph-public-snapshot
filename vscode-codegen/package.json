@@ -1,7 +1,7 @@
 {
   "name": "cody",
   "displayName": "Cody",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -34,23 +34,27 @@
     "commands": [
       {
         "command": "cody.suggest",
-        "title": "Ask Cody: View suggestions"
+        "title": "Ask Cody: View Suggestions"
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain selected code in detail"
+        "title": "Ask Cody: Explain Selected Code (detailed)"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain selected code at a high level"
+        "title": "Ask Cody: Explain Selected Code (high-level)"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate a unit test"
+        "title": "Ask Cody: Generate Unit Test"
+      },
+      {
+        "command": "cody.recipe.generate-docstring",
+        "title": "Ask Cody: Generate Docstring"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set access token"
+        "title": "Cody: Set Access Token"
       }
     ],
     "submenus": [
@@ -75,6 +79,9 @@
         },
         {
           "command": "cody.recipe.generate-unit-test"
+        },
+        {
+          "command": "cody.recipe.generate-docstring"
         }
       ]
     },

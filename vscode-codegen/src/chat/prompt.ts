@@ -61,7 +61,11 @@ export class Prompt {
 		return `Answer the following question or statement only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.\n\n${humanInput}`
 	}
 
-	async getPromptForMessage(message: Message, contextMessages: Message[]): Promise<Message[]> {
+	async getPromptForMessage(
+		message: Message,
+		contextMessages: Message[],
+		botResponsePrefix: string = ''
+	): Promise<Message[]> {
 		const messageTokensUsage = estimateTokensUsage(message)
 		// Since we are limited by the amount of tokens we can send to the backend, we have to truncate the prompt.
 		// In order of priority, we have to fit in:
@@ -101,6 +105,10 @@ export class Prompt {
 		// Finally, add the human message at the end.
 		this.messages.push(message)
 
+		if (botResponsePrefix) {
+			this.messages.push({ speaker: 'bot', text: botResponsePrefix })
+		}
+
 		return this.messages
 	}
 
@@ -127,7 +135,11 @@ export class Prompt {
 		return this.getPromptForMessage(humanMessage, contextMessages)
 	}
 
-	async constructPromptForRecipe(recipe: string, recipeInput: RecipeInput): Promise<Message[]> {
+	async constructPromptForRecipe(
+		recipe: string,
+		recipeInput: RecipeInput,
+		recipeResponsePrefix: string
+	): Promise<Message[]> {
 		const truncatedSelectedText = this.truncateText(recipeInput.selectedText, MAX_RECIPE_INPUT_TOKENS)
 		const contextMessages = (
 			await this.getContextMessages(truncatedSelectedText, getRecipeContextOptions(recipe))
@@ -142,10 +154,15 @@ export class Prompt {
 			speaker: 'you',
 			text: getRecipePrompt(recipe, { ...recipeInput, selectedText: truncatedSelectedText }),
 		}
-		return this.getPromptForMessage(recipeMessage, contextMessages)
+		return this.getPromptForMessage(recipeMessage, contextMessages, recipeResponsePrefix)
 	}
 
 	addBotResponse(text: string): void {
+		const lastMessage = this.messages[this.messages.length - 1]
+		if (lastMessage?.speaker === 'bot') {
+			// Remove the last bot message that only contains the prefix, and append the full message below.
+			this.messages = this.messages.slice(0, this.messages.length - 1)
+		}
 		this.messages.push({ speaker: 'bot', text })
 	}
 

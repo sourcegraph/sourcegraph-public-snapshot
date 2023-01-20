@@ -73,6 +73,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			executeRecipe('generateUnitTest')
 		),
 
+		vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
+			executeRecipe('generateDocstring')
+		),
+
 		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider),
 
 		vscode.commands.registerCommand('cody.set-access-token', async () => {
