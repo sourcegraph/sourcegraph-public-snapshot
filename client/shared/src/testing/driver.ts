@@ -1,7 +1,6 @@
 import * as os from 'os'
 import * as path from 'path'
 
-import { SnapshotOptions } from '@percy/core'
 import realPercySnapshot from '@percy/puppeteer'
 import delay from 'delay'
 import expect from 'expect'
@@ -57,10 +56,19 @@ export const extractStyles = (page: puppeteer.Page): Promise<string> =>
         )
     )
 
+interface CommonSnapshotOptions {
+    widths?: number[];
+    minHeight?: number;
+    percyCSS?: string;
+    enableJavaScript?: boolean;
+    devicePixelRatio?: number;
+    scope?: string;
+}
+
 export const percySnapshot = async (
     page: puppeteer.Page,
     name: string,
-    options: SnapshotOptions = {}
+    options: CommonSnapshotOptions = {}
 ): Promise<void> => {
     if (!readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })) {
         return Promise.resolve()
