@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	executor2 "github.com/sourcegraph/sourcegraph/internal/executor"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,8 +18,6 @@ type QueueShim struct {
 
 type QueueStore interface {
 	Dequeue(ctx context.Context, queueName string, payload *executor.Job) (bool, error)
-	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry executor2.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry executor2.ExecutionLogEntry) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
@@ -47,14 +45,6 @@ func (s *QueueShim) Heartbeat(ctx context.Context, ids []int) (knownIDs, cancelI
 	return s.Store.Heartbeat(ctx, s.Name, ids)
 }
 
-func (s *QueueShim) AddExecutionLogEntry(ctx context.Context, id int, entry executor2.ExecutionLogEntry) (int, error) {
-	return s.Store.AddExecutionLogEntry(ctx, s.Name, id, entry)
-}
-
-func (s *QueueShim) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry executor2.ExecutionLogEntry) error {
-	return s.Store.UpdateExecutionLogEntry(ctx, s.Name, jobID, entryID, entry)
-}
-
 func (s *QueueShim) MarkComplete(ctx context.Context, id int) (bool, error) {
 	return true, s.Store.MarkComplete(ctx, s.Name, id)
 }
@@ -65,6 +55,11 @@ func (s *QueueShim) MarkErrored(ctx context.Context, id int, errorMessage string
 
 func (s *QueueShim) MarkFailed(ctx context.Context, id int, errorMessage string) (bool, error) {
 	return true, s.Store.MarkFailed(ctx, s.Name, id, errorMessage)
+}
+
+type ExecutionLogEntryStore interface {
+	AddExecutionLogEntry(ctx context.Context, id int, entry internalexecutor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry internalexecutor.ExecutionLogEntry) error
 }
 
 // FilesStore handles interactions with the file store.

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -55,7 +56,7 @@ type Options struct {
 	WorkerOptions workerutil.WorkerOptions
 
 	// QueueOptions configures the client that interacts with the queue API.
-	QueueOptions worker.Options
+	QueueOptions queue.Options
 
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions

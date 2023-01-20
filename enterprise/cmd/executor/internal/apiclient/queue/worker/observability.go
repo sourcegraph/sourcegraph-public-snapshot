@@ -20,14 +20,14 @@ type operations struct {
 func newOperations(observationCtx *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationCtx.Registerer,
-		"apiworker_apiclient_queue",
+		"apiworker_apiclient_queue_worker",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("apiworker.apiclient.queue.%s", name),
+			Name:              fmt.Sprintf("apiworker.apiclient.queue.worker.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
 		})

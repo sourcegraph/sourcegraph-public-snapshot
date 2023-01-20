@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,22 +19,17 @@ import (
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options         Options
+	options         queue.Options
 	client          *apiclient.BaseClient
 	logger          log.Logger
 	metricsGatherer prometheus.Gatherer
 	operations      *operations
 }
 
-type Options struct {
-	// ExecutorName is a unique identifier for the requesting executor.
-	ExecutorName string
+// Compile time validation.
+var _ store.ExecutionLogEntryStore = &Client{}
 
-	// BaseClientOptions are the underlying HTTP client options.
-	BaseClientOptions apiclient.BaseClientOptions
-}
-
-func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
+func New(observationCtx *observation.Context, options queue.Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
 	if err != nil {
 		return nil, err
@@ -40,20 +37,20 @@ func New(observationCtx *observation.Context, options Options, metricsGatherer p
 	return &Client{
 		options:         options,
 		client:          client,
-		logger:          log.Scoped("executor-api-queue-job-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		logger:          log.Scoped("executor-api-queue-job-client", "The API client adapter for executors to handle Jobs over HTTP"),
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationCtx),
 	}, nil
 }
 
-func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
+func (c *Client) AddExecutionLogEntry(ctx context.Context, jobID int, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
 	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queueName),
+		otlog.String("queueName", c.options.QueueName),
 		otlog.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", queueName), executor.AddExecutionLogEntryRequest{
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), executor.AddExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
 		JobID:             jobID,
 		ExecutionLogEntry: entry,
@@ -66,15 +63,15 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 	return entryID, err
 }
 
-func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
+func (c *Client) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
 	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queueName),
+		otlog.String("queueName", c.options.QueueName),
 		otlog.Int("jobID", jobID),
 		otlog.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", queueName), executor.UpdateExecutionLogEntryRequest{
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), executor.UpdateExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
 		JobID:             jobID,
 		EntryID:           entryID,

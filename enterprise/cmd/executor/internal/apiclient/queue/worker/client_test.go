@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -283,7 +284,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *worker.Client)) {
 	ts := testServer(t, spec)
 	defer ts.Close()
 
-	options := worker.Options{
+	options := queue.Options{
 		ExecutorName: "deadbeef",
 		BaseClientOptions: apiclient.BaseClientOptions{
 			EndpointOptions: apiclient.EndpointOptions{
@@ -292,7 +293,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *worker.Client)) {
 				Token:      "hunter2",
 			},
 		},
-		TelemetryOptions: worker.TelemetryOptions{
+		TelemetryOptions: queue.TelemetryOptions{
 			OS:              "test-os",
 			Architecture:    "test-architecture",
 			DockerVersion:   "test-docker-version",

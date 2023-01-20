@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -26,41 +27,14 @@ import (
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options         Options
+	options         queue.Options
 	client          *apiclient.BaseClient
 	logger          log.Logger
 	metricsGatherer prometheus.Gatherer
 	operations      *operations
 }
 
-type Options struct {
-	// ExecutorName is a unique identifier for the requesting executor.
-	ExecutorName string
-
-	// BaseClientOptions are the underlying HTTP client options.
-	BaseClientOptions apiclient.BaseClientOptions
-
-	// TelemetryOptions captures additional parameters sent in heartbeat requests.
-	TelemetryOptions TelemetryOptions
-
-	// ResourceOptions inform the frontend how large of a VM the job will be executed in.
-	// This can be used to replace magic variables in the job payload indicating how much
-	// the task should be able to comfortably consume.
-	ResourceOptions ResourceOptions
-}
-
-type ResourceOptions struct {
-	// NumCPUs is the number of virtual CPUs a job can safely utilize.
-	NumCPUs int
-
-	// Memory is the maximum amount of memory a job can safely utilize.
-	Memory string
-
-	// DiskSpace is the maximum amount of disk a job can safely utilize.
-	DiskSpace string
-}
-
-func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
+func New(observationCtx *observation.Context, options queue.Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
 	if err != nil {
 		return nil, err
@@ -68,7 +42,7 @@ func New(observationCtx *observation.Context, options Options, metricsGatherer p
 	return &Client{
 		options:         options,
 		client:          client,
-		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		logger:          log.Scoped("executor-api-queue-worker-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationCtx),
 	}, nil
