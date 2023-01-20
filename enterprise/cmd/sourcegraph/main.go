@@ -25,7 +25,7 @@ var services = []service.Service{
 	worker_shared.Service,
 	githubproxy_shared.Service,
 	precise_code_intel_worker_shared.Service,
-	executor_shared.Service,
+	executor_shared.Service, // TODO - use run.RunRun
 }
 
 func main() {

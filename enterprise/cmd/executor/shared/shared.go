@@ -21,7 +21,6 @@ import (
 )
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
-
 	makeActionHandler := func(handler func(cliCtx *cli.Context, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
 			return handler(ctx, observationCtx.Logger, cfg)

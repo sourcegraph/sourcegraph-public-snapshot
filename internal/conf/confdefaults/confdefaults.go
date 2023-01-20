@@ -83,6 +83,7 @@ var SingleProgram = conftypes.RawUnified{
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"executors.accessToken": "hunter2hunter2hunter2", // TODO - generate and set in ... thing?
 }`,
 }
 
