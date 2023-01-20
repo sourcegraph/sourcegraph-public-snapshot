@@ -1,0 +1,32 @@
+[
+  {
+    "path": "internal/database",
+    "prefix": "TestRolePermissionGetByRoleIDAndPermissionID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRolePermissionGetByRoleID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRolePermissionGetByPermissionID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleList/basic_no_opts",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleList/with_pagination",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleList",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  }
+]
