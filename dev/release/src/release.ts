@@ -586,16 +586,6 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
-                        repo: 'https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1',
-                        base: `${release.major}.${release.minor}`,
-                        head: `publish-${release.version}`,
-                        commitMessage: defaultPRMessage,
-                        title: defaultPRMessage,
-                        edits: [`tools/update-docker-tags.sh ${release.version}`],
-                        ...prBodyAndDraftState([]),
-                    },
-                    {
-                        owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-aws',
                         base: 'master',
                         head: `publish-${release.version}`,
@@ -701,11 +691,7 @@ Batch change: ${batchChangeURL}`,
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
-            for (const repo of [
-                'deploy-sourcegraph',
-                'deploy-sourcegraph-docker',
-                'deploy-sourcegraph-docker-customer-replica-1',
-            ]) {
+            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
                 try {
                     await createTag(
                         await getAuthenticatedGitHubClient(),
