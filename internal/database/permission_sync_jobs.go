@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type PermissionSyncJobOpts struct {
@@ -371,7 +370,7 @@ func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
 }
 
 func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,

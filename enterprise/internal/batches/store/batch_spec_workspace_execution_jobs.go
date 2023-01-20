@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -474,7 +473,7 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 }
 
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(

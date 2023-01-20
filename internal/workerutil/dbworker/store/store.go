@@ -3,8 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -135,21 +133,6 @@ type Store[T workerutil.Record] interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
-}
-
-type ExecutionLogEntry executor.ExecutionLogEntry
-
-func (e *ExecutionLogEntry) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
-	return json.Marshal(e)
 }
 
 type store[T workerutil.Record] struct {
@@ -748,7 +731,7 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry execu
 	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {
@@ -801,7 +784,7 @@ func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryI
 		updateExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		entryID,
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {

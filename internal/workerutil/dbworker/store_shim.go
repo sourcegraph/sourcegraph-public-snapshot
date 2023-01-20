@@ -5,7 +5,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,14 +43,6 @@ func (s *storeShim[T]) Dequeue(ctx context.Context, workerHostname string, extra
 
 func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []int) (knownIDs, cancelIDs []int, err error) {
 	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
-}
-
-func (s *storeShim[T]) AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry) (entryID int, err error) {
-	return s.Store.AddExecutionLogEntry(ctx, id, entry, store.ExecutionLogEntryOptions{})
-}
-
-func (s *storeShim[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry) error {
-	return s.Store.UpdateExecutionLogEntry(ctx, recordID, entryID, entry, store.ExecutionLogEntryOptions{})
 }
 
 func (s *storeShim[T]) MarkComplete(ctx context.Context, id int) (bool, error) {

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type DataRetentionJob struct {
@@ -75,7 +74,7 @@ func scanDataRetentionJobs(rows *sql.Rows, err error) ([]*DataRetentionJob, erro
 
 func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 	var job DataRetentionJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.InsightSeriesID,

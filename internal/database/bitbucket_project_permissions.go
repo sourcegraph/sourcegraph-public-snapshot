@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -162,7 +161,7 @@ func (s *bitbucketProjectPermissionsStore) ListJobs(
 
 func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketProjectPermissionJob, error) {
 	var job types.BitbucketProjectPermissionJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var permissions []userPermission
 
 	if err := rows.Scan(

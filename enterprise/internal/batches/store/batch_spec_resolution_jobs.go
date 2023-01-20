@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // batchSpecResolutionJobInsertColumns is the list of changeset_jobs columns that are
@@ -220,7 +219,7 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 }
 
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(

@@ -68,7 +68,7 @@ var baseJobColumns = []*sqlf.Query{
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	var job BaseJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,

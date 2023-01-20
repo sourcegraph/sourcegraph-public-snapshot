@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -137,7 +136,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 	var (
 		keyID         string
 		rawPayload    []byte
-		executionLogs []store.ExecutionLogEntry
+		executionLogs []executor.ExecutionLogEntry
 	)
 
 	if err := sc.Scan(
