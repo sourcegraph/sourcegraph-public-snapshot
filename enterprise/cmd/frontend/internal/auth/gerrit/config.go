@@ -18,15 +18,16 @@ func Init(logger log.Logger) {
 	const pkgName = "gerrit"
 	logger = logger.Scoped(pkgName, "Gerrit auth config watch")
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(logger, cfg)
+		_, problems := parseConfig(cfg)
 		return problems
 	})
 
 	go conf.Watch(func() {
-		newProviders, _ := parseConfig(logger, conf.Get())
+		newProviders, _ := parseConfig(conf.Get())
 		fmt.Println(newProviders)
 		newProviderList := make([]providers.Provider, len(newProviders))
 		for i, p := range newProviders {
+			p := p // capture loop variable
 			newProviderList[i] = &p
 		}
 		providers.Update(pkgName, newProviderList)
@@ -38,13 +39,13 @@ type Provider struct {
 	ServiceType string
 }
 
-func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
+func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gerrit == nil {
 			continue
 		}
 
-		provider, providerProblems := parseProvider(logger, pr.Gerrit)
+		provider, providerProblems := parseProvider(pr.Gerrit)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		ps = append(ps, provider)
 	}
@@ -52,7 +53,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier) (ps []Provi
 	return ps, problems
 }
 
-func parseProvider(logger log.Logger, p *schema.GerritAuthProvider) (Provider, []string) {
+func parseProvider(p *schema.GerritAuthProvider) (Provider, []string) {
 	return Provider{
 		ServiceID:   p.Url,
 		ServiceType: p.Type,
