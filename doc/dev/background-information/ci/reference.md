@@ -133,6 +133,15 @@ Base pipeline (more steps might be included based on branch changes):
 - Stylelint (all)
 - Upload build trace
 
+### App snapshot release
+
+The run type for branches matching `app/release-snapshot` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- App release
+- Upload build trace
+
 ### Tagged release
 
 The run type for tags starting with `v`.

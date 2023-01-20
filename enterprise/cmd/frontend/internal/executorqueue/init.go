@@ -2,11 +2,14 @@ package executorqueue
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
@@ -15,6 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
 )
+
+func queueDisableAccessTokenDefault() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return "true"
+	}
+	return "false"
+}
+
+var queueDisableAccessToken = env.Get("EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE", queueDisableAccessTokenDefault(), "Disable usage of an access token between executors and Sourcegraph (DANGEROUS")
 
 // Init initializes the executor endpoints required for use with the executor service.
 func Init(
@@ -27,8 +40,29 @@ func Init(
 	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
-	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
+
 	logger := log.Scoped("executorqueue", "")
+
+	accessToken := func() (token string, accessTokenEnabled bool) {
+		token = conf.SiteConfig().ExecutorsAccessToken
+		wantDisableAccessToken, _ := strconv.ParseBool(queueDisableAccessToken)
+
+		if wantDisableAccessToken {
+			isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+			isSingleDockerContainer := deploy.IsDeployTypeSingleDockerContainer(deploy.Type())
+			allowedDeployType := isSingleProgram || isSingleDockerContainer || env.InsecureDev
+			if allowedDeployType && token == "" {
+				// Disable the access token.
+				return "", false
+			}
+			// Respect the access token.
+			logger.Warn("access token may only be disabled if executors.accessToken is empty in site config AND the deployment type is single-program, single-docker-container, or dev")
+			return token, true
+		}
+
+		// Respect the access token.
+		return token, true
+	}
 
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
