@@ -79,6 +79,7 @@ import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
+import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 
 export interface WorkspaceDetailsProps {
     id: Scalars['ID']
@@ -504,6 +505,42 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
             setPageInfo(step.outputLines.pageInfo)
         }
     }, [step.outputLines])
+
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+        BatchSpecWorkspaceStepByIndexResult,
+        BatchSpecWorkspaceStepByIndexVariables,
+        null
+    >({
+        query: BATCH_SPEC_WORKSPACE_STEP_BY_INDEX,
+        variables: {
+            workspaceID,
+            stepIndex: step.number,
+            after: pageInfo?.endCursor || null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        onCompleted: (result: BatchSpecWorkspaceStepByIndexResult) => {
+            const previousData = outputLines
+
+            if (previousData === undefined || result === undefined) {
+                return
+            }
+
+            if (result.node?.__typename !== 'VisibleBatchSpecWorkspace' || result.node.step === null) {
+                return
+            }
+
+            if (result.node.step.outputLines === null) {
+                return
+            }
+
+            const newOutputLines = result.node.step.outputLines
+            setOutputLines([...previousData, ...newOutputLines.nodes])
+            setPageInfo(newOutputLines.pageInfo)
+        }
+    })
 
     const [fetchAdditionalOutputLines, additionalOutputLinesResult] = useLazyQuery<
         BatchSpecWorkspaceStepByIndexResult,
