@@ -3,7 +3,6 @@ package azuredevops
 import (
 	"context"
 	"flag"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")

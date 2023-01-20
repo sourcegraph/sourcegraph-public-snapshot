@@ -1296,10 +1296,12 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
                     In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services/Server.
                 </li>
                 <li>
-                    In the configuration below, set <Field>username</Field> to the authenticated Username for the Azure DevOps Services/Server.
+                    In the configuration below, set <Field>username</Field> to the authenticated Username for the Azure
+                    DevOps Services/Server.
                 </li>
                 <li>
-                    In the configuration below, set <Field>token</Field> to the authenticated Username for the Azure DevOps Services/Server.
+                    In the configuration below, set <Field>token</Field> to the authenticated Username for the Azure
+                    DevOps Services/Server.
                 </li>
             </ol>
         </div>
@@ -1487,7 +1489,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
     ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
-    ...(window.context?.experimentalFeatures?.azuredevops === 'enabled' ? { azuredevops: AZUREDEVOPS} : {}),
+    ...(window.context?.experimentalFeatures?.azuredevops === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
