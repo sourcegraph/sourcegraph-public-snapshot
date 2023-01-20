@@ -120,11 +120,11 @@ This issue occurs when the "symbols" component attempts to connect to other serv
 
 In general, service meshes like Istio use a feature called mutual Transport Layer Security (mTLS) to secure communication between services. mTLS relies on services communicating with each other using DNS names, rather than IP addresses. These DNS names are used to identify the specific services or pods that the communication is intended for.
 
-In this case, when the Envoy sidecar (a component used to manage communication between services) intercepts a request from the "frontend" component to the "symbols" component, it is unable to locate the correct upstream service because it is using the IP address instead of the DNS name.
+In this case, when the Envoy sidecar (a component used to manage communication between services) intercepts a request from the "frontend" component to the "symbols" component, it is unable to locate the correct upstream service. This is because Sourcegraph's built-in service discovery makes requests to specific pods via IP address, rather than using more standard Kubernetes service discovery. This allows Sourcegraph to optimize search resolution using cached data for certain services, but violates assumptions made by envoy.
 
-For example, in a good request, the communication flow would be: frontend -> http://symbol:3184/ -> envoy -> [look up upstream service using DNS name] -> envoy -> symbols
+For example, envoy expects, the communication flow would be: frontend -> http://symbol:3184/ -> envoy -> [look up upstream service using DNS name] -> envoy -> symbols
 
-In a bad request, the communication flow would be: frontend -> http://symbol_pod_ip:3184 -> envoy -> [symbol_pod_ip not found since it's an IP address not a DNS name] -> envoy -> symbols
+With our built-in service discovery, the communication flow would be: frontend -> http://symbol_pod_ip:3184 -> envoy -> [symbol_pod_ip not found since it's an IP address not a DNS name] -> envoy -> symbols
 
 To resolve this issue, the solution is to redeploy the frontend after specifying the service address for symbols by setting the SYMBOLS_URL environment variable in frontend.
 
