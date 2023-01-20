@@ -44,46 +44,24 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <>
-            {results?.state === 'loading' ? (
+            {results?.state === 'complete' ? (
                 <div className="mb-5">
                     <H2 as={H3}>Please wait. Smart Search is trying variations on your query...</H2>
-                    <ul className={classNames(styles.container, 'px-0 mb-3')}>
-                        {results?.alert?.proposedQueries?.map(item => (
-                            <li key={item.query}>
-                                <Link
-                                    to={createLinkUrl({
-                                        pathname: '/search',
-                                        search: formatSearchParameters(new URLSearchParams({ q: item.query })),
-                                    })}
-                                    className={classNames(styles.link, 'px-0')}
-                                >
-                                    <span className="p-1 bg-code">
-                                        <SyntaxHighlightedSearchQuery
-                                            query={item.query}
-                                            searchPatternType={SearchPatternType.standard}
-                                        />
-                                    </span>
-                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="ml-2 mr-1 text-body" />
-                                    <span>
-                                        {item.annotations
-                                            ?.filter(({ name }) => name === 'ResultCount')
-                                            ?.map(({ name, value }) => (
-                                                <span key={name} className="text-muted">
-                                                    {' '}
-                                                    {value}
-                                                </span>
-                                            ))}
-                                    </span>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+
+                    <div className={classNames(styles.shimmerContainer, 'rounded my-3 col-6')}>
+                        <div className={classNames(styles.shimmerAnimate, 'absolute top-0 overflow-hidden')} />
+                    </div>
+
+                    <div className={classNames(styles.shimmerContainer, 'rounded mb-3 col-4')}>
+                        <div className={classNames(styles.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')} />
+                    </div>
 
                     <EnableSmartSearch query={query} history={history} />
                 </div>
-            ) : results?.state === 'complete' && !!results?.alert?.proposedQueries ? (
+            ) : results?.state === 'loading' && !!results?.alert?.proposedQueries ? (
                 <div className="mb-5">
                     <H2 as={H3}>However, Smart Smart found {resultsNum} results:</H2>
+
                     <ul className={classNames(styles.container, 'px-0 mb-3')}>
                         {results?.alert?.proposedQueries?.map(item => (
                             <li key={item.query}>
