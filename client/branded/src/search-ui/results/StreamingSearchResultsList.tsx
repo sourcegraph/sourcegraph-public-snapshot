@@ -291,7 +291,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 history={history}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                setSearchMode={setSearchMode}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
