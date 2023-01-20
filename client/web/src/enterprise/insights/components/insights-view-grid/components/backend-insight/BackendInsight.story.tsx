@@ -162,6 +162,7 @@ const mockInsightAPIResponse = ({
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                         seriesDisplayOptions: {
                             limit: 20,
+                            numSamples: 12,
                             sortOptions: {
                                 direction: SeriesSortDirection.DESC,
                                 mode: SeriesSortMode.RESULT_COUNT,
@@ -183,6 +184,7 @@ const mockInsightAPIResponse = ({
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                     seriesDisplayOptions: {
                         limit: 20,
+                        numSamples: 12,
                         sortOptions: {
                             direction: SeriesSortDirection.DESC,
                             mode: SeriesSortMode.RESULT_COUNT,
@@ -329,6 +331,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
@@ -631,6 +634,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
@@ -933,6 +937,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
