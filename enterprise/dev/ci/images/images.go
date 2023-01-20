@@ -86,8 +86,8 @@ var DeploySourcegraphDockerImages = []string{
 	"syntax-highlighter",
 	"worker",
 	"migrator",
-	"executor",
-	"executor-vm",
+	// "executor", 2023-01-20 skipping due to flakey upstream timeouts with no logs
+	// "executor-vm", 2023-01-20 skipping due to flakey upstream timeouts with no logs
 	"batcheshelper",
 	"opentelemetry-collector",
 }
