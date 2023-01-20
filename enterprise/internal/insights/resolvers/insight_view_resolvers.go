@@ -1187,6 +1187,19 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.UniqueID = unique
 		}
 
+		if r.args.ExcludeIds != nil {
+			var insightIDs []string
+			for _, id := range *r.args.ExcludeIds {
+				var unique string
+				r.err = relay.UnmarshalSpec(id, &unique)
+				if r.err != nil {
+					return
+				}
+				insightIDs = append(insightIDs, unique)
+			}
+			args.ExcludeIDs = insightIDs
+		}
+
 		insights, err := r.insightStore.GetAllMapped(ctx, args)
 		if err != nil {
 			r.err = err

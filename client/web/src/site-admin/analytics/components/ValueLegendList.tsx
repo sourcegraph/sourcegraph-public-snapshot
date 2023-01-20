@@ -39,9 +39,15 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
         return search
     }, [filter, location.search])
 
+    const tooltipOnNumber =
+        formattedNumber !== unformattedNumber
+            ? isNaN(parseFloat(unformattedNumber))
+                ? unformattedNumber
+                : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
+            : undefined
     return (
         <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
-            <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
+            <Tooltip content={tooltipOnNumber}>
                 {filter ? (
                     <Link to={`?${searchParams.toString()}`} style={{ color }} className={styles.count}>
                         {formattedNumber}

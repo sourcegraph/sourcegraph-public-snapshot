@@ -38,7 +38,7 @@ func (e *accessLogTransformer) Create(ctx context.Context, log *database.Executo
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
 
-func transformRecord(ctx context.Context, db database.DB, index types.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db database.DB, index types.Index, resourceMetadata handler.ResourceMetadata, accessToken func() (token string, tokenEnabled bool)) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	var secrets []*database.ExecutorSecret
@@ -94,8 +94,9 @@ func transformRecord(ctx context.Context, db database.DB, index types.Index, res
 		})
 	}
 
+	token, _ := accessToken()
 	frontendURL := conf.ExecutorsFrontendURL()
-	authorizationHeader := makeAuthHeaderValue(accessToken)
+	authorizationHeader := makeAuthHeaderValue(token)
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 	srcCliImage := fmt.Sprintf("%s:%s", conf.ExecutorsSrcCLIImage(), conf.ExecutorsSrcCLIImageTag())
 
@@ -145,7 +146,7 @@ func transformRecord(ctx context.Context, db database.DB, index types.Index, res
 		// Authorization header to src-cli, which we trust not to ship the
 		// values to a third party, but not to trust to ensure the values
 		// are absent from the command's stdout or stderr streams.
-		accessToken: "PASSWORD_REMOVED",
+		token: "PASSWORD_REMOVED",
 	}
 	// 🚨 SECURITY: Catch uses of executor secrets from the executor secret store
 	maps.Copy(allRedactedValues, redactedEnvVars)

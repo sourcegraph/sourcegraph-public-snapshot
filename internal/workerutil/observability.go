@@ -93,7 +93,10 @@ func NewMetrics(observationCtx *observation.Context, prefix string, opts ...Obse
 			Help: help,
 		}, keys)
 
-		observationCtx.Registerer.MustRegister(gaugeVec)
+		// TODO(sqs): TODO(single-binary): Ideally we would be using MustRegister here, not the
+		// IgnoreDuplicate variant. This is a bit of a hack to allow 2 executor instances to run in a
+		// single binary deployment.
+		gaugeVec = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, gaugeVec)
 		return gaugeVec.WithLabelValues(values...)
 	}
 

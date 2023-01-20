@@ -15,20 +15,31 @@ var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
+	_, err := checkCurrentUserIsSiteAdmin(ctx, db)
+	return err
+}
+
+// CheckCurrentUserIsSiteAdminAndReturn returns an error if the current user is
+// NOT a site admin and returns a user otherwise.
+func CheckCurrentUserIsSiteAdminAndReturn(ctx context.Context, db database.DB) (*types.User, error) {
+	return checkCurrentUserIsSiteAdmin(ctx, db)
+}
+
+func checkCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) (*types.User, error) {
 	if actor.FromContext(ctx).IsInternal() {
-		return nil
+		return nil, nil
 	}
 	user, err := CurrentUser(ctx, db)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if user == nil {
-		return ErrNotAuthenticated
+		return nil, ErrNotAuthenticated
 	}
 	if !user.SiteAdmin {
-		return ErrMustBeSiteAdmin
+		return nil, ErrMustBeSiteAdmin
 	}
-	return nil
+	return user, nil
 }
 
 // CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.

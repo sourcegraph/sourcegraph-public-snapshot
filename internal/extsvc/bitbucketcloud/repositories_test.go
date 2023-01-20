@@ -61,6 +61,16 @@ func TestClient_Repos(t *testing.T) {
 				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/src-cli"},
 			},
 			ForkPolicy: ForkPolicyNoPublic,
+			Owner: &Account{
+				Links: Links{
+					"avatar": Link{Href: "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"},
+					"html":   Link{Href: "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+					"self":   Link{Href: "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+				},
+				Nickname:    "Sourcegraph Testing",
+				DisplayName: "Sourcegraph Testing",
+				UUID:        "{4b85b785-1433-4092-8512-20302f4a03be}",
+			},
 		},
 		"sourcegraph": {
 			Slug:      "sourcegraph",
@@ -77,6 +87,16 @@ func TestClient_Repos(t *testing.T) {
 				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/sourcegraph"},
 			},
 			ForkPolicy: ForkPolicyNoPublic,
+			Owner: &Account{
+				Links: Links{
+					"avatar": Link{Href: "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"},
+					"html":   Link{Href: "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+					"self":   Link{Href: "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+				},
+				Nickname:    "Sourcegraph Testing",
+				DisplayName: "Sourcegraph Testing",
+				UUID:        "{4b85b785-1433-4092-8512-20302f4a03be}",
+			},
 		},
 	}
 
@@ -131,7 +151,7 @@ func TestClient_Repos(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			repos, next, err := cli.Repos(tc.ctx, tc.page, tc.account)
+			repos, next, err := cli.Repos(tc.ctx, tc.page, tc.account, nil)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}

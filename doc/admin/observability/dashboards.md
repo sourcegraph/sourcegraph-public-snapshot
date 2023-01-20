@@ -18735,6 +18735,48 @@ To see this dashboard, visit `/-/debug/grafana/d/prometheus/prometheus` on your 
 
 ### Prometheus: Metrics
 
+#### prometheus: metrics_cardinality
+
+<p class="subtitle">Metrics with highest cardinalities</p>
+
+The 10 highest-cardinality metrics collected by this Prometheus instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `topk(10, count by (__name__, job)({__name__!=""}))`
+
+</details>
+
+<br />
+
+#### prometheus: samples_scraped
+
+<p class="subtitle">Samples scraped by job</p>
+
+The number of samples scraped after metric relabeling was applied by this Prometheus instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(job) (scrape_samples_post_metric_relabeling{job!=""})`
+
+</details>
+
+<br />
+
 #### prometheus: prometheus_rule_eval_duration
 
 <p class="subtitle">Average prometheus rule group evaluation duration over 10m by rule group</p>
@@ -18746,7 +18788,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18767,7 +18809,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-failures) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18921,6 +18963,64 @@ Query: `increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[10m]
 
 <br />
 
+### Prometheus: Google Managed Prometheus (only available for `sourcegraph/prometheus-gcp`)
+
+#### prometheus: samples_exported
+
+<p class="subtitle">Samples exported to GMP every 5m</p>
+
+A high value indicates that large numbers of samples are being exported, potentially impacting costs.
+In [Sourcegraph Cloud centralized observability](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/), high values can be investigated by:
+
+- going to per-instance self-hosted dashboards for Prometheus in (Internals -> Metrics cardinality).
+- querying for `monitoring_googleapis_com:billing_samples_ingested`, for example:
+
+```
+topk(10, sum by(metric_type, project_id) (rate(monitoring_googleapis_com:billing_samples_ingested[1h])))
+```
+
+This is required because GMP does not allow queries aggregating on `__name__`
+
+See [Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_samples_sent_total`.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(gcm_export_samples_sent_total[5m])`
+
+</details>
+
+<br />
+
+#### prometheus: pending_exports
+
+<p class="subtitle">Samples pending export to GMP per minute</p>
+
+A high value indicates exports are taking a long time.
+
+See [`gmc_*` Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_pending_requests`.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum_over_time(gcm_export_pending_requests[1m])`
+
+</details>
+
+<br />
+
 ### Prometheus: Container monitoring (not available on server)
 
 #### prometheus: container_missing
@@ -18939,7 +19039,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18958,7 +19058,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^prometheus.*"}) > 
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18977,7 +19077,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}`
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18999,7 +19099,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19020,7 +19120,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) 
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19039,7 +19139,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19058,7 +19158,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19077,7 +19177,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prom
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19099,7 +19199,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -19120,7 +19220,7 @@ Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
 
 Refer to the [alerts reference](./alerts.md#prometheus-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -24739,16 +24839,16 @@ To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` 
 
 <p class="subtitle">Spans received per receiver per minute</p>
 
-								Shows the rate of spans accepted by the configured reveiver
-								
-								A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
-								The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
-								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
-								
-								See the Exporters section see spans that have made it through the pipeline and are exported.
-								
-								Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
-								https://opentelemetry.io/docs/collector/configuration/#processors.
+Shows the rate of spans accepted by the configured reveiver
+
+A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
+The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
+For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+
+See the Exporters section see spans that have made it through the pipeline and are exported.
+
+Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
+https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 
@@ -24769,12 +24869,7 @@ Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans[1m]))`
 
 <p class="subtitle">Spans refused per receiver</p>
 
-								Shows the amount of spans that have been refused by a receiver.
-								
-								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-								
- 								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
-								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+
 
 Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-refused) for 1 alert related to this panel.
 
@@ -24797,12 +24892,12 @@ Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))`
 
 <p class="subtitle">Spans exported per exporter per minute</p>
 
-								Shows the rate of spans being sent by the exporter
-								
-								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+Shows the rate of spans being sent by the exporter
+
+A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
+The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24823,9 +24918,9 @@ Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans[1m]))`
 
 <p class="subtitle">Span export failures by exporter</p>
 
-								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-export-failures) for 1 alert related to this panel.
 
@@ -24848,7 +24943,7 @@ Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
 
 <p class="subtitle">Cpu usage of the collector</p>
 
-								Shows the cpu usage of the OpenTelemetry collector
+Shows CPU usage as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
@@ -24869,7 +24964,7 @@ Query: `sum by (job) (rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m]))`
 
 <p class="subtitle">Memory allocated to the otel collector</p>
 
-								Shows the memory Resident Set Size (RSS) allocated to the OpenTelemetry collector
+Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
@@ -24890,13 +24985,13 @@ Query: `sum by (job) (rate(otelcol_process_memory_rss{job=~"^.*"}[1m]))`
 
 <p class="subtitle">Memory used by the collector</p>
 
-								Shows how much memory is being used by the otel collector.
-								
-								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
-								* Spans failing to be sent and the exporter is configured to retry
-								* A high batch count by using a batch processor
-								
-								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
+Shows how much memory is being used by the otel collector.
+
+* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
+* Spans failing to be sent and the exporter is configured to retry
+* A high batch count by using a batch processor
+
+For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 
