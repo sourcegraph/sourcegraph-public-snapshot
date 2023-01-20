@@ -7,4 +7,5 @@ fi
 
 docker run --privileged \
   -v "$PWD":/work \
+  # -v "$HOME/scratch/tmp":/tmp \ # Useful for debugging
   cgr.dev/chainguard/melange build $1 --arch x86_64 --signing-key keys/melange.rsa
