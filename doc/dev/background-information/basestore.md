@@ -161,9 +161,12 @@ Here are a few examples on how to use them:
 ```go
 func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	// Scan int
-	totalCount, found, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM horses;")))
+	totalCount, found, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM horses WHERE name = 'chonky horse';")))
 	if err != nil {
 		return err
+	}
+	if !found {
+		fmt.Println("no chonky horse")
 	}
 
 	// Scan []string
