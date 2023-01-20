@@ -1,4 +1,4 @@
-package queue
+package worker
 
 import (
 	"bytes"
@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	executor2 "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -93,47 +92,6 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	}
 
 	return c.client.DoAndDecode(ctx, req, &job)
-}
-
-func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry executor2.ExecutionLogEntry) (entryID int, err error) {
-	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queueName),
-		otlog.Int("jobID", jobID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", queueName), executor.AddExecutionLogEntryRequest{
-		ExecutorName:      c.options.ExecutorName,
-		JobID:             jobID,
-		ExecutionLogEntry: entry,
-	})
-	if err != nil {
-		return entryID, err
-	}
-
-	_, err = c.client.DoAndDecode(ctx, req, &entryID)
-	return entryID, err
-}
-
-func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry executor2.ExecutionLogEntry) (err error) {
-	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queueName),
-		otlog.Int("jobID", jobID),
-		otlog.Int("entryID", entryID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", queueName), executor.UpdateExecutionLogEntryRequest{
-		ExecutorName:      c.options.ExecutorName,
-		JobID:             jobID,
-		EntryID:           entryID,
-		ExecutionLogEntry: entry,
-	})
-	if err != nil {
-		return err
-	}
-
-	return c.client.DoAndDrop(ctx, req)
 }
 
 func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) (err error) {

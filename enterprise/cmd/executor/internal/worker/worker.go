@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
@@ -55,7 +55,7 @@ type Options struct {
 	WorkerOptions workerutil.WorkerOptions
 
 	// QueueOptions configures the client that interacts with the queue API.
-	QueueOptions queue.Options
+	QueueOptions worker.Options
 
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions
@@ -84,7 +84,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
 
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore, err := queue.New(observationCtx, options.QueueOptions, gatherer)
+	queueStore, err := worker.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
 		return nil, errors.Wrap(err, "building queue store")
 	}
@@ -116,7 +116,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 // For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
 // in dev environments where the executor may start up before the frontend. This method returns true
 // after a ping is successful and returns false if a user signal is received.
-func connectToFrontend(logger log.Logger, queueStore *queue.Client, options Options) bool {
+func connectToFrontend(logger log.Logger, queueStore *worker.Client, options Options) bool {
 	start := time.Now()
 	logger.Debug("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
 

@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -23,8 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
-	t := queue.TelemetryOptions{
+func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) worker.TelemetryOptions {
+	t := worker.TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
 		ExecutorVersion: version.Version(),
@@ -93,7 +93,7 @@ func execOutput(ctx context.Context, name string, args ...string) (string, error
 	return strings.TrimSpace(buf.String()), nil
 }
 
-func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
+func apiWorkerOptions(c *config.Config, queueTelemetryOptions worker.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
 		KeepWorkspaces:     c.KeepWorkspaces,
@@ -167,12 +167,12 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 	}
 }
 
-func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
-	return queue.Options{
+func queueOptions(c *config.Config, telemetryOptions worker.TelemetryOptions) worker.Options {
+	return worker.Options{
 		ExecutorName:      c.WorkerHostname,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
-		ResourceOptions: queue.ResourceOptions{
+		ResourceOptions: worker.ResourceOptions{
 			NumCPUs:   c.JobNumCPUs,
 			Memory:    c.JobMemory,
 			DiskSpace: c.FirecrackerDiskSpace,

@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	worker2 "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -34,7 +34,7 @@ func StandaloneRunRun(ctx context.Context, logger log.Logger, cfg *config.Config
 	observationCtx := observation.NewContext(logger)
 
 	// Determine telemetry data.
-	queueTelemetryOptions := func() queue.TelemetryOptions {
+	queueTelemetryOptions := func() worker2.TelemetryOptions {
 		// Run for at most 5s to get telemetry options.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

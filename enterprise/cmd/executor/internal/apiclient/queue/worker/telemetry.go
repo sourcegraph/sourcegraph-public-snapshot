@@ -1,4 +1,4 @@
-package queue
+package worker
 
 type TelemetryOptions struct {
 	OS              string
