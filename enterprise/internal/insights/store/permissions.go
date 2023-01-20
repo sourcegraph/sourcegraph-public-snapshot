@@ -71,17 +71,19 @@ func (i *InsightPermStore) GetUserPermissions(ctx context.Context) ([]int, []int
 	db := database.NewDBWith(i.logger, i.Store)
 	orgStore := db.Orgs()
 
-	var orgIds []int
+	currentActor := actor.FromContext(ctx)
+	if !currentActor.IsAuthenticated() {
+		return nil, nil, errors.New("user is unauthenticated")
+	}
 
-	userId := actor.FromContext(ctx).UID
-	if userId != 0 {
-		orgs, err := orgStore.GetByUserID(ctx, userId)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "GetByUserID")
-		}
-		for _, org := range orgs {
-			orgIds = append(orgIds, int(org.ID))
-		}
+	var orgIds []int
+	userId := currentActor.UID // UID is only equal to 0 if the actor is unauthenticated.
+	orgs, err := orgStore.GetByUserID(ctx, userId)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "GetByUserID")
+	}
+	for _, org := range orgs {
+		orgIds = append(orgIds, int(org.ID))
 	}
 
 	return []int{int(userId)}, orgIds, nil
