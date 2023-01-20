@@ -112,7 +112,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, err
 	}
 	var nextPageProjects *gerrit.ListProjectsResponse
-	for nextPage == true {
+	for nextPage {
 		queryArgs.Cursor.Page++
 		nextPageProjects, nextPage, err = client.ListProjects(ctx, queryArgs)
 		if err != nil {
