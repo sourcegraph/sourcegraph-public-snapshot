@@ -13,7 +13,7 @@ export const SourcegraphPage = sourcegraphPlugin.provide(
   createRoutableExtension({
     name: 'SourcegraphPage',
     component: () =>
-      import('./components/ExampleComponent').then(m => m.ExampleComponent),
+      import('./components/CatalogMonitor').then(m => m.CatalogMonitor),
     mountPoint: rootRouteRef,
   }),
 );
