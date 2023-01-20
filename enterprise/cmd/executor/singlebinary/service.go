@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
+	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -26,6 +27,8 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg env.Config) error {
 	config := cfg.(*config.Config)
+	// Always use the in-memory secret.
+	config.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {

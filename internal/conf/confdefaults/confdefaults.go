@@ -5,7 +5,11 @@
 // pkg/database/confdb, which we have a linter to protect against.
 package confdefaults
 
-import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+import (
+	"github.com/russellhaering/gosaml2/uuid"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+)
 
 // TODO(slimsag): consider moving these into actual json files for improved
 // editing.
@@ -71,6 +75,10 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 }`,
 }
 
+// SingleProgramInMemoryExecutorPassword is an in-memory generated shared access token for communication
+// between the bundled executor and the publicly-facing executor API.
+var SingleProgramInMemoryExecutorPassword = uuid.NewV4().String()
+
 // SingleProgram is the default configuration for the single-program (Go static binary)
 // distribution.
 var SingleProgram = conftypes.RawUnified{
@@ -83,6 +91,7 @@ var SingleProgram = conftypes.RawUnified{
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"executors.accessToken": "` + SingleProgramInMemoryExecutorPassword + `",
 }`,
 }
 
