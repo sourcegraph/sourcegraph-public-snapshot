@@ -181,14 +181,14 @@ describe('Code insight create insight page', () => {
                                     },
                                 ],
                             },
+                            repositoryDefinition: {
+                                repositories: ['github.com/sourcegraph/sourcegraph'],
+                                __typename: 'InsightRepositoryScope',
+                            },
                             dataSeriesDefinitions: [
                                 {
                                     seriesId: '1',
                                     query: 'test series #1 query',
-                                    repositoryScope: {
-                                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
                                     timeScope: {
                                         unit: TimeIntervalStepUnit.MONTH,
                                         value: 2,
@@ -202,10 +202,6 @@ describe('Code insight create insight page', () => {
                                 {
                                     seriesId: '1',
                                     query: 'test series #2 query',
-                                    repositoryScope: {
-                                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
                                     timeScope: {
                                         unit: TimeIntervalStepUnit.MONTH,
                                         value: 2,

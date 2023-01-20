@@ -36,7 +36,7 @@ func TestVirtualFile(t *testing.T) {
 		}
 	})
 	t.Run("Content", func(t *testing.T) {
-		have, err := vfr.Content(context.Background())
+		have, err := vfr.Content(context.Background(), &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,7 +54,7 @@ func TestVirtualFile(t *testing.T) {
 		}
 	})
 	t.Run("RichHTML", func(t *testing.T) {
-		have, err := vfr.RichHTML(context.Background())
+		have, err := vfr.RichHTML(context.Background(), &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}

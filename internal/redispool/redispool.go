@@ -75,7 +75,7 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 // rather than having it in-memory only.
 //
 // In Kubernetes the service is called redis-cache.
-var Cache = &redis.Pool{
+var Cache = RedisKeyValue(&redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
 	Dial: func() (redis.Conn, error) {
@@ -85,13 +85,13 @@ var Cache = &redis.Pool{
 		_, err := c.Do("PING")
 		return err
 	},
-}
+})
 
 // Store is a redis configured for persisting data. Do not abuse this pool,
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.
-var Store = &redis.Pool{
+var Store = RedisKeyValue(&redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
@@ -101,4 +101,4 @@ var Store = &redis.Pool{
 	Dial: func() (redis.Conn, error) {
 		return dialRedis(addrStore)
 	},
-}
+})

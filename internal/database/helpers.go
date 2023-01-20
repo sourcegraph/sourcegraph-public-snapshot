@@ -10,13 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type OrderByDirection string
-
-var (
-	AscendingOrderByDirection  OrderByDirection = "ASC"
-	DescendingOrderByDirection OrderByDirection = "DESC"
-)
-
 // LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
 // structs that need to perform SQL queries with LIMIT and OFFSET.
 type LimitOffset struct {
@@ -116,4 +109,22 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 	}
 
 	return queryArgs, nil
+}
+
+// Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
+func (p *PaginationArgs) Clone() *PaginationArgs {
+	copyIntPtr := func(n *int) *int {
+		if n == nil {
+			return nil
+		}
+
+		c := *n
+		return &c
+	}
+	return &PaginationArgs{
+		First:  copyIntPtr(p.First),
+		Last:   copyIntPtr(p.Last),
+		After:  copyIntPtr(p.After),
+		Before: copyIntPtr(p.Before),
+	}
 }

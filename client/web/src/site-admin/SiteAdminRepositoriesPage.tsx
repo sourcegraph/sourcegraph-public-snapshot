@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { mdiCloudDownload, mdiCog } from '@mdi/js'
+import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -72,6 +72,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
+                <Tooltip content="Repository code graph data">
+                    <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                    </Button>
+                </Tooltip>{' '}
                 <Tooltip content="Repository settings">
                     <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
@@ -191,6 +196,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 tooltip: 'Show only repositories that have failed to fetch or clone',
                 args: { failedFetch: true },
             },
+            {
+                label: 'Corrupted',
+                value: 'corrupted',
+                tooltip: 'Show only repositories which are corrupt',
+                args: { corrupted: true },
+            },
         ],
     },
 ]
@@ -239,7 +250,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         if (!data) {
             return undefined
         }
-        return [
+        const items: ValueLegendListProps['items'] = [
             {
                 value: data.repositoryStats.total,
                 description: 'Repositories',
@@ -288,6 +299,18 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
+        if (data.repositoryStats.corrupted > 0) {
+            items.push({
+                value: data.repositoryStats.corrupted,
+                description: 'Corrupted',
+                color: 'var(--danger)',
+                position: 'right',
+                tooltip:
+                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
+                filter: { name: 'status', value: 'corrupted' },
+            })
+        }
+        return items
     }, [data])
 
     const {

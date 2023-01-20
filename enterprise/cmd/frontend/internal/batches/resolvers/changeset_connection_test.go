@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -116,26 +117,26 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset1.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset1.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset2.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset2.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
-			ID:         string(marshalChangesetID(changeset3.ID)),
+			ID:         string(bgql.MarshalChangesetID(changeset3.ID)),
 			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename: "HiddenExternalChangeset",
-			ID:       string(marshalChangesetID(changeset4.ID)),
+			ID:       string(bgql.MarshalChangesetID(changeset4.ID)),
 		},
 	}
 

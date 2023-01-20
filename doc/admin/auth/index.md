@@ -6,6 +6,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
+- [Bitbucket Cloud](#bitbucket-cloud)
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -47,7 +48,7 @@ enable sign-in via multiple services. Identities from different providers will b
 Sourcegraph user by comparing the user's verified email address to the email address from the
 external identity provider.
 
-> _NOTE: If OAuth is the only sign-in method available on sign-out, a new OAuth sign-in will be attempted immediately upon a redirect to the sign-in page. If it is necessary to sign-out and have persistent access to the sign-in page, enable `builtin` sign-in in addition to your OAuth sign-in._
+> NOTE: If OAuth is the only sign-in method available on sign-out, a new OAuth sign-in will be attempted immediately upon a redirect to the sign-in page. If it is necessary to sign-out and have persistent access to the sign-in page, enable `builtin` sign-in in addition to your OAuth sign-in.
 
 ## Builtin password authentication
 
@@ -76,6 +77,7 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
     "auth.providers": [{ "type": "builtin", "allowSignup": true }]
   }
 ```
+> NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
 
 
 ### Account lockout
@@ -207,7 +209,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 
   When combined with `"allowSignup": true`, only members of the allowed teams can create their accounts in Sourcegraph via GitHub authentication.
 
-  If set with `"allowSignup": false` or if `allowSignup` is unset, an admim should first create the new users accounts so that they can login with GitHub.
+  If set with `"allowSignup": false` or if `allowSignup` is unset, an admin should first create the new users accounts so that they can login with GitHub.
 
   In case both `allowOrgs` and `allowOrgsMap` filters are configured, org membership (`allowOrgs`) will be checked first. Only if the user doesn't belong to any of the listed organizations then team membership (`allowOrgsMap`) will be checked.
 
@@ -294,7 +296,7 @@ You can use the following filters to control how users can create accounts and s
 
   When empty or unset, no restrictions will be applied.
 
-  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+  If combined with `"allowSignup": false`, an admin should first create the user account so that the user can sign in with GitLab.
 
   If combined with `"allowSignup": true` or with `allowSignup` unset, only members of  the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
 
@@ -309,6 +311,31 @@ You can use the following filters to control how users can create accounts and s
     }
   ```
 
+## Bitbucket Cloud
+[Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+Sourcegraph instance:
+
+- Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
+- Permissions: 
+  - `Account`: `Read`
+  - `Repositories`: `Read` (if [permissions syncing](../repo/permissions.md) is desired)
+
+After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
+Then add the following lines to your [site configuration](config/site_config.md):
+```json
+{
+    // ...
+    "auth.providers": [
+      {
+        "type": "bitbucketcloud",
+        "displayName": "Bitbucket Cloud",
+        "clientKey": "replace-with-the-oauth-consumer-key",
+        "clientSecret": "replace-with-the-oauth-consumer-secret",
+        "allowSignup": false // If not set, it defaults to true allowing any Bitbucket Cloud user with access to your instance to sign up.
+      }
+    ]
+```
+Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
 
 ## OpenID Connect
 
@@ -341,7 +368,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
       "type": "openidconnect",
       "issuer": "https://oidc.example.com",
       "clientID": "my-client-id",
-      "configID":"my-config-id" //An arbitrary value that will be used to reference to this auth provider within the site config 
+      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config 
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
     }

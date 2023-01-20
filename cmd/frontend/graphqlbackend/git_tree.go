@@ -60,12 +60,17 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	l := make([]*GitTreeEntryResolver, 0, len(entries))
 	for _, entry := range entries {
 		// Apply any additional filtering
+
 		if filter == nil || filter(entry) {
-			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, r.commit, entry))
+			opts := GitTreeEntryResolverOpts{
+				commit: r.Commit(),
+				stat:   entry,
+			}
+			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, opts))
 		}
 	}
 
-	// Update after filtering
+	// Update endLine filtering
 	hasSingleChild := len(l) == 1
 	for i := range l {
 		l[i].isSingleChild = &hasSingleChild

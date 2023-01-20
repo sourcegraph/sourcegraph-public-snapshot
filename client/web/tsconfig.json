@@ -11,16 +11,45 @@
     "outDir": "out",
   },
   "references": [
-    { "path": "../shared" },
-    { "path": "../branded" },
-    { "path": "../../schema" },
-    { "path": "../storybook" },
-    { "path": "../http-client" },
-    { "path": "../codeintellify" },
-    { "path": "../common" },
-    { "path": "../client-api" },
-    { "path": "../observability-client" },
-    { "path": "../wildcard" },
+    {
+      "path": "../../schema",
+    },
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../observability-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../storybook",
+    },
+    {
+      "path": "../testing",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],

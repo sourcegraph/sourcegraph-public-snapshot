@@ -165,6 +165,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $indexed: Boolean
                 $notIndexed: Boolean
                 $failedFetch: Boolean
+                $corrupted: Boolean
                 $cloneStatus: CloneStatus
                 $orderBy: RepositoryOrderBy
                 $descending: Boolean
@@ -176,6 +177,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     indexed: $indexed
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
+                    corrupted: $corrupted
                     cloneStatus: $cloneStatus
                     orderBy: $orderBy
                     descending: $descending
@@ -197,6 +199,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             failedFetch: args.failedFetch ?? false,
+            corrupted: args.corrupted ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
@@ -282,7 +285,44 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
+export const BACKGROUND_JOBS = gql`
+    query BackgroundJobs($recentRunCount: Int) {
+        backgroundJobs(recentRunCount: $recentRunCount) {
+            nodes {
+                name
+
+                routines {
+                    name
+                    type
+                    description
+                    intervalMs
+                    instances {
+                        hostName
+                        lastStartedAt
+                        lastStoppedAt
+                    }
+                    recentRuns {
+                        at
+                        hostName
+                        durationMs
+                        errorMessage
+                    }
+                    stats {
+                        since
+                        runCount
+                        errorCount
+                        minDurationMs
+                        avgDurationMs
+                        maxDurationMs
+                    }
+                }
+            }
+        }
+    }
+`
+
 export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
+export const BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -701,6 +741,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            corrupted
             indexed
         }
     }

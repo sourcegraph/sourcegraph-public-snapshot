@@ -11,7 +11,7 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     SearchMatch,
@@ -63,16 +63,20 @@ export interface StreamingSearchResultsListProps
      */
     resultClassName?: string
 
-    /**
-     * For A/B testing on Sourcegraph.com. To be removed at latest by 12/2022.
-     */
-    smartSearchEnabled?: boolean
-
     prefetchFile?: FilePrefetcher
 
     prefetchFileEnabled?: boolean
 
     enableKeyboardNavigation?: boolean
+
+    showQueryExamplesOnNoResultsPage?: boolean
+
+    /*
+     * For updating the query from the QueryExamples on NoResultsPage. Only
+     * needed if showQueryExamplesOnNoResultsPage is true.
+     */
+    setQueryState?: (query: QueryState) => void
+    selectedSearchContextSpec?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -95,6 +99,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFileEnabled,
     enableKeyboardNavigation,
     history,
+    showQueryExamplesOnNoResultsPage,
+    setQueryState,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -290,6 +296,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 assetsRoot={assetsRoot}
+                                showQueryExamples={showQueryExamplesOnNoResultsPage}
+                                setQueryState={setQueryState}
                             />
                         )}
                     </>
