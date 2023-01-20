@@ -130,14 +130,14 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 
 // Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
-	c := poolGet()
-	defer c.Close()
-
 	if !utf8.Valid([]byte(key)) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
 	if r.ttlSeconds == 0 {
+		c := poolGet()
+		defer c.Close()
+
 		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)

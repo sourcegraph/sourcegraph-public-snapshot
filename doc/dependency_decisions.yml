@@ -488,3 +488,10 @@
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:26:01.138835000 Z
+- - :license
+  - github.com/xi2/xz
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-01-12 01:20:17.504279000 Z

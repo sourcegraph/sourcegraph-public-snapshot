@@ -1,31 +1,25 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
-import { SearchPatternType } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
-
-import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
+import { exampleQueryColumns } from './QueryExamples.constants'
+import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
-import styles from './QueryExamplesHomepage.module.scss'
+import styles from './QueryExamples.module.scss'
 
-export interface QueryExamplesHomepageProps extends TelemetryProps {
+export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
-    queryState: QueryState
+    queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
-    authenticatedUser?: AuthenticatedUser | null
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -46,13 +40,12 @@ export const queryToTip = (id: string | undefined): Tip | null => {
     return null
 }
 
-export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
-    queryState,
+    queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
-    authenticatedUser,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
@@ -111,43 +104,10 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
         ]
     )
 
-    const [cloudCtaVariant, setCloudCtaVariant] = useState<CloudCtaBanner['variant'] | string>('filled')
-    useEffect(() => {
-        const searchParams = new URL(window.location.href).searchParams
-        const uxParam = searchParams.get('cta')
-        const allowedVariants: { [key: string]: string | undefined } = {
-            a: 'filled',
-            b: 'underlined',
-            c: 'outlined',
-            d: undefined,
-        }
-
-        if (uxParam && Object.keys(allowedVariants).includes(uxParam)) {
-            setCloudCtaVariant(allowedVariants[uxParam])
-        }
-    }, [])
-
     return (
         <div>
             {isSourcegraphDotCom ? (
                 <>
-                    <div className="d-table mx-auto">
-                        <CloudCtaBanner className="mb-5" variant={cloudCtaVariant}>
-                            To search across your private repositories,{' '}
-                            <Link
-                                to={buildCloudTrialURL(authenticatedUser)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() =>
-                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeUnderSearch' })
-                                }
-                            >
-                                try Sourcegraph Cloud
-                            </Link>
-                            .
-                        </CloudCtaBanner>
-                    </div>
-
                     <Tabs size="medium" onChange={handleTabChange}>
                         <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
                             <Tab key="Code search basics">Code search basics</Tab>

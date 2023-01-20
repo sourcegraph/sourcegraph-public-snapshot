@@ -1,6 +1,6 @@
 golang 1.19.3
 nodejs 16.18.1
-fd 7.4.0
+fd 8.6.0
 shfmt 3.5.0
 shellcheck 0.7.1
 kubectl 1.21.7
