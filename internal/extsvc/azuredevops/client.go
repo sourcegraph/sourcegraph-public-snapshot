@@ -130,7 +130,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 	case *auth.BasicAuth:
 		break
 	default:
-		return nil, fmt.Errorf("authenticator type unsupported for %s clients: %s", "Azure DevOps Client", a)
+		return nil, fmt.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
 	return &Client{
