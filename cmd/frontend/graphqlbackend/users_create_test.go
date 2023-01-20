@@ -86,7 +86,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 					mutation {
-						createUser(username: "alice",email:"alice@sourcegraph.com") {
+						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
 							user {
 								id
 							}
@@ -136,7 +136,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 					mutation {
-						createUser(username: "alice",email:"alice@sourcegraph.com") {
+						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
 							user {
 								id
 							}
@@ -164,5 +164,62 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 
 		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.Called(t, userEmails.SetLastVerificationFunc)
+	})
+
+	t.Run("with SMTP enabled, without verifiedEmail", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				EmailSmtp: &schema.SMTPServerConfig{},
+			},
+		})
+
+		var sentMessage txemail.Message
+		txemail.MockSend = func(_ context.Context, message txemail.Message) error {
+			sentMessage = message
+			return nil
+		}
+		t.Cleanup(func() {
+			conf.Mock(nil)
+			txemail.MockSend = nil
+		})
+
+		db, authz := makeUsersCreateTestDB()
+		userEmails := database.NewMockUserEmailsStore()
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+					mutation {
+						createUser(username: "alice",email:"alice@sourcegraph.com") {
+							user {
+								id
+							}
+							resetPasswordURL
+						}
+					}
+				`,
+				ExpectedResult: `
+					{
+						"createUser": {
+							"user": {
+								"id": "VXNlcjox"
+							},
+							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
+						}
+					}
+				`,
+			},
+		})
+
+		// should not have tried to issue email verification
+		data := sentMessage.Data.(userpasswd.SetPasswordEmailTemplateData)
+		assert.Contains(t, data.URL, "http://example.com/reset-url")
+		assert.NotContains(t, data.URL, "&emailVerifyCode=")
+		assert.NotContains(t, data.URL, "&email=")
+
+		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.NotCalled(t, userEmails.SetLastVerificationFunc)
 	})
 }

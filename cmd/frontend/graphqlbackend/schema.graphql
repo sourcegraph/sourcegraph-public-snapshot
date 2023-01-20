@@ -188,6 +188,10 @@ type Mutation {
         The new user's optional email address. If given, it must be verified by the user.
         """
         email: String
+        """
+        Whether or not to mark the provided email address as verified. Defaults to true.
+        """
+        verifiedEmail: Boolean
     ): CreateUserResult!
     """
     Randomize a user's password so that they need to reset it before they can sign in again.

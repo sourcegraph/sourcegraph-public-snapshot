@@ -125,7 +125,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 {this.state.createUserResult ? (
                     <Alert variant="success">
                         <Text>
-                            Account created for <strong>{this.state.username}</strong>.
+                            Account created for <Link to={`/users/${this.state.username}`}>{this.state.username}</Link>.
                         </Text>
                         {postCreateText(this.state.createUserResult, !!this.state.email)}
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">

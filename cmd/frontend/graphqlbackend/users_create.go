@@ -17,8 +17,9 @@ import (
 )
 
 func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
-	Username string
-	Email    *string
+	Username      string
+	Email         *string
+	VerifiedEmail *bool
 }) (*createUserResult, error) {
 	// 🚨 SECURITY: Only site admins can create user accounts.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -34,6 +35,13 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	// enabled and we are allowed to reset passwords (which will become the primary
 	// mechanism for verifying this newly created email).
 	needsEmailVerification := email != "" && conf.CanSendEmail()
+	// For backwards-compatibility, allow this behaviour to be confiugred based
+	// on the VerifiedEmail argument. If not provided, or set to true, we
+	// forcibly mark the email as not needing verification.
+	if args.VerifiedEmail == nil || *args.VerifiedEmail {
+		needsEmailVerification = false
+	}
+
 	logger := r.logger.Scoped("createUser", "create user handler").With(
 		log.Bool("needsEmailVerification", needsEmailVerification))
 
