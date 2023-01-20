@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"net/url"
 	"strings"
 
@@ -51,6 +52,10 @@ func cloneURL(parsed any, logger log.Logger, kind string, repo *types.Repo) (str
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {
 			return awsCodeCloneURL(logger, r, t), nil
+		}
+	case *schema.AzureDevOpsConnection:
+		if r, ok := repo.Metadata.(*azuredevops.Repository); ok {
+			return azureDevOpsCloneURL(logger, r, t), nil
 		}
 	case *schema.BitbucketServerConnection:
 		if r, ok := repo.Metadata.(*bitbucketserver.Repo); ok {
@@ -125,6 +130,17 @@ func awsCodeCloneURL(logger log.Logger, repo *awscodecommit.Repository, cfg *sch
 	password := cfg.GitCredentials.Password
 
 	u.User = url.UserPassword(username, password)
+	return u.String()
+}
+
+func azureDevOpsCloneURL(logger log.Logger, repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) string {
+	u, err := url.Parse(repo.CloneURL)
+	if err != nil {
+		logger.Warn("Error adding authentication to Azure DevOps repo remote URL.", log.String("url", cfg.Url), log.Error(err))
+		return cfg.Url
+	}
+	u.User = url.UserPassword(cfg.Username, cfg.Token)
+
 	return u.String()
 }
 

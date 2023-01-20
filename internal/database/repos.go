@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"net"
 	"os"
 	"strconv"
@@ -543,6 +544,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeAzureDevOps:
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
 		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:

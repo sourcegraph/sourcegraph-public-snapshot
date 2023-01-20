@@ -201,6 +201,7 @@ func (e *externalServiceStore) Done(err error) error {
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
 	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
 	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
 	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
