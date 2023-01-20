@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -21,17 +20,20 @@ import (
 
 // ExportHandler handles retrieving and exporting code insights data.
 type ExportHandler struct {
-	logger log.Logger
-	store  *store.Store
+	seriesStore  *store.Store
+	permStore    *store.InsightPermStore
+	insightStore *store.InsightStore
 }
 
 func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) *ExportHandler {
 	insightPermStore := store.NewInsightPermissionStore(db)
-	insightsStore := store.New(insightsDB, insightPermStore)
+	seriesStore := store.New(insightsDB, insightPermStore)
+	insightsStore := store.NewInsightStore(insightsDB)
 
 	return &ExportHandler{
-		store:  insightsStore,
-		logger: log.Scoped("Code insights data export", "retrieves and exports code insights data"),
+		seriesStore:  seriesStore,
+		permStore:    insightPermStore,
+		insightStore: insightsStore,
 	}
 }
 
@@ -39,10 +41,9 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 
-		archive, err := exportCodeInsightData(r.Context(), h.store, id)
+		archive, err := h.exportCodeInsightData(r.Context(), id)
 		if err != nil {
-			h.logger.Error("exporting data errored", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("failed to export data: %v", err), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/zip")
@@ -50,8 +51,7 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 
 		_, err = w.Write(archive.data)
 		if err != nil {
-			h.logger.Error("writing archive errored", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("failed to write data: %v", err), http.StatusInternalServerError)
 		}
 	}
 }
@@ -61,17 +61,35 @@ type codeInsightsDataArchive struct {
 	data        []byte
 }
 
-func exportCodeInsightData(ctx context.Context, store *store.Store, id string) (*codeInsightsDataArchive, error) {
+func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*codeInsightsDataArchive, error) {
 	var insightViewId string
 	if err := relay.UnmarshalSpec(graphql.ID(id), &insightViewId); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal insight view ID")
 	}
+
+	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
+	if err != nil {
+		return nil, errors.New("could not validate user permissions")
+	}
+
+	visibleViewSeries, err := h.insightStore.GetAll(ctx, store.InsightQueryArgs{
+		UniqueIDs:            []string{insightViewId},
+		UserID:               userID,
+		OrgID:                orgIDs,
+		WithoutAuthorization: false,
+	})
+	if err != nil {
+		return nil, errors.New("could not fetch insight information")
+	}
+	// 🚨 SECURITY: if the user context doesn't get any response here that means they should not be able to access this insight.
+	if len(visibleViewSeries) == 0 {
+		return nil, errors.New("insight not found")
+	}
+
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
-	// We don't have access to the insight view title yet. The `id` string will be what makes the most sense to the user
-	// at this point (the id from the url parameter).
-	dataFile, err := zw.Create(fmt.Sprintf("data-%s.csv", id))
+	dataFile, err := zw.Create(fmt.Sprintf("%s.csv", visibleViewSeries[0].Title))
 	if err != nil {
 		return nil, err
 	}
@@ -93,9 +111,9 @@ func exportCodeInsightData(ctx context.Context, store *store.Store, id string) (
 		return nil, errors.Wrap(err, "failed to write csv header")
 	}
 
-	dataPoints, err := store.GetAllDataForInsightViewID(ctx, insightViewId)
+	dataPoints, err := h.seriesStore.GetAllDataForInsightViewID(ctx, insightViewId)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch all data for insight view with id %s", insightViewId)
+		return nil, errors.Wrap(err, "failed to fetch all data for insight")
 	}
 
 	var insightName string

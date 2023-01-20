@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -17,6 +18,18 @@ import (
 type InsightPermStore struct {
 	logger log.Logger
 	*basestore.Store
+}
+
+func NewInsightPermissionStore(db database.DB) *InsightPermStore {
+	return &InsightPermStore{
+		logger: log.Scoped("InsightPermStore", ""),
+		Store:  basestore.NewWithHandle(db.Handle()),
+	}
+}
+
+type InsightPermissionStore interface {
+	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
+	GetUserPermissions(ctx context.Context) (userIDs []int, orgIDs []int, err error)
 }
 
 // GetUnauthorizedRepoIDs returns a list of repo IDs that the current user does *not* have access to. The primary
@@ -51,17 +64,27 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 }
 
 const fetchUnauthorizedReposSql = `
-	SELECT id FROM repo WHERE NOT`
+SELECT id FROM repo WHERE NOT
+`
 
-func NewInsightPermissionStore(db database.DB) *InsightPermStore {
-	return &InsightPermStore{
-		logger: log.Scoped("InsightPermStore", ""),
-		Store:  basestore.NewWithHandle(db.Handle()),
+func (i *InsightPermStore) GetUserPermissions(ctx context.Context) ([]int, []int, error) {
+	db := database.NewDBWith(i.logger, i.Store)
+	orgStore := db.Orgs()
+
+	var orgIds []int
+
+	userId := actor.FromContext(ctx).UID
+	if userId != 0 {
+		orgs, err := orgStore.GetByUserID(ctx, userId)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "GetByUserID")
+		}
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
 	}
-}
 
-type InsightPermissionStore interface {
-	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
+	return []int{int(userId)}, orgIds, nil
 }
 
 type InsightViewGrant struct {
