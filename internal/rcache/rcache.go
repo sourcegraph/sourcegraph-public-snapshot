@@ -52,10 +52,7 @@ func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	c := poolGet()
-	defer c.Close()
-
-	b, err := redis.Bytes(c.Do("GET", r.rkeyPrefix()+key))
+	b, err := pool.Get(r.rkeyPrefix() + key).Bytes()
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
@@ -70,10 +67,7 @@ func (r *Cache) Set(key string, b []byte) {
 	}
 
 	if r.ttlSeconds == 0 {
-		c := poolGet()
-		defer c.Close()
-
-		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
+		err := pool.Set(r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
@@ -83,20 +77,19 @@ func (r *Cache) Set(key string, b []byte) {
 }
 
 func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
-	c := poolGet()
-	defer c.Close()
-
 	if !utf8.Valid([]byte(key)) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
-	_, err := c.Do("SETEX", r.rkeyPrefix()+key, ttl, b)
+	err := pool.SetEx(r.rkeyPrefix()+key, ttl, b)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 	}
 }
 
 func (r *Cache) Increase(key string) {
+	// TODO(keegan) this logs a warning when redis is disabled. Currently only
+	// used by auth/userpasswd lockouts.
 	c := poolGet()
 	defer func() { _ = c.Close() }()
 
@@ -118,6 +111,8 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
+	// TODO(keegan) this logs a warning when redis is disabled. Currently only
+	// used by auth/userpasswd lockouts.
 	c := poolGet()
 	defer func() { _ = c.Close() }()
 
@@ -134,29 +129,25 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 // If the key already exists and is a different type, an error is returned.
 // If the hash key does not exist, it is created. If it exists, the value is overwritten.
 func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
-	c := poolGet()
-	defer c.Close()
-	_, err := c.Do("HSET", r.rkeyPrefix()+key, hashKey, hashValue)
-	return err
+	return pool.HSet(r.rkeyPrefix()+key, hashKey, hashValue)
 }
 
 // GetHashItem gets a key in a HASH.
 func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
-	c := poolGet()
-	defer c.Close()
-	return redis.String(c.Do("HGET", r.rkeyPrefix()+key, hashKey))
+	return pool.HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
-	c := poolGet()
-	defer c.Close()
-	return redis.StringMap(c.Do("HGETALL", r.rkeyPrefix()+key))
+	return pool.HGetAll(r.rkeyPrefix() + key).StringMap()
 }
 
 // AddToList adds a value to the end of a list.
 // If the list does not exist, it is created.
 func (r *Cache) AddToList(key string, value string) error {
+	// TODO(keegan) The only use of AddToList looks like it wants a queue (in
+	// fact it looks like it really wants a FIFOList). So will migrate that
+	// instead of supporting RPUSH in KV.
 	c := poolGet()
 	defer c.Close()
 	_, err := c.Do("RPUSH", r.rkeyPrefix()+key, value)
@@ -165,27 +156,17 @@ func (r *Cache) AddToList(key string, value string) error {
 
 // GetLastListItems returns the last `count` items in the list.
 func (r *Cache) GetLastListItems(key string, count int) ([]string, error) {
-	c := poolGet()
-	defer c.Close()
-	return redis.Strings(c.Do("LRANGE", r.rkeyPrefix()+key, -count, -1))
+	return pool.LRange(r.rkeyPrefix()+key, -count, -1).Strings()
 }
 
 // LTrimList trims the list to the last `count` items.
 func (r *Cache) LTrimList(key string, count int) error {
-	c := poolGet()
-	defer c.Close()
-	_, err := c.Do("LTRIM", r.rkeyPrefix()+key, -count, -1)
-	return err
+	return pool.LTrim(r.rkeyPrefix()+key, -count, -1)
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	c := poolGet()
-	defer func(c redis.Conn) {
-		_ = c.Close()
-	}(c)
-
-	_, err := c.Do("DEL", r.rkeyPrefix()+key)
+	err := pool.Del(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
