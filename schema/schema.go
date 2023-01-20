@@ -112,12 +112,13 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
-	Builtin       *BuiltinAuthProvider
-	Saml          *SAMLAuthProvider
-	Openidconnect *OpenIDConnectAuthProvider
-	HttpHeader    *HTTPHeaderAuthProvider
-	Github        *GitHubAuthProvider
-	Gitlab        *GitLabAuthProvider
+	Builtin        *BuiltinAuthProvider
+	Saml           *SAMLAuthProvider
+	Openidconnect  *OpenIDConnectAuthProvider
+	HttpHeader     *HTTPHeaderAuthProvider
+	Github         *GitHubAuthProvider
+	Gitlab         *GitLabAuthProvider
+	Bitbucketcloud *BitbucketCloudAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -139,6 +140,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	if v.Gitlab != nil {
 		return json.Marshal(v.Gitlab)
 	}
+	if v.Bitbucketcloud != nil {
+		return json.Marshal(v.Bitbucketcloud)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *AuthProviders) UnmarshalJSON(data []byte) error {
@@ -149,6 +153,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "bitbucketcloud":
+		return json.Unmarshal(data, &v.Bitbucketcloud)
 	case "builtin":
 		return json.Unmarshal(data, &v.Builtin)
 	case "github":
@@ -162,7 +168,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"})
 }
 
 type BackendInsight struct {
@@ -213,12 +219,36 @@ type BatchSpec struct {
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
+// BitbucketCloudAuthProvider description: Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketcloud/callback".
+type BitbucketCloudAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.
+	AllowSignup bool `json:"allowSignup,omitempty"`
+	// ApiScope description: The OAuth API scope that should be used
+	ApiScope string `json:"apiScope,omitempty"`
+	// ClientKey description: The Key of the Bitbucket OAuth app.
+	ClientKey string `json:"clientKey"`
+	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
+	ClientSecret string `json:"clientSecret"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Type         string `json:"type"`
+	// Url description: URL of the Bitbucket Cloud instance.
+	Url string `json:"url,omitempty"`
+}
+
+// BitbucketCloudAuthorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+type BitbucketCloudAuthorization struct {
+	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
+	IdentityProvider string `json:"identityProvider,omitempty"`
+}
+
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword"`
+	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
 	//
 	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).
@@ -556,6 +586,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
 	WebhookLogKey          *EncryptionKey `json:"webhookLogKey,omitempty"`
@@ -631,7 +662,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
+	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
@@ -639,8 +670,6 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
-	// EnableWebhookRepoSync description: Enable webhooks for repo syncing
-	EnableWebhookRepoSync bool `json:"enableWebhookRepoSync,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// Gerrit description: Allow adding Gerrit code host connections
@@ -653,6 +682,8 @@ type ExperimentalFeatures struct {
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// InsightsBackfillerV2 description: DEPRECATED: Setting any value to this flag has no effect.
 	InsightsBackfillerV2 *bool `json:"insightsBackfillerV2,omitempty"`
+	// InsightsDataRetention description: Code insights data points beyond the sample size defined in the site configuration will be periodically archived
+	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -726,13 +757,13 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "enableLegacyExtensions")
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enablePostSignupFlow")
-	delete(m, "enableWebhookRepoSync")
 	delete(m, "eventLogging")
 	delete(m, "gerrit")
 	delete(m, "gitServerPinnedRepos")
 	delete(m, "goPackages")
 	delete(m, "insightsAlternateLoadingStrategy")
 	delete(m, "insightsBackfillerV2")
+	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
@@ -2049,8 +2080,6 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
-	// EnableMergedFileSymbolSidebar description: Enables the new file sidebar experience with merged file and symbol entries.
-	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
 	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
 	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
@@ -2151,7 +2180,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
-	delete(m, "enableMergedFileSymbolSidebar")
 	delete(m, "enableSearchFilePrefetch")
 	delete(m, "enableSidebarFilePrefetch")
 	delete(m, "fuzzyFinder")
@@ -2298,6 +2326,8 @@ type SiteConfiguration struct {
 	DisableAutoCodeHostSyncs bool `json:"disableAutoCodeHostSyncs,omitempty"`
 	// DisableAutoGitUpdates description: Disable periodically fetching git contents for existing repositories.
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
+	// DisableFeedbackSurvey description: Disable the feedback survey
+	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
 	// DisableNonCriticalTelemetry description: Disable aggregated event counts from being sent to Sourcegraph.com via pings.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
@@ -2363,6 +2393,8 @@ type SiteConfiguration struct {
 	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
+	// InsightsHistoricalWorkerRateLimitBurst description: The allowed burst rate for the Code Insights historical worker rate limiter.
+	InsightsHistoricalWorkerRateLimitBurst int `json:"insights.historical.worker.rateLimitBurst,omitempty"`
 	// InsightsMaximumSampleSize description: The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.
 	InsightsMaximumSampleSize int `json:"insights.maximumSampleSize,omitempty"`
 	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
@@ -2502,6 +2534,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "defaultRateLimit")
 	delete(m, "disableAutoCodeHostSyncs")
 	delete(m, "disableAutoGitUpdates")
+	delete(m, "disableFeedbackSurvey")
 	delete(m, "disableNonCriticalTelemetry")
 	delete(m, "disablePublicRepoRedirects")
 	delete(m, "dotcom")
@@ -2534,6 +2567,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "insights.aggregations.proactiveResultLimit")
 	delete(m, "insights.backfill.interruptAfter")
 	delete(m, "insights.historical.worker.rateLimit")
+	delete(m, "insights.historical.worker.rateLimitBurst")
 	delete(m, "insights.maximumSampleSize")
 	delete(m, "insights.query.worker.concurrency")
 	delete(m, "insights.query.worker.rateLimit")

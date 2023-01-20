@@ -1166,6 +1166,10 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			// we might want to not filter on this attribute at all, and `bool` defaults to false.
 			args.IsFrozen = r.args.IsFrozen
 		}
+		if r.args.Find != nil {
+			args.Find = *r.args.Find
+		}
+
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
 		if err != nil {
@@ -1181,6 +1185,19 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			}
 			log15.Debug("unique_id", "id", unique)
 			args.UniqueID = unique
+		}
+
+		if r.args.ExcludeIds != nil {
+			var insightIDs []string
+			for _, id := range *r.args.ExcludeIds {
+				var unique string
+				r.err = relay.UnmarshalSpec(id, &unique)
+				if r.err != nil {
+					return
+				}
+				insightIDs = append(insightIDs, unique)
+			}
+			args.ExcludeIDs = insightIDs
 		}
 
 		insights, err := r.insightStore.GetAllMapped(ctx, args)

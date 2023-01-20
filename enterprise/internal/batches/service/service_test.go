@@ -2138,14 +2138,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			batchChange := testDraftBatchChange(admin.ID)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			spec := testBatchSpec(admin.ID)
-			spec.BatchChangeID = batchChange.ID
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2437,14 +2437,14 @@ changesetTemplate:
 		})
 
 		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
-			batchChange := testDraftBatchChange(admin.ID)
-			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			spec := testBatchSpec(admin.ID)
-			spec.BatchChangeID = batchChange.ID
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
 
@@ -3040,8 +3040,8 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	return c
 }
 
-func testDraftBatchChange(user int32) *btypes.BatchChange {
-	bc := testBatchChange(user, &btypes.BatchSpec{})
+func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	bc := testBatchChange(user, spec)
 	bc.LastAppliedAt = time.Time{}
 	bc.CreatorID = 0
 	bc.LastApplierID = 0

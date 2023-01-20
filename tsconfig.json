@@ -24,7 +24,14 @@
     "watchDirectory": "useFsEvents",
     "fallbackPolling": "dynamicPriority"
   },
-
   "include": [],
-  "exclude": ["out", "node_modules"]
+  "exclude": ["out", "node_modules"],
+  "references": [
+    {
+      "path": "client/extension-api"
+    },
+    {
+      "path": "client/extension-api-types"
+    }
+  ]
 }

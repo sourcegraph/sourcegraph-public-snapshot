@@ -2,7 +2,6 @@ package repos_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -15,13 +14,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,12 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSyncerSync(t *testing.T) {
@@ -2011,113 +2004,6 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 	return syncer, dbRepos
 }
-
-func TestEnqueueWebhookBuildJob(t *testing.T) {
-	t.Skip("Skipping flakey test")
-	store := getTestRepoStore(t)
-
-	ctx := context.Background()
-	observationContext := observation.TestContextTB(t)
-
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			EnableWebhookRepoSync: true,
-		},
-	}})
-
-	esStore := store.ExternalServiceStore()
-	repoStore := store.RepoStore()
-	workerStore := webhookworker.CreateWorkerStore(observationContext, store.Handle())
-
-	repo := &types.Repo{
-		ID:   1,
-		Name: api.RepoName("milton/test"),
-	}
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	ghConn := &schema.GitHubConnection{
-		Url:      "https://github.com",
-		Token:    "fake",
-		Repos:    []string{string(repo.Name)},
-		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
-	}
-	bs, err := json.Marshal(ghConn)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	config := string(bs)
-	svc := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "TestService",
-		Config:      extsvc.NewUnencryptedConfig(config),
-	}
-	if err := esStore.Upsert(ctx, svc); err != nil {
-		t.Fatal(err)
-	}
-
-	sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, repo))
-	syncer := &repos.Syncer{
-		Sourcer: sourcer,
-		Store:   store,
-		Now:     time.Now,
-		ObsvCtx: observationContext,
-	}
-
-	if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	jobChan := make(chan *webhookworker.Job)
-	metrics := workerutil.NewMetrics(observationContext, fmt.Sprintf("%s_processor", "webhook_build_worker"))
-
-	worker := webhookworker.NewWorker(ctx, &fakeWebhookBuildHandler{jobChan: jobChan}, workerStore, metrics)
-
-	go worker.Start()
-	defer worker.Stop()
-
-	want := &webhookworker.Job{
-		RepoID:     int32(repo.ID),
-		RepoName:   string(repo.Name),
-		Org:        strings.Split(string(repo.Name), "/")[1],
-		ExtSvcID:   svc.ID,
-		ExtSvcKind: svc.Kind,
-	}
-
-	var have *webhookworker.Job
-
-	select {
-	case have = <-jobChan:
-		if diff := cmp.Diff(have, want, jobComparer); diff != "" {
-			t.Fatalf("mismatched jobs, (-want +got):\n%s", diff)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("Timeout")
-	}
-}
-
-type fakeWebhookBuildHandler struct {
-	jobChan chan *webhookworker.Job
-}
-
-func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, job *webhookworker.Job) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case h.jobChan <- job:
-		return nil
-	}
-}
-
-var jobComparer = cmp.Comparer(func(x, y *webhookworker.Job) bool {
-	return x.RepoID == y.RepoID &&
-		x.RepoName == y.RepoName &&
-		x.Org == y.Org &&
-		x.ExtSvcID == y.ExtSvcID &&
-		x.ExtSvcKind == y.ExtSvcKind
-})
 
 var noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, final bool) error {
 	return nil
