@@ -189,8 +189,12 @@ describe('StreamingSearchResults', () => {
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
-        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', { 'index': 0, 'type': 'fileMatch' })
-        sinon.assert.calledWith(logSpy, 'search.ranking.first-result-clicked', { 'index': 0, 'type': 'fileMatch', 'resultsNumber': 3})
+        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', { index: 0, type: 'fileMatch' })
+        sinon.assert.calledWith(logSpy, 'search.ranking.first-result-clicked', {
+            index: 0,
+            type: 'fileMatch',
+            resultsNumber: 3,
+        })
 
         logSpy.resetHistory()
 

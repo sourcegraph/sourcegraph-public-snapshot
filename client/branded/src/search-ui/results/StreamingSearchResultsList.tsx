@@ -1,4 +1,4 @@
-import React, { useCallback, useRef,useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -112,7 +112,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             if (firstClick.current) {
-                telemetryService.log('search.ranking.first-result-clicked', {index, resultsNumber, type})
+                telemetryService.log('search.ranking.first-result-clicked', { index, resultsNumber, type })
                 firstClick.current = false
             }
         },
