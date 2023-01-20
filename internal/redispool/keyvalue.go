@@ -22,6 +22,7 @@ type KeyValue interface {
 	Get(key string) Value
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
+	SetEx(key string, ttlSeconds int, value any) error
 	Del(key string) error
 
 	HGet(key, field string) Value
@@ -31,8 +32,6 @@ type KeyValue interface {
 	LTrim(key string, start, stop int) error
 	LLen(key string) (int, error)
 	LRange(key string, start, stop int) Value
-
-	Expire(key string, seconds int) error
 
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
@@ -102,6 +101,10 @@ func (r *redisKeyValue) Set(key string, val any) error {
 	return r.do("SET", r.prefix+key, val).err
 }
 
+func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
+	return r.do("SET", r.prefix+key, ttlSeconds, val).err
+}
+
 func (r *redisKeyValue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
 }
@@ -126,10 +129,6 @@ func (r *redisKeyValue) LLen(key string) (int, error) {
 }
 func (r *redisKeyValue) LRange(key string, start, stop int) Value {
 	return r.do("LRANGE", r.prefix+key, start, stop)
-}
-
-func (r *redisKeyValue) Expire(key string, seconds int) error {
-	return r.do("EXPIRE", r.prefix+key, seconds).err
 }
 
 func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
