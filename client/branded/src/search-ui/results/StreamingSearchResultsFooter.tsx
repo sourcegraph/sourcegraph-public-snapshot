@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, LoadingSpinner, Code, Text, Link, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, Code, Text, H2, H3, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
@@ -35,20 +35,9 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
             <div className="pr-3 mt-3 align-self-stretch">
                 <Alert variant="info">
-                    <Text className="m-0">
-                        <strong>No results matched your query</strong>
-                        <br />
-                        Learn more about how to search{' '}
-                        <Link
-                            to="/help/code_search/explanations/features"
-                            rel="noopener noreferrer"
-                            target="_blank"
-                            onClick={() => telemetryService.log('ClickedOnDocs')}
-                        >
-                            in our docs
-                        </Link>
-                        , or use the tips below to improve your query.
-                    </Text>
+                    <H2 as={H3} className="m-0 py-1">
+                        No results matched your search.
+                    </H2>
                 </Alert>
             </div>
         )}

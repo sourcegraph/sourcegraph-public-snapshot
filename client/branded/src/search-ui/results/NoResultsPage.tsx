@@ -93,7 +93,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
             {showQueryExamples && setQueryState && (
                 <>
-                    <H2 as={H2}>Search basics</H2>
+                    <H2 as={H3}>Search basics</H2>
                     <div className={styles.queryExamplesContainer}>
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
