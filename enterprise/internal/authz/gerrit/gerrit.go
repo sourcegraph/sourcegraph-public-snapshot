@@ -3,7 +3,6 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
@@ -134,20 +133,15 @@ func (p Provider) URN() string {
 // ValidateConnection validates the connection to the Gerrit code host.
 // Currently, this is done by querying for the Administrators group and validating that the
 // group returned is valid, hence meaning that the given credentials have Admin permissions.
-func (p Provider) ValidateConnection(ctx context.Context) (warnings []string) {
-
+func (p Provider) ValidateConnection(ctx context.Context) error {
 	adminGroup, err := p.client.GetGroup(ctx, adminGroupName)
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Unable to get %s group: %v", adminGroupName, err),
-		}
+		return errors.Newf("Unable to get %s group: %s", adminGroupName, err)
 	}
 
 	if adminGroup.ID == "" || adminGroup.Name != adminGroupName || adminGroup.CreatedOn == "" {
-		return []string{
-			fmt.Sprintf("Gerrit credentials not sufficent enough to query %s group", adminGroupName),
-		}
+		return errors.Newf("Gerrit credentials not sufficent enough to query %s group", adminGroupName)
 	}
 
-	return []string{}
+	return nil
 }
