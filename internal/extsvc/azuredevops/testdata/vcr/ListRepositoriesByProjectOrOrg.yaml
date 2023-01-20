@@ -1,0 +1,54 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://dev.azure.com/sgadotest/_apis/git/repositories?api-version=7.0
+    method: GET
+  response:
+    body: '{"value":[{"id":"d43b669c-d6da-4c9e-9952-11f411153cf9","name":"sgadotest","url":"https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9","project":{"id":"889cc0c6-c7ed-40f0-b6f1-053acfc1397d","name":"sgadotest","url":"https://dev.azure.com/sgadotest/_apis/projects/889cc0c6-c7ed-40f0-b6f1-053acfc1397d","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-17T22:13:58.063Z"},"size":0,"remoteUrl":"https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/sgadotest","sshUrl":"git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest","webUrl":"https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest","isDisabled":false,"isInMaintenance":false},{"id":"47c49ea1-5dc8-468e-ae6d-52410a1084a7","name":"idano","url":"https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7","project":{"id":"889cc0c6-c7ed-40f0-b6f1-053acfc1397d","name":"sgadotest","url":"https://dev.azure.com/sgadotest/_apis/projects/889cc0c6-c7ed-40f0-b6f1-053acfc1397d","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-17T22:13:58.063Z"},"defaultBranch":"refs/heads/main","size":726,"remoteUrl":"https://sgadotest@dev.azure.com/sgadotest/sgadotest/_git/idano","sshUrl":"git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano","webUrl":"https://dev.azure.com/sgadotest/sgadotest/_git/idano","isDisabled":false,"isInMaintenance":false},{"id":"2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5","name":"sgadotest2","url":"https://dev.azure.com/sgadotest/450fc69b-ff88-4604-88d3-84b488e290b2/_apis/git/repositories/2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5","project":{"id":"450fc69b-ff88-4604-88d3-84b488e290b2","name":"sgadotest2","url":"https://dev.azure.com/sgadotest/_apis/projects/450fc69b-ff88-4604-88d3-84b488e290b2","state":"wellFormed","revision":19,"visibility":"private","lastUpdateTime":"2023-01-18T05:29:24.46Z"},"size":0,"remoteUrl":"https://sgadotest@dev.azure.com/sgadotest/sgadotest2/_git/sgadotest2","sshUrl":"git@ssh.dev.azure.com:v3/sgadotest/sgadotest2/sgadotest2","webUrl":"https://dev.azure.com/sgadotest/sgadotest2/_git/sgadotest2","isDisabled":false,"isInMaintenance":false}],"count":3}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - bb687111-e265-4a33-8b7f-5b4d55d3b878
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Wed, 18 Jan 2023 14:49:16 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:72d31d95-1757-44f5-b910-a46611808454
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: D4246B6C514F430BA3FB288B164F66E5 Ref B: YTO01EDGE0510 Ref C: 2023-01-18T14:49:15Z'
+      X-Tfs-Processid:
+      - a9e61ddf-ab88-4476-9b7e-1af9921bf7ed
+      X-Tfs-Session:
+      - bb687111-e265-4a33-8b7f-5b4d55d3b878
+      X-Vss-E2eid:
+      - bb687111-e265-4a33-8b7f-5b4d55d3b878
+      X-Vss-Senderdeploymentid:
+      - 4ff21e82-8865-0b2e-ffe8-9598818f8190
+      X-Vss-Userdata:
+      - 003fb9ec-23b7-699d-9973-544b77eb2595:varsanojidan@gmail.com
+    status: 200 OK
+    code: 200
+    duration: ""

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
@@ -95,6 +95,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
                                     </>
                                 )}
+                                {provider.serviceType === 'bitbucketCloud' && (
+                                    <>
+                                        <Icon aria-hidden={true} svgPath={mdiBitbucket} />{' '}
+                                    </>
+                                )}
                                 Continue with {provider.displayName}
                             </Button>
                         </div>
@@ -108,7 +113,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 to="https://signup.sourcegraph.com"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                onClick={() =>
+                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedOut' })
+                                }
                             >
                                 Sign up
                             </Link>

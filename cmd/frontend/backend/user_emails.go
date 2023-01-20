@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -141,7 +141,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 		// transaction has committed so that it takes into account any changes triggered
 		// by the removal of the e-mail.
-		triggerPermissionsSync(ctx, logger, userID)
+		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailRemoved)
 	}()
 
 	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
@@ -218,7 +218,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 		// transaction has committed so that it takes into account any changes triggered
 		// by changes in the verification status of the e-mail.
-		triggerPermissionsSync(ctx, logger, userID)
+		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailVerified)
 	}()
 
 	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
@@ -469,12 +469,10 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 })
 
 // triggerPermissionsSync is a helper that attempts to schedule a new permissions
-// sync for the given user. Errors are not fatal since our background permissions
-// syncer will eventually sync the user anyway, so we just log any errors.
-func triggerPermissionsSync(ctx context.Context, logger log.Logger, userID int32) {
-	if err := repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+// sync for the given user.
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason string) {
+	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
-	}); err != nil {
-		logger.Warn("Error scheduling permissions sync", log.Error(err), log.Int32("user_id", userID))
-	}
+		Reason:  reason,
+	})
 }

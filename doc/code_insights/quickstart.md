@@ -24,29 +24,32 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 **If you're on Sourcegraph version 3.31 or earlier** and you don't already see the "Insights" item in your main nav bar, you'll need to add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings` (and _not_ in your site configuration settings):
 
-```javascript
+```json
 "experimentalFeatures": { "codeInsights": true },
  "extensions": {
       "sourcegraph/code-stats-insights": true,
-      "sourcegraph/search-insights": true,
-    },
+      "sourcegraph/search-insights": true
+ }
 ```
 
 If you put this in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" navbar menu item and create their own code insights. If you put the flag in your user settings, only you will have those abilities.
 
 (Enabling code insights organization-wide doesn't mean that other users can automatically see the code insights you create, however – you can control that visibility per individual insight.)
 
-### 2. Visit your sourcegraph.example.com/insights page and select "+ Create new insight"
+### 2. Visit your example.sourcegraph.com/insights page and select "+ Create insight"
 
-### 3. On the insight type selection page, select "Create custom insight"
+### 3. On the insight type selection page, select "Track changes"
 
 This creates a code insight tracking an arbitrary input that you could run a Sourcegraph search for.
 
-If you are more interested in creating a language-based insight to show you language breakdown in your repositories, [follow this tutorial](language_insight_quickstart.md) instead.
+Your other options are to:
 
-### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search or check "all repositories"
+* [create a "Detect and track" insight](explanations/automatically_generated_data_series.md) to automatically generate your data series according to capture group matching (3.35+).
+* [create a language-based insight](language_insight_quickstart.md) to show you language breakdown in your repositories.
 
-If you want an insight running over up to ~50-70 repositories, enter the repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+### 4. Once on the form fields page, enter the repositories you want to search or check "all repositories"
+
+If you want an insight running over a specific amount of repositories, enter the repositories in the repository URL format, like `github.com/sourcegraph/sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
 
 If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
@@ -64,13 +67,13 @@ You can also select the color of your data series.
 
 Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository name]`.
 
-### 7. Set the distance between data points to 1 month
+### 7. Set the distance between data points
 
-The code insights prototypes currently show you seven datapoints for each data series. Your code insight will therefore show you results for a time horizon that is 6 * [distance between datapoints]. Setting it to one month means you'll see the results over the last six months.
+Code insights give you twelve datapoints for each data series on insight creation. Setting it to one month means you'll see the results over the last year.
 
 ### 8. Click "create code insight" and view your insight.
 
-You'll be taken to the sourcegraph.example.com/insights page and can view your insight.
+You'll be taken to the `example.sourcegraph.com/insights` page and can view your insight.
 
 ### 9. Filter your insight to explore it further 
 

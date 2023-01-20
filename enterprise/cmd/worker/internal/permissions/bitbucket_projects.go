@@ -357,6 +357,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
+		Description:       "syncs Bitbucket Projects via Explicit Permissions API",
 		NumHandlers:       cfg.WorkerConcurrency,
 		Interval:          cfg.WorkerPollInterval,
 		HeartbeatInterval: 15 * time.Second,

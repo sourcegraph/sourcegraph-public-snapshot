@@ -135,6 +135,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
+    const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
         props.location.pathname === PageRoutes.SignIn ||
@@ -218,7 +219,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && (
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
             {!isSiteInit && !isSignInOrUp && (

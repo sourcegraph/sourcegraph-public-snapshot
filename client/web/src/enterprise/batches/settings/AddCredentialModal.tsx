@@ -27,7 +27,7 @@ export interface AddCredentialModalProps {
     initialStep?: Step
 }
 
-const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-credentials'
+const HELP_TEXT_LINK_URL = '/help/batch_changes/quickstart#configure-code-host-credentials'
 
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (

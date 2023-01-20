@@ -70,6 +70,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
 		Name:              name,
+		Description:       "generates and runs searches to backfill a code insight",
 		NumHandlers:       1,
 		Interval:          inProgressPollingInterval,
 		HeartbeatInterval: 15 * time.Second,

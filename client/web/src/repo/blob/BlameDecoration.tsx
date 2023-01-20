@@ -19,10 +19,11 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
-import { BlameHunk } from '../blame/useBlameHunks'
+import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 
 import { useBlameRecencyColor } from './BlameRecency'
 
@@ -111,13 +112,14 @@ const usePopover = ({
 export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
-    firstCommitDate?: Date
+    firstCommitDate?: BlameHunkData['firstCommitDate']
+    externalURLs?: BlameHunkData['externalURLs']
     history: History
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
     isLightTheme: boolean
     hideRecency: boolean
-}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, isLightTheme, hideRecency }) => {
+}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, externalURLs, isLightTheme, hideRecency }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
@@ -182,23 +184,34 @@ export const BlameDecoration: React.FunctionComponent<{
                                 <span className={styles.date} data-line-decoration-attachment-content={true}>
                                     {displayInfo.dateString}
                                 </span>
-                                <span className={styles.author} data-line-decoration-attachment-content={true}>
-                                    {blameHunk.author.person ? (
-                                        <UserAvatar
-                                            inline={true}
-                                            className={styles.avatar}
-                                            user={
-                                                blameHunk.author.person.user
-                                                    ? blameHunk.author.person.user
-                                                    : blameHunk.author.person
-                                            }
-                                            size={16}
-                                        />
-                                    ) : (
-                                        `${displayInfo.username}${displayInfo.displayName}`
-                                    )}
-                                </span>
+                                {blameHunk.author.person ? (
+                                    <>
+                                        <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                            <UserAvatar
+                                                inline={true}
+                                                className={styles.avatar}
+                                                style={{ top: 1 }}
+                                                user={
+                                                    blameHunk.author.person.user
+                                                        ? blameHunk.author.person.user
+                                                        : blameHunk.author.person
+                                                }
+                                                size={16}
+                                            />
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className={styles.author} data-line-decoration-attachment-content={true}>
+                                        {`${displayInfo.username}${displayInfo.displayName}`}
+                                    </span>
+                                )}
                                 <span className={styles.content} data-line-decoration-attachment-content={true}>
+                                    {blameHunk.author.person ? (
+                                        <>
+                                            {`${displayInfo.username}${displayInfo.displayName}`.split(' ')[0]}
+                                            {' • '}
+                                        </>
+                                    ) : null}
                                     {displayInfo.message}
                                 </span>
                             </>
@@ -226,15 +239,8 @@ export const BlameDecoration: React.FunctionComponent<{
                                     as={SourceCommitIcon}
                                     className={classNames('mr-2 flex-shrink-0', styles.icon)}
                                 />
-                                <Link
-                                    to={blameHunk.displayInfo.linkURL}
-                                    target="_blank"
-                                    rel="noreferrer noopener"
-                                    className={styles.link}
-                                    onClick={logCommitClick}
-                                >
-                                    {blameHunk.message}
-                                </Link>
+
+                                {generateCommitMessageWithLinks(blameHunk, externalURLs)}
                             </div>
                             {blameHunk.commit.parents.length > 0 && (
                                 <>
@@ -262,6 +268,61 @@ export const BlameDecoration: React.FunctionComponent<{
             ) : null}
         </div>
     )
+}
+
+// This regex is supposed to match in the following cases:
+//
+//  - Create search and search-ui packages (#29773)
+//  - Fix #123 for xyz
+//
+// However it is supposed not to mach in:
+//
+// - Something sourcegraph/other-repo#123 or so
+// - 123#123
+const GH_ISSUE_NUMBER_IN_COMMIT = /([^\dA-Za-z](#\d+))/g
+
+const generateCommitMessageWithLinks = (
+    blameHunk: BlameHunk,
+    externalURLs: BlameHunkData['externalURLs']
+): React.ReactNode => {
+    const commitLinkProps = {
+        to: blameHunk.displayInfo.linkURL,
+        target: '_blank',
+        rel: 'noreferrer noopener',
+        className: styles.link,
+        onClick: logCommitClick,
+    }
+
+    const github = externalURLs ? externalURLs.find(url => url.serviceKind === ExternalServiceKind.GITHUB) : null
+    const message = blameHunk.message
+    const matches = [...message.matchAll(GH_ISSUE_NUMBER_IN_COMMIT)]
+    if (github && matches.length > 0) {
+        let remainingMessage = message
+        let skippedCharacters = 0
+        const linkSegments: React.ReactNode[] = []
+
+        for (const match of matches) {
+            if (match.index === undefined) {
+                continue
+            }
+            const issueNumber = match[2]
+            const index = remainingMessage.indexOf(issueNumber, match.index - skippedCharacters)
+            const before = remainingMessage.slice(0, index)
+
+            linkSegments.push(<Link {...commitLinkProps}>{before}</Link>)
+            linkSegments.push(<Link to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
+
+            const nextIndex = index + issueNumber.length
+            remainingMessage = remainingMessage.slice(index + issueNumber.length)
+            skippedCharacters += nextIndex
+        }
+
+        linkSegments.push(<Link {...commitLinkProps}>{remainingMessage}</Link>)
+
+        return <div>{linkSegments}</div>
+    }
+
+    return <Link {...commitLinkProps}>{blameHunk.message}</Link>
 }
 
 const logCommitClick = (): void => {

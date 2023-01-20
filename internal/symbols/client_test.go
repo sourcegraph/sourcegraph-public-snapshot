@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func init() {
+	LoadConfig()
+}
+
 func TestSearchWithFiltering(t *testing.T) {
 	ctx := context.Background()
 	fixture := search.SymbolsResponse{

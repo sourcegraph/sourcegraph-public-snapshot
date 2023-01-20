@@ -71,6 +71,21 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 }`,
 }
 
+// SingleProgram is the default configuration for the single-program (Go static binary)
+// distribution.
+var SingleProgram = conftypes.RawUnified{
+	Site: `{
+	"auth.providers": [
+		{ "type": "builtin" }
+	],
+	"externalURL": "http://localhost:3080",
+
+	"codeIntelAutoIndexing.enabled": true,
+	"codeIntelAutoIndexing.allowGlobalPolicies": true,
+	"executors.frontendURL": "http://host.docker.internal:3080",
+}`,
+}
+
 // Default is the default for *this* deployment type. It is populated by
 // pkg/conf at init time.
 var Default conftypes.RawUnified

@@ -1,4 +1,4 @@
-import { Node, Operator, Parameter, Pattern, OperatorKind } from './parser'
+import { Node, Operator, Parameter, Pattern, OperatorKind, Sequence } from './parser'
 import { CharacterRange, PatternKind } from './token'
 
 export class Visitor {
@@ -20,6 +20,9 @@ export class Visitor {
                 case 'operator':
                     this.visitOperator(node)
                     break
+                case 'sequence':
+                    this.visitSequence(node)
+                    break
                 case 'parameter':
                     this.visitParameter(node)
                     break
@@ -37,6 +40,13 @@ export class Visitor {
         this.visit(node.operands)
     }
 
+    private visitSequence(node: Sequence): void {
+        if (this._visitors.visitSequence) {
+            this._visitors.visitSequence(node.nodes, node.range)
+        }
+        this.visit(node.nodes)
+    }
+
     private visitParameter(node: Parameter): void {
         if (this._visitors.visitParameter) {
             this._visitors.visitParameter(node.field, node.value, node.negated, node.range)
@@ -52,6 +62,7 @@ export class Visitor {
 
 export interface Visitors {
     visitOperator?(operands: Node[], kind: OperatorKind, range: CharacterRange, groupRange?: CharacterRange): void
+    visitSequence?(nodes: Node[], range: CharacterRange): void
     visitParameter?(field: string, value: string, negated: boolean, range: CharacterRange): void
     visitPattern?(value: string, kind: PatternKind, negated: boolean, quoted: boolean, range: CharacterRange): void
 }

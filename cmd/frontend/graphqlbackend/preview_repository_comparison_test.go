@@ -266,7 +266,7 @@ Line 9
 Line 10
 `
 
-		haveContent, err := newFile.Content(ctx)
+		haveContent, err := newFile.Content(ctx, &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}

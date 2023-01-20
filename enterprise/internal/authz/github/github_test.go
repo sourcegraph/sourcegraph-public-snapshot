@@ -1206,8 +1206,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
 		})
-		problems := p.ValidateConnection(context.Background())
-		if len(problems) > 0 {
+		err := p.ValidateConnection(context.Background())
+		if err != nil {
 			t.Fatal("expected validate to pass")
 		}
 	})
@@ -1225,12 +1225,12 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					return nil, errors.New("scopes error")
 				})
 			p.client = mockClientFunc(mockClient)
-			problems := p.ValidateConnection(context.Background())
-			if len(problems) != 1 {
+			err := p.ValidateConnection(context.Background())
+			if err == nil {
 				t.Fatal("expected 1 problem")
 			}
-			if !strings.Contains(problems[0], "scopes error") {
-				t.Fatalf("unexpected problem: %q", problems[0])
+			if !strings.Contains(err.Error(), "scopes error") {
+				t.Fatalf("unexpected problem: %q", err.Error())
 			}
 		})
 
@@ -1241,12 +1241,12 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					return []string{}, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			problems := p.ValidateConnection(context.Background())
-			if len(problems) != 1 {
-				t.Fatal("expected 1 problem")
+			err := p.ValidateConnection(context.Background())
+			if err == nil {
+				t.Fatal("expected error")
 			}
-			if !strings.Contains(problems[0], "read:org") {
-				t.Fatalf("unexpected problem: %q", problems[0])
+			if !strings.Contains(err.Error(), "read:org") {
+				t.Fatalf("unexpected problem: %q", err.Error())
 			}
 		})
 
@@ -1262,8 +1262,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 						return testCase, nil
 					})
 				p.client = mockClientFunc(mockClient)
-				problems := p.ValidateConnection(context.Background())
-				if len(problems) != 0 {
+				err := p.ValidateConnection(context.Background())
+				if err != nil {
 					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
 				}
 			}

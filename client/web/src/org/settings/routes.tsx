@@ -45,7 +45,6 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
         path: '/members',
         exact: true,
-        render: lazyComponent(() => import('./members-v1/OrgSettingsMembersPage'), 'OrgSettingsMembersPage'),
-        condition: context => !context.newMembersInviteEnabled,
+        render: lazyComponent(() => import('./members/OrgSettingsMembersPage'), 'OrgSettingsMembersPage'),
     },
 ]

@@ -336,7 +336,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
         totalCount,
     }) => (
-        <div className="mt-2">
+        <div className="p-2">
             {showOlderCommits ? (
                 <>
                     {totalCount} total {pluralize('commit', totalCount)} in this tree.
@@ -365,7 +365,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 />
             )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} />
+                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
                 <Card className={styles.commits}>
                     <CardHeader className={panelStyles.cardColHeaderWrapper}>
@@ -459,6 +459,7 @@ const CONTRIBUTORS_QUERY = gql`
                 username
                 url
                 displayName
+                avatarURL
             }
         }
         count
@@ -585,7 +586,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     return (
         <li className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
             <div className={contributorsStyles.person}>
-                <UserAvatar inline={true} className="mr-2" user={node.person} />
+                <UserAvatar inline={true} className="mr-2" user={node.person.user ? node.person.user : node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={contributorsStyles.commits}>

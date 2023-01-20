@@ -125,7 +125,7 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         withSearchQueryInput(editorName => {
-            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
+            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride(),

@@ -195,7 +195,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const RootHeaderSection = (): React.ReactElement => (
         <>
-            <div className="d-flex flex-wrap flex-lg-nowrap justify-content-between px-0">
+            <div className="d-flex flex-wrap justify-content-between px-0">
                 <div className={styles.header}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
@@ -283,6 +283,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                     aria-label="Repository settings"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiCog} />
+                                    <span className={styles.text}>Settings</span>
                                 </Button>
                             </Tooltip>
                         )}
