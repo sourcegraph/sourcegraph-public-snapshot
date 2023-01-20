@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 
 import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
-import classNames from 'classnames'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -9,8 +8,6 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-
-import styles from './ToggleBlameAction.module.scss'
 
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
@@ -31,13 +28,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    const icon = (
-        <Icon
-            aria-hidden={true}
-            svgPath={isBlameVisible ? mdiAccountDetails : mdiAccountDetailsOutline}
-            className={classNames(isBlameVisible && styles.iconActive)}
-        />
-    )
+    const icon = <Icon aria-hidden={true} svgPath={isBlameVisible ? mdiAccountDetails : mdiAccountDetailsOutline} />
 
     if (props.source === 'actionItemsBar') {
         return (
