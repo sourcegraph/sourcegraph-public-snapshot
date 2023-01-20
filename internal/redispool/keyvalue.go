@@ -102,7 +102,7 @@ func (r *redisKeyValue) Set(key string, val any) error {
 }
 
 func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
-	return r.do("SET", r.prefix+key, ttlSeconds, val).err
+	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
 }
 
 func (r *redisKeyValue) Del(key string) error {
