@@ -31,6 +31,10 @@ type Symbol struct {
 
 // FromProto converts a proto.Symbol to a result.Symbol.
 func (s *Symbol) FromProto(p *proto.SymbolsResponse_Symbol) {
+	if s == nil {
+		return
+	}
+
 	s.Name = p.GetName()
 	s.Path = p.GetPath()
 
@@ -48,6 +52,10 @@ func (s *Symbol) FromProto(p *proto.SymbolsResponse_Symbol) {
 }
 
 func (s *Symbol) ToProto() *proto.SymbolsResponse_Symbol {
+	if s == nil {
+		return &proto.SymbolsResponse_Symbol{}
+	}
+
 	return &proto.SymbolsResponse_Symbol{
 		Name:        s.Name,
 		Path:        s.Path,

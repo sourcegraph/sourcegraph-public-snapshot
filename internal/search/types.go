@@ -124,6 +124,7 @@ func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
 }
 
 func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
+
 	return &proto.SearchRequest{
 		Repo:     string(s.Repo),
 		CommitId: string(s.CommitID),
