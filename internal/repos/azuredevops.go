@@ -107,15 +107,12 @@ func (s *AzureDevOpsSource) ExternalServices() types.ExternalServices {
 // given authenticator, provided that authenticator type is supported by the
 // code host.
 func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
-	switch a.(type) {
-	case *auth.BasicAuth:
-		break
-	default:
-		return nil, newUnsupportedAuthenticatorError("Azure DevOps Source", a)
-	}
-
 	sc := *s
-	sc.cli.WithAuthenticator(a)
+	cli, err := sc.cli.WithAuthenticator(a)
+	if err != nil {
+		return nil, err
+	}
+	sc.cli = cli
 
 	return &sc, nil
 }

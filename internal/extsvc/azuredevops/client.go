@@ -125,13 +125,20 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 // Note that using an unsupported Authenticator implementation may result in
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
-func (c Client) WithAuthenticator(a auth.Authenticator) Client {
-	return Client{
+func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
+	switch a.(type) {
+	case *auth.BasicAuth:
+		break
+	default:
+		return nil, fmt.Errorf("authenticator type unsupported for %s clients: %s", "Azure DevOps Client", a)
+	}
+
+	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		auth:       a,
 		rateLimit:  c.rateLimit,
-	}
+	}, nil
 }
 
 type ListRepositoriesResponse struct {
