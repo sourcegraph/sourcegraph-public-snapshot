@@ -891,6 +891,9 @@ type SeriesPointForExport struct {
 }
 
 func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId string) (_ []SeriesPointForExport, err error) {
+	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
+	// this user context. This is similar to how `SeriesPoints` works.
+	// We enforce repo permissions here as we store repository data at this level.
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
