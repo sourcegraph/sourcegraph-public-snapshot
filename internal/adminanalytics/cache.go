@@ -54,15 +54,11 @@ func setDataToCache(key string, data string, expireSeconds int) (bool, error) {
 		return true, nil
 	}
 
-	if err := store.Set(scopeKey+key, data); err != nil {
-		return false, err
-	}
-
 	if expireSeconds == 0 {
 		expireSeconds = 24 * 60 * 60 // 1 day
 	}
 
-	if err := store.Expire(scopeKey+key, expireSeconds); err != nil {
+	if err := store.SetEx(scopeKey+key, expireSeconds, data); err != nil {
 		return false, err
 	}
 
