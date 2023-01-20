@@ -45,7 +45,7 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 			recordsLimit = defaultSyncJobsRecordsLimit
 		}
 
-		// Setting cache size to 0 disables it
+		// Setting cache size to <=0 disables it
 		r.cache.SetMaxSize(recordsLimit)
 		if recordsLimit > 0 {
 			r.logger.Debug("enabled records store cache", log.Int("limit", recordsLimit))
