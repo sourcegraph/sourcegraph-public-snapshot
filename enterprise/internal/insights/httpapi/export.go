@@ -96,7 +96,10 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
-	dataFile, err := zw.Create(fmt.Sprintf("%s.csv", visibleViewSeries[0].Title))
+	timestamp := time.Now().Format(time.RFC3339)
+	name := fmt.Sprintf("%s-%s", insightViewId, timestamp)
+
+	dataFile, err := zw.Create(fmt.Sprintf("%s.csv", name))
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,6 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		return nil, errors.Wrap(err, "failed to write csv header")
 	}
 
-	timestamp := time.Now().Format(time.RFC3339)
 	dataPoints, err := h.seriesStore.GetAllDataForInsightViewID(ctx, store.ExportOpts{InsightViewUniqueID: insightViewId})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch all data for insight")
@@ -143,7 +145,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		return nil, err
 	}
 	return &codeInsightsDataArchive{
-		name: fmt.Sprintf("%s-%s", insightViewId, timestamp),
+		name: name,
 		data: buf.Bytes(),
 	}, nil
 }

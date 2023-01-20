@@ -1392,7 +1392,7 @@ func NewMockInterface() *MockInterface {
 			},
 		},
 		GetAllDataForInsightViewIDFunc: &InterfaceGetAllDataForInsightViewIDFunc{
-			defaultHook: func(context.Context, string) (r0 []SeriesPointForExport, r1 error) {
+			defaultHook: func(context.Context, ExportOpts) (r0 []SeriesPointForExport, r1 error) {
 				return
 			},
 		},
@@ -1449,7 +1449,7 @@ func NewStrictMockInterface() *MockInterface {
 			},
 		},
 		GetAllDataForInsightViewIDFunc: &InterfaceGetAllDataForInsightViewIDFunc{
-			defaultHook: func(context.Context, string) ([]SeriesPointForExport, error) {
+			defaultHook: func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
 				panic("unexpected invocation of MockInterface.GetAllDataForInsightViewID")
 			},
 		},
@@ -1747,15 +1747,15 @@ func (c InterfaceCountDataFuncCall) Results() []interface{} {
 // GetAllDataForInsightViewID method of the parent MockInterface instance is
 // invoked.
 type InterfaceGetAllDataForInsightViewIDFunc struct {
-	defaultHook func(context.Context, string) ([]SeriesPointForExport, error)
-	hooks       []func(context.Context, string) ([]SeriesPointForExport, error)
+	defaultHook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)
+	hooks       []func(context.Context, ExportOpts) ([]SeriesPointForExport, error)
 	history     []InterfaceGetAllDataForInsightViewIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetAllDataForInsightViewID delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockInterface) GetAllDataForInsightViewID(v0 context.Context, v1 string) ([]SeriesPointForExport, error) {
+func (m *MockInterface) GetAllDataForInsightViewID(v0 context.Context, v1 ExportOpts) ([]SeriesPointForExport, error) {
 	r0, r1 := m.GetAllDataForInsightViewIDFunc.nextHook()(v0, v1)
 	m.GetAllDataForInsightViewIDFunc.appendCall(InterfaceGetAllDataForInsightViewIDFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1764,7 +1764,7 @@ func (m *MockInterface) GetAllDataForInsightViewID(v0 context.Context, v1 string
 // SetDefaultHook sets function that is called when the
 // GetAllDataForInsightViewID method of the parent MockInterface instance is
 // invoked and the hook queue is empty.
-func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultHook(hook func(context.Context, string) ([]SeriesPointForExport, error)) {
+func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultHook(hook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)) {
 	f.defaultHook = hook
 }
 
@@ -1773,7 +1773,7 @@ func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *InterfaceGetAllDataForInsightViewIDFunc) PushHook(hook func(context.Context, string) ([]SeriesPointForExport, error)) {
+func (f *InterfaceGetAllDataForInsightViewIDFunc) PushHook(hook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1782,19 +1782,19 @@ func (f *InterfaceGetAllDataForInsightViewIDFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultReturn(r0 []SeriesPointForExport, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]SeriesPointForExport, error) {
+	f.SetDefaultHook(func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *InterfaceGetAllDataForInsightViewIDFunc) PushReturn(r0 []SeriesPointForExport, r1 error) {
-	f.PushHook(func(context.Context, string) ([]SeriesPointForExport, error) {
+	f.PushHook(func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
 		return r0, r1
 	})
 }
 
-func (f *InterfaceGetAllDataForInsightViewIDFunc) nextHook() func(context.Context, string) ([]SeriesPointForExport, error) {
+func (f *InterfaceGetAllDataForInsightViewIDFunc) nextHook() func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1833,7 +1833,7 @@ type InterfaceGetAllDataForInsightViewIDFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 ExportOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []SeriesPointForExport
