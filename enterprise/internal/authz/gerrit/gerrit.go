@@ -22,7 +22,7 @@ const (
 
 type Provider struct {
 	urn      string
-	client   client
+	client   gerrit.Client
 	codeHost *extsvc.CodeHost
 }
 
@@ -101,7 +101,28 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		Username: credentials.Username,
 		Password: credentials.Password,
 	})
-	projects, _, _ := client.ListProjects(ctx, gerrit.ListProjectsArgs{})
+	queryArgs := gerrit.ListProjectsArgs{
+		Cursor: &gerrit.Pagination{
+			PerPage: 100,
+			Page:    1,
+		},
+	}
+	projects, nextPage, err := client.ListProjects(ctx, queryArgs)
+	if err != nil {
+		return nil, err
+	}
+	var nextPageProjects *gerrit.ListProjectsResponse
+	for nextPage == true {
+		queryArgs.Cursor.Page++
+		nextPageProjects, nextPage, err = client.ListProjects(ctx, queryArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		for k, v := range *nextPageProjects {
+			(*projects)[k] = v
+		}
+	}
 
 	extIDs := make([]extsvc.RepoID, 0, len(*projects))
 	for _, project := range *projects {

@@ -8,7 +8,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -121,7 +123,43 @@ func TestProvider_ValidateConnection(t *testing.T) {
 	}
 }
 
-func NewTestProvider(client client) *Provider {
+func TestProvider_FetchUserPerms(t *testing.T) {
+	mClient := mockClient{}
+	mClient.mockListProjects = func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error) {
+		resp := make(gerrit.ListProjectsResponse)
+		resp["test-project"] = &gerrit.Project{
+			ID: "test-project",
+		}
+		return &resp, false, nil
+	}
+	mClient.mockWithAuthenticator = func(auth auth.Authenticator) gerrit.Client {
+		return &mClient
+	}
+
+	p := NewTestProvider(&mClient)
+
+	accountData := extsvc.AccountData{}
+	err := gerrit.SetExternalAccountData(&accountData, &gerrit.Account{}, &gerrit.AccountCredentials{
+		Username: "test-user",
+		Password: "test-password",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	perms, err := p.FetchUserPerms(context.Background(), &extsvc.Account{
+		AccountData: accountData,
+	}, authz.FetchPermsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if perms.Exacts[0] != "test-project" {
+		t.Fatalf("expected test-project, got %s", perms.Exacts[0])
+	}
+}
+
+func NewTestProvider(client gerrit.Client) *Provider {
 	baseURL, _ := url.Parse("https://gerrit.sgdev.org")
 	return &Provider{
 		urn:      "Gerrit",

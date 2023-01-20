@@ -16,8 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type Client interface {
+	WithAuthenticator(a auth.Authenticator) Client
+	ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error)
+	ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error)
+	GetGroup(ctx context.Context, groupName string) (Group, error)
+	ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error)
+	GetAuthenticatedUserAccount(ctx context.Context) (*Account, error)
+	URL() *url.URL
+}
+
 // Client access a Gerrit via the REST API.
-type Client struct {
+type client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
@@ -25,7 +35,7 @@ type Client struct {
 	Config *schema.GerritConnection
 
 	// URL is the base URL of Gerrit.
-	URL *url.URL
+	url *url.URL
 
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
@@ -37,7 +47,7 @@ type Client struct {
 // NewClient returns an authenticated Gerrit API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (Client, error) {
 	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -49,10 +59,10 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 
 	auther := &auth.BasicAuth{Username: config.Username, Password: config.Password}
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		Config:     config,
-		URL:        u,
+		url:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 		auther:     auther,
 	}, nil
@@ -60,29 +70,33 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 
 type ListAccountsResponse []Account
 
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-	return &Client{
+func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+	return &client{
 		httpClient: c.httpClient,
 		Config:     c.Config,
-		URL:        c.URL,
+		url:        c.url,
 		rateLimit:  c.rateLimit,
 		auther:     a,
 	}
 }
 
-func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
+func (c *client) URL() *url.URL {
+	return c.url
+}
+
+func (c *client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
 	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
 	return c.listAccounts(ctx, qsAccounts)
 }
 
-func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
+func (c *client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
 	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
 	return c.listAccounts(ctx, qsAccounts)
 }
 
-func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
+func (c *client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
 	req, err := http.NewRequest("GET", "a/accounts/self", nil)
 	if err != nil {
 		return nil, err
@@ -102,7 +116,7 @@ func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, err
 	return &account, nil
 }
 
-func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
+func (c *client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
 	qsAccounts.Set("o", "details")
 
 	urlPath := "a/accounts/"
@@ -121,7 +135,7 @@ func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListA
 	return respAllAccts, nil
 }
 
-func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) {
+func (c *client) GetGroup(ctx context.Context, groupName string) (Group, error) {
 
 	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
 
@@ -146,7 +160,7 @@ type ListProjectsArgs struct {
 // ListProjectsResponse defines a response struct returned from ListProjects method calls.
 type ListProjectsResponse map[string]*Project
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
+func (c *client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
 
 	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
 	// Currently, if you want to only get CODE projects and want to know if there is another page
@@ -203,8 +217,8 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	req.URL = c.URL.ResolveReference(req.URL)
+func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+	req.URL = c.URL().ResolveReference(req.URL)
 
 	c.auther.Authenticate(req)
 

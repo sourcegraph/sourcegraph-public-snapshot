@@ -21,7 +21,7 @@ import (
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
 	svc       *types.ExternalService
-	cli       *gerrit.Client
+	cli       gerrit.Client
 	serviceID string
 	perPage   int
 	private   bool
@@ -55,7 +55,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	return &GerritSource{
 		svc:       svc,
 		cli:       cli,
-		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
+		serviceID: c.Url,
 		perPage:   100,
 		private:   c.Authorization != nil,
 	}, nil
@@ -116,7 +116,7 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + projectName)
+	fullURL, err := urlx.Parse(s.cli.URL().String() + projectName)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 
 // NewTestClient returns a gerrit.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
