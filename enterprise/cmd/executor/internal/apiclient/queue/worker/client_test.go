@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -33,8 +32,7 @@ func TestDequeue(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		var job executor.Job
-		dequeued, err := client.Dequeue(context.Background(), "test_queue", &job)
+		job, dequeued, err := client.Dequeue(context.Background(), "worker", nil)
 		if err != nil {
 			t.Fatalf("unexpected error dequeueing record: %s", err)
 		}
@@ -59,7 +57,7 @@ func TestDequeueNoRecord(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		dequeued, err := client.Dequeue(context.Background(), "test_queue", nil)
+		_, dequeued, err := client.Dequeue(context.Background(), "worker", nil)
 		if err != nil {
 			t.Fatalf("unexpected error dequeueing record: %s", err)
 		}
@@ -81,7 +79,7 @@ func TestDequeueBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if _, err := client.Dequeue(context.Background(), "test_queue", nil); err == nil {
+		if _, _, err := client.Dequeue(context.Background(), "test_queue", nil); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -99,8 +97,10 @@ func TestMarkComplete(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if err := client.MarkComplete(context.Background(), "test_queue", 42); err != nil {
+		if marked, err := client.MarkComplete(context.Background(), 42); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
+		} else if !marked {
+			t.Fatalf("expecting job to be marked")
 		}
 	})
 }
@@ -117,8 +117,10 @@ func TestMarkCompleteBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if err := client.MarkComplete(context.Background(), "test_queue", 42); err == nil {
+		if marked, err := client.MarkComplete(context.Background(), 42); err == nil {
 			t.Fatalf("expected an error")
+		} else if marked {
+			t.Fatalf("expecting job to not be marked")
 		}
 	})
 }
@@ -135,8 +137,10 @@ func TestMarkErrored(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if err := client.MarkErrored(context.Background(), "test_queue", 42, "OH NO"); err != nil {
+		if marked, err := client.MarkErrored(context.Background(), 42, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
+		} else if marked {
+			t.Fatalf("expecting job to not be marked")
 		}
 	})
 }
@@ -153,8 +157,10 @@ func TestMarkErroredBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if err := client.MarkErrored(context.Background(), "test_queue", 42, "OH NO"); err == nil {
+		if marked, err := client.MarkErrored(context.Background(), 42, "OH NO"); err == nil {
 			t.Fatalf("expected an error")
+		} else if marked {
+			t.Fatalf("expecting job to not be marked")
 		}
 	})
 }
@@ -171,8 +177,10 @@ func TestMarkFailed(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if err := client.MarkFailed(context.Background(), "test_queue", 42, "OH NO"); err != nil {
+		if marked, err := client.MarkFailed(context.Background(), 42, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
+		} else if marked {
+			t.Fatalf("expecting job to not be marked")
 		}
 	})
 }
@@ -223,7 +231,7 @@ func TestHeartbeat(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3})
+		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
@@ -264,7 +272,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *worker.Client) {
-		if _, _, err := client.Heartbeat(context.Background(), "test_queue", []int{1, 2, 3}); err == nil {
+		if _, _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -286,6 +294,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *worker.Client)) {
 
 	options := queue.Options{
 		ExecutorName: "deadbeef",
+		QueueName:    "test_queue",
 		BaseClientOptions: apiclient.BaseClientOptions{
 			EndpointOptions: apiclient.EndpointOptions{
 				URL:        ts.URL,
