@@ -16,7 +16,6 @@ import (
 
 func Init(logger log.Logger) {
 	const pkgName = "gerrit"
-	logger = logger.Scoped(pkgName, "Gerrit auth config watch")
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(cfg)
 		return problems
