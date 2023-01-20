@@ -8,15 +8,21 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import { RenderMode } from '@sourcegraph/shared/src/util/url'
 
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
+    renderMode?: RenderMode
 }
 export const ToggleBlameAction: React.FC<Props> = props => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
-    const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
+    const disabled = props.renderMode === 'rendered'
+
+    const descriptiveText = disabled
+        ? 'Git blame line annotations are not available when viewing a rendered document'
+        : `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
     const toggleBlameState = useCallback(() => {
         if (isBlameVisible) {
@@ -28,7 +34,9 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    const icon = <Icon aria-hidden={true} svgPath={isBlameVisible ? mdiAccountDetails : mdiAccountDetailsOutline} />
+    const icon = (
+        <Icon aria-hidden={true} svgPath={isBlameVisible && !disabled ? mdiAccountDetails : mdiAccountDetailsOutline} />
+    )
 
     if (props.source === 'actionItemsBar') {
         return (
@@ -40,7 +48,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
 
     if (props.actionType === 'dropdown') {
         return (
-            <RepoHeaderActionMenuLink file={true} as={Button} onClick={toggleBlameState}>
+            <RepoHeaderActionMenuLink file={true} as={Button} onClick={toggleBlameState} disabled={disabled}>
                 {icon}
                 <span>{descriptiveText}</span>
             </RepoHeaderActionMenuLink>
@@ -49,7 +57,9 @@ export const ToggleBlameAction: React.FC<Props> = props => {
 
     return (
         <Tooltip content={descriptiveText}>
-            <RepoHeaderActionAnchor onSelect={toggleBlameState}>{icon}</RepoHeaderActionAnchor>
+            <RepoHeaderActionAnchor onSelect={toggleBlameState} disabled={disabled}>
+                {icon}
+            </RepoHeaderActionAnchor>
         </Tooltip>
     )
 }
