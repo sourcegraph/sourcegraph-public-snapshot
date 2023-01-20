@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -98,7 +98,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	// Add Basic Auth headers for authenticated requests.
 	c.auth.Authenticate(req)
-	
+
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
