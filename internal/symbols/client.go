@@ -94,7 +94,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 	c.langMappingOnce.Do(func() {
 		var mappings map[string][]string
 
-		if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		if c.isGRPCEnabled(ctx) {
 			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
 		} else {
 			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
