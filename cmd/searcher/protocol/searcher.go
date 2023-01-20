@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -47,7 +46,7 @@ type Request struct {
 	//
 	// This only times out how long we wait for the fetch request;
 	// the fetch will still happen in the background so future requests don't have to wait.
-	FetchTimeout string
+	FetchTimeout time.Duration
 
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
@@ -178,16 +177,13 @@ func (p *PatternInfo) String() string {
 }
 
 func (r *Request) ToProto() *proto.SearchRequest {
-	fetchTimeout, err := time.ParseDuration(r.FetchTimeout)
-	if err != nil {
-		panic(errors.Newf("invalid duration %q", r.FetchTimeout))
-	}
 	return &proto.SearchRequest{
 		Repo:      string(r.Repo),
 		RepoId:    uint32(r.RepoID),
 		CommitOid: string(r.Commit),
 		Branch:    r.Branch,
 		Indexed:   r.Indexed,
+		Url:       r.URL,
 		PatternInfo: &proto.PatternInfo{
 			Pattern:                      r.PatternInfo.Pattern,
 			IsNegated:                    r.PatternInfo.IsNegated,
@@ -198,14 +194,14 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			ExcludePattern:               r.PatternInfo.ExcludePattern,
 			IncludePatterns:              r.PatternInfo.IncludePatterns,
 			PathPatternsAreCaseSensitive: r.PatternInfo.PathPatternsAreCaseSensitive,
-			Limit:                        int32(r.PatternInfo.Limit),
+			Limit:                        int64(r.PatternInfo.Limit),
 			PatternMatchesContent:        r.PatternInfo.PatternMatchesContent,
 			PatternMatchesPath:           r.PatternInfo.PatternMatchesPath,
 			CombyRule:                    r.PatternInfo.CombyRule,
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: durationpb.New(fetchTimeout),
+		FetchTimeout: durationpb.New(r.FetchTimeout),
 		FeatHybrid:   r.FeatHybrid,
 	}
 }
@@ -214,7 +210,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 	*r = Request{
 		Repo:   api.RepoName(req.Repo),
 		RepoID: api.RepoID(req.RepoId),
-		URL:    "",
+		URL:    req.Url,
 		Commit: api.CommitID(req.CommitOid),
 		Branch: req.Branch,
 		PatternInfo: PatternInfo{
@@ -234,7 +230,7 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration().String(),
+		FetchTimeout: req.FetchTimeout.AsDuration(),
 		Indexed:      req.Indexed,
 		FeatHybrid:   req.FeatHybrid,
 	}

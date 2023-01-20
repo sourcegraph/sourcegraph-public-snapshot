@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 	"text/template"
@@ -18,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -211,16 +210,22 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	// to add a backlink to Sourcegraph).
 	body, err := e.decorateChangesetBody(ctx)
 	if err != nil {
+		// At this point in time, we haven't yet established if the changeset has already
+		// been published or not. When in doubt, we record a more generic "update error"
+		// event.
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
@@ -239,10 +244,16 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
 		draftCss, err := sources.ToDraftChangesetSource(css)
 		if err != nil {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return err
 		}
 		exists, err = draftCss.CreateDraftChangeset(ctx, cs)
 		if err != nil {
+			if exists {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
+			} else {
+				e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
+			}
 			return errors.Wrap(err, "creating draft changeset")
 		}
 	} else {
@@ -252,6 +263,11 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// commit yet, because the API of the codehost doesn't return it yet.
 		exists, err = css.CreateChangeset(ctx, cs)
 		if err != nil {
+			if exists {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
+			} else {
+				e.enqueueWebhook(ctx, webhooks.ChangesetPublishError)
+			}
 			return errors.Wrap(err, "creating changeset")
 		}
 	}
@@ -260,17 +276,28 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	if exists {
 		outdated, err := cs.IsOutdated()
 		if err != nil {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return errors.Wrap(err, "could not determine whether changeset needs update")
 		}
 
 		if outdated {
 			if err := css.UpdateChangeset(ctx, cs); err != nil {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 				return errors.Wrap(err, "updating changeset")
 			}
 		}
 	}
+
 	// Set the changeset to published.
 	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+
+	// Enqueue the appropriate webhook.
+	if exists {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
+	} else {
+		e.enqueueWebhook(ctx, webhooks.ChangesetPublish)
+	}
+
 	return nil
 }
 
@@ -327,16 +354,19 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	// to add a backlink to Sourcegraph).
 	body, err := e.decorateChangesetBody(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
 	css, err := e.changesetSource(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
+		e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 		return err
 	}
 
@@ -355,12 +385,15 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
 			if err := e.handleArchivedRepo(ctx); err != nil {
+				e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 				return err
 			}
 		} else {
+			e.enqueueWebhook(ctx, webhooks.ChangesetUpdateError)
 			return errors.Wrap(err, "updating changeset")
 		}
 	}
+	e.enqueueWebhook(ctx, webhooks.ChangesetUpdate)
 
 	return nil
 }
@@ -387,7 +420,7 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 		Changeset:  e.ch,
 	}
 	if err := css.ReopenChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
+		return errors.Wrap(err, "reopening changeset")
 	}
 	return nil
 }
@@ -449,6 +482,8 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 	if err := css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
 	}
+
+	e.enqueueWebhook(ctx, webhooks.ChangesetClose)
 	return nil
 }
 
@@ -611,6 +646,10 @@ func handleArchivedRepo(
 	return nil
 }
 
+func (e *executor) enqueueWebhook(ctx context.Context, eventType string) {
+	webhooks.EnqueueChangeset(ctx, e.logger, e.tx, eventType, e.ch)
+}
+
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
@@ -680,7 +719,7 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return "", errors.Wrap(err, "retrieving namespace")
 	}
 
-	u, err := batchChangeURL(ctx, ns, batchChange)
+	u, err := batchChange.URL(ctx, ns.Name)
 	if err != nil {
 		return "", errors.Wrap(err, "building URL")
 	}
@@ -706,41 +745,6 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 
 	// Otherwise, append to the end of the body.
 	return fmt.Sprintf("%s\n\n%s", body, bcl), nil
-}
-
-// internalClient is here for mocking reasons.
-var internalClient interface {
-	ExternalURL(context.Context) (string, error)
-} = internalapi.Client
-
-func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) (string, error) {
-	// To build the absolute URL, we need to know where Sourcegraph is!
-	extStr, err := internalClient.ExternalURL(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "getting external Sourcegraph URL")
-	}
-
-	extURL, err := url.Parse(extStr)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
-	}
-
-	// This needs to be kept consistent with resolvers.batchChangeURL().
-	// (Refactoring the resolver to use the same function is difficult due to
-	// the different querying and caching behaviour in GraphQL resolvers, so we
-	// simply replicate the logic here.)
-	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/batch-changes/" + c.Name})
-
-	return u.String(), nil
-}
-
-func namespaceURL(ns *database.Namespace) string {
-	prefix := "/users/"
-	if ns.Organization != 0 {
-		prefix = "/organizations/"
-	}
-
-	return prefix + ns.Name
 }
 
 // errPublishSameBranch is returned by publish changeset if a changeset with

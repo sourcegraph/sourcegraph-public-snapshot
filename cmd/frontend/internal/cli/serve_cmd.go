@@ -15,6 +15,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
+	"github.com/throttled/throttled/v2"
+	"github.com/throttled/throttled/v2/store/memstore"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -391,10 +393,18 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 }
 
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
-	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	var store throttled.GCRAStore
+	var err error
+	if pool, ok := redispool.Cache.Pool(); ok {
+		store, err = redigostore.New(pool, "gql:rl:", 0)
+	} else {
+		// If redis is disabled we are in Sourcegraph App and can rely on an
+		// in-memory store.
+		store, err = memstore.New(0)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
 }

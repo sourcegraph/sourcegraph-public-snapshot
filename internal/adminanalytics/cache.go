@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,16 +14,13 @@ import (
 )
 
 var (
-	pool                = redispool.Store
+	store               = redispool.Store
 	scopeKey            = "adminanalytics:"
 	cacheDisabledInTest = false
 )
 
 func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
+	data, err := store.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +35,7 @@ func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
 }
 
 func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
+	data, err := store.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -57,23 +49,20 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string, expire int64) (bool, error) {
+func setDataToCache(key string, data string, expireSeconds int) (bool, error) {
 	if cacheDisabledInTest {
 		return true, nil
 	}
 
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	if _, err := rdb.Do("SET", scopeKey+key, data); err != nil {
+	if err := store.Set(scopeKey+key, data); err != nil {
 		return false, err
 	}
 
-	if expire == 0 {
-		expire = int64((24 * time.Hour).Seconds())
+	if expireSeconds == 0 {
+		expireSeconds = 24 * 60 * 60 // 1 day
 	}
 
-	if _, err := rdb.Do("EXPIRE", scopeKey+key, expire); err != nil {
+	if err := store.Expire(scopeKey+key, expireSeconds); err != nil {
 		return false, err
 	}
 

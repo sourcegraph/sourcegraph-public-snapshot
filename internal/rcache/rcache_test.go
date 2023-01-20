@@ -170,7 +170,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		c.SetMulti([2]string{key, strconv.Itoa(i)})
 	}
 
-	conn := pool.Get()
+	conn := poolGet()
 	defer conn.Close()
 
 	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
@@ -283,10 +283,77 @@ func TestCache_ListKeys(t *testing.T) {
 	}
 }
 
+func TestCache_LTrimList(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix", 1)
+
+	c.AddToList("list", "1")
+	c.AddToList("list", "2")
+	c.AddToList("list", "3")
+	c.AddToList("list", "4")
+	c.AddToList("list", "5")
+
+	c.LTrimList("list", 2)
+
+	items, err := c.GetLastListItems("list", 8)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(items))
+	assert.Equal(t, "4", items[0])
+	assert.Equal(t, "5", items[1])
+}
+
+func TestCache_Hashes(t *testing.T) {
+	SetupForTest(t)
+
+	// Test SetHashItem
+	c := NewWithTTL("simple_hash", 1)
+	err := c.SetHashItem("key", "hashKey1", "value1")
+	assert.NoError(t, err)
+	err = c.SetHashItem("key", "hashKey2", "value2")
+	assert.NoError(t, err)
+
+	// Test GetHashItem
+	val1, err := c.GetHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", val1)
+	val2, err := c.GetHashItem("key", "hashKey2")
+	assert.NoError(t, err)
+	assert.Equal(t, "value2", val2)
+	val3, err := c.GetHashItem("key", "hashKey3")
+	assert.Error(t, err)
+	assert.Equal(t, "", val3)
+
+	// Test GetHashAll
+	all, err := c.GetHashAll("key")
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"hashKey1": "value1", "hashKey2": "value2"}, all)
+}
+
+func TestCache_Lists(t *testing.T) {
+	SetupForTest(t)
+
+	// Use AddToList to fill list
+	c := NewWithTTL("simple_list", 1)
+	err := c.AddToList("key", "item1")
+	assert.NoError(t, err)
+	err = c.AddToList("key", "item2")
+	assert.NoError(t, err)
+	err = c.AddToList("key", "item3")
+	assert.NoError(t, err)
+
+	// Use GetLastListItems to get last 2 items
+	last2, err := c.GetLastListItems("key", 2)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"item2", "item3"}, last2)
+
+	// Use GetLastListItems to get last 5 items (we only have 3)
+	last5, err := c.GetLastListItems("key", 5)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"item1", "item2", "item3"}, last5)
+}
+
 func bytes(s ...string) [][]byte {
-	if s == nil {
-		return nil
-	}
 	t := make([][]byte, len(s))
 	for i, v := range s {
 		t[i] = []byte(v)

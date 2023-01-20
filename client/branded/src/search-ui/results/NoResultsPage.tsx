@@ -3,12 +3,14 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, Text, H2 } from '@sourcegraph/wildcard'
+
+import { QueryExamples } from '../components/QueryExamples'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -47,6 +49,9 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
+    showQueryExamples?: boolean
+    setQueryState?: (query: QueryState) => void
+    selectedSearchContextSpec?: string
 }
 
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
@@ -56,6 +61,9 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    showQueryExamples,
+    setQueryState,
+    selectedSearchContextSpec,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -75,7 +83,19 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <H2>Sourcegraph basics</H2>
+            {showQueryExamples && setQueryState && (
+                <>
+                    <H2 as={H2}>Search basics</H2>
+                    <div className={styles.queryExamplesContainer}>
+                        <QueryExamples
+                            selectedSearchContextSpec={selectedSearchContextSpec}
+                            telemetryService={telemetryService}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                        />
+                    </div>
+                </>
+            )}
             <div className={styles.panels}>
                 <div className="flex-1 flex-shrink-past-contents">
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (

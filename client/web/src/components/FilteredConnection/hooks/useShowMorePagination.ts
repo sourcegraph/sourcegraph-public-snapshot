@@ -117,7 +117,14 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
+    const {
+        data: currentData,
+        previousData,
+        error,
+        loading,
+        fetchMore,
+        refetch,
+    } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
@@ -136,6 +143,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
         return getConnectionFromGraphQLResult(result)
     }
 
+    const data = currentData ?? previousData
     const connection = data ? getConnection({ data, error }) : undefined
 
     useShowMorePaginationUrl({

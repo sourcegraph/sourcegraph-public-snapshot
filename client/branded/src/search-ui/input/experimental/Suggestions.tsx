@@ -13,7 +13,7 @@ function getNote(option: Option): string {
         case 'completion':
             return 'Add'
         case 'target':
-            return 'Jump to'
+            return option.note ?? 'Jump to'
         case 'command':
             return option.note ?? ''
     }
@@ -75,50 +75,52 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
             onMouseDown={handleSelection}
             tabIndex={-1}
         >
-            {results.map((group, groupIndex) => (
-                <ul role="rowgroup" key={group.title} keyaria-labelledby={`${id}-${groupIndex}-label`}>
-                    <li id={`${id}-${groupIndex}-label`} role="presentation">
-                        {group.title}
-                    </li>
-                    {group.options.map((option, rowIndex) => (
-                        <li
-                            role="row"
-                            key={rowIndex}
-                            id={`${id}-${groupIndex}x${rowIndex}`}
-                            aria-selected={focusedItem === option}
-                        >
-                            {option.icon && (
-                                <div className="pr-1">
-                                    <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
-                                </div>
-                            )}
-                            <div role="gridcell">
-                                {option.render
-                                    ? option.render(option)
-                                    : option.matches
-                                    ? [...option.value].map((char, index) =>
-                                          option.matches!.has(index) ? (
-                                              <span key={index} className={styles.match}>
-                                                  {char}
-                                              </span>
-                                          ) : (
-                                              char
-                                          )
-                                      )
-                                    : option.value}
-                            </div>
-                            {option.description && (
-                                <div role="gridcell" className={styles.description}>
-                                    {option.description}
-                                </div>
-                            )}
-                            <div role="gridcell" className={styles.note}>
-                                {getNote(option)}
-                            </div>
+            {results.map((group, groupIndex) =>
+                group.options.length > 0 ? (
+                    <ul role="rowgroup" key={group.title} aria-labelledby={`${id}-${groupIndex}-label`}>
+                        <li id={`${id}-${groupIndex}-label`} role="presentation">
+                            {group.title}
                         </li>
-                    ))}
-                </ul>
-            ))}
+                        {group.options.map((option, rowIndex) => (
+                            <li
+                                role="row"
+                                key={rowIndex}
+                                id={`${id}-${groupIndex}x${rowIndex}`}
+                                aria-selected={focusedItem === option}
+                            >
+                                {option.icon && (
+                                    <div className="pr-1">
+                                        <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
+                                    </div>
+                                )}
+                                <div role="gridcell">
+                                    {option.render
+                                        ? option.render(option)
+                                        : option.matches
+                                        ? [...option.value].map((char, index) =>
+                                              option.matches!.has(index) ? (
+                                                  <span key={index} className={styles.match}>
+                                                      {char}
+                                                  </span>
+                                              ) : (
+                                                  char
+                                              )
+                                          )
+                                        : option.value}
+                                </div>
+                                {option.description && (
+                                    <div role="gridcell" className={styles.description}>
+                                        {option.description}
+                                    </div>
+                                )}
+                                <div role="gridcell" className={styles.note}>
+                                    {getNote(option)}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : null
+            )}
         </div>
     )
 }

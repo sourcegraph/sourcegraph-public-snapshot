@@ -20,10 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
-// extracting a user from the github event and scheduling it for a perms update in repo-updater
+// handleGitHubUserAuthzEvent handles a github webhook for the events described
+// in webhookhandlers/handlers.go extracting a user from the github event and
+// scheduling it for a perms update in repo-updater
 func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
-	return webhooks.Handler(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+	return func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -35,8 +36,8 @@ func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions)
 
 		var user *gh.User
 
-		// github events contain a user object at a few different levels, so try and find the first that matches
-		// and extract the user
+		// github events contain a user object at a few different levels, so try and find
+		// the first that matches and extract the user
 		switch e := payload.(type) {
 		case memberGetter:
 			user = e.GetMember()
@@ -48,7 +49,7 @@ func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions)
 		}
 
 		return scheduleUserUpdate(ctx, logger, db, user, opts)
-	})
+	}
 }
 
 type memberGetter interface {
@@ -85,6 +86,7 @@ func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: ids,
 		Options: opts,
+		Reason:  permssync.ReasonGitHubUserEvent,
 	})
 
 	return nil

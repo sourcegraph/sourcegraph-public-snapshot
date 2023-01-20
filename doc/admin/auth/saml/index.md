@@ -102,6 +102,8 @@ Use the following filters to restrict how users can create accounts and sign in 
     }
   ```
 
+  > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+
 **allowGroups**
 
   Restricts login to members of the allowed SAML groups. By groups we understand any SAML assertion by which we can determine if a user should be allowed to sign-in or sign-up to a sourcegraph account. This SAML assertion attribute needs to return a list of strings.

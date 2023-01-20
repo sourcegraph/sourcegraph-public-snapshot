@@ -91,14 +91,14 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: [],
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
             query: 'machine_type \\"([\\w]+\\-[\\w]+[\\-[\\w]+]?)\\" lang:Terraform  patterntype:regexp',
-            repositoryScope: {
-                repositories: [],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.MONTH,
                 value: 1,
@@ -179,19 +179,19 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: [
+            'github.com/sourcegraph/sourcegraph',
+            'github.com/sourcegraph/deploy-sourcegraph-managed',
+            'github.com/sourcegraph/infrastructure',
+            'github.com/sourcegraph/deploy-sourcegraph-cloud',
+        ],
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
             query: 'lang:go exec.Cmd OR exec.CommandContext',
-            repositoryScope: {
-                repositories: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/deploy-sourcegraph-managed',
-                    'github.com/sourcegraph/infrastructure',
-                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                ],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 2,
@@ -205,15 +205,6 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
         {
             seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
             query: 'lang:go content:"github.com/sourcegraph/run" AND (run.Cmd OR run.Bash)',
-            repositoryScope: {
-                repositories: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/deploy-sourcegraph-managed',
-                    'github.com/sourcegraph/infrastructure',
-                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                ],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 2,
@@ -276,14 +267,14 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
         title: 'Lang Stats',
         otherThreshold: 0.03,
     },
+    repositoryDefinition: {
+        repositories: ['github.com/sourcegraph/about'],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CuLABWoJVNlP8KqoB49hdes8MK',
             query: '',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/about'],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.MONTH,
                 value: 0,
@@ -340,14 +331,14 @@ export const COMPUTE_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2F7eRYTr4EyEblhHeoQE2lRXG2y',
             query: 'DEP case:yes',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: { unit: TimeIntervalStepUnit.WEEK, value: 2, __typename: 'InsightIntervalTimeScope' },
             isCalculated: true,
             generatedFromCaptureGroups: true,

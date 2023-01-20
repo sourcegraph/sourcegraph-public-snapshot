@@ -187,6 +187,14 @@ extend type Query {
         first: Int
         after: String
         id: ID
+        """
+        Allow you to exclude subset of insights by their ids.
+        """
+        excludeIds: [ID!]
+        """
+        Allow you to search insight views by their title or data series labels.
+        """
+        find: String
         isFrozen: Boolean
         filters: InsightViewFiltersInput
         seriesDisplayOptions: SeriesDisplayOptionsInput

@@ -26,7 +26,7 @@ func main() {
 }
 
 const (
-	bucketName         = "codeintel-qa-indexes"
+	bucketName         = "precise-code-intel-integration-testdata"
 	relativeIndexesDir = "dev/codeintel-qa/testdata/indexes"
 )
 
@@ -89,7 +89,7 @@ func downloadAll(ctx context.Context, bucket *storage.BucketHandle, paths []stri
 }
 
 func downloadIndex(ctx context.Context, bucket *storage.BucketHandle, indexesDir, name string) (err error) {
-	targetFile := filepath.Join(indexesDir, strings.TrimSuffix(name, ".gz"))
+	targetFile := filepath.Join(indexesDir, "sourcegraph-testing."+strings.TrimSuffix(name, ".gz"))
 
 	if ok, err := internal.FileExists(targetFile); err != nil {
 		return err

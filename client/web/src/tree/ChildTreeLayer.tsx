@@ -19,7 +19,6 @@ interface ChildTreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     singleChildTreeEntry: SingleChildGitTree
     /** The children entries of a SingleChildTreeLayer. Will be undefined if there is no SingleChildTreeLayer to render. */
     childrenEntries?: SingleChildGitTree[]
-    enableMergedFileSymbolSidebar: boolean
     onHover: (filePath: string) => void
 }
 
@@ -79,7 +78,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                     isSelected={false}
                                                     isGoUpTreeLink={true}
                                                     customIconPath={mdiFolderOutline}
-                                                    enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                                 />
                                             )}
                                         </TreeRootContext.Consumer>
@@ -100,7 +98,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                     entryInfo={props.singleChildTreeEntry}
                                     childrenEntries={props.singleChildTreeEntry.children}
                                     telemetryService={props.telemetryService}
-                                    enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
@@ -112,7 +109,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                         parentPath={item.path}
                                         entryInfo={item}
                                         telemetryService={props.telemetryService}
-                                        enableMergedFileSymbolSidebar={props.enableMergedFileSymbolSidebar}
                                     />
                                 ))
                             )}

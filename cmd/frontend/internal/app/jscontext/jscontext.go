@@ -107,6 +107,8 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
+	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -118,6 +120,8 @@ type JSContext struct {
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
+
+	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -245,6 +249,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
+		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
@@ -254,6 +260,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		LicenseInfo: licenseInfo,
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
+
+		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
 	}
 }
 
