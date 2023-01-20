@@ -1,6 +1,7 @@
 import * as os from 'os'
 import * as path from 'path'
 
+import { SnapshotOptions } from '@percy/core'
 import realPercySnapshot from '@percy/puppeteer'
 import delay from 'delay'
 import expect from 'expect'
@@ -45,9 +46,29 @@ import { readEnvironmentBoolean, retry } from './utils'
 export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
-    : () => Promise.resolve()
+export const extractStyles = (page: puppeteer.Page): Promise<string> =>
+    page.evaluate(() =>
+        [...document.styleSheets].reduce(
+            (styleSheetRules, styleSheet) =>
+                styleSheetRules.concat(
+                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                ),
+            ''
+        )
+    )
+
+export const percySnapshot = async (
+    page: puppeteer.Page,
+    name: string,
+    options: SnapshotOptions = {}
+): Promise<void> => {
+    if (!readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })) {
+        return Promise.resolve()
+    }
+
+    const extensionStyles = await extractStyles(page)
+    return realPercySnapshot(page, name, { ...options, percyCSS: extensionStyles.concat(options.percyCSS || '') })
+}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
