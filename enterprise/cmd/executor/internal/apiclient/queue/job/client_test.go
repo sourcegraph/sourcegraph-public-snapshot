@@ -18,12 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/job"
-	executor2 "github.com/sourcegraph/sourcegraph/internal/executor"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestAddExecutionLogEntry(t *testing.T) {
-	entry := executor2.ExecutionLogEntry{
+	entry := internalexecutor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -63,7 +63,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestAddExecutionLogEntryBadResponse(t *testing.T) {
-	entry := executor2.ExecutionLogEntry{
+	entry := internalexecutor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -99,7 +99,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntry(t *testing.T) {
-	entry := executor2.ExecutionLogEntry{
+	entry := internalexecutor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -136,7 +136,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
-	entry := executor2.ExecutionLogEntry{
+	entry := internalexecutor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
