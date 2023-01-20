@@ -43,27 +43,6 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 }
 
 func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (*extsvc.Account, error) {
-	// First try to fetch Gerrit account for this username
-	accts, err := p.client.ListAccountsByUsername(ctx, user.Username)
-	if err != nil {
-		return nil, err
-	}
-	// Check that this account from Gerrit correlates to a verified email
-	if acct, found, err := p.checkAccountsAgainstVerifiedEmails(accts, user, verifiedEmails); found && err == nil {
-		return acct, nil
-	}
-
-	// If no account was found via the user's Sourcegraph username, attempt to find an account via one of the verified emails.
-	for _, email := range verifiedEmails {
-		accts, err := p.client.ListAccountsByEmail(ctx, email)
-		if err != nil {
-			return nil, err
-		}
-		for _, acct := range accts {
-			return p.buildExtsvcAccount(acct, user, email)
-		}
-	}
-
 	return nil, nil
 }
 

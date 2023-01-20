@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
-import { Button, Form, H3, Input, Modal } from '@sourcegraph/wildcard'
-import { gql, useMutation } from '@sourcegraph/http-client'
 import { AddGerritAccountResult, AddGerritAccountVariables } from 'src/graphql-operations'
+
+import { gql, useMutation } from '@sourcegraph/http-client'
+import { Alert, Button, Form, H3, Input, Modal, Text } from '@sourcegraph/wildcard'
 
 export const ADD_GERRIT_ACCOUNT = gql`
     mutation AddGerritAccount($username: String!, $password: String!, $serviceID: String!) {
@@ -24,30 +25,32 @@ export const AddGerritAccountModal: React.FunctionComponent<
         ADD_GERRIT_ACCOUNT
     )
 
-    const onAccountAdd = useCallback<React.FormEventHandler<HTMLFormElement>>(async event => {
-        const target = event.target as typeof event.target & {
-            username: { value: string }
-            password: { value: string }
-        }
-        event.preventDefault()
-        setIsLoading(true)
+    const onAccountAdd = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        event => {
+            const target = event.target as typeof event.target & {
+                username: { value: string }
+                password: { value: string }
+            }
+            event.preventDefault()
+            setIsLoading(true)
 
-        await addGerritAccount({
-            variables: {
-                username: target.username.value,
-                password: target.password.value,
-                serviceID: serviceID,
-            },
-        })
-
-        if (error) {
-            console.log(error)
-            setIsLoading(false)
-            return
-        }
-        setIsLoading(false)
-        onDidAdd()
-    }, [])
+            addGerritAccount({
+                variables: {
+                    username: target.username.value,
+                    password: target.password.value,
+                    serviceID,
+                },
+            })
+                .then(() => {
+                    setIsLoading(false)
+                    onDidAdd()
+                })
+                .catch(() => {
+                    setIsLoading(false)
+                })
+        },
+        [addGerritAccount, onDidAdd, serviceID]
+    )
 
     return (
         <Modal aria-labelledby="heading--add-gerrit-account" aria-describedby="description--add-gerrit-account">
@@ -55,9 +58,10 @@ export const AddGerritAccountModal: React.FunctionComponent<
                 Add Gerrit account
             </H3>
             <Form onSubmit={onAccountAdd}>
-                <p id="description--add-gerrit-account">
+                {error && <Alert variant="danger">{error.message}</Alert>}
+                <Text id="description--add-gerrit-account">
                     You are about to add a Gerrit account. Please enter your Gerrit HTTP credentials.
-                </p>
+                </Text>
                 <Input type="text" name="username" placeholder="Username" className="mb-4" />
                 <Input type="password" name="password" placeholder="Password" className="mb-4" />
                 <div className="d-flex justify-content-end">

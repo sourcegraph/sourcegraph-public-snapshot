@@ -4,6 +4,7 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -79,6 +80,26 @@ func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (L
 	qsAccounts := make(url.Values)
 	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
 	return c.listAccounts(ctx, qsAccounts)
+}
+
+func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
+	req, err := http.NewRequest("GET", "a/accounts/self", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var account Account
+	if _, err = c.do(ctx, req, &account); err != nil {
+		if httpErr := (&httpError{}); errors.As(err, &httpErr) {
+			if httpErr.Unauthorized() {
+				return nil, errors.New("Invalid username or password.")
+			}
+		}
+
+		return nil, err
+	}
+
+	return &account, nil
 }
 
 func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {

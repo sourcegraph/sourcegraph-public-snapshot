@@ -3,7 +3,6 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -55,7 +54,7 @@ func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData)
 	}, nil
 }
 
-func SetExternalAccountData(data *extsvc.AccountData, usr *AccountData, creds *AccountCredentials) error {
+func SetExternalAccountData(data *extsvc.AccountData, usr *Account, creds *AccountCredentials) error {
 	serializedUser, err := json.Marshal(usr)
 	if err != nil {
 		return err
@@ -70,30 +69,11 @@ func SetExternalAccountData(data *extsvc.AccountData, usr *AccountData, creds *A
 	return nil
 }
 
-func VerifyAccount(ctx context.Context, conn *types.GerritConnection, creds *AccountCredentials) (*AccountData, error) {
+func VerifyAccount(ctx context.Context, conn *types.GerritConnection, creds *AccountCredentials) (*Account, error) {
 	auther := &auth.BasicAuth{Username: creds.Username, Password: creds.Password}
 	client, err := NewClient(conn.URN, conn.GerritConnection, nil)
 	if err != nil {
 		return nil, err
 	}
-	client = client.WithAuthenticator(auther)
-
-	resp, err := client.ListAccountsByUsername(ctx, creds.Username)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(resp) != 1 {
-		if len(resp) == 0 {
-			return nil, errors.New("no account found")
-		} else {
-			return nil, errors.New("multiple accounts found")
-		}
-	}
-
-	return &AccountData{
-		Username:  resp[0].Username,
-		Email:     resp[0].Email,
-		AccountID: resp[0].ID,
-	}, nil
+	return client.WithAuthenticator(auther).GetAuthenticatedUserAccount(ctx)
 }

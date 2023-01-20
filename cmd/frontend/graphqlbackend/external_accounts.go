@@ -9,9 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -141,6 +143,10 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		UserIDs: []int32{account.UserID},
+	})
+
 	return &EmptyResponse{}, nil
 }
 
@@ -223,6 +229,10 @@ func (r *schemaResolver) AddGerritExternalAccount(ctx context.Context, args *str
 	if err = r.db.UserExternalAccounts().Insert(ctx, user.ID, accountSpec, accountData); err != nil {
 		return nil, err
 	}
+
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		UserIDs: []int32{user.ID},
+	})
 
 	return &EmptyResponse{}, nil
 }

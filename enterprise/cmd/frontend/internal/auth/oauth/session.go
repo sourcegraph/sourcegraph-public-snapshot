@@ -15,8 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -144,6 +146,11 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			span.AddEvent(err.Error()) // do not set error
 			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
 		}
+
+		// Trigger a permissions sync
+		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+			UserIDs: []int32{user.ID},
+		})
 
 		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 	})
