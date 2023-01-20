@@ -57,12 +57,12 @@ export const extractStyles = (page: puppeteer.Page): Promise<string> =>
     )
 
 interface CommonSnapshotOptions {
-    widths?: number[];
-    minHeight?: number;
-    percyCSS?: string;
-    enableJavaScript?: boolean;
-    devicePixelRatio?: number;
-    scope?: string;
+    widths?: number[]
+    minHeight?: number
+    percyCSS?: string
+    enableJavaScript?: boolean
+    devicePixelRatio?: number
+    scope?: string
 }
 
 export const percySnapshot = async (
