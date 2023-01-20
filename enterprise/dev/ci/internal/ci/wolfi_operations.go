@@ -16,7 +16,7 @@ func WolfiOperations() *operations.Set {
 func buildWolfi(target string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":wolf: Build stuff %s", target),
-			bk.Cmd(fmt.Sprintf("./dev/enterprise/ci/scripts/wolfi/build.sh %s", target)),
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 		)
