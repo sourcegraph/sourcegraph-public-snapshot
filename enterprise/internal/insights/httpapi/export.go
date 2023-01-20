@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
@@ -51,7 +52,7 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"CodeInsightsDataExport-%s.zip\"", archive.insightName))
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"CodeInsightsDataExport-%s.zip\"", archive.name))
 
 		_, err = w.Write(archive.data)
 		if err != nil {
@@ -61,8 +62,8 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 }
 
 type codeInsightsDataArchive struct {
-	insightName string
-	data        []byte
+	name string
+	data []byte
 }
 
 var notFoundError = errors.New("insight not found")
@@ -117,12 +118,12 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		return nil, errors.Wrap(err, "failed to write csv header")
 	}
 
+	timestamp := time.Now().Format(time.RFC3339)
 	dataPoints, err := h.seriesStore.GetAllDataForInsightViewID(ctx, insightViewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch all data for insight")
 	}
 
-	var insightName string
 	for _, d := range dataPoints {
 		dataPoint[0] = d.InsightViewTitle
 		dataPoint[1] = d.SeriesLabel
@@ -131,7 +132,6 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		dataPoint[4] = emptyStringIfNil(d.RepoName)
 		dataPoint[5] = fmt.Sprintf("%d", d.Value)
 		dataPoint[6] = emptyStringIfNil(d.Capture)
-		insightName = d.InsightViewTitle
 
 		if err := dataWriter.Write(dataPoint); err != nil {
 			return nil, err
@@ -143,8 +143,8 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		return nil, err
 	}
 	return &codeInsightsDataArchive{
-		insightName: insightName,
-		data:        buf.Bytes(),
+		name: fmt.Sprintf("%s-%s", insightViewId, timestamp),
+		data: buf.Bytes(),
 	}, nil
 }
 
