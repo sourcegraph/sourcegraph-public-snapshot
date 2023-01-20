@@ -7,13 +7,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
-import { Insight } from '../../../../../core'
+import { Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'
 
 interface Props extends TelemetryProps {
-    insight: Pick<Insight, 'title' | 'id' | 'type'>
+    insight: Insight
 }
 
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
@@ -46,6 +46,12 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
 
     return (
         <div className={styles.container}>
+            {!isLangStatsInsight(insight) && (
+                <Button as={Link} to={`/api/insights/export/${insight.id}`} variant="secondary">
+                    Export CVS data
+                </Button>
+            )}
+
             <Tooltip content={isCopied ? 'Copied!' : undefined}>
                 <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
                     <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
