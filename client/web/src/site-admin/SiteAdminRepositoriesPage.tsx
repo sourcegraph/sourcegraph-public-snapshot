@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
+import { isEqual } from 'lodash'
 import { RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -15,6 +15,7 @@ import {
     Container,
     H4,
     Icon,
+    Input,
     Link,
     LoadingSpinner,
     PageHeader,
@@ -22,17 +23,22 @@ import {
     Tooltip,
     ErrorAlert,
     LinkOrSpan,
+    PageSwitcher,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
-    FilteredConnection,
+    buildFilterArgs,
+    FilterControl,
+    FilteredConnectionFilterValue,
     FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
+import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
+import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
+    RepositoriesVariables,
     RepositoryOrderBy,
     RepositoryStatsResult,
     ExternalServiceIDsAndNamesVariables,
@@ -43,7 +49,7 @@ import {
 import { refreshSiteFlags } from '../site/backend'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
+import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
@@ -355,17 +361,79 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         return filtersWithExternalServices
     }, [extSvcs])
 
-    const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
-        []
+    const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
+        getFilterFromURL(new URLSearchParams(location.search), filters)
     )
+
+    useEffect(() => {
+        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
+    }, [filters, location.search])
+
+    const [searchQuery, setSearchQuery] = useState<string>(
+        () => new URLSearchParams(location.search).get('query') || ''
+    )
+
+    useEffect(() => {
+        const searchFragment = getUrlQuery({
+            query: searchQuery,
+            filters,
+            filterValues,
+            search: location.search,
+        })
+        const searchFragmentParams = new URLSearchParams(searchFragment)
+        searchFragmentParams.sort()
+
+        const oldParams = new URLSearchParams(location.search)
+        oldParams.sort()
+
+        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+            history.replace({
+                search: searchFragment,
+                hash: location.hash,
+                // Do not throw away flash messages
+                state: location.state,
+            })
+        }
+    }, [filters, filterValues, searchQuery, location, history])
+
+    const variables = useMemo<RepositoriesVariables>(() => {
+        const args = buildFilterArgs(filterValues)
+
+        return {
+            ...args,
+            query: searchQuery,
+            indexed: args.indexed ?? true,
+            notIndexed: args.notIndexed ?? true,
+            failedFetch: args.failedFetch ?? false,
+            corrupted: args.corrupted ?? false,
+            cloneStatus: args.cloneStatus ?? null,
+            externalService: args.externalService ?? null,
+        } as RepositoriesVariables
+    }, [searchQuery, filterValues])
+
+    const {
+        connection,
+        loading: reposLoading,
+        error: reposError,
+        refetch,
+        ...paginationProps
+    } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
+        query: REPOSITORIES_QUERY,
+        variables,
+        getConnection: ({ data }) => data?.repositories || undefined,
+        options: { pollInterval: 5000 },
+    })
+
+    useEffect(() => {
+        refetch(variables)
+    }, [refetch, variables])
+
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
     const licenseInfo = window.context.licenseInfo
 
-    const error = repoStatsError || extSvcError
-    const loading = repoStatsLoading || extSvcLoading
+    const error = repoStatsError || extSvcError || reposError
+    const loading = repoStatsLoading || extSvcLoading || reposLoading
 
     return (
         <div className="site-admin-repositories-page">
@@ -413,20 +481,49 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {extSvcs && (
-                    <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                        className="mb-0"
-                        listClassName="list-group list-group-flush mb-0"
-                        summaryClassName="mt-2"
-                        withCenteredSummary={true}
-                        noun="repository"
-                        pluralNoun="repositories"
-                        queryConnection={queryRepositories}
-                        nodeComponent={RepositoryNode}
-                        inputClassName="ml-2 flex-1"
-                        filters={filters}
-                        history={history}
-                        location={location}
-                    />
+                    <>
+                        <div className="d-flex justify-content-center">
+                            <FilterControl
+                                filters={filters}
+                                values={filterValues}
+                                onValueSelect={(
+                                    filter: FilteredConnectionFilter,
+                                    value: FilteredConnectionFilterValue
+                                ) =>
+                                    setFilterValues(values => {
+                                        const newValues = new Map(values)
+                                        newValues.set(filter.id, value)
+                                        return newValues
+                                    })
+                                }
+                            />
+                            <Input
+                                type="search"
+                                className="flex-1"
+                                placeholder="Search repositories..."
+                                name="query"
+                                value={searchQuery}
+                                onChange={event => setSearchQuery(event.currentTarget.value)}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck={false}
+                                aria-label="Search repositories..."
+                                variant="regular"
+                            />
+                        </div>
+                        <ul className="list-group list-group-flush mt-4">
+                            {(connection?.nodes || []).map(node => (
+                                <RepositoryNode key={node.id} node={node} />
+                            ))}
+                        </ul>
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-4"
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel="repositories"
+                        />
+                    </>
                 )}
             </Container>
         </div>

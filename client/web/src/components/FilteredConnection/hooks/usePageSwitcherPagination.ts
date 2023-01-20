@@ -41,7 +41,7 @@ export interface UsePaginatedConnectionResult<TResult, TVariables, TNode> extend
     connection?: PaginatedConnection<TNode>
     loading: boolean
     error?: ApolloError
-    refetch: () => any
+    refetch: (variables?: TVariables) => any
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -53,6 +53,8 @@ interface UsePaginatedConnectionConfig<TResult> {
     fetchPolicy?: WatchQueryFetchPolicy
     // Allows running an optional callback on any successful request
     onCompleted?: (data: TResult) => void
+    // Allows to provide polling interval to useQuery
+    pollInterval?: number
 }
 
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
@@ -98,6 +100,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
+        pollInterval: options?.pollInterval,
     })
 
     const connection = useMemo(() => {
