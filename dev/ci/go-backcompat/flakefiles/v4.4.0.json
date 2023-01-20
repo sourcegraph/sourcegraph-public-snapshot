@@ -28,5 +28,40 @@
     "path": "internal/database",
     "prefix": "TestRoleList",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleCount",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleUpdate",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleUpdate/non-existent_role",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleUpdate/existing_role",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestUserRoleGetByRoleIDAndUserID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestUserRoleGetByUserID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestUserRoleGetByRoleID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
   }
 ]
