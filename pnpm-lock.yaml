@@ -801,6 +801,53 @@ importers:
       yaml: 2.2.1
       yauzl: 2.10.0
 
+  client/backstage-plugin:
+    specifiers:
+      '@backstage/cli': ^0.22.0
+      '@backstage/core-app-api': ^1.4.0
+      '@backstage/core-components': ^0.12.3
+      '@backstage/core-plugin-api': ^1.3.0
+      '@backstage/dev-utils': ^1.0.11
+      '@backstage/test-utils': ^1.2.3
+      '@backstage/theme': ^0.2.16
+      '@internal/plugin-sourcegraph': 'link:'
+      '@material-ui/core': ^4.9.13
+      '@material-ui/icons': ^4.9.1
+      '@material-ui/lab': 4.0.0-alpha.57
+      '@testing-library/jest-dom': ^5.10.1
+      '@testing-library/react': ^12.1.3
+      '@testing-library/user-event': ^14.0.0
+      '@types/node': '*'
+      cross-fetch: ^3.1.5
+      msw: ^0.49.0
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      react-router-dom: ^6.7.0
+      react-use: ^17.2.4
+    dependencies:
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
+      '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
+      '@internal/plugin-sourcegraph': 'link:'
+      '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
+      '@material-ui/icons': 4.11.3_5glfapqkhejqpattrqvw65m2la
+      '@material-ui/lab': 4.0.0-alpha.57_5glfapqkhejqpattrqvw65m2la
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
+      react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
+    devDependencies:
+      '@backstage/cli': 0.22.1_veicm43jo6hfcg5mjykszuneye
+      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
+      '@backstage/dev-utils': 1.0.11_asenqjccrkesmsfwbq3lggkll4
+      '@backstage/test-utils': 1.2.4_e442r2zblqvic2logccjohmmdi
+      '@testing-library/jest-dom': 5.16.4
+      '@testing-library/react': 12.1.5_biqbaboplfbrettd7655fr4n2y
+      '@testing-library/user-event': 14.4.3_tlwynutqiyp5mns3woioasuxnq
+      '@types/node': 18.8.3
+      cross-fetch: 3.1.5
+      msw: 0.49.2_typescript@4.9.3
+
   client/branded:
     specifiers:
       '@sourcegraph/client-api': workspace:*
@@ -931,53 +978,6 @@ importers:
       '@sourcegraph/build-config': workspace:*
     devDependencies:
       '@sourcegraph/build-config': link:../build-config
-
-  client/plugin-backstage:
-    specifiers:
-      '@backstage/cli': ^0.22.0
-      '@backstage/core-app-api': ^1.4.0
-      '@backstage/core-components': ^0.12.3
-      '@backstage/core-plugin-api': ^1.3.0
-      '@backstage/dev-utils': ^1.0.11
-      '@backstage/test-utils': ^1.2.3
-      '@backstage/theme': ^0.2.16
-      '@internal/plugin-sourcegraph': 'link:'
-      '@material-ui/core': ^4.9.13
-      '@material-ui/icons': ^4.9.1
-      '@material-ui/lab': 4.0.0-alpha.57
-      '@testing-library/jest-dom': ^5.10.1
-      '@testing-library/react': ^12.1.3
-      '@testing-library/user-event': ^14.0.0
-      '@types/node': '*'
-      cross-fetch: ^3.1.5
-      msw: ^0.49.0
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      react-router-dom: ^6.7.0
-      react-use: ^17.2.4
-    dependencies:
-      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
-      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
-      '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
-      '@internal/plugin-sourcegraph': 'link:'
-      '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
-      '@material-ui/icons': 4.11.3_5glfapqkhejqpattrqvw65m2la
-      '@material-ui/lab': 4.0.0-alpha.57_5glfapqkhejqpattrqvw65m2la
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
-      react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
-    devDependencies:
-      '@backstage/cli': 0.22.1_veicm43jo6hfcg5mjykszuneye
-      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
-      '@backstage/dev-utils': 1.0.11_asenqjccrkesmsfwbq3lggkll4
-      '@backstage/test-utils': 1.2.4_e442r2zblqvic2logccjohmmdi
-      '@testing-library/jest-dom': 5.16.4
-      '@testing-library/react': 12.1.5_biqbaboplfbrettd7655fr4n2y
-      '@testing-library/user-event': 14.4.3_tlwynutqiyp5mns3woioasuxnq
-      '@types/node': 18.8.3
-      cross-fetch: 3.1.5
-      msw: 0.49.2_typescript@4.9.3
 
   client/shared:
     specifiers:
