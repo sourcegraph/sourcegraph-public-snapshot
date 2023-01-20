@@ -158,9 +158,11 @@ func (r *RepoCommitPath) FromProto(p *proto.RepoCommitPath) {
 		return
 	}
 
-	r.Repo = p.GetRepo()
-	r.Commit = p.GetCommit()
-	r.Path = p.GetPath()
+	*r = RepoCommitPath{
+		Repo:   p.GetRepo(),
+		Commit: p.GetCommit(),
+		Path:   p.GetPath(),
+	}
 }
 
 type LocalCodeIntelPayload struct {
@@ -197,7 +199,9 @@ func (p *LocalCodeIntelPayload) FromProto(r *proto.LocalCodeIntelResponse) {
 		symbols = append(symbols, symbol)
 	}
 
-	p.Symbols = symbols
+	*p = LocalCodeIntelPayload{
+		Symbols: symbols,
+	}
 }
 
 type RepoCommitPathRange struct {
@@ -236,8 +240,10 @@ func (p *Point) FromProto(pp *proto.Point) {
 		return
 	}
 
-	p.Row = int(pp.GetRow())
-	p.Column = int(pp.GetColumn())
+	*p = Point{
+		Row:    int(pp.GetRow()),
+		Column: int(pp.GetColumn()),
+	}
 }
 
 type Symbol struct {
@@ -267,10 +273,12 @@ func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
 }
 
 func (s *Symbol) FromProto(p *proto.LocalCodeIntelResponse_Symbol) {
-	s.Name = p.GetName()
-	s.Hover = p.GetHover()
+	if s == nil {
+		return
+	}
 
-	s.Def.FromProto(p.GetDef())
+	var def Range
+	def.FromProto(p.GetDef())
 
 	var refs []Range
 
@@ -281,7 +289,12 @@ func (s *Symbol) FromProto(p *proto.LocalCodeIntelResponse_Symbol) {
 		refs = append(refs, r)
 	}
 
-	s.Refs = refs
+	*s = Symbol{
+		Name:  p.GetName(),
+		Hover: p.GetHover(),
+		Def:   def,
+		Refs:  refs,
+	}
 }
 
 func (s Symbol) String() string {
@@ -311,9 +324,11 @@ func (r *Range) FromProto(p *proto.Range) {
 		return
 	}
 
-	r.Row = int(p.GetRow())
-	r.Column = int(p.GetColumn())
-	r.Length = int(p.GetLength())
+	*r = Range{
+		Row:    int(p.GetRow()),
+		Column: int(p.GetColumn()),
+		Length: int(p.GetLength()),
+	}
 }
 
 func (r Range) String() string {
@@ -347,16 +362,26 @@ func (si *SymbolInfo) ToProto() *proto.SymbolInfoResponse {
 }
 
 func (si *SymbolInfo) FromProto(p *proto.SymbolInfoResponse) {
+	if si == nil {
+		return
+	}
+
 	result := p.GetResult()
 
 	if result == nil {
 		return
 	}
 
-	si.Definition.RepoCommitPath.FromProto(result.GetDefinition().GetRepoCommitPath())
-	si.Definition.Range.FromProto(result.GetDefinition().GetRange())
+	var definition RepoCommitPathMaybeRange
 
-	si.Hover = result.Hover // don't use GetHover() because it returns a string, not a pointer to a string
+	definition.RepoCommitPath.FromProto(result.GetDefinition().GetRepoCommitPath())
+	definition.Range.FromProto(result.GetDefinition().GetRange())
+
+	*si = SymbolInfo{
+		Definition: definition,
+		Hover:      result.Hover, // don't use GetHover() because it returns a string, not a pointer to a string
+	}
+
 }
 
 func (s SymbolInfo) String() string {

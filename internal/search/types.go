@@ -112,18 +112,27 @@ type SymbolsParameters struct {
 }
 
 func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
-	s.Repo = api.RepoName(p.GetRepo()) // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
-	s.CommitID = api.CommitID(p.GetCommitId())
-	s.Query = p.GetQuery()
-	s.IsRegExp = p.GetIsRegExp()
-	s.IsCaseSensitive = p.GetIsCaseSensitive()
-	s.IncludePatterns = p.GetIncludePatterns()
-	s.ExcludePattern = p.GetExcludePattern()
-	s.First = int(p.GetFirst())
-	s.Timeout = int(p.GetTimeout())
+	if s == nil {
+		return
+	}
+
+	*s = SymbolsParameters{
+		Repo:            api.RepoName(p.GetRepo()), // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
+		CommitID:        api.CommitID(p.GetCommitId()),
+		Query:           p.GetQuery(),
+		IsRegExp:        p.GetIsRegExp(),
+		IsCaseSensitive: p.GetIsCaseSensitive(),
+		IncludePatterns: p.GetIncludePatterns(),
+		ExcludePattern:  p.GetExcludePattern(),
+		First:           int(p.GetFirst()),
+		Timeout:         int(p.GetTimeout()),
+	}
 }
 
 func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
+	if s == nil {
+		return &proto.SearchRequest{}
+	}
 
 	return &proto.SearchRequest{
 		Repo:     string(s.Repo),
@@ -146,6 +155,10 @@ type SymbolsResponse struct {
 }
 
 func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
+	if r == nil {
+		return
+	}
+
 	var symbols []result.Symbol
 
 	for _, s := range p.GetSymbols() {
@@ -154,29 +167,32 @@ func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
 		symbols = append(symbols, symbol)
 	}
 
-	r.Symbols = symbols
-	r.Err = p.GetError()
+	*r = SymbolsResponse{
+		Symbols: symbols,
+		Err:     p.GetError(),
+	}
+
 }
 
 func (r *SymbolsResponse) ToProto() *proto.SymbolsResponse {
 	if r == nil {
-		return nil
+		return &proto.SymbolsResponse{}
 	}
-
-	var response proto.SymbolsResponse
 
 	var symbols []*proto.SymbolsResponse_Symbol
 	for _, s := range r.Symbols {
 		symbols = append(symbols, s.ToProto())
 	}
 
-	response.Symbols = symbols
-
+	var err *string
 	if r.Err != "" {
-		response.Error = &r.Err
+		err = &r.Err
 	}
 
-	return &response
+	return &proto.SymbolsResponse{
+		Symbols: symbols,
+		Error:   err,
+	}
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global
