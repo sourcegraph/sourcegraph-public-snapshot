@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixed a bug where saving default Sort & Limit filters in Code Insights did not persist [#46653](https://github.com/sourcegraph/sourcegraph/pull/46653)
 
 ### Removed
 
