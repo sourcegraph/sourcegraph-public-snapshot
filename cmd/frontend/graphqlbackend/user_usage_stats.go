@@ -141,13 +141,24 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			continue
 		}
 
-		if strings.HasPrefix(args.Event, "search.ranking.") {
+		if strings.HasPrefix(args.Event, "search.ranking.result-clicked") {
 			argumentPayload, err := decode(args.Argument)
 			if err != nil {
 				return nil, err
 			}
-			if err := exportPrometheusSearchRanking(argumentPayload); err != nil {
-				log15.Error("exportPrometheusSearchRanking", "error", err)
+			if err := exportSearchResultClickedMetric(argumentPayload); err != nil {
+				log15.Error("exportSearchResultClickedMetric", "error", err)
+			}
+			continue
+		}
+
+		if strings.HasPrefix(args.Event, "search.ranking.first-result-clicked") {
+			argumentPayload, err := decode(args.Argument)
+			if err != nil {
+				return nil, err
+			}
+			if err := exportFirstSearchResultClickedMetric(argumentPayload); err != nil {
+				log15.Error("exportFirstSearchResultClickedMetric", "error", err)
 			}
 			continue
 		}
@@ -236,7 +247,7 @@ var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOp
 	Buckets: prometheus.LinearBuckets(1, 1, 10),
 }, []string{"type"})
 
-func exportPrometheusSearchRanking(payload json.RawMessage) error {
+func exportSearchResultClickedMetric(payload json.RawMessage) error {
 	var v struct {
 		Index float64 `json:"index"`
 		Type  string  `json:"type"`
@@ -245,5 +256,39 @@ func exportPrometheusSearchRanking(payload json.RawMessage) error {
 		return err
 	}
 	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
+	return nil
+}
+
+var searchRankingFirstResultClicked = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_search_ranking_first_result_clicked",
+	Help:    "the index of the first search result which was clicked on by the user",
+	Buckets: prometheus.LinearBuckets(1, 1, 10),
+}, []string{"type", "num_results"})
+
+func exportFirstSearchResultClickedMetric(payload json.RawMessage) error {
+	var v struct {
+		Index      float64 `json:"index"`
+		NumResults int     `json:"resultsNumber"`
+		Type       string  `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+		return err
+	}
+
+	var numResultsBucket string
+	switch {
+	case v.NumResults > 10:
+		numResultsBucket = "+Inf"
+	case v.NumResults > 5:
+		numResultsBucket = "5+"
+	case v.NumResults > 3:
+		numResultsBucket = "3+"
+	case v.NumResults > 1:
+		numResultsBucket = "1+"
+	default:
+		numResultsBucket = "1"
+	}
+
+	searchRankingFirstResultClicked.WithLabelValues(v.Type, numResultsBucket).Observe(v.Index)
 	return nil
 }

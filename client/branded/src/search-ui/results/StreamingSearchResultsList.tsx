@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef,useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -102,6 +102,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
+    const firstClick = useRef(true)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -109,8 +110,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type })
+
+            if (firstClick.current) {
+                telemetryService.log('search.ranking.first-result-clicked', {index, resultsNumber, type})
+                firstClick.current = false
+            }
         },
-        [telemetryService]
+        [telemetryService, resultsNumber]
     )
 
     const renderResult = useCallback(
