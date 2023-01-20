@@ -906,7 +906,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, insightViewId st
 	if len(excludedRepoIDs) == 0 {
 		repoIDsPred = sqlf.Sprintf("true")
 	} else {
-		repoIDsPred = sqlf.Sprintf("sp.repo_name_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
+		repoIDsPred = sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ","))
 	}
 
 	tx, err := s.Transact(ctx)

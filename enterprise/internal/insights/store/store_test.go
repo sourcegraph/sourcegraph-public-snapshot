@@ -1049,7 +1049,7 @@ INSERT INTO series_points(
 SELECT recording_time,
     'series1',
     11,
-    1,
+    1111,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
 	FROM insight_series_recording_times WHERE insight_series_id = 1;
@@ -1078,7 +1078,7 @@ SELECT recording_time,
 		}
 	})
 	t.Run("respects repo permissions", func(t *testing.T) {
-		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1}, nil)
+		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1111}, nil)
 		defer func() {
 			// cleanup
 			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
