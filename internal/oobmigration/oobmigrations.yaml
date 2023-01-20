@@ -108,3 +108,11 @@
   introduced_version_minor: 3
   deprecated_version_major: 4
   deprecated_version_minor: 4
+- id: 19
+  team: batch-changes
+  component: db.user_roles
+  description: Assigns roles to existing users
+  non_destructive: true
+  is_enterprise: false
+  introduced_version_major: 4
+  introduced_version_minor: 5

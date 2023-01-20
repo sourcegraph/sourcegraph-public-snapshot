@@ -22,7 +22,7 @@ import { createRoot, Root } from 'react-dom/client'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
-import { BlameHunk } from '../../blame/useBlameHunks'
+import { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import { blobPropsFacet } from '.'
@@ -61,7 +61,7 @@ class BlameDecorationWidget extends WidgetType {
         // We can not access the light theme and first commit date from the view
         // props because we need the widget to re-render when it updates.
         public readonly isLightTheme: boolean,
-        public readonly firstCommitDate: Date | undefined
+        public readonly blameHunkMetadata: Omit<BlameHunkData, 'current'>
     ) {
         super()
         const blobProps = this.view.state.facet(blobPropsFacet)
@@ -86,7 +86,8 @@ class BlameDecorationWidget extends WidgetType {
                     history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
-                    firstCommitDate={this.firstCommitDate}
+                    firstCommitDate={this.blameHunkMetadata.firstCommitDate}
+                    externalURLs={this.blameHunkMetadata.externalURLs}
                     isLightTheme={this.isLightTheme}
                     hideRecency={false}
                 />
@@ -119,7 +120,7 @@ class BlameDecorationWidget extends WidgetType {
 interface BlameDecorationsFacetProps {
     hunks: BlameHunk[]
     isLightTheme: boolean
-    firstCommitDate: Date | undefined
+    blameHunkMetadata: Omit<BlameHunkData, 'current'>
 }
 const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDecorationsFacetProps>({
     combine: decorations => decorations[0],
@@ -132,7 +133,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 public decorations: DecorationSet
                 private previousHunkLength = -1
                 private previousIsLightTheme = false
-                private previousFirstCommitDate: Date | undefined
+                private previousBlameHunkMetadata: Omit<BlameHunkData, 'current'> | undefined
 
                 constructor(view: EditorView) {
                     this.decorations = this.computeDecorations(view, facet)
@@ -142,19 +143,19 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                     const facetProps = update.view.state.facet(facet)
                     const hunks = facetProps.hunks
                     const isLightMode = facetProps.isLightTheme
-                    const firstCommitDate = facetProps.firstCommitDate
+                    const blameHunkMetadata = facetProps.blameHunkMetadata
 
                     if (
                         update.docChanged ||
                         update.viewportChanged ||
                         this.previousHunkLength !== hunks.length ||
                         this.previousIsLightTheme !== isLightMode ||
-                        this.previousFirstCommitDate !== firstCommitDate
+                        this.previousBlameHunkMetadata !== blameHunkMetadata
                     ) {
                         this.decorations = this.computeDecorations(update.view, facet)
                         this.previousHunkLength = hunks.length
                         this.previousIsLightTheme = isLightMode
-                        this.previousFirstCommitDate = firstCommitDate
+                        this.previousBlameHunkMetadata = blameHunkMetadata
                     }
                 }
 
@@ -164,7 +165,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                 ): DecorationSet {
                     const widgets = []
                     const facetProps = view.state.facet(facet)
-                    const { hunks, isLightTheme, firstCommitDate } = facetProps
+                    const { hunks, isLightTheme, blameHunkMetadata } = facetProps
 
                     for (const { from, to } of view.visibleRanges) {
                         let nextHunkDecorationLineRenderedAt = -1
@@ -197,7 +198,7 @@ const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDe
                                     matchingHunk,
                                     line.number,
                                     isLightTheme,
-                                    firstCommitDate
+                                    blameHunkMetadata
                                 ),
                             })
                             widgets.push(decoration.range(line.from))
@@ -292,11 +293,19 @@ function blameLineStyles({ isBlameVisible }: { isBlameVisible: boolean }): Exten
 
 export const createBlameDecorationsExtension = (
     isBlameVisible: boolean,
-    blameHunks: BlameHunk[] | undefined,
-    firstCommitDate: Date | undefined,
+    blameHunks: BlameHunkData | undefined,
     isLightTheme: boolean
 ): Extension => [
     blameLineStyles({ isBlameVisible }),
     isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
-    blameHunks ? showGitBlameDecorations.of({ hunks: blameHunks, isLightTheme, firstCommitDate }) : [],
+    blameHunks?.current
+        ? showGitBlameDecorations.of({
+              hunks: blameHunks.current,
+              isLightTheme,
+              blameHunkMetadata: {
+                  firstCommitDate: blameHunks.firstCommitDate,
+                  externalURLs: blameHunks.externalURLs,
+              },
+          })
+        : [],
 ]

@@ -8,7 +8,6 @@ type Schema struct {
 
 // Namespace represents a feature to be guarded by RBAC. (example: Batch Changes, Code Insights e.t.c)
 type Namespace struct {
-	Name         string   `json:"name"`
-	Actions      []string `json:"actions"`
-	DefaultApply bool     `json:"defaultApply"`
+	Name    string   `json:"name"`
+	Actions []string `json:"actions"`
 }

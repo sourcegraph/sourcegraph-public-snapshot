@@ -41,6 +41,12 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			if !reflect.DeepEqual(gotV, wantV) {
 				t.Fatalf("got %q, wanted %q", gotV, wantV)
 			}
+		case [][]byte:
+			gotV, err := got.ByteSlices()
+			assertWorks(err)
+			if !reflect.DeepEqual(gotV, wantV) {
+				t.Fatalf("got %q, wanted %q", gotV, wantV)
+			}
 		case string:
 			gotV, err := got.String()
 			assertWorks(err)
@@ -62,6 +68,16 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			}
 		default:
 			t.Fatalf("unsupported want type for %q: %T", want, want)
+		}
+	}
+	assertListLen := func(key string, want int) {
+		t.Helper()
+		got, err := kv.LLen(key)
+		if err != nil {
+			t.Fatal("LLen returned error", err)
+		}
+		if got != want {
+			t.Fatalf("unexpected list length got=%d want=%d", got, want)
 		}
 	}
 
@@ -115,7 +131,51 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	assertWorks(kv.HSet("hash", "funky", []byte{0, 10, 100, 255}))
 	assertEqual(kv.HGet("hash", "funky"), []byte{0, 10, 100, 255})
 
-	// We intentionally do not test EXPIRE since I don't like sleeps in tests.
+	// Lists
+
+	// Redis behaviour on unset lists
+	assertListLen("list-unset-0", 0)
+	assertEqual(kv.LRange("list-unset-1", 0, 10), bytes())
+	assertWorks(kv.LTrim("list-unset-2", 0, 10))
+
+	assertWorks(kv.LPush("list", "4"))
+	assertWorks(kv.LPush("list", "3"))
+	assertWorks(kv.LPush("list", "2"))
+	assertWorks(kv.LPush("list", "1"))
+	assertWorks(kv.LPush("list", "0"))
+
+	// Different ways we get the full list back
+	assertEqual(kv.LRange("list", 0, 10), bytes("0", "1", "2", "3", "4"))
+	assertEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
+	assertEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
+	assertEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+
+	// Subsets
+	assertEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
+	assertEqual(kv.LRange("list", 1, -2), bytes("1", "2", "3"))
+	assertEqual(kv.LRange("list", -4, 3), bytes("1", "2", "3"))
+	assertEqual(kv.LRange("list", -4, -2), bytes("1", "2", "3"))
+
+	// Trim noop
+	assertWorks(kv.LTrim("list", 0, 10))
+	assertEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+
+	// Trim popback
+	assertWorks(kv.LTrim("list", 0, -2))
+	assertEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3"))
+	assertListLen("list", 4)
+
+	// Trim popfront
+	assertWorks(kv.LTrim("list", 1, 10))
+	assertEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
+	assertListLen("list", 3)
+
+	// SetEx
+	assertWorks(kv.SetEx("expires", 60, "1"))
+	assertEqual(kv.Get("expires"), "1")
+	assertWorks(kv.SetEx("expires", 1, "2"))
+	time.Sleep(1100 * time.Millisecond)
+	assertEqual(kv.Get("expires"), nil)
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
@@ -185,4 +245,12 @@ return result
 
 	_, err := c.Do("EVAL", script, 0, prefix+":*", deleteBatchSize)
 	return err
+}
+
+func bytes(ss ...string) [][]byte {
+	bs := make([][]byte, 0, len(ss))
+	for _, s := range ss {
+		bs = append(bs, []byte(s))
+	}
+	return bs
 }

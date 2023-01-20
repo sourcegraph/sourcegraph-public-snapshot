@@ -1,0 +1,64 @@
+[
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/sgadotest",
+   "URI": "dev.azure.com/sgadotest",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "d43b669c-d6da-4c9e-9952-11f411153cf9",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/sgadotest"
+    }
+   },
+   "Metadata": {
+    "id": "d43b669c-d6da-4c9e-9952-11f411153cf9",
+    "name": "sgadotest",
+    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest",
+    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
+    "isDisabled": false
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/idano",
+   "URI": "dev.azure.com/idano",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/idano"
+    }
+   },
+   "Metadata": {
+    "id": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
+    "name": "idano",
+    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano",
+    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/idano",
+    "isDisabled": false
+   }
+  }
+ ]
