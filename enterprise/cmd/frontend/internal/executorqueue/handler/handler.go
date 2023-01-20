@@ -2,12 +2,17 @@ package handler
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
@@ -120,7 +125,41 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		job.Version = 2
 	}
 
+	if len(conf.SiteConfig().Executors.JobAccessToken.SigningKey) > 0 {
+		token, err := newJobToken(metadata.Name, job.ID)
+		if err != nil {
+			return apiclient.Job{}, false, errors.Wrap(err, "Job Token")
+		}
+		job.Token = token
+	}
+
 	return job, true, nil
+}
+
+func newJobToken(hostname string, jobId int) (string, error) {
+	expiry := time.Now().Add(time.Minute * time.Duration(conf.SiteConfig().Executors.JobAccessToken.Expiry))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jobOperationClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    hostname,
+			ExpiresAt: jwt.NewNumericDate(expiry),
+			Subject:   strconv.FormatInt(int64(jobId), 10),
+		},
+		AccessToken: conf.SiteConfig().ExecutorsAccessToken,
+	})
+	decodedSigningKey, err := base64.StdEncoding.DecodeString(conf.SiteConfig().Executors.JobAccessToken.SigningKey)
+	if err != nil {
+		return "", err
+	}
+	tokenString, err := token.SignedString(decodedSigningKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+type jobOperationClaims struct {
+	jwt.RegisteredClaims
+	AccessToken string `json:"accessToken"`
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.

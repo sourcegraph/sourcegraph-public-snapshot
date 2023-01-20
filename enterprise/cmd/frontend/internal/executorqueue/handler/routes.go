@@ -2,12 +2,15 @@ package handler
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v4"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 
@@ -18,32 +21,159 @@ import (
 	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, handlers []ExecutorHandler, router *mux.Router) {
+func SetupRoutes(handlers []ExecutorHandler, router *mux.Router) {
 	for _, h := range handlers {
 		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
-			"dequeue":                 h.handleDequeue,
+			"dequeue":   h.handleDequeue,
+			"heartbeat": h.handleHeartbeat,
+			// TODO: This endpoint can be removed in Sourcegraph 4.4.
+			"canceledJobs": h.handleCanceledJobs,
+		}
+		for path, route := range routes {
+			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(route)
+		}
+	}
+}
+
+// SetupJobRoutes registers all route handlers required for all configured executor
+// queues with the given router.
+func SetupJobRoutes(handlers []ExecutorHandler, router *mux.Router) {
+	for _, h := range handlers {
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
+		routes := map[string]func(w http.ResponseWriter, r *http.Request){
 			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
 			"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
 			"markComplete":            h.handleMarkComplete,
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
-			"heartbeat":               h.handleHeartbeat,
-			// TODO: This endpoint can be removed in Sourcegraph 4.4.
-			"canceledJobs": h.handleCanceledJobs,
 		}
-		for path, handler := range routes {
-			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
+		for path, route := range routes {
+			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(route)
+		}
+		// Setup auth on the endpoints
+		subRouter.Use(authMiddleware(h))
+	}
+}
+
+func authMiddleware(executorHandler ExecutorHandler) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if validateJobRequest(w, r, executorHandler) {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
+}
+
+func validateJobRequest(w http.ResponseWriter, r *http.Request, executorHandler ExecutorHandler) bool {
+	// Read the body and re-set the body, so we can parse the request payload.
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log15.Error("failed to read request body", "err", err)
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return false
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+	// Every job requests has the basics. Parse out the info we need to see whether the request is valid/authenticated.
+	var payload apiclient.JobOperationRequest
+	if err := json.Unmarshal(body, &payload); err != nil {
+		log15.Error("failed to read parse request body", "err", err)
+		http.Error(w, "Failed to read parse request body", http.StatusBadRequest)
+		return false
+	}
+
+	// Get the auth token from the Authorization header.
+	var tokenType string
+	var authToken string
+	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
+		parts := strings.Split(headerValue, " ")
+		if len(parts) != 2 {
+			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"' or '%s TOKEN'`, "Bearer", "token-executor"), http.StatusUnauthorized)
+			return false
+		}
+		// Check what the token type is. For backwards compatibility sake, we should also accept the general executor
+		// access token.
+		tokenType = parts[0]
+		if tokenType != "Bearer" && tokenType != "token-executor" {
+			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", "Bearer", "token-executor"), http.StatusUnauthorized)
+			return false
+		}
+
+		authToken = parts[1]
+	}
+	if authToken == "" {
+		http.Error(w, "no token value in the HTTP Authorization request header", http.StatusUnauthorized)
+		return false
+	}
+
+	accessToken := conf.SiteConfig().ExecutorsAccessToken
+
+	// If the general executor access token was provided, simply check the value.
+	if tokenType == "token-executor" {
+		if authToken == accessToken {
+			return true
+		} else {
+			w.WriteHeader(http.StatusForbidden)
+			return false
 		}
 	}
+
+	// Parse the provided JWT token with the key.
+	c := jobOperationClaims{}
+	token, err := jwt.ParseWithClaims(authToken, &c, func(token *jwt.Token) (any, error) {
+		return base64.StdEncoding.DecodeString(conf.SiteConfig().Executors.JobAccessToken.SigningKey)
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
+
+	if err != nil {
+		log15.Error("failed to parse token", "err", err)
+		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return false
+	}
+
+	// Time to go to work on the provided token.
+	if claims, ok := token.Claims.(*jobOperationClaims); ok && token.Valid {
+		// Make sure the request has the general executor access token.
+		if claims.AccessToken != accessToken {
+			log15.Error("claims access token does not match the executor access token")
+			w.WriteHeader(http.StatusForbidden)
+			return false
+		}
+		// Ensure the token the request was generated for is coming for the correct executor instance.
+		if claims.Issuer != payload.ExecutorName {
+			log15.Error("executor name does not match claims Issuer")
+			w.WriteHeader(http.StatusForbidden)
+			return false
+		}
+		// Parse the job ID from the claims.
+		id, err := strconv.Atoi(claims.Subject)
+		if err != nil {
+			log15.Error("failed to claim Subject to integer", "err", err)
+			w.WriteHeader(http.StatusForbidden)
+			return false
+		}
+		// Ensure the job matches the payload
+		if id != payload.JobID {
+			log15.Error("job ID does not match claims Subject")
+			w.WriteHeader(http.StatusForbidden)
+			return false
+		}
+	}
+
+	// Since the payload partially deserialize, ensure the worker hostname is valid.
+	if err = validateWorkerHostname(payload.ExecutorName); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+	return true
 }
 
 // POST /{queueName}/dequeue
@@ -226,7 +356,7 @@ func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload
 // decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
 // applies common labels.
 func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
-	data := []*dto.MetricFamily{}
+	var data []*dto.MetricFamily
 
 	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
 	for {

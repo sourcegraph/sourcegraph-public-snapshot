@@ -14,52 +14,66 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
 func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
-	metricsStore := metricsstore.NewDistributedStore("executors:")
-	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
-		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
+		base := mux.NewRouter().PathPrefix("/.executors").Subrouter()
 		base.StrictSlash(true)
 
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
-		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
-		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
+		gitRouter := base.PathPrefix("/git").Subrouter()
+		gitRouter.Path("/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
+		gitRouter.Path("/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
+		// The git route are treated as an internal actor and require the executor access token to authenticate.
+		gitRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
 
 		// Serve the executor queue API.
-		handler.SetupRoutes(executorStore, metricsStore, queueHandlers, base.PathPrefix("/queue/").Subrouter())
+		queueRouter := base.PathPrefix("/queue").Subrouter()
+		handler.SetupRoutes(queueHandlers, queueRouter)
+		// The queue route are treated as an internal actor and require the executor access token to authenticate.
+		queueRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
+
+		jobRouter := base.PathPrefix("/queue").Subrouter()
+		handler.SetupJobRoutes(queueHandlers, jobRouter)
+		// The job routes are treated as internal actor.
+		// Each job endpoint has an auth middleware setup within SetupJobRoutes.
+		jobRouter.Use(withInternalActor)
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
-		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
+		lsifRouter := base.PathPrefix("/lsif").Subrouter()
+		lsifRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
+		// The lsif route are treated as an internal actor and require the executor access token to authenticate.
+		lsifRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
 
-		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
-		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+		filesRouter := base.PathPrefix("/files").Subrouter()
+		batchChangesRouter := filesRouter.PathPrefix("/batch-changes").Subrouter()
+		batchChangesRouter.Path("/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
+		batchChangesRouter.Path("/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+		// The files route are treated as an internal actor and require the executor access token to authenticate.
+		filesRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
 
-		// Make sure requests to these endpoints are treated as an internal actor.
-		// We treat executors as internal and the executor secret is an internal actor
-		// access token.
-		// Also ensure that proper executor authentication is provided.
-		return authMiddleware(accessToken, withInternalActor(base))
+		return base
 	}
 
 	return factory
 }
 
-// authMiddleware rejects requests that do not have a Authorization header set
+// authExecutorMiddleware rejects requests that do not have a Authorization header set
 // with the correct "token-executor <token>" value. This should only be used
 // for internal _services_, not users, in which a shared key exchange can be
 // done so safely.
-func authMiddleware(accessToken func() string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if validateExecutorToken(w, r, accessToken()) {
-			next.ServeHTTP(w, r)
-		}
-	})
+func authExecutorMiddleware(accessToken func() string) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if validateExecutorToken(w, r, accessToken()) {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
 }
 
 const SchemeExecutorToken = "token-executor"
