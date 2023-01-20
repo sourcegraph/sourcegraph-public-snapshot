@@ -49,35 +49,31 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string, expireSeconds int) (bool, error) {
+func setDataToCache(key string, data string, expireSeconds int) error {
 	if cacheDisabledInTest {
-		return true, nil
+		return nil
 	}
 
 	if expireSeconds == 0 {
 		expireSeconds = 24 * 60 * 60 // 1 day
 	}
 
-	if err := store.SetEx(scopeKey+key, expireSeconds, data); err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return store.SetEx(scopeKey+key, expireSeconds, data)
 }
 
-func setArrayToCache[T interface{}](cacheKey string, nodes []*T) (bool, error) {
+func setArrayToCache[T interface{}](cacheKey string, nodes []*T) error {
 	data, err := json.Marshal(nodes)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	return setDataToCache(cacheKey, string(data), 0)
 }
 
-func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
+func setItemToCache[T interface{}](cacheKey string, summary *T) error {
 	data, err := json.Marshal(summary)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	return setDataToCache(cacheKey, string(data), 0)
