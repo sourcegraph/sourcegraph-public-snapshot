@@ -26,7 +26,6 @@ import { FilePathSearchResult } from '../components/FilePathSearchResult'
 import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
-import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -110,33 +109,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // This data ends up in Prometheus and is not part of the ping payload.
             telemetryService.log('search.ranking.result-clicked', { index, type })
-
-            // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (
-                !(
-                    results?.alert?.kind === 'smart-search-additional-results' ||
-                    results?.alert?.kind === 'smart-search-pure-results'
-                )
-            ) {
-                telemetryService.log('SearchResultClickedAutoNone')
-            }
-
-            if (
-                (results?.alert?.kind === 'smart-search-additional-results' ||
-                    results?.alert?.kind === 'smart-search-pure-results') &&
-                results?.alert?.title &&
-                results.alert.proposedQueries
-            ) {
-                const event = smartSearchClickedEvent(
-                    results.alert.kind,
-                    results.alert.title,
-                    results.alert.proposedQueries.map(entry => entry.description || '')
-                )
-
-                telemetryService.log(event)
-            }
         },
-        [telemetryService, results]
+        [telemetryService]
     )
 
     const renderResult = useCallback(
