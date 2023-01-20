@@ -117,7 +117,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		MaxPageSize: &maxPageSize,
 		OrderBy:     database.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
-		Descending:  args.Descending,
+		Ascending:   !args.Descending,
 	}
 
 	return graphqlutil.NewConnectionResolver[RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
@@ -165,6 +165,10 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(orderBy) == 0 {
+		return nil, errors.New("no orderBy provided")
 	}
 
 	column := orderBy[0].Field

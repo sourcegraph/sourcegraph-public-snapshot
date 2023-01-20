@@ -31,9 +31,7 @@ func (r *RepositoryResolver) Contributors(args *struct {
 	}
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
-		OrderBy:    database.OrderBy{{Field: "id"}},
-		Descending: true,
-		Reverse:    &reverse,
+		Reverse: &reverse,
 	}
 	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }

@@ -91,11 +91,11 @@ func (o OrderBy) Columns() []string {
 	return columns
 }
 
-func (o OrderBy) SQL(descending bool) *sqlf.Query {
+func (o OrderBy) SQL(ascending bool) *sqlf.Query {
 	columns := []*sqlf.Query{}
 
 	for _, orderOption := range o {
-		columns = append(columns, orderOption.SQL(descending))
+		columns = append(columns, orderOption.SQL(ascending))
 	}
 
 	return sqlf.Join(columns, ", ")
@@ -106,15 +106,15 @@ type OrderByOption struct {
 	Nulls string
 }
 
-func (o OrderByOption) SQL(descending bool) *sqlf.Query {
+func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
 	var sb strings.Builder
 
 	sb.WriteString(o.Field)
 
-	if descending {
-		sb.WriteString(" DESC")
-	} else {
+	if ascending {
 		sb.WriteString(" ASC")
+	} else {
+		sb.WriteString(" DESC")
 	}
 
 	if o.Nulls == "FIRST" || o.Nulls == "LAST" {
@@ -125,12 +125,14 @@ func (o OrderByOption) SQL(descending bool) *sqlf.Query {
 }
 
 type PaginationArgs struct {
-	First      *int
-	Last       *int
-	After      *string
-	Before     *string
-	OrderBy    OrderBy
-	Descending bool
+	First  *int
+	Last   *int
+	After  *string
+	Before *string
+
+	// TODDO(naman): explain default
+	OrderBy   OrderBy
+	Ascending bool
 }
 
 func (p *PaginationArgs) SQL() (*QueryArgs, error) {
@@ -138,15 +140,17 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 	var conditions []*sqlf.Query
 
-	orderByColumns := p.OrderBy.Columns()
-	if len(orderByColumns) < 1 {
-		return nil, errors.New("no sort column provided")
+	orderBy := p.OrderBy
+	if len(orderBy) < 1 {
+		orderBy = OrderBy{{Field: "id"}}
 	}
+
+	orderByColumns := orderBy.Columns()
 
 	if p.After != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) >", columnsStr)
-		if p.Descending {
+		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) <", columnsStr)
 		}
 
@@ -155,7 +159,7 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 	if p.Before != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) <", columnsStr)
-		if p.Descending {
+		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) >", columnsStr)
 		}
 
@@ -167,10 +171,10 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 	}
 
 	if p.First != nil {
-		queryArgs.Order = p.OrderBy.SQL(p.Descending)
+		queryArgs.Order = orderBy.SQL(p.Ascending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.First)
 	} else if p.Last != nil {
-		queryArgs.Order = p.OrderBy.SQL(!p.Descending)
+		queryArgs.Order = orderBy.SQL(!p.Ascending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)
 	} else {
 		return nil, errors.New("First or Last must be set")
@@ -179,20 +183,21 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 	return queryArgs, nil
 }
 
+func copyPtr[T any](n *T) *T {
+	if n == nil {
+		return nil
+	}
+
+	c := *n
+	return &c
+}
+
 // Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
 func (p *PaginationArgs) Clone() *PaginationArgs {
-	copyIntPtr := func(n *int) *int {
-		if n == nil {
-			return nil
-		}
-
-		c := *n
-		return &c
-	}
 	return &PaginationArgs{
-		First:  copyIntPtr(p.First),
-		Last:   copyIntPtr(p.Last),
-		After:  copyIntPtr(p.After),
-		Before: copyIntPtr(p.Before),
+		First:  copyPtr[int](p.First),
+		Last:   copyPtr[int](p.Last),
+		After:  copyPtr[string](p.After),
+		Before: copyPtr[string](p.Before),
 	}
 }

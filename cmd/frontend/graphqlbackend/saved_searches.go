@@ -142,12 +142,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 		orgID:  &orgID,
 	}
 
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
-		OrderBy:    database.OrderBy{{Field: "id"}},
-		Descending: true,
-	}
-
-	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type savedSearchesConnectionStore struct {

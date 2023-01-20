@@ -160,6 +160,14 @@ func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[testCo
 	}
 }
 
+func buildPaginationArgs() *database.PaginationArgs {
+	args := database.PaginationArgs{
+		OrderBy: database.OrderBy{{Field: "id"}},
+	}
+
+	return &args
+}
+
 func TestConnectionNodes(t *testing.T) {
 	for _, test := range []struct {
 		name           string
@@ -171,30 +179,30 @@ func TestConnectionNodes(t *testing.T) {
 		{
 			name:               "default",
 			connectionArgs:     withFirstCA(5, &ConnectionResolverArgs{}),
-			wantPaginationArgs: withFirstPA(6, &database.PaginationArgs{}),
+			wantPaginationArgs: withFirstPA(6, buildPaginationArgs()),
 			wantNodes:          2,
 		},
 		{
 			name:               "last arg",
-			wantPaginationArgs: withLastPA(6, &database.PaginationArgs{}),
+			wantPaginationArgs: withLastPA(6, buildPaginationArgs()),
 			connectionArgs:     withLastCA(5, &ConnectionResolverArgs{}),
 			wantNodes:          2,
 		},
 		{
 			name:               "after arg",
-			wantPaginationArgs: withAfterPA("0", withFirstPA(6, &database.PaginationArgs{})),
+			wantPaginationArgs: withAfterPA("0", withFirstPA(6, buildPaginationArgs())),
 			connectionArgs:     withAfterCA("0", withFirstCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "before arg",
-			wantPaginationArgs: withBeforePA("0", withLastPA(6, &database.PaginationArgs{})),
+			wantPaginationArgs: withBeforePA("0", withLastPA(6, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "with limit",
-			wantPaginationArgs: withBeforePA("0", withLastPA(2, &database.PaginationArgs{})),
+			wantPaginationArgs: withBeforePA("0", withLastPA(2, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
 			wantNodes:          1,
 		},

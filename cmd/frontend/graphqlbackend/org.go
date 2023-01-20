@@ -156,12 +156,7 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
-		OrderBy:    database.OrderBy{{Field: "id"}},
-		Descending: true,
-	}
-
-	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type membersConnectionStore struct {

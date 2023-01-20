@@ -63,7 +63,7 @@ type ConnectionResolverOptions struct {
 	// Columns to order by
 	OrderBy database.OrderBy
 	// Order direction
-	Descending bool
+	Ascending bool
 }
 
 // MaxPageSize returns the configured max page limit for the connection
@@ -109,8 +109,8 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 	}
 
 	paginationArgs := database.PaginationArgs{
-		OrderBy:    r.options.OrderBy,
-		Descending: r.options.Descending,
+		OrderBy:   r.options.OrderBy,
+		Ascending: r.options.Ascending,
 	}
 
 	limit := r.pageSize() + 1
@@ -279,7 +279,11 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
 func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
 	if options == nil {
-		options = &ConnectionResolverOptions{}
+		options = &ConnectionResolverOptions{OrderBy: database.OrderBy{{Field: "id"}}}
+	}
+
+	if len(options.OrderBy) == 0 {
+		options.OrderBy = database.OrderBy{{Field: "id"}}
 	}
 
 	return &ConnectionResolver[N]{
