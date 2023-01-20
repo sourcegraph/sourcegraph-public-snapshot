@@ -189,7 +189,9 @@ type Mutation {
         """
         email: String
         """
-        Whether or not to mark the provided email address as verified. Defaults to true.
+        Whether or not to mark the provided email address as verified. If unset or set to
+        true, then the email address is immediately marked as verified - otherwise, the
+        email may be marked as unverified if SMTP and password resets are enabled.
         """
         verifiedEmail: Boolean
     ): CreateUserResult!
