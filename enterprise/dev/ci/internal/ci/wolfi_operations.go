@@ -9,7 +9,7 @@ import (
 
 func WolfiOperations() *operations.Set {
 	ops := operations.NewSet()
-	ops.Append(buildWolfi("//dev/sg"))
+	ops.Append(buildWolfi("foobar"))
 	return ops
 }
 

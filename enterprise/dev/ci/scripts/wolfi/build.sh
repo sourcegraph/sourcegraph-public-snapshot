@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+
 set -euf -o pipefail
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
 function cleanup() {
@@ -36,7 +38,7 @@ if [ ! -f "$name/apko.yaml" ]; then
   exit 1
 fi
 
-cd "$name"
+cd "wolfi-images/${name}"
 
 echo " * Building apko base image '$name'"
 apko build --debug apko.yaml \
