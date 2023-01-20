@@ -1,4 +1,4 @@
-# Configure email sending / SMTP server
+# SMTP and email delivery
 
 Sourcegraph uses an SMTP server of your choosing to send emails for:
 
