@@ -662,14 +662,14 @@ func TestRepositories_Integration(t *testing.T) {
 		indexed     bool
 		lastError   string
 	}{
-		{repo: &types.Repo{Name: "repo1"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
-		{repo: &types.Repo{Name: "repo2"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo2 error"},
-		{repo: &types.Repo{Name: "repo3"}, size: 40, cloneStatus: types.CloneStatusCloning},
-		{repo: &types.Repo{Name: "repo4"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo4 error"},
-		{repo: &types.Repo{Name: "repo5"}, size: 60, cloneStatus: types.CloneStatusCloned},
-		{repo: &types.Repo{Name: "repo6"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo6 error"},
-		{repo: &types.Repo{Name: "repo7"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
-		{repo: &types.Repo{Name: "repo8"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
+		{repo: &types.Repo{Name: "repo0"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
+		{repo: &types.Repo{Name: "repo1"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo1 error"},
+		{repo: &types.Repo{Name: "repo2"}, size: 40, cloneStatus: types.CloneStatusCloning},
+		{repo: &types.Repo{Name: "repo3"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo3 error"},
+		{repo: &types.Repo{Name: "repo4"}, size: 60, cloneStatus: types.CloneStatusCloned},
+		{repo: &types.Repo{Name: "repo5"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo5 error"},
+		{repo: &types.Repo{Name: "repo6"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
+		{repo: &types.Repo{Name: "repo7"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
 	}
 
 	for _, rsc := range repos {
@@ -711,7 +711,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// first
 		{
 			args:             "first: 2",
-			wantRepos:        []string{"repo1", "repo2"},
+			wantRepos:        []string{"repo0", "repo1"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -721,7 +721,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// second page with first, after args
 		{
 			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[0].repo)),
-			wantRepos:        []string{"repo2", "repo3"},
+			wantRepos:        []string{"repo1", "repo2"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: true,
@@ -731,7 +731,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// last page with first, after args
 		{
 			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[5].repo)),
-			wantRepos:        []string{"repo7", "repo8"},
+			wantRepos:        []string{"repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: true,
@@ -741,7 +741,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// last
 		{
 			args:             "last: 2",
-			wantRepos:        []string{"repo7", "repo8"},
+			wantRepos:        []string{"repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: true,
@@ -751,7 +751,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// second last page with last, before args
 		{
 			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[6].repo)),
-			wantRepos:        []string{"repo5", "repo6"},
+			wantRepos:        []string{"repo4", "repo5"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: true,
@@ -761,7 +761,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// back to first page with last, before args
 		{
 			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[2].repo)),
-			wantRepos:        []string{"repo1", "repo2"},
+			wantRepos:        []string{"repo0", "repo1"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -771,7 +771,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending first
 		{
 			args:             "first: 2, descending: true",
-			wantRepos:        []string{"repo8", "repo7"},
+			wantRepos:        []string{"repo7", "repo6"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -781,7 +781,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending second page with first, after args
 		{
 			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[6].repo)),
-			wantRepos:        []string{"repo6", "repo5"},
+			wantRepos:        []string{"repo5", "repo4"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: true,
@@ -791,7 +791,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending last page with first, after args
 		{
 			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[2].repo)),
-			wantRepos:        []string{"repo2", "repo1"},
+			wantRepos:        []string{"repo1", "repo0"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: true,
@@ -801,7 +801,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending last
 		{
 			args:             "last: 2, descending: true",
-			wantRepos:        []string{"repo2", "repo1"},
+			wantRepos:        []string{"repo1", "repo0"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: true,
@@ -811,7 +811,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending second last page with last, before args
 		{
 			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[3].repo)),
-			wantRepos:        []string{"repo6", "repo5"},
+			wantRepos:        []string{"repo5", "repo4"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: true,
@@ -821,7 +821,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// descending back to first page with last, before args
 		{
 			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[5].repo)),
-			wantRepos:        []string{"repo8", "repo7"},
+			wantRepos:        []string{"repo7", "repo6"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -832,7 +832,7 @@ func TestRepositories_Integration(t *testing.T) {
 		{
 			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
 			args:             "first: 10, cloned: true",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -841,7 +841,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, cloned: false",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3"},
 			wantTotalCount:   4,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -850,7 +850,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "cloned: false, first: 2",
-			wantRepos:        []string{"repo1", "repo2"},
+			wantRepos:        []string{"repo0", "repo1"},
 			wantTotalCount:   4,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -860,7 +860,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// notCloned
 		{
 			args:             "first: 10, notCloned: true",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -869,7 +869,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, notCloned: false",
-			wantRepos:        []string{"repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   4,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -879,7 +879,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// failedFetch
 		{
 			args:             "first: 10, failedFetch: true",
-			wantRepos:        []string{"repo2", "repo4", "repo6"},
+			wantRepos:        []string{"repo1", "repo3", "repo5"},
 			wantTotalCount:   3,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -888,7 +888,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "failedFetch: true, first: 2",
-			wantRepos:        []string{"repo2", "repo4"},
+			wantRepos:        []string{"repo1", "repo3"},
 			wantTotalCount:   3,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -897,7 +897,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, failedFetch: false",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -907,7 +907,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// cloneStatus
 		{
 			args:             "first: 10, cloneStatus:NOT_CLONED",
-			wantRepos:        []string{"repo1", "repo2"},
+			wantRepos:        []string{"repo0", "repo1"},
 			wantTotalCount:   2,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -916,7 +916,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, cloneStatus:CLONING",
-			wantRepos:        []string{"repo3", "repo4"},
+			wantRepos:        []string{"repo2", "repo3"},
 			wantTotalCount:   2,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -925,7 +925,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, cloneStatus:CLONED",
-			wantRepos:        []string{"repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   4,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -934,7 +934,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "cloneStatus:NOT_CLONED, first: 1",
-			wantRepos:        []string{"repo1"},
+			wantRepos:        []string{"repo0"},
 			wantTotalCount:   2,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -945,7 +945,7 @@ func TestRepositories_Integration(t *testing.T) {
 		{
 			// indexed only says whether to "Include indexed repositories.", it doesn't exclude non-indexed.
 			args:             "first: 10, indexed: true",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -954,7 +954,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, indexed: false",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
 			wantTotalCount:   7,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -963,7 +963,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "indexed: false, first: 2",
-			wantRepos:        []string{"repo1", "repo2"},
+			wantRepos:        []string{"repo0", "repo1"},
 			wantTotalCount:   7,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -973,7 +973,7 @@ func TestRepositories_Integration(t *testing.T) {
 		// notIndexed
 		{
 			args:             "first: 10, notIndexed: true",
-			wantRepos:        []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
 			wantTotalCount:   8,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -982,7 +982,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "first: 10, notIndexed: false",
-			wantRepos:        []string{"repo8"},
+			wantRepos:        []string{"repo7"},
 			wantTotalCount:   1,
 			wantNextPage:     false,
 			wantPreviousPage: false,
@@ -991,7 +991,7 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:             "orderBy:SIZE, descending:false, first: 5",
-			wantRepos:        []string{"repo6", "repo1", "repo2", "repo3", "repo4"},
+			wantRepos:        []string{"repo5", "repo0", "repo1", "repo2", "repo3"},
 			wantTotalCount:   8,
 			wantNextPage:     true,
 			wantPreviousPage: false,
@@ -1005,7 +1005,6 @@ func TestRepositories_Integration(t *testing.T) {
 			runRepositoriesQuery(t, ctx, schema, tt)
 		})
 	}
-
 }
 
 type repositoriesQueryTest struct {
