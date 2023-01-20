@@ -18,7 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var outboundRequestsRedisCache = rcache.NewWithTTL("outbound-requests", 604800)
+// outboundRequestsRedisFIFOListDefaultSize sets a default value for the FIFO list.
+const outboundRequestsRedisFIFOListDefaultSize = 50
+
+// outboundRequestsRedisFIFOList is a FIFO redis cache to store the requests.
+var outboundRequestsRedisFIFOList = rcache.NewFIFOList("outbound-requests", outboundRequestsRedisFIFOListDefaultSize)
 
 const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 
@@ -31,6 +35,9 @@ func redisLoggerMiddleware() Middleware {
 			duration := time.Since(start)
 			limit := OutboundRequestLogLimit()
 			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
+
+			// Update limit in case it changed
+			outboundRequestsRedisFIFOList.SetMaxSize(int(limit))
 
 			// Feature is turned off, do not log
 			if limit == 0 {
@@ -106,12 +113,9 @@ func redisLoggerMiddleware() Middleware {
 			}
 
 			// Save new item
-			outboundRequestsRedisCache.Set(key, logItemJson)
-
-			// Delete excess items
-			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, int(limit)); deleteErr != nil {
+			if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
 				middlewareErrors = errors.Append(middlewareErrors,
-					errors.Wrap(deleteErr, "delete excess items"))
+					errors.Wrap(err, "insert log item"))
 			}
 
 			return resp, err
@@ -119,90 +123,76 @@ func redisLoggerMiddleware() Middleware {
 	}
 }
 
-func deleteExcessItems(c *rcache.Cache, limit int) error {
-	keys, err := c.ListKeys(context.Background())
-	if err != nil {
-		return errors.Wrap(err, "list keys")
-	}
-
-	// Delete all but the last N keys
-	if len(keys) > limit {
-		sort.Strings(keys)
-		c.DeleteMulti(keys[:len(keys)-limit]...)
-	}
-
-	return nil
-}
-
 // GetOutboundRequestLogItems returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
 func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
-	var limit = OutboundRequestLogLimit()
+	var limit = int(OutboundRequestLogLimit())
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
-	// Get values from Redis
-	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, int(limit))
+	items, err := getOutboundRequestLogItems(ctx, func(item *types.OutboundRequestLogItem) bool {
+		if after == "" {
+			return true
+		} else {
+			return item.ID > after
+		}
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert raw Redis store items to log items
-	items := make([]*types.OutboundRequestLogItem, 0, len(rawItems))
+	if len(items) > limit {
+		items = items[:limit]
+	}
+
+	return items, nil
+}
+
+func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
+	items, err := getOutboundRequestLogItems(context.Background(), func(item *types.OutboundRequestLogItem) bool {
+		return item.ID == key
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, errors.New("item not found")
+	}
+	return items[0], nil
+}
+
+// getOutboundRequestLogItems returns all items where pred returns true,
+// sorted by ID ascending.
+func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRequestLogItem) bool) ([]*types.OutboundRequestLogItem, error) {
+	// We fetch all values from redis, then just return those matching pred.
+	// Given the max size is enforced as 500, this is fine. But if we ever
+	// raise the limit, we likely need to think of an alternative way to do
+	// pagination against lists / or also store the items so we can look up by
+	// key
+	rawItems, err := outboundRequestsRedisFIFOList.All(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "list all log items")
+	}
+
+	var items []*types.OutboundRequestLogItem
 	for _, rawItem := range rawItems {
 		var item types.OutboundRequestLogItem
 		err = json.Unmarshal(rawItem, &item)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, &item)
-	}
-	return items, nil
-}
-
-func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
-	rawItem, ok := outboundRequestsRedisCache.Get(key)
-	if !ok {
-		return nil, errors.New("item not found")
-	}
-
-	var item types.OutboundRequestLogItem
-	err := json.Unmarshal(rawItem, &item)
-	if err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-// getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.
-func getAllValuesAfter(ctx context.Context, c *rcache.Cache, after string, limit int) ([][]byte, error) {
-	all, err := c.ListKeys(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var keys []string
-	if after != "" {
-		for _, key := range all {
-			if key > after {
-				keys = append(keys, key)
-			}
+		if pred(&item) {
+			items = append(items, &item)
 		}
-	} else {
-		keys = all
 	}
 
-	// Sort ascending
-	sort.Strings(keys)
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
 
-	// Limit to N
-	if len(keys) > limit {
-		keys = keys[len(keys)-limit:]
-	}
-
-	return c.GetMulti(keys...), nil
+	return items, nil
 }
 
 func redactSensitiveHeaders(headers http.Header) http.Header {

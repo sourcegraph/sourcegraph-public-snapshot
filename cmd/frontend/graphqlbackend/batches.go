@@ -686,10 +686,11 @@ type BatchWorkspaceFileResolver interface {
 	Path() string
 	Name() string
 	IsDirectory() bool
-	Content(ctx context.Context) (string, error)
+	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
+	TotalLines(ctx context.Context) (int32, error)
 	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context) (string, error)
+	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)

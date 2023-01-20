@@ -5,7 +5,7 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-import { basicSyntaxColumns } from './QueryExamplesHomepage.constants'
+import { basicSyntaxColumns } from './QueryExamples.constants'
 
 export interface QueryExamplesContent {
     repositoryName: string

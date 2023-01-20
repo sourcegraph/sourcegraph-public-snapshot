@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -450,9 +451,13 @@ func (r Row) validate(variables []ContainerVariable) error {
 // the handbook: https://handbook.sourcegraph.com/departments/engineering/
 type ObservableOwner struct {
 	// identifier is the team's name on OpsGenie and is used for routing alerts.
-	identifier       string
-	handbookSlug     string
-	handbookTeamName string
+	identifier string
+	// human-friendly name for this team
+	teamName string
+	// path relative to handbookBaseURL for this team's page
+	handbookSlug string
+	// optional - defaults to /departments/engineering/teams
+	handbookBasePath string
 }
 
 // identifer must be all lowercase, and optionally  hyphenated.
@@ -471,62 +476,71 @@ var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
 
 var (
 	ObservableOwnerSearch = ObservableOwner{
-		identifier:       "search",
-		handbookSlug:     "search/product",
-		handbookTeamName: "Search",
+		identifier:   "search",
+		handbookSlug: "search/product",
+		teamName:     "Search",
 	}
 	ObservableOwnerSearchCore = ObservableOwner{
-		identifier:       "search-core",
-		handbookSlug:     "search/core",
-		handbookTeamName: "Search Core",
+		identifier:   "search-core",
+		handbookSlug: "search/core",
+		teamName:     "Search Core",
 	}
 	ObservableOwnerBatches = ObservableOwner{
-		identifier:       "batch-changes",
-		handbookSlug:     "batch-changes",
-		handbookTeamName: "Batch Changes",
+		identifier:   "batch-changes",
+		handbookSlug: "batch-changes",
+		teamName:     "Batch Changes",
 	}
 	ObservableOwnerCodeIntel = ObservableOwner{
-		identifier:       "code-intel",
-		handbookSlug:     "code-intelligence",
-		handbookTeamName: "Code intelligence",
+		identifier:   "code-intel",
+		handbookSlug: "code-intelligence",
+		teamName:     "Code intelligence",
 	}
 	ObservableOwnerSecurity = ObservableOwner{
-		identifier:       "security",
-		handbookSlug:     "security",
-		handbookTeamName: "Security",
+		identifier:   "security",
+		handbookSlug: "security",
+		teamName:     "Security",
 	}
 	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:       "repo-management",
-		handbookSlug:     "repo-management",
-		handbookTeamName: "Repo Management",
+		identifier:   "repo-management",
+		handbookSlug: "repo-management",
+		teamName:     "Repo Management",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
-		identifier:       "code-insights",
-		handbookSlug:     "code-insights",
-		handbookTeamName: "Code Insights",
+		identifier:   "code-insights",
+		handbookSlug: "code-insights",
+		teamName:     "Code Insights",
 	}
 	ObservableOwnerDevOps = ObservableOwner{
-		identifier:       "devops",
-		handbookSlug:     "devops",
-		handbookTeamName: "Cloud DevOps",
+		identifier:   "devops",
+		handbookSlug: "devops",
+		teamName:     "Cloud DevOps",
 	}
 	ObservableOwnerIAM = ObservableOwner{
-		identifier:       "iam",
-		handbookSlug:     "iam",
-		handbookTeamName: "Identity and Access Management",
+		identifier:   "iam",
+		handbookSlug: "iam",
+		teamName:     "Identity and Access Management",
 	}
 	ObservableOwnerDataAnalytics = ObservableOwner{
-		identifier:       "data-analytics",
-		handbookSlug:     "data-analytics",
-		handbookTeamName: "Data & Analytics",
+		identifier:   "data-analytics",
+		handbookSlug: "data-analytics",
+		teamName:     "Data & Analytics",
+	}
+	ObservableOwnerCloud = ObservableOwner{
+		identifier:       "cloud",
+		handbookSlug:     "cloud",
+		handbookBasePath: "/departments",
+		teamName:         "Cloud",
 	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
-		o.handbookTeamName, o.handbookSlug,
+	basePath := "/departments/engineering/teams"
+	if o.handbookBasePath != "" {
+		basePath = o.handbookBasePath
+	}
+	return fmt.Sprintf("[Sourcegraph %s team](https://%s)",
+		o.teamName, path.Join("handbook.sourcegraph.com", basePath, o.handbookSlug),
 	)
 }
 
