@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, Extension, Line } from '@codemirror/state'
+import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
@@ -26,7 +26,8 @@ import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
-import { selectableLineNumbers, SelectedLineRange, selectLines, shouldScrollIntoView } from './codemirror/linenumbers'
+import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
@@ -277,7 +278,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Update blame decorations
     useLayoutEffect(() => {
         if (editor) {
-            editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
+            const effects = [blameDecorationsCompartment.reconfigure(blameDecorations), ...lockFirstVisibleLine(editor)]
+            editor.dispatch({ effects })
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -297,14 +299,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Update line wrapping
     useEffect(() => {
         if (editor) {
-            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings)]
-            const firstLine = firstVisibleLine(editor)
-            if (firstLine) {
-                // Avoid jumpy scrollbar when enabling line wrapping by forcing the
-                // scroll bar to preserve the top line number that's visible.
-                // Details https://github.com/sourcegraph/sourcegraph/issues/41413
-                effects.push(EditorView.scrollIntoView(firstLine.from, { y: 'start' }))
-            }
+            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings), ...lockFirstVisibleLine(editor)]
             editor.dispatch({ effects })
         }
         // editor is not provided because this should only be triggered after the
@@ -376,25 +371,4 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         }
         return blobRef.current
     }, [blobInfo])
-}
-
-// Returns the first line that is visible in the editor. We can't directly use
-// the viewport for this functionality because the viewport includes lines that
-// are rendered but not visible.
-function firstVisibleLine(view: EditorView): Line | undefined {
-    for (const { from, to } of view.visibleRanges) {
-        for (let pos = from; pos < to; ) {
-            const line = view.state.doc.lineAt(pos)
-            // This may be an inefficient way to detect the first visible line
-            // but it appears to work correctly and this is unlikely to be a
-            // performance bottleneck since we should only use need to compute
-            // this for infrequently used code-paths like when enabling/disabling
-            // line wrapping, or when lazy syntax highlighting gets loaded.
-            if (!shouldScrollIntoView(view, { line: line.number + 1 })) {
-                return line
-            }
-            pos = line.to + 1
-        }
-    }
-    return undefined
 }
