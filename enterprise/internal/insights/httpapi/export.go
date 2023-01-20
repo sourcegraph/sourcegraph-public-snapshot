@@ -43,7 +43,11 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 
 		archive, err := h.exportCodeInsightData(r.Context(), id)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to export data: %v", err), http.StatusInternalServerError)
+			if errors.Is(err, notFoundError) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, fmt.Sprintf("failed to export data: %v", err), http.StatusInternalServerError)
+			}
 			return
 		}
 		w.Header().Set("Content-Type", "application/zip")
@@ -60,6 +64,8 @@ type codeInsightsDataArchive struct {
 	insightName string
 	data        []byte
 }
+
+var notFoundError = errors.New("insight not found")
 
 func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*codeInsightsDataArchive, error) {
 	var insightViewId string
@@ -83,7 +89,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	}
 	// 🚨 SECURITY: if the user context doesn't get any response here that means they should not be able to access this insight.
 	if len(visibleViewSeries) == 0 {
-		return nil, errors.New("insight not found")
+		return nil, notFoundError
 	}
 
 	var buf bytes.Buffer
