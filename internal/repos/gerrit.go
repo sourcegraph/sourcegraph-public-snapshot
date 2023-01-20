@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"net/url"
 	"path"
 	"sort"
 
@@ -52,10 +53,16 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, err
 	}
 
+	serviceID, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+	serviceID = extsvc.NormalizeBaseURL(serviceID)
+
 	return &GerritSource{
 		svc:       svc,
 		cli:       cli,
-		serviceID: c.Url,
+		serviceID: serviceID.String(),
 		perPage:   100,
 		private:   c.Authorization != nil,
 	}, nil
@@ -116,7 +123,7 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL().String() + projectName)
+	fullURL, err := urlx.Parse(s.cli.URL().JoinPath(projectName).String())
 	if err != nil {
 		return nil, err
 	}

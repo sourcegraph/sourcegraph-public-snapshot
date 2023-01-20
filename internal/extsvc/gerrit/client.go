@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -52,6 +53,7 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 	if err != nil {
 		return nil, err
 	}
+	u = extsvc.NormalizeBaseURL(u)
 
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
