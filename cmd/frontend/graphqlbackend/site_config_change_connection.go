@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -28,7 +29,10 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	// determine next/previous page. Instead, dereference the values from args first (if
 	// they're non-nil) and then assign them address of the new variables.
 	paginationArgs := args.Clone()
-	isModifiedPaginationArgs := modifyArgs(paginationArgs)
+	isModifiedPaginationArgs, err := modifyArgs(paginationArgs)
+	if err != nil {
+		return []*SiteConfigurationChangeResolver{}, err
+	}
 
 	history, err := s.db.Conf().ListSiteConfigs(ctx, paginationArgs)
 	if err != nil {
@@ -58,35 +62,45 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	return resolvers, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver) (*string, error) {
+func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver, _ database.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 	return &cursor, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
+func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
-	return &id, err
+	if err != nil {
+		return nil, err
+	}
+
+	idStr := strconv.Itoa(id)
+	return &idStr, err
 }
 
 // modifyArgs will fetch one more than the originally requested number of items because we need one
 // older item to get the diff of the oldes item in the list.
 //
 // A separate function so that this can be tested in isolation.
-func modifyArgs(args *database.PaginationArgs) bool {
+func modifyArgs(args *database.PaginationArgs) (bool, error) {
 	var modified bool
 	if args.First != nil {
 		*args.First += 1
 		modified = true
 	} else if args.Last != nil && args.Before != nil {
-		if *args.Before > 0 {
+		before, err := strconv.Atoi(*args.Before)
+		if err != nil {
+			return false, err
+		}
+
+		if before > 0 {
 			modified = true
 			*args.Last += 1
-			*args.Before -= 1
+			*args.Before = strconv.Itoa(before - 1)
 		}
 	}
 
-	return modified
+	return modified, nil
 }
 
 func generateResolversForFirst(history []*database.SiteConfig, db database.DB) []*SiteConfigurationChangeResolver {

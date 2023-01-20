@@ -49,20 +49,14 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
         }
         defaultSeriesDisplayOptions {
             limit
-            sortOptions {
-                mode
-                direction
-            }
-        }
-        appliedSeriesDisplayOptions {
-            limit
+            numSamples
             sortOptions {
                 mode
                 direction
             }
         }
         isFrozen
-        appliedFilters {
+        defaultFilters {
             includeRepoRegex
             excludeRepoRegex
             searchContexts

@@ -170,7 +170,12 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	assertEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
 	assertListLen("list", 3)
 
-	// We intentionally do not test EXPIRE since I don't like sleeps in tests.
+	// SetEx
+	assertWorks(kv.SetEx("expires", 60, "1"))
+	assertEqual(kv.Get("expires"), "1")
+	assertWorks(kv.SetEx("expires", 1, "2"))
+	time.Sleep(1100 * time.Millisecond)
+	assertEqual(kv.Get("expires"), nil)
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
