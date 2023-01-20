@@ -36,7 +36,7 @@ func Init(logger log.Logger, db database.DB) {
 	githuboauth.Init(logger, db)
 	gitlaboauth.Init(logger, db)
 	bitbucketcloudoauth.Init(logger, db)
-	gerrit.Init(logger)
+	gerrit.Init()
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(

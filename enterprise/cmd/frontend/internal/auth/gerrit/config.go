@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -14,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Init(logger log.Logger) {
+func Init() {
 	const pkgName = "gerrit"
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(cfg)
