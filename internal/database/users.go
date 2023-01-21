@@ -697,18 +697,9 @@ func (u *userStore) RecoverList(ctx context.Context, ids []int32) error {
 		userIDs[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	idsCond := sqlf.Join(userIDs, ",")
-	res, err := tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond))
+	affectedUserID, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
 	if err != nil {
 		return err
-	}
-
-	affectedUserID := []int32{}
-	for res.Next() {
-		var id int32
-		if err := res.Scan(&id); err != nil {
-			return err
-		}
-		affectedUserID = append(affectedUserID, id)
 	}
 
 	if len(affectedUserID) != len(ids) {
