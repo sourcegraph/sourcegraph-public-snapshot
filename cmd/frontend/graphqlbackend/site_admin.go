@@ -53,7 +53,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 			return nil, err
 		}
 		if a.UID == id {
-			return nil, errors.New("unable to delete current user")
+			return nil, errors.New("unable to recover current user")
 		}
 		ids[index] = id
 	}
