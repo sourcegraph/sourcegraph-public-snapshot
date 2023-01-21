@@ -61,6 +61,11 @@
   },
   {
     "path": "internal/database",
+    "prefix": "TestUserRoleCreate",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
     "prefix": "TestUserRoleDelete",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
   },
@@ -73,11 +78,20 @@
     "path": "internal/database",
     "prefix": "TestUserRoleGetByRoleID",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
-
   },
   {
     "path": "internal/database",
     "prefix": "TestRolePermissionCreate",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleDelete",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleDelete/existing_role",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
   },
   {
@@ -98,6 +112,16 @@
   {
     "path": "internal/database",
     "prefix": "TestRolePermissionGetByRoleID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleGetByID",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRolePermissionDelete",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
   }
 ]
