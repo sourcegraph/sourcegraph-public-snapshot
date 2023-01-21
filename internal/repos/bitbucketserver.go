@@ -159,6 +159,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			host.Hostname(),
 			project,
 			repo.Slug,
+			
 		),
 		URI: string(reposource.BitbucketServerRepoName(
 			"",
@@ -171,7 +172,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
-		Description: repo.Name,
+		Description: repo.Description, //Name
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
 		Private:     !repo.Public,
