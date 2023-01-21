@@ -16,7 +16,7 @@ interface Query<T> {
   Marshal(data: string): T
 }
 
-class SearchQuery implements Query<any> {
+export class SearchQuery implements Query<any> {
   Marshal(_: string): any {
     throw new Error('Method not implemented.');
   }
@@ -41,8 +41,6 @@ class UserQuery implements Query<string> {
     }
     `
   }
-
-
 
 }
 
