@@ -6,8 +6,9 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 The installation steps below will walk you through the steps using our quick-start overlay for GKE to deploy the Sourcegraph without the monitoring services.
 
-The overlay will configure the Sourcegraph base cluster with:
+The overlay will:
 
+- Deploy a Sourcegraph instance without RBAC resources 
 - A [BackendConfig](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig) CRD. This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
 - Ingress to use [Container-native load balancing](https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing) to expose Sourcegraph publicly on a domain of your choosing and
 - Storage Class to use [Compute Engine persistent disk](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
@@ -27,10 +28,10 @@ You must complete **all** the prerequisites listed above before installing Sourc
 
 ### Step 1: Deploy Sourcegraph
 
-Deploy Sourcegraph main app without the monitoring stacks to your cluster:
+Deploy Sourcegraph to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/gke/base?ref=v4.3.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/quick-start/gke/base?ref=v4.3.1
 ```
 
 Monitor the deployment status to make sure everything is up and running:
@@ -70,31 +71,23 @@ kubectl port-forward svc/sourcegraph-frontend 3080:30080
 
 You should now be able to access your new Sourcegraph instance at http://localhost:3080  🎉
 
-### Optional Step: Deploy monitoring stacks 
-
-**IMPORTANT**: RBAC is required for the monitoring stacks to work properly.
-
-If RBAC is enabled in your cluster, we strongly recommend you to deploy the monitoring stacks for Sourcegraph.
-
-```bash
-$ kubectl apply -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/monitoring?ref=v4.3.1
-```
-
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [quick-start/gke/base](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/quick-start/gke/base) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [quick-start/gke/base](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/quick-start/gke/base) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
 ```yaml
-# new/overlays/your_gke_deployment/kustomization.yaml
+# overlays/$OVERLAY_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
 resources:
-# Sourcegraph Main Stacks
+# Sourcegraph Main Stack
 - ../../base/sourcegraph
 components:
+# Sourcegraph Monitoring Stack
+- ../../components/monitoring
 # Use resources for a size-XS instance
 - ../../components/sizes/xs
 # Apply configurations for GKE
@@ -104,7 +97,7 @@ components:
 You can also build the kustomization file remotely and build on top of it:
 
 ```yaml
-kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/gke/base?ref=v4.3.1
+kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/quick-start/gke/base?ref=v4.3.1
 ```
 
 #### Enable TLS
@@ -122,21 +115,30 @@ In order to use [Google-managed SSL certificates](https://cloud.google.com/kuber
 Step 1: Add the `gke mange-cert` component to your overlay:
 
 ```yaml
-# new/overlays/your_gke_deployment/kustomization.yaml
+# overlays/$OVERLAY_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
-resources:
+# Sourcegraph Main Stack
 - ../../base/sourcegraph
 components:
+# Sourcegraph Monitoring Stack
+- ../../components/monitoring
 - ../../components/sizes/xs
 - ../../components/gke/configure
 - ../../components/gke/mange-cert
 ```
 
-Step 2: Add your Google-managed certificate name to the `overlay.config` file using the `GKE_MANAGED_CERT_NAME` variable:
+Step 2: Set the `GKE_MANAGED_CERT_NAME` variable with your Google-managed certificate name under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
 
 ```yaml
-# new/overlays/your_gke_deployment/config/overlay.config
-GKE_MANAGED_CERT_NAME=your-managed-cert-name
+# overlays/$OVERLAY_NAME/kustomization.yaml
+# OVERLAY CONFIGURATIONS
+configMapGenerator:
+  # Handle updating configs using env vars for kustomize
+  - name: sourcegraph-kustomize-env
+    behavior: merge
+    literals:
+      ...
+      - GKE_MANAGED_CERT_NAME=your-managed-cert-name
 ```

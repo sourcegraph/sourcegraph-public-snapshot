@@ -8,7 +8,9 @@ Sourcegraph provides reference repositories with branches corresponding to the v
 |:--------------------------|:---------------------------------------------------------|
 | Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
 | Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
-| Kubernetes                | https://github.com/deploy-sourcegraph                    |
+| Kubernetes                | https://github.com/deploy-sourcegraph-k8s                |
+
+> WARNING: [deploy-sourcegrap](https://github.com/deploy-sourcegrap) has bee deperacated
 
 ## Create a private copy
 
@@ -21,8 +23,8 @@ Follow the [official GitHub docs](https://docs.github.com/en/repositories/creati
 Export the following environment variables for the next steps.
 
 - `DEPLOY_REPO_NAME`: name of the deployment repository
-  - `deploy-sourcegraph` for Kubernetes with Kustomize deployment
-  - `deploy-sourcegraph` for Docker and Docker Compose deployment
+  - `deploy-sourcegraph-k8s` for Kubernetes with Kustomize deployment
+  - `deploy-sourcegraph-docker` for Docker and Docker Compose deployment
 - `DEPLOY_GITHUB_USERNAME`: the account name that is hosting the empty repository created in step 1 
 - `PRIVATE_DEPLOY_REPO_NAME`: default to the same name as $DEPLOY_REPO_NAME
 - `SOURCEGRAPH_VERSION`: latest version number of Sourcegraph
@@ -31,7 +33,7 @@ Update the environment variables in the command below before running it in your 
 
 ```bash
 export DEPLOY_GITHUB_USERNAME="YOUR_USERNAME"
-export DEPLOY_REPO_NAME="deploy-sourcegraph"
+export DEPLOY_REPO_NAME="deploy-sourcegraph-k8s"
 export PRIVATE_DEPLOY_REPO_NAME="$DEPLOY_REPO_NAME"
 export SOURCEGRAPH_VERSION="v4.3.1"
 ```
