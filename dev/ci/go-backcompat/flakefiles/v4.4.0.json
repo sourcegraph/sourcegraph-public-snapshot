@@ -123,5 +123,10 @@
     "path": "internal/database",
     "prefix": "TestRolePermissionDelete",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestRoleCreate",
+    "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
   }
 ]
