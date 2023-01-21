@@ -103,7 +103,15 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		searchOpts.DebugScore = true
 	}
 
-	if o.Features.Ranking {
+	if o.Features.CodeIntelRanking {
+		// This enables the use of PageRank scores if they are available.
+		searchOpts.UseDocumentRanks = true
+
+		// This damps the impact of document ranks on the final ranking.
+		searchOpts.RanksDampingFactor = 0.5
+	}
+
+	if o.Features.FileRanking {
 		limit := int(o.FileMatchLimit)
 
 		// Tell each zoekt replica to not send back more than limit results.
@@ -126,12 +134,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// This enables our stream based ranking were we wait upto 500ms to
 		// collect results before ranking.
 		searchOpts.FlushWallTime = 500 * time.Millisecond
-
-		// This enables the use of PageRank scores if they are available.
-		searchOpts.UseDocumentRanks = true
-
-		// This damps the impact of document ranks on the final ranking.
-		searchOpts.RanksDampingFactor = 0.5
 
 		return searchOpts
 	}

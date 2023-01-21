@@ -337,9 +337,14 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// Ranking when true will use a our new #ranking signals and code paths
-	// for ranking results from Zoekt.
-	Ranking bool `json:"ranking"`
+	// FileRanking when true will rank results based on file scores as opposed
+	// to bucketing by repository. This uses some experimental changes to Zoekt
+	// streaming and a new frontend search aggregator.
+	FileRanking bool `json:"file-ranking"`
+
+	// CodeIntelRanking when true will incorporate ranking signals based on code
+	// intelligence when they're available (like the file reference count).
+	CodeIntelRanking bool `json:"code-intel-ranking"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
