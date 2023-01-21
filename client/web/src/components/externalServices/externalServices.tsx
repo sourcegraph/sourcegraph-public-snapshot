@@ -1264,9 +1264,7 @@ const GERRIT: AddExternalServiceOptions = {
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
-  "url": "https://gerrit.example.com",
-  "username": "username",
-  "token": "token"
+  "url": "https://gerrit.example.com"
 }`,
     instructions: (
         <div>
@@ -1288,6 +1286,8 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
     defaultDisplayName: 'Azure DevOps',
     defaultConfig: `{
   "url": "https://dev.azure.com",
+  "username": "username",
+  "token": "token"
 }`,
     instructions: (
         <div>
