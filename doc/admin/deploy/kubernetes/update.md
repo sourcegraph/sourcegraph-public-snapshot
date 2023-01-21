@@ -39,15 +39,15 @@ Follow the steps below if your instance was deployed using [Kustomize](kustomize
 **Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
+$ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
 ```
 
 **Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
 
-**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `new/generated-cluster.yaml file` generated from step 2
+**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `cluster.yaml file` generated from step 2
 
 ```bash
-$ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
+$ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
 ```
 
 > NOTE: Using deployment script without Kustomize has been deprecated: `./kubectl-apply-all.sh`
@@ -125,15 +125,17 @@ You can rollback by resetting your `release` branch to the old state and proceed
 **Step 1:** Build the deployment manifests with your deployment overlay
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
+$ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
 ```
+
+A new set of manifests will be generated and grouped into a single output file `cluster.yaml` for your review
 
 **Step 2:** Review the output manifests to make sure they reflect the configurations made by the overlay
 
-**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `new/generated-cluster.yaml file` generated from step 2
+**Step 3:** Run the following command from the root of your deployment repository to apply the manifests inside the `cluster.yaml file` generated from step 2
 
 ```bash
-$ kubectl apply -k --prune -l deploy=sourcegraph -f new/generated-cluster.yaml
+$ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
 ```
 
 If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.

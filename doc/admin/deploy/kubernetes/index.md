@@ -39,42 +39,9 @@ Not sure if Kubernetes is the right choice for you? Learn more about other [Sour
    - Follow our [reference repository docs](../repositories.md) to create one
 5. Determine your instance size using our [instance size chart](../instance-size.md)
 
-#### Deployment repository
+## Deployment repository
 
-Follow our [reference repository docs](../repositories.md) to create a private copy of the [reference repository: `sourcegraph/deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph/), which contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph Kubernetes instance using [Kustomize](kustomize/index.md).
-
-## Quick start
-
-The instructions below are for deploying Sourcegraph to a pre-configured Kubernetes cluster without additional changes.
-
-Please follow the instructions in our [configuration guide for Kustomize](kustomize/configure.md) or [configuration guide for Helm](helm.md#configuration) when deploying Sourcegraph into a specified cloud environment (eg. [Amazon EKS](kustomize/eks.md), [Google GKE](kustomize/gke.md), etc).
-
-#### Step 1: Deploy Sourcegraph
-
-Run command below to deploy a pre-configured Sourcegraph instance without the monitoring stacks to your cluster using kustomize _`-k`_.
-
-```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/base/xs?ref=v4.5.0
-```
-
-Alternatively, you can deploy Sourcegraph with default values using Helm.
-
-```bash
-$ helm repo add sourcegraph https://helm.sourcegraph.com/release
-$ helm install --version 4.5.0 sourcegraph sourcegraph/sourcegraph
-```
-
-#### Step 2: Access Sourcegraph
-
-When the status of all Sourcegraph services are shown to be `Running`, it means the deployment has been completed successfully. You can then make the frontend accessible temporarily by connecting to the sourcegraph-frontend service in your Kubernetes cluster using [kubectl port-forward](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/):
-
-```sh
-$ kubectl port-forward svc/sourcegraph-frontend 3080:30080
-```
-
-Visit http://localhost:3080 in your browser to view the new Sourcegraph instance.
-
-You can also access your Sourcegraph instance through ingress if an [`ingress-controller`](kustomize/configure.md#ingress-controller) is available in your cluster.
+Follow our [reference repository docs](../repositories.md) to create a private copy of the [`sourcegraph/deploy-sourcegraph-k8s`](https://github.com/sourcegraph/deploy-sourcegraph-k8s/) repository, which contains everything you need to [configure](kustomize/configure.md) and [deploy](kustomize#deploy) a Sourcegraph Kubernetes instance using [Kustomize](kustomize/index.md).
 
 ## Configure
 

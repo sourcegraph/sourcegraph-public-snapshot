@@ -18,20 +18,15 @@ All the Kustomize resources for Sourcegraph are located inside the **new** direc
 Here is the file structure:
 
 ```bash
-# github.com/sourcegraph/deploy-sourcegraph
-~/new
+# github.com/sourcegraph/deploy-sourcegraph-k8s
 ├── base
-│ ├── sourcegraph
-│ └── monitoring
+│   ├── sourcegraph
+│   └── monitoring
 ├── components
-└── overlays
-  └── template
-    ├── config
-    │  └── overlay.config
-    ├── env
-    │  └── frontend.env
-    ├── utils
-    └── kustomization.yaml
+├── overlays
+│   └── template
+│       └── kustomization.template.yaml
+└── quick-start
 ```
 
 > WARNING: Please create your own sets of overlays within the 'overlays' directory and refrain from making changes to the other directories to prevent potential merge conflicts during future updates.
@@ -49,25 +44,25 @@ An [overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomiz
 Here is an example of a `kustomization` file from one of our [pre-built overlays](#pre-built-overlays) that is configured for deploying a size XS instance to a k3s cluster:
 
 ```yaml
-# new/quick-starts/k3s/xs/kustomization.yaml
+# quick-starts/k3s/xs/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: ns-sourcegraph-example
+namespace: sourcegraph-example
 resources:
-# Add resources for Sourcegraph Main Stacks
-- ../../new/base/sourcegraph
+# Add resources for Sourcegraph main stack
+- ../../base/sourcegraph
 components:
-# Add resources for Sourcegraph Monitoring Stacks
-- ../../new/components/monitoring
+# Add resources for Sourcegraph monitoring stack
+- ../../components/monitoring
 # Configurs the deployment for k3s cluster
-- ../../new/components/k3s
+- ../../components/k3s
 # Configurs the resources we added above for a size XS instance
-- ../../new/components/sizes/xs
+- ../../components/sizes/xs
 ```
 
 ### Pre-built overlays
 
- In addition to providing a template for creating new overlays, we also provide a set of pre-built overlays that are pre-configured for different environments. These pre-built overlays can be found inside the [new/quick-start](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/quick-start) directory. 
+ In addition to providing a template for creating new overlays, we also provide a set of pre-built overlays that are pre-configured for different environments. These pre-built overlays can be found inside the [quick-start](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/quick-start) directory. 
 
 ## Overlay
 
@@ -77,36 +72,66 @@ In this section, we will take a quick look at the essential part that make up a 
 
 An overlay is a directory that contains various files used to configure a deployment for a specific scenario. These files include the kustomization.yaml file, which is used to specify how the resources defined in the base manifests should be customized and configured, as well as other files such as environment variable files, configuration files, and patches.
 
-All overlays should be stored in the [new/overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays), where you can find the [new/overlays/template folder](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/overlays/template). This folder contains a selection of necessary files to construct an overlay for Sourcegraph. You can duplicate this folder as needed to create new overlays for deploying Sourcegraph.
+File structure:
 
-### Configuration files
+```bash
+# github.com/sourcegraph/deploy-sourcegraph-k8s
+└── overlays
+  ├── $OVERLAY_NAME
+  │   ├── kustomization.yaml
+  │   └── patches
+  │       └── config files go here...
+  └── template
+      └── kustomization.template.yaml
+```
 
-Below are the configuration files we have defined to make configuring Sourcegraph with an overlay easier.
+All overlays should be stored in the [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/overlays), where you can find the [overlays/template folder](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/overlays/template). This folder contains a `kustomization.template.yaml file` that is preconfigured to construct an overlay for deploying Sourcegraph.
 
-#### kustomization.yaml
+### kustomization.yaml
 
- The kustomization.yaml file is a key component of a Kustomize overlay. It is located in the root of an overlay directory and is used to specify how the resources defined in the base manifests should be customized and configured according to our [configuration docs](./configure.md).
+The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a Kustomize overlay. It is situated in the root directory of the overlay and serves as a means of customizing and configuring the resources defined in the base manifests, as outlined in our [configuration documentation](./configure.md).
 
-#### env and config directories
+To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment. These sections include:
 
-The **env directory**  and **config directory** are designated locations for storing configuration files related to your deployment.
+#### FRONTEND ENV VARS
 
-- The **env directory** is intended to contain files that will be used by the deployed instance, such as frontend.env, tls.cert, tls.key, and ssh files.
-- The **config directory** is intended to contain files that are used to customize the deployment using Kustomize, such as Kustomize overlays, kustomization.yaml files, and other configuration files used to patch the deployment.
+The `FRONTEND ENV VARS` section is located at the bottom of the [kustomization.yaml file](#kustomization-yaml) (which must be a copy of the `kustomization.template.yaml`). It is utilized to update environment variables for the `sourcegraph-frontend` service. These environment variables can be used to configure various aspects of the frontend service, such as authentication and authorization settings, feature flags, and more.
 
-#### frontend.env
+#### OVERLAY CONFIGURATIONS
 
-The frontend.env file is used to update environment variables for the sourcegraph-frontend service. These environment variables can be used to configure various aspects of the frontend service, such as authentication and authorization settings, feature flags, and more.
+Certain components may require additional input from users to construct the overlay. These inputs are typically configurations that are specific to the user's environment, use case, or preferences. The `OVERLAY CONFIGURATIONS` section should only be updated when instructed by the components defined in the overlay. This is because not all components require additional configurations and some may even have default values that are suitable for most use cases. Updating the section unnecessarily can cause errors or unexpected behavior. Always refer to the component's documentation or the comments in the kustomization.yaml file before making changes to this section.
 
-Only update the frontend.env file if instructed by the components defined in your overlay
+### patches directory
 
-#### overlay.config
+The `patches directory` is designated to store configuration files that Kustomize uses to customize your deployment. These files can include Kustomize overlays, supplementary kustomization.yaml files, modified ConfigMaps, and other configuration files necessary for patching the deployment.
 
-Some components may require additional input from users to construct the overlay. These inputs are typically configurations that are specific to the user's environment, use case, or preferences. These configurations are typically stored in an overlay.config file, which is located in the same directory as the overlay's kustomization.yaml file.
+When instructed by the configuration docs to set up the necessary files for configuring your Sourcegraph instance:
 
-It's important to only update the overlay.config file if instructed by the components defined in your overlay. This is because not all components require additional configurations, and some may even have default values that are suitable for most use cases. Updating the overlay.config file unnecessarily can cause errors or unexpected behavior. Always refer to the component's documentation or the comments in the kustomization.yaml file before making changes to the overlay.config file.
+1. Create a directory called 'patches': `mkdir patches`
+2. Create the required files within the 'patches' directory
+  
+This will ensure the files are in the correct location for the configuration process to access them.
 
-Also, it's worth to mention that you can store your configuration in different ways and not just in a file named overlay.config, It's depending on your preference, it can be stored in an environment variable, a configmap, or a secret.
+> NOTE: Creating the patches directory is not mandatory unless instructed by the components defined in your overlay.
+
+### Create a Sourcegraph overlay
+
+**Step 1**: Create a new directory within the `**overlays**` subdirectory. 
+
+The name of this directory, $OVERLAY_NAME, serves as the name of your overlay, for example, dev, prod, staging, etc.
+
+```bash
+# from the root of the repository
+mkdir overlays/$OVERLAY_NAME
+```
+
+**Step 2**: Copy the `kustomization.template.yaml` file from the `overlays/template` directory to the new directory created in step 1, and rename it to `kustomization.yaml`.
+
+```bash
+cp overlays/template/kustomization.template.yaml overlays/$OVERLAY_NAME/kustomization.yaml
+```
+
+**Step 3**: You can begin customizing your Sourcegraph deployment by updating the [kustomization.yaml file](#kustomization-yaml) inside your overlay, following our [configuration guides](./configure.md) for guidance.
 
 ## Components
 
@@ -123,10 +148,10 @@ To create manifests using a remote overlay, you can use the following command:
 
 ```bash
 # Replace the $REMOTE_OVERLAY_URL with a URL of an overlays.
-$ kubectl kustomize $REMOTE_OVERLAY_URL -o generated-cluster.yaml
+$ kubectl kustomize $REMOTE_OVERLAY_URL -o cluster.yaml
 ```
 
-This command will download the overlay specified in the $REMOTE_OVERLAY_URL and apply the customizations to the base resources and output the resulting customized manifests to the file generated-cluster.yaml. This command allows you to preview the resources before running the apply command below to deploy using the remote overlay.
+This command will download the overlay specified in the $REMOTE_OVERLAY_URL and apply the customizations to the base resources and output the resulting customized manifests to the file cluster.yaml. This command allows you to preview the resources before running the apply command below to deploy using the remote overlay.
 
 
 ```bash
@@ -138,18 +163,18 @@ $ kubectl apply -k --prune -l deploy=sourcegraph -f $REMOTE_OVERLAY_URL
 To create a customized deployment using your overlay, run the following command from the root directory of your deployment repository.
 
 ```bash
-$ kubectl kustomize $PATH_TO_OVERLAY -o new/generated-cluster.yaml
+$ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
 ```
 
-This command will apply the customizations specified in the overlay located at $PATH_TO_OVERLAY to the base resources and output the resulting customized manifests to the file `new/generated-cluster.yaml`.
+This command will apply the customizations specified in the overlay located at $PATH_TO_OVERLAY to the base resources and output the resulting customized manifests to the file `cluster.yaml`.
 
 The $PATH_TO_OVERLAY path can be a local path or remote path. For example:
 
 ```bash
 # Local
-$ kubectl kustomize new/overlays/deploy -o generated-cluster.yaml
+$ kubectl kustomize quick-start/k3s/xs -o cluster.yaml
 # Remote
-$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/k3s/xs?ref=v4.5.0 -o generated-cluster.yaml
+$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph-k8s/quick-start/k3s/xs?ref=v4.5.0 -o cluster.yaml
 ```
 
 > NOTE: This command will only generate the customized manifests and will not apply them to the cluster. . It does not affect your current deployment until you run the apply command.
@@ -175,24 +200,24 @@ Example 1: compare diff between resources generated by the k3s overlay for size 
 
 ```bash
 $ diff \
-    <(kubectl kustomize new/quick-start/k3s/xs) \
-    <(kubectl kustomize new/quick-start/k3s/xl) |\
+    <(kubectl kustomize quick-start/k3s/xs) \
+    <(kubectl kustomize quick-start/k3s/xl) |\
     more
 ```
 
-Example 2: compare diff between the deprecated cluster and the deprecated cluster built with the new Kustomize setup (both with default values):
+Example 2: compare diff between the deprecated cluster and the new cluster:
 
 ```bash
 $ diff \
-    <(kubectl kustomize new/quick-start/deprecated) \
-    <(kubectl kustomize new/quick-start/old-base/default) |\
+    <(kubectl kustomize quick-start/deprecated) \
+    <(kubectl kustomize quick-start/old-cluster) |\
     more
 ```
 
 Example 3: compare diff between the output files from two different overlay builds:
 
 ```bash
-$ diff new/generated-cluster-old.yaml new/generated-cluster-new.yaml
+$ diff generated-cluster-old.yaml generated-cluster-new.yaml
 ```
 
 ### Between an overlay and a running cluster
@@ -208,7 +233,7 @@ The command will output the differences between the customizations specified in 
 Example: compare diff between the k3s overlay for size xl instance and the instance that is connected with `kubectl`:
 
 ```bash
-kubectl kustomize new/quick-start/k3s/xl | kubectl diff -f  -
+kubectl kustomize quick-start/k3s/xl | kubectl diff -f  -
 ```
 
 ## Kustomize with Helm
@@ -234,7 +259,7 @@ It's crucial to note that both tools are used for generating manifests for deplo
 
 ### Old cluster vs new cluster
 
-As of the latest version, the new Sourcegraph cluster runs in non-root and non-privileged mode by default. This change was implemented by recreating the cluster using a modified version of the previous [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/tree/v4.3.0/overlays/non-privileged) overlay and [non-privileged-create-cluster](https://github.com/sourcegraph/deploy-sourcegraph/tree/v4.3.0/overlays/non-privileged-create-cluster) overlay. This modification was made to ensure that the Sourcegraph cluster is running in a more secure and stable environment.
+As of the latest version, the new Sourcegraph cluster runs in non-root and non-privileged mode by default. This change was implemented by recreating the cluster using a modified version of the previous [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/v4.3.0/overlays/non-privileged) overlay and [non-privileged-create-cluster](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/v4.3.0/overlays/non-privileged-create-cluster) overlay. This modification was made to ensure that the Sourcegraph cluster is running in a more secure and stable environment.
 
 For instructions on deploying Sourcegraph with privileged access, please refer to the [configuration docs](configure.md).
 
@@ -263,3 +288,4 @@ kubectl kustomize $PATH_TO_OVERLAY/. | kubectl apply --prune -l deploy=sourcegra
 It's important to review the changes, and ensure that the new overlay produces similar resources as the ones currently being used by the active cluster, before applying the new overlay.
 
 Note: Make sure to test the new overlay and the migration process in a non-production environment before applying it to your production cluster.
+

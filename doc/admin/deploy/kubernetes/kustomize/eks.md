@@ -4,12 +4,11 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy the Sourcegraph without the monitoring services.
+The installation steps below will walk you through the steps using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy Sourcegraph.
 
 The overlay will:
 
-- Deploy a resources for the Sourcegraph main stacks without monitoring services
-- Monitoring services required RBAC and can be deployed later 
+- Deploy a Sourcegraph instance without RBAC resources 
 - Configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly on your domain
 - Configure the Storage Class to use [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html) (installed as adds-on)
 
@@ -32,7 +31,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph main app without the monitoring stacks to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/aws/eks?ref=v4.3.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k3s/quick-start/aws/eks?ref=v4.3.1
 ```
 
 Monitor the deployment status to make sure everything is up and running:
@@ -72,31 +71,23 @@ kubectl port-forward svc/sourcegraph-frontend 3080:30080
 
 You should now be able to access your new Sourcegraph instance at http://localhost:3080  🎉
 
-### Optional Step: Deploy monitoring stacks 
-
-**IMPORTANT**: RBAC is required for the monitoring stacks to work properly.
-
-If RBAC is enabled in your cluster, we strongly recommend you to deploy the monitoring stacks for Sourcegraph.
-
-```bash
-$ kubectl apply -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph/new/quick-start/monitoring?ref=v4.3.1
-```
-
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/new/quick-start/aws/eks) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph-k3s/tree/master/quick-start/aws/eks) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
 ```yaml
-# new/overlays/your_aws_deployment/kustomization.yaml
+# overlays/$OVERLAY_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
 resources:
-# Sourcegraph Main Stacks
+# Sourcegraph Main Stack
 - ../../base/sourcegraph
 components:
+# Sourcegraph Monitoring Stack
+- ../../components/monitoring
 # Use resources for a size-XS instance
 - ../../components/sizes/xs
 # Apply configurations for AWS EKS
@@ -118,22 +109,31 @@ In order to use a managed certificate from [AWS Certificate Manager](https://doc
 Step 1: Add the `aws/mange-cert` component to your overlay:
 
 ```yaml
-# new/overlays/your_aws_deployment/kustomization.yaml
+# overlays/$OVERLAY_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
-resources:
+# Sourcegraph Main Stack
 - ../../base/sourcegraph
 components:
+# Sourcegraph Monitoring Stack
+- ../../components/monitoring
 - ../../components/sizes/xs
 - ../../components/aws/configure-eks
 - ../../components/aws/mange-cert
 ```
 
-Step 2: Add the `ARN of the AWS-managed TLS certificate` to the `overlay.config` file using the `AWS_MANAGED_CERT_ARN` variable:
+Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
 
 ```yaml
-# new/overlays/your_aws_deployment/config/overlay.config
-# ARN of the AWS-managed TLS certificate
-AWS_MANAGED_CERT_ARN=arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
+# overlays/$OVERLAY_NAME/kustomization.yaml
+# OVERLAY CONFIGURATIONS
+configMapGenerator:
+  # Handle updating configs using env vars for kustomize
+  - name: sourcegraph-kustomize-env
+    behavior: merge
+    literals:
+      ...
+      # ARN of the AWS-managed TLS certificate
+      - AWS_MANAGED_CERT_ARN=arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
 ```

@@ -26,24 +26,35 @@ Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](
   </a>
 </div>
 
+## Configure
+
+We strongly recommend referring to our [Configuration guide](configure.md) to learn about how to configure your Sourcegraph with Kubernetes instance.
+
 ## Deploy
 
-Refer to our [installation guide](./index.md#installation) for details on how to deploy Sourcegraph.
+Refer to our [installation guide](./index.md) for details on how to deploy Sourcegraph.
 
 Migrating from another [deployment type](../index.md)? Refer to our [migration guides](../migrate-backup.md).
 
 ### Applying manifests
 
-In general, Sourcegraph with Kubernetes is deployed by applying the [Kubernetes](./index.md#kubernetes) manifests in our [deploy-sourcegraph reference repository](./index.md#reference-repository) - see our [configuration guide](./configure.md) for more details.
+In order to deploy Sourcegraph that is configured for your cluster:
 
-We provide a `kubectl-apply-all.sh` script that you can use to do this, usually by running the following from the root directory of the [deploy-sourcegraph reference repository](./index.md#reference-repository):
+#### 1. Build manifests
 
-```sh
-./kubectl-apply-all.sh
+Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/configure.md)
+   
+```bash
+kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
 ```
 
-> NOTE: By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
-> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed. For example, if you use [overlays to make changes to the manifests](./configure.md#overlays), you should modify this script to apply your generated cluster instead.
+#### 2. Apply manifests
+
+Run the command below to apply the manifests from the ouput file `cluster.yaml` to the connected cluster:
+
+```bash
+kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
+```
 
 Once you have applied your changes:
 
@@ -60,15 +71,6 @@ Once you have applied your changes:
   ```
 
 - *Log in* - browse to your Sourcegraph deployment, login, and verify the instance is working as expected.
-
-## Configure
-
-We strongly recommend referring to our [Configuration guide](configure.md) to learn about how to configure your Sourcegraph with Kubernetes instance.
-
-## Upgrade
-
-- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
-- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ## List pods in cluster
 
@@ -341,6 +343,11 @@ and i.indisready AND i.indisvalid;
 ```
 
 H. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
+
+## Upgrade
+
+- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
+- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ## Troubleshoot
 
