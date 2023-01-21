@@ -542,7 +542,8 @@ export const createSuggestionsSource = ({
         tiebreakers: [starTiebraker],
     }
 
-    const fileFilters: Set<FilterType> = new Set([FilterType.repo, FilterType.rev, FilterType.context])
+    // Relevant query filters for file suggestions
+    const fileFilters: Set<FilterType> = new Set([FilterType.repo, FilterType.rev, FilterType.context, FilterType.lang])
 
     // TODO: Initialize outside to persist cache across page navigation
     const caches: Caches = {
