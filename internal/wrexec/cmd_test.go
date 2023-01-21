@@ -1,4 +1,4 @@
-package exec_test
+package wrexec_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/exec"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	osexec "os/exec"
@@ -21,7 +21,7 @@ func TestCommand(t *testing.T) {
 	name := "md5sum"
 	args := []string{"-b"}
 
-	got := exec.Command(context.Background(), logger, name, args...).Unwrap()
+	got := wrexec.CommandContext(context.Background(), logger, name, args...).Cmd
 	want := osexec.Command(name, args...)
 
 	if diff := cmp.Diff(want.Path, got.Path); diff != "" {
@@ -45,7 +45,7 @@ func TestWrap(t *testing.T) {
 	args := []string{"-b"}
 
 	want := osexec.Command(name, args...)
-	got := exec.Wrap(context.Background(), logger, want).Unwrap()
+	got := wrexec.Wrap(context.Background(), logger, want).Cmd
 
 	if diff := cmp.Diff(want.Path, got.Path); diff != "" {
 		t.Fatal("Path", diff)
@@ -412,8 +412,8 @@ func TestString(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	oscmd := osexec.CommandContext(ctx, "md5sum", "-h")
-	cmd := exec.Command(ctx, logger, "md5sum", "-h")
-	cmd1 := exec.Wrap(ctx, logger, oscmd)
+	cmd := wrexec.CommandContext(ctx, logger, "md5sum", "-h")
+	cmd1 := wrexec.Wrap(ctx, logger, oscmd)
 
 	want := oscmd.String()
 	got := cmd.String()
@@ -435,7 +435,7 @@ func TestHooks(t *testing.T) {
 	t.Run("all hooks are called", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		args := []string{"-b", f.Name()}
-		cmd := exec.Command(ctx, logger, name, args...)
+		cmd := wrexec.CommandContext(ctx, logger, name, args...)
 		var a1, a2 int
 		var b1, b2 int
 		cmd.SetBeforeHooks(
@@ -473,7 +473,7 @@ func TestHooks(t *testing.T) {
 	t.Run("before hooks can interrupt the command", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		args := []string{"-b", f.Name()}
-		cmd := exec.Command(ctx, logger, name, args...)
+		cmd := wrexec.CommandContext(ctx, logger, name, args...)
 		var a, b1, b2 int
 		wantErr := errors.New("foobar")
 		cmd.SetBeforeHooks(
@@ -515,7 +515,7 @@ func TestHooks(t *testing.T) {
 	t.Run("before hooks can update the os.exec.Cmd", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		oscmd := osexec.Command("md5sum", "-b", f.Name())
-		cmd := exec.Command(ctx, logger, "md5sum", "--help")
+		cmd := wrexec.CommandContext(ctx, logger, "md5sum", "--help")
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, c *osexec.Cmd) error {
 			// .Args[0] is going to be ignored if and only if .Path is present.
 			// And the osexec.Command always set it obviously ...
@@ -545,7 +545,7 @@ func TestHooks(t *testing.T) {
 		//nolint:staticcheck
 		ctx := context.WithValue(context.Background(), "my-key", 1)
 		f := createTmpFile(t, "foobar")
-		cmd := exec.Command(ctx, logger, "md5sum", "-b", f.Name())
+		cmd := wrexec.CommandContext(ctx, logger, "md5sum", "-b", f.Name())
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) error {
 			want, got := 1, ctx.Value("my-key")
 			if want != got {
@@ -566,7 +566,7 @@ type testcase struct {
 	beforeCounter int
 	afterCounter  int
 	oscmd         *osexec.Cmd
-	cmd           *exec.Cmd
+	cmd           *wrexec.Cmd
 }
 
 func createTmpFile(t *testing.T, content string) *os.File {
@@ -587,7 +587,7 @@ func createTmpFile(t *testing.T, content string) *os.File {
 }
 
 func createTestCommand(ctx context.Context, logger log.Logger, name string, args ...string) *testcase {
-	c := exec.Command(ctx, logger, name, args...)
+	c := wrexec.CommandContext(ctx, logger, name, args...)
 	testcase := testcase{
 		oscmd: osexec.CommandContext(ctx, name, args...),
 		cmd:   c,

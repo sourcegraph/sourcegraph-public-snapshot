@@ -42,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	rexec "github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -60,7 +59,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -103,7 +104,7 @@ var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd rexec.Cmder) (exitCode int, err error) {
+func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd.Unwrap())
 	}
@@ -132,7 +133,7 @@ func runCommand(ctx context.Context, cmd rexec.Cmder) (exitCode int, err error) 
 // supplied context is cancelled we attempt to send SIGINT to the command to
 // allow it to gracefully shutdown. All clients of this function should pass in a
 // command *without* a context.
-func runCommandGraceful(ctx context.Context, logger log.Logger, cmd rexec.Cmder) (exitCode int, err error) {
+func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful") //nolint:staticcheck // OT is deprecated
 	c := cmd.Unwrap()
 	span.SetTag("path", c.Path)
@@ -359,7 +360,7 @@ type Server struct {
 	// recordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
-	recordingCommandFactory *rexec.RecordingCommandFactory
+	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
 type locks struct {
@@ -440,56 +441,61 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	})
 }
 
+func recordCommandsOnRepos(conf *schema.GitRecorder) wrexec.ShouldRecordFunc {
+	ignoredGitCommands := map[string]struct{}{
+		"show":      {},
+		"rev-parse": {},
+		"log":       {},
+		"diff":      {},
+		"ls-tree":   {},
+	}
+	return func(ctx context.Context, cmd *exec.Cmd) bool {
+		if conf == nil {
+			// no config so we record nothing
+			return false
+		}
+
+		base := filepath.Base(cmd.Path)
+		if base != "git" {
+			return false
+		}
+
+		repoMatch := false
+		for _, repo := range conf.Repos {
+			if strings.Contains(cmd.Dir, repo) {
+				repoMatch = true
+				break
+			}
+		}
+
+		// If the repo doesn't match, no use in checking if it is a command we should record.
+		if !repoMatch {
+			return false
+		}
+		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
+		// git -c "protocol.version=2" remote show
+		for _, arg := range cmd.Args {
+			if _, ok := ignoredGitCommands[arg]; ok {
+				return false
+			}
+		}
+		return true
+	}
+
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
-	s.recordingCommandFactory = rexec.NewRecordingCommandFactory(nil)
+	s.recordingCommandFactory = wrexec.NewRecordingCommandFactory(nil)
 	conf.Watch(func() {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
-		ignoredGitCommands := map[string]struct{}{
-			"show":      {},
-			"rev-parse": {},
-			"log":       {},
-			"diff":      {},
-			"ls-tree":   {},
-		}
 		recordingConf := conf.Get().SiteConfig().GitRecorder
-		s.recordingCommandFactory.Update(func(ctx context.Context, cmd *exec.Cmd) bool {
-			if recordingConf == nil {
-				// no config so we record nothing
-				return false
-			}
-
-			base := filepath.Base(cmd.Path)
-			if base != "git" {
-				return false
-			}
-
-			repoMatch := false
-			for _, repo := range recordingConf.OnlyRepos {
-				if strings.Contains(cmd.Dir, repo) {
-					repoMatch = true
-					break
-				}
-			}
-
-			// If the repo doesn't match, no use in checking if it is a command we should record.
-			if !repoMatch {
-				return false
-			}
-			// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
-			// git -c "protocol.version=2" remote show
-			for _, arg := range cmd.Args {
-				if _, ok := ignoredGitCommands[arg]; ok {
-					return false
-				}
-			}
-			return true
-		})
+		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf))
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
@@ -2739,7 +2745,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, rf *rexec.RecordingCommandFactory, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)

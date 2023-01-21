@@ -1,4 +1,4 @@
-package exec
+package wrexec
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 // Cmd wraps an os/exec.Cmd into a thin layer than enables one to set hooks for before and after the commands.
 type Cmd struct {
-	cmd         *exec.Cmd
+	*exec.Cmd
 	ctx         context.Context
 	logger      log.Logger
 	beforeHooks []BeforeHook
@@ -51,9 +51,9 @@ type Cmder interface {
 
 var _ Cmder = &Cmd{}
 
-// Command constructs a new Cmd wrapper.
+// CommandContext constructs a new Cmd wrapper with the provided context.
 // If logger is nil, a no-op logger will be set.
-func Command(ctx context.Context, logger log.Logger, name string, args ...string) *Cmd { // TODO
+func CommandContext(ctx context.Context, logger log.Logger, name string, args ...string) *Cmd {
 	cmd := exec.CommandContext(ctx, name, args...)
 	return Wrap(ctx, logger, cmd)
 }
@@ -61,12 +61,11 @@ func Command(ctx context.Context, logger log.Logger, name string, args ...string
 // Wrap constructs a new Cmd based of an existing os/Exec.cmd command.
 // If logger is nil, a no-op logger will be set.
 func Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *Cmd {
-	// TODO?
 	if logger == nil {
 		logger = log.NoOp()
 	}
 	return &Cmd{
-		cmd:    cmd,
+		Cmd:    cmd,
 		ctx:    ctx,
 		logger: logger,
 	}
@@ -92,12 +91,12 @@ func (c *Cmd) SetAfterHooks(hooks ...AfterHook) {
 // Unwrap returns the underlying os/exec.Cmd, that can be safely modified unless
 // the Cmd has been started.
 func (c *Cmd) Unwrap() *exec.Cmd {
-	return c.cmd
+	return c.Cmd
 }
 
 func (c *Cmd) runBeforeHooks() error {
 	for _, h := range c.beforeHooks {
-		if err := h(c.ctx, c.logger, c.cmd); err != nil {
+		if err := h(c.ctx, c.logger, c.Cmd); err != nil {
 			return err
 		}
 	}
@@ -106,7 +105,7 @@ func (c *Cmd) runBeforeHooks() error {
 
 func (c *Cmd) runAfterHooks() {
 	for _, h := range c.afterHooks {
-		h(c.ctx, c.logger, c.cmd)
+		h(c.ctx, c.logger, c.Cmd)
 	}
 }
 
@@ -117,12 +116,12 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.cmd.CombinedOutput()
+	return c.Cmd.CombinedOutput()
 }
 
 // Environ returns the underlying command environ. It never call the hooks.
 func (c *Cmd) Environ() []string {
-	return c.cmd.Environ()
+	return c.Cmd.Environ()
 }
 
 // Output calls os/exec.Cmd.Output after running the before hooks,
@@ -132,7 +131,7 @@ func (c *Cmd) Output() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.cmd.Output()
+	return c.Cmd.Output()
 }
 
 // Run calls os/exec.Cmd.Run after running the before hooks,
@@ -142,7 +141,7 @@ func (c *Cmd) Run() error {
 		return err
 	}
 	defer c.runAfterHooks()
-	return c.cmd.Run()
+	return c.Cmd.Run()
 }
 
 // Start calls os/exec.Cmd.Start after running the before hooks,
@@ -153,31 +152,31 @@ func (c *Cmd) Start() error {
 	if err := c.runBeforeHooks(); err != nil {
 		return err
 	}
-	return c.cmd.Start()
+	return c.Cmd.Start()
 }
 
 // StderrPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
 func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
-	return c.cmd.StderrPipe()
+	return c.Cmd.StderrPipe()
 }
 
 // StdinPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
 func (c *Cmd) StdinPipe() (io.WriteCloser, error) {
-	return c.cmd.StdinPipe()
+	return c.Cmd.StdinPipe()
 }
 
 // StdoutPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
 func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
-	return c.cmd.StdoutPipe()
+	return c.Cmd.StdoutPipe()
 }
 
 // String calls os/exec.Cmd.String, without any modification.
 func (c *Cmd) String() string {
-	return c.cmd.String()
+	return c.Cmd.String()
 }
 
 // Wait calls os/exec.Cmd.Wait and will run the after hooks once it returns.
 func (c *Cmd) Wait() error {
 	defer c.runAfterHooks()
-	return c.cmd.Wait()
+	return c.Cmd.Wait()
 }

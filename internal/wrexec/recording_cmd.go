@@ -1,4 +1,4 @@
-package exec
+package wrexec
 
 import (
 	"context"
@@ -48,7 +48,7 @@ type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 //
 // The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
 func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, name string, args ...string) *RecordingCmd {
-	cmd := Command(ctx, logger, name, args...)
+	cmd := CommandContext(ctx, logger, name, args...)
 	rc := &RecordingCmd{
 		Cmd:          cmd,
 		r:            rcache.New(KeyPrefix),

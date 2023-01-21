@@ -1103,8 +1103,8 @@ type GitLabWebhook struct {
 
 // GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
 type GitRecorder struct {
-	// OnlyRepos description: List of repositories whose git operations should be recorded.
-	OnlyRepos []string `json:"onlyRepos,omitempty"`
+	// Repos description: List of repositories whose git operations should be recorded.
+	Repos []string `json:"repos,omitempty"`
 }
 
 // Github description: GitHub configuration, both for queries and receiving release webhooks.

@@ -21,10 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	rexec "github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -165,7 +165,7 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
-func runWith(ctx context.Context, cmd rexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -361,7 +361,7 @@ var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, rexec.Wrap(ctx, nil, cmd))
+	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

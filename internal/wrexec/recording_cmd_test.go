@@ -1,4 +1,4 @@
-package exec_test
+package wrexec_test
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/exec"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *exec.RecordedCommand) (bool, error) {
+func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *wrexec.RecordedCommand) (bool, error) {
 	t.Helper()
 
 	if !cmp.Equal(cmd.Dir, recording.Dir) {
@@ -41,14 +41,14 @@ func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *exec.RecordedCom
 	return true, nil
 }
 
-func getRecording(t *testing.T, store *rcache.Cache, rcmd *exec.RecordingCmd) *exec.RecordedCommand {
+func getRecording(t *testing.T, store *rcache.Cache, rcmd *wrexec.RecordingCmd) *wrexec.RecordedCommand {
 	t.Helper()
 	data, ok := store.Get(rcmd.Key())
 	if !ok {
 		t.Errorf("expected key %q to exist in redis but it was not found", rcmd.Key())
 	}
 
-	var recording exec.RecordedCommand
+	var recording wrexec.RecordedCommand
 	if err := json.Unmarshal(data, &recording); err != nil {
 		t.Fatalf("failed to unmarshal recording: %v", err)
 	}
@@ -57,8 +57,8 @@ func getRecording(t *testing.T, store *rcache.Cache, rcmd *exec.RecordingCmd) *e
 
 func TestRecordingCmd(t *testing.T) {
 	rcache.SetupForTest(t)
-	store := rcache.New(exec.KeyPrefix)
-	var recordAlways exec.ShouldRecordFunc = func(ctx context.Context, c *osexec.Cmd) bool {
+	store := rcache.New(wrexec.KeyPrefix)
+	var recordAlways wrexec.ShouldRecordFunc = func(ctx context.Context, c *osexec.Cmd) bool {
 		return true
 	}
 
@@ -66,7 +66,7 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("with combinedOutput", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		cmd := osexec.Command("md5sum", "-b", f.Name())
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
 		_, err := rcmd.CombinedOutput()
 		if err != nil {
 			t.Fatalf("failed to execute recorded command: %v", err)
@@ -80,7 +80,7 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("with Run", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		cmd := osexec.Command("md5sum", "-b", f.Name())
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
 		rcmd.Run()
 
 		recording := getRecording(t, store, rcmd)
@@ -91,7 +91,7 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("with Output", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		cmd := osexec.Command("md5sum", "-b", f.Name())
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
 		_, err := rcmd.Output()
 		if err != nil {
 			t.Fatalf("failed to execute recorded command: %v", err)
@@ -105,7 +105,7 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("with Start and Wait", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		cmd := osexec.Command("md5sum", "-b", f.Name())
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
 		err := rcmd.Start()
 		if err != nil {
 			t.Fatalf("failed to execute recorded command: %v", err)
@@ -131,7 +131,7 @@ func TestRecordingCmd(t *testing.T) {
 	})
 	t.Run("with failed command", func(t *testing.T) {
 		cmd := osexec.Command("which", "i-should-not-exist-DEADBEEF")
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd)
 		_, err := rcmd.Output()
 		if err == nil {
 			t.Fatalf("command should have failed but executed successfully: %v", err)
@@ -145,7 +145,7 @@ func TestRecordingCmd(t *testing.T) {
 	t.Run("no recording with false predicate", func(t *testing.T) {
 		cmd := osexec.Command("echo", "hello-world")
 		noRecord := func(ctx context.Context, c *osexec.Cmd) bool { return false }
-		rcmd := exec.RecordingWrap(ctx, logtest.Scoped(t), noRecord, cmd)
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), noRecord, cmd)
 		out, err := rcmd.Output()
 		if err != nil {
 			t.Fatalf("failed to execute recorded command: %v", err)
@@ -168,8 +168,8 @@ func TestRecordingCmd(t *testing.T) {
 		f2 := createTmpFile(t, "fubar")
 		cmd1 := osexec.Command("md5sum", "-b", f1.Name())
 		cmd2 := osexec.Command("md5sum", "-b", f2.Name())
-		rcmd1 := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd1)
-		rcmd2 := exec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd2)
+		rcmd1 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd1)
+		rcmd2 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, cmd2)
 		err := rcmd1.Start()
 		if err != nil {
 			t.Fatalf("failed to execute recorded command 1: %v", err)
