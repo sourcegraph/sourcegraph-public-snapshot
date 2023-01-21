@@ -99,6 +99,7 @@
     display: flex;
     flex-direction: column;
     min-height: 18px;
+    position: relative;
 
     &:not(:last-child) > &--link {
         border-bottom: 1px solid var(--body-bg);
@@ -106,6 +107,21 @@
 
     &--active {
         background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: calc(100% - 1px);
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-3);
+        padding-left: 0.25rem;
+        padding-right: 0.1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     &--link:hover {

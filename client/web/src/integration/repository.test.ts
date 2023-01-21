@@ -395,9 +395,6 @@ describe('Repository', () => {
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
 
-            // Wait for extensions bar to be loaded before screenshotting
-            await driver.page.waitForSelector('[data-testid="action-items-toggle-open"]')
-
             await percySnapshotWithVariants(driver.page, 'Repository index page')
             await accessibilityAudit(driver.page)
 

@@ -6,7 +6,6 @@ import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from 
 // If there are no feature flags at the moment, this should be `never`.
 export type FeatureFlagName =
     | 'quick-start-tour-for-authenticated-users'
-    | 'new-repo-page'
     | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
     | 'ab-email-verification-alert'

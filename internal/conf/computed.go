@@ -21,7 +21,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.SingleProgram, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -36,6 +36,8 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
 		panic("deploy type did not register default configuration")
 	}
@@ -146,7 +148,7 @@ func AccessTokensAllow() AccessTokenAllow {
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {
-	return Get().EmailSmtp != nil
+	return CanSendEmail()
 }
 
 // CanSendEmail returns whether the site can send emails (e.g., to reset a password or

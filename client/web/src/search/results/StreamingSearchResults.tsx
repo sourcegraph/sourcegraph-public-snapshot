@@ -5,8 +5,8 @@ import * as H from 'history'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
-import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -443,6 +443,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setQueryState}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     </div>
                 </>

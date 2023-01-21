@@ -99,7 +99,7 @@ const steps: Step[] = [
         run: (_config, all) => {
             console.error('Sourcegraph release tool - https://handbook.sourcegraph.com/engineering/releases')
             console.error('\nUSAGE\n')
-            console.error('\tyarn run release <step>')
+            console.error('\tpnpm run release <step>')
             console.error('\nAVAILABLE STEPS\n')
             console.error(
                 steps
@@ -539,7 +539,7 @@ cc @${config.captainGitHubUsername}
                                 const items: string[] = []
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
-                                    'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
+                                    'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
                                     'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
@@ -583,6 +583,16 @@ cc @${config.captainGitHubUsername}
                         ...prBodyAndDraftState([
                             'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
                         ]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -658,7 +668,7 @@ Batch change: ${batchChangeURL}`,
         id: 'release:add-to-batch-change',
         description: 'Manually add a change to a release batch change',
         argNames: ['changeRepo', 'changeID'],
-        // Example: yarn run release release:add-to-batch-change sourcegraph/about 1797
+        // Example: pnpm run release release:add-to-batch-change sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
             const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
@@ -691,7 +701,11 @@ Batch change: ${batchChangeURL}`,
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
-            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+            for (const repo of [
+                'deploy-sourcegraph',
+                'deploy-sourcegraph-docker',
+                'deploy-sourcegraph-docker-customer-replica-1',
+            ]) {
                 try {
                     await createTag(
                         await getAuthenticatedGitHubClient(),
@@ -830,7 +844,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:batchchange-create-from-changes',
         description: 'Test batch changes integration',
         argNames: ['batchchangeConfigJSON'],
-        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
+        // Example: pnpm run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
         run: async (_config, batchchangeConfigJSON) => {
             const batchChangeConfig = JSON.parse(batchchangeConfigJSON) as {
                 changes: CreatedChangeset[]

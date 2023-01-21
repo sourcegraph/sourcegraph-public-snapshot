@@ -5,7 +5,17 @@ export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
 export { ErrorMessage, renderError } from './ErrorMessage'
-export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
+export {
+    LineChart,
+    BarChart,
+    PieChart,
+    StackedMeter,
+    LegendList,
+    LegendItem,
+    LegendItemPoint,
+    ScrollBox,
+    ParentSize,
+} from './Charts'
 export {
     Checkbox,
     FlexTextArea,
@@ -14,7 +24,6 @@ export {
     LoaderInput,
     RadioButton,
     Select,
-    MultiSelect,
     TextArea,
     InputStatus,
     getInputStatus,
@@ -62,6 +71,14 @@ export {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxEmptyList,
+    MultiComboboxOptionGroup,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
 } from './Combobox'
 
 /**
@@ -70,9 +87,9 @@ export {
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
+export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
 export type { PopoverOpenEvent, Rectangle } from './Popover'
@@ -84,6 +101,7 @@ export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+export type { MultiComboboxProps } from './Combobox'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

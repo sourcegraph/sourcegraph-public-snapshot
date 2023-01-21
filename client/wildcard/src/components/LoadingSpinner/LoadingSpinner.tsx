@@ -25,6 +25,7 @@ export const LoadingSpinner: FC<LoadingSpinnerProps> = props => {
             aria-label="Loading"
             aria-live="polite"
             className={classNames(styles.loadingSpinner, className)}
+            data-loading-spinner={true}
             {...attribute}
         />
     )

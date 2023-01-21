@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -114,11 +115,11 @@ func TestBulkOperationResolver(t *testing.T) {
 		Progress: 2.0 / 3.0,
 		Errors: []*apitest.ChangesetJobError{
 			{
-				Changeset: &apitest.Changeset{ID: string(marshalChangesetID(changeset1.ID))},
+				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset1.ID))},
 				Error:     strPtr(errorMsg),
 			},
 			{
-				Changeset: &apitest.Changeset{ID: string(marshalChangesetID(changeset3.ID))},
+				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset3.ID))},
 				// Error should not be exposed.
 				Error: nil,
 			},

@@ -215,6 +215,7 @@ type IsRepoCloneableRequest struct {
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
 type IsRepoCloneableResponse struct {
 	Cloneable bool   // whether the repo is cloneable
+	Cloned    bool   // true if the repo was ever cloned in the past
 	Reason    string // if not cloneable, the reason why not
 }
 

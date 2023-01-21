@@ -10,6 +10,7 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import {
     useCurrentSpan,
@@ -17,7 +18,6 @@ import {
     createActiveSpan,
     reactManualTracer,
 } from '@sourcegraph/observability-client'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
@@ -49,11 +49,13 @@ import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
+import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -102,6 +104,7 @@ interface BlobPageProps
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']
     repoUrl?: string
+    repoServiceType?: string
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
@@ -185,6 +188,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      * Intention is to use this whilst we wait for syntax highlighting,
      * so the user has useful content rather than a loading spinner
      */
+
     const formattedBlobInfoOrError = useObservable(
         useMemo(
             () =>
@@ -323,7 +327,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     }
 
     const [isBlameVisible] = useBlameVisibility()
-    const blameDecorations = useBlameHunks(
+    const blameHunks = useBlameHunks(
         { repoName, revision, filePath, enableCodeMirror },
         props.platformContext.sourcegraphURL
     )
@@ -358,6 +362,36 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
+            {!window.context.enableLegacyExtensions ? (
+                <>
+                    {window.context.isAuthenticatedUser && (
+                        <RepoHeaderContributionPortal
+                            position="right"
+                            priority={112}
+                            id="open-in-editor-action"
+                            repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                        >
+                            {({ actionType }) => (
+                                <OpenInEditorActionItem
+                                    platformContext={props.platformContext}
+                                    externalServiceType={props.repoServiceType}
+                                    actionType={actionType}
+                                    source="repoHeader"
+                                />
+                            )}
+                        </RepoHeaderContributionPortal>
+                    )}
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={111}
+                        id="toggle-blame-action"
+                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                    >
+                        {({ actionType }) => <ToggleBlameAction actionType={actionType} source="repoHeader" />}
+                    </RepoHeaderContributionPortal>
+                </>
+            ) : null}
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -383,6 +417,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
             )}
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
@@ -553,7 +588,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
-                        blameHunks={blameDecorations}
+                        blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
                         enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
                         enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}

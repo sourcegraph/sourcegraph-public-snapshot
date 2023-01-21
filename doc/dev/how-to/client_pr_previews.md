@@ -7,8 +7,8 @@ We have app previews for each PR with **only client changes**. It means that eve
 A link to a deployed preview is automatically added to the bottom of the PR description. [Under the hood](https://sourcegraph.com/search?q=context:global+repo:sourcegraph/sourcegraph%24+Get+service+id+of+preview+app+on+render.com&patternType=literal), it uses a production build of the web application running on the standalone web server:
 
 ```sh
-dev/ci/yarn-build.sh client/web
-yarn workspace @sourcegraph/web serve:prod
+dev/ci/pnpm-build.sh client/web
+pnpm --filter @sourcegraph/web serve:prod
 ```
 
 The standalone web server is deployed as [a web service](https://render.com/docs/web-services) to [render.com](https://render.com/) via [a Buildkite step](https://sourcegraph.com/search?q=context:global+repo:sourcegraph/sourcegraph%24+prPreview%28%29&patternType=literal).
