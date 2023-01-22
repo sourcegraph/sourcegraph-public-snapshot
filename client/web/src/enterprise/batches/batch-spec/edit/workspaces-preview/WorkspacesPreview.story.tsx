@@ -8,8 +8,6 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS, WORKSPACES } from '../../../create/backend'
-import { GET_LICENSE_AND_USAGE_INFO } from '../../../list/backend'
-import { getLicenseAndUsageInfoResult } from '../../../list/testData'
 import {
     mockBatchChange,
     mockBatchSpec,
@@ -19,6 +17,8 @@ import {
     UNSTARTED_CONNECTION_MOCKS,
     UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
     LARGE_SUCCESS_CONNECTION_MOCKS,
+    UNLICENSED_MOCK,
+    LICENSED_MOCK,
 } from '../../batch-spec.mock'
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
@@ -87,6 +87,7 @@ export const QueuedInProgress: Story = args => {
     const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
+        LICENSED_MOCK,
         {
             request: {
                 query: getDocumentNode(WORKSPACES),
@@ -150,6 +151,7 @@ export const QueuedInProgressWithCachedConnectionResult: Story = args => {
     const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
+        LICENSED_MOCK,
         {
             request: {
                 query: getDocumentNode(WORKSPACES),
@@ -212,6 +214,7 @@ export const FailedErrored: Story = args => {
     )
 
     const failedConnectionMocks = new WildcardMockLink([
+        LICENSED_MOCK,
         {
             request: {
                 query: getDocumentNode(WORKSPACES),
@@ -274,6 +277,7 @@ export const FailedErroredWithCachedConnectionResult: Story = args => {
     )
 
     const failedConnectionMocks = new WildcardMockLink([
+        LICENSED_MOCK,
         {
             request: {
                 query: getDocumentNode(WORKSPACES),
@@ -458,19 +462,7 @@ export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
-                link={
-                    new WildcardMockLink([
-                        ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
-                        {
-                            request: {
-                                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
-                                variables: MATCH_ANY_PARAMETERS,
-                            },
-                            result: { data: getLicenseAndUsageInfoResult(false, true) },
-                            nMatches: Number.POSITIVE_INFINITY,
-                        },
-                    ])
-                }
+                link={new WildcardMockLink([UNLICENSED_MOCK, ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS])}
             >
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
@@ -490,19 +482,7 @@ export const ReadOnlyWithLicenseAlert: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
-                link={
-                    new WildcardMockLink([
-                        ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
-                        {
-                            request: {
-                                query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
-                                variables: MATCH_ANY_PARAMETERS,
-                            },
-                            result: { data: getLicenseAndUsageInfoResult(false, true) },
-                            nMatches: Number.POSITIVE_INFINITY,
-                        },
-                    ])
-                }
+                link={new WildcardMockLink([UNLICENSED_MOCK, ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS])}
             >
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}

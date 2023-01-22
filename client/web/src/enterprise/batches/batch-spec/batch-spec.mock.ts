@@ -24,10 +24,24 @@ import {
     ExecutorCompatibility,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
+import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
+import { getLicenseAndUsageInfoResult } from '../list/testData'
 
 import helloWorldSample from './edit/library/hello-world.batch.yaml'
 
 const now = new Date()
+
+export const LICENSED_MOCK: WildcardMockedResponse = {
+    request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
+    result: { data: getLicenseAndUsageInfoResult(true, true) },
+    nMatches: Number.POSITIVE_INFINITY,
+}
+
+export const UNLICENSED_MOCK: WildcardMockedResponse = {
+    request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
+    result: { data: getLicenseAndUsageInfoResult(false, true) },
+    nMatches: Number.POSITIVE_INFINITY,
+}
 
 export const MOCK_USER_NAMESPACE = {
     __typename: 'User',
@@ -520,6 +534,7 @@ export const NO_ACTIVE_EXECUTORS_MOCK: WildcardMockedResponse = {
 }
 
 export const UNSTARTED_CONNECTION_MOCKS: MockedResponses = [
+    LICENSED_MOCK,
     {
         request: {
             query: getDocumentNode(WORKSPACES),
@@ -547,6 +562,7 @@ export const UNSTARTED_CONNECTION_MOCKS: MockedResponses = [
 ]
 
 export const UNSTARTED_WITH_CACHE_CONNECTION_MOCKS: MockedResponses = [
+    LICENSED_MOCK,
     {
         request: {
             query: getDocumentNode(WORKSPACES),
@@ -574,6 +590,7 @@ export const UNSTARTED_WITH_CACHE_CONNECTION_MOCKS: MockedResponses = [
 ]
 
 export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
+    LICENSED_MOCK,
     {
         request: {
             query: getDocumentNode(WORKSPACES),
