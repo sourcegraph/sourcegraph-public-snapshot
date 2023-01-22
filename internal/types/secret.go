@@ -253,6 +253,12 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 			return errCodeHostIdentityChanged{"url", "token"}
 		}
 		es.unredactString(c.Token, o.Token, "token")
+	case *schema.AzureDevOpsConnection:
+		o := oldCfg.(*schema.AzureDevOpsConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.NpmPackagesConnection:
 		o := oldCfg.(*schema.NpmPackagesConnection)
 		if c.Credentials == RedactedSecret && c.Registry != o.Registry {
