@@ -465,16 +465,19 @@ export const mockImportingChangesets = (
     __typename: 'VisibleChangesetSpec'
 })[] => [...new Array(count).keys()].map(id => mockImportingChangeset(id))
 
-export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorkspacesPreviewResult => ({
+export const mockBatchSpecWorkspaces = (
+    workspacesCount: number,
+    totalCount?: number
+): BatchSpecWorkspacesPreviewResult => ({
     node: {
         __typename: 'BatchSpec',
         workspaceResolution: {
             __typename: 'BatchSpecWorkspaceResolution',
             workspaces: {
                 __typename: 'BatchSpecWorkspaceConnection',
-                totalCount: workspacesCount,
+                totalCount: totalCount ?? workspacesCount,
                 pageInfo: {
-                    hasNextPage: workspacesCount > 0,
+                    hasNextPage: !!totalCount,
                     endCursor: 'end-cursor',
                 },
                 nodes: mockPreviewWorkspaces(workspacesCount),
@@ -558,6 +561,33 @@ export const UNSTARTED_WITH_CACHE_CONNECTION_MOCKS: MockedResponses = [
             variables: MATCH_ANY_PARAMETERS,
         },
         result: { data: mockBatchSpecImportingChangesets(20) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockWorkspaceResolutionStatus(BatchSpecWorkspaceResolutionState.COMPLETED) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]
+
+export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecWorkspaces(50, 2200) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(IMPORTING_CHANGESETS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecImportingChangesets(0) },
         nMatches: Number.POSITIVE_INFINITY,
     },
     {
