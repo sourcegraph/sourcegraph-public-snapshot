@@ -299,8 +299,8 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     </div>
                 )}
                 {totalCount !== null && totalCount >= WORKSPACE_WARNING_MIN_TOTAL_COUNT && (
-                    <div className="d-flex flex-column align-items-center w-100 mb-3">
-                        <CTASizeWarning totalCount={totalCount} />
+                    <div className="d-flex flex-column align-items-center w-100">
+                        <CTASizeWarning />
                     </div>
                 )}
                 {(hasPreviewed || isReadOnly) && (
@@ -351,16 +351,11 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     )
 }
 
-const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({ totalCount }) => (
-    <Alert variant="warning">
-        <div className="mb-2">
-            <strong>
-                It's over <s>9000</s> {WORKSPACE_WARNING_MIN_TOTAL_COUNT}!
-            </strong>
-        </div>
-        Batch changes with more than {WORKSPACE_WARNING_MIN_TOTAL_COUNT} workspaces may be unwieldy to manage. We're
-        working on providing more filtering options, and you can continue with this batch change if you want, but you
-        may want to break it into {Math.ceil(totalCount / WORKSPACE_WARNING_MIN_TOTAL_COUNT)} or more batch changes if
-        you can.
+const CTASizeWarning: React.FunctionComponent = () => (
+    <Alert variant="note" className="mb-2">
+        The experience is currently optimized for batch changes targeting up to {WORKSPACE_WARNING_MIN_TOTAL_COUNT}{' '}
+        workspaces. Break your batch change down into several smaller batch changes for a better experience.
+    </Alert>
+)
     </Alert>
 )
