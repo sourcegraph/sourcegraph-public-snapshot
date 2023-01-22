@@ -266,20 +266,6 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     {totalCountDisplay}
                 </WorkspacesListHeader>
                 {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
-                {exceedsLicense((totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
-                    <div className="d-flex flex-column align-items-center w-100 mb-3">
-                        <Alert variant="info">
-                            <div className="mb-2">
-                                <strong>
-                                    Your license only allows for {maxUnlicensedChangesets} changesets per batch change
-                                </strong>
-                            </div>
-                            If more than {maxUnlicensedChangesets} changesets are generated, you won't be able to apply
-                            the batch change and actually publish the changesets to the code host.
-                        </Alert>
-                    </div>
-                )}
-                {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
                 {!isReadOnly && (
                     <div className="d-flex flex-column align-items-center w-100 mb-3">
                         {error && <ErrorAlert error={error} className="w-100 mb-0" />}
@@ -303,6 +289,12 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                         <CTASizeWarning />
                     </div>
                 )}
+                {totalCount !== null &&
+                    exceedsLicense(totalCount + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
+                        <div className="d-flex flex-column align-items-center w-100">
+                            <CTALicenseWarning maxCount={maxUnlicensedChangesets} />
+                        </div>
+                    )}
                 {(hasPreviewed || isReadOnly) && (
                     <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
                 )}
@@ -357,5 +349,10 @@ const CTASizeWarning: React.FunctionComponent = () => (
         workspaces. Break your batch change down into several smaller batch changes for a better experience.
     </Alert>
 )
+
+const CTALicenseWarning: React.FunctionComponent<React.PropsWithChildren<{ maxCount: number }>> = ({ maxCount }) => (
+    <Alert variant="note" className="mb-2">
+        Your license only allows for {maxCount} changesets per batch change. If more than {maxCount} changesets are
+        generated, you won't be able to apply the batch change and actually publish the changesets to the code host.
     </Alert>
 )
