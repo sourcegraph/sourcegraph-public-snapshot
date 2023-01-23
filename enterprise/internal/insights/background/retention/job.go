@@ -69,9 +69,7 @@ func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 		return nil, err
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, entry)
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return &job, nil
 }
