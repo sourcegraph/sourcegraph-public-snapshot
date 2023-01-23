@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,6 +31,9 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
+
+	// Authenticator used to authenticate HTTP requests.
+	auther auth.Authenticator
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -53,6 +58,16 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 }
 
 type ListAccountsResponse []Account
+
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		Config:     c.Config,
+		URL:        c.URL,
+		rateLimit:  c.rateLimit,
+		auther:     a,
+	}
+}
 
 func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
@@ -83,6 +98,26 @@ func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListA
 		return respAllAccts, err
 	}
 	return respAllAccts, nil
+}
+
+func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
+	req, err := http.NewRequest("GET", "a/accounts/self", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var account Account
+	if _, err = c.do(ctx, req, &account); err != nil {
+		if httpErr := (&httpError{}); errors.As(err, &httpErr) {
+			if httpErr.Unauthorized() {
+				return nil, errors.New("Invalid username or password.")
+			}
+		}
+
+		return nil, err
+	}
+
+	return &account, nil
 }
 
 func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) {
