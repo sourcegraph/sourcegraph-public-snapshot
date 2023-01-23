@@ -243,7 +243,6 @@ func TestDBWithTransact(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		// Lifetime of tx
 		err := db.WithTransact(ctx, func(tx DB) error {
 			repos := tx.Repos()
 			err := repos.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
