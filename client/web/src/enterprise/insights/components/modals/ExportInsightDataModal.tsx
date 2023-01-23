@@ -30,7 +30,7 @@ export const ExportInsightDataModal: FC<ExportInsightDataModalProps> = props => 
                     variant="primary"
                     onClick={onConfirm}
                 >
-                    Export CVS data
+                    Export data as CSV
                 </Button>
             </div>
         </Modal>
