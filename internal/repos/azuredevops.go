@@ -57,6 +57,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
 	}
 
 	exclude, err := eb.Build()

@@ -13,12 +13,15 @@ import (
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	conf := &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
-		Username: "testuser",
-		Token:    "testtoken",
+		Username: "idan.varsano@sourcegraph.com",
+		Token:    "p653zdrtbqm6g7znzfhcqauzv7rzclmvuh4yczrifl5jwnlzq5ea",
 		Orgs:     []string{"sgtestazure"},
 		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
 			{
 				Name: "sgtestazure/sgtestazure2",
+			},
+			{
+				Pattern: "^sgtestazure/sgtestazure[3-9]",
 			},
 		},
 	}
@@ -41,5 +44,5 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), true, repos)
 }
