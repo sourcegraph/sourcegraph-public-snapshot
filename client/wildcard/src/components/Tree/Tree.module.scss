@@ -64,3 +64,9 @@
 :global(.focus-visible) > .node {
     outline: 0.125rem solid var(--primary-2);
 }
+
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}
