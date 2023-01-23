@@ -162,9 +162,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 
 	isValidRepoRegexp := func() error {
 		if negated {
-			if _, err := regexp.Compile(value); err != nil {
-				return err
-			}
+			return isValidRegexp()
 		}
 		_, err := ParseRepositoryRevisions(value)
 		return err

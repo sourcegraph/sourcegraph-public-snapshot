@@ -26,6 +26,10 @@ func TestValidation(t *testing.T) {
 			want:  "error parsing regexp: missing closing ]: `[`",
 		},
 		{
+			input: "repo:[@rev]",
+			want:  "error parsing regexp: missing closing ]: `[`",
+		},
+		{
 			input: "repo:\\@Query\\(\"SELECT",
 			want:  "error parsing regexp: trailing backslash at end of expression: ``",
 		},
