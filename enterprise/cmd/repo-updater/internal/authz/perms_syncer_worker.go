@@ -2,10 +2,14 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -41,7 +45,7 @@ type permsSyncerWorker struct {
 	syncGroups map[requestType]group.ContextGroup
 }
 
-func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, record *database.PermissionSyncJob) error {
+func (h *permsSyncerWorker) Handle(_ context.Context, _ log.Logger, record *database.PermissionSyncJob) error {
 	prio := priorityLow
 	if record.HighPriority {
 		prio = priorityHigh
@@ -115,3 +119,72 @@ func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "permission_sync_job_worker"),
 	})
 }
+
+// MakeCleaner returns a background goroutine which will periodically find and
+// remove permission sync jobs of repos/users which exceed the history preserving
+// threshold in site config (PermissionsSyncJobsHistorySize).
+func MakeCleaner(ctx context.Context, observationCtx *observation.Context, db database.DB) goroutine.BackgroundRoutine {
+	m := metrics.NewREDMetrics(
+		observationCtx.Registerer,
+		"permission_sync_job_worker_cleaner",
+		metrics.WithCountHelp("Total number of permissions syncer cleaner executions."),
+	)
+	operation := observationCtx.Operation(observation.Op{
+		Name:    "PermissionsSyncer.Cleaner.Run",
+		Metrics: m,
+	})
+	jobsToKeep := 5
+	if conf.Get().PermissionsSyncJobsHistorySize != nil {
+		jobsToKeep = *conf.Get().PermissionsSyncJobsHistorySize
+	}
+
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		ctx, "authz.permission_sync_job_worker_cleaner", "removes completed or failed permissions sync jobs",
+		1*time.Hour, goroutine.HandlerFunc(
+			func(ctx context.Context) error {
+				start := time.Now()
+				cleanedJobs, err := cleanJobs(ctx, db, jobsToKeep)
+				m.Observe(time.Since(start).Seconds(), cleanedJobs, &err)
+				return err
+			},
+		), operation,
+	)
+}
+
+// cleanJobs runs an SQL query which finds and deletes all non-queued/processing
+// permission sync jobs of users/repos which number exceeds `jobsToKeep`.
+func cleanJobs(ctx context.Context, store database.DB, jobsToKeep int) (float64, error) {
+	result, err := store.ExecContext(
+		ctx,
+		fmt.Sprintf(cleanJobsFmtStr, jobsToKeep),
+	)
+	if err != nil {
+		return 0, err
+	}
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return float64(deleted), err
+}
+
+const cleanJobsFmtStr = `
+-- CTE for fetching queued/processing jobs per repository_id/user_id and their row numbers
+
+WITH job_history AS (
+	SELECT id, repository_id, user_id, ROW_NUMBER() OVER (
+		PARTITION BY repository_id, user_id
+		ORDER BY id
+	) FROM permission_sync_jobs
+	WHERE state NOT IN ('queued', 'processing')
+)
+
+-- Removing those jobs which count per repo/user exceeds a certain number
+
+DELETE FROM permission_sync_jobs
+WHERE id IN (
+	SELECT id
+	FROM job_history
+	WHERE row_number > %d
+)
+`

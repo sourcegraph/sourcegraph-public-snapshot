@@ -28,11 +28,11 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
+	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
-	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
 
@@ -123,14 +123,14 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
+	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user1, err := db.Users().Create(context.Background(), NewUser{Username: "horse"})
+	user1, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
-	user2, err := db.Users().Create(context.Background(), NewUser{Username: "graph"})
+	user2, err := db.Users().Create(ctx, NewUser{Username: "graph"})
 	require.NoError(t, err)
-	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
 
