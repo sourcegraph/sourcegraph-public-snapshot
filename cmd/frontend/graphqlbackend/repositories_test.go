@@ -16,18 +16,39 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func buildCursor(node *types.Repo) *string {
+	cursor := MarshalRepositoryCursor(
+		&types.Cursor{
+			Column: "name",
+			Value:  fmt.Sprintf("%s@%d", node.Name, node.ID),
+		},
+	)
+
+	return &cursor
+}
+
+func buildCursorBySize(node *types.Repo, size int64) *string {
+	cursor := MarshalRepositoryCursor(
+		&types.Cursor{
+			Column: "gr.repo_size_bytes",
+			Value:  fmt.Sprintf("%d@%d", size, node.ID),
+		},
+	)
+
+	return &cursor
+}
+
 func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 	mockRepos := []*types.Repo{
-		{Name: "repo1"}, // not_cloned
-		{Name: "repo2"}, // cloning
-		{Name: "repo3"}, // cloned
+		{ID: 1, Name: "repo1"}, // not_cloned
+		{ID: 2, Name: "repo2"}, // cloning
+		{ID: 3, Name: "repo3"}, // cloned
 	}
 
 	repos := database.NewMockRepoStore()
@@ -69,7 +90,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories {
+					repositories(first: 3) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -84,18 +105,11 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": null,
+						"totalCount": 0,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
 			`,
-				ExpectedErrors: []*gqlerrors.QueryError{
-					{
-						Path:          []any{"repositories", "totalCount"},
-						Message:       auth.ErrMustBeSiteAdmin.Error(),
-						ResolverError: auth.ErrMustBeSiteAdmin,
-					},
-				},
 			},
 		})
 	})
@@ -108,7 +122,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories {
+					repositories(first: 3) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -136,7 +150,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				// when setting them explicitly
 				Query: `
 				{
-					repositories(cloned: true, notCloned: true) {
+					repositories(first: 3, cloned: true, notCloned: true) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -183,7 +197,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloned: false) {
+					repositories(first: 3, cloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -205,7 +219,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(notCloned: false) {
+					repositories(first: 3, notCloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -226,7 +240,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(notCloned: false, cloned: false) {
+					repositories(first: 3, notCloned: false, cloned: false) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -245,7 +259,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: CLONED) {
+					repositories(first: 3, cloneStatus: CLONED) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -266,7 +280,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: CLONING) {
+					repositories(first: 3, cloneStatus: CLONING) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -287,7 +301,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				Schema: schema,
 				Query: `
 				{
-					repositories(cloneStatus: NOT_CLONED) {
+					repositories(first: 3, cloneStatus: NOT_CLONED) {
 						nodes { name }
 						pageInfo { hasNextPage }
 					}
@@ -355,7 +369,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories {
+					repositories(first: 5) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -384,7 +398,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			// when setting them explicitly
 			Query: `
 				{
-					repositories(indexed: true, notIndexed: true) {
+					repositories(first: 5, indexed: true, notIndexed: true) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -410,7 +424,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(indexed: false) {
+					repositories(first: 5, indexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -434,7 +448,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(notIndexed: false) {
+					repositories(first: 5, notIndexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -458,7 +472,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			Schema: schema,
 			Query: `
 				{
-					repositories(notIndexed: false, indexed: false) {
+					repositories(first: 5, notIndexed: false, indexed: false) {
 						nodes { name }
 						totalCount
 						pageInfo { hasNextPage }
@@ -506,18 +520,18 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query:  buildQuery(1, ""),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo1"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, *buildCursor(mockRepos[0])),
 		})
 	})
 
@@ -526,19 +540,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
-			ExpectedResult: `
+			Query:  buildQuery(1, *buildCursor(mockRepos[0])),
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo2"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8zIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, *buildCursor(mockRepos[1])),
 		})
 	})
 
@@ -547,19 +561,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
-			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoicHJldiJ9"),
-			ExpectedResult: `
+			Query:  buildQuery(1, *buildCursor(mockRepos[0])),
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
 							"name": "repo2"
 						}],
 						"pageInfo": {
-						  "endCursor": "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8zIiwiRGlyZWN0aW9uIjoicHJldiJ9"
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, *buildCursor(mockRepos[1])),
 		})
 	})
 
@@ -569,7 +583,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query:  buildQuery(3, ""),
-			ExpectedResult: `
+			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
@@ -580,11 +594,11 @@ func TestRepositories_CursorPagination(t *testing.T) {
 							"name": "repo3"
 						}],
 						"pageInfo": {
-						  "endCursor": null
+						  "endCursor": "%s"
 						}
 					}
 				}
-			`,
+			`, *buildCursor(mockRepos[2])),
 		})
 	})
 
@@ -616,7 +630,12 @@ func TestRepositories_CursorPagination(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"repositories"},
+					Path:          []any{"repositories", "nodes"},
+					Message:       `cannot unmarshal repository cursor type: ""`,
+					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
+				},
+				{
+					Path:          []any{"repositories", "pageInfo"},
 					Message:       `cannot unmarshal repository cursor type: ""`,
 					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
 				},
@@ -643,14 +662,14 @@ func TestRepositories_Integration(t *testing.T) {
 		indexed     bool
 		lastError   string
 	}{
-		{repo: &types.Repo{Name: "repo1"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
-		{repo: &types.Repo{Name: "repo2"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo2 error"},
-		{repo: &types.Repo{Name: "repo3"}, size: 40, cloneStatus: types.CloneStatusCloning},
-		{repo: &types.Repo{Name: "repo4"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo4 error"},
-		{repo: &types.Repo{Name: "repo5"}, size: 60, cloneStatus: types.CloneStatusCloned},
-		{repo: &types.Repo{Name: "repo6"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo6 error"},
-		{repo: &types.Repo{Name: "repo7"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
-		{repo: &types.Repo{Name: "repo8"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
+		{repo: &types.Repo{Name: "repo0"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
+		{repo: &types.Repo{Name: "repo1"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo1 error"},
+		{repo: &types.Repo{Name: "repo2"}, size: 40, cloneStatus: types.CloneStatusCloning},
+		{repo: &types.Repo{Name: "repo3"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo3 error"},
+		{repo: &types.Repo{Name: "repo4"}, size: 60, cloneStatus: types.CloneStatusCloned},
+		{repo: &types.Repo{Name: "repo5"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo5 error"},
+		{repo: &types.Repo{Name: "repo6"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
+		{repo: &types.Repo{Name: "repo7"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
 	}
 
 	for _, rsc := range repos {
@@ -689,114 +708,295 @@ func TestRepositories_Integration(t *testing.T) {
 	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
 
 	tests := []repositoriesQueryTest{
-		// no args
-		{
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
-		},
 		// first
 		{
-			args:           "first: 2",
-			wantRepos:      []string{"repo1", "repo2"},
-			wantTotalCount: 8,
+			args:             "first: 2",
+			wantRepos:        []string{"repo0", "repo1"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[1].repo),
+		},
+		// second page with first, after args
+		{
+			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[0].repo)),
+			wantRepos:        []string{"repo1", "repo2"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[1].repo),
+			wantEndCursor:    buildCursor(repos[2].repo),
+		},
+		// last page with first, after args
+		{
+			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[5].repo)),
+			wantRepos:        []string{"repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[6].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
+		},
+		// last
+		{
+			args:             "last: 2",
+			wantRepos:        []string{"repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[6].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
+		},
+		// second last page with last, before args
+		{
+			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[6].repo)),
+			wantRepos:        []string{"repo4", "repo5"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[4].repo),
+			wantEndCursor:    buildCursor(repos[5].repo),
+		},
+		// back to first page with last, before args
+		{
+			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[2].repo)),
+			wantRepos:        []string{"repo0", "repo1"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[1].repo),
+		},
+		// descending first
+		{
+			args:             "first: 2, descending: true",
+			wantRepos:        []string{"repo7", "repo6"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[7].repo),
+			wantEndCursor:    buildCursor(repos[6].repo),
+		},
+		// descending second page with first, after args
+		{
+			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[6].repo)),
+			wantRepos:        []string{"repo5", "repo4"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[5].repo),
+			wantEndCursor:    buildCursor(repos[4].repo),
+		},
+		// descending last page with first, after args
+		{
+			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[2].repo)),
+			wantRepos:        []string{"repo1", "repo0"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[1].repo),
+			wantEndCursor:    buildCursor(repos[0].repo),
+		},
+		// descending last
+		{
+			args:             "last: 2, descending: true",
+			wantRepos:        []string{"repo1", "repo0"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[1].repo),
+			wantEndCursor:    buildCursor(repos[0].repo),
+		},
+		// descending second last page with last, before args
+		{
+			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[3].repo)),
+			wantRepos:        []string{"repo5", "repo4"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: true,
+			wantStartCursor:  buildCursor(repos[5].repo),
+			wantEndCursor:    buildCursor(repos[4].repo),
+		},
+		// descending back to first page with last, before args
+		{
+			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[5].repo)),
+			wantRepos:        []string{"repo7", "repo6"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[7].repo),
+			wantEndCursor:    buildCursor(repos[6].repo),
 		},
 		// cloned
 		{
 			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
-			args:           "cloned: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
+			args:             "first: 10, cloned: true",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "cloned: false",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4"},
-			wantTotalCount: 4,
+			args:             "first: 10, cloned: false",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3"},
+			wantTotalCount:   4,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:           "cloned: false, first: 2",
-			wantRepos:      []string{"repo1", "repo2"},
-			wantTotalCount: 4,
+			args:             "cloned: false, first: 2",
+			wantRepos:        []string{"repo0", "repo1"},
+			wantTotalCount:   4,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[1].repo),
 		},
 		// notCloned
 		{
-			args:           "notCloned: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
+			args:             "first: 10, notCloned: true",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "notCloned: false",
-			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 4,
+			args:             "first: 10, notCloned: false",
+			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   4,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[4].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		// failedFetch
 		{
-			args:           "failedFetch: true",
-			wantRepos:      []string{"repo2", "repo4", "repo6"},
-			wantTotalCount: 3,
+			args:             "first: 10, failedFetch: true",
+			wantRepos:        []string{"repo1", "repo3", "repo5"},
+			wantTotalCount:   3,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[1].repo),
+			wantEndCursor:    buildCursor(repos[5].repo),
 		},
 		{
-			args:           "failedFetch: true, first: 2",
-			wantRepos:      []string{"repo2", "repo4"},
-			wantTotalCount: 3,
+			args:             "failedFetch: true, first: 2",
+			wantRepos:        []string{"repo1", "repo3"},
+			wantTotalCount:   3,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[1].repo),
+			wantEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:           "failedFetch: false",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
+			args:             "first: 10, failedFetch: false",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		// cloneStatus
 		{
-			args:           "cloneStatus:NOT_CLONED",
-			wantRepos:      []string{"repo1", "repo2"},
-			wantTotalCount: 2,
+			args:             "first: 10, cloneStatus:NOT_CLONED",
+			wantRepos:        []string{"repo0", "repo1"},
+			wantTotalCount:   2,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[1].repo),
 		},
 		{
-			args:           "cloneStatus:CLONING",
-			wantRepos:      []string{"repo3", "repo4"},
-			wantTotalCount: 2,
+			args:             "first: 10, cloneStatus:CLONING",
+			wantRepos:        []string{"repo2", "repo3"},
+			wantTotalCount:   2,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[2].repo),
+			wantEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:           "cloneStatus:CLONED",
-			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 4,
+			args:             "first: 10, cloneStatus:CLONED",
+			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   4,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[4].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "cloneStatus:NOT_CLONED, first: 1",
-			wantRepos:      []string{"repo1"},
-			wantTotalCount: 2,
+			args:             "cloneStatus:NOT_CLONED, first: 1",
+			wantRepos:        []string{"repo0"},
+			wantTotalCount:   2,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[0].repo),
 		},
 		// indexed
 		{
 			// indexed only says whether to "Include indexed repositories.", it doesn't exclude non-indexed.
-			args:           "indexed: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
+			args:             "first: 10, indexed: true",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "indexed: false",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount: 7,
+			args:             "first: 10, indexed: false",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wantTotalCount:   7,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[6].repo),
 		},
 		{
-			args:           "indexed: false, first: 2",
-			wantRepos:      []string{"repo1", "repo2"},
-			wantTotalCount: 7,
+			args:             "indexed: false, first: 2",
+			wantRepos:        []string{"repo0", "repo1"},
+			wantTotalCount:   7,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[1].repo),
 		},
 		// notIndexed
 		{
-			args:           "notIndexed: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
-			wantTotalCount: 8,
+			args:             "first: 10, notIndexed: true",
+			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount:   8,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[0].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "notIndexed: false",
-			wantRepos:      []string{"repo8"},
-			wantTotalCount: 1,
+			args:             "first: 10, notIndexed: false",
+			wantRepos:        []string{"repo7"},
+			wantTotalCount:   1,
+			wantNextPage:     false,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursor(repos[7].repo),
+			wantEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:           "orderBy:SIZE, descending:false, first: 5",
-			wantRepos:      []string{"repo6", "repo1", "repo2", "repo3", "repo4"},
-			wantTotalCount: 8,
+			args:             "orderBy:SIZE, descending:false, first: 5",
+			wantRepos:        []string{"repo5", "repo0", "repo1", "repo2", "repo3"},
+			wantTotalCount:   8,
+			wantNextPage:     true,
+			wantPreviousPage: false,
+			wantStartCursor:  buildCursorBySize(repos[5].repo, repos[5].size),
+			wantEndCursor:    buildCursorBySize(repos[3].repo, repos[3].size),
 		},
 	}
 
@@ -805,16 +1005,16 @@ func TestRepositories_Integration(t *testing.T) {
 			runRepositoriesQuery(t, ctx, schema, tt)
 		})
 	}
-
 }
 
 type repositoriesQueryTest struct {
-	args string
-
-	wantRepos []string
-
-	wantNoTotalCount bool
+	args             string
+	wantRepos        []string
 	wantTotalCount   int
+	wantEndCursor    *string
+	wantStartCursor  *string
+	wantNextPage     bool
+	wantPreviousPage bool
 }
 
 func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Schema, want repositoriesQueryTest) {
@@ -824,9 +1024,17 @@ func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Sch
 		Name string `json:"name"`
 	}
 
+	type pageInfo struct {
+		HasNextPage     bool    `json:"hasNextPage"`
+		HasPreviousPage bool    `json:"hasPreviousPage"`
+		StartCursor     *string `json:"startCursor"`
+		EndCursor       *string `json:"endCursor"`
+	}
+
 	type repositories struct {
-		Nodes      []node `json:"nodes"`
-		TotalCount *int   `json:"totalCount"`
+		Nodes      []node   `json:"nodes"`
+		TotalCount *int     `json:"totalCount"`
+		PageInfo   pageInfo `json:"pageInfo"`
 	}
 
 	type expected struct {
@@ -842,11 +1050,13 @@ func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Sch
 		Repositories: repositories{
 			Nodes:      nodes,
 			TotalCount: &want.wantTotalCount,
+			PageInfo: pageInfo{
+				HasNextPage:     want.wantNextPage,
+				HasPreviousPage: want.wantPreviousPage,
+				StartCursor:     want.wantStartCursor,
+				EndCursor:       want.wantEndCursor,
+			},
 		},
-	}
-
-	if want.wantNoTotalCount {
-		ex.Repositories.TotalCount = nil
 	}
 
 	marshaled, err := json.Marshal(ex)
@@ -854,12 +1064,21 @@ func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Sch
 		t.Fatalf("failed to marshal expected repositories query result: %s", err)
 	}
 
-	var query string
-	if want.args != "" {
-		query = fmt.Sprintf(`{ repositories(%s) { nodes { name } totalCount } } `, want.args)
-	} else {
-		query = `{ repositories { nodes { name } totalCount } }`
-	}
+	query := fmt.Sprintf(`
+	{ 
+		repositories(%s) { 
+			nodes { 
+				name 
+			} 
+			totalCount 
+			pageInfo { 
+				hasNextPage 
+				hasPreviousPage 
+				startCursor 
+				endCursor 
+			}
+		}
+	}`, want.args)
 
 	RunTest(t, &Test{
 		Context:        ctx,

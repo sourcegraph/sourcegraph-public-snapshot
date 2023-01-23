@@ -235,6 +235,7 @@ describe('Code insight edit insight page', () => {
                     },
                     seriesDisplayOptions: {
                         limit: 20,
+                        numSamples: null,
                         sortOptions: {
                             direction: 'DESC',
                             mode: 'RESULT_COUNT',
