@@ -2,13 +2,16 @@ import { useCallback, useEffect } from 'react'
 
 import { mdiMenuRight, mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
-import TreeView, { INode, ITreeViewProps } from 'react-accessible-treeview'
 
 import { Icon, LoadingSpinner } from '..'
 
+import TreeView, { INode, ITreeViewProps } from './react-accessible-treeview'
+
 import styles from './Tree.module.scss'
 
-interface Props<N extends INode> extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onLoadData' | 'nodeRenderer'> {
+export type TreeNode = INode
+
+interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onLoadData' | 'nodeRenderer'> {
     data: N[]
 
     onSelect?: (args: { element: N; isSelected: boolean }) => void
@@ -21,7 +24,7 @@ interface Props<N extends INode> extends Omit<ITreeViewProps, 'nodes' | 'onSelec
         handleSelect: (event: React.MouseEvent) => {}
     }) => React.ReactNode
 }
-export function Tree<N extends INode>(props: Props<N>): JSX.Element {
+export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
     usePatchFocusToFixScrollIssues()
 
     const { onSelect, onLoadData, renderNode, ...rest } = props
@@ -38,9 +41,7 @@ export function Tree<N extends INode>(props: Props<N>): JSX.Element {
     const _onLoadData = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
         // hence the any cast.
-        async (args: { element: any }): Promise<void> => {
-            return onLoadData?.(args)
-        },
+        async (args: { element: any }): Promise<void> => onLoadData?.(args),
         [onLoadData]
     )
 

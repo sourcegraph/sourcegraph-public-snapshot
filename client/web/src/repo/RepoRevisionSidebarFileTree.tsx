@@ -2,12 +2,19 @@ import { useCallback, useRef, useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { INode } from 'react-accessible-treeview'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, ErrorMessage, Icon, Link, LoadingSpinner, Tree } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    ErrorMessage,
+    Icon,
+    TreeNode as WildcardTreeNode,
+    Link,
+    LoadingSpinner,
+    Tree,
+} from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { MAX_TREE_ENTRIES } from '../tree/constants'
@@ -211,7 +218,7 @@ function renderNode({
     )
 }
 
-type TreeNode = INode & { entry: FileTreeEntry | null }
+type TreeNode = WildcardTreeNode & { entry: FileTreeEntry | null }
 interface TreeData {
     // The flat nodes list used by react-accessible-treeview
     nodes: TreeNode[]
