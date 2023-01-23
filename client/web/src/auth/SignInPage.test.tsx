@@ -119,6 +119,7 @@ describe('SignInPage', () => {
         it('does not render the Gerrit provider', () => {
             const rendered = render('/sign-in', withGerritProvider)
             expect(within(rendered.baseElement).queryByText(txt => txt.includes('Gerrit'))).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
         })
     })
 
