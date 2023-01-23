@@ -13,7 +13,7 @@ const shouldTraceMetadataKey = "sg-should-trace"
 // ShouldTrace key can be propagated across gRPC API calls.
 type ShouldTracePropagator struct{}
 
-func (ShouldTracePropagator) ExtractContext(ctx context.Context) metadata.MD {
+func (ShouldTracePropagator) FromContext(ctx context.Context) metadata.MD {
 	return metadata.Pairs(shouldTraceMetadataKey, strconv.FormatBool(ShouldTrace(ctx)))
 }
 

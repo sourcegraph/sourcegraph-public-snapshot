@@ -13,7 +13,7 @@ func TestShouldTracePropagator(t *testing.T) {
 		p := ShouldTracePropagator{}
 
 		ctx1 := context.Background()
-		md := p.ExtractContext(ctx1)
+		md := p.FromContext(ctx1)
 		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "false"))
 
 		ctx2 := p.InjectContext(context.Background(), md)
@@ -24,7 +24,7 @@ func TestShouldTracePropagator(t *testing.T) {
 		p := ShouldTracePropagator{}
 
 		ctx1 := WithShouldTrace(context.Background(), false)
-		md := p.ExtractContext(ctx1)
+		md := p.FromContext(ctx1)
 		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "false"))
 
 		ctx2 := p.InjectContext(context.Background(), md)
@@ -35,7 +35,7 @@ func TestShouldTracePropagator(t *testing.T) {
 		p := ShouldTracePropagator{}
 
 		ctx1 := WithShouldTrace(context.Background(), true)
-		md := p.ExtractContext(ctx1)
+		md := p.FromContext(ctx1)
 		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "true"))
 
 		ctx2 := p.InjectContext(context.Background(), md)

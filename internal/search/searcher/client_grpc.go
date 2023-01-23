@@ -82,7 +82,11 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		clientConn, err := grpc.DialContext(ctx, parsed.Host, append(grpcdefaults.DialOptions(), grpc.WithTransportCredentials(insecure.NewCredentials()))...)
+		var opts []grpc.DialOption
+		opts = append(opts, grpcdefaults.DialOptions()...)
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+		clientConn, err := grpc.DialContext(ctx, parsed.Host, opts...)
 		if err != nil {
 			return false, err
 		}

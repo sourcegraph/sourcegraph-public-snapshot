@@ -11,10 +11,10 @@ import (
 // returning it in the form of metadata.MD and can also inject that same metadata
 // back into a context on the server side of an RPC call.
 type Propagator interface {
-	// ExtractContext extracts the information to be propagated from a context,
+	// FromContext extracts the information to be propagated from a context,
 	// converting it to a metadata.MD. This will be called on the client side
 	// of an RPC.
-	ExtractContext(context.Context) metadata.MD
+	FromContext(context.Context) metadata.MD
 
 	// InjectContext takes a context and some metadata and creates a new context
 	// with the information from the metadata injected into the context.
@@ -34,7 +34,7 @@ func StreamClientPropagator(prop Propagator) grpc.StreamClientInterceptor {
 		streamer grpc.Streamer,
 		opts ...grpc.CallOption,
 	) (grpc.ClientStream, error) {
-		md := prop.ExtractContext(ctx)
+		md := prop.FromContext(ctx)
 		for k, vals := range md {
 			for _, val := range vals {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, val)
@@ -56,7 +56,7 @@ func UnaryClientPropagator(prop Propagator) grpc.UnaryClientInterceptor {
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error {
-		md := prop.ExtractContext(ctx)
+		md := prop.FromContext(ctx)
 		for k, vals := range md {
 			for _, val := range vals {
 				ctx = metadata.AppendToOutgoingContext(ctx, k, val)
