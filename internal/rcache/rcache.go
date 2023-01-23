@@ -124,6 +124,11 @@ func (r *Cache) KeyTTL(key string) (int, bool) {
 	return ttl, ttl >= 0
 }
 
+// FIFOList returns a FIFOList namespaced in r.
+func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
+	return NewFIFOList(r.rkeyPrefix()+key, maxSize)
+}
+
 // SetHashItem sets a key in a HASH.
 // If the HASH does not exist, it is created.
 // If the key already exists and is a different type, an error is returned.
@@ -140,28 +145,6 @@ func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
 	return pool.HGetAll(r.rkeyPrefix() + key).StringMap()
-}
-
-// AddToList adds a value to the end of a list.
-// If the list does not exist, it is created.
-func (r *Cache) AddToList(key string, value string) error {
-	// TODO(keegan) The only use of AddToList looks like it wants a queue (in
-	// fact it looks like it really wants a FIFOList). So will migrate that
-	// instead of supporting RPUSH in KV.
-	c := poolGet()
-	defer c.Close()
-	_, err := c.Do("RPUSH", r.rkeyPrefix()+key, value)
-	return err
-}
-
-// GetLastListItems returns the last `count` items in the list.
-func (r *Cache) GetLastListItems(key string, count int) ([]string, error) {
-	return pool.LRange(r.rkeyPrefix()+key, -count, -1).Strings()
-}
-
-// LTrimList trims the list to the last `count` items.
-func (r *Cache) LTrimList(key string, count int) error {
-	return pool.LTrim(r.rkeyPrefix()+key, -count, -1)
 }
 
 // Delete implements httpcache.Cache.Delete
