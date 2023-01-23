@@ -12,6 +12,7 @@ import {
     mdiOpenInNew,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -521,25 +522,36 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
             useURL: false,
             fetchPolicy: 'cache-and-network',
         },
-        onCompleted: (result: BatchSpecWorkspaceStepByIndexResult) => {
-            const previousData = outputLines
+        getConnection(result) {
+            const data = dataOrThrowErrors(result)
 
-            if (previousData === undefined || result === undefined) {
-                return
+            if (!data.node) {
+                throw new Error(`Workspace with ID ${step.number} does not exist`)
             }
-
-            if (result.node?.__typename !== 'VisibleBatchSpecWorkspace' || result.node.step === null) {
-                return
+            if (data.node.__typename !== 'VisibleBatchSpecWorkspace' || result.node.step === null) {
+                throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchChange`)
             }
+            return data.node.changesets
+        },
+        // onCompleted: (result: BatchSpecWorkspaceStepByIndexResult) => {
+        //     const previousData = outputLines
 
-            if (result.node.step.outputLines === null) {
-                return
-            }
+        //     if (previousData === undefined || result === undefined) {
+        //         return
+        //     }
 
-            const newOutputLines = result.node.step.outputLines
-            setOutputLines([...previousData, ...newOutputLines.nodes])
-            setPageInfo(newOutputLines.pageInfo)
-        }
+        //     if (result.node?.__typename !== 'VisibleBatchSpecWorkspace' || result.node.step === null) {
+        //         return
+        //     }
+
+        //     if (result.node.step.outputLines === null) {
+        //         return
+        //     }
+
+        //     const newOutputLines = result.node.step.outputLines
+        //     setOutputLines([...previousData, ...newOutputLines.nodes])
+        //     setPageInfo(newOutputLines.pageInfo)
+        // }
     })
 
     const [fetchAdditionalOutputLines, additionalOutputLinesResult] = useLazyQuery<
