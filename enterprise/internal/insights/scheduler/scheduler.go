@@ -90,7 +90,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, executor.ExecutionLogEntry(entry))
+		job.ExecutionLogs = append(job.ExecutionLogs, entry)
 	}
 
 	return &job, nil

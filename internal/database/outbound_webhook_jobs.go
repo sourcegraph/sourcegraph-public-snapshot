@@ -167,9 +167,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 		job.Payload = encryption.NewUnencrypted(string(rawPayload))
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, entry)
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return nil
 }
