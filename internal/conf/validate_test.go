@@ -257,6 +257,8 @@ func TestRedactSecrets(t *testing.T) {
 		)
 
 		require.NoError(t, err)
+
+		// See this for the SHA256 of "strongsecret": https://go.dev/play/p/N-4R4_fO9XI
 		want := `{
   "auth.providers": [
     {
