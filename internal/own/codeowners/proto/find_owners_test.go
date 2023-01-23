@@ -24,6 +24,13 @@ func TestFileOwnersMatch(t *testing.T) {
 			},
 		},
 		{
+			pattern: "*.md",
+			paths: []string{
+				"/README.md",
+				"/nested/index.md",
+			},
+		},
+		{
 			pattern: "directory/path/",
 			paths: []string{
 				"/directory/path/file",

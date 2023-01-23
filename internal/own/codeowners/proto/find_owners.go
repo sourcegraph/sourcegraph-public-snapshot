@@ -57,6 +57,29 @@ type anyMatch struct{}
 func (p anyMatch) String() string      { return "*" }
 func (p anyMatch) Match(_ string) bool { return true }
 
+// asteriskPattern is a pattern that contains * glob wildcard,
+// but is not solely * wildcard. The data structure is a slice
+// of all the substrings of the pattern in order as if glob
+// was split by *.
+type asteriskPattern []string
+
+func (p asteriskPattern) String() string { return strings.Join(p, "*") }
+func (p asteriskPattern) Match(part string) bool {
+	leftOverMatch := part
+	canOmitPrefix := false
+	matchesRest := false
+	for _, exactMatch := range p {
+		i := strings.Index(leftOverMatch, exactMatch)
+		if !canOmitPrefix && i != 0 {
+			return false
+		}
+		leftOverMatch = leftOverMatch[i+len(exactMatch):]
+		matchesRest = exactMatch == ""
+		canOmitPrefix = true
+	}
+	return matchesRest || leftOverMatch == ""
+}
+
 // compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
 func compile(pattern string) (globPattern, error) {
@@ -75,6 +98,9 @@ func compile(pattern string) (globPattern, error) {
 		case "**":
 			glob = append(glob, anySubPath{})
 		default:
+			if strings.Contains(part, "**") {
+
+			}
 			glob = append(glob, exactMatch(part))
 		}
 	}
