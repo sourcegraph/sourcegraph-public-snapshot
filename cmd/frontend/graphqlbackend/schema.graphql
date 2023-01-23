@@ -302,6 +302,11 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Adds a Gerrit external account for the authenticated user. The provided username and password is tested
+    against the Gerrit instance URL, which is the serviceID, to verify the account.
+    """
+    addGerritExternalAccount(username: String!, password: String!, serviceID: String!): EmptyResponse!
+    """
     Sends an invitation to join Sourcegraph to the given email address.
 
     Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
