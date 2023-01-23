@@ -37,8 +37,11 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
-    const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
-    const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
+    const percentComplete =
+        // We don't count archived or deleted changesets when computing the percentage.
+        stats.total === 0 ? 0 : ((stats.closed + stats.merged) / (stats.total - stats.archived - stats.deleted)) * 100
+    const isCompleted =
+        stats.total !== 0 && stats.closed + stats.merged === stats.total - stats.archived - stats.deleted
     let BatchChangeStatusIcon = ProgressCheckIcon
     if (isCompleted) {
         BatchChangeStatusIcon = CheckCircleOutlineIcon
