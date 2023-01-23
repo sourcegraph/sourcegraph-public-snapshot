@@ -33,7 +33,7 @@ func TestParseConfig(t *testing.T) {
 				ServiceType: extsvc.TypeGerrit,
 			}},
 		},
-		"2 gerrit configs with same URL": {
+		"2 gerrit configs with same URL causes conflict": {
 			cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{
@@ -56,6 +56,34 @@ func TestParseConfig(t *testing.T) {
 			}},
 			wantProblems: []string{
 				`Cannot have more than one auth provider with url "https://gerrit.example.com"`,
+			},
+		},
+		"2 gerrit configs with different URLs is okay": {
+			cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						Gerrit: &schema.GerritAuthProvider{
+							Url:  "https://gerrit.example.com",
+							Type: extsvc.TypeGerrit,
+						},
+					},
+					{
+						Gerrit: &schema.GerritAuthProvider{
+							Url:  "https://gerrit.different.com",
+							Type: extsvc.TypeGerrit,
+						},
+					},
+				},
+			}},
+			wantProviders: []Provider{
+				{
+					ServiceID:   "https://gerrit.example.com",
+					ServiceType: extsvc.TypeGerrit,
+				},
+				{
+					ServiceID:   "https://gerrit.different.com",
+					ServiceType: extsvc.TypeGerrit,
+				},
 			},
 		},
 	}
