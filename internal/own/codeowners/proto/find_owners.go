@@ -67,17 +67,17 @@ func (p asteriskPattern) String() string { return strings.Join(p, "*") }
 func (p asteriskPattern) Match(part string) bool {
 	leftOverMatch := part
 	canOmitPrefix := false
-	matchesRest := false
+	matchesAnySuffix := false
 	for _, exactMatch := range p {
 		i := strings.Index(leftOverMatch, exactMatch)
 		if !canOmitPrefix && i != 0 {
 			return false
 		}
 		leftOverMatch = leftOverMatch[i+len(exactMatch):]
-		matchesRest = exactMatch == ""
+		matchesAnySuffix = exactMatch == ""
 		canOmitPrefix = true
 	}
-	return matchesRest || leftOverMatch == ""
+	return leftOverMatch == "" || matchesAnySuffix
 }
 
 // compile translates a text representation of a glob pattern
