@@ -32,6 +32,14 @@ func TestFileOwnersMatch(t *testing.T) {
 			},
 		},
 		{
+			pattern: "foo*bar*baz",
+			paths: []string{
+				"/foobarbaz",
+				"/foo-bar-baz",
+				"/foobarbazfoobarbazfoobarbaz",
+			},
+		},
+		{
 			pattern: "directory/path/",
 			paths: []string{
 				"/directory/path/file",
@@ -124,6 +132,7 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			paths: []string{
 				"/prefix_filename_suffix",
 				"/src/prefix_filename",
+				"/finemale/nested",
 			},
 		},
 		{
@@ -131,6 +140,13 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			paths: []string{
 				"/README.mdf",
 				"/not/matching/without/the/dot/md",
+			},
+		},
+		{
+			pattern: "foo*bar*baz",
+			paths: []string{
+				"/foo-ba-baz",
+				"/foobarbaz.md",
 			},
 		},
 		{

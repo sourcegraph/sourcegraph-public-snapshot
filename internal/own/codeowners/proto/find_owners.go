@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,30 +49,23 @@ func (p anySubPath) Match(_ string) bool { return true }
 var anyMatch patternPart = makeAsteriskPattern("*")
 
 // asteriskPattern is a pattern that may contain * glob wildcard.
-// The data structure is a slice of all the substrings of the pattern
-// in order as if glob was split by *.
-type asteriskPattern []string
-
-func makeAsteriskPattern(pattern string) asteriskPattern { return strings.Split(pattern, "*") }
-func (p asteriskPattern) String() string                 { return strings.Join(p, "*") }
-func (p asteriskPattern) Match(part string) bool {
-	leftOverMatch := part
-	canOmitPrefix := false
-	for _, exactMatch := range p {
-		i := strings.Index(leftOverMatch, exactMatch)
-		if i == -1 {
-			return false
-		}
-		if !canOmitPrefix && i != 0 {
-			return false
-		}
-		leftOverMatch = leftOverMatch[i+len(exactMatch):]
-		canOmitPrefix = true
-	}
-	return leftOverMatch == "" || p.endsWithAsterisk()
+type asteriskPattern struct {
+	glob     string
+	compiled *regexp.Regexp
 }
-func (p asteriskPattern) endsWithAsterisk() bool {
-	return len(p) > 0 && p[len(p)-1] == ""
+
+func makeAsteriskPattern(pattern string) asteriskPattern {
+	quoted := regexp.QuoteMeta(pattern)
+	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
+	compiled, err := regexp.Compile("^" + regular + "$")
+	if err != nil {
+		return asteriskPattern{}
+	}
+	return asteriskPattern{glob: pattern, compiled: compiled}
+}
+func (p asteriskPattern) String() string { return p.glob }
+func (p asteriskPattern) Match(part string) bool {
+	return p.compiled.FindString(part) != ""
 }
 
 // compile translates a text representation of a glob pattern
