@@ -456,7 +456,7 @@
     "react-resizable": "^3.0.4",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-router-dom-v5-compat": "^6.3.0",
+    "react-router-dom-v5-compat": "^6.7.0",
     "react-spring": "^9.4.2",
     "react-sticky-box": "1.0.2",
     "react-visibility-sensor": "^5.1.1",
@@ -487,6 +487,15 @@
     "zustand": "^3.6.9"
   },
   "packageManager": "pnpm@7.24.2",
+  "pnpm": {
+    "packageExtensions": {
+      "react-router-dom-v5-compat": {
+        "dependencies": {
+          "@remix-run/router": "*"
+        }
+      }
+    }
+  },
   "resolutions": {
     "@types/webpack": "5",
     "history": "4.5.1",
@@ -495,4 +504,5 @@
     "tslib": "2.1.0",
     "jsprim": "1.4.2"
   }
+
 }

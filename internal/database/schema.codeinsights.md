@@ -137,34 +137,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.insight_dirty_queries"
-```
-      Column       |            Type             | Collation | Nullable |                      Default                      
--------------------+-----------------------------+-----------+----------+---------------------------------------------------
- id                | integer                     |           | not null | nextval('insight_dirty_queries_id_seq'::regclass)
- insight_series_id | integer                     |           |          | 
- query             | text                        |           | not null | 
- dirty_at          | timestamp without time zone |           | not null | CURRENT_TIMESTAMP
- reason            | text                        |           | not null | 
- for_time          | timestamp without time zone |           | not null | 
-Indexes:
-    "insight_dirty_queries_pkey" PRIMARY KEY, btree (id)
-    "insight_dirty_queries_insight_series_id_fk_idx" btree (insight_series_id)
-Foreign-key constraints:
-    "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
-
-```
-
-Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.
-
-**dirty_at**: Timestamp when this query was marked dirty.
-
-**for_time**: Timestamp for which the original data point was recorded or intended to be recorded.
-
-**query**: Sourcegraph query string that was executed.
-
-**reason**: Human readable string indicating the reason the query was marked dirty.
-
 # Table "public.insight_series"
 ```
             Column             |            Type             | Collation | Nullable |                  Default                   
@@ -198,7 +170,6 @@ Indexes:
     "insight_series_deleted_at_idx" btree (deleted_at)
     "insight_series_next_recording_after_idx" btree (next_recording_after)
 Referenced by:
-    TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "archived_insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
