@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -176,14 +177,16 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ reso
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
+	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db))
 
 	index, exists, err := prefetcher.GetIndexByID(ctx, int(indexID))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, index, prefetcher, traceErrs), nil
+	return sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, index, prefetcher, locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
@@ -262,11 +265,13 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
+	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db))
 
 	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, traceErrs))
+		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, locationResolver, traceErrs))
 	}
 
 	return lsifIndexResolvers, nil

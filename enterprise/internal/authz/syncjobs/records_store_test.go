@@ -6,34 +6,9 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestSyncJobsRecordsStoreWatch(t *testing.T) {
-	s := NewRecordsStore(logtest.Scoped(t))
-
-	// assert default
-	assert.Equal(t, defaultSyncJobsRecordsLimit, s.cache.(*rcache.FIFOList).MaxSize())
-
-	cw := confWatcher{
-		conf: schema.SiteConfiguration{
-			AuthzSyncJobsRecordsLimit: 5,
-		},
-	}
-
-	// register
-	s.Watch(&cw)
-
-	// proc the update
-	cw.update()
-
-	// assert updated
-	assert.Equal(t, 5, s.cache.(*rcache.FIFOList).MaxSize())
-}
 
 func TestSyncJobRecordsRecord(t *testing.T) {
 	mockTime, err := time.Parse(time.RFC1123, time.RFC1123)

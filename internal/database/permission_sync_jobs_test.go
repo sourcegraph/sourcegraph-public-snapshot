@@ -249,7 +249,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	store := PermissionSyncJobsWith(logger, db)
 
 	// Test that cancelling non-existent job errors out.
-	err := store.CancelQueuedJob(ctx, 1)
+	err := store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
 	require.True(t, errcode.IsNotFound(err))
 
 	// Adding a job.
@@ -257,11 +257,16 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.NoError(t, err)
 
 	// Cancelling a job should be successful now.
-	err = store.CancelQueuedJob(ctx, 1)
+	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
 	require.NoError(t, err)
+	// Checking that cancellation reason is set.
+	cancelledJob, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: 1})
+	require.NoError(t, err)
+	require.Len(t, cancelledJob, 1)
+	require.Equal(t, CancellationReasonHigherPriority, cancelledJob[0].CancellationReason)
 
 	// Cancelling already cancelled job doesn't make sense and errors out as well.
-	err = store.CancelQueuedJob(ctx, 1)
+	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
 	require.True(t, errcode.IsNotFound(err))
 
 	// Adding another job and setting it to "processing" state.
@@ -271,6 +276,6 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.NoError(t, err)
 
 	// Cancelling it errors out because it is in a state different from "queued".
-	err = store.CancelQueuedJob(ctx, 2)
+	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 2)
 	require.True(t, errcode.IsNotFound(err))
 }
