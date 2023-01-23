@@ -925,9 +925,6 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 			preds = append(preds, includes)
 		}
 	}
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("true"))
-	}
 	if len(opts.ExcludeRepoRegex) > 0 {
 		for _, regex := range opts.ExcludeRepoRegex {
 			if len(regex) == 0 {
@@ -935,6 +932,9 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 			}
 			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
 		}
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("true"))
 	}
 
 	tx, err := s.Transact(ctx)
