@@ -141,8 +141,8 @@ func TestMarkErrored(t *testing.T) {
 	testRoute(t, spec, func(client *queue.Client) {
 		if marked, err := client.MarkErrored(context.Background(), executor.Job{ID: 42, Token: "job-token"}, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
-		} else if marked {
-			t.Fatalf("expecting job to not be marked")
+		} else if !marked {
+			t.Fatalf("expecting job to be marked")
 		}
 	})
 }
@@ -181,8 +181,8 @@ func TestMarkFailed(t *testing.T) {
 	testRoute(t, spec, func(client *queue.Client) {
 		if marked, err := client.MarkFailed(context.Background(), executor.Job{ID: 42, Token: "job-token"}, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
-		} else if marked {
-			t.Fatalf("expecting job to not be marked")
+		} else if !marked {
+			t.Fatalf("expecting job to be marked")
 		}
 	})
 }
