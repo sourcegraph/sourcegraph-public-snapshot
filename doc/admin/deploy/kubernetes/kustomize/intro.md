@@ -62,7 +62,7 @@ components:
 
 ### Pre-built overlays
 
- In addition to providing a template for creating new overlays, we also provide a set of pre-built overlays that are pre-configured for different environments. These pre-built overlays can be found inside the [quick-start](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/quick-start) directory. 
+ In addition to providing a template for creating new overlays, we also provide a set of pre-built overlays that are pre-configured for different environments. These pre-built overlays can be found inside the [quick-start](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples) directory. 
 
 ## Overlay
 
@@ -173,7 +173,7 @@ The $PATH_TO_OVERLAY path can be a local path or remote path. For example:
 # Local
 $ kubectl kustomize quick-start/k3s/xs -o cluster.yaml
 # Remote
-$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph-k8s/quick-start/k3s/xs?ref=v4.5.0 -o cluster.yaml
+$ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/k3s/xs?ref=v4.5.0 -o cluster.yaml
 ```
 
 > NOTE: This command will only generate the customized manifests and will not apply them to the cluster. . It does not affect your current deployment until you run the apply command.
