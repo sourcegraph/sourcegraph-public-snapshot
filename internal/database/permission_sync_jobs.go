@@ -404,7 +404,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, executor.ExecutionLogEntry(entry))
+		job.ExecutionLogs = append(job.ExecutionLogs, entry)
 	}
 	return nil
 }
