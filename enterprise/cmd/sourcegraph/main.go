@@ -6,7 +6,7 @@ import (
 
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
-	executor_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/shared"
+	executor_singlebinary "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared"
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/shared"
@@ -25,7 +25,7 @@ var services = []service.Service{
 	worker_shared.Service,
 	githubproxy_shared.Service,
 	precise_code_intel_worker_shared.Service,
-	executor_shared.Service,
+	executor_singlebinary.Service,
 }
 
 func main() {

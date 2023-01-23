@@ -60,12 +60,9 @@ func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts Prov
 
 // ValidateConnection validates that the Provider has access to the Bitbucket Cloud API
 // with the credentials it was configured with.
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
+func (p *Provider) ValidateConnection(ctx context.Context) error {
 	_, err := p.client.CurrentUser(ctx)
-	if err != nil {
-		return []string{err.Error()}
-	}
-	return []string{}
+	return err
 }
 
 func (p *Provider) URN() string {

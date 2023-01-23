@@ -3,44 +3,48 @@ package azuredevops
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-// Client used to access an ADO code host via the REST API.
+// Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
 	// Config is the code host connection config for this client.
-	Config *ADOConnection
+	Config *AzureDevOpsConnection
 
-	// URL is the base URL of ADO.
+	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter (since ADO does not have a concept
+	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
+	auth      auth.BasicAuth
 }
 
-// TODO: @varsanojidan remove this when the shcema is updated to include ADO: https://github.com/sourcegraph/sourcegraph/issues/46266.
-type ADOConnection struct {
+// TODO: @varsanojidan remove this when the shcema is updated to include AzureDevOps: https://github.com/sourcegraph/sourcegraph/issues/46266.
+type AzureDevOpsConnection struct {
+	URL      string
 	Username string
 	Token    string
+	Projects []string
+	Orgs     []string
 }
 
-// NewClient returns an authenticated ADO API client with
+// NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse("https://dev.azure.com")
+func NewClient(urn string, config *AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Parse(config.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +58,10 @@ func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Cli
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auth: auth.BasicAuth{
+			Username: config.Username,
+			Password: config.Token,
+		},
 	}, nil
 }
 
@@ -63,7 +71,7 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 	ProjectOrOrgName string
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (*ListRepositoriesResponse, error) {
+func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]RepositoriesValue, error) {
 	qs := make(url.Values)
 
 	// TODO: @varsanojidan look into which API version/s we want to support.
@@ -81,7 +89,7 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 		return nil, err
 	}
 
-	return &repos, nil
+	return repos.Value, nil
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
@@ -89,14 +97,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Token)))
+	c.auth.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +111,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		return nil, err
 	}
@@ -141,5 +147,5 @@ type httpError struct {
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("ADO API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }

@@ -1,29 +1,26 @@
-{
-  "value": [
-   {
-    "id": "d43b669c-d6da-4c9e-9952-11f411153cf9",
-    "name": "sgadotest",
-    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9",
-    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest",
-    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
-    "isDisabled": false
-   },
-   {
-    "id": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
-    "name": "idano",
-    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7",
-    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano",
-    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/idano",
-    "isDisabled": false
-   },
-   {
-    "id": "2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5",
-    "name": "sgadotest2",
-    "url": "https://dev.azure.com/sgadotest/450fc69b-ff88-4604-88d3-84b488e290b2/_apis/git/repositories/2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5",
-    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest2/sgadotest2",
-    "webUrl": "https://dev.azure.com/sgadotest/sgadotest2/_git/sgadotest2",
-    "isDisabled": false
-   }
-  ],
-  "count": 3
- }
+[
+  {
+   "id": "d43b669c-d6da-4c9e-9952-11f411153cf9",
+   "name": "sgadotest",
+   "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest",
+   "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
+   "isDisabled": false
+  },
+  {
+   "id": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
+   "name": "idano",
+   "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano",
+   "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/idano",
+   "isDisabled": false
+  },
+  {
+   "id": "2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5",
+   "name": "sgadotest2",
+   "url": "https://dev.azure.com/sgadotest/450fc69b-ff88-4604-88d3-84b488e290b2/_apis/git/repositories/2c8bc3c0-841b-478e-ae1b-f5736b4f9cf5",
+   "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest2/sgadotest2",
+   "webUrl": "https://dev.azure.com/sgadotest/sgadotest2/_git/sgadotest2",
+   "isDisabled": false
+  }
+ ]
