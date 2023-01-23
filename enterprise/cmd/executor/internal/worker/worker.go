@@ -14,8 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/job"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
@@ -85,29 +83,24 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
 
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	workerClient, err := worker.New(observationCtx, options.QueueOptions, gatherer)
+	queueClient, err := queue.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
 		return nil, errors.Wrap(err, "building queue worker client")
 	}
 
-	if !connectToFrontend(observationCtx.Logger, workerClient, options) {
+	if !connectToFrontend(observationCtx.Logger, queueClient, options) {
 		os.Exit(1)
 	}
 
-	filesStore, err := files.New(observationCtx, options.FilesOptions)
+	filesClient, err := files.New(observationCtx, options.FilesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "building files store")
 	}
 
-	jobClient, err := job.New(observationCtx, options.QueueOptions, gatherer)
-	if err != nil {
-		return nil, errors.Wrap(err, "building queue job client")
-	}
-
 	h := &handler{
 		nameSet:       nameSet,
-		logStore:      jobClient,
-		filesStore:    filesStore,
+		logStore:      queueClient,
+		filesStore:    filesClient,
 		options:       options,
 		operations:    command.NewOperations(observationCtx),
 		runnerFactory: command.NewRunner,
@@ -115,14 +108,14 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker[executor.Job](ctx, workerClient, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[executor.Job](ctx, queueClient, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
 // For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
 // in dev environments where the executor may start up before the frontend. This method returns true
 // after a ping is successful and returns false if a user signal is received.
-func connectToFrontend(logger log.Logger, queueStore *worker.Client, options Options) bool {
+func connectToFrontend(logger log.Logger, queueClient *queue.Client, options Options) bool {
 	start := time.Now()
 	logger.Debug("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
 
@@ -134,7 +127,7 @@ func connectToFrontend(logger log.Logger, queueStore *worker.Client, options Opt
 	defer signal.Stop(signals)
 
 	for {
-		err := queueStore.Ping(context.Background(), options.QueueName, nil)
+		err := queueClient.Ping(context.Background(), options.QueueName, nil)
 		if err == nil {
 			logger.Debug("Connected to Sourcegraph instance")
 			return true
