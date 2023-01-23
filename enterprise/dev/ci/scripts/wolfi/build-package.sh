@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "/root" # TODO: Only used in local Docker
 
 set -euf -o pipefail
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
@@ -11,6 +12,7 @@ function cleanup() {
 trap cleanup EXIT
 
 # Install requisite packages
+apt update
 apt install -y bubblewrap
 
 (
@@ -28,6 +30,11 @@ apt install -y bubblewrap
 )
 
 export PATH="$tmpdir/bin:$PATH"
+
+if [ $# -eq 0 ]; then
+  echo "No arguments supplied - provide the melange YAML file to build"
+  exit 0
+fi
 
 name=${1%/}
 
