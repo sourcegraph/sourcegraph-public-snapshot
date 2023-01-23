@@ -121,6 +121,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
+    /** Whether code insights API is enabled on the site. */
+    codeInsightsEnabled: boolean
+
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 

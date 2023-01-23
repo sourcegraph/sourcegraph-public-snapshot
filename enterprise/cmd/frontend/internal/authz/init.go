@@ -62,10 +62,11 @@ func Init(
 
 		// Add connection validation issue
 		for _, p := range providers {
-			for _, problem := range p.ValidateConnection(ctx) {
-				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
+			if err := p.ValidateConnection(ctx); err != nil {
+				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), err))
 			}
 		}
+
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
 	})

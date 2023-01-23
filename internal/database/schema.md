@@ -2634,6 +2634,7 @@ Referenced by:
 ----------------------+--------------------------+-----------+----------+--------------------------------------------------
  id                   | integer                  |           | not null | nextval('permission_sync_jobs_id_seq'::regclass)
  state                | text                     |           |          | 'queued'::text
+ reason               | text                     |           | not null | 
  failure_message      | text                     |           |          | 
  queued_at            | timestamp with time zone |           |          | now()
  started_at           | timestamp with time zone |           |          | 
@@ -2647,20 +2648,25 @@ Referenced by:
  cancel               | boolean                  |           | not null | false
  repository_id        | integer                  |           |          | 
  user_id              | integer                  |           |          | 
+ triggered_by_user_id | integer                  |           |          | 
  high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
- reason               | text                     |           |          | 
- triggered_by_user_id | integer                  |           |          | 
+ cancellation_reason  | text                     |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
+    "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
     "permission_sync_jobs_process_after" btree (process_after)
     "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
     "permission_sync_jobs_user_id" btree (user_id)
+Check constraints:
+    "permission_sync_jobs_for_repo_or_user" CHECK ((user_id IS NULL) <> (repository_id IS NULL))
 Foreign-key constraints:
     "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
 ```
+
+**cancellation_reason**: Specifies why permissions sync job was cancelled.
 
 **reason**: Specifies why permissions sync job was triggered.
 
@@ -2969,7 +2975,7 @@ Foreign-key constraints:
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
  deleted_at | timestamp with time zone |           |          | 
- readonly   | boolean                  |           | not null | false
+ system     | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
     "roles_name" UNIQUE CONSTRAINT, btree (name)
@@ -2983,7 +2989,7 @@ Referenced by:
 
 **name**: The uniquely identifying name of the role.
 
-**readonly**: This is used to indicate whether a role is read-only or can be modified.
+**system**: This is used to indicate whether a role is read-only or can be modified.
 
 # Table "public.saved_searches"
 ```
@@ -3470,34 +3476,6 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
-
-```
-
-# Table "public.webhook_build_jobs"
-```
-      Column       |           Type           | Collation | Nullable |                    Default                     
--------------------+--------------------------+-----------+----------+------------------------------------------------
- repo_id           | integer                  |           |          | 
- repo_name         | text                     |           |          | 
- extsvc_kind       | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
- state             | text                     |           | not null | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- org               | text                     |           |          | 
- extsvc_id         | integer                  |           |          | 
- cancel            | boolean                  |           | not null | false
-Indexes:
-    "webhook_build_jobs_queued_at_idx" btree (queued_at)
-    "webhook_build_jobs_state" btree (state)
 
 ```
 

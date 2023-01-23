@@ -69,7 +69,7 @@ func GetCodeIntelByLanguage(ctx context.Context, db database.DB, cache bool, dat
 		items = append(items, &item)
 	}
 
-	if _, err := setArrayToCache(cacheKey, items); err != nil {
+	if err := setArrayToCache(cacheKey, items); err != nil {
 		return nil, err
 	}
 

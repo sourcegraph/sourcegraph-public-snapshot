@@ -3283,6 +3283,7 @@ CREATE VIEW outbound_webhooks_with_event_types AS
 CREATE TABLE permission_sync_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
+    reason text NOT NULL,
     failure_message text,
     queued_at timestamp with time zone DEFAULT now(),
     started_at timestamp with time zone,
@@ -3296,15 +3297,18 @@ CREATE TABLE permission_sync_jobs (
     cancel boolean DEFAULT false NOT NULL,
     repository_id integer,
     user_id integer,
+    triggered_by_user_id integer,
     high_priority boolean DEFAULT false NOT NULL,
     invalidate_caches boolean DEFAULT false NOT NULL,
-    reason text,
-    triggered_by_user_id integer
+    cancellation_reason text,
+    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
 COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';
 
 COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
+
+COMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
@@ -3568,13 +3572,13 @@ CREATE TABLE roles (
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    readonly boolean DEFAULT false NOT NULL,
+    system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
 
 COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
-COMMENT ON COLUMN roles.readonly IS 'This is used to indicate whether a role is read-only or can be modified.';
+COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
 CREATE SEQUENCE roles_id_seq
     AS integer
@@ -3909,34 +3913,6 @@ CREATE TABLE versions (
     version text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     first_version text NOT NULL
-);
-
-CREATE SEQUENCE webhook_build_jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-CREATE TABLE webhook_build_jobs (
-    repo_id integer,
-    repo_name text,
-    extsvc_kind text,
-    queued_at timestamp with time zone DEFAULT now(),
-    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,
-    state text DEFAULT 'queued'::text NOT NULL,
-    failure_message text,
-    started_at timestamp with time zone,
-    finished_at timestamp with time zone,
-    process_after timestamp with time zone,
-    num_resets integer DEFAULT 0 NOT NULL,
-    num_failures integer DEFAULT 0 NOT NULL,
-    execution_logs json[],
-    last_heartbeat_at timestamp with time zone,
-    worker_hostname text DEFAULT ''::text NOT NULL,
-    org text,
-    extsvc_id integer,
-    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE webhook_logs (
@@ -4884,6 +4860,8 @@ CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING bt
 
 CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
 
+CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (high_priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
+
 CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
@@ -4971,10 +4949,6 @@ CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_cust
 CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
-
-CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
-
-CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
 
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
@@ -5479,3 +5453,8 @@ INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention 
 INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
+
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+
+SELECT pg_catalog.setval('roles_id_seq', 3, true);

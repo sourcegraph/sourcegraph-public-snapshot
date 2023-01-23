@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -103,6 +104,12 @@ func TestStreamBlame(t *testing.T) {
 			return api.CommitID(""), &gitdomain.RevisionNotFoundError{Repo: repo.Name}
 		}
 	}
+	usersStore := database.NewMockUserStore()
+	errNotFound := &errcode.Mock{
+		IsNotFound: true,
+	}
+	usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
+	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	t.Cleanup(func() {
 		backend.Mocks.Repos = backend.MockRepos{}

@@ -42,7 +42,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []resolverstubs
 
 	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.uploadsResolver.Uploads[i], r.prefetcher, r.traceErrs))
+		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.traceErrs))
 	}
 	return resolvers, nil
 }

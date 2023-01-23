@@ -26,58 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
-
-// SearchContextLoader loads search contexts just from the full name of the
-// context. This will not verify that the calling context owns the context, it
-// will load regardless of the current user.
-type SearchContextLoader interface {
-	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
-}
-
-type scLoader struct {
-	primary database.DB
-}
-
-func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	return searchcontexts.ResolveSearchContextSpec(ctx, l.primary, name)
-}
-
-func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
-	var include []string
-	var exclude []string
-
-	for _, rawContext := range rawContexts {
-		searchContext, err := loader.GetByName(ctx, rawContext)
-		if err != nil {
-			return nil, nil, err
-		}
-		if searchContext.Query != "" {
-			var plan searchquery.Plan
-			plan, err := searchquery.Pipeline(
-				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
-			)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
-			}
-			inc, exc := plan.ToQ().Repositories()
-			for _, repoFilter := range inc {
-				if len(repoFilter.Revs) > 0 {
-					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
-				}
-				include = append(include, repoFilter.Repo)
-			}
-			exclude = append(exclude, exc...)
-		}
-	}
-	return include, exclude, nil
-}
-
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct {
@@ -227,7 +179,7 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
 	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
-	scLoader := &scLoader{primary: db}
+	scLoader := store.NewSCLoader(db)
 	modifiedPoints := removeClosePoints(p.points, p.series)
 	filterRepoIncludes := []string{}
 	filterRepoExcludes := []string{}
@@ -240,7 +192,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 	}
 
 	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
-	includeRepos, excludeRepos, _ := unwrapSearchContexts(ctx, scLoader, p.filters.SearchContexts)
+	includeRepos, excludeRepos, _ := scLoader.UnwrapSearchContexts(ctx, p.filters.SearchContexts)
 	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
 	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
 
@@ -395,8 +347,8 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: db}
-	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
+	scLoader := store.NewSCLoader(db)
+	inc, exc, err := scLoader.UnwrapSearchContexts(ctx, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}

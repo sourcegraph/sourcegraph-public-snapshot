@@ -378,7 +378,7 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
+func (p *Provider) ValidateConnection(ctx context.Context) error {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {
@@ -387,9 +387,9 @@ func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 	}
 
 	if strings.Contains(err.Error(), "You don't have permission for this operation.") {
-		return []string{"the user does not have super access"}
+		return errors.New("the user does not have super access")
 	}
-	return []string{"validate user access level: " + err.Error()}
+	return errors.Wrap(err, "invalid user access level")
 }
 
 func scanEmail(s *bufio.Scanner) (string, string, bool) {

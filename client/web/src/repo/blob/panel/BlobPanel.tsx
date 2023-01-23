@@ -26,7 +26,7 @@ import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
-import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
+import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
@@ -238,7 +238,7 @@ function useBlobPanelViews({
                 panelDefinitions.push({
                     id: 'references',
                     provider: panelSubjectChanges.pipe(
-                        map(({ position, history, location }) => ({
+                        map(({ position }) => ({
                             title: 'References',
                             content: '',
                             priority: 180,
@@ -251,15 +251,13 @@ function useBlobPanelViews({
                             // This panel doesn't need a wrapper
                             noWrapper: true,
                             reactElement: position ? (
-                                <ReferencesPanelWithMemoryRouter
+                                <ReferencesPanel
                                     settingsCascade={settingsCascade}
                                     platformContext={platformContext}
                                     isLightTheme={isLightTheme}
                                     extensionsController={extensionsController}
                                     telemetryService={telemetryService}
                                     key="references"
-                                    externalHistory={history}
-                                    externalLocation={location}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                     useCodeIntel={useCodeIntel}
                                 />
