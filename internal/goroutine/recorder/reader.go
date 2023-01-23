@@ -259,7 +259,7 @@ func loadRecentRuns(c *rcache.Cache, jobName string, routineName string, hostNam
 	runs := make([]RoutineRun, 0, len(recentRuns))
 	for _, serializedRun := range recentRuns {
 		var run RoutineRun
-		err := json.Unmarshal([]byte(serializedRun), &run)
+		err := json.Unmarshal(serializedRun, &run)
 		if err != nil {
 			return nil, errors.Wrap(err, "deserialize run")
 		}
