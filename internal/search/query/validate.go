@@ -156,10 +156,18 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isValidRegexp := func() error {
-		if _, err := regexp.Compile(value); err != nil {
-			return err
+		_, err := regexp.Compile(value)
+		return err
+	}
+
+	isValidRepoRegexp := func() error {
+		if negated {
+			if _, err := regexp.Compile(value); err != nil {
+				return err
+			}
 		}
-		return nil
+		_, err := ParseRepositoryRevisions(value)
+		return err
 	}
 
 	isBoolean := func() error {
@@ -239,7 +247,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
 		FieldRepo:
-		return satisfies(isValidRegexp)
+		return satisfies(isValidRepoRegexp)
 	case
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
