@@ -77,17 +77,17 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 	return job, decoded, err
 }
 
-func (c *Client) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
+func (c *Client) MarkComplete(ctx context.Context, job executor.Job) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", id),
+		otlog.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), executor.MarkCompleteRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
-			JobID:        id,
+			JobID:        job.ID,
 		},
 	})
 	if err != nil {
@@ -100,17 +100,17 @@ func (c *Client) MarkComplete(ctx context.Context, id int) (_ bool, err error) {
 	return true, nil
 }
 
-func (c *Client) MarkErrored(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (c *Client) MarkErrored(ctx context.Context, job executor.Job, failureMessage string) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", id),
+		otlog.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), executor.MarkErroredRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
-			JobID:        id,
+			JobID:        job.ID,
 		},
 		ErrorMessage: failureMessage,
 	})
@@ -124,17 +124,17 @@ func (c *Client) MarkErrored(ctx context.Context, id int, failureMessage string)
 	return true, nil
 }
 
-func (c *Client) MarkFailed(ctx context.Context, id int, failureMessage string) (_ bool, err error) {
+func (c *Client) MarkFailed(ctx context.Context, job executor.Job, failureMessage string) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", id),
+		otlog.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), executor.MarkErroredRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
-			JobID:        id,
+			JobID:        job.ID,
 		},
 		ErrorMessage: failureMessage,
 	})

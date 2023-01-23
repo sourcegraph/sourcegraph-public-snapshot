@@ -26,13 +26,13 @@ type Store[T Record] interface {
 
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.
-	MarkComplete(ctx context.Context, id int) (bool, error)
+	MarkComplete(ctx context.Context, rec T) (bool, error)
 
 	// MarkErrored attempts to update the state of the record to errored. This method returns a boolean flag indicating
 	// if the record was updated.
-	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkErrored(ctx context.Context, rec T, failureMessage string) (bool, error)
 
 	// MarkFailed attempts to update the state of the record to failed. This method returns a boolean flag indicating
 	// if the record was updated.
-	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
+	MarkFailed(ctx context.Context, rec T, failureMessage string) (bool, error)
 }
