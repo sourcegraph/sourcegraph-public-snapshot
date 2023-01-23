@@ -41,6 +41,12 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			if !reflect.DeepEqual(gotV, wantV) {
 				t.Fatalf("got %q, wanted %q", gotV, wantV)
 			}
+		case int:
+			gotV, err := got.Int()
+			assertWorks(err)
+			if gotV != wantV {
+				t.Fatalf("got %d, wanted %d", gotV, wantV)
+			}
 		case string:
 			gotV, err := got.String()
 			assertWorks(err)
@@ -99,6 +105,28 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			t.Fatalf("unexpected list length got=%d want=%d", got, want)
 		}
 	}
+	assertTTL := func(key string, want int) {
+		t.Helper()
+		got, err := kv.TTL(key)
+		if err != nil {
+			t.Fatal("TTL returned error", err)
+		}
+
+		// TTL timing is tough in a test environment. So if we are expecting a
+		// positive TTL we give a 10s grace.
+		if want > 10 {
+			min := want - 10
+			if got < min || got > want {
+				t.Fatalf("unexpected TTL got=%d expected=[%d,%d]", got, min, want)
+			}
+		} else if want < 0 {
+			if got != want {
+				t.Fatalf("unexpected TTL got=%d want=%d", got, want)
+			}
+		} else {
+			t.Fatalf("got bad want value %d", want)
+		}
+	}
 
 	// Redis returns nil on unset values
 	assertEqual(kv.Get("hi"), redis.ErrNil)
@@ -107,6 +135,7 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	// behaviour.
 	assertWorks(kv.Set("simple", "1"))
 	assertEqual(kv.Get("simple"), "1")
+	assertEqual(kv.Get("simple"), 1)
 	assertEqual(kv.Get("simple"), true)
 	assertEqual(kv.Get("simple"), []byte("1"))
 
@@ -130,6 +159,13 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	if err := kv.HSet("simple", "field", "value"); !strings.Contains(err.Error(), "WRONGTYPE") {
 		t.Fatalf("expected wrongtype error, got %v", err)
 	}
+
+	// Incr
+	assertWorks(kv.Set("incr-set", 5))
+	assertWorks(kv.Incr("incr-set"))
+	assertWorks(kv.Incr("incr-unset"))
+	assertEqual(kv.Get("incr-set"), 6)
+	assertEqual(kv.Get("incr-unset"), 1)
 
 	// Pretty much copy-pasta above tests but on a hash
 
@@ -201,12 +237,28 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	assertWorks(kv.LPush("funky2D", []byte{0, 10}))
 	assertAllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
 
-	// SetEx
-	assertWorks(kv.SetEx("expires", 60, "1"))
-	assertEqual(kv.Get("expires"), "1")
-	assertWorks(kv.SetEx("expires", 1, "2"))
+	// SetEx, Expire and TTL
+	assertWorks(kv.SetEx("expires-setex", 60, "1"))
+	assertWorks(kv.Set("expires-set", "1"))
+	assertWorks(kv.Expire("expires-set", 60))
+	assertWorks(kv.Set("expires-unset", "1"))
+	assertTTL("expires-setex", 60)
+	assertTTL("expires-set", 60)
+	assertTTL("expires-unset", -1)
+	assertTTL("expires-does-not-exist", -2)
+
+	assertEqual(kv.Get("expires-setex"), "1")
+	assertEqual(kv.Get("expires-set"), "1")
+
+	assertWorks(kv.SetEx("expires-setex", 1, "2"))
+	assertWorks(kv.Set("expires-set", "2"))
+	assertWorks(kv.Expire("expires-set", 1))
+
 	time.Sleep(1100 * time.Millisecond)
-	assertEqual(kv.Get("expires"), nil)
+	assertEqual(kv.Get("expires-setex"), nil)
+	assertEqual(kv.Get("expires-set"), nil)
+	assertTTL("expires-setex", -2)
+	assertTTL("expires-set", -2)
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship

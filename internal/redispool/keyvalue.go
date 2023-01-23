@@ -23,7 +23,11 @@ type KeyValue interface {
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
+	Incr(key string) error
 	Del(key string) error
+
+	TTL(key string) (int, error)
+	Expire(key string, ttlSeconds int) error
 
 	HGet(key, field string) Value
 	HGetAll(key string) Values
@@ -61,6 +65,10 @@ func (v Value) Bool() (bool, error) {
 
 func (v Value) Bytes() ([]byte, error) {
 	return redis.Bytes(v.reply, v.err)
+}
+
+func (v Value) Int() (int, error) {
+	return redis.Int(v.reply, v.err)
 }
 
 func (v Value) String() (string, error) {
@@ -125,8 +133,20 @@ func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
 }
 
+func (r *redisKeyValue) Incr(key string) error {
+	return r.do("INCR", r.prefix+key).err
+}
+
 func (r *redisKeyValue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
+}
+
+func (r *redisKeyValue) TTL(key string) (int, error) {
+	return r.do("TTL", r.prefix+key).Int()
+}
+
+func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
+	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
 }
 
 func (r *redisKeyValue) HGet(key, field string) Value {
