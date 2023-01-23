@@ -21,7 +21,7 @@ import (
 
 type handler struct {
 	nameSet       *janitor.NameSet
-	logStore      store.ExecutionLogEntryStore
+	logStore      command.ExecutionLogEntryStore
 	filesStore    store.FilesStore
 	options       Options
 	operations    *command.Operations

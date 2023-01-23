@@ -1,4 +1,4 @@
-package worker
+package queue
 
 import (
 	"bytes"
@@ -18,8 +18,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -28,7 +29,7 @@ import (
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options         queue.Options
+	options         Options
 	client          *apiclient.BaseClient
 	logger          log.Logger
 	metricsGatherer prometheus.Gatherer
@@ -37,8 +38,9 @@ type Client struct {
 
 // Compile time validation.
 var _ workerutil.Store[executor.Job] = &Client{}
+var _ command.ExecutionLogEntryStore = &Client{}
 
-func New(observationCtx *observation.Context, options queue.Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
+func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
 	if err != nil {
 		return nil, err
@@ -46,7 +48,7 @@ func New(observationCtx *observation.Context, options queue.Options, metricsGath
 	return &Client{
 		options:         options,
 		client:          client,
-		logger:          log.Scoped("executor-api-queue-worker-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationCtx),
 	}, nil
@@ -221,34 +223,6 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	return respV1, cancelIDs, nil
 }
 
-// TODO: Remove this in Sourcegraph 4.4.
-func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", c.options.QueueName), executor.CanceledJobsRequest{
-		KnownJobIDs:  knownIDs,
-		ExecutorName: c.options.ExecutorName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
-		return nil, err
-	}
-
-	return canceledIDs, nil
-}
-
-func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), executor.HeartbeatRequest{
-		ExecutorName: c.options.ExecutorName,
-	})
-	if err != nil {
-		return err
-	}
-
-	return c.client.DoAndDrop(ctx, req)
-}
-
 func intsToString(ints []int) string {
 	segments := make([]string, 0, len(ints))
 	for _, id := range ints {
@@ -280,4 +254,73 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 		}
 	}
 	return buf.String(), nil
+}
+
+// TODO: Remove this in Sourcegraph 4.4.
+func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", c.options.QueueName), executor.CanceledJobsRequest{
+		KnownJobIDs:  knownIDs,
+		ExecutorName: c.options.ExecutorName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
+		return nil, err
+	}
+
+	return canceledIDs, nil
+}
+
+func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), executor.HeartbeatRequest{
+		ExecutorName: c.options.ExecutorName,
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.client.DoAndDrop(ctx, req)
+}
+
+func (c *Client) AddExecutionLogEntry(ctx context.Context, jobID int, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
+	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", c.options.QueueName),
+		otlog.Int("jobID", jobID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), executor.AddExecutionLogEntryRequest{
+		ExecutorName:      c.options.ExecutorName,
+		JobID:             jobID,
+		ExecutionLogEntry: entry,
+	})
+	if err != nil {
+		return entryID, err
+	}
+
+	_, err = c.client.DoAndDecode(ctx, req, &entryID)
+	return entryID, err
+}
+
+func (c *Client) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
+	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", c.options.QueueName),
+		otlog.Int("jobID", jobID),
+		otlog.Int("entryID", entryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), executor.UpdateExecutionLogEntryRequest{
+		ExecutorName:      c.options.ExecutorName,
+		JobID:             jobID,
+		EntryID:           entryID,
+		ExecutionLogEntry: entry,
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.client.DoAndDrop(ctx, req)
 }
