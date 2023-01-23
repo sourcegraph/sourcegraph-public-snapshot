@@ -119,6 +119,7 @@ type AuthProviders struct {
 	Github         *GitHubAuthProvider
 	Gitlab         *GitLabAuthProvider
 	Bitbucketcloud *BitbucketCloudAuthProvider
+	Gerrit         *GerritAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -143,6 +144,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	if v.Bitbucketcloud != nil {
 		return json.Marshal(v.Bitbucketcloud)
 	}
+	if v.Gerrit != nil {
+		return json.Marshal(v.Gerrit)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *AuthProviders) UnmarshalJSON(data []byte) error {
@@ -157,6 +161,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Bitbucketcloud)
 	case "builtin":
 		return json.Unmarshal(data, &v.Builtin)
+	case "gerrit":
+		return json.Unmarshal(data, &v.Gerrit)
 	case "github":
 		return json.Unmarshal(data, &v.Github)
 	case "gitlab":
@@ -168,7 +174,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"})
 }
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
@@ -870,6 +876,13 @@ type FusionClient struct {
 	Refresh int `json:"refresh,omitempty"`
 	// Retries description: How many times a command should be retried before the process exits in a failure
 	Retries int `json:"retries,omitempty"`
+}
+
+// GerritAuthProvider description: Gerrit auth provider
+type GerritAuthProvider struct {
+	Type string `json:"type"`
+	// Url description: URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.
+	Url string `json:"url"`
 }
 
 // GerritConnection description: Configuration for a connection to Gerrit.
