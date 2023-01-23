@@ -112,8 +112,8 @@ export async function getHoverTooltip(view: EditorView, pos: number): Promise<To
     if (!result.markdownContents) {
         return null
     }
-    const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
-    return new CodeIntelTooltip(view, occurrence, result, occurrence === pinnedOccurrence)
+    // const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
+    return new CodeIntelTooltip(view, occurrence, result, false)
 }
 
 export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<HoverResult> {

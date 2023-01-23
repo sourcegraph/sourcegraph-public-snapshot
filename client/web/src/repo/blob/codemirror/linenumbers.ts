@@ -351,7 +351,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         }),
         // Disable `selectOnClick` with token selection because they interact
         // badly with each other causing errors.
-        config.enableSelectionDrivenCodeNavigation ? [] : selectOnClick(config),
+        // config.enableSelectionDrivenCodeNavigation ? [] : selectOnClick(config),
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',

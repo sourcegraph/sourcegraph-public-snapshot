@@ -49,28 +49,28 @@ export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
     combine: props => props[0],
     enables: () => [
         definitionUrlField,
-        EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
-            const occ = state.field(hoveredOccurrenceField)
-            const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
-            if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
-                const range = rangeToCmSelection(state, occ.range)
-                if (range.from === range.to) {
-                    return RangeSet.empty
-                }
-                if (url) {
-                    // Insert an HTML link to support Context-menu>Open-link-in-new-tab
-                    const definitionURL = Decoration.mark({
-                        attributes: {
-                            href: url,
-                        },
-                        tagName: 'a',
-                    })
-                    return RangeSet.of([definitionURL.range(range.from, range.to)])
-                }
-                return RangeSet.of([definitionReady.range(range.from, range.to)])
-            }
-            return RangeSet.empty
-        }),
+        // EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
+        //     const occ = state.field(hoveredOccurrenceField)
+        //     const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
+        //     if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
+        //         const range = rangeToCmSelection(state, occ.range)
+        //         if (range.from === range.to) {
+        //             return RangeSet.empty
+        //         }
+        //         if (url) {
+        //             // Insert an HTML link to support Context-menu>Open-link-in-new-tab
+        //             const definitionURL = Decoration.mark({
+        //                 attributes: {
+        //                     href: url,
+        //                 },
+        //                 tagName: 'a',
+        //             })
+        //             return RangeSet.of([definitionURL.range(range.from, range.to)])
+        //         }
+        //         return RangeSet.of([definitionReady.range(range.from, range.to)])
+        //     }
+        //     return RangeSet.empty
+        // }),
     ],
 })
 

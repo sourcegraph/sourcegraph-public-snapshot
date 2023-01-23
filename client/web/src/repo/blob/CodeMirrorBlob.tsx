@@ -35,6 +35,7 @@ import { selectionFromLocation, selectRange } from './codemirror/token-selection
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
+import { focusDrivenCodeNavigation } from './codemirror/focus-driven-navigation/extension'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -104,6 +105,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         blameHunks,
         enableLinkDrivenCodeNavigation,
         enableSelectionDrivenCodeNavigation,
+        enableFocusDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -191,6 +193,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             }),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
+            enableFocusDrivenCodeNavigation ? focusDrivenCodeNavigation() : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick

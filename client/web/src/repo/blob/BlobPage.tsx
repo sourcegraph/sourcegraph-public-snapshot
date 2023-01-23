@@ -590,8 +590,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
-                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
+                        enableLinkDrivenCodeNavigation={false}
+                        enableSelectionDrivenCodeNavigation={false}
+                        enableFocusDrivenCodeNavigation={true}
                     />
                 </TraceSpanProvider>
             )}

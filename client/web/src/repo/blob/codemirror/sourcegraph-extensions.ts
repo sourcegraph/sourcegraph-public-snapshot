@@ -122,8 +122,8 @@ export function sourcegraphExtensions({
         // token is highlighted differently. Hovercard datasource is disabled
         // when selection-driven navigation is enabled because it reimplements
         // hover logic in the file 'token-selection/hover.ts'.
-        enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
-        enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
+        // enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
+        // enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
         ViewPlugin.define(() => new WarmupReferencesManager(contextObservable)),
     ]

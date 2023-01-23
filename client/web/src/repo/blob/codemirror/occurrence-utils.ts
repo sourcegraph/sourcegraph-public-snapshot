@@ -149,8 +149,8 @@ export function closestOccurrenceByCharacter(
     return undefined
 }
 
-export function positionAtCmPosition(view: EditorView, position: number): Position {
-    const cmLine = view.state.doc.lineAt(position)
+export function positionAtCmPosition({ state }: EditorView, position: number): Position {
+    const cmLine = state.doc.lineAt(position)
     const line = cmLine.number - 1
     // The lack of "- 1" at the end of the line below is intentional because it
     // makes clicking on the first character of a token have no effect.

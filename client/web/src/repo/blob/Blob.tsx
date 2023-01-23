@@ -78,6 +78,7 @@ import styles from './Blob.module.scss'
 // implementation.
 interface CodeMirrorBlobProps {
     overrideBrowserSearchKeybinding?: boolean
+    enableFocusDrivenCodeNavigation?: boolean
 }
 
 export interface BlobProps
