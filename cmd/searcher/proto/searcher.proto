@@ -31,17 +31,13 @@ message SearchRequest {
 
   PatternInfo pattern_info = 5;
 
-  // reserve space for more commonly used fields.
-  // Fields with IDs greater than 16 take more space to encode.
-  reserved 6 to 15;
-
   // URL specifies the repository's Git remote URL (for gitserver). It is optional. See
   // (gitserver.ExecRequest).URL for documentation on what it is used for.
-  string url = 16;
+  string url = 6;
 
   // branch is used for structural search as an alternative to Commit
   // because Zoekt only takes branch names
-  string branch = 17;
+  string branch = 7;
 
   // fetch_timeout is the amount of time to wait for a repo archive to
   // fetch.
@@ -57,12 +53,12 @@ message SearchRequest {
   // This only times out how long we wait for the fetch request; the
   // fetch will still happen in the background so future requests don't
   // have to wait.
-  google.protobuf.Duration fetch_timeout = 18;
+  google.protobuf.Duration fetch_timeout = 8;
 
   // feat_hybrid is a feature flag which enables hybrid search.
   // Hybrid search will only search what has changed since Zoekt has
   // indexed as well as including Zoekt results.
-  bool feat_hybrid = 19;
+  bool feat_hybrid = 9;
 }
 
 // SearchResponse is a message in the response stream for Search
@@ -177,20 +173,18 @@ message PatternInfo {
   // pattern (but whose contents don't) should be considered a match.
   bool pattern_matches_path = 12;
 
-  reserved 13 to 15;
-
   // comby_rule is a rule that constrains matching for structural search.
   // It only applies when IsStructuralPat is true.
   // As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
   // a flag to activate the old structural search path, which queries zoekt for the
   // file list in the frontend and passes it to searcher.
-  string comby_rule = 16;
+  string comby_rule = 13;
 
   // languages is the list of languages passed via the lang filters (e.g., "lang:c")
-  repeated string languages = 17;
+  repeated string languages = 14;
 
   // select is the value of the the select field in the query. It is not necessary to
   // use it since selection is done after the query completes, but exposing it can enable
   // optimizations.
-  string select = 18;
+  string select = 15;
 }
