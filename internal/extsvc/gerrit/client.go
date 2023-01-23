@@ -3,7 +3,6 @@ package gerrit
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -49,11 +48,17 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 		httpClient = httpcli.ExternalDoer
 	}
 
+	auther := &auth.BasicAuth{
+		Username: config.Username,
+		Password: config.Password,
+	}
+
 	return &Client{
 		httpClient: httpClient,
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auther:     auther,
 	}, nil
 }
 
@@ -205,8 +210,12 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
-	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
+	// Authenticate request with auther
+	if c.auther != nil {
+		if err := c.auther.Authenticate(req); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
