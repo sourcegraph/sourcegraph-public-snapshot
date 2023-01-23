@@ -300,6 +300,7 @@ const HIGHLIGHTED_FILE_MOCK = {
             commit: {
                 id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3lNRFE9IiwiYyI6IjlkMWYzNTNhMjg1YjMwOTRiYzMzYmRhZTI3N2ExOWFlZGFiZThiNzEifQ==',
                 blob: {
+                    content: 'content',
                     highlight: {
                         aborted: false,
                         html: highlightedDiffFileContent,
