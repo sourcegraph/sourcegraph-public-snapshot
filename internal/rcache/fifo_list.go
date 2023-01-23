@@ -12,17 +12,30 @@ import (
 // FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
 type FIFOList struct {
 	key     string
-	maxSize atomic.Int64 // invariant: non-negative integer
+	maxSize *atomic.Int64 // invariant: non-negative integer
 }
 
 // NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
 func NewFIFOList(key string, size int) *FIFOList {
 	l := &FIFOList{
-		key: key,
+		key:     key,
+		maxSize: atomic.NewInt64(0),
 	}
 	// SetMaxSize will adjust size to be a non-negative integer.
 	l.SetMaxSize(size)
 	return l
+}
+
+// WithKey returns a FIFOList namespaced by the current key. IE l.key+"+"+key
+//
+// It will use the same maxsize as l, and will use the same size as l if l's
+// maxsize is updated. If SetMaxSize is called on the child it will also
+// affect the parent.
+func (l *FIFOList) WithKey(key string) *FIFOList {
+	return &FIFOList{
+		key:     l.key + ":" + key,
+		maxSize: l.maxSize,
+	}
 }
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.

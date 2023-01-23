@@ -51,8 +51,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		r := NewFIFOList(c.key, c.size)
-		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
+		f := func(t *testing.T, r *FIFOList) {
 			for _, b := range c.inserts {
 				if err := r.Insert(b); err != nil {
 					t.Errorf("expected no error, got %q", err)
@@ -72,6 +71,14 @@ func Test_FIFOList_All_OK(t *testing.T) {
 			if !reflect.DeepEqual(c.want, got) {
 				t.Errorf("Expected %v, but got %v", _str(c.want...), _str(got...))
 			}
+		}
+
+		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
+			parent := NewFIFOList(c.key, c.size)
+			f(t, parent)
+			t.Run("WithKey", func(t *testing.T) {
+				f(t, parent.WithKey("child"))
+			})
 		})
 	}
 }
@@ -159,37 +166,48 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 }
 
 func Test_FIFOList_SetMaxSize(t *testing.T) {
-	r := NewFIFOList("a", 3)
-	for i := 0; i < 10; i++ {
-		err := r.Insert([]byte("a"))
+	insert := func(r *FIFOList, count int, v string) {
+		t.Helper()
+		for i := 0; i < count; i++ {
+			err := r.Insert([]byte(v))
+			if err != nil {
+				t.Errorf("expected no error, got %q", err)
+			}
+		}
+	}
+	assertSlice := func(r *FIFOList, want ...string) {
+		t.Helper()
+		got, err := r.Slice(context.Background(), 0, -1)
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}
-	}
-
-	got, err := r.Slice(context.Background(), 0, -1)
-	if err != nil {
-		t.Errorf("expected no error, got %q", err)
-	}
-	if want := bytes("a", "a", "a"); !reflect.DeepEqual(want, got) {
-		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
-	}
-
-	r.SetMaxSize(2)
-	for i := 0; i < 10; i++ {
-		err := r.Insert([]byte("b"))
-		if err != nil {
-			t.Errorf("expected no error, got %q", err)
+		if !reflect.DeepEqual(bytes(want...), got) {
+			t.Errorf("expected %v, but got %v", want, _str(got...))
 		}
 	}
 
-	got, err = r.Slice(context.Background(), 0, -1)
-	if err != nil {
-		t.Errorf("expected no error, got %q", err)
-	}
-	if want := bytes("b", "b"); !reflect.DeepEqual(want, got) {
-		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
-	}
+	parent := NewFIFOList("parent", 3)
+	child := parent.WithKey("child")
+
+	// maxSize = 3
+	insert(parent, 10, "a")
+	insert(child, 10, "z")
+	assertSlice(parent, "a", "a", "a")
+	assertSlice(child, "z", "z", "z")
+
+	// maxSize = 2 via parent
+	parent.SetMaxSize(2)
+	insert(parent, 10, "b")
+	insert(child, 10, "y")
+	assertSlice(parent, "b", "b")
+	assertSlice(child, "y", "y")
+
+	// maxSize = 4 via child
+	child.SetMaxSize(4)
+	insert(parent, 3, "c")
+	insert(child, 3, "x")
+	assertSlice(parent, "c", "c", "c", "b")
+	assertSlice(child, "x", "x", "x", "y")
 }
 
 func Test_FIOListContextCancellation(t *testing.T) {
