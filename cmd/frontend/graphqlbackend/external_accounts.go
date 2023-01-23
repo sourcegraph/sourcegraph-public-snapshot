@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
+	"strconv"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -150,10 +152,10 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) AddGerritExternalAccount(ctx context.Context, args *struct {
-	Username  string
-	Password  string
-	ServiceID string
+func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
+	ServiceType    string
+	ServiceID      string
+	AccountDetails string
 }) (*EmptyResponse, error) {
 	user, err := auth.CurrentUser(ctx, r.db)
 	if err != nil {
@@ -163,17 +165,39 @@ func (r *schemaResolver) AddGerritExternalAccount(ctx context.Context, args *str
 		return nil, errors.New("not authenticated")
 	}
 
+	switch args.ServiceType {
+	case "gerrit":
+		err = r.addGerritExternalAccount(ctx, user.ID, args.ServiceID, args.AccountDetails)
+	default:
+		return nil, errors.New("unsupported service type")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+		UserIDs: []int32{user.ID},
+	})
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) addGerritExternalAccount(ctx context.Context, userID int32, serviceID string, accountDetails string) error {
+	var accountCredentials gerrit.AccountCredentials
+	json.Unmarshal([]byte(accountDetails), &accountCredentials)
+
 	// Fetch external service matching ServiceID
 	svcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindGerrit},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	serviceURL, err := url.Parse(args.ServiceID)
+	serviceURL, err := url.Parse(serviceID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	serviceURL = extsvc.NormalizeBaseURL(serviceURL)
 
@@ -201,38 +225,28 @@ func (r *schemaResolver) AddGerritExternalAccount(ctx context.Context, args *str
 		}
 	}
 	if gerritConn == nil {
-		return nil, errors.New("no gerrit connection found")
+		return errors.New("no gerrit connection found")
 	}
 
-	accountCredentials := &gerrit.AccountCredentials{
-		Username: args.Username,
-		Password: args.Password,
-	}
-
-	gerritAccount, err := gerrit.VerifyAccount(ctx, gerritConn, accountCredentials)
+	gerritAccount, err := gerrit.VerifyAccount(ctx, gerritConn, &accountCredentials)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	accountSpec := extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGerrit,
-		ServiceID:   args.ServiceID,
+		ServiceID:   serviceID,
 		ClientID:    "",
-		AccountID:   args.Username,
+		AccountID:   strconv.Itoa(int(gerritAccount.ID)),
 	}
 
 	accountData := extsvc.AccountData{}
-	if err = gerrit.SetExternalAccountData(&accountData, gerritAccount, accountCredentials); err != nil {
-		return nil, err
+	if err = gerrit.SetExternalAccountData(&accountData, gerritAccount, &accountCredentials); err != nil {
+		return err
 	}
 
-	if err = r.db.UserExternalAccounts().Insert(ctx, user.ID, accountSpec, accountData); err != nil {
-		return nil, err
+	if err = r.db.UserExternalAccounts().Insert(ctx, userID, accountSpec, accountData); err != nil {
+		return err
 	}
-
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
-		UserIDs: []int32{user.ID},
-	})
-
-	return &EmptyResponse{}, nil
+	return nil
 }
