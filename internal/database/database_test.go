@@ -376,9 +376,6 @@ func TestDBWithTransact(t *testing.T) {
 			require.Error(t, err)
 
 			err = tx1.WithTransact(ctx, func(tx2 DB) error {
-				tx2, err := tx1.Transact(ctx)
-				require.NoError(t, err)
-
 				err = tx2.Repos().Create(ctx, &types.Repo{ID: 2, Name: "test2"})
 				require.NoError(t, err)
 
@@ -430,8 +427,6 @@ func TestDBWithTransact(t *testing.T) {
 				require.NoError(t, err)
 
 				panic("to infinity and beyond")
-
-				return nil
 			})
 		})
 
