@@ -98,6 +98,21 @@ Base pipeline (more steps might be included based on branch changes):
 - Build //dev/sg
 - Upload build trace
 
+### Wolfi Exp Branch
+
+The run type for branches matching `wolfi/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build wolfi
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Metadata**: Pipeline metadata
+- Build stuff foobar
+- Upload build trace
+
 ### Release branch nightly healthcheck build
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
