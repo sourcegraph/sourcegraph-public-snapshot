@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { AddGerritAccountResult, AddGerritAccountVariables } from 'src/graphql-operations'
+import { AddExternalAccountResult, AddExternalAccountVariables } from 'src/graphql-operations'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Alert, Button, Form, H3, Input, Modal, Text } from '@sourcegraph/wildcard'
@@ -22,7 +22,7 @@ export const AddGerritAccountModal: React.FunctionComponent<
     }>
 > = ({ onDidAdd, serviceID, isOpen, onDismiss }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [addExternalAccount, { error }] = useMutation<AddGerritAccountResult, AddGerritAccountVariables>(
+    const [addExternalAccount, { error }] = useMutation<AddExternalAccountResult, AddExternalAccountVariables>(
         ADD_EXTERNAL_ACCOUNT
     )
 
