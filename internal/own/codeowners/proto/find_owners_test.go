@@ -28,6 +28,7 @@ func TestFileOwnersMatch(t *testing.T) {
 			paths: []string{
 				"/README.md",
 				"/nested/index.md",
+				"/weird/but/matching/.md",
 			},
 		},
 		{
@@ -88,6 +89,34 @@ func TestFileOwnersMatch(t *testing.T) {
 	}
 }
 
+func TestDebug(t *testing.T) {
+	cases := []testCase{
+		{
+			pattern: "*.md",
+			paths: []string{
+				"/not/matching/without/the/dot/md",
+			},
+		},
+	}
+	for _, c := range cases {
+		for _, path := range c.paths {
+			pattern := c.pattern
+			owner := []*codeownerspb.Owner{
+				{Handle: "foo"},
+			}
+			file := &codeownerspb.File{
+				Rule: []*codeownerspb.Rule{
+					{Pattern: pattern, Owner: owner},
+				},
+			}
+			got := file.FindOwners(path)
+			if got != nil {
+				t.Errorf("want %q not to match %q", pattern, path)
+			}
+		}
+	}
+}
+
 func TestFileOwnersNoMatch(t *testing.T) {
 	cases := []testCase{
 		{
@@ -95,6 +124,13 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			paths: []string{
 				"/prefix_filename_suffix",
 				"/src/prefix_filename",
+			},
+		},
+		{
+			pattern: "*.md",
+			paths: []string{
+				"/README.mdf",
+				"/not/matching/without/the/dot/md",
 			},
 		},
 		{
