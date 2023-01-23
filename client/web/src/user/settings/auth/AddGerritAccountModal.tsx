@@ -15,13 +15,12 @@ export const ADD_GERRIT_ACCOUNT = gql`
 
 export const AddGerritAccountModal: React.FunctionComponent<
     React.PropsWithChildren<{
-        onDidCancel: () => void
         onDidAdd: () => void
         onDismiss: () => void
         serviceID: string
         isOpen: boolean
     }>
-> = ({ onDidAdd, onDidCancel, serviceID, isOpen, onDismiss }) => {
+> = ({ onDidAdd, serviceID, isOpen, onDismiss }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [addGerritAccount, { error }] = useMutation<AddGerritAccountResult, AddGerritAccountVariables>(
         ADD_GERRIT_ACCOUNT
@@ -75,7 +74,7 @@ export const AddGerritAccountModal: React.FunctionComponent<
                     <Button
                         className="mr-2"
                         disabled={isLoading}
-                        onClick={onDidCancel}
+                        onClick={onDismiss}
                         outline={true}
                         variant="secondary"
                     >
