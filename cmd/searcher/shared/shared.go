@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
@@ -198,7 +199,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions()...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
 		Service: service,
