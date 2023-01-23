@@ -340,15 +340,15 @@ func (cm *ChunkMatch) ToProto() *proto.ChunkMatch {
 
 func (cm *ChunkMatch) FromProto(pm *proto.ChunkMatch) {
 	var contentStart Location
-	contentStart.FromProto(pm.ContentStart)
+	contentStart.FromProto(pm.GetContentStart())
 
-	ranges := make([]Range, len(pm.Ranges))
-	for i, r := range pm.Ranges {
+	ranges := make([]Range, len(pm.GetRanges()))
+	for i, r := range pm.GetRanges() {
 		ranges[i].FromProto(r)
 	}
 
 	*cm = ChunkMatch{
-		Content:      pm.Content,
+		Content:      pm.GetContent(),
 		ContentStart: contentStart,
 		Ranges:       ranges,
 	}
@@ -367,8 +367,8 @@ func (r *Range) ToProto() *proto.Range {
 }
 
 func (r *Range) FromProto(pr *proto.Range) {
-	r.Start.FromProto(pr.Start)
-	r.End.FromProto(pr.End)
+	r.Start.FromProto(pr.GetStart())
+	r.End.FromProto(pr.GetEnd())
 }
 
 type Location struct {
@@ -393,8 +393,8 @@ func (l *Location) ToProto() *proto.Location {
 
 func (l *Location) FromProto(pl *proto.Location) {
 	*l = Location{
-		Offset: pl.Offset,
-		Line:   pl.Line,
-		Column: pl.Column,
+		Offset: pl.GetOffset(),
+		Line:   pl.GetLine(),
+		Column: pl.GetColumn(),
 	}
 }
