@@ -17028,6 +17028,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancellation_reason",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Specifies why permissions sync job was cancelled."
+        },
+        {
           "Name": "execution_logs",
           "Index": 12,
           "TypeName": "json[]",
