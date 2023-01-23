@@ -10,13 +10,12 @@ import (
 	"context"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 // MockExecutionLogEntryStore is a mock implementation of the
 // ExecutionLogEntryStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command)
 // used for unit testing.
 type MockExecutionLogEntryStore struct {
 	// AddExecutionLogEntryFunc is an instance of a mock function object
@@ -66,7 +65,7 @@ func NewStrictMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 // NewMockExecutionLogEntryStoreFrom creates a new mock of the
 // MockExecutionLogEntryStore interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockExecutionLogEntryStoreFrom(i store.ExecutionLogEntryStore) *MockExecutionLogEntryStore {
+func NewMockExecutionLogEntryStoreFrom(i ExecutionLogEntryStore) *MockExecutionLogEntryStore {
 	return &MockExecutionLogEntryStore{
 		AddExecutionLogEntryFunc: &ExecutionLogEntryStoreAddExecutionLogEntryFunc{
 			defaultHook: i.AddExecutionLogEntry,
