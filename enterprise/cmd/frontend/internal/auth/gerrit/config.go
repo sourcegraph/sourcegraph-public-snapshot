@@ -37,6 +37,7 @@ type Provider struct {
 }
 
 func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
+	seen := make(map[string]struct{})
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gerrit == nil {
 			continue
@@ -44,13 +45,19 @@ func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.
 
 		provider, providerProblems := parseProvider(pr.Gerrit)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
-		ps = append(ps, provider)
+		if _, ok := seen[provider.ServiceID]; !ok {
+			ps = append(ps, provider)
+			seen[provider.ServiceID] = struct{}{}
+		} else {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider with url %q", provider.ServiceID)))
+		}
 	}
 
 	return ps, problems
 }
 
 func parseProvider(p *schema.GerritAuthProvider) (Provider, []string) {
+
 	return Provider{
 		ServiceID:   p.Url,
 		ServiceType: p.Type,
@@ -59,8 +66,8 @@ func parseProvider(p *schema.GerritAuthProvider) (Provider, []string) {
 
 func (p *Provider) ConfigID() providers.ConfigID {
 	return providers.ConfigID{
-		Type: "gerrit",
-		ID:   "http://localhost:8080/",
+		Type: extsvc.TypeGerrit,
+		ID:   p.ServiceID,
 	}
 }
 
