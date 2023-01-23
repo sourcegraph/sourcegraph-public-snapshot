@@ -6,21 +6,30 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.uber.org/atomic"
 )
 
 // FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
 type FIFOList struct {
 	key     string
-	maxSize *atomic.Int64
+	maxSize func() int
 }
 
 // NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
 func NewFIFOList(key string, size int) *FIFOList {
 	return &FIFOList{
 		key:     key,
-		maxSize: atomic.NewInt64(int64(size)),
+		maxSize: func() int { return size },
 	}
+}
+
+// NewFIFOListDynamic is like NewFIFOList except size will be called each time
+// we enforce list size invariants.
+func NewFIFOListDynamic(key string, size func() int) *FIFOList {
+	l := &FIFOList{
+		key:     key,
+		maxSize: size,
+	}
+	return l
 }
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
@@ -62,15 +71,11 @@ func (l *FIFOList) Size() (int, error) {
 }
 
 func (l *FIFOList) MaxSize() int {
-	return int(l.maxSize.Load())
-}
-
-// SetMaxSize will change the size we truncate at.
-//
-// Note: this won't cause truncation to happen, instead truncation is done on
-// the next insert.
-func (l *FIFOList) SetMaxSize(maxSize int) {
-	l.maxSize.Store(int64(maxSize))
+	maxSize := l.maxSize()
+	if maxSize < 0 {
+		return 0
+	}
+	return maxSize
 }
 
 // All return all items stored in the FIFOList.

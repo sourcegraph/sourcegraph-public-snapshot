@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = ["store.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store",
+    visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = [
+        "//enterprise/internal/executor",
+        "//internal/workerutil",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["store_test.go"],
+    deps = [
+        ":store",
+        "//enterprise/internal/executor",
+        "//internal/workerutil",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
+    ],
+)

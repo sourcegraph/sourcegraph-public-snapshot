@@ -167,9 +167,9 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 	}
 
 	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
-		UserIDs:    []int32{externalAccounts[0].UserID},
-		Reason:     reason,
-		NextSyncAt: time.Now().Add(sleepTime),
+		UserIDs:      []int32{externalAccounts[0].UserID},
+		Reason:       reason,
+		ProcessAfter: time.Now().Add(sleepTime),
 	})
 
 	return err
@@ -184,9 +184,9 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 	}
 
 	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
-		RepoIDs:    []api.RepoID{repo.ID},
-		Reason:     reason,
-		NextSyncAt: time.Now().Add(sleepTime),
+		RepoIDs:      []api.RepoID{repo.ID},
+		Reason:       reason,
+		ProcessAfter: time.Now().Add(sleepTime),
 	})
 
 	return nil

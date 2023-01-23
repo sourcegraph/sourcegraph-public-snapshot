@@ -250,7 +250,7 @@ type PermsSyncRequest struct {
 	Options           authz.FetchPermsOptions `json:"options"`
 	Reason            string                  `json:"reason"`
 	TriggeredByUserID int32                   `json:"triggered_by_user_id"`
-	NextSyncAt        time.Time               `json:"next_sync_at"`
+	ProcessAfter      time.Time               `json:"process_after"`
 }
 
 // PermsSyncResponse is a response to sync permissions.

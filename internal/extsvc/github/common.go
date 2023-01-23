@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1463,6 +1464,14 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 	}
 }
 
+func githubBaseURLDefault() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return ""
+	}
+	return "http://github-proxy"
+}
+
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
 
@@ -1470,7 +1479,7 @@ var (
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 
 	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
-	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", githubBaseURLDefault(), "base URL for GitHub.com API (used for github-proxy)")
 )
 
 func getGithubProxyURL() (*url.URL, bool) {

@@ -5,7 +5,6 @@ package shared
 import (
 	"context"
 	"io"
-	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -17,7 +16,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
 
@@ -28,20 +26,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -116,11 +109,11 @@ func setupTmpDir() error {
 	return nil
 }
 
-func run(logger log.Logger) error {
+func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
+	logger := observationCtx.Logger
+
 	// Ready immediately
-	ready := make(chan struct{})
-	close(ready)
-	go debugserver.NewServerRoutine(ready).Start()
+	ready()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
@@ -198,7 +191,7 @@ func run(logger log.Logger) error {
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -240,31 +233,4 @@ func run(logger log.Logger) error {
 	})
 
 	return g.Wait()
-}
-
-func Main() {
-	stdlog.SetFlags(0)
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
-
-	logger := log.Scoped("server", "the searcher service")
-
-	err := run(logger)
-	if err != nil {
-		logger.Fatal("searcher failed", log.Error(err))
-	}
 }

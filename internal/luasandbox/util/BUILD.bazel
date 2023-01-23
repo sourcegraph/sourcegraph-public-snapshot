@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = ["util.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/luasandbox/util",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "@com_layeh_gopher_luar//:gopher-luar",
+    ],
+)
