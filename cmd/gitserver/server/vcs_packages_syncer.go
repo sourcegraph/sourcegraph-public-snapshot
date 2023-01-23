@@ -138,24 +138,25 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 	}
 
-	if err = s.fetchVersions(ctx, name, dir, versionsToSync); err != nil {
-		return err
+	err = s.fetchVersions(ctx, name, dir, versionsToSync)
+
+	// we want to sync available tags and update latest branch regardless of this
+	// particular version failing.
+	if e := s.updateAvailableVersions(ctx, dir, pkg); e != nil {
+		err = errors.Append(err, e)
+		return
 	}
 
-	// we dont want to sync available tags and update latest branch if we
-	// failed to fetch non-specific version
-	// TODO: nsc do perform this if only _some_ versions failed to sync
-	if err = s.updateAvailableVersions(ctx, dir, pkg); err != nil {
-		return err
-	}
-
-	if err = s.syncAndSetLatest(ctx, dir, name); err != nil {
-		return err
+	if e := s.syncAndSetLatest(ctx, dir, name); e != nil {
+		err = errors.Append(err, e)
+		return
 	}
 
 	return nil
 }
 
+// Lists all versions of pkg that are available via the package host source, and creates tags pointing towards the special "empty tree"
+// object. This way we can have a local listing of the versions without having to sync every version.
 func (s *vcsPackagesSyncer) updateAvailableVersions(ctx context.Context, dir GitDir, pkg reposource.Package) (errs error) {
 	allPackageVersions, err := s.source.ListVersions(ctx, pkg)
 	if err != nil {
@@ -332,6 +333,7 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 	return nil
 }
 
+// Syncs the latest listed version and sets the latest branch to point towards it. Does not remove previously latest tags.
 func (s *vcsPackagesSyncer) syncAndSetLatest(ctx context.Context, dir GitDir, name reposource.PackageName) error {
 	// Create set of existing tags. We want to skip the download of a package if the tag already exists.
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "for-each-ref", "--format=%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end):%(refname:lstrip=2)", "refs/tags/"), string(dir), s.placeholder)
