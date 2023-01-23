@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Button, Modal, Text, Link, H2 } from '@sourcegraph/wildcard'
+import { Button, Modal, Text, H2 } from '@sourcegraph/wildcard'
 
 interface ExportInsightDataModalProps {
     insightId: string
@@ -23,9 +23,10 @@ export const ExportInsightDataModal: FC<ExportInsightDataModalProps> = props => 
             <Text>This will only include data that you are permitted to see.</Text>
             <div className="d-flex justify-content-end mt-5">
                 <Button
+                    as="a"
+                    href={`/.api/insights/export/${insightId}`}
                     autoFocus={true}
-                    as={Link}
-                    to={`/api/insights/export/${insightId}`}
+                    download={true}
                     variant="primary"
                     onClick={onConfirm}
                 >

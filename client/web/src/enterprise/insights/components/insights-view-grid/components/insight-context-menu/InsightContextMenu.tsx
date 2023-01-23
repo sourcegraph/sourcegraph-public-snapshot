@@ -109,7 +109,7 @@ export const InsightContextMenu: FC<InsightCardMenuProps> = props => {
                                     Get shareable link
                                 </MenuLink>
 
-                                {isLangStatsInsight(insight) && (
+                                {!isLangStatsInsight(insight) && (
                                     <MenuItem className={styles.item} onSelect={() => setShowExportDataConfirm(true)}>
                                         Export data
                                     </MenuItem>
