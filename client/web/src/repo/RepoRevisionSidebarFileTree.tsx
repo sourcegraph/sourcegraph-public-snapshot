@@ -1,13 +1,13 @@
-import { useCallback, useRef, useState, useEffect } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline, mdiMenuRight, mdiMenuDown } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
-import TreeView, { INode } from 'react-accessible-treeview'
+import { INode } from 'react-accessible-treeview'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, ErrorMessage, Icon, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, ErrorMessage, Icon, Link, LoadingSpinner, Tree } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 import { MAX_TREE_ENTRIES } from '../tree/constants'
@@ -155,8 +155,6 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
         [defaultNodeId, navigate, props.telemetryService]
     )
 
-    usePatchFocusToFixScrollIssues()
-
     if (error) {
         return (
             <Alert variant="danger">
@@ -169,66 +167,31 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
     }
 
     return (
-        <TreeView
+        <Tree<TreeNode>
             data={treeData.nodes}
             aria-label="file tree"
             defaultSelectedIds={defaultSelectedIds}
             defaultExpandedIds={defaultExpandedIds}
-            className={styles.fileTree}
-            // TreeView expects nodes to be INode but ours are extending this type.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            onSelect={onSelect as any}
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            onLoadData={onLoadData as any}
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-            nodeRenderer={renderNode as any}
+            onSelect={onSelect}
+            onLoadData={onLoadData}
+            renderNode={renderNode}
         />
     )
-}
-
-function getMarginLeft(level: number): string {
-    return `${0.75 * (level - 1)}rem`
 }
 
 function renderNode({
     element,
     isBranch,
     isExpanded,
-    isSelected,
-    getNodeProps,
-    level,
     handleSelect,
-    handleExpand,
 }: {
     element: TreeNode
     isBranch: boolean
     isExpanded: boolean
-    isSelected: boolean
-    getNodeProps: (props: { onClick: (event: Event) => {} }) => {}
-    level: number
     handleSelect: (event: React.MouseEvent) => {}
-    handleExpand: (event: Event) => {}
 }): React.ReactNode {
     return (
-        <div
-            {...getNodeProps({ onClick: handleExpand })}
-            // eslint-disable-next-line react/forbid-dom-props
-            style={{
-                marginLeft: getMarginLeft(level),
-                minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
-            }}
-            data-tree-node-id={element.id}
-            className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
-        >
-            {isBranch ? (
-                <div className={classNames('mr-1', styles.icon)}>
-                    {isExpanded && element.children.length === 0 ? (
-                        <LoadingSpinner />
-                    ) : (
-                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
-                    )}
-                </div>
-            ) : null}
+        <>
             <Icon
                 svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
                 className={classNames('mr-1', styles.icon)}
@@ -244,7 +207,7 @@ function renderNode({
             >
                 {element.entry?.name}
             </Link>
-        </div>
+        </>
     )
 }
 
@@ -355,37 +318,4 @@ function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
         parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
     }
     return parents
-}
-
-// By default, react-accessible-tree uses .focus() on the `<li>` to scroll to
-// the element. In case of a larger nested list, this is causing unexpected
-// jumps in the UI because the browser wants to fit as much content from the
-// `<li>` into the viewport as possible.
-//
-// This is not what we want though, because we only render the focus outline
-// on the folder name as well and thus the jumping is unexpected. To fix this,
-// we have to patch `.focus()` and handle the case ourselves.
-//
-// TODO: This can be removed once the upstream fix is landed:
-//       https://github.com/dgreene1/react-accessible-treeview/pull/81
-function usePatchFocusToFixScrollIssues(): void {
-    useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        const originalFocus = HTMLElement.prototype.focus
-        HTMLElement.prototype.focus = function (...args) {
-            const isBranch = this.nodeName === 'LI' && this.classList.contains('tree-branch-wrapper')
-            const isNode = this.nodeName === 'DIV' && this.classList.contains(styles.node)
-            if (isBranch || isNode) {
-                const focusableNode = isNode ? this : this.querySelector(`.${styles.node}`)
-                if (focusableNode) {
-                    focusableNode.scrollIntoView({ block: 'nearest' })
-                    return originalFocus.call(this, { preventScroll: true })
-                }
-            }
-            return originalFocus.call(this, ...args)
-        }
-        return () => {
-            HTMLElement.prototype.focus = originalFocus
-        }
-    }, [])
 }
