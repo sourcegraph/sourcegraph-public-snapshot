@@ -3479,34 +3479,6 @@ Triggers:
 
 ```
 
-# Table "public.webhook_build_jobs"
-```
-      Column       |           Type           | Collation | Nullable |                    Default                     
--------------------+--------------------------+-----------+----------+------------------------------------------------
- repo_id           | integer                  |           |          | 
- repo_name         | text                     |           |          | 
- extsvc_kind       | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
- state             | text                     |           | not null | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- org               | text                     |           |          | 
- extsvc_id         | integer                  |           |          | 
- cancel            | boolean                  |           | not null | false
-Indexes:
-    "webhook_build_jobs_queued_at_idx" btree (queued_at)
-    "webhook_build_jobs_state" btree (state)
-
-```
-
 # Table "public.webhook_logs"
 ```
        Column        |           Type           | Collation | Nullable |                 Default                  
