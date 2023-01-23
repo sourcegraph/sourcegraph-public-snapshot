@@ -91,3 +91,19 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	}
 	return nil, nil
 }
+
+func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*externalAccountDataResolver, error) {
+	// 🚨 SECURITY: We only return this data to site admin or user who is linked to the external account
+	// This method differs from the one above - here we only return specific attributes
+	// from the account that are public info, e.g. username, email, etc.
+	err := auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.account.Data != nil {
+		return NewExternalAccountDataResolver(ctx, r.account)
+	}
+
+	return nil, nil
+}

@@ -10,30 +10,29 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,8 +40,14 @@ const addr = ":3189"
 
 type EnterpriseInit = func(ossDB database.DB)
 
-// Start runs the worker.
-func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc, enterpriseInit EnterpriseInit) error {
+type namedBackgroundRoutine struct {
+	Routine goroutine.BackgroundRoutine
+	JobName string
+}
+
+func LoadConfig(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
+	symbols.LoadConfig()
+
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
@@ -53,28 +58,34 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		"record-encrypter":          encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor": repostatistics.NewCompactor(),
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
+		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 	}
 
-	jobs := map[string]job.Job{}
+	var config Config
+	config.Jobs = map[string]job.Job{}
+
 	for name, job := range builtins {
-		jobs[name] = job
+		config.Jobs[name] = job
 	}
 	for name, job := range additionalJobs {
-		jobs[name] = job
+		config.Jobs[name] = job
 	}
 
 	// Setup environment variables
-	loadConfigs(jobs)
+	loadConfigs(config.Jobs)
 
-	env.Lock()
-	env.HandleHelpFlag()
-	conf.Init()
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
+	// Validate environment variables
+	if err := validateConfigs(config.Jobs); err != nil {
+		config.AddError(err)
+	}
 
-	if err := keyring.Init(context.Background()); err != nil {
-		return errors.Wrap(err, "Failed to intialise keyring")
+	return &config
+}
+
+// Start runs the worker.
+func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+	if err := keyring.Init(ctx); err != nil {
+		return errors.Wrap(err, "initializing keyring")
 	}
 
 	if enterpriseInit != nil {
@@ -86,23 +97,14 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		enterpriseInit(db)
 	}
 
-	// Start debug server
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
-	// Validate environment variables
-	if err := validateConfigs(jobs); err != nil {
-		return err
-	}
-
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
-	emitJobCountMetrics(jobs)
+	emitJobCountMetrics(config.Jobs)
 
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines, err := createBackgroundRoutines(observationCtx, jobs)
+	allRoutinesWithJobNames, err := createBackgroundRoutines(observationCtx, config.Jobs)
 	if err != nil {
 		return err
 	}
@@ -113,15 +115,33 @@ func Start(observationCtx *observation.Context, additionalJobs map[string]job.Jo
 		WriteTimeout: 10 * time.Minute,
 		Handler:      httpserver.NewHandler(nil),
 	})
-	allRoutines = append(allRoutines, server)
+	serverRoutineWithJobName := namedBackgroundRoutine{Routine: server, JobName: "health-server"}
+	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
+
+	// Register recorder in all routines that support it
+	recorderCache := recorder.GetCache()
+	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
+	for _, rj := range allRoutinesWithJobNames {
+		if recordable, ok := rj.Routine.(recorder.Recordable); ok {
+			recordable.SetJobName(rj.JobName)
+			recordable.RegisterRecorder(rec)
+			rec.Register(recordable)
+		}
+	}
+	rec.RegistrationDone()
 
 	// We're all set up now
 	// Respond positively to ready checks
-	close(ready)
+	ready()
 
 	// This method blocks while the app is live - the following return is only to appease
 	// the type checker.
-	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
+	allRoutines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
+	for _, r := range allRoutinesWithJobNames {
+		allRoutines = append(allRoutines, r.Routine)
+	}
+
+	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
 	return nil
 }
 
@@ -206,15 +226,15 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 // createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]goroutine.BackgroundRoutine, error) {
+func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]namedBackgroundRoutine, error) {
 	var (
-		allRoutines  []goroutine.BackgroundRoutine
-		descriptions []string
+		allRoutinesWithJobNames []namedBackgroundRoutine
+		descriptions            []string
 	)
 
 	for result := range runRoutinesConcurrently(observationCtx, jobs) {
 		if result.err == nil {
-			allRoutines = append(allRoutines, result.routines...)
+			allRoutinesWithJobNames = append(allRoutinesWithJobNames, result.routinesWithJobNames...)
 		} else {
 			descriptions = append(descriptions, fmt.Sprintf("  - %s: %s", result.name, result.err))
 		}
@@ -225,13 +245,13 @@ func createBackgroundRoutines(observationCtx *observation.Context, jobs map[stri
 		return nil, errors.Newf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
 
-	return allRoutines, nil
+	return allRoutinesWithJobNames, nil
 }
 
 type routinesResult struct {
-	name     string
-	routines []goroutine.BackgroundRoutine
-	err      error
+	name                 string
+	routinesWithJobNames []namedBackgroundRoutine
+	err                  error
 }
 
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
@@ -261,7 +281,14 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
-			results <- routinesResult{name, routines, err}
+			routinesWithJobNames := make([]namedBackgroundRoutine, 0, len(routines))
+			for _, r := range routines {
+				routinesWithJobNames = append(routinesWithJobNames, namedBackgroundRoutine{
+					Routine: r,
+					JobName: name,
+				})
+			}
+			results <- routinesResult{name, routinesWithJobNames, err}
 
 			if err == nil {
 				jobLogger.Debug("Finished initializing job")

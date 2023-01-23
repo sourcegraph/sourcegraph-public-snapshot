@@ -25,6 +25,11 @@ type dataRetentionHandler struct {
 }
 
 func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
+	doArchive := conf.ExperimentalFeatures().InsightsDataRetention
+	if doArchive == nil || !*doArchive {
+		return nil
+	}
+
 	maximumSampleSize := getMaximumSampleSize(logger)
 
 	// All the retention operations need to be completed in the same transaction
@@ -35,7 +40,9 @@ func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, re
 	defer func() { err = tx.Done(err) }()
 
 	// We remove 1 off the maximum sample size so that we get the last timestamp that we want to keep data for.
-	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, maximumSampleSize-1)
+	// We ignore snapshot timestamps. This is because if there are 10 record points and 1 snapshot point and a sample
+	// size of 5 we don't want to keep 4 record points and the ephemeral snapshot point, but 5 record points.
+	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, maximumSampleSize-1, true)
 	if err != nil {
 		return errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
@@ -74,6 +81,7 @@ func getMaximumSampleSize(logger log.Logger) int {
 func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], insightsStore *store.Store, metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "insights_data_retention_worker",
+		Description:       "archives code insights data points over the maximum sample size",
 		NumHandlers:       5,
 		Interval:          30 * time.Minute,
 		HeartbeatInterval: 15 * time.Second,

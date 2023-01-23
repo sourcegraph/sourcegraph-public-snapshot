@@ -40,7 +40,11 @@ func TestMain(m *testing.M) {
 func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
 	repoFilters := make([]query.ParsedRepoFilter, len(repoRevs))
 	for i, r := range repoRevs {
-		repoFilters[i] = query.ParseRepositoryRevisions(r)
+		parsedFilter, err := query.ParseRepositoryRevisions(r)
+		if err != nil {
+			panic(errors.Errorf("unexpected error parsing repo filter %s", r))
+		}
+		repoFilters[i] = parsedFilter
 	}
 	return repoFilters
 }
@@ -226,29 +230,11 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []query.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
-		{
-			descr:    "invalid regexp",
-			specs:    []string{"*o@a:b"},
-			repo:     "foo",
-			err:      errors.Errorf("%s", "bad request: in findPatternRevs: error parsing regexp: missing argument to repetition operator: `*`"),
-			matched:  nil,
-			clashing: nil,
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			repoRevs := toParsedRepoFilters(test.specs...)
-			_, pats, err := findPatternRevs(repoRevs)
-			if err != nil {
-				if test.err == nil {
-					t.Errorf("unexpected error: '%s'", err)
-				}
-				if test.err != nil && err.Error() != test.err.Error() {
-					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
-				}
-				// don't try to use the pattern list if we got an error
-				return
-			}
+			_, pats := findPatternRevs(repoRevs)
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
@@ -266,7 +252,7 @@ func TestSearchRevspecs(t *testing.T) {
 func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
-		_, pats, _ := findPatternRevs(repoRevs)
+		_, pats := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -274,7 +260,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 
 	b.Run("multiple overlapping", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
-		_, pats, _ := findPatternRevs(repoRevs)
+		_, pats := findPatternRevs(repoRevs)
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}

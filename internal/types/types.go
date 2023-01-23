@@ -805,10 +805,17 @@ type User struct {
 	Searchable            bool
 }
 
+type SystemRole string
+
+var (
+	UserSystemRole              SystemRole = "USER"
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
 type Role struct {
 	ID        int32
 	Name      string
-	ReadOnly  bool
+	System    bool
 	CreatedAt time.Time
 	DeletedAt time.Time
 }
@@ -1759,6 +1766,7 @@ type Webhook struct {
 	UpdatedByUserID int32
 }
 
+// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
 type OutboundRequestLogItem struct {
 	ID                 string              `json:"id"`
 	StartedAt          time.Time           `json:"startedAt"`

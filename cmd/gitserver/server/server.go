@@ -993,14 +993,13 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var resp protocol.IsRepoCloneableResponse
+	resp := protocol.IsRepoCloneableResponse{
+		Cloned: repoCloned(s.dir(req.Repo)),
+	}
 	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
-		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
+		resp.Cloneable = true
 	} else {
-		resp = protocol.IsRepoCloneableResponse{
-			Cloneable: false,
-			Reason:    err.Error(),
-		}
+		resp.Reason = err.Error()
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -2003,7 +2002,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) {
 	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
 		reason := stderr
-		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason); err != nil {
+		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
 		}
 	}

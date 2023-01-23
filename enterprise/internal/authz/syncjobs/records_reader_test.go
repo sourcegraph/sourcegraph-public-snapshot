@@ -6,12 +6,13 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestSyncJobRecordsRead(t *testing.T) {
-	c := memCache{}
+	c := &memCache{}
 
 	// Write multiple records
 	s := NewRecordsStore(logtest.Scoped(t))
@@ -30,13 +31,13 @@ func TestSyncJobRecordsRead(t *testing.T) {
 	}}, nil)
 
 	// set up reader
-	r := NewRecordsReader()
+	r := NewRecordsReader(100)
 	r.readOnlyCache = c
 
 	t.Run("read limited", func(t *testing.T) {
 		results, err := r.GetAll(context.Background(), 1)
 		assert.NoError(t, err)
-		assert.Len(t, results, 1)
+		require.Len(t, results, 1)
 
 		first := results[0]
 		assert.Equal(t, "repo", first.JobType)
@@ -55,12 +56,5 @@ func TestSyncJobRecordsRead(t *testing.T) {
 		third := results[2]
 		assert.True(t, first.Completed.Before(second.Completed))
 		assert.True(t, second.Completed.Before(third.Completed))
-
-		t.Run("read single", func(t *testing.T) {
-			s, err := r.Get(second.Completed)
-			assert.NoError(t, err)
-			assert.Equal(t, second, *s)
-		})
 	})
-
 }

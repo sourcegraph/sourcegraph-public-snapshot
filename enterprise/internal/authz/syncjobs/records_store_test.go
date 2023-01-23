@@ -17,11 +17,11 @@ func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 	s := NewRecordsStore(logtest.Scoped(t))
 
 	// assert default
-	assert.IsType(t, noopCache{}, s.cache)
+	assert.Equal(t, defaultSyncJobsRecordsLimit, s.cache.(*rcache.FIFOList).MaxSize())
 
 	cw := confWatcher{
 		conf: schema.SiteConfiguration{
-			AuthzSyncJobsRecordsTTL: 5,
+			AuthzSyncJobsRecordsLimit: 5,
 		},
 	}
 
@@ -32,7 +32,7 @@ func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 	cw.update()
 
 	// assert updated
-	assert.Equal(t, 5*time.Minute, s.cache.(*rcache.Cache).TTL())
+	assert.Equal(t, 5, s.cache.(*rcache.FIFOList).MaxSize())
 }
 
 func TestSyncJobRecordsRecord(t *testing.T) {
@@ -45,17 +45,21 @@ func TestSyncJobRecordsRecord(t *testing.T) {
 		now:    func() time.Time { return mockTime },
 	}
 	t.Run("success", func(t *testing.T) {
-		c := memCache{}
+		c := &memCache{}
 		s.cache = c
 		s.Record("repo", 12, []ProviderStatus{}, nil)
-		autogold.Want("record_success", memCache{"1136214245000000000": `{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`}).
+		autogold.Want("record_success", &memCache{values: []string{
+			`{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`,
+		}}).
 			Equal(t, c)
 	})
 	t.Run("error", func(t *testing.T) {
-		c := memCache{}
+		c := &memCache{}
 		s.cache = c
 		s.Record("repo", 12, []ProviderStatus{}, errors.New("oh no"))
-		autogold.Want("record_error", memCache{"1136214245000000000": `{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`}).
+		autogold.Want("record_error", &memCache{values: []string{
+			`{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`,
+		}}).
 			Equal(t, c)
 	})
 }

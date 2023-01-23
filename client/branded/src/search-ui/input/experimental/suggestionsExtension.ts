@@ -71,6 +71,7 @@ export interface Target {
     icon?: string
     render?: CustomRenderer
     description?: string
+    note?: string
 }
 export interface Completion {
     type: 'completion'
@@ -276,12 +277,16 @@ class RegisteredSource {
     }
 
     public update(transaction: Transaction): RegisteredSource {
-        // TODO: We probalby don't want to trigger fetches on every doc changed
+        // TODO: We probably don't want to trigger fetches on every doc changed
         if (isUserInput(transaction) || transaction.docChanged) {
             return this.query(transaction.state)
         }
 
         if (transaction.selection) {
+            if (!transaction.selection.main.empty) {
+                // Hide suggestions when the user selects a range in the input
+                return new RegisteredSource(this.source, RegisteredSourceState.Inactive, this.result)
+            }
             if (this.result.valid(transaction.state, transaction.newSelection.main.head)) {
                 return this
             }

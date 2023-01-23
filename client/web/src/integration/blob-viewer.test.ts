@@ -109,6 +109,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
+                                totalLines: 3,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
@@ -195,6 +196,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")',
+                                totalLines: 2,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
@@ -351,6 +353,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
+                                totalLines: 2,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,

@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react'
 
+import { mdiCog } from '@mdi/js'
 import * as H from 'history'
 import { Redirect } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2, Container, ErrorAlert } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, Icon, ButtonLink } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
@@ -14,10 +15,10 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
+import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
 
 import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
-import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
@@ -123,19 +124,49 @@ export const ExternalServiceEditPage: React.FunctionComponent<React.PropsWithChi
             ) : (
                 <PageTitle title="Code host" />
             )}
-            <H2>Update code host connection {combinedLoading && <LoadingSpinner inline={true} />}</H2>
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
 
             {externalService && (
                 <Container className="mb-3">
-                    {externalServiceCategory && (
-                        <div className="mb-3">
-                            <ExternalServiceCard {...externalServiceCategory} />
-                        </div>
-                    )}
+                    <PageHeader
+                        path={[
+                            { icon: mdiCog },
+                            { to: '/site-admin/external-services', text: 'Code hosts' },
+                            {
+                                text: (
+                                    <>
+                                        {externalService.displayName}
+                                        {externalServiceCategory && (
+                                            <Icon
+                                                inline={true}
+                                                as={externalServiceCategory.icon}
+                                                aria-label="Code host logo"
+                                                className="ml-2"
+                                            />
+                                        )}
+                                    </>
+                                ),
+                            },
+                        ]}
+                        byline={
+                            <CreatedByAndUpdatedByInfoByline
+                                createdAt={externalService.createdAt}
+                                updatedAt={externalService.updatedAt}
+                                noAuthor={true}
+                            />
+                        }
+                        className="mb-3"
+                        headingElement="h2"
+                        actions={
+                            <ButtonLink to={`/site-admin/external-services/${externalServiceID}`} variant="secondary">
+                                Cancel
+                            </ButtonLink>
+                        }
+                    />
                     {externalServiceCategory && (
                         <ExternalServiceForm
                             input={{ ...externalService }}
+                            externalServiceID={externalServiceID}
                             editorActions={externalServiceCategory.editorActions}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             error={updateExternalServiceError}

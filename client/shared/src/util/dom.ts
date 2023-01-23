@@ -39,6 +39,7 @@ const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
  */
 export function createSVGIcon(pathSpec: string, ariaLabel?: string): SVGElement {
     const svg = document.createElementNS(SVG_NAMESPACE, 'svg')
+    svg.style.fill = 'currentcolor'
     svg.setAttribute('viewBox', '0 0 24 24')
     if (ariaLabel) {
         svg.setAttributeNS(HTML_NAMESPACE, 'aria-label', ariaLabel)

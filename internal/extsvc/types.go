@@ -26,8 +26,9 @@ type Account struct {
 	UserID      int32
 	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
 	AccountData // AuthData, Data
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	PublicAccountData
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // AccountSpec specifies a user external account by its external identifier (i.e., by the
@@ -45,6 +46,15 @@ type AccountSpec struct {
 type AccountData struct {
 	AuthData *EncryptableData
 	Data     *EncryptableData
+}
+
+// PublicAccountData contains a few fields from the AccountData.Data mentioned above.
+// We only expose publicly available fields in this struct.
+// See the GraphQL API's corresponding fields for documentation.
+type PublicAccountData struct {
+	DisplayName *string `json:"displayName,omitempty"`
+	Login       *string `json:"login,omitempty"`
+	URL         *string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]
@@ -128,6 +138,7 @@ const (
 	KindRubyPackages    = "RUBYPACKAGES"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
+	KindAzureDevOps     = "AZUREDEVOPS"
 	KindOther           = "OTHER"
 )
 
@@ -172,6 +183,9 @@ const (
 
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
+
+	// TypeAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	TypeAzureDevOps = "azuredevops"
 
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
@@ -228,6 +242,8 @@ func KindToType(kind string) string {
 		return TypeGoModules
 	case KindPagure:
 		return TypePagure
+	case KindAzureDevOps:
+		return TypeAzureDevOps
 	case KindOther:
 		return TypeOther
 	default:
@@ -271,6 +287,8 @@ func TypeToKind(t string) string {
 		return KindGoPackages
 	case TypePagure:
 		return KindPagure
+	case TypeAzureDevOps:
+		return KindAzureDevOps
 	case TypeOther:
 		return KindOther
 	default:
@@ -326,6 +344,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeRubyPackages, true
 	case TypePagure:
 		return TypePagure, true
+	case TypeAzureDevOps:
+		return TypeAzureDevOps, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -367,6 +387,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindRubyPackages, true
 	case KindPagure:
 		return KindPagure, true
+	case KindAzureDevOps:
+		return KindAzureDevOps, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -381,6 +403,7 @@ var supportsRepoExclusion = map[string]bool{
 	KindGitHub:          true,
 	KindGitLab:          true,
 	KindGitolite:        true,
+	KindAzureDevOps:     true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports
@@ -465,6 +488,8 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
+	case KindAzureDevOps:
+		return nil, errors.New("TODO: @varsanojidan add for ADO once the schema is implemented.")
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
@@ -773,6 +798,7 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return KindRubyPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
+	// TODO: @varsanojidan add ADO once the schema is implemented.
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}

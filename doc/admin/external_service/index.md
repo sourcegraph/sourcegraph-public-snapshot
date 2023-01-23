@@ -77,8 +77,8 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td>BitBucket Cloud</td>
         <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
-        <td class="indexer-implemented-n">✗</td> <!-- Permissions Syncing -->
-        <td class="indexer-implemented-n">✗</td> <!-- Authentication -->
+        <td class="indexer-implemented-n">✓</td> <!-- Permissions Syncing -->
+        <td class="indexer-implemented-n">✓</td> <!-- Authentication -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Monitors -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Insights -->

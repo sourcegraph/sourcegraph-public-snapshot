@@ -3,8 +3,6 @@ package syncjobs
 import (
 	"context"
 	"encoding/json"
-	"sort"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -14,51 +12,49 @@ import (
 type recordsReader struct {
 	// readOnlyCache is a replaceable abstraction over rcache.Cache.
 	readOnlyCache interface {
-		ListKeys(ctx context.Context) ([]string, error)
-		GetMulti(keys ...string) [][]byte
+		Slice(ctx context.Context, from, to int) ([][]byte, error)
 	}
 }
 
-func NewRecordsReader() *recordsReader {
+func NewRecordsReader(limit int) *recordsReader {
 	return &recordsReader{
-		readOnlyCache: rcache.New(syncJobsRecordsPrefix),
+		// The cache is read-only in recordsReader, so the limit doesn't affect
+		// the contents of the list - it doesn't need to align with the actual
+		// limit of the list.
+		readOnlyCache: rcache.NewFIFOList(syncJobsRecordsKey, limit),
 	}
 }
 
-// Get retrieves a record by timestamp.
-func (r *recordsReader) Get(timestamp time.Time) (*Status, error) {
-	res := r.readOnlyCache.GetMulti(strconv.FormatInt(timestamp.UTC().UnixNano(), 10))
-	if len(res) == 0 || len(res[0]) == 0 {
-		return nil, errors.New("record not found")
+func (r *recordsReader) Get(ctx context.Context, timestamp time.Time) (*Status, error) {
+	items, err := r.GetAll(ctx, -1)
+	if err != nil {
+		return nil, errors.Wrap(err, "list jobs")
 	}
-	var s Status
-	if err := json.Unmarshal(res[0], &s); err != nil {
-		return nil, errors.Wrap(err, "invalid record")
+	for _, i := range items {
+		if i.Completed.Equal(timestamp) {
+			return &i, nil
+		}
 	}
-	return &s, nil
+	return nil, errors.New("job not found")
 }
 
 // GetAll retrieves the first n records, with the most recent records first.
 func (r *recordsReader) GetAll(ctx context.Context, first int) ([]Status, error) {
-	keys, err := r.readOnlyCache.ListKeys(ctx)
+	items, err := r.readOnlyCache.Slice(ctx, 0, first)
 	if err != nil {
 		return nil, errors.Wrap(err, "list jobs")
 	}
 
-	// keys are timestamps
-	sort.Strings(keys)
-
 	switch {
 	case first <= 0:
 		return []Status{}, nil
-	case first < len(keys):
-		keys = keys[:first]
+	case first < len(items):
+		items = items[:first]
 	}
 
 	// get values
-	vals := r.readOnlyCache.GetMulti(keys...)
-	records := make([]Status, 0, len(vals))
-	for _, v := range vals {
+	records := make([]Status, 0, len(items))
+	for _, v := range items {
 		var j Status
 		if err := json.Unmarshal(v, &j); err != nil {
 			continue // discard
@@ -66,5 +62,6 @@ func (r *recordsReader) GetAll(ctx context.Context, first int) ([]Status, error)
 		records = append(records, j)
 	}
 
+	// records are already ~sorted
 	return records, nil
 }

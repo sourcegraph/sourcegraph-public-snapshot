@@ -2,6 +2,7 @@ import { InsightViewNode, SeriesSortDirection, SeriesSortMode, TimeIntervalStepU
 
 const DEFAULT_SERIES_DISPLAY_OPTIONS = {
     limit: 20,
+    numSamples: null,
     sortOptions: {
         direction: SeriesSortDirection.DESC,
         mode: SeriesSortMode.RESULT_COUNT,
@@ -16,11 +17,10 @@ interface InsightOptions {
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
     id: options.id ?? '001',
-    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         __typename: 'InsightViewFilters',
         searchContexts: [],
         includeRepoRegex: '',
@@ -46,6 +46,10 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     dataSeriesDefinitions: [
         {
             __typename: 'SearchInsightDataSeriesDefinition',
@@ -53,10 +57,6 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
             query: 'patternType:regex case:yes \\*\\sas\\sGQL',
             isCalculated: options.type === 'calculated',
             generatedFromCaptureGroups: false,
-            repositoryScope: {
-                __typename: 'InsightRepositoryScope',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-            },
             timeScope: {
                 __typename: 'InsightIntervalTimeScope',
                 unit: TimeIntervalStepUnit.WEEK,
@@ -70,10 +70,6 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
             query: "patternType:regexp case:yes /graphql-operations'",
             isCalculated: options.type === 'calculated',
             generatedFromCaptureGroups: false,
-            repositoryScope: {
-                __typename: 'InsightRepositoryScope',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-            },
             timeScope: {
                 __typename: 'InsightIntervalTimeScope',
                 unit: TimeIntervalStepUnit.WEEK,
@@ -87,13 +83,12 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
 export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '002',
-    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     dashboards: { nodes: [] },
 
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
@@ -111,6 +106,10 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     dataSeriesDefinitions: [
         {
             __typename: 'SearchInsightDataSeriesDefinition',
@@ -118,10 +117,6 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
             query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\(',
             isCalculated: false,
             generatedFromCaptureGroups: false,
-            repositoryScope: {
-                __typename: 'InsightRepositoryScope',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-            },
             timeScope: {
                 __typename: 'InsightIntervalTimeScope',
                 unit: TimeIntervalStepUnit.WEEK,
@@ -135,13 +130,12 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
 export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '003',
-    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     dashboards: { nodes: [] },
 
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
@@ -152,14 +146,14 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
         title: 'Sourcegraph languages',
         otherThreshold: 0.03,
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '001',
             query: '',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                __typename: 'InsightRepositoryScope',
-            },
             timeScope: {
                 unit: TimeIntervalStepUnit.MONTH,
                 value: 0,

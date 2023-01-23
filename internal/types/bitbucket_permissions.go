@@ -1,10 +1,14 @@
 package types
 
 import (
+	"database/sql/driver"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
+
+type ExecutionLogEntry interface {
+	Scan(value any) error
+	Value() (driver.Value, error)
+}
 
 // BitbucketProjectPermissionJob represents a task to apply a set of permissions
 // to all the repos of the given Bitbucket project.
@@ -19,7 +23,7 @@ type BitbucketProjectPermissionJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []ExecutionLogEntry
 	WorkerHostname  string
 
 	// Name of the Bitbucket Project

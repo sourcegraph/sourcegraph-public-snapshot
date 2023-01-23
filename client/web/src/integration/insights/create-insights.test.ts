@@ -154,7 +154,7 @@ describe('Code insight create insight page', () => {
                         view: {
                             id: '001',
                             isFrozen: false,
-                            appliedFilters: {
+                            defaultFilters: {
                                 includeRepoRegex: null,
                                 excludeRepoRegex: null,
                                 searchContexts: [],
@@ -181,14 +181,14 @@ describe('Code insight create insight page', () => {
                                     },
                                 ],
                             },
+                            repositoryDefinition: {
+                                repositories: ['github.com/sourcegraph/sourcegraph'],
+                                __typename: 'InsightRepositoryScope',
+                            },
                             dataSeriesDefinitions: [
                                 {
                                     seriesId: '1',
                                     query: 'test series #1 query',
-                                    repositoryScope: {
-                                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
                                     timeScope: {
                                         unit: TimeIntervalStepUnit.MONTH,
                                         value: 2,
@@ -202,10 +202,6 @@ describe('Code insight create insight page', () => {
                                 {
                                     seriesId: '1',
                                     query: 'test series #2 query',
-                                    repositoryScope: {
-                                        repositories: ['github.com/sourcegraph/sourcegraph'],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
                                     timeScope: {
                                         unit: TimeIntervalStepUnit.MONTH,
                                         value: 2,
@@ -217,15 +213,9 @@ describe('Code insight create insight page', () => {
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],
-                            appliedSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    direction: null,
-                                    mode: null,
-                                },
-                            },
                             defaultSeriesDisplayOptions: {
                                 limit: null,
+                                numSamples: null,
                                 sortOptions: {
                                     direction: null,
                                     mode: null,

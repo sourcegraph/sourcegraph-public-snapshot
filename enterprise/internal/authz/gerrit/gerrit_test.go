@@ -72,9 +72,9 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 func TestProvider_ValidateConnection(t *testing.T) {
 	testCases := []struct {
-		name     string
-		client   mockClient
-		warnings []string
+		name    string
+		client  mockClient
+		wantErr string
 	}{
 		{
 			name: "GetGroup fails",
@@ -83,7 +83,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					return gerrit.Group{}, errors.New("fake error")
 				},
 			},
-			warnings: []string{fmt.Sprintf("Unable to get %s group: %v", adminGroupName, errors.New("fake error"))},
+			wantErr: fmt.Sprintf("Unable to get %s group: %v", adminGroupName, errors.New("fake error")),
 		},
 		{
 			name: "no access to admin group",
@@ -94,7 +94,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					}, nil
 				},
 			},
-			warnings: []string{fmt.Sprintf("Gerrit credentials not sufficent enough to query %s group", adminGroupName)},
+			wantErr: fmt.Sprintf("Gerrit credentials not sufficent enough to query %s group", adminGroupName),
 		},
 		{
 			name: "admin group is valid",
@@ -107,14 +107,18 @@ func TestProvider_ValidateConnection(t *testing.T) {
 					}, nil
 				},
 			},
-			warnings: []string{},
+			wantErr: "",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			p := NewTestProvider(&tc.client)
-			warnings := p.ValidateConnection(context.Background())
-			if diff := cmp.Diff(warnings, tc.warnings); diff != "" {
+			err := p.ValidateConnection(context.Background())
+			errMessage := ""
+			if err != nil {
+				errMessage = err.Error()
+			}
+			if diff := cmp.Diff(errMessage, tc.wantErr); diff != "" {
 				t.Fatalf("warnings did not match: %s", diff)
 			}
 
