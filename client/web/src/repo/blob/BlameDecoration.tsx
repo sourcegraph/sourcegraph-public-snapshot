@@ -175,8 +175,8 @@ export const BlameDecoration: React.FunctionComponent<{
                     >
                         {hideRecency ? (
                             <span className={styles.content} data-line-decoration-attachment-content={true}>
-                                {`${displayInfo.dateString} • ${displayInfo.username}${
-                                    displayInfo.displayName
+                                {`${displayInfo.dateString} • ${displayInfo.displayName}${
+                                    displayInfo.username
                                 } [${truncate(displayInfo.message, { length: 45 })}]`}
                             </span>
                         ) : (
@@ -208,7 +208,7 @@ export const BlameDecoration: React.FunctionComponent<{
                                 <span className={styles.content} data-line-decoration-attachment-content={true}>
                                     {blameHunk.author.person ? (
                                         <>
-                                            {`${displayInfo.username}${displayInfo.displayName}`.split(' ')[0]}
+                                            {`${displayInfo.displayName}${displayInfo.username}`.split(' ')[0]}
                                             {' • '}
                                         </>
                                     ) : null}

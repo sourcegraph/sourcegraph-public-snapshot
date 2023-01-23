@@ -78,14 +78,19 @@ func compile(pattern string) (globPattern, error) {
 			glob = append(glob, exactMatch(part))
 		}
 	}
-	// Trailing `/` is equivalent with trailing `/**/*`.
-	// Such pattern matches any files within the directory sub-tree
-	// anchored at the directory that the pattern describes.
-	// However, this pattern does not match if the path finishes
-	// with the part that matches token preceeding `/`. This is why
-	// the extra `*` is needed, and `/**` will not suffice.
+	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
 	if strings.HasSuffix(pattern, separator) {
-		glob = append(glob, anySubPath{}, anyMatch{})
+		glob = append(glob, anySubPath{})
+	}
+	// Trailing `/**` (explicitly or implicitly like above) is necessarily
+	// translated to `/**/*.
+	// This is because, trailing `/**` should not match if the path finishes
+	// with the part that matches up to and excluding final `**` wildcard.
+	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
+	if len(glob) > 0 {
+		if _, ok := glob[len(glob)-1].(anySubPath); ok {
+			glob = append(glob, anyMatch{})
+		}
 	}
 	return glob, nil
 }

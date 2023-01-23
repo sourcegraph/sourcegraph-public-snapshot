@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "symbols_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/sourcegraph-oss/osscmd",
+        "//cmd/symbols/shared",
+    ],
+)
+
+go_binary(
+    name = "symbols",
+    embed = [":symbols_lib"],
+    visibility = ["//visibility:public"],
+)

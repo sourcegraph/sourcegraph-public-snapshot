@@ -26,33 +26,25 @@ type RecordsStore struct {
 	// cache is a replaceable abstraction over rcache.FIFOList.
 	cache interface {
 		Insert(v []byte) error
-		SetMaxSize(int)
 	}
 }
 
-func NewRecordsStore(logger log.Logger) *RecordsStore {
+func NewRecordsStore(logger log.Logger, c conftypes.SiteConfigQuerier) *RecordsStore {
 	return &RecordsStore{
 		logger: logger,
-		cache:  rcache.NewFIFOList(syncJobsRecordsKey, defaultSyncJobsRecordsLimit),
-		now:    time.Now,
+		cache: rcache.NewFIFOListDynamic(syncJobsRecordsKey, func() int {
+			return syncJobsRecordsLimit(c)
+		}),
+		now: time.Now,
 	}
 }
 
-func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
-	c.Watch(func() {
-		recordsLimit := c.SiteConfig().AuthzSyncJobsRecordsLimit
-		if recordsLimit == 0 {
-			recordsLimit = defaultSyncJobsRecordsLimit
-		}
-
-		// Setting cache size to <=0 disables it
-		r.cache.SetMaxSize(recordsLimit)
-		if recordsLimit > 0 {
-			r.logger.Debug("enabled records store cache", log.Int("limit", recordsLimit))
-		} else {
-			r.logger.Debug("disabled records store cache")
-		}
-	})
+func syncJobsRecordsLimit(c conftypes.SiteConfigQuerier) int {
+	recordsLimit := c.SiteConfig().AuthzSyncJobsRecordsLimit
+	if recordsLimit == 0 {
+		return defaultSyncJobsRecordsLimit
+	}
+	return recordsLimit
 }
 
 // Record inserts a record for this job's outcome into the records store.

@@ -106,7 +106,7 @@ func NewPermsSyncer(
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
-		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store")),
+		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store"), conf.DefaultClient()),
 	}
 }
 
@@ -1354,7 +1354,6 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.recordsStore.Watch(conf.DefaultClient())
 
 	<-ctx.Done()
 }

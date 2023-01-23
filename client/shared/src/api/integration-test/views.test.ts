@@ -3,9 +3,8 @@ import { first, take, toArray } from 'rxjs/operators'
 
 import { ContributableViewContainer } from '@sourcegraph/client-api'
 
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 import { wrapRemoteObservable } from '../client/api/common'
-
-import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('Views (integration)', () => {
     describe('app.createPanelView', () => {

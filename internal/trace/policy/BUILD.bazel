@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policy",
+    srcs = ["policy.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/trace/policy",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@com_github_opentracing_contrib_go_stdlib//nethttp",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)

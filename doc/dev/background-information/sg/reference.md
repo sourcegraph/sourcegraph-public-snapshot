@@ -241,6 +241,7 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * bzl
+* wolfi
 * main-dry-run
 * docker-images-patch
 * docker-images-patch-notest
@@ -495,7 +496,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:
