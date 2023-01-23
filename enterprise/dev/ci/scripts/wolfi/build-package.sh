@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "/root" # TODO: Only used in local Docker
 
 set -euf -o pipefail
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
