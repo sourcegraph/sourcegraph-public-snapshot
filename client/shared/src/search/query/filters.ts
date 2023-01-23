@@ -139,7 +139,7 @@ export interface Completion {
     asSnippet?: boolean
 }
 
-interface BaseFilterDefinition {
+export interface BaseFilterDefinition {
     alias?: keyof typeof AliasedFilterType
     description: string
     discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
@@ -152,7 +152,7 @@ interface BaseFilterDefinition {
     singular?: boolean
 }
 
-interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'description'> {
+export interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'description'> {
     negatable: true
     description: (negated: boolean) => string
 }

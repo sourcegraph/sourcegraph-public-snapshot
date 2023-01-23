@@ -17,7 +17,7 @@ import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
 import styles from './PanelView.module.scss'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps, TelemetryProps {
+export interface Props extends ExtensionsControllerProps, SettingsCascadeProps, TelemetryProps {
     panelView: PanelViewWithComponent
     repoName?: string
     location: H.Location
