@@ -35,45 +35,44 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 		return nil, err
 	}
 
-	tx, err := r.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var executorConnection *executorConnectionResolver
+	err = r.db.WithTransact(ctx, func(tx database.DB) error {
+		opts := database.ExecutorStoreListOptions{
+			Offset: offset,
+			Limit:  int(args.First),
+		}
+		if args.Query != nil {
+			opts.Query = *args.Query
+		}
+		if args.Active != nil {
+			opts.Active = *args.Active
+		}
+		execs, err := tx.Executors().List(ctx, opts)
+		if err != nil {
+			return err
+		}
+		totalCount, err := tx.Executors().Count(ctx, opts)
+		if err != nil {
+			return err
+		}
 
-	opts := database.ExecutorStoreListOptions{
-		Offset: offset,
-		Limit:  int(args.First),
-	}
-	if args.Query != nil {
-		opts.Query = *args.Query
-	}
-	if args.Active != nil {
-		opts.Active = *args.Active
-	}
-	execs, err := tx.Executors().List(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	totalCount, err := tx.Executors().Count(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
+		resolvers := make([]*ExecutorResolver, 0, len(execs))
+		for _, executor := range execs {
+			resolvers = append(resolvers, &ExecutorResolver{executor: executor})
+		}
 
-	resolvers := make([]*ExecutorResolver, 0, len(execs))
-	for _, executor := range execs {
-		resolvers = append(resolvers, &ExecutorResolver{executor: executor})
-	}
+		nextOffset := graphqlutil.NextOffset(offset, len(execs), totalCount)
 
-	nextOffset := graphqlutil.NextOffset(offset, len(execs), totalCount)
+		executorConnection = &executorConnectionResolver{
+			resolvers:  resolvers,
+			totalCount: totalCount,
+			nextOffset: nextOffset,
+		}
 
-	executorConnection := &executorConnectionResolver{
-		resolvers:  resolvers,
-		totalCount: totalCount,
-		nextOffset: nextOffset,
-	}
+		return nil
+	})
 
-	return executorConnection, nil
+	return executorConnection, err
 }
 
 func (r *schemaResolver) AreExecutorsConfigured() bool {
