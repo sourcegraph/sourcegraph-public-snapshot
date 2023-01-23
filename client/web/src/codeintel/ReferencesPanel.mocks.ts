@@ -96,7 +96,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     const resolveRepoRevisionBlobVariables: ResolveRepoAndRevisionVariables = {
         repoName,
         filePath: path,
-        revision: '',
+        revision: commit,
     }
 
     const fetchHighlightedBlobVariables: ReferencesPanelHighlightedBlobVariables = {
@@ -108,7 +108,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     }
 
     return {
-        url: `/${repoName}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
+        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
         requestMocks: [
             {
                 request: {
