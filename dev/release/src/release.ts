@@ -35,7 +35,7 @@ import {
     ensureReleaseBranchUpToDate,
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
-    getLatestTag,
+    getLatestTag, ReadCache,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -58,6 +58,7 @@ export type StepID =
     | 'release:close'
     // util
     | 'util:clear-cache'
+    | 'util:test-cache'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
@@ -812,6 +813,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Clear release tool cache',
         run: () => {
             rmdirSync(cacheFolder, { recursive: true })
+        },
+    },
+    {
+        id: 'util:test-cache',
+        description: 'test release tool cache',
+        run: async () => {
+            // rmdirSync(cacheFolder, { recursive: true })
+            await ReadCache().then(value => console.log(value)).catch()
         },
     },
     {

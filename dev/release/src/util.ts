@@ -193,3 +193,23 @@ export async function getContainerRegistryCredential(registryHostname: string): 
     }
     return credential
 }
+
+interface ReleaseCache {
+    githubToken?: string
+    dockerUsername?: string
+    dockerPassword?: string
+    slackWebhook?: string
+    workingVersion?: string
+}
+
+const newCachePath = './jsonCache.json'
+
+export async function ReadCache(): Promise<ReleaseCache> {
+    try {
+        const buf = await readFile(newCachePath)
+        return JSON.parse(buf.toString())
+    } catch {
+        await writeFile(newCachePath, JSON.stringify({}))
+        return {}
+    }
+}
