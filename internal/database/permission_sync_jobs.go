@@ -20,6 +20,8 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+const CancellationReasonHigherPriority = "A job with higher priority was added."
+
 type PermissionSyncJobOpts struct {
 	HighPriority      bool
 	InvalidateCaches  bool
@@ -39,7 +41,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	CancelQueuedJob(ctx context.Context, id int) error
+	CancelQueuedJob(ctx context.Context, reason string, id int) error
 }
 
 type permissionSyncJobStore struct {
@@ -196,7 +198,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 		return nil
 	}
 
-	err = tx.CancelQueuedJob(ctx, existingJob.ID)
+	err = tx.CancelQueuedJob(ctx, CancellationReasonHigherPriority, existingJob.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
@@ -207,13 +209,13 @@ type notFoundError struct{ error }
 
 func (e notFoundError) NotFound() bool { return true }
 
-func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, id int) error {
+func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, reason string, id int) error {
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE permission_sync_jobs
-SET cancel = TRUE, state = 'canceled', finished_at = %s
+SET cancel = TRUE, state = 'canceled', finished_at = %s, cancellation_reason = %s
 WHERE id = %s AND state = 'queued' AND cancel IS FALSE
-`, now, id)
+`, now, reason, id)
 
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -312,21 +314,22 @@ ORDER BY id ASC
 `
 
 type PermissionSyncJob struct {
-	ID                int
-	State             string
-	FailureMessage    *string
-	Reason            string
-	TriggeredByUserID int32
-	QueuedAt          time.Time
-	StartedAt         time.Time
-	FinishedAt        time.Time
-	ProcessAfter      time.Time
-	NumResets         int
-	NumFailures       int
-	LastHeartbeatAt   time.Time
-	ExecutionLogs     []workerutil.ExecutionLogEntry
-	WorkerHostname    string
-	Cancel            bool
+	ID                 int
+	State              string
+	FailureMessage     *string
+	Reason             string
+	CancellationReason string
+	TriggeredByUserID  int32
+	QueuedAt           time.Time
+	StartedAt          time.Time
+	FinishedAt         time.Time
+	ProcessAfter       time.Time
+	NumResets          int
+	NumFailures        int
+	LastHeartbeatAt    time.Time
+	ExecutionLogs      []workerutil.ExecutionLogEntry
+	WorkerHostname     string
+	Cancel             bool
 
 	RepositoryID int
 	UserID       int
@@ -341,6 +344,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
 	sqlf.Sprintf("permission_sync_jobs.state"),
 	sqlf.Sprintf("permission_sync_jobs.reason"),
+	sqlf.Sprintf("permission_sync_jobs.cancellation_reason"),
 	sqlf.Sprintf("permission_sync_jobs.triggered_by_user_id"),
 	sqlf.Sprintf("permission_sync_jobs.failure_message"),
 	sqlf.Sprintf("permission_sync_jobs.queued_at"),
@@ -376,6 +380,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.ID,
 		&job.State,
 		&job.Reason,
+		&dbutil.NullString{S: &job.CancellationReason},
 		&dbutil.NullInt32{N: &job.TriggeredByUserID},
 		&job.FailureMessage,
 		&job.QueuedAt,

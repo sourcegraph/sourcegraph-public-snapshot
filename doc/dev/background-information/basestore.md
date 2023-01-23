@@ -71,7 +71,7 @@ func DoSomethingAtomicOverTwoStores(ctx context.Context, store *MyStore, otherSt
 
 **Note**: This is not well-defined over two stores targeting a different physical database.
 
-## Using *basestore.Store
+## Using `*basestore.Store`
 
 The [`Store`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/database/basestore/store.go#L37:6) struct defined in [github.com/sourcegraph/sourcegraph/internal/database/basestore](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/tree/internal/database/basestore) can be used to quickly bootstrap the base functionalities described above.
 
@@ -146,5 +146,51 @@ func (s *MyStore) ThingsForDomain(ctx context.Context, domain string, limit, off
 func (s *MyStore) InsertThingForDomain(ctx context.Context, domain, value string) error {
 	// Exec and throw away result
 	return s.Store.Exec(sqlf.Sprintf("INSERT INTO thing (domain, value) VALUES (%s, %s)", domain, value))
+}
+```
+
+## Using `basestore` helpers for scanning
+
+The `basestore` package offers a lot of helpers for scanning database rows returned by `Query`.
+
+Take a look at
+[`basestore/scan_values.go`](https://github.com/sourcegraph/sourcegraph/blob/e430ee72e977efeafaef678ac53436833c3990ec/internal/database/basestore/scan_values.go) and [`basestore/scan_collections.go`](https://github.com/sourcegraph/sourcegraph/blob/e430ee72e977efeafaef678ac53436833c3990ec/internal/database/basestore/scan_collections.go) to see all of them.
+
+Here are a few examples on how to use them:
+
+```go
+func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
+	// Scan int
+	totalCount, found, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM horses WHERE name = 'chonky horse';")))
+	if err != nil {
+		return err
+	}
+	if !found {
+		fmt.Println("no chonky horse")
+	}
+
+	// Scan []string
+	names, err := basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf("SELECT nicknames FROM horses;")))
+	if err != nil {
+		return err
+	}
+
+	// Scan nullable text into string
+	script, err = basestore.ScanFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT passport_name FROM horses WHERE id = 1;")))
+	if err != nil {
+		return err
+	}
+
+	// Scan []int32
+	ids, err := basestore.ScanInt32s(s.Query(ctx, sqlf.Sprintf("SELECT id FROM horses;")))
+	if err != nil {
+		return err
+	}
+
+	// Scan bool
+	exists, found, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM horses WHERE age < 10;")))
+	if err != nil {
+		return err
+	}
 }
 ```
