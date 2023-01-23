@@ -83,7 +83,7 @@ func compile(pattern string) (globPattern, error) {
 		glob = append(glob, anySubPath{})
 	}
 	// Trailing `/**` (explicitcly or implicitly like above) is neccessarily
-	// transleted to `/**/*.
+	// translated to `/**/*.
 	// This is because, trailing `/**` should not match if the path finishes
 	// with the part that matches up to and excluding final `**` wildcard.
 	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
