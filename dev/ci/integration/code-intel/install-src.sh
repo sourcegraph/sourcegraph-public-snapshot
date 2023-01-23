@@ -17,7 +17,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-git clone git@github.com:sourcegraph/src-cli.git "${TEMP}" --depth 1
+git clone git@github.com:sourcegraph/src-cli.git "${TEMP}"
 pushd "${TEMP}"
 git checkout "${VERSION}"
 mkdir -p "${root_dir}/.bin"
