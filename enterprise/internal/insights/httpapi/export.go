@@ -15,6 +15,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -52,6 +53,8 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, notFoundError) {
 				http.Error(w, err.Error(), http.StatusNotFound)
+			} else if errors.Is(err, authenticationError) {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
 			} else {
 				http.Error(w, fmt.Sprintf("failed to export data: %v", err), http.StatusInternalServerError)
 			}
@@ -73,16 +76,21 @@ type codeInsightsDataArchive struct {
 }
 
 var notFoundError = errors.New("insight not found")
+var authenticationError = errors.New("authentication error")
 
 func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*codeInsightsDataArchive, error) {
+	currentActor := actor.FromContext(ctx)
+	if !currentActor.IsAuthenticated() {
+		return nil, authenticationError
+	}
+	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
+	if err != nil {
+		return nil, authenticationError
+	}
+
 	var insightViewId string
 	if err := relay.UnmarshalSpec(graphql.ID(id), &insightViewId); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal insight view ID")
-	}
-
-	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
-	if err != nil {
-		return nil, errors.New("error with session")
 	}
 
 	visibleViewSeries, err := h.insightStore.GetAll(ctx, store.InsightQueryArgs{
