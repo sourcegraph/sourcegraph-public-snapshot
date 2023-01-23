@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DB is an interface that embeds dbutil.DB, adding methods to
@@ -106,28 +105,10 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
-var ErrPanicDuringTransaction = errors.New("encountered panic during transaction")
-
-func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) (err error) {
-	tx, err := d.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			// If we're panicking, roll back the transaction
-			// even when err is nil.
-			err = tx.Done(ErrPanicDuringTransaction)
-			// Re-throw the panic after rolling back the transaction
-			panic(r)
-		} else {
-			// If we're not panicking, roll back the transaction if the
-			// operation on the transaction failed for whatever reason.
-			err = tx.Done(err)
-		}
-	}()
-	return f(&db{logger: d.logger, Store: tx})
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&db{logger: d.logger, Store: tx})
+	})
 }
 
 func (d *db) Done(err error) error {
