@@ -67,10 +67,6 @@ func (v Value) String() (string, error) {
 	return redis.String(v.reply, v.err)
 }
 
-func (v Value) values() Values {
-	return Values{reply: v.reply, err: v.err}
-}
-
 // Values is a response from an operation on KeyValue which returns multiple
 // items. It provides convenient methods to get at the underlying value of the
 // reply.
@@ -138,7 +134,7 @@ func (r *redisKeyValue) HGet(key, field string) Value {
 }
 
 func (r *redisKeyValue) HGetAll(key string) Values {
-	return r.do("HGETALL", r.prefix+key).values()
+	return Values(r.do("HGETALL", r.prefix+key))
 }
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
@@ -156,7 +152,7 @@ func (r *redisKeyValue) LLen(key string) (int, error) {
 	return redis.Int(raw.reply, raw.err)
 }
 func (r *redisKeyValue) LRange(key string, start, stop int) Values {
-	return r.do("LRANGE", r.prefix+key, start, stop).values()
+	return Values(r.do("LRANGE", r.prefix+key, start, stop))
 }
 
 func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
