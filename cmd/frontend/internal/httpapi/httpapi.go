@@ -62,9 +62,6 @@ type Handlers struct {
 
 	// Compute
 	NewComputeStreamHandler enterprise.NewComputeStreamHandler
-
-	// Code Insights
-	CodeInsightsDataExportHandler http.Handler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -139,8 +136,6 @@ func NewHandler(
 	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
-
-	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))

@@ -37,8 +37,6 @@ const (
 	BatchesFileExists = "batches.file.exists"
 	BatchesFileUpload = "batches.file.upload"
 
-	CodeInsightsDataExport = "insights.data.export"
-
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
 	GitInfoRefs            = "internal.git.info-refs"
@@ -80,7 +78,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Name(GitBlameStream)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
-	base.Path("/insights/export/{id}").Methods("GET").Name(CodeInsightsDataExport)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
