@@ -33,6 +33,15 @@ func TestFileOwnersMatch(t *testing.T) {
 			},
 		},
 		{
+			pattern: "directory/path/**",
+			paths: []string{
+				"/directory/path/file",
+				"/directory/path/deeply/nested/file",
+				"/prefix/directory/path/file",
+				"/prefix/directory/path/deeply/nested/file",
+			},
+		},
+		{
 			pattern: "directory/*",
 			paths: []string{
 				"/directory/file",
