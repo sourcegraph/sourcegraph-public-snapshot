@@ -2769,6 +2769,7 @@ A specific kind of external service.
 """
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    AZUREDEVOPS
     BITBUCKETCLOUD
     BITBUCKETSERVER
     GERRIT
