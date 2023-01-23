@@ -113,7 +113,6 @@ func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) (err error) 
 	if err != nil {
 		return err
 	}
-	txDB := &db{logger: d.logger, Store: tx}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -128,7 +127,7 @@ func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) (err error) 
 			err = tx.Done(err)
 		}
 	}()
-	return f(txDB)
+	return f(&db{logger: d.logger, Store: tx})
 }
 
 func (d *db) Done(err error) error {
