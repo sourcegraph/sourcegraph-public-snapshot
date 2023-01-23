@@ -36,6 +36,8 @@ if [ ! -f "wolfi-packages/${name}.yaml" ]; then
   exit 1
 fi
 
+cd "wolfi-packages"
+
 echo " * Building melange package '$name'"
 # TODO: Signing key
 melange build "$name.yaml" --arch x86_64
