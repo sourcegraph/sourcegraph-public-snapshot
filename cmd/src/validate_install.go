@@ -9,15 +9,12 @@ import (
 	"strings"
 
 	"github.com/mattn/go-isatty"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/validate"
+	"github.com/sourcegraph/src-cli/internal/validate/install"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-)
-
-var (
-	validateWarningEmoji = output.EmojiWarning
 )
 
 func init() {
@@ -60,7 +57,7 @@ Environmental variables
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
-		var validationSpec *validate.ValidationSpec
+		var validationSpec *install.ValidationSpec
 
 		if len(flagSet.Args()) == 1 {
 			fileName := flagSet.Arg(0)
@@ -70,14 +67,14 @@ Environmental variables
 			}
 
 			if strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml") {
-				validationSpec, err = validate.LoadYamlConfig(f)
+				validationSpec, err = install.LoadYamlConfig(f)
 				if err != nil {
 					return err
 				}
 			}
 
 			if strings.HasSuffix(fileName, ".json") {
-				validationSpec, err = validate.LoadJsonConfig(f)
+				validationSpec, err = install.LoadJsonConfig(f)
 				if err != nil {
 					return err
 				}
@@ -90,26 +87,26 @@ Environmental variables
 			if err != nil {
 				return errors.Wrap(err, "failed to read installation validation config from pipe")
 			}
-			validationSpec, err = validate.LoadYamlConfig(input)
+			validationSpec, err = install.LoadYamlConfig(input)
 			if err != nil {
 				return err
 			}
 		}
 
 		if validationSpec == nil {
-			validationSpec = validate.DefaultConfig()
+			validationSpec = install.DefaultConfig()
 		}
 
 		envGithubToken := os.Getenv("SRC_GITHUB_TOKEN")
 
 		// will work for now with only GitHub supported but will need to be revisited when other code hosts are supported
 		if envGithubToken == "" {
-			return errors.Newf("%s failed to read `SRC_GITHUB_TOKEN` environment variable", validateWarningEmoji)
+			return errors.Newf("%s  failed to read `SRC_GITHUB_TOKEN` environment variable", validate.WarningSign)
 		}
 
 		validationSpec.ExternalService.Config.GitHub.Token = envGithubToken
 
-		return validate.Installation(context.Background(), client, validationSpec)
+		return install.Validate(context.Background(), client, validationSpec)
 	}
 
 	validateCommands = append(validateCommands, &command{

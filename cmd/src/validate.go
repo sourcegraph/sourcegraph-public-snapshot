@@ -21,6 +21,7 @@ Usage:
 The commands are:
 
 	install        validates a Sourcegraph installation
+	kube           validates a Sourcegraph deployment on a Kubernetes cluster
 
 Use "src validate [command] -h" for more information about a command.
 `

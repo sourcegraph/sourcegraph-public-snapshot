@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 - `src codeintel upload` will now upload SCIP indexes (over LSIF indexes) when the target instance supports it. [#897](https://github.com/sourcegraph/src-cli/pull/897)
 
+- `src validate kube` adds support for validating Sourcegraph deployments on Kubernetes. Validations include Pods, Services, PVCs, and network connectivity. [#926](https://github.com/sourcegraph/src-cli/pull/926)
+
 ### Changed
 
 ### Fixed
