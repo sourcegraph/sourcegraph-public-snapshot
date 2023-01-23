@@ -82,7 +82,7 @@ func compile(pattern string) (globPattern, error) {
 	if strings.HasSuffix(pattern, separator) {
 		glob = append(glob, anySubPath{})
 	}
-	// Trailing `/**` (explicitcly or implicitly like above) is neccessarily
+	// Trailing `/**` (explicitly or implicitly like above) is necessarily
 	// translated to `/**/*.
 	// This is because, trailing `/**` should not match if the path finishes
 	// with the part that matches up to and excluding final `**` wildcard.
