@@ -70,7 +70,13 @@ func SetExternalAccountData(data *extsvc.AccountData, usr *Account, creds *Accou
 	return nil
 }
 
+var MockVerifyAccount func(context.Context, *types.GerritConnection, *AccountCredentials) (*Account, error)
+
 func VerifyAccount(ctx context.Context, conn *types.GerritConnection, creds *AccountCredentials) (*Account, error) {
+	if MockVerifyAccount != nil {
+		return MockVerifyAccount(ctx, conn, creds)
+	}
+
 	auther := &auth.BasicAuth{Username: creds.Username, Password: creds.Password}
 	client, err := NewClient(conn.URN, conn.GerritConnection, nil)
 	if err != nil {
