@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
@@ -14,6 +14,7 @@ import {
     Link,
     LoadingSpinner,
     Tree,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
@@ -197,6 +198,46 @@ function renderNode({
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
 }): React.ReactNode {
+    const submodule = element.entry?.submodule
+    const name = element.entry?.name
+    const url = element.entry?.url
+
+    if (submodule) {
+        const rev = submodule.commit.slice(0, 7)
+        const title = `${name} @ ${rev}`
+
+        let content = <span>{title}</span>
+        if (url) {
+            content = (
+                <Link
+                    to={url ?? '#'}
+                    tabIndex={-1}
+                    onClick={event => {
+                        event.preventDefault()
+                        handleSelect(event)
+                    }}
+                >
+                    {title}
+                </Link>
+            )
+        }
+
+        return (
+            <>
+                <Tooltip content={'Submodule: ' + submodule.url}>
+                    <span>
+                        <Icon
+                            svgPath={mdiSourceRepository}
+                            className={classNames('mr-1', styles.icon)}
+                            aria-label={'Submodule: ' + submodule.url}
+                        />
+                        {content}
+                    </span>
+                </Tooltip>
+            </>
+        )
+    }
+
     return (
         <>
             <Icon
@@ -205,14 +246,14 @@ function renderNode({
                 aria-hidden={true}
             />
             <Link
-                to={element.entry?.url ?? '#'}
+                to={url ?? '#'}
                 tabIndex={-1}
                 onClick={event => {
                     event.preventDefault()
                     handleSelect(event)
                 }}
             >
-                {element.entry?.name}
+                {name}
             </Link>
         </>
     )
