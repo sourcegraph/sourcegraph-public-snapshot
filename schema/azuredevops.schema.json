@@ -25,7 +25,7 @@
       "minLength": 1
     },
     "token": {
-      "description": "The PAT associated with the Azure DevOps username used for authentication.",
+      "description": "The Personal Access Token associated with the Azure DevOps username used for authentication.",
       "type": "string",
       "minLength": 1
     },

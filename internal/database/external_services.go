@@ -468,7 +468,7 @@ func validateAzureDevOpsConnection(azureDevOpsValidators []func(connection *sche
 		err = errors.Append(err, validate(c))
 	}
 	if c.Projects == nil && c.Orgs == nil {
-		err = errors.Append(err, errors.New("at least one of: projects or orgs must be set"))
+		err = errors.Append(err, errors.New("either 'projects' or 'orgs' must be set"))
 	}
 	return err
 }

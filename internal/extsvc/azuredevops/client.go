@@ -127,10 +127,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
 func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
-	switch a.(type) {
-	case *auth.BasicAuth:
-		break
-	default:
+	if _, ok := a.(*auth.BasicAuth); !ok {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 

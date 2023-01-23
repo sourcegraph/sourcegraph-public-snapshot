@@ -1286,8 +1286,8 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
     defaultDisplayName: 'Azure DevOps',
     defaultConfig: `{
   "url": "https://dev.azure.com",
-  "username": "username",
-  "token": "token"
+  "username": "<username>",
+  "token": "<token>"
 }`,
     instructions: (
         <div>
@@ -1296,12 +1296,19 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
                     In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services/Server.
                 </li>
                 <li>
-                    In the configuration below, set <Field>username</Field> to the authenticated Username for the Azure
-                    DevOps Services/Server.
+                    In the configuration below, set <Field>username</Field> to the authenticated username for the Azure
+                    DevOps Services/Server instance.
                 </li>
                 <li>
-                    In the configuration below, set <Field>token</Field> to the authenticated Username for the Azure
-                    DevOps Services/Server.
+                    In the configuration below, set <Field>token</Field> to the authenticated token for the Azure
+                    DevOps Services/Server instance.
+                </li>
+                <li>
+                    See the{' '}
+                    <Link to="https://www.jfrog.com/confluence/display/JFROG/RubyGems+Repositories">
+                        Azure DevOps documentation
+                    </Link>{' '}
+                    for instructions on how to create a Personal Access Token.
                 </li>
             </ol>
         </div>
@@ -1489,7 +1496,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
     ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
-    ...(window.context?.experimentalFeatures?.azuredevops === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
+    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {

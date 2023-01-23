@@ -181,7 +181,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "1 errors - dev.azure.com",
 			kind:    extsvc.KindAzureDevOps,
 			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username"}`,
-			wantErr: "at least one of: projects or orgs must be set",
+			wantErr: "either 'projects' or 'orgs' must be set",
 		},
 		{
 			name:    "0 errors - dev.azure.com",
