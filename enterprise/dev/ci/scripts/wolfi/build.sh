@@ -11,7 +11,7 @@ function cleanup() {
 trap cleanup EXIT
 
 (
-  cd $tmpdir
+  cd "$tmpdir"
   mkdir bin
 
   # Install apko
@@ -48,6 +48,6 @@ apko build --debug apko.yaml \
   "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
 
-docker load < "$tarball"
-docker tag "$image_name" us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
-docker push us.gcr.io/sourcegraph-dev/wolfi-${name}:latest
+docker load <"$tarball"
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
