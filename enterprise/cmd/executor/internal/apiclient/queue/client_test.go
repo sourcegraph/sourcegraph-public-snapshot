@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -98,7 +99,7 @@ func TestMarkComplete(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if marked, err := client.MarkComplete(context.Background(), 42); err != nil {
+		if marked, err := client.MarkComplete(context.Background(), executor.Job{ID: 42, Token: "job-token"}); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if !marked {
 			t.Fatalf("expecting job to be marked")
@@ -118,7 +119,7 @@ func TestMarkCompleteBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if marked, err := client.MarkComplete(context.Background(), 42); err == nil {
+		if marked, err := client.MarkComplete(context.Background(), executor.Job{ID: 42, Token: "job-token"}); err == nil {
 			t.Fatalf("expected an error")
 		} else if marked {
 			t.Fatalf("expecting job to not be marked")
@@ -138,7 +139,7 @@ func TestMarkErrored(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if marked, err := client.MarkErrored(context.Background(), 42, "OH NO"); err != nil {
+		if marked, err := client.MarkErrored(context.Background(), executor.Job{ID: 42, Token: "job-token"}, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if marked {
 			t.Fatalf("expecting job to not be marked")
@@ -158,7 +159,7 @@ func TestMarkErroredBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if marked, err := client.MarkErrored(context.Background(), 42, "OH NO"); err == nil {
+		if marked, err := client.MarkErrored(context.Background(), executor.Job{ID: 42, Token: "job-token"}, "OH NO"); err == nil {
 			t.Fatalf("expected an error")
 		} else if marked {
 			t.Fatalf("expecting job to not be marked")
@@ -178,7 +179,7 @@ func TestMarkFailed(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if marked, err := client.MarkFailed(context.Background(), 42, "OH NO"); err != nil {
+		if marked, err := client.MarkFailed(context.Background(), executor.Job{ID: 42, Token: "job-token"}, "OH NO"); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if marked {
 			t.Fatalf("expecting job to not be marked")
@@ -309,7 +310,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		entryID, err := client.AddExecutionLogEntry(context.Background(), 42, entry)
+		entryID, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry)
 		if err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
@@ -349,7 +350,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, err := client.AddExecutionLogEntry(context.Background(), 42, entry); err == nil {
+		if _, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -386,7 +387,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), 42, 99, entry); err != nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
 	})
@@ -423,7 +424,7 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), 42, 99, entry); err == nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

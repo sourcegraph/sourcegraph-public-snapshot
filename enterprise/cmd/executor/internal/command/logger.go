@@ -102,8 +102,8 @@ type logger struct {
 
 // ExecutionLogEntryStore handle interactions with executor.Job logs.
 type ExecutionLogEntryStore interface {
-	AddExecutionLogEntry(ctx context.Context, id int, entry internalexecutor.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry internalexecutor.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, job executor.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, job executor.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
 }
 
 // logEntryBufSize is the maximum number of log entries that are logged by the
