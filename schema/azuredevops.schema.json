@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "azuredevops.schema.json#",
+  "title": "AzureDevOpsConnection",
+  "description": "Configuration for a connection to Azure DevOps.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "username", "token"],
+  "properties": {
+    "url": {
+      "description": "URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.",
+      "type": "string",
+      "pattern": "^https?://",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "format": "uri",
+      "examples": ["https://dev.azure.com"]
+    },
+    "username": {
+      "description": "A username for authentication withe the Gerrit code host.",
+      "type": "string",
+      "minLength": 1
+    },
+    "token": {
+      "description": "The Personal Access Token associated with the Azure DevOps username used for authentication.",
+      "type": "string",
+      "minLength": 1
+    },
+    "projects": {
+      "description": "An array of projects \"org/project\" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" },
+      "examples": [["org/project"]]
+    },
+    "orgs": {
+      "description": "An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w-]+$" },
+      "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    }
+  }
+}
