@@ -92,6 +92,15 @@ func marshalAccountData(username, email string, acctID int32) (json.RawMessage, 
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	if account == nil {
+		return nil, errors.New("no account provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+	} else if account.AccountData.Data == nil || account.AccountData.AuthData == nil {
+		return nil, errors.New("no account data")
+	}
+
 	_, credentials, err := gerrit.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, err
