@@ -16,9 +16,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,21 +23,24 @@ import (
 type ExportHandler struct {
 	primaryDB database.DB
 
-	seriesStore  *store.Store
-	permStore    *store.InsightPermStore
-	insightStore *store.InsightStore
+	seriesStore         *store.Store
+	permStore           *store.InsightPermStore
+	insightStore        *store.InsightStore
+	searchContextLoader *store.SCLoader
 }
 
 func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) *ExportHandler {
 	insightPermStore := store.NewInsightPermissionStore(db)
 	seriesStore := store.New(insightsDB, insightPermStore)
 	insightsStore := store.NewInsightStore(insightsDB)
+	searchContextLoader := store.NewSCLoader(db)
 
 	return &ExportHandler{
-		primaryDB:    db,
-		seriesStore:  seriesStore,
-		permStore:    insightPermStore,
-		insightStore: insightsStore,
+		primaryDB:           db,
+		seriesStore:         seriesStore,
+		permStore:           insightPermStore,
+		insightStore:        insightsStore,
+		searchContextLoader: searchContextLoader,
 	}
 }
 
@@ -114,8 +114,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		includeRepo(*visibleViewSeries[0].DefaultFilterExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: h.primaryDB}
-	inc, exc, err := unwrapSearchContexts(ctx, scLoader, visibleViewSeries[0].DefaultFilterSearchContexts)
+	inc, exc, err := h.searchContextLoader.UnwrapSearchContexts(ctx, visibleViewSeries[0].DefaultFilterSearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "search context error")
 	}
@@ -185,46 +184,4 @@ func emptyStringIfNil(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-type SearchContextLoader interface {
-	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
-}
-
-type scLoader struct {
-	primary database.DB
-}
-
-func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	return searchcontexts.ResolveSearchContextSpec(ctx, l.primary, name)
-}
-
-func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
-	var include []string
-	var exclude []string
-
-	for _, rawContext := range rawContexts {
-		searchContext, err := loader.GetByName(ctx, rawContext)
-		if err != nil {
-			return nil, nil, err
-		}
-		if searchContext.Query != "" {
-			var plan searchquery.Plan
-			plan, err := searchquery.Pipeline(
-				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
-			)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
-			}
-			inc, exc := plan.ToQ().Repositories()
-			for _, repoFilter := range inc {
-				if len(repoFilter.Revs) > 0 {
-					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
-				}
-				include = append(include, repoFilter.Repo)
-			}
-			exclude = append(exclude, exc...)
-		}
-	}
-	return include, exclude, nil
 }
