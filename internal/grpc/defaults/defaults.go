@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -21,10 +22,12 @@ func DialOptions() []grpc.DialOption {
 	// that are not initialized during init time.
 	return []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(
+			internalgrpc.StreamClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamClientInterceptor(),
 		),
 		grpc.WithChainUnaryInterceptor(
+			internalgrpc.UnaryClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryClientInterceptor(),
 		),
@@ -40,10 +43,12 @@ func ServerOptions() []grpc.ServerOption {
 	// that are not initialized during init time.
 	return []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
+			internalgrpc.StreamServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
 		),
 		grpc.ChainUnaryInterceptor(
+			internalgrpc.UnaryServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
 		),
