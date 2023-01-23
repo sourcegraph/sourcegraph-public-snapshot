@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Search searches repo@commit with p.
@@ -33,31 +33,32 @@ func SearchGRPC(
 	features search.Features,
 	onMatch func(*proto.FileMatch),
 ) (limitHit bool, err error) {
-	r := proto.SearchRequest{
-		Repo:      string(repo),
-		RepoId:    uint32(repoID),
-		CommitOid: string(commit),
-		Branch:    branch,
-		Indexed:   indexed,
-		PatternInfo: &proto.PatternInfo{
-			Pattern:   p.Pattern,
-			IsNegated: p.IsNegated, IsRegexp: p.IsRegExp,
-			IsStructural:                 p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
-			IsCaseSensitive:              p.IsCaseSensitive,
+	r := (&protocol.Request{
+		Repo:   repo,
+		RepoID: repoID,
+		Commit: commit,
+		Branch: branch,
+		PatternInfo: protocol.PatternInfo{
+			Pattern:                      p.Pattern,
 			ExcludePattern:               p.ExcludePattern,
 			IncludePatterns:              p.IncludePatterns,
+			Languages:                    p.Languages,
+			CombyRule:                    p.CombyRule,
+			Select:                       p.Select.Root(),
+			Limit:                        int(p.FileMatchLimit),
+			IsRegExp:                     p.IsRegExp,
+			IsStructuralPat:              p.IsStructuralPat,
+			IsWordMatch:                  p.IsWordMatch,
+			IsCaseSensitive:              p.IsCaseSensitive,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			Limit:                        int64(p.FileMatchLimit),
+			IsNegated:                    p.IsNegated,
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
-			CombyRule:                    p.CombyRule,
-			Languages:                    p.Languages,
-			Select:                       p.Select.Root(),
 		},
-		FetchTimeout: durationpb.New(fetchTimeout),
-		FeatHybrid:   features.HybridSearch,
-	}
+		Indexed:      indexed,
+		FetchTimeout: fetchTimeout,
+		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
@@ -87,7 +88,7 @@ func SearchGRPC(
 		defer clientConn.Close()
 
 		client := proto.NewSearcherClient(clientConn)
-		resp, err := client.Search(ctx, &r)
+		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err
 		}
