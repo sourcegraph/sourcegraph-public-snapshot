@@ -60,10 +60,7 @@
       },
       "examples": [
         [{ "name": "myproject/myrepo" }],
-        [
-          { "name": "myproject/myrepo" },
-          { "name": "myproject/myotherrepo" }
-        ]
+        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }]
       ]
     }
   }
