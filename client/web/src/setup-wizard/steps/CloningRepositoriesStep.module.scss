@@ -1,0 +1,36 @@
+.repo-list {
+    padding: 0;
+    list-style: none;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.repo-item {
+    & + & {
+        border-top: 1px solid var(--border-color);
+    }
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+
+    &-icon {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-right: 0.25rem;
+    }
+
+    &-description {
+        margin-top: 0.15rem;
+        flex-basis: 100%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        color: var(--text-muted);
+    }
+}
