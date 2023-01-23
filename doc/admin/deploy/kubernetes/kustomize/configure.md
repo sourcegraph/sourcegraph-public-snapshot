@@ -245,7 +245,7 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
+Update the following variables under the [OVERLAY CONFIGURATIONS](intro.md#overlay-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```yaml
 # overlays/$OVERLAY_NAME/kustomization.yaml
@@ -307,7 +307,7 @@ sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 
 To configure the hostname for your Sourcegraph ingress, follow these steps:
 
-**Step 1**: Under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section, add the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
+**Step 1**: Under the [OVERLAY CONFIGURATIONS](intro.md#overlay-configurations) section, add the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
 # overlays/$OVERLAY_NAME/kustomization.yaml
@@ -415,7 +415,7 @@ data:
     LS...SSVZBVEUgS0VZLS0tLS0=
 ```
 
-**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
+**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [OVERLAY CONFIGURATIONS](intro.md#overlay-configurations) section:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
