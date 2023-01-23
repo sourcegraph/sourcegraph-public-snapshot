@@ -185,7 +185,10 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 
 func (r *schemaResolver) addGerritExternalAccount(ctx context.Context, userID int32, serviceID string, accountDetails string) error {
 	var accountCredentials gerrit.AccountCredentials
-	json.Unmarshal([]byte(accountDetails), &accountCredentials)
+	err := json.Unmarshal([]byte(accountDetails), &accountCredentials)
+	if err != nil {
+		return err
+	}
 
 	// Fetch external service matching ServiceID
 	svcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
