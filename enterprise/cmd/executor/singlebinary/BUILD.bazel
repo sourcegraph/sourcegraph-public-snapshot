@@ -1,19 +1,18 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "shared",
+    name = "singlebinary",
     srcs = [
+        "doc.go",
         "service.go",
-        "shared.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/singlebinary",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/gitserver/shared",
-        "//enterprise/internal/authz/subrepoperms",
-        "//enterprise/internal/database",
-        "//internal/authz",
-        "//internal/database",
+        "//enterprise/cmd/executor/internal/config",
+        "//enterprise/cmd/executor/internal/run",
+        "//internal/conf/confdefaults",
+        "//internal/conf/deploy",
         "//internal/debugserver",
         "//internal/env",
         "//internal/observation",

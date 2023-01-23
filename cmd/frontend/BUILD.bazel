@@ -6,12 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/frontend/enterprise",
         "//cmd/frontend/shared",
-        "//internal/authz",
-        "//internal/conf/conftypes",
-        "//internal/database",
-        "//internal/env",
+        "//cmd/sourcegraph-oss/osscmd",
     ],
 )
 

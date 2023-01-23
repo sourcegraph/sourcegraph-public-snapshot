@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
-    srcs = ["shared.go"],
+    srcs = [
+        "service.go",
+        "shared.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/shared",
     visibility = ["//visibility:public"],
     deps = [
@@ -18,17 +21,12 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/goroutine",
-        "//internal/hostname",
         "//internal/instrumentation",
-        "//internal/logging",
         "//internal/observation",
-        "//internal/profiler",
         "//internal/search",
+        "//internal/service",
         "//internal/trace",
-        "//internal/tracer",
-        "//internal/version",
         "//lib/errors",
-        "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_keegancsmith_tmpfriend//:tmpfriend",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_sync//errgroup",

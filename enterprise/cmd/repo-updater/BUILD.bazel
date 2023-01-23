@@ -6,9 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/repo-updater/shared",
         "//enterprise/cmd/repo-updater/shared",
-        "//internal/env",
+        "//enterprise/cmd/sourcegraph/enterprisecmd",
     ],
 )
 

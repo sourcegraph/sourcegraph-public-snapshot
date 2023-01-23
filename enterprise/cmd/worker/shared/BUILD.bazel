@@ -2,12 +2,16 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
-    srcs = ["shared.go"],
+    srcs = [
+        "service.go",
+        "shared.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared",
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/globals",
         "//cmd/worker/job",
+        "//cmd/worker/shared",
         "//cmd/worker/shared/init/db",
         "//enterprise/cmd/frontend/worker/auth",
         "//enterprise/cmd/worker/internal/batches",
@@ -18,9 +22,17 @@ go_library(
         "//enterprise/cmd/worker/internal/permissions",
         "//enterprise/cmd/worker/internal/telemetry",
         "//enterprise/internal/authz",
+        "//enterprise/internal/authz/subrepoperms",
+        "//enterprise/internal/database",
+        "//enterprise/internal/oobmigration/migrations",
         "//internal/authz",
         "//internal/conf",
+        "//internal/database",
+        "//internal/debugserver",
+        "//internal/env",
         "//internal/extsvc/versions",
         "//internal/observation",
+        "//internal/service",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

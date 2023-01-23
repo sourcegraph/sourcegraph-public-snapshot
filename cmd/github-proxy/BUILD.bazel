@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/github-proxy/shared",
-        "//internal/env",
+        "//cmd/sourcegraph-oss/osscmd",
     ],
 )
 

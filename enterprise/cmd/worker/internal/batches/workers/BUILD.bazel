@@ -16,6 +16,7 @@ go_library(
         "//enterprise/internal/batches/service",
         "//enterprise/internal/batches/sources",
         "//enterprise/internal/batches/store",
+        "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
         "//internal/actor",
         "//internal/api",

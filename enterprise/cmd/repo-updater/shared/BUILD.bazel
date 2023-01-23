@@ -2,13 +2,17 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
-    srcs = ["shared.go"],
+    srcs = [
+        "service.go",
+        "shared.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/shared",
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/repo-updater/repoupdater",
+        "//cmd/repo-updater/shared",
         "//enterprise/cmd/repo-updater/internal/authz",
         "//enterprise/internal/authz",
         "//enterprise/internal/batches",
@@ -26,6 +30,7 @@ go_library(
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/repos",
+        "//internal/service",
         "//internal/timeutil",
     ],
 )

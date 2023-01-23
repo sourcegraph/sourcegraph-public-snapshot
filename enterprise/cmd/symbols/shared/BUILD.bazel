@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
-    srcs = ["setup.go"],
+    srcs = [
+        "service.go",
+        "setup.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared",
     visibility = ["//visibility:public"],
     deps = [
@@ -16,11 +19,13 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/connections/live",
+        "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/search",
         "//internal/search/result",
+        "//internal/service",
         "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
     ],

@@ -2087,6 +2087,15 @@ def go_dependencies():
         version = "v1.0.3",
     )
     go_repository(
+        name = "com_github_fergusstrange_embedded_postgres",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/fergusstrange/embedded-postgres",
+        replace = "github.com/sourcegraph/embedded-postgres",
+        sum = "h1:NbyS/m5kyBsaxynmY18st03pL9ZSOdEEC/B839vNNRA=",
+        version = "v1.19.1-0.20230113234230-bb62ad58a1e1",
+    )
+
+    go_repository(
         name = "com_github_flosch_pongo2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/flosch/pongo2",

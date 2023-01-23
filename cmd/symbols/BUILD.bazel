@@ -5,7 +5,10 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols",
     visibility = ["//visibility:private"],
-    deps = ["//cmd/symbols/shared"],
+    deps = [
+        "//cmd/sourcegraph-oss/osscmd",
+        "//cmd/symbols/shared",
+    ],
 )
 
 go_binary(

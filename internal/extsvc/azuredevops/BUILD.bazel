@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/ratelimit",
     ],
@@ -13,7 +14,10 @@ go_library(
 
 go_test(
     name = "azuredevops_test",
-    srcs = ["client_test.go"],
+    srcs = [
+        "client_test.go",
+        "main_test.go",
+    ],
     data = glob(["testdata/**"]),
     embed = [":azuredevops"],
     deps = [
