@@ -213,27 +213,64 @@ func TestProblems(t *testing.T) {
 }
 
 func TestRedactSecrets(t *testing.T) {
-	redacted, err := RedactSecrets(
-		conftypes.RawUnified{
-			Site: getTestSiteWithSecrets(
-				executorsAccessToken,
-				authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
-				emailSMTPPassword,
-				organizationInvitationsSigningKey,
-				githubClientSecret,
-				dotcomGitHubAppCloudClientSecret,
-				dotcomGitHubAppCloudPrivateKey,
-				dotcomSrcCliVersionCacheGitHubToken,
-				dotcomSrcCliVersionCacheGitHubWebhookSecret,
-				authUnlockAccountLinkSigningKey,
-			),
-		},
-		false,
-	)
-	require.NoError(t, err)
+	t.Run("do not hashSecrets", func(t *testing.T) {
+		redacted, err := RedactSecrets(
+			conftypes.RawUnified{
+				Site: getTestSiteWithSecrets(
+					executorsAccessToken,
+					authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
+					emailSMTPPassword,
+					organizationInvitationsSigningKey,
+					githubClientSecret,
+					dotcomGitHubAppCloudClientSecret,
+					dotcomGitHubAppCloudPrivateKey,
+					dotcomSrcCliVersionCacheGitHubToken,
+					dotcomSrcCliVersionCacheGitHubWebhookSecret,
+					authUnlockAccountLinkSigningKey,
+				),
+			},
+			false,
+		)
+		require.NoError(t, err)
 
-	want := getTestSiteWithRedactedSecrets()
-	assert.Equal(t, want, redacted.Site)
+		want := getTestSiteWithRedactedSecrets()
+		assert.Equal(t, want, redacted.Site)
+	})
+
+	t.Run("hashSecrets", func(t *testing.T) {
+
+		redacted, err := RedactSecrets(
+			conftypes.RawUnified{
+				Site: `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "strongsecret",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`,
+			},
+			true,
+		)
+
+		require.NoError(t, err)
+		want := `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "REDACTED-DATA-CHUNK-f434ecc765",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`
+
+		assert.Equal(t, want, redacted.Site)
+	})
 }
 
 func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
