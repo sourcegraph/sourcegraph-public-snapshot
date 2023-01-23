@@ -286,7 +286,3 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler
   interfaces:
     - RepoQueryExecutor
-- filename: enterprise/internal/insights/store/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
-  interfaces:
-    - InsightPermissionStore

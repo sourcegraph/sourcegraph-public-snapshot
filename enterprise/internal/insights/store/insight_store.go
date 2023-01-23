@@ -353,8 +353,8 @@ func (s *InsightStore) GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([
 	return scanDataSeries(s.Query(ctx, q))
 }
 
-// CompleteJustInTimeConversionAttempt is a special purpose func to convert a Just In Time search insight
-// to a scoped backfilled search insight
+// CompleteJustInTimeConversionAttempt Is a special purpose func to convert a Just In Time search insight
+// to a scoped backfilled serach insight
 func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),

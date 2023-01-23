@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestFrozenInsightDataSeriesResolver(t *testing.T) {
@@ -246,6 +247,14 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 			t.Errorf("unexpected results from dashboardResolvers resolver")
 		}
 	})
+}
+
+type fakeSearchContextLoader struct {
+	mocks map[string]*internalTypes.SearchContext
+}
+
+func (f *fakeSearchContextLoader) GetByName(ctx context.Context, name string) (*internalTypes.SearchContext, error) {
+	return f.mocks[name], nil
 }
 
 func TestRemoveClosePoints(t *testing.T) {
