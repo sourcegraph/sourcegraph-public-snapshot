@@ -12,7 +12,7 @@ import (
 // the HTTP middleware in this package, and should work exactly the same.
 type ActorPropagator struct{}
 
-func (ActorPropagator) ExtractContext(ctx context.Context) metadata.MD {
+func (ActorPropagator) FromContext(ctx context.Context) metadata.MD {
 	actor := FromContext(ctx)
 	switch {
 	case actor.IsInternal():
