@@ -173,6 +173,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
 type AzureDevOpsConnection struct {
+	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
 	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.
@@ -608,6 +610,10 @@ type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
 	Id string `json:"id,omitempty"`
 	// Name description: The name of an AWS CodeCommit repository ("repo-name") to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+}
+type ExcludedAzureDevOpsServerRepo struct {
+	// Name description: The name of a Azure DevOps Services/Server repo ("projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
 }
 type ExcludedBitbucketCloudRepo struct {
