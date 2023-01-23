@@ -2651,6 +2651,7 @@ Referenced by:
  triggered_by_user_id | integer                  |           |          | 
  high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
+ cancellation_reason  | text                     |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -2664,6 +2665,8 @@ Foreign-key constraints:
     "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
 ```
+
+**cancellation_reason**: Specifies why permissions sync job was cancelled.
 
 **reason**: Specifies why permissions sync job was triggered.
 
