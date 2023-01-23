@@ -245,9 +245,7 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 		rj.FailureMessage = &failureMessage
 	}
 
-	for _, entry := range executionLogs {
-		rj.ExecutionLogs = append(rj.ExecutionLogs, executor.ExecutionLogEntry(entry))
-	}
+	rj.ExecutionLogs = append(rj.ExecutionLogs, executionLogs...)
 
 	return nil
 }

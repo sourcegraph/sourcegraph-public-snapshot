@@ -503,9 +503,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		wj.FailureMessage = &failureMessage
 	}
 
-	for _, entry := range executionLogs {
-		wj.ExecutionLogs = append(wj.ExecutionLogs, executor.ExecutionLogEntry(entry))
-	}
+	wj.ExecutionLogs = append(wj.ExecutionLogs, executionLogs...)
 
 	return nil
 }

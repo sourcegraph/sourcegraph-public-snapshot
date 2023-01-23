@@ -186,7 +186,7 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 	}
 
 	for _, entry := range executionLogs {
-		logEntry := executor.ExecutionLogEntry(entry)
+		logEntry := entry
 		job.ExecutionLogs = append(job.ExecutionLogs, &logEntry)
 	}
 
