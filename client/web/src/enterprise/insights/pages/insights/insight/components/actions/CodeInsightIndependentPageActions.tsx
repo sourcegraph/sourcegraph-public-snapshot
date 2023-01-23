@@ -47,9 +47,11 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
     return (
         <div className={styles.container}>
             {!isLangStatsInsight(insight) && (
-                <Button as="a" href={`/.api/insights/export/${insight.id}`} download={true} variant="secondary">
-                    Export data as CSV
-                </Button>
+                <Tooltip content="This will create a CVS archive of all data for this Code Insight, including data that has been archived.This will only include data that you are permitted to see.">
+                    <Button as="a" href={`/.api/insights/export/${insight.id}`} download={true} variant="secondary">
+                        Export data as CSV
+                    </Button>
+                </Tooltip>
             )}
 
             <Tooltip content={isCopied ? 'Copied!' : undefined}>
