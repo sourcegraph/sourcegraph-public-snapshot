@@ -3,12 +3,12 @@ import { useCallback } from 'react'
 import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-import { RenderMode } from '@sourcegraph/shared/src/util/url'
 
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
