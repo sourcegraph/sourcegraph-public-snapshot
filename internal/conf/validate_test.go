@@ -228,6 +228,7 @@ func TestRedactSecrets(t *testing.T) {
 				authUnlockAccountLinkSigningKey,
 			),
 		},
+		false,
 	)
 	require.NoError(t, err)
 
@@ -243,6 +244,7 @@ func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 		conftypes.RawUnified{
 			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
 		},
+		false,
 	)
 	require.NoError(t, err)
 

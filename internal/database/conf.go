@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -210,8 +211,8 @@ func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents
 }
 
 const createSiteConfigFmtStr = `
-INSERT INTO critical_and_site_config (type, author_user_id, contents)
-VALUES ('site', %s, %s)
+INSERT INTO critical_and_site_config (type, author_user_id, contents, redacted_contents)
+VALUES ('site', %s, %s, %s)
 RETURNING %s -- siteConfigColumns
 `
 
@@ -240,10 +241,22 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
+	logger := log.Scoped("createIfUpToDate", "confStore.createIfUpToDate")
+	redactedConf, err := conf.RedactSecrets(conftypes.RawUnified{Site: contents}, true)
+	var redactedContents string
+	if err != nil {
+		// Do not fail here. Instead continue writing to DB with an empty value for
+		// "redacted_contents".
+		logger.Warn("failed to redact secrets", log.Error(err))
+	} else {
+		redactedContents = redactedConf.Site
+	}
+
 	q := sqlf.Sprintf(
 		createSiteConfigFmtStr,
 		dbutil.NullInt32Column(authorUserID),
 		contents,
+		redactedContents,
 		sqlf.Join(siteConfigColumns, ","),
 	)
 
