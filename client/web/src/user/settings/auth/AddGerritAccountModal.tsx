@@ -5,9 +5,9 @@ import { AddGerritAccountResult, AddGerritAccountVariables } from 'src/graphql-o
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Alert, Button, Form, H3, Input, Modal, Text } from '@sourcegraph/wildcard'
 
-export const ADD_GERRIT_ACCOUNT = gql`
-    mutation AddGerritAccount($username: String!, $password: String!, $serviceID: String!) {
-        addGerritExternalAccount(username: $username, password: $password, serviceID: $serviceID) {
+export const ADD_EXTERNAL_ACCOUNT = gql`
+    mutation AddExternalAccount($serviceType: String!, $serviceID: String!, $accountDetails: String!) {
+        addExternalAccount(serviceType: $serviceType, serviceID: $serviceID, accountDetails: $accountDetails) {
             alwaysNil
         }
     }
@@ -22,8 +22,8 @@ export const AddGerritAccountModal: React.FunctionComponent<
     }>
 > = ({ onDidAdd, serviceID, isOpen, onDismiss }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [addGerritAccount, { error }] = useMutation<AddGerritAccountResult, AddGerritAccountVariables>(
-        ADD_GERRIT_ACCOUNT
+    const [addExternalAccount, { error }] = useMutation<AddGerritAccountResult, AddGerritAccountVariables>(
+        ADD_EXTERNAL_ACCOUNT
     )
 
     const onAccountAdd = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -35,11 +35,14 @@ export const AddGerritAccountModal: React.FunctionComponent<
             event.preventDefault()
             setIsLoading(true)
 
-            addGerritAccount({
+            addExternalAccount({
                 variables: {
-                    username: target.username.value,
-                    password: target.password.value,
+                    serviceType: 'gerrit',
                     serviceID,
+                    accountDetails: JSON.stringify({
+                        username: target.username.value,
+                        password: target.password.value,
+                    }),
                 },
             })
                 .then(() => {
@@ -50,7 +53,7 @@ export const AddGerritAccountModal: React.FunctionComponent<
                     setIsLoading(false)
                 })
         },
-        [addGerritAccount, onDidAdd, serviceID]
+        [addExternalAccount, onDidAdd, serviceID]
     )
 
     return (
