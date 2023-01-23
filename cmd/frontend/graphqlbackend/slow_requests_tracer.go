@@ -27,20 +27,12 @@ const slowRequestRedisFIFOListDefaultSize = 5000
 const slowRequestRedisFIFOListPerPage = 50
 
 // slowRequestRedisFIFOList is a FIFO redis cache to store the slow requests.
-var slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
-
-// slowRequestConfWatchOnce enables to ensure we're not watching for conf updates more than once.
-var slowRequestConfWatchOnce sync.Once
+var slowRequestRedisFIFOList = rcache.NewFIFOListDynamic("slow-graphql-requests-list", func() int {
+	return conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
+})
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
 func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
-	slowRequestConfWatchOnce.Do(func() {
-		conf.Watch(func() {
-			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
-			slowRequestRedisFIFOList.SetMaxSize(limit)
-		})
-	})
-
 	b, err := json.Marshal(req)
 	if err != nil {
 		logger.Warn("failed to marshal slowRequest", log.Error(err))

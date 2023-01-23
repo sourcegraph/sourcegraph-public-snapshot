@@ -1099,7 +1099,7 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
-			numSamples := 30
+			numSamples := 90
 			if d.args.SeriesDisplayOptions.NumSamples != nil {
 				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
 				if numSamples > 90 {

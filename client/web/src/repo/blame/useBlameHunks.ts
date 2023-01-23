@@ -162,6 +162,11 @@ interface RawStreamHunk {
     startLine: number
     filename: string
     message: string
+    user?: {
+        username: string
+        displayName: string | null
+        avatarURL: string | null
+    }
 }
 
 /**
@@ -221,10 +226,10 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     author: {
                                         date: rawHunk.author.Date,
                                         person: {
-                                            email: rawHunk.author.Email,
+                                            email: rawHunk.author?.Email,
                                             displayName: rawHunk.author.Name,
-                                            avatarURL: null,
-                                            user: null,
+                                            avatarURL: rawHunk.user?.avatarURL ?? null,
+                                            user: rawHunk.user ?? null,
                                         },
                                     },
                                     commit: {

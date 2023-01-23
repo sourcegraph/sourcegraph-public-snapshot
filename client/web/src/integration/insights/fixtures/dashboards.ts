@@ -40,15 +40,7 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
     defaultSeriesDisplayOptions: {
         limit: 20,
-        sortOptions: {
-            mode: SeriesSortMode.RESULT_COUNT,
-            direction: SeriesSortDirection.DESC,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: 20,
+        numSamples: null,
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,
             direction: SeriesSortDirection.DESC,
@@ -57,7 +49,7 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
@@ -117,15 +109,7 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: {
-            mode: null,
-            direction: null,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: {
             mode: null,
             direction: null,
@@ -134,7 +118,7 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],
@@ -223,15 +207,7 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQ3VMOXlZbXNndHI3NW05NEpUY3BWWVFNMFoi',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: {
-            mode: null,
-            direction: null,
-            __typename: 'SeriesSortOptions',
-        },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: {
             mode: null,
             direction: null,
@@ -240,7 +216,7 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: null,
         excludeRepoRegex: null,
         searchContexts: [],
@@ -293,16 +269,12 @@ export const COMPUTE_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyRjdlUk1Tc1ZoUHRBd0FKNzJ2TEJEOWZEQUgi',
     defaultSeriesDisplayOptions: {
         limit: null,
-        sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
-        __typename: 'SeriesDisplayOptions',
-    },
-    appliedSeriesDisplayOptions: {
-        limit: null,
+        numSamples: null,
         sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
         __typename: 'SeriesDisplayOptions',
     },
     isFrozen: false,
-    appliedFilters: {
+    defaultFilters: {
         includeRepoRegex: '',
         excludeRepoRegex: '',
         searchContexts: [],

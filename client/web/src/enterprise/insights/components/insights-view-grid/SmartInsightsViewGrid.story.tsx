@@ -11,7 +11,7 @@ import {
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../graphql-operations'
-import { InsightExecutionType, InsightType, BackendInsight } from '../../core'
+import { InsightType, BackendInsight } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
@@ -34,7 +34,8 @@ const DEFAULT_FILTERS = {
     includeRepoRegexp: '',
     context: '',
     seriesDisplayOptions: {
-        limit: '20',
+        limit: 20,
+        numSamples: null,
         sortOptions: {
             direction: SeriesSortDirection.DESC,
             mode: SeriesSortMode.RESULT_COUNT,
@@ -45,7 +46,6 @@ const DEFAULT_FILTERS = {
 const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #1',
@@ -54,12 +54,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_2',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
@@ -71,12 +69,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_3',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #3',
@@ -89,12 +85,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_4',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #4',
@@ -103,12 +97,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_5',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.CaptureGroup,
         title: 'Backend insight #5',
@@ -117,12 +109,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_6',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #6',
@@ -131,12 +121,10 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_7',
-        executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #7',
@@ -145,7 +133,6 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
         filters: DEFAULT_FILTERS,
         dashboardReferenceCount: 0,
         isFrozen: false,
-        seriesDisplayOptions: {},
         dashboards: [],
     },
 ]

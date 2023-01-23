@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,7 +26,7 @@ type indexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
+func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -36,14 +35,13 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 		prefetcher.MarkUpload(*index.AssociatedUploadID)
 	}
 
-	db := autoindexingSvc.GetUnsafeDB()
 	return &indexResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
 		index:            index,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		locationResolver: locationResolver,
 		traceErrs:        errTrace,
 	}
 }
@@ -105,7 +103,7 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ resolverstubs.L
 		return nil, err
 	}
 
-	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, upload, r.prefetcher, r.traceErrs), nil
+	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *indexResolver) ShouldReindex(ctx context.Context) bool {

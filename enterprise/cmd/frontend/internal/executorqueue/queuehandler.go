@@ -17,7 +17,7 @@ import (
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
-func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() (token string, enabled bool), uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
+func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
@@ -54,10 +54,9 @@ func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []
 // with the correct "token-executor <token>" value. This should only be used
 // for internal _services_, not users, in which a shared key exchange can be
 // done so safely.
-func authMiddleware(accessToken func() (token string, enabled bool), next http.Handler) http.Handler {
+func authMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, tokenEnabled := accessToken()
-		if !tokenEnabled || validateExecutorToken(w, r, token) {
+		if validateExecutorToken(w, r, accessToken()) {
 			next.ServeHTTP(w, r)
 		}
 	})

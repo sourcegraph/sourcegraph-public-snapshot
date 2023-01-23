@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "background",
+    srcs = [
+        "file_reference_graph.go",
+        "iface.go",
+        "indexer.go",
+        "loader.go",
+        "loader_metrics.go",
+        "merger.go",
+        "merger_metrics.go",
+        "pagerank.go",
+        "streaming_graph.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//enterprise/internal/codeintel/ranking/internal/store",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//lib/errors",
+        "//lib/group",
+        "@com_github_dcadenas_pagerank//:pagerank",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
+    ],
+)
+
+go_test(
+    name = "background_test",
+    srcs = ["indexer_test.go"],
+    embed = [":background"],
+)
