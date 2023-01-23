@@ -241,6 +241,7 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * bzl
+* wolfi
 * main-dry-run
 * docker-images-patch
 * docker-images-patch-notest
