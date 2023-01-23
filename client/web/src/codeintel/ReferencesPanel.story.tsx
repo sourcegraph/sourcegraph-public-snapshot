@@ -12,12 +12,6 @@ const config: Meta = {
     title: 'wildcard/ReferencesPanel',
     component: ReferencesPanel,
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
-
     parameters: {
         component: ReferencesPanel,
         chromatic: {
@@ -32,10 +26,16 @@ export const Simple: Story = () => {
     const { url, requestMocks } = buildReferencePanelMocks()
 
     return (
-        <div style={{ width: 1200, height: 400 }}>
-            <MockedTestProvider mocks={requestMocks}>
-                <ReferencesPanel {...defaultProps} initialActiveURL={url} />
-            </MockedTestProvider>
-        </div>
+        <BrandedStory styles={webStyles} initialEntries={[url]}>
+            {() => (
+                <div className="container mt-3 pb-3">
+                    <div style={{ width: 1200, height: 400 }}>
+                        <MockedTestProvider mocks={requestMocks}>
+                            <ReferencesPanel {...defaultProps} initialActiveURL={url} />
+                        </MockedTestProvider>
+                    </div>
+                </div>
+            )}
+        </BrandedStory>
     )
 }
