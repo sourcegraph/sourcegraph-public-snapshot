@@ -14,7 +14,7 @@ func BazelOperations() *operations.Set {
 	ops := operations.NewSet()
 	ops.Append(
 		build("//dev/sg"),
-		build("//internal/cmd/resources_report"),
+		build("//internal/cmd/resources-report"),
 	)
 	return ops
 }
