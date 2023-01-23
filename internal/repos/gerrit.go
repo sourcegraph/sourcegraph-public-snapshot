@@ -25,6 +25,7 @@ type GerritSource struct {
 	cli       *gerrit.Client
 	serviceID string
 	perPage   int
+	private   bool
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -65,6 +66,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
 		perPage:   100,
+		private:   c.Authorization != nil,
 	}, nil
 }
 
@@ -123,7 +125,7 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + projectName)
+	fullURL, err := urlx.Parse(s.cli.URL.JoinPath(projectName).String())
 	if err != nil {
 		return nil, err
 	}

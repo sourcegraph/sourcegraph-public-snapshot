@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,34 +39,15 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 	}
 	return &Provider{
 		urn:      conn.URN,
-		client:   gClient,
+		client:   &ClientAdapter{Client: gClient},
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
 	}, nil
 }
 
+// FetchAccount is unused for Gerrit. Users need to provide their own account
+// credentials instead.
 func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (*extsvc.Account, error) {
-	// First try to fetch Gerrit account for this username
-	accts, err := p.client.ListAccountsByUsername(ctx, user.Username)
-	if err != nil {
-		return nil, err
-	}
-	// Check that this account from Gerrit correlates to a verified email
-	if acct, found, err := p.checkAccountsAgainstVerifiedEmails(accts, user, verifiedEmails); found && err == nil {
-		return acct, nil
-	}
-
-	// If no account was found via the user's Sourcegraph username, attempt to find an account via one of the verified emails.
-	for _, email := range verifiedEmails {
-		accts, err := p.client.ListAccountsByEmail(ctx, email)
-		if err != nil {
-			return nil, err
-		}
-		for _, acct := range accts {
-			return p.buildExtsvcAccount(acct, user, email)
-		}
-	}
-
-	return nil, nil
+	return nil, authz.ErrUnimplemented{Feature: "gerrit.FetchAccount"}
 }
 
 func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool, error) {
@@ -114,7 +96,54 @@ func marshalAccountData(username, email string, acctID int32) (json.RawMessage, 
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPerms"}
+	if account == nil {
+		return nil, errors.New("no account provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+	} else if account.AccountData.Data == nil || account.AccountData.AuthData == nil {
+		return nil, errors.New("no account data")
+	}
+
+	_, credentials, err := gerrit.GetExternalAccountData(ctx, &account.AccountData)
+	if err != nil {
+		return nil, err
+	}
+
+	client := p.client.WithAuthenticator(&auth.BasicAuth{
+		Username: credentials.Username,
+		Password: credentials.Password,
+	})
+	queryArgs := gerrit.ListProjectsArgs{
+		Cursor: &gerrit.Pagination{
+			PerPage: 100,
+			Page:    1,
+		},
+	}
+	projects, nextPage, err := client.ListProjects(ctx, queryArgs)
+	if err != nil {
+		return nil, err
+	}
+	var nextPageProjects *gerrit.ListProjectsResponse
+	for nextPage {
+		queryArgs.Cursor.Page++
+		nextPageProjects, nextPage, err = client.ListProjects(ctx, queryArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		for k, v := range *nextPageProjects {
+			(*projects)[k] = v
+		}
+	}
+
+	extIDs := make([]extsvc.RepoID, 0, len(*projects))
+	for _, project := range *projects {
+		extIDs = append(extIDs, extsvc.RepoID(project.ID))
+	}
+	return &authz.ExternalUserPermissions{
+		Exacts: extIDs,
+	}, nil
 }
 
 func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
