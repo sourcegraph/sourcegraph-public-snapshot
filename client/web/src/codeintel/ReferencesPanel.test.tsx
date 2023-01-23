@@ -99,8 +99,7 @@ describe('ReferencesPanel', () => {
             '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
         )
         // Click on reference the second time promotes the active location to the URL (and main blob view)
-        const referenceButton2 = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
-        fireEvent.click(referenceButton2)
+        fireEvent.click(referenceButton)
         expect(history.createHref(history.location)).toBe(fullReferenceURL)
     })
 })
