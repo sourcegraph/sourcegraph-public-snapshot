@@ -276,7 +276,7 @@ const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match
 // These are the filters shown when the query input is empty or the cursor is at
 // at whitespace token.
 const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.context, FilterType.lang, FilterType.type]
-// If the query contains on the of the listed filters, suggest these filters
+// If the query contains one of the listed filters, suggest these filters
 // too.
 const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType[]>> = {
     [FilterType.type]: filter => {
