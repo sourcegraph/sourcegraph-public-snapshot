@@ -35,7 +35,7 @@ type codeownershipJob struct {
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
+	defer finish(alert, err)
 
 	var (
 		mu   sync.Mutex

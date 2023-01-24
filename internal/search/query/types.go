@@ -465,9 +465,7 @@ func (p Parameters) FileHasOwner() (include, exclude []string) {
 		} else {
 			include = append(include, pred.Owner)
 		}
-
 	})
-
 	return include, exclude
 }
 
