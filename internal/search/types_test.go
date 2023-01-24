@@ -77,11 +77,5 @@ func symbolsResponseWithinInt32(r SymbolsResponse) bool {
 }
 
 func symbolsParametersWithinInt32(s SymbolsParameters) bool {
-	for _, number := range []int{s.Timeout, s.First} {
-		if number < math.MinInt32 || number > math.MaxInt32 {
-			return false
-		}
-	}
-
-	return true
+	return s.First >= math.MinInt32 && s.First <= math.MaxInt32
 }
