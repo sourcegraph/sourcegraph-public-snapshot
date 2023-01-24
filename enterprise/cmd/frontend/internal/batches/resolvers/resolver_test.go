@@ -496,6 +496,79 @@ mutation($changesetSpec: String!){
 }
 `
 
+func TestCreateChangesetSpecs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := bt.CreateTestUser(t, db, true).ID
+
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+
+	repo1 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test1", newGitHubExternalService(t, esStore))
+	err := repoStore.Create(ctx, repo1)
+	require.NoError(t, err)
+
+	repo2 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test2", newGitHubExternalService(t, esStore))
+	err = repoStore.Create(ctx, repo2)
+	require.NoError(t, err)
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	input := map[string]any{
+		"changesetSpecs": []string{
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo1.ID), "d34db33f"),
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo2.ID), "d34db33g"),
+		},
+	}
+
+	var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
+
+	specs := response.CreateChangesetSpecs
+	assert.Len(t, specs, 2)
+
+	for _, spec := range specs {
+		assert.NotEmpty(t, spec.Typename)
+		assert.NotEmpty(t, spec.ID)
+		assert.NotNil(t, spec.ExpiresAt)
+
+		randID, err := unmarshalChangesetSpecID(graphql.ID(spec.ID))
+		require.NoError(t, err)
+
+		cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+		require.NoError(t, err)
+
+		if cs.BaseRev == "d34db33f" {
+			assert.Equal(t, repo1.ID, cs.BaseRepoID)
+		} else {
+			assert.Equal(t, repo2.ID, cs.BaseRepoID)
+		}
+	}
+}
+
+const mutationCreateChangesetSpecs = `
+mutation($changesetSpecs: [String!]!){
+  createChangesetSpecs(changesetSpecs: $changesetSpecs) {
+	__typename
+	... on VisibleChangesetSpec {
+		id
+		expiresAt
+	}
+  }
+}
+`
+
 func TestApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

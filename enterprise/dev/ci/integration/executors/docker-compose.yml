@@ -33,7 +33,6 @@ services:
       SOURCEGRAPH_LICENSE_GENERATION_KEY: '${SOURCEGRAPH_LICENSE_GENERATION_KEY}'
       SITE_CONFIG_FILE: /e2e/site-config.json
       PGDATASOURCE: postgres://sg@postgres:5432/sg
-      EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE: 'true'
     volumes:
       - '${DATA}/config:/etc/sourcegraph'
       - '${DATA}/data:/var/opt/sourcegraph'

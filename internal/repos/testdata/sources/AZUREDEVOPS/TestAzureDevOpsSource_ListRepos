@@ -1,0 +1,34 @@
+[
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/sgtestazure",
+   "URI": "dev.azure.com/sgtestazure",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/sgtestazure"
+    }
+   },
+   "Metadata": {
+    "id": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "name": "sgtestazure",
+    "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
+    "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "isDisabled": false
+   }
+  }
+ ]

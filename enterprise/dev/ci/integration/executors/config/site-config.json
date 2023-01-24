@@ -1,4 +1,5 @@
 {
+  "executors.accessToken": "$EXECUTOR_FRONTEND_PASSWORD",
   "executors.batcheshelperImage": "us.gcr.io/sourcegraph-dev/batcheshelper",
   "executors.batcheshelperImageTag": "$CANDIDATE_VERSION",
   "auth.providers": [

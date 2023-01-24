@@ -8,6 +8,8 @@ overrides:
   tslib: 2.1.0
   jsprim: 1.4.2
 
+packageExtensionsChecksum: 4b1de42ef6cd5dc58798836c97782882
+
 importers:
 
   .:
@@ -339,7 +341,7 @@ importers:
       react-resizable: ^3.0.4
       react-router: ^5.2.0
       react-router-dom: ^5.2.0
-      react-router-dom-v5-compat: ^6.3.0
+      react-router-dom-v5-compat: ^6.7.0
       react-spring: ^9.4.2
       react-sticky-box: 1.0.2
       react-visibility-sensor: ^5.1.1
@@ -518,7 +520,7 @@ importers:
       react-resizable: 3.0.4_ef5jwxihqo6n7gxfmzogljlgcm
       react-router: 5.2.0_react@18.1.0
       react-router-dom: 5.2.0_react@18.1.0
-      react-router-dom-v5-compat: 6.3.0_xjeikfjhclro5pp2abrahotxli
+      react-router-dom-v5-compat: 6.7.0_xjeikfjhclro5pp2abrahotxli
       react-spring: 9.4.2_ssv3vkwxg74iun7wj74vdfwzhu
       react-sticky-box: 1.0.2_react@18.1.0
       react-visibility-sensor: 5.1.1_ef5jwxihqo6n7gxfmzogljlgcm
@@ -26281,17 +26283,19 @@ packages:
       resize-observer-polyfill: 1.5.1
     dev: false
 
-  /react-router-dom-v5-compat/6.3.0_xjeikfjhclro5pp2abrahotxli:
-    resolution: {integrity: sha512-lfnfDEAdfXf92VQQ692+aMFj9JKb73GZ7EbiQJeJT4sK+KUGvua3FGN2H8n2H5zSMaY1cvrihGiaI373cvv7OQ==}
+  /react-router-dom-v5-compat/6.7.0_xjeikfjhclro5pp2abrahotxli:
+    resolution: {integrity: sha512-pwK0hdpgbBnTxCv0/Yi1yCaVX0iglPxxDvuy6VK7MF/0q2MYEkqS186diGdktgXikKXmFMhhXR2h3IanBv0tAA==}
+    engines: {node: '>=14'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
       react-router-dom: 4 || 5
     dependencies:
+      '@remix-run/router': 1.3.0
       history: 4.5.1
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
-      react-router: 6.3.0_react@18.1.0
+      react-router: 6.7.0_react@18.1.0
       react-router-dom: 5.2.0_react@18.1.0
     dev: false
 
@@ -26340,12 +26344,13 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-router/6.3.0_react@18.1.0:
-    resolution: {integrity: sha512-7Wh1DzVQ+tlFjkeo+ujvjSqSJmkt1+8JO+T5xklPlgrh70y7ogx75ODRW0ThWhY7S+6yEDks8TYrtQe/aoboBQ==}
+  /react-router/6.7.0_react@18.1.0:
+    resolution: {integrity: sha512-KNWlG622ddq29MAM159uUsNMdbX8USruoKnwMMQcs/QWZgFUayICSn2oB7reHce1zPj6CG18kfkZIunSSRyGHg==}
+    engines: {node: '>=14'}
     peerDependencies:
       react: '>=16.8'
     dependencies:
-      history: 4.5.1
+      '@remix-run/router': 1.3.0
       react: 18.1.0
     dev: false
 
