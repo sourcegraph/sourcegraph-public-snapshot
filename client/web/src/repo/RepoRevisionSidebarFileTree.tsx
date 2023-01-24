@@ -15,6 +15,7 @@ import {
     LoadingSpinner,
     Tree,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
@@ -118,7 +119,7 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
     const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
     const defaultExpandedIds =
         treeData && defaultNode && defaultNodeId
-            ? [defaultNodeId, ...getAllParentsOfNode(treeData, defaultNode).map(node => node.id)]
+            ? [defaultNodeId, ...getAllParentsOfPath(treeData, defaultNode?.entry?.path ?? '').map(node => node.id)]
             : []
 
     const onLoadData = useCallback(
@@ -198,9 +199,14 @@ function renderNode({
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
 }): React.ReactNode {
-    const submodule = element.entry?.submodule
-    const name = element.entry?.name
-    const url = element.entry?.url
+    const { entry, error } = element
+    const submodule = entry?.submodule
+    const name = entry?.name
+    const url = entry?.url
+
+    if (error) {
+        return <ErrorAlert className="m-0" variant="note" error={error} />
+    }
 
     if (submodule) {
         const rev = submodule.commit.slice(0, 7)
@@ -259,7 +265,7 @@ function renderNode({
     )
 }
 
-type TreeNode = WildcardTreeNode & { entry: FileTreeEntry | null }
+type TreeNode = WildcardTreeNode & { entry: FileTreeEntry | null } & { error?: string }
 interface TreeData {
     // The flat nodes list used by react-accessible-treeview
     nodes: TreeNode[]
@@ -283,38 +289,25 @@ function createTreeData(): TreeData {
 function appendTreeData(tree: TreeData, entries: FileTreeEntry[]): TreeData {
     tree = { ...tree, nodes: [...tree.nodes], pathToId: new Map(tree.pathToId) }
 
-    function addTreeEntry(entry: FileTreeEntry): void {
-        if (tree.pathToId.has(entry.path)) {
-            return
-        }
-
-        const id = tree.nodes.length
-
-        const node: TreeNode = {
-            name: entry.name,
-            id,
-            isBranch: entry.isDirectory,
-            parent: 0,
-            children: [],
-            entry,
-        }
-
-        const children = tree.nodes.filter(potentialChild => isAParentOfB(node, potentialChild))
-        const parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, node))
+    function appendNode(node: TreeNode, path: string): void {
+        const children = tree.nodes.filter(potentialChild => isAParentOfB(path, potentialChild.entry?.path ?? ''))
+        const parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent.entry?.path ?? '', path))
 
         // Fix all children references
         node.children = children.map(child => child.id)
         for (const child of children) {
-            child.parent = id
+            child.parent = node.id
         }
 
         // Fix all parent references
         if (parent) {
             node.parent = parent.id
-            parent.children.push(id)
+            parent.children.push(node.id)
         }
 
-        tree.pathToId.set(entry.path, id)
+        if (node.entry) {
+            tree.pathToId.set(node.entry.path, node.id)
+        }
         tree.nodes.push(node)
     }
 
@@ -332,8 +325,50 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[]): TreeData {
         })
     }
 
-    for (const entry of entries) {
-        addTreeEntry(entry)
+    let siblingCount = 0
+    for (let idx = 0; idx < entries.length; idx++) {
+        const entry = entries[idx]
+
+        if (tree.pathToId.has(entry.path)) {
+            continue
+        }
+
+        const isSiblingOfPreviousNode = idx > 0 && dirname(entries[idx - 1].path) === dirname(entry.path)
+
+        if (isSiblingOfPreviousNode) {
+            siblingCount++
+        } else {
+            siblingCount = 0
+        }
+
+        const id = tree.nodes.length
+        const node: TreeNode = {
+            name: entry.name,
+            id,
+            isBranch: entry.isDirectory,
+            parent: 0,
+            children: [],
+            entry,
+        }
+        appendNode(node, entry.path)
+
+        // We have reached the maximum number of entries for a directory. Add a
+        // dummy node to indicate that there are more entries.
+        if (siblingCount === MAX_TREE_ENTRIES - 1) {
+            siblingCount = 0
+            const errorMessage = 'Full list of files is too long to display. Use search to find a specific file.'
+            const id = tree.nodes.length
+            const node: TreeNode = {
+                name: errorMessage,
+                id,
+                isBranch: false,
+                parent: 0,
+                children: [],
+                entry: null,
+                error: errorMessage,
+            }
+            appendNode(node, entry.path)
+        }
     }
 
     return tree
@@ -345,25 +380,25 @@ function setLoadedPath(tree: TreeData, path: string): TreeData {
     return tree
 }
 
-function isAParentOfB(a: TreeNode, b: TreeNode): boolean {
+function isAParentOfB(fullPathA: string, fullPathB: string): boolean {
     // B is the root so it can not have a parent
-    const aFullPath = a.entry?.path || ''
-    const bFullPath = b.entry?.path || ''
-    if (bFullPath === '') {
+    if (fullPathB === '') {
         return false
     }
-    const bParentPath = bFullPath.split('/').slice(0, -1).join('/') || ''
-    return aFullPath === bParentPath
+    const bParentPath = fullPathB.split('/').slice(0, -1).join('/') || ''
+    return fullPathA === bParentPath
 }
 
-function getAllParentsOfNode(tree: TreeData, node: TreeNode): TreeNode[] {
+function getAllParentsOfPath(tree: TreeData, fullPath: string): TreeNode[] {
     const parents = []
 
-    let parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, node))
+    let parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent.entry?.path ?? '', fullPath))
     while (parent) {
         parents.push(parent)
 
-        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent, parent!))
+        parent = tree.nodes.find(potentialParent =>
+            isAParentOfB(potentialParent.entry?.path ?? '', parent!.entry?.path ?? '')
+        )
     }
     return parents
 }
