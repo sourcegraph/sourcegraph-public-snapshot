@@ -22,9 +22,8 @@ func Init() {
 	go conf.Watch(func() {
 		newProviders, _ := parseConfig(conf.Get())
 		newProviderList := make([]providers.Provider, len(newProviders))
-		for i, p := range newProviders {
-			p := p // capture loop variable
-			newProviderList[i] = &p
+		for i := range newProviders {
+			newProviderList[i] = &newProviders[i]
 		}
 		providers.Update(pkgName, newProviderList)
 	})
