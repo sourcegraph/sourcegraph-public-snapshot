@@ -613,7 +613,7 @@ type ExcludedAWSCodeCommitRepo struct {
 	Name string `json:"name,omitempty"`
 }
 type ExcludedAzureDevOpsServerRepo struct {
-	// Name description: The name of an Azure DevOps Services/Server repo ("projectName/repositoryName") to exclude from mirroring.
+	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
 	Pattern string `json:"pattern,omitempty"`
