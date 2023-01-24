@@ -34,7 +34,7 @@ type Resolver struct {
 	logger          log.Logger
 	db              edb.EnterpriseDB
 	syncJobsRecords interface {
-		Get(timestamp time.Time) (*syncjobs.Status, error)
+		Get(ctx context.Context, timestamp time.Time) (*syncjobs.Status, error)
 		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
 	}
 }
@@ -54,11 +54,14 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	return nil
 }
 
+// syncJobRecordsReadLimit caps syncJobsRecords retrieval to 500 items
+const syncJobRecordsReadLimit = 500
+
 func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
 		logger:          observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:              edb.NewEnterpriseDB(db),
-		syncJobsRecords: syncjobs.NewRecordsReader(),
+		syncJobsRecords: syncjobs.NewRecordsReader(syncJobRecordsReadLimit),
 	}
 }
 
@@ -635,6 +638,9 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 
 	if args.First == 0 {
 		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
+	}
+	if args.First > syncJobRecordsReadLimit {
+		return nil, errors.Newf("cannot retrieve more than %d records", syncJobRecordsReadLimit)
 	}
 
 	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))

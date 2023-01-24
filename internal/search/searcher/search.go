@@ -199,6 +199,16 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		onMatches := func(searcherMatch *proto.FileMatch) {
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+			})
+		}
+
+		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+	}
+
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
 			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),

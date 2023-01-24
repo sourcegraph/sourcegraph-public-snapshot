@@ -963,14 +963,15 @@ Indexes:
 
 # Table "public.critical_and_site_config"
 ```
-     Column     |           Type           | Collation | Nullable |                       Default                        
-----------------+--------------------------+-----------+----------+------------------------------------------------------
- id             | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
- type           | critical_or_site         |           | not null | 
- contents       | text                     |           | not null | 
- created_at     | timestamp with time zone |           | not null | now()
- updated_at     | timestamp with time zone |           | not null | now()
- author_user_id | integer                  |           |          | 
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type              | critical_or_site         |           | not null | 
+ contents          | text                     |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ author_user_id    | integer                  |           |          | 
+ redacted_contents | text                     |           |          | 
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
@@ -978,6 +979,8 @@ Indexes:
 ```
 
 **author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
+
+**redacted_contents**: This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.
 
 # Table "public.discussion_comments"
 ```
@@ -2651,6 +2654,7 @@ Referenced by:
  triggered_by_user_id | integer                  |           |          | 
  high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
+ cancellation_reason  | text                     |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -2664,6 +2668,8 @@ Foreign-key constraints:
     "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
 ```
+
+**cancellation_reason**: Specifies why permissions sync job was cancelled.
 
 **reason**: Specifies why permissions sync job was triggered.
 
@@ -3473,34 +3479,6 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
-
-```
-
-# Table "public.webhook_build_jobs"
-```
-      Column       |           Type           | Collation | Nullable |                    Default                     
--------------------+--------------------------+-----------+----------+------------------------------------------------
- repo_id           | integer                  |           |          | 
- repo_name         | text                     |           |          | 
- extsvc_kind       | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
- state             | text                     |           | not null | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- org               | text                     |           |          | 
- extsvc_id         | integer                  |           |          | 
- cancel            | boolean                  |           | not null | false
-Indexes:
-    "webhook_build_jobs_queued_at_idx" btree (queued_at)
-    "webhook_build_jobs_state" btree (state)
 
 ```
 

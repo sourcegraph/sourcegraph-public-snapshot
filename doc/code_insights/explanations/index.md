@@ -11,4 +11,5 @@ The following articles explain different parts of [Sourcegraph Code Insights](..
 - [Current limitations of Code Insights](current_limitations_of_code_insights.md)
 - [Search-screen search results aggregations](search_results_aggregations.md)
 - [Viewing code insights](viewing_code_insights.md)
+- [Data retention](data_retention.md)
 <!-- - [How Code Insights work](explanations/how_code_insights_work.md) -->

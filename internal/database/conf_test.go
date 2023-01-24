@@ -286,6 +286,7 @@ func TestGetSiteConfigCount(t *testing.T) {
 
 func TestListSiteConfigs(t *testing.T) {
 	toIntPtr := func(n int) *int { return &n }
+	toStringPtr := func(n string) *string { return &n }
 
 	if testing.Short() {
 		t.Skip()
@@ -357,7 +358,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 2, after: 3",
 			listOptions: &PaginationArgs{
 				First: toIntPtr(2),
-				After: toIntPtr(3),
+				After: toStringPtr("3"),
 			},
 			expectedIDs: []int32{2, 1},
 		},
@@ -365,7 +366,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 5, after: 3 (overflow)",
 			listOptions: &PaginationArgs{
 				First: toIntPtr(5),
-				After: toIntPtr(3),
+				After: toStringPtr("3"),
 			},
 			expectedIDs: []int32{2, 1},
 		},
@@ -373,7 +374,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 2, after: 4",
 			listOptions: &PaginationArgs{
 				Last:  toIntPtr(2),
-				After: toIntPtr(4),
+				After: toStringPtr("4"),
 			},
 			expectedIDs: []int32{1, 2},
 		},
@@ -381,7 +382,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 5, after: 4 (overflow)",
 			listOptions: &PaginationArgs{
 				Last:  toIntPtr(5),
-				After: toIntPtr(4),
+				After: toStringPtr("4"),
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
@@ -389,7 +390,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 2, before: 1",
 			listOptions: &PaginationArgs{
 				First:  toIntPtr(2),
-				Before: toIntPtr(1),
+				Before: toStringPtr("1"),
 			},
 			expectedIDs: []int32{4, 3},
 		},
@@ -397,7 +398,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 5, before: 1 (overflow)",
 			listOptions: &PaginationArgs{
 				First:  toIntPtr(5),
-				Before: toIntPtr(1),
+				Before: toStringPtr("1"),
 			},
 			expectedIDs: []int32{4, 3, 2},
 		},
@@ -405,7 +406,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 2, before: 1",
 			listOptions: &PaginationArgs{
 				Last:   toIntPtr(2),
-				Before: toIntPtr(1),
+				Before: toStringPtr("1"),
 			},
 			expectedIDs: []int32{2, 3},
 		},
@@ -413,7 +414,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 5, before: 1 (overflow)",
 			listOptions: &PaginationArgs{
 				Last:   toIntPtr(5),
-				Before: toIntPtr(1),
+				Before: toStringPtr("1"),
 			},
 			expectedIDs: []int32{2, 3, 4},
 		},

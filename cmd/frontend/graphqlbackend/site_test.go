@@ -71,7 +71,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name:                  "last: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(5)},
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(20)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
 		{

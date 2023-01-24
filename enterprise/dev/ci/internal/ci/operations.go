@@ -569,6 +569,25 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
+// Release a snapshot of App.
+func addAppSnapshotReleaseSteps(c Config) operations.Operation {
+	// TODO(sqs): Use goreleaser-pro nightly feature? Blocked on
+	// https://github.com/goreleaser/goreleaser-cross/issues/22.
+
+	// goreleaser requires that the version is semver-compatible
+	// (https://goreleaser.com/limitations/semver/). This is fine for now in alpha.
+	version := fmt.Sprintf("0.0.%d-snapshot+%s-%.6s", c.BuildNumber, c.Time.Format("20060102"), c.Commit)
+
+	return func(pipeline *bk.Pipeline) {
+		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
+		pipeline.AddStep(":desktop_computer: App release",
+			withPnpmCache(),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+			bk.Env("VERSION", version),
+			bk.Cmd("enterprise/dev/ci/scripts/release-app.sh"))
+	}
+}
+
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()

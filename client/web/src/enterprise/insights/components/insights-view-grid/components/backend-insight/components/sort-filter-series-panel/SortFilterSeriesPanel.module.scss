@@ -13,8 +13,9 @@
 
 .toggles-container {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    column-gap: 0.5rem;
+    row-gap: 1rem;
     padding: 0.5rem;
 }
 
@@ -27,8 +28,7 @@
     display: grid;
     grid-template-columns: 1fr 4rem;
     gap: 0.5rem;
-    align-items: center;
-    border-top: solid 1px var(--border-color-2);
+    align-items: baseline;
     padding: 0.5rem;
 }
 

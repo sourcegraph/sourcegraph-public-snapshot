@@ -1,6 +1,10 @@
 import { CaptureGroupFormFields } from '../../types'
 
-export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, 'step' | 'stepValue'>
+type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery' | 'repoMode'
+
+export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, UnsupportedFields> & {
+    repoQuery: string
+}
 
 export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>): string {
     const parameters = new URLSearchParams()
@@ -10,6 +14,7 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
         const fields = values as CaptureInsightUrlValues
 
         switch (key) {
+            case 'repoQuery':
             case 'groupSearchQuery': {
                 parameters.set(key, encodeURIComponent(fields[key].toString()))
                 break
@@ -27,17 +32,18 @@ export function decodeCaptureInsightURL(queryParameters: string): Partial<Captur
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
+        const repoQuery = decodeURIComponent(searchParameter.get('repoQuery') ?? '')
         const repositories = searchParameter.get('repositories')
         const title = searchParameter.get('title')
         const groupSearchQuery = decodeURIComponent(searchParameter.get('groupSearchQuery') ?? '')
-        const allRepos = searchParameter.get('allRepos')
 
-        if (repositories || title || groupSearchQuery || allRepos) {
+        if (repositories || title || groupSearchQuery || repoQuery) {
             return {
                 title: title ?? '',
                 repositories: repositories ?? '',
-                allRepos: !!allRepos,
                 groupSearchQuery: groupSearchQuery ?? '',
+                repoMode: repoQuery ? 'search-query' : 'urls-list',
+                repoQuery: { query: repoQuery ?? '' },
             }
         }
 
