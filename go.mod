@@ -237,7 +237,7 @@ require (
 replace github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230112115613-e0cf62d238b9
+	github.com/sourcegraph/zoekt v0.0.0-20230124062116-f4df546826ea
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
