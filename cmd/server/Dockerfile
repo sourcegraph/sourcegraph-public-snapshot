@@ -40,9 +40,9 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
-    # We require git 2.38+ because we need a fix for this vulnerability to be included:
-    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
-    'git>=2.38.1' \
+    # We require git 2.39.1+ because we need a fix for this vulnerability to be included:
+    # https://github.blog/2023-01-17-git-security-vulnerabilities-announced-2/
+    'git>=2.39.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     git-lfs \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \

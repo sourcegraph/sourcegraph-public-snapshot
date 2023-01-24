@@ -291,6 +291,11 @@ export class SourcegraphWebApp extends React.Component<
                         parsedSearchURLAndContext.searchContextSpec !== this.state.selectedSearchContextSpec
                     ) {
                         this.setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec)
+                    } else if (!parsedSearchURLAndContext.searchContextSpec) {
+                        // If no search context is present we have to fall back
+                        // to the global search context to match the server
+                        // behavior.
+                        this.setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
                     }
 
                     setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.processedQuery)

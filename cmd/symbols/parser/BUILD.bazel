@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "parser",
+    srcs = [
+        "filtering_parser.go",
+        "observability.go",
+        "parser.go",
+        "parser_pool.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/parser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/symbols/fetcher",
+        "//cmd/symbols/types",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//std",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

@@ -34,8 +34,7 @@ type BackfillRequest struct {
 }
 
 type requestContext struct {
-	backfillRequest    *BackfillRequest
-	compressionSavings float64
+	backfillRequest *BackfillRequest
 }
 
 type Backfiller interface {

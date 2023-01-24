@@ -4009,6 +4009,9 @@ type MockDB struct {
 	// WebhooksFunc is an instance of a mock function object controlling the
 	// behavior of the method Webhooks.
 	WebhooksFunc *DBWebhooksFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *DBWithTransactFunc
 	// ZoektReposFunc is an instance of a mock function object controlling
 	// the behavior of the method ZoektRepos.
 	ZoektReposFunc *DBZoektReposFunc
@@ -4250,6 +4253,11 @@ func NewMockDB() *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 WebhookStore) {
+				return
+			},
+		},
+		WithTransactFunc: &DBWithTransactFunc{
+			defaultHook: func(context.Context, func(tx DB) error) (r0 error) {
 				return
 			},
 		},
@@ -4500,6 +4508,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Webhooks")
 			},
 		},
+		WithTransactFunc: &DBWithTransactFunc{
+			defaultHook: func(context.Context, func(tx DB) error) error {
+				panic("unexpected invocation of MockDB.WithTransact")
+			},
+		},
 		ZoektReposFunc: &DBZoektReposFunc{
 			defaultHook: func() ZoektReposStore {
 				panic("unexpected invocation of MockDB.ZoektRepos")
@@ -4652,6 +4665,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: i.Webhooks,
+		},
+		WithTransactFunc: &DBWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 		ZoektReposFunc: &DBZoektReposFunc{
 			defaultHook: i.ZoektRepos,
@@ -9367,6 +9383,110 @@ func (c DBWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBWithTransactFunc describes the behavior when the WithTransact method of
+// the parent MockDB instance is invoked.
+type DBWithTransactFunc struct {
+	defaultHook func(context.Context, func(tx DB) error) error
+	hooks       []func(context.Context, func(tx DB) error) error
+	history     []DBWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) WithTransact(v0 context.Context, v1 func(tx DB) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(DBWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBWithTransactFunc) SetDefaultHook(hook func(context.Context, func(tx DB) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBWithTransactFunc) PushHook(hook func(context.Context, func(tx DB) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(tx DB) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(tx DB) error) error {
+		return r0
+	})
+}
+
+func (f *DBWithTransactFunc) nextHook() func(context.Context, func(tx DB) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBWithTransactFunc) appendCall(r0 DBWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBWithTransactFuncCall objects describing
+// the invocations of this function.
+func (f *DBWithTransactFunc) History() []DBWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]DBWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBWithTransactFuncCall is an object that describes an invocation of
+// method WithTransact on an instance of MockDB.
+type DBWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(tx DB) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -35688,6 +35808,9 @@ func (c OutboundWebhookStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockPermissionSyncJobStore struct {
+	// CancelQueuedJobFunc is an instance of a mock function object
+	// controlling the behavior of the method CancelQueuedJob.
+	CancelQueuedJobFunc *PermissionSyncJobStoreCancelQueuedJobFunc
 	// CreateRepoSyncJobFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateRepoSyncJob.
 	CreateRepoSyncJobFunc *PermissionSyncJobStoreCreateRepoSyncJobFunc
@@ -35716,6 +35839,11 @@ type MockPermissionSyncJobStore struct {
 // results, unless overwritten.
 func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: func(context.Context, string, int) (r0 error) {
+				return
+			},
+		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) (r0 error) {
 				return
@@ -35759,6 +35887,11 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 // overwritten.
 func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: func(context.Context, string, int) error {
+				panic("unexpected invocation of MockPermissionSyncJobStore.CancelQueuedJob")
+			},
+		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: func(context.Context, api.RepoID, PermissionSyncJobOpts) error {
 				panic("unexpected invocation of MockPermissionSyncJobStore.CreateRepoSyncJob")
@@ -35802,6 +35935,9 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 // implementation, unless overwritten.
 func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermissionSyncJobStore {
 	return &MockPermissionSyncJobStore{
+		CancelQueuedJobFunc: &PermissionSyncJobStoreCancelQueuedJobFunc{
+			defaultHook: i.CancelQueuedJob,
+		},
 		CreateRepoSyncJobFunc: &PermissionSyncJobStoreCreateRepoSyncJobFunc{
 			defaultHook: i.CreateRepoSyncJob,
 		},
@@ -35824,6 +35960,118 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 			defaultHook: i.With,
 		},
 	}
+}
+
+// PermissionSyncJobStoreCancelQueuedJobFunc describes the behavior when the
+// CancelQueuedJob method of the parent MockPermissionSyncJobStore instance
+// is invoked.
+type PermissionSyncJobStoreCancelQueuedJobFunc struct {
+	defaultHook func(context.Context, string, int) error
+	hooks       []func(context.Context, string, int) error
+	history     []PermissionSyncJobStoreCancelQueuedJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CancelQueuedJob delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) CancelQueuedJob(v0 context.Context, v1 string, v2 int) error {
+	r0 := m.CancelQueuedJobFunc.nextHook()(v0, v1, v2)
+	m.CancelQueuedJobFunc.appendCall(PermissionSyncJobStoreCancelQueuedJobFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CancelQueuedJob
+// method of the parent MockPermissionSyncJobStore instance is invoked and
+// the hook queue is empty.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) SetDefaultHook(hook func(context.Context, string, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CancelQueuedJob method of the parent MockPermissionSyncJobStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) PushHook(hook func(context.Context, string, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, int) error {
+		return r0
+	})
+}
+
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) nextHook() func(context.Context, string, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) appendCall(r0 PermissionSyncJobStoreCancelQueuedJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermissionSyncJobStoreCancelQueuedJobFuncCall objects describing the
+// invocations of this function.
+func (f *PermissionSyncJobStoreCancelQueuedJobFunc) History() []PermissionSyncJobStoreCancelQueuedJobFuncCall {
+	f.mutex.Lock()
+	history := make([]PermissionSyncJobStoreCancelQueuedJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermissionSyncJobStoreCancelQueuedJobFuncCall is an object that describes
+// an invocation of method CancelQueuedJob on an instance of
+// MockPermissionSyncJobStore.
+type PermissionSyncJobStoreCancelQueuedJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermissionSyncJobStoreCancelQueuedJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermissionSyncJobStoreCancelQueuedJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // PermissionSyncJobStoreCreateRepoSyncJobFunc describes the behavior when

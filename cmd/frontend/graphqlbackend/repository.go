@@ -292,6 +292,14 @@ func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: time.Now()}
 }
 
+func (r *RepositoryResolver) RawCreatedAt() string {
+	if r.innerRepo == nil {
+		return ""
+	}
+
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
+}
+
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }

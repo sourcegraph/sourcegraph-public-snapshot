@@ -34,7 +34,7 @@ type Resolver struct {
 	logger          log.Logger
 	db              edb.EnterpriseDB
 	syncJobsRecords interface {
-		Get(timestamp time.Time) (*syncjobs.Status, error)
+		Get(ctx context.Context, timestamp time.Time) (*syncjobs.Status, error)
 		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
 	}
 }
@@ -54,11 +54,14 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	return nil
 }
 
+// syncJobRecordsReadLimit caps syncJobsRecords retrieval to 500 items
+const syncJobRecordsReadLimit = 500
+
 func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
 		logger:          observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:              edb.NewEnterpriseDB(db),
-		syncJobsRecords: syncjobs.NewRecordsReader(),
+		syncJobsRecords: syncjobs.NewRecordsReader(syncJobRecordsReadLimit),
 	}
 }
 
@@ -169,7 +172,8 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 	}
 
 	// 🚨 SECURITY: Only site admins can trigger repository permissions syncs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	user, err := auth.CheckCurrentUserIsSiteAdminAndReturn(ctx, r.db)
+	if err != nil {
 		return nil, err
 	}
 
@@ -178,7 +182,12 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync}
+	userID := int32(0)
+	// user is nil in case of internal actor
+	if user != nil {
+		userID = user.ID
+	}
+	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync, TriggeredByUserID: userID}
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -199,7 +208,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: userID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
@@ -629,6 +638,9 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 
 	if args.First == 0 {
 		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
+	}
+	if args.First > syncJobRecordsReadLimit {
+		return nil, errors.Newf("cannot retrieve more than %d records", syncJobRecordsReadLimit)
 	}
 
 	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))

@@ -48,7 +48,7 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
     const settings = useDebounce(
         useDeepMemo({
             series: createExampleDataSeries(query),
-            repositories: getSanitizedRepositories(repositories),
+            repoScope: { repositories: getSanitizedRepositories(repositories) },
             step: { months: 2 },
             disabled,
         }),

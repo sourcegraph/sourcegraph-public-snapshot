@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -580,6 +582,8 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 }
 
 var (
+	searcherURL string
+
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
@@ -632,6 +636,12 @@ func symbolsAddr(environ []string) (string, error) {
 
 	// Not set, use the default (non-service discovery on searcher)
 	return "http://symbols:3184", nil
+}
+
+func LoadConfig() {
+	searcherURL, _ = searcherAddr(os.Environ())
+	highlight.LoadConfig()
+	symbols.LoadConfig()
 }
 
 func computeSearcherEndpoints() *endpoint.Map {
@@ -731,12 +741,12 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 	case deploy.DockerCompose:
 		fmtStrTail = fmt.Sprintf(":%s", port)
 	default:
-		return "", fmt.Errorf("Error: unsupported deployment type: %v", deployType)
+		return "", errors.New("Error: unsupported deployment type: " + deployType)
 	}
 
 	var addrs []string
 	for i := 0; i < count; i++ {
-		addrs = append(addrs, fmt.Sprintf(fmtStrHead+"%s-%d"+fmtStrTail, serviceName, i))
+		addrs = append(addrs, strings.Join([]string{fmtStrHead, serviceName, "-", strconv.Itoa(i), fmtStrTail}, ""))
 	}
 	return strings.Join(addrs, " "), nil
 }

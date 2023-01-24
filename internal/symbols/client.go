@@ -46,6 +46,19 @@ func SymbolsURLs() string {
 	return symbolsURLs.String()
 }
 
+func LoadConfig() {
+	DefaultClient = &Client{
+		URL:                 SymbolsURLs(),
+		HTTPClient:          defaultDoer,
+		HTTPLimiter:         parallel.NewRun(500),
+		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
+	}
+}
+
+// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
+// SYMBOLS_URL environment variable.
+var DefaultClient *Client
+
 var defaultDoer = func() httpcli.Doer {
 	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
 	if err != nil {
@@ -53,15 +66,6 @@ var defaultDoer = func() httpcli.Doer {
 	}
 	return d
 }()
-
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// SYMBOLS_URL environment variable.
-var DefaultClient = &Client{
-	URL:                 SymbolsURLs(),
-	HTTPClient:          defaultDoer,
-	HTTPLimiter:         parallel.NewRun(500),
-	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
-}
 
 // Client is a symbols service client.
 type Client struct {

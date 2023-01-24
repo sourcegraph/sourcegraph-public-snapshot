@@ -49,14 +49,7 @@
         }
     }
 
-    .global-shortcut {
-        display: block;
-        align-self: center;
-        border: 1px solid var(--border-color-2);
-        width: 1.5rem;
-    }
-
-    button {
+    .input-button {
         display: none;
         align-self: flex-start;
         padding: 0.125rem 0.25rem;
@@ -69,6 +62,13 @@
             outline: 2px solid rgba(163, 208, 255, 1);
             outline-offset: 0;
         }
+    }
+
+    .global-shortcut {
+        display: block;
+        align-self: center;
+        border: 1px solid var(--border-color-2);
+        width: 1.5rem;
     }
 }
 

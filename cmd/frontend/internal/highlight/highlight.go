@@ -34,10 +34,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
-	client        *gosyntect.Client
-)
+func LoadConfig() {
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	client = gosyntect.New(syntectServer)
+}
+
+var client *gosyntect.Client
 
 var (
 	highlightOpOnce sync.Once
@@ -61,10 +63,6 @@ func getHighlightOp() *observation.Operation {
 	})
 
 	return highlightOp
-}
-
-func init() {
-	client = gosyntect.New(syntectServer)
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.

@@ -1,6 +1,5 @@
 import type { WorkspaceRoot } from '../../codeintel/legacy-extensions/api'
-
-import { collectSubscribableValues, integrationTestContext } from './testHelpers'
+import { collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 
 describe('Workspace roots (integration)', () => {
     describe('workspace.roots', () => {

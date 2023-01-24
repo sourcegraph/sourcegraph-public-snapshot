@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -186,5 +187,5 @@ func setupRedisTest(t *testing.T) {
 		return nil, nil
 	}))
 
-	pool = &redis.Pool{Dial: func() (redis.Conn, error) { return mockConn, nil }, MaxIdle: 10}
+	evalStore = redispool.RedisKeyValue(&redis.Pool{Dial: func() (redis.Conn, error) { return mockConn, nil }, MaxIdle: 10})
 }
