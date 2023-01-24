@@ -140,6 +140,11 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	t.Run("expire", func(t *testing.T) {
 		require := require{TB: t}
 
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+
 		// SetEx, Expire and TTL
 		require.Works(kv.SetEx("expires-setex", 60, "1"))
 		require.Works(kv.Set("expires-set", "1"))
