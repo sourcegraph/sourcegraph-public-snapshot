@@ -36,7 +36,7 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 	}
 	return &Provider{
 		urn:      conn.URN,
-		client:   &ClientAdapter{Client: gClient},
+		client:   gClient,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
 	}, nil
 }
@@ -66,6 +66,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		Username: credentials.Username,
 		Password: credentials.Password,
 	})
+
 	queryArgs := gerrit.ListProjectsArgs{
 		Cursor: &gerrit.Pagination{
 			PerPage: 100,
@@ -76,6 +77,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 	if err != nil {
 		return nil, err
 	}
+
 	var nextPageProjects *gerrit.ListProjectsResponse
 	for nextPage {
 		queryArgs.Cursor.Page++

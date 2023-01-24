@@ -5,6 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client interface {
@@ -20,6 +22,14 @@ var _ client = (*ClientAdapter)(nil)
 // ClientAdapter is an adapter for Gerrit API client.
 type ClientAdapter struct {
 	*gerrit.Client
+}
+
+func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (client, error) {
+	c, err := gerrit.NewClient(urn, config, httpClient)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientAdapter{c}, nil
 }
 
 // WithAuthenticator returns a new ClientAdapter with the given authenticator.
