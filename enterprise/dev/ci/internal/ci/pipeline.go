@@ -93,9 +93,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		if c.Diff.Has(changed.WolfiBaseImages) {
+			fmt.Printf("Wolfi base image changed files: %+v\n\n", c.ChangedFiles[changed.WolfiBaseImages])
 			ops.Merge(WolfiBaseImagesOperations(c.ChangedFiles[changed.WolfiBaseImages]))
 		}
 		if c.Diff.Has(changed.WolfiPackages) {
+			fmt.Printf("Wolfi package changed files: %+v\n", c.ChangedFiles[changed.WolfiPackages])
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
 		}
 
