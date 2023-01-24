@@ -2,7 +2,7 @@ local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
 
 local indexer = require("sg.autoindex.indexes").get "rust"
-local outfile = "dump.scip"
+local outfile = "index.scip"
 
 return recognizer.new_path_recognizer {
   patterns = {
