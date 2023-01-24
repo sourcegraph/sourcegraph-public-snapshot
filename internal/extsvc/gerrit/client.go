@@ -13,16 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Client access a Gerrit via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
-
-	// Config is the code host connection config for this client
-	Config *schema.GerritConnection
 
 	// URL is the base URL of Gerrit.
 	URL *url.URL
@@ -36,27 +32,21 @@ type Client struct {
 }
 
 // NewClient returns an authenticated Gerrit API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// the provided configuration. If a nil httpClient is provided, httpcli.ExternalDoer
 // will be used.
-func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-
+func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
 	auther := &auth.BasicAuth{
-		Username: config.Username,
-		Password: config.Password,
+		Username: creds.Username,
+		Password: creds.Password,
 	}
 
 	return &Client{
 		httpClient: httpClient,
-		Config:     config,
-		URL:        u,
+		URL:        url,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 		auther:     auther,
 	}, nil
@@ -67,7 +57,6 @@ type ListAccountsResponse []Account
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
-		Config:     c.Config,
 		URL:        c.URL,
 		rateLimit:  c.rateLimit,
 		auther:     a,
