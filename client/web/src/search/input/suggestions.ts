@@ -1,10 +1,8 @@
 import React from 'react'
 
 import { EditorState } from '@codemirror/state'
-import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar } from '@mdi/js'
+import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
-import { AuthenticatedUser } from 'src/auth'
-import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
@@ -20,14 +18,25 @@ import {
     getEditorConfig,
     SuggestionResult,
 } from '@sourcegraph/branded/src/search-ui/experimental'
+import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
+import { isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+
+import { AuthenticatedUser } from '../../auth'
+import {
+    SuggestionsRepoResult,
+    SuggestionsRepoVariables,
+    SuggestionsFileResult,
+    SuggestionsFileVariables,
+} from '../../graphql-operations'
 
 /**
  * Used to organize the various sources that contribute to the final list of
@@ -36,19 +45,25 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 type InternalSource<T extends Token | undefined = Token | undefined> = (params: {
     token: T
     tokens: Token[]
+    parsedQuery: Node | null
     input: string
     position: number
 }) => SuggestionResult | null
 
 const none: any[] = []
 
+// Custom renderer for filter suggestions
 const filterRenderer = (option: Option): React.ReactElement => React.createElement(FilterOption, { option })
+// Custom renderer for (the current) query suggestions
 const queryRenderer = (option: Option): React.ReactElement => React.createElement(QueryOption, { option })
 
 function starTiebraker(a: { item: { stars: number } }, b: { item: { stars: number } }): number {
     return b.item.stars - a.item.stars
 }
 
+/**
+ * Ranks default and starred contexts higher than others
+ */
 function contextTiebraker(a: { item: Context }, b: { item: Context }): number {
     return (b.item.starred || b.item.default ? 1 : 0) - (a.item.starred || a.item.default ? 1 : 0)
 }
@@ -66,6 +81,28 @@ const REPOS_QUERY = gql`
     }
 `
 
+const FILE_QUERY = gql`
+    query SuggestionsFile($query: String!) {
+        search(patternType: regexp, query: $query) {
+            results {
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
+                            path
+                            url
+                            repository {
+                                name
+                                stars
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 interface Repo {
     name: string
     stars: number
@@ -77,6 +114,14 @@ interface Context {
     default: boolean
     starred: boolean
     description: string
+}
+
+interface File {
+    path: string
+    // The repository stars
+    stars: number
+    repository: string
+    url: string
 }
 
 /**
@@ -152,6 +197,36 @@ function toFilterCompletion(filter: FilterType, from: number, to?: number): Comp
 }
 
 /**
+ * Converts a File value to a completion suggestion.
+ */
+function toFileCompletion({ item, positions }: FzfResultItem<File>, from: number, to?: number): Completion {
+    return {
+        type: 'completion',
+        icon: mdiFileOutline,
+        value: item.path,
+        insertValue: regexInsertText(item.path, { globbing: false }) + ' ',
+        description: item.repository,
+        matches: positions,
+        from,
+        to,
+    }
+}
+
+/**
+ * Converts a File value to a (jump) target suggestion.
+ */
+function toFileTarget({ item, positions }: FzfResultItem<File>): Target {
+    return {
+        type: 'target',
+        icon: mdiFileOutline,
+        value: item.path,
+        description: item.repository,
+        url: item.url,
+        matches: positions,
+    }
+}
+
+/**
  * If the query is not empty, this source will return a single command
  * suggestion which submits the query when selected.
  */
@@ -198,7 +273,11 @@ const currentQuery: InternalSource = ({ token, input }) => {
 }
 
 const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
+// These are the filters shown when the query input is empty or the cursor is at
+// at whitespace token.
 const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.context, FilterType.lang, FilterType.type]
+// If the query contains one of the listed filters, suggest these filters
+// too.
 const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType[]>> = {
     [FilterType.type]: filter => {
         switch (filter.value?.value) {
@@ -212,7 +291,8 @@ const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType
 
 /**
  * Returns filter completion suggestions for the current term at the cursor. If
- * there is no term a small list of suggested filters is returned.
+ * there is no term a small list of default filters is returned. Filters are
+ * matched by prefix.
  */
 const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
     let options: Group['options'] = []
@@ -245,7 +325,7 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
  * a filter value.
  */
 function filterValueSuggestions(caches: Caches): InternalSource {
-    return ({ token }) => {
+    return ({ token, parsedQuery, position }) => {
         if (token?.type !== 'filter') {
             return null
         }
@@ -256,12 +336,31 @@ function filterValueSuggestions(caches: Caches): InternalSource {
 
         switch (resolvedFilter?.definition.suggestions) {
             case 'repo': {
-                return caches.repo.query(value, entries => [
-                    {
-                        title: 'Repositories',
-                        options: entries.slice(0, 25).map(item => toRepoCompletion(item, from, to)),
-                    },
-                ])
+                return caches.repo.query(
+                    value,
+                    entries => [
+                        {
+                            title: 'Repositories',
+                            options: entries.slice(0, 25).map(item => toRepoCompletion(item, from, to)),
+                        },
+                    ],
+                    parsedQuery,
+                    position
+                )
+            }
+
+            case 'path': {
+                return caches.file.query(
+                    value,
+                    entries => [
+                        {
+                            title: 'Files',
+                            options: entries.map(item => toFileCompletion(item, from, to)).slice(0, 25),
+                        },
+                    ],
+                    parsedQuery,
+                    position
+                )
             }
 
             default: {
@@ -332,34 +431,85 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
 
 /**
  * Returns repository (jump) target suggestions matching the term at the cursor,
- * but only if the query doens't already contain a 'repo:' filter.
+ * but only if the query doesn't already contain a 'repo:' filter.
  */
-function repoSuggestions(cache: Cache<Repo, FzfResultItem<Repo>>): InternalSource {
-    return ({ token, tokens }) => {
+function repoSuggestions(cache: Caches['repo']): InternalSource {
+    return ({ token, tokens, parsedQuery, position }) => {
         const showRepoSuggestions =
             token?.type === 'pattern' && !tokens.some(token => token.type === 'filter' && token.field.value === 'repo')
         if (!showRepoSuggestions) {
             return null
         }
 
-        return cache.query(token.value, results => [
-            {
-                title: 'Repositories',
-                options: results.slice(0, 5).map(toRepoTarget),
-            },
-        ])
+        return cache.query(
+            token.value,
+            results => [
+                {
+                    title: 'Repositories',
+                    options: results.slice(0, 5).map(toRepoTarget),
+                },
+            ],
+            parsedQuery,
+            position
+        )
     }
 }
 
+/**
+ * Returns file (jump) target suggestions matching the term at the cursor,
+ * but only if the query contains suitable filters. On dotcom we only show file
+ * suggestions if the query contains at least one context: or repo: filter.
+ */
+function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): InternalSource {
+    return ({ token, tokens, parsedQuery, position }) => {
+        // Only show file suggestions when
+        // - the query contains at least one repo: filter
+        // - if this is dotcom, contains at least one context: filter that is not 'global'
+        const showFileSuggestions =
+            token?.type === 'pattern' &&
+            (!isSourcegraphDotCom ||
+                tokens.some(
+                    token =>
+                        token.type === 'filter' &&
+                        ((token.field.value === 'context' && token.value?.value !== 'global') ||
+                            token.field.value === 'repo')
+                ))
+
+        if (!showFileSuggestions) {
+            return null
+        }
+
+        return cache.query(
+            token.value,
+            results => [
+                {
+                    title: 'Files',
+                    options: results.slice(0, 5).map(toFileTarget),
+                },
+            ],
+            parsedQuery,
+            position
+        )
+    }
+}
+
+/**
+ * A contextual cache not only uses the provided value to find suggestions but
+ * also the current (parsed) query input.
+ */
+type ContextualCache<T, U> = Cache<T, U, [Node | null, number]>
+
 interface Caches {
-    repo: Cache<Repo, FzfResultItem<Repo>>
+    repo: ContextualCache<Repo, FzfResultItem<Repo>>
     context: Cache<Context, FzfResultItem<Context>>
+    file: ContextualCache<File, FzfResultItem<File>>
 }
 
 interface SuggestionsSourceConfig
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'> {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
     authenticatedUser?: AuthenticatedUser | null
+    isSourcegraphDotCom?: boolean
 }
 
 /**
@@ -371,12 +521,14 @@ export const createSuggestionsSource = ({
     authenticatedUser,
     fetchSearchContexts,
     getUserSearchContextNamespaces,
+    isSourcegraphDotCom,
 }: SuggestionsSourceConfig): Source => {
     const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
 
     const repoFzfOptions: FzfOptions<Repo> = {
         selector: item => item.name,
         tiebreakers: [starTiebraker],
+        forward: false,
     }
 
     const contextFzfOptions: FzfOptions<Context> = {
@@ -384,10 +536,28 @@ export const createSuggestionsSource = ({
         tiebreakers: [contextTiebraker],
     }
 
+    const fileFzfOptions: FzfOptions<File> = {
+        selector: item => item.path,
+        forward: false,
+        tiebreakers: [starTiebraker],
+    }
+
+    // Relevant query filters for file suggestions
+    const fileFilters: Set<FilterType> = new Set([FilterType.repo, FilterType.rev, FilterType.context, FilterType.lang])
+
     // TODO: Initialize outside to persist cache across page navigation
     const caches: Caches = {
         repo: new Cache({
-            queryKey: value => `type:repo count:50 repo:${value}`,
+            // Repo queries are scoped to context: filters
+            dataCacheKey: (parsedQuery, position) =>
+                parsedQuery
+                    ? buildSuggestionQuery(
+                          parsedQuery,
+                          { start: position, end: position },
+                          token => token.type === 'parameter' && !!token.value && token.field === 'context'
+                      )
+                    : '',
+            queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:repo count:50 repo:${value}`,
             async query(query) {
                 const response = await platformContext
                     .requestGraphQL<SuggestionsRepoResult, SuggestionsRepoVariables>({
@@ -434,12 +604,54 @@ export const createSuggestionsSource = ({
                 const fzf = new Fzf(contexts, contextFzfOptions)
                 const results = fzf.find(cleanRegex(query))
                 if (query.trim() === '') {
-                    // We need to manually sort results if the query is empty to
-                    // ensure that default and starred contexts are listed
-                    // first.
+                    // It seems we need to manually sort results if the query is
+                    // empty to ensure that default and starred contexts are
+                    // listed first.
                     results.sort(contextTiebraker)
                 }
                 return results
+            },
+        }),
+        // File queries are scoped to context: and repo: filters
+        file: new Cache({
+            dataCacheKey: (parsedQuery, position) =>
+                parsedQuery
+                    ? buildSuggestionQuery(
+                          parsedQuery,
+                          { start: position, end: position },
+                          token =>
+                              token.type === 'parameter' && !!token.value && fileFilters.has(token.field as FilterType)
+                      )
+                    : '',
+            queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:file count:50 file:${value}`,
+            async query(query) {
+                const response = await platformContext
+                    .requestGraphQL<SuggestionsFileResult, SuggestionsFileVariables>({
+                        request: FILE_QUERY,
+                        variables: { query },
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                return (
+                    response.data?.search?.results?.results?.reduce((results, result) => {
+                        if (result.__typename === 'FileMatch') {
+                            results.push([
+                                result.file.path,
+                                {
+                                    path: result.file.path,
+                                    repository: result.file.repository.name,
+                                    stars: result.file.repository.stars,
+                                    url: result.file.url,
+                                },
+                            ])
+                        }
+                        return results
+                    }, [] as [string, File][]) ?? []
+                )
+            },
+            filter(files, query) {
+                const fzf = new Fzf(files, fileFzfOptions)
+                return fzf.find(cleanRegex(query))
             },
         }),
     }
@@ -449,9 +661,11 @@ export const createSuggestionsSource = ({
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
+        fileSuggestions(caches.file, isSourcegraphDotCom),
     ]
 
     return (state, position) => {
+        const parsedQuery = getParsedQuery(state)
         const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
         const token = tokenAt(tokens, position)
         const input = state.sliceDoc()
@@ -461,7 +675,7 @@ export const createSuggestionsSource = ({
             return token === tokenAt(tokens, position)
         }
 
-        const params = { token, tokens, input, position }
+        const params = { token, tokens, input, position, parsedQuery }
         const results = sources.map(source => source(params))
         const dummyResult = { result: [], valid }
 
@@ -469,52 +683,202 @@ export const createSuggestionsSource = ({
     }
 }
 
-interface CacheConfig<T, U> {
-    queryKey(value: string): string
-    query(key: string, value: string): Promise<[string, T][]>
+interface CacheConfig<T, U, E extends any[] = []> {
+    /**
+     * Returns a string that uniquely identifies this query (which is often just
+     * the query itself). If the same request is made again the existing result
+     * is reused.
+     */
+    queryKey(value: string, dataCacheKey?: string): string
+    /**
+     * Fetch data. queryKey is the value return by the queryKey function and
+     * value is the term that's currently completed. Returns a list of [key,
+     * value] tuples. The key of these tuples is used to uniquly identify a
+     * value the data cache.
+     */
+    query(queryKey: string, value: string): Promise<[string, T][]>
+    /**
+     * This function filters and ranks all cache values (entries) by value.
+     */
     filter(entries: T[], value: string): U[]
+    /**
+     * If provided data values are bucketed into different "cache groups", keyed
+     * by the return value of this function.
+     */
+    dataCacheKey?(...extraArgs: E): string
 }
 
 /**
  * This class handles creating suggestion results that include cached values (if
  * available) and updates the cache with new results from new queries.
  */
-class Cache<T, U> {
+class Cache<T, U, E extends any[] = []> {
     private queryCache = new Map<string, Promise<void>>()
     private dataCache = new Map<string, T>()
+    private dataCacheByQuery = new Map<string, Map<string, T>>()
 
-    constructor(private config: CacheConfig<T, U>) {}
+    constructor(private config: CacheConfig<T, U, E>) {}
 
-    public query(value: string, mapper: (values: U[]) => Group[]): ReturnType<InternalSource> {
-        const next: SuggestionResult['next'] = () => {
-            const key = this.config.queryKey(value)
-            let result = this.queryCache.get(key)
-
-            if (!result) {
-                result = this.config.query(key, value).then(entries => {
-                    for (const [key, entry] of entries) {
-                        if (!this.dataCache.has(key)) {
-                            this.dataCache.set(key, entry)
-                        }
-                    }
-                })
+    public query(value: string, mapper: (values: U[]) => Group[], ...extraArgs: E): ReturnType<InternalSource> {
+        // The dataCacheKey could possibly just be an argument to query. However
+        // that would require callsites to remember to pass the value. Doing it
+        // this way we get a bit more type safety.
+        const dataCacheKey = this.config.dataCacheKey?.(...extraArgs)
+        const queryKey = this.config.queryKey(value, dataCacheKey)
+        let dataCache = this.dataCache
+        if (dataCacheKey) {
+            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map()
+            if (!this.dataCacheByQuery.has(dataCacheKey)) {
+                this.dataCacheByQuery.set(dataCacheKey, dataCache)
             }
-
-            if (!this.queryCache.has(key)) {
-                this.queryCache.set(key, result)
-            }
-
-            return result.then(() => ({ result: mapper(this.cachedData(value)) }))
         }
-
         return {
-            result: mapper(this.cachedData(value)),
-            next,
+            result: mapper(this.cachedData(value, dataCache)),
+            next: () => {
+                let result = this.queryCache.get(queryKey)
+
+                if (!result) {
+                    result = this.config.query(queryKey, value).then(entries => {
+                        for (const [key, entry] of entries) {
+                            if (!dataCache.has(key)) {
+                                dataCache.set(key, entry)
+                            }
+                        }
+                    })
+
+                    this.queryCache.set(queryKey, result)
+                }
+
+                return result.then(() => ({ result: mapper(this.cachedData(value, dataCache)) }))
+            },
         }
     }
 
-    private cachedData(value: string): U[] {
-        return this.config.filter(Array.from(this.dataCache.values()), value)
+    private cachedData(value: string, cache = this.dataCache): U[] {
+        return this.config.filter(Array.from(cache.values()), value)
+    }
+}
+
+const placeholderRange: CharacterRange = { start: 0, end: 0 }
+
+/**
+ * This function processes a given query in a top-down manner and removes any
+ * patterns and filters that cannot affect the token at the target character
+ * range.
+ * This is relatively straighforward: We only keep tokens that represent
+ * whitelisted filters and which are direct children of an AND branch.
+ * Everything else is discarded.
+ */
+function buildSuggestionQuery(query: Node, target: CharacterRange, filter: (node: Node) => boolean): string {
+    function processNode(node: Node): Node | null {
+        switch (node.type) {
+            case 'parameter':
+            case 'pattern':
+                return filter(node) ? node : null
+            case 'sequence': {
+                const nodes = node.nodes.map(processNode).filter(isDefined)
+                return nodes.length > 0 ? { type: 'sequence', nodes, range: placeholderRange } : null
+            }
+            case 'operator': {
+                switch (node.kind) {
+                    case OperatorKind.Or: {
+                        // If one operand contains the target branche we only
+                        // need to keep that operand (the other branch is
+                        // irrelevant). But if no operand contains the target
+                        // range we need to process all nodes and assume that
+                        // this token is ANDed at some level with the target
+                        // range.
+                        //
+                        // Examples:
+                        //
+                        // filter:a filter:b OR filter:|
+                        // ^^^^^^^^^^^^^^^^^
+                        //      discard
+                        //
+                        // (filter:a or filter:b) filter:|
+                        // ^^^^^^^^^^^^^^^^^^^^^^
+                        // needs to be preserved
+                        const operand = node.operands.find(
+                            node => node.range.start <= target.start && node.range.end >= target.end
+                        )
+
+                        if (operand) {
+                            return processNode(operand)
+                        }
+                        // NOTE: Intentional fallthrough since the logic is the
+                        // same.
+                    }
+                    case OperatorKind.And: {
+                        const operands = node.operands.map(processNode).filter(isDefined)
+                        switch (operands.length) {
+                            case 0:
+                                return null
+                            case 1:
+                                return operands[0]
+                            default:
+                                return {
+                                    type: 'operator',
+                                    // needs to be node.kind to properly handle
+                                    // fallthrough case.
+                                    kind: node.kind,
+                                    operands,
+                                    range: placeholderRange,
+                                }
+                        }
+                    }
+                    case OperatorKind.Not: {
+                        if (node.operands.length === 0) {
+                            return null
+                        }
+                        const operand = processNode(node.operands[0])
+                        if (!operand) {
+                            return null
+                        }
+                        return { type: 'operator', kind: node.kind, operands: [operand], range: placeholderRange }
+                    }
+                }
+            }
+        }
+    }
+
+    const result = processNode(query)
+    return result ? printParsedQuery(result).join('') : ''
+}
+
+function printParsedQuery(node: Node, buffer: string[] = []): string[] {
+    switch (node.type) {
+        case 'pattern':
+            // TODO: quoted, negated, ...
+            switch (node.kind) {
+                case PatternKind.Regexp:
+                    buffer.push('/', node.value, '/')
+                    return buffer
+                default:
+                    buffer.push(node.value)
+                    return buffer
+            }
+        case 'parameter': {
+            if (node.negated) {
+                buffer.push('-')
+            }
+            buffer.push(node.field, ':', node.value)
+            return buffer
+        }
+        case 'sequence': {
+            for (const operand of node.nodes) {
+                printParsedQuery(operand, buffer)
+                buffer.push(' ')
+            }
+            return buffer
+        }
+        case 'operator': {
+            buffer.push(
+                ' (',
+                node.operands.map(operand => printParsedQuery(operand).join('')).join(` ${node.kind} `),
+                ') '
+            )
+            return buffer
+        }
     }
 }
 

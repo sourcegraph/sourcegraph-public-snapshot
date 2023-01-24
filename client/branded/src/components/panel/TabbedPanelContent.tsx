@@ -44,7 +44,7 @@ import { PanelView } from './views/PanelView'
 
 import styles from './TabbedPanelContent.module.scss'
 
-interface TabbedPanelContentProps
+export interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,

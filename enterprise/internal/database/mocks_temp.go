@@ -6964,6 +6964,9 @@ type MockEnterpriseDB struct {
 	// WebhooksFunc is an instance of a mock function object controlling the
 	// behavior of the method Webhooks.
 	WebhooksFunc *EnterpriseDBWebhooksFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *EnterpriseDBWithTransactFunc
 	// ZoektReposFunc is an instance of a mock function object controlling
 	// the behavior of the method ZoektRepos.
 	ZoektReposFunc *EnterpriseDBZoektReposFunc
@@ -7220,6 +7223,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		WebhooksFunc: &EnterpriseDBWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 database.WebhookStore) {
+				return
+			},
+		},
+		WithTransactFunc: &EnterpriseDBWithTransactFunc{
+			defaultHook: func(context.Context, func(tx database.DB) error) (r0 error) {
 				return
 			},
 		},
@@ -7485,6 +7493,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Webhooks")
 			},
 		},
+		WithTransactFunc: &EnterpriseDBWithTransactFunc{
+			defaultHook: func(context.Context, func(tx database.DB) error) error {
+				panic("unexpected invocation of MockEnterpriseDB.WithTransact")
+			},
+		},
 		ZoektReposFunc: &EnterpriseDBZoektReposFunc{
 			defaultHook: func() database.ZoektReposStore {
 				panic("unexpected invocation of MockEnterpriseDB.ZoektRepos")
@@ -7647,6 +7660,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		WebhooksFunc: &EnterpriseDBWebhooksFunc{
 			defaultHook: i.Webhooks,
+		},
+		WithTransactFunc: &EnterpriseDBWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 		ZoektReposFunc: &EnterpriseDBZoektReposFunc{
 			defaultHook: i.ZoektRepos,
@@ -12708,6 +12724,111 @@ func (c EnterpriseDBWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBWithTransactFunc describes the behavior when the WithTransact
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBWithTransactFunc struct {
+	defaultHook func(context.Context, func(tx database.DB) error) error
+	hooks       []func(context.Context, func(tx database.DB) error) error
+	history     []EnterpriseDBWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) WithTransact(v0 context.Context, v1 func(tx database.DB) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(EnterpriseDBWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBWithTransactFunc) SetDefaultHook(hook func(context.Context, func(tx database.DB) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBWithTransactFunc) PushHook(hook func(context.Context, func(tx database.DB) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(tx database.DB) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(tx database.DB) error) error {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBWithTransactFunc) nextHook() func(context.Context, func(tx database.DB) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBWithTransactFunc) appendCall(r0 EnterpriseDBWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBWithTransactFunc) History() []EnterpriseDBWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockEnterpriseDB.
+type EnterpriseDBWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(tx database.DB) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

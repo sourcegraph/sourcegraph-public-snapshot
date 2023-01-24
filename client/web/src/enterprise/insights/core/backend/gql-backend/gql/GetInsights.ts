@@ -62,6 +62,16 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
             searchContexts
         }
         dashboardReferenceCount
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         dashboards {
             nodes {
                 id
