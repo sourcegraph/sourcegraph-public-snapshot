@@ -1,8 +1,11 @@
 package blobstore_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -87,8 +90,28 @@ func TestGetExists(t *testing.T) {
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Get(ctx context.Context, key string) (io.ReadCloser, error)
-	_ = store
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "hello world!")
+
+	// Upload our object
+	uploaded, err := store.Upload(ctx, "foobar", &buf)
+	autogold.Expect([2]interface{}{12, nil}).Equal(t, [2]interface{}{uploaded, err})
+
+	// Get the object back out
+	reader, err := store.Get(ctx, "foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Expect(nil).Equal(t, []interface{}{
+		uploaded,
+		len(data),
+		buf.String(),
+		string(data),
+	})
 }
 
 // Initialize uploadstore, upload two objects, compose them together
