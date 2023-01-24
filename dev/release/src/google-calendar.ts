@@ -1,14 +1,15 @@
+import { createServer } from 'http'
+import type { IncomingMessage, Server, ServerResponse } from 'http'
+import { AddressInfo } from 'net'
+
 import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
-import { createServer } from 'http'
 import { OAuth2Client } from 'googleapis-common'
 import { readFile, writeFile } from 'mz/fs'
 import open from 'open'
-import type { IncomingMessage, Server, ServerResponse } from 'http'
 
 import { readLine, cacheFolder } from './util'
-import { AddressInfo } from 'net'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
