@@ -782,12 +782,31 @@ function buildSuggestionQuery(query: Node, target: CharacterRange, filter: (node
             case 'operator': {
                 switch (node.kind) {
                     case OperatorKind.Or: {
-                        // We only keep the operand that are within the
-                        // target range. There can only be one.
+                        // If one operand contains the target branche we only
+                        // need to keep that operand (the other branch is
+                        // irrelevant). But if no operand contains the target
+                        // range we need to process all nodes and assume that
+                        // this token is ANDed at some level with the target
+                        // range.
+                        //
+                        // Examples:
+                        //
+                        // filter:a filter:b OR filter:|
+                        // ^^^^^^^^^^^^^^^^^
+                        //      discard
+                        //
+                        // (filter:a or filter:b) filter:|
+                        // ^^^^^^^^^^^^^^^^^^^^^^
+                        // needs to be preserved
                         const operand = node.operands.find(
                             node => node.range.start <= target.start && node.range.end >= target.end
                         )
-                        return operand ? processNode(operand) : null
+
+                        if (operand) {
+                            return processNode(operand)
+                        }
+                        // NOTE: Intentional fallthrough since the logic is the
+                        // same.
                     }
                     case OperatorKind.And: {
                         const operands = node.operands.map(processNode).filter(isDefined)
@@ -799,6 +818,8 @@ function buildSuggestionQuery(query: Node, target: CharacterRange, filter: (node
                             default:
                                 return {
                                     type: 'operator',
+                                    // needs to be node.kind to properly handle
+                                    // fallthrough case.
                                     kind: node.kind,
                                     operands,
                                     range: placeholderRange,
