@@ -2476,10 +2476,6 @@ def go_dependencies():
 
     go_repository(
         name = "com_github_sourcegraph_scip",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/sourcegraph/scip",
-        sum = "h1:6nRsTlNTELn+1V7JxLrDVbBpb9H1gAbUF48N7x5B8Y4=",
-        version = "v0.2.3",
         # This fixes the build for sourcegraph/scip which depends on sourcegraph/sourcegraph/lib but
         # gazelle doesn't know how to resolve those packages from within sourcegraph/scip.
         build_directives = [
@@ -2488,6 +2484,10 @@ def go_dependencies():
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader @//lib/codeintel/lsif/protocol/reader",
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer @//lib/codeintel/lsif/protocol/writer",
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/scip",
+        sum = "h1:6nRsTlNTELn+1V7JxLrDVbBpb9H1gAbUF48N7x5B8Y4=",
+        version = "v0.2.3",
     )
 
     go_repository(
