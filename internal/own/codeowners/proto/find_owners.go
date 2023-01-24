@@ -45,8 +45,19 @@ type anySubPath struct{}
 func (p anySubPath) String() string      { return "**" }
 func (p anySubPath) Match(_ string) bool { return true }
 
-// anyMatch is a pattern that matches any path part.
-var anyMatch patternPart = makeAsteriskPattern("*")
+// exactMatch is indicated by an exact name of directory or a file within
+// the glob pattern, and matches that exact part of the path only.
+type exactMatch string
+
+func (p exactMatch) String() string         { return string(p) }
+func (p exactMatch) Match(part string) bool { return string(p) == part }
+
+// anyMatch is indicated by * in a glob pattern, and matches any single file
+// or directory on the path.
+type anyMatch struct{}
+
+func (p anyMatch) String() string      { return "*" }
+func (p anyMatch) Match(_ string) bool { return true }
 
 // asteriskPattern is a pattern that may contain * glob wildcard.
 type asteriskPattern struct {
@@ -54,17 +65,20 @@ type asteriskPattern struct {
 	compiled *regexp.Regexp
 }
 
-func makeAsteriskPattern(pattern string) asteriskPattern {
+func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
 	quoted := regexp.QuoteMeta(pattern)
 	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
 	compiled, err := regexp.Compile("^" + regular + "$")
 	if err != nil {
-		return asteriskPattern{}
+		return asteriskPattern{}, err
 	}
-	return asteriskPattern{glob: pattern, compiled: compiled}
+	return asteriskPattern{glob: pattern, compiled: compiled}, nil
 }
 func (p asteriskPattern) String() string { return p.glob }
 func (p asteriskPattern) Match(part string) bool {
+	if p.compiled == nil {
+		return false
+	}
 	return p.compiled.FindString(part) != ""
 }
 
@@ -83,8 +97,18 @@ func compile(pattern string) (globPattern, error) {
 			return nil, errors.New("two consecutive forward slashes")
 		case "**":
 			glob = append(glob, anySubPath{})
+		case "*":
+			glob = append(glob, anyMatch{})
 		default:
-			glob = append(glob, makeAsteriskPattern(part))
+			if strings.Contains(part, "*") {
+				p, err := makeAsteriskPattern(part)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to interpret %q within %q", part, pattern)
+				}
+				glob = append(glob, p)
+			} else {
+				glob = append(glob, exactMatch(part))
+			}
 		}
 	}
 	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
@@ -98,7 +122,7 @@ func compile(pattern string) (globPattern, error) {
 	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
 	if len(glob) > 0 {
 		if _, ok := glob[len(glob)-1].(anySubPath); ok {
-			glob = append(glob, anyMatch)
+			glob = append(glob, anyMatch{})
 		}
 	}
 	return glob, nil
