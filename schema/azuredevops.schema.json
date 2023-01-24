@@ -52,7 +52,7 @@
         "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
-            "description": "The name of an Azure DevOps Services/Server repo (\"projectName/repositoryName\") to exclude from mirroring.",
+            "description": "The name of an Azure DevOps Services/Server project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
             "pattern": "^~?[\\w-]+/[\\w.-]+$"
           },
