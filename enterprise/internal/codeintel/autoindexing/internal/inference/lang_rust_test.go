@@ -24,7 +24,7 @@ func TestRustGenerator(t *testing.T) {
 					Root:        "",
 					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"scip-rust", "index"},
-					Outfile:     "dump.scip",
+					Outfile:     "index.scip",
 				},
 			},
 		},
