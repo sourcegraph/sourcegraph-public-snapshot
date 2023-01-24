@@ -32,6 +32,9 @@ const (
 	All
 )
 
+// ChangedFiles maps between diff type and lists of files that have changed in the diff
+type ChangedFiles map[Diff][]string
+
 // ForEachDiffType iterates all Diff types except None and All and calls the callback on
 // each.
 func ForEachDiffType(callback func(d Diff)) {
@@ -62,7 +65,11 @@ var topLevelGoDirs = []string{
 //
 // To introduce a new type of Diff, add it a new Diff constant above and add a check in
 // this function to identify the Diff.
-func ParseDiff(files []string) (diff Diff) {
+//
+// ChangedFiles is only used for diff types where it's helpful to know exactly which files changed.
+func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
+	changedFiles = make(ChangedFiles)
+
 	for _, p := range files {
 		// Affects Go
 		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
@@ -176,11 +183,13 @@ func ParseDiff(files []string) (diff Diff) {
 		// Affects Wolfi packages
 		if strings.HasPrefix(p, "wolfi-packages/") && strings.HasSuffix(p, ".yaml") {
 			diff |= WolfiPackages
+			changedFiles[WolfiPackages] = append(changedFiles[WolfiPackages], p)
 		}
 
 		// Affects Wolfi base images
 		if strings.HasPrefix(p, "wolfi-images/") && strings.HasSuffix(p, ".yaml") {
 			diff |= WolfiBaseImages
+			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
 		}
 	}
 	return

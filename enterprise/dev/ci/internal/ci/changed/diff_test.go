@@ -60,7 +60,8 @@ func TestParseDiff(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			diff := ParseDiff(tt.files)
+			// TODO: Update tests
+			diff, _ := ParseDiff(tt.files)
 			for _, want := range tt.wantAffects {
 				assert.True(t, diff.Has(want))
 			}

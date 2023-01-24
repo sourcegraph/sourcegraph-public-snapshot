@@ -30,6 +30,8 @@ type Config struct {
 
 	// Diff denotes what has changed since the merge-base with origin/main.
 	Diff changed.Diff
+	// ChangedFiles lists files that have changed, group by diff type
+	ChangedFiles changed.ChangedFiles
 
 	// MustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
 	// in the branch. If empty, then no check is enforced.
@@ -99,6 +101,8 @@ func NewConfig(now time.Time) Config {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
+	// fmt.Printf("List of changed files:\n%+v\n", changedFiles)
+
 	// special tag adjustments based on run type
 	switch {
 	case runType.Is(runtype.TaggedRelease):
@@ -119,6 +123,8 @@ func NewConfig(now time.Time) Config {
 		tag = tag + "_patch"
 	}
 
+	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
+
 	return Config{
 		RunType: runType,
 
@@ -127,7 +133,8 @@ func NewConfig(now time.Time) Config {
 		Version:           tag,
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
-		Diff:              changed.ParseDiff(changedFiles),
+		Diff:              diff,
+		ChangedFiles:      changedFilesByDiffType,
 		BuildNumber:       buildNumber,
 
 		// get flags from commit message
