@@ -74,8 +74,8 @@ export const percySnapshot = async (
         return Promise.resolve()
     }
 
-    const extensionStyles = await extractStyles(page)
-    return realPercySnapshot(page, name, { ...options, percyCSS: extensionStyles.concat(options.percyCSS || '') })
+    const pageStyles = await extractStyles(page)
+    return realPercySnapshot(page, name, { ...options, percyCSS: pageStyles.concat(options.percyCSS || '') })
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'

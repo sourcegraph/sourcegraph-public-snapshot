@@ -61,7 +61,7 @@ export const createWebIntegrationTestContext = async ({
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const config = getConfig('disableAppAssetsMocking')
-    const bundles = getManifestBundles()
+    const { environment, ...bundles } = getManifestBundles()
 
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
@@ -73,8 +73,6 @@ export const createWebIntegrationTestContext = async ({
 
     const tempSettings = new TemporarySettingsContext()
     sharedTestContext.overrideGraphQL(tempSettings.getGraphQLOverrides())
-
-    const environment = bundles.environment
 
     const prodChunks = {
         'app.js': bundles['app.js'] || '',
