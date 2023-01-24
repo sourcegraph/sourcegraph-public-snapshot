@@ -179,7 +179,7 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
 	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
-	scLoader := store.NewSCLoader(db)
+	scHandler := store.NewSearchContextHandler(db)
 	modifiedPoints := removeClosePoints(p.points, p.series)
 	filterRepoIncludes := []string{}
 	filterRepoExcludes := []string{}
@@ -192,7 +192,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *grap
 	}
 
 	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
-	includeRepos, excludeRepos, _ := scLoader.UnwrapSearchContexts(ctx, p.filters.SearchContexts)
+	includeRepos, excludeRepos, _ := scHandler.UnwrapSearchContexts(ctx, p.filters.SearchContexts)
 	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
 	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
 
@@ -347,8 +347,8 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 
-	scLoader := store.NewSCLoader(db)
-	inc, exc, err := scLoader.UnwrapSearchContexts(ctx, filters.SearchContexts)
+	scHandler := store.NewSearchContextHandler(db)
+	inc, exc, err := scHandler.UnwrapSearchContexts(ctx, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}

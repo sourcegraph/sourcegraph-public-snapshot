@@ -6,18 +6,19 @@ export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateI
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
+        const repoQuery = searchParameter.get('repoQuery')
         const repositories = searchParameter.get('repositories')
         const title = searchParameter.get('title')
         const rawSeries = JSON.parse(searchParameter.get('series') ?? '[]') as SearchBasedInsightSeries[]
         const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false, valid: true }))
-        const allRepos = searchParameter.get('allRepos')
 
-        if (repositories || title || editableSeries.length > 0 || allRepos) {
+        if (repoQuery || repositories || title || editableSeries.length > 0) {
             return {
                 title: title ?? '',
+                repoQuery: { query: repoQuery ?? '' },
                 repositories: repositories ?? '',
-                allRepos: !!allRepos,
                 series: editableSeries,
+                repoMode: repoQuery ? 'search-query' : 'urls-list',
             }
         }
 
@@ -27,9 +28,10 @@ export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateI
     }
 }
 
-type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue'
+type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue' | 'repoQuery' | 'repoMode'
 
 export interface SearchInsightURLValues extends Omit<CreateInsightFormFields, UnsupportedValues> {
+    repoQuery: string
     series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string | number })[]
 }
 
@@ -42,10 +44,9 @@ export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>):
 
         switch (key) {
             case 'title':
-            case 'repositories':
-            case 'allRepos': {
-                parameters.set(key, fields[key].toString())
-
+            case 'repoQuery':
+            case 'repositories': {
+                parameters.set(key, encodeURIComponent(fields[key].toString()))
                 break
             }
             case 'series': {
