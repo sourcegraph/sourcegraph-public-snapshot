@@ -154,7 +154,7 @@ describe('Code insight create insight page', () => {
                         view: {
                             id: '001',
                             isFrozen: false,
-                            appliedFilters: {
+                            defaultFilters: {
                                 includeRepoRegex: null,
                                 excludeRepoRegex: null,
                                 searchContexts: [],
@@ -213,15 +213,9 @@ describe('Code insight create insight page', () => {
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],
-                            appliedSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    direction: null,
-                                    mode: null,
-                                },
-                            },
                             defaultSeriesDisplayOptions: {
                                 limit: null,
+                                numSamples: null,
                                 sortOptions: {
                                     direction: null,
                                     mode: null,

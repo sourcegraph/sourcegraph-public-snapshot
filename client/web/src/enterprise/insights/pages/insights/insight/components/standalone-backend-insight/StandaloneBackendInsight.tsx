@@ -25,7 +25,6 @@ import {
     InsightIncompleteAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
-    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
     BackendInsightData,
@@ -33,6 +32,7 @@ import {
     CodeInsightsBackendContext,
     InsightFilters,
     useSaveInsightAsNewView,
+    isComputeInsight,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
@@ -77,7 +77,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        limit: debouncedFilters.seriesDisplayOptions.limit,
+        numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
@@ -144,6 +145,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         initialValues={filters}
                         originalValues={originalInsightFilters}
                         visualMode={filterVisualMode}
+                        // It doesn't make sense to have max series per point for compute insights
+                        // because there is always only one point per series
+                        isNumSamplesFilterAvailable={!isComputeInsight(insight)}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}

@@ -25,9 +25,9 @@ type uploadMeta struct {
 // Uploads are performed concurrently given the limiter instance as well as the set of
 // flags supplied by the user. This function returns a slice of uploadMeta containing
 // the graphql identifier of the uploaded resources.
-func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *internal.Limiter) ([]uploadMeta, error) {
+func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]internal.ExtensionAndCommit, limiter *internal.Limiter) ([]uploadMeta, error) {
 	n := 0
-	for _, commits := range commitsByRepo {
+	for _, commits := range extensionAndCommitsByRepo {
 		n += len(commits)
 	}
 
@@ -35,8 +35,11 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 	errCh := make(chan error, n)
 	uploadCh := make(chan uploadMeta, n)
 
-	for repoName, commits := range commitsByRepo {
-		for i, commit := range commits {
+	for repoName, extensionAndCommits := range extensionAndCommitsByRepo {
+		for i, extensionAndCommit := range extensionAndCommits {
+			commit := extensionAndCommit.Commit
+			extension := extensionAndCommit.Extension
+
 			wg.Add(1)
 
 			go func(repoName, commit, file string) {
@@ -63,7 +66,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 					repoName: repoName,
 					commit:   commit,
 				}
-			}(repoName, commit, fmt.Sprintf("%s.%d.%s.dump", strings.Replace(repoName, "/", ".", 1), i, commit))
+			}(repoName, commit, fmt.Sprintf("%s.%d.%s.%s", strings.Replace(repoName, "/", ".", 1), i, commit, extension))
 		}
 	}
 
@@ -99,6 +102,7 @@ func upload(ctx context.Context, repoName, commit, file string) (string, error) 
 	for k, v := range argMap {
 		args = append(args, fmt.Sprintf("-%s=%s", k, v))
 	}
+	args = append(args, "--skip-scip")
 
 	tempDir, err := os.MkdirTemp("", "codeintel-qa")
 	if err != nil {

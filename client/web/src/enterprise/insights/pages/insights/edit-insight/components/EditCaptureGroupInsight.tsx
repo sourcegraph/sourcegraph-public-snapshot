@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo, FC } from 'react'
 
 import {
     CodeInsightCreationMode,
@@ -20,9 +20,7 @@ interface EditCaptureGroupInsightProps {
     onCancel: () => void
 }
 
-export const EditCaptureGroupInsight: React.FunctionComponent<
-    React.PropsWithChildren<EditCaptureGroupInsightProps>
-> = props => {
+export const EditCaptureGroupInsight: FC<EditCaptureGroupInsightProps> = props => {
     const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CaptureGroupFormFields>(
@@ -46,7 +44,6 @@ export const EditCaptureGroupInsight: React.FunctionComponent<
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
-            seriesDisplayOptions: insight.seriesDisplayOptions,
         })
     }
 

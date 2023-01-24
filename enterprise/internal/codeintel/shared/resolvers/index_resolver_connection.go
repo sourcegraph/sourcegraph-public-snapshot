@@ -40,7 +40,7 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.LS
 
 	resolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.indexesResolver.Indexes[i], r.prefetcher, r.errTracer))
+		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }

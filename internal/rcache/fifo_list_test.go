@@ -42,6 +42,12 @@ func Test_FIFOList_All_OK(t *testing.T) {
 			inserts: bytes("a1", "a2", "a3"),
 			want:    bytes(),
 		},
+		{
+			key:     "f",
+			size:    -1,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+		},
 	}
 
 	for _, c := range cases {
@@ -123,6 +129,14 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 			from:    2,
 			to:      -1,
 		},
+		{
+			key:     "f",
+			size:    -1,
+			inserts: bytes("a1", "a2", "a3"),
+			want:    bytes(),
+			from:    0,
+			to:      -1,
+		},
 	}
 
 	for _, c := range cases {
@@ -144,8 +158,9 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 	}
 }
 
-func Test_FIFOList_SetMaxSize(t *testing.T) {
-	r := NewFIFOList("a", 3)
+func Test_NewFIFOListDynamic(t *testing.T) {
+	maxSize := 3
+	r := NewFIFOListDynamic("a", func() int { return maxSize })
 	for i := 0; i < 10; i++ {
 		err := r.Insert([]byte("a"))
 		if err != nil {
@@ -161,7 +176,7 @@ func Test_FIFOList_SetMaxSize(t *testing.T) {
 		t.Errorf("expected %v, but got %v", _str(want...), _str(got...))
 	}
 
-	r.SetMaxSize(2)
+	maxSize = 2
 	for i := 0; i < 10; i++ {
 		err := r.Insert([]byte("b"))
 		if err != nil {

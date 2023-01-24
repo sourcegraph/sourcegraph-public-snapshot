@@ -82,7 +82,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 				InvalidateCaches:  req.Options.InvalidateCaches,
 				Reason:            req.Reason,
 				TriggeredByUserID: req.TriggeredByUserID,
-				NextSyncAt:        req.NextSyncAt,
+				ProcessAfter:      req.ProcessAfter,
 			}
 			err := db.PermissionSyncJobs().CreateUserSyncJob(ctx, userID, opts)
 			if err != nil {
@@ -96,7 +96,7 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 				InvalidateCaches:  req.Options.InvalidateCaches,
 				Reason:            req.Reason,
 				TriggeredByUserID: req.TriggeredByUserID,
-				NextSyncAt:        req.NextSyncAt,
+				ProcessAfter:      req.ProcessAfter,
 			}
 			err := db.PermissionSyncJobs().CreateRepoSyncJob(ctx, repoID, opts)
 			if err != nil {

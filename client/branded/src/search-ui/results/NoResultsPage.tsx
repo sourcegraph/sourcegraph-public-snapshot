@@ -107,25 +107,14 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
 
                     <Container title="More resources">
-                        <Text>
-                            Check out the learn site, including the cheat sheet for more tips on getting the most from
-                            Sourcegraph.
-                        </Text>
+                        <Text>Check out the docs for more tips on getting the most from Sourcegraph.</Text>
                         <Text>
                             <Link
-                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Learn site' })}
+                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Docs' })}
                                 target="blank"
-                                to="https://learn.sourcegraph.com/"
+                                to="https://docs.sourcegraph.com/"
                             >
-                                Sourcegraph Learn <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
-                            </Link>
-                            <br />
-                            <Link
-                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Cheat sheet' })}
-                                target="blank"
-                                to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
-                            >
-                                Sourcegraph cheat sheet <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
+                                Sourcegraph Docs <Icon svgPath={mdiOpenInNew} aria-label="Open in a new tab" />
                             </Link>
                         </Text>
                     </Container>
