@@ -138,6 +138,8 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 		return nil, errors.Wrap(err, "dialing symbols service")
 	}
 
+	defer conn.Close()
+
 	client := proto.NewSymbolsClient(conn)
 	resp, err := client.ListLanguages(ctx, &emptypb.Empty{})
 	if err != nil {
