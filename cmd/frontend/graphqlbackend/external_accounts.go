@@ -2,23 +2,19 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
-	"net/url"
-	"strconv"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	gext "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit/externalaccount"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -157,17 +153,15 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 	ServiceID      string
 	AccountDetails string
 }) (*EmptyResponse, error) {
-	user, err := auth.CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, errors.New("not authenticated")
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() || a.IsInternal() {
+		return nil, auth.ErrNotAuthenticated
 	}
 
+	var err error
 	switch args.ServiceType {
 	case "gerrit":
-		err = r.addGerritExternalAccount(ctx, user.ID, args.ServiceID, args.AccountDetails)
+		err = gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
 	default:
 		return nil, errors.New("unsupported service type")
 	}
@@ -177,79 +171,8 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 	}
 
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
-		UserIDs: []int32{user.ID},
+		UserIDs: []int32{a.UID},
 	})
 
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) addGerritExternalAccount(ctx context.Context, userID int32, serviceID string, accountDetails string) error {
-	var accountCredentials gerrit.AccountCredentials
-	err := json.Unmarshal([]byte(accountDetails), &accountCredentials)
-	if err != nil {
-		return err
-	}
-
-	// Fetch external service matching ServiceID
-	svcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindGerrit},
-	})
-	if err != nil {
-		return err
-	}
-
-	serviceURL, err := url.Parse(serviceID)
-	if err != nil {
-		return err
-	}
-	serviceURL = extsvc.NormalizeBaseURL(serviceURL)
-
-	var gerritConn *types.GerritConnection
-	for _, svc := range svcs {
-		cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
-		if err != nil {
-			continue
-		}
-		if c, ok := cfg.(*schema.GerritConnection); ok {
-			connURL, err := url.Parse(c.Url)
-			if err != nil {
-				continue
-			}
-			connURL = extsvc.NormalizeBaseURL(connURL)
-
-			if connURL.String() != serviceURL.String() {
-				continue
-			}
-			gerritConn = &types.GerritConnection{
-				URN:              svc.URN(),
-				GerritConnection: c,
-			}
-			break
-		}
-	}
-	if gerritConn == nil {
-		return errors.New("no gerrit connection found")
-	}
-
-	gerritAccount, err := gerrit.VerifyAccount(ctx, gerritConn, &accountCredentials)
-	if err != nil {
-		return err
-	}
-
-	accountSpec := extsvc.AccountSpec{
-		ServiceType: extsvc.TypeGerrit,
-		ServiceID:   serviceID,
-		ClientID:    "",
-		AccountID:   strconv.Itoa(int(gerritAccount.ID)),
-	}
-
-	accountData := extsvc.AccountData{}
-	if err = gerrit.SetExternalAccountData(&accountData, gerritAccount, &accountCredentials); err != nil {
-		return err
-	}
-
-	if err = r.db.UserExternalAccounts().Insert(ctx, userID, accountSpec, accountData); err != nil {
-		return err
-	}
-	return nil
 }
