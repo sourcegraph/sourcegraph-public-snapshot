@@ -14,15 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
+func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) (err error) {
 	var accountCredentials gerrit.AccountCredentials
-	err := json.Unmarshal([]byte(accountDetails), &accountCredentials)
+	err = json.Unmarshal([]byte(accountDetails), &accountCredentials)
 	if err != nil {
 		return err
 	}
 
+	tx, err := db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Fetch external service matching ServiceID
-	svcs, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+	svcs, err := tx.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindGerrit},
 	})
 	if err != nil {
@@ -79,7 +85,7 @@ func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32,
 		return err
 	}
 
-	if err = db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, accountSpec, accountData); err != nil {
+	if err = tx.UserExternalAccounts().AssociateUserAndSave(ctx, userID, accountSpec, accountData); err != nil {
 		return err
 	}
 	return nil
