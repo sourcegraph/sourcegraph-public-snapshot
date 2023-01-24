@@ -898,11 +898,11 @@ importers:
       msw: ^0.49.0
       react: ^18.2.0
       react-dom: ^18.2.0
-      react-router-dom: ^5.2.0
+      react-router-dom: ^6.7.0
       react-use: ^17.2.4
     dependencies:
-      '@backstage/core-components': 0.12.3_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@internal/plugin-sourcegraph': 'link:'
       '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
@@ -910,13 +910,13 @@ importers:
       '@material-ui/lab': 4.0.0-alpha.57_5glfapqkhejqpattrqvw65m2la
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
     devDependencies:
       '@backstage/cli': 0.22.1_veicm43jo6hfcg5mjykszuneye
-      '@backstage/core-app-api': 1.4.0_lje7mf367xpxmzxswr2o3srnje
-      '@backstage/dev-utils': 1.0.11_6mxnalkz7h5nowo2oub4w4wlvi
-      '@backstage/test-utils': 1.2.4_5xmhnzyvauhlwmehetvwsoyq7u
+      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
+      '@backstage/dev-utils': 1.0.11_asenqjccrkesmsfwbq3lggkll4
+      '@backstage/test-utils': 1.2.4_e442r2zblqvic2logccjohmmdi
       '@testing-library/jest-dom': 5.16.4
       '@testing-library/react': 12.1.5_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_tlwynutqiyp5mns3woioasuxnq
@@ -3313,23 +3313,23 @@ packages:
       '@babel/helper-validator-identifier': 7.19.1
       to-fast-properties: 2.0.0
 
-  /@backstage/app-defaults/1.1.0_54lbwovg2n52fj553n7pfg3qba:
+  /@backstage/app-defaults/1.1.0_fvbr2cjomnxtlkfwrrwqyod56q:
     resolution: {integrity: sha512-WZKYTfvsFXiVvZt39loo2Q0t6CJ90gfUqtRtajUDcrksDSvbF84I2rTFVbmX6tp5qG6XVR+q6qrMBN4sGFeH5Q==}
     peerDependencies:
       react: ^16.13.1 || ^17.0.0
       react-dom: ^16.13.1 || ^17.0.0
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
-      '@backstage/core-app-api': 1.4.0_lje7mf367xpxmzxswr2o3srnje
-      '@backstage/core-components': 0.12.3_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
-      '@backstage/plugin-permission-react': 0.4.9_lje7mf367xpxmzxswr2o3srnje
+      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
+      '@backstage/plugin-permission-react': 0.4.9_4tknkhmdkn726v6rgr7mg246jm
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
       '@material-ui/icons': 4.11.3_5glfapqkhejqpattrqvw65m2la
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
     transitivePeerDependencies:
       - '@date-io/core'
       - '@types/react'
@@ -3528,7 +3528,7 @@ packages:
       '@backstage/types': 1.0.2
       lodash: 4.17.21
 
-  /@backstage/core-app-api/1.4.0_lje7mf367xpxmzxswr2o3srnje:
+  /@backstage/core-app-api/1.4.0_4tknkhmdkn726v6rgr7mg246jm:
     resolution: {integrity: sha512-qPicwwUYP3V0dW6/U9ChNaJWdK2AaQYg0bcGrIpJkHCQbEr6TM+TuEyiwub77OmsXp1uXF+4Stxacl5TCWVNFA==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3536,14 +3536,14 @@ packages:
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
       '@backstage/config': 1.0.6
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/types': 1.0.2
       '@backstage/version-bridge': 1.0.3_vqvt52xx3h2ersphfxson777fi
       '@types/prop-types': 15.7.5
       '@types/react': 17.0.43
       prop-types: 15.8.1
       react: 18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
       zen-observable: 0.10.0
       zod: 3.18.0
@@ -3551,7 +3551,7 @@ packages:
       - react-dom
     dev: true
 
-  /@backstage/core-components/0.12.3_54lbwovg2n52fj553n7pfg3qba:
+  /@backstage/core-components/0.12.3_fvbr2cjomnxtlkfwrrwqyod56q:
     resolution: {integrity: sha512-R+tmEfxLYTblvURn50G43VCm69QTA381cvtn72S0PAx1XlRgAj/JKJRuT240IgKQXLsumiAbn1yRy2Pcjojsyw==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3560,7 +3560,7 @@ packages:
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
       '@backstage/config': 1.0.6
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/errors': 1.1.4
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@backstage/version-bridge': 1.0.3_vqvt52xx3h2ersphfxson777fi
@@ -3590,7 +3590,7 @@ packages:
       react-helmet: 6.1.0_react@18.2.0
       react-hook-form: 7.42.1_react@18.2.0
       react-markdown: 8.0.5_vqvt52xx3h2ersphfxson777fi
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-sparklines: 1.7.0_biqbaboplfbrettd7655fr4n2y
       react-syntax-highlighter: 15.5.0_react@18.2.0
       react-text-truncate: 0.19.0_biqbaboplfbrettd7655fr4n2y
@@ -3607,7 +3607,7 @@ packages:
       - react-native
       - supports-color
 
-  /@backstage/core-plugin-api/1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu:
+  /@backstage/core-plugin-api/1.3.0_sueyyaiqx2a24dbpeicw7rfxlu:
     resolution: {integrity: sha512-A7powQ0vVyMU2HWyp+hP0vJWjsaOy6KE4OjrAN6m5bakb90DzCYfcZsZbnbdioTUtBaolFLIiN+iX4UpJdhpkA==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3621,10 +3621,10 @@ packages:
       history: 4.5.1
       prop-types: 15.8.1
       react: 18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       zen-observable: 0.10.0
 
-  /@backstage/dev-utils/1.0.11_6mxnalkz7h5nowo2oub4w4wlvi:
+  /@backstage/dev-utils/1.0.11_asenqjccrkesmsfwbq3lggkll4:
     resolution: {integrity: sha512-dkQRgpAQeeQTUeMtDtXtmsLam2KtxlQkMeclQGKZ6rStqAvWW+aJhgY0KYyDVFCKFOHtsJJZcdrZ9A5upUXgQQ==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3632,14 +3632,14 @@ packages:
       react-dom: ^16.13.1 || ^17.0.0
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
-      '@backstage/app-defaults': 1.1.0_54lbwovg2n52fj553n7pfg3qba
+      '@backstage/app-defaults': 1.1.0_fvbr2cjomnxtlkfwrrwqyod56q
       '@backstage/catalog-model': 1.1.5
-      '@backstage/core-app-api': 1.4.0_lje7mf367xpxmzxswr2o3srnje
-      '@backstage/core-components': 0.12.3_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
-      '@backstage/integration-react': 1.1.9_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/plugin-catalog-react': 1.2.4_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/test-utils': 1.2.4_5xmhnzyvauhlwmehetvwsoyq7u
+      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
+      '@backstage/integration-react': 1.1.9_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/plugin-catalog-react': 1.2.4_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/test-utils': 1.2.4_e442r2zblqvic2logccjohmmdi
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
       '@material-ui/icons': 4.11.3_5glfapqkhejqpattrqvw65m2la
@@ -3649,7 +3649,7 @@ packages:
       '@types/react': 17.0.43
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
       zen-observable: 0.10.0
     transitivePeerDependencies:
@@ -3670,14 +3670,14 @@ packages:
     transitivePeerDependencies:
       - encoding
 
-  /@backstage/integration-react/1.1.9_54lbwovg2n52fj553n7pfg3qba:
+  /@backstage/integration-react/1.1.9_fvbr2cjomnxtlkfwrrwqyod56q:
     resolution: {integrity: sha512-fhxEgnZbLHxvu3TAwi7L+c9hw/dx1H9HAqi/MTcOvqjDRVnMN/An0OfRzUCksJPs3HeniRZM7GzcuE215rb1nQ==}
     peerDependencies:
       react: ^16.13.1 || ^17.0.0
     dependencies:
       '@backstage/config': 1.0.6
-      '@backstage/core-components': 0.12.3_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/integration': 1.4.2
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
@@ -3721,7 +3721,7 @@ packages:
       - encoding
     dev: true
 
-  /@backstage/plugin-catalog-react/1.2.4_54lbwovg2n52fj553n7pfg3qba:
+  /@backstage/plugin-catalog-react/1.2.4_fvbr2cjomnxtlkfwrrwqyod56q:
     resolution: {integrity: sha512-u26FK7JvQXmhlpTYTxoHf969By/kmHRWv7W2wV+osJYGuRX5ckX1Bpf7dY+WodOMCScksNHgz1gyHbkLd1iXeQ==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3730,13 +3730,13 @@ packages:
     dependencies:
       '@backstage/catalog-client': 1.3.0
       '@backstage/catalog-model': 1.1.5
-      '@backstage/core-components': 0.12.3_54lbwovg2n52fj553n7pfg3qba
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-components': 0.12.3_fvbr2cjomnxtlkfwrrwqyod56q
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/errors': 1.1.4
       '@backstage/integration': 1.4.2
       '@backstage/plugin-catalog-common': 1.0.10
       '@backstage/plugin-permission-common': 0.7.3
-      '@backstage/plugin-permission-react': 0.4.9_lje7mf367xpxmzxswr2o3srnje
+      '@backstage/plugin-permission-react': 0.4.9_4tknkhmdkn726v6rgr7mg246jm
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@backstage/types': 1.0.2
       '@backstage/version-bridge': 1.0.3_vqvt52xx3h2ersphfxson777fi
@@ -3750,7 +3750,7 @@ packages:
       material-ui-popup-state: 1.9.3_fvaebydoztlmlbmlu5u4butffa
       qs: 6.11.0
       react: 18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
       yaml: 2.2.1
       zen-observable: 0.10.0
@@ -3776,7 +3776,7 @@ packages:
       - encoding
     dev: true
 
-  /@backstage/plugin-permission-react/0.4.9_lje7mf367xpxmzxswr2o3srnje:
+  /@backstage/plugin-permission-react/0.4.9_4tknkhmdkn726v6rgr7mg246jm:
     resolution: {integrity: sha512-zsmYs8tt1BThfYNIawcvXFZQzMXrw75JWwYbUYY+Af47SRBckKBON4mkQ4qFG0VsSGH4gr4cmoA0e3Uj8MtGiA==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3784,12 +3784,12 @@ packages:
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
       '@backstage/config': 1.0.6
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/plugin-permission-common': 0.7.3
       '@types/react': 17.0.43
       cross-fetch: 3.1.5
       react: 18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       react-use: 17.4.0_biqbaboplfbrettd7655fr4n2y
       swr: 2.0.1_react@18.2.0
     transitivePeerDependencies:
@@ -3814,7 +3814,7 @@ packages:
       - encoding
     dev: true
 
-  /@backstage/test-utils/1.2.4_5xmhnzyvauhlwmehetvwsoyq7u:
+  /@backstage/test-utils/1.2.4_e442r2zblqvic2logccjohmmdi:
     resolution: {integrity: sha512-osv0NmIBKUna4YKU9ea26Y3twatgN/TXha/dhtjwYUZdUscjzc7vMAE4V8vfB5WYoQJO8fnnZxWO20FPCP2fSQ==}
     peerDependencies:
       '@types/react': ^16.13.1 || ^17.0.0
@@ -3823,10 +3823,10 @@ packages:
       react-router-dom: 6.0.0-beta.0 || ^6.3.0
     dependencies:
       '@backstage/config': 1.0.6
-      '@backstage/core-app-api': 1.4.0_lje7mf367xpxmzxswr2o3srnje
-      '@backstage/core-plugin-api': 1.3.0_vh5pbnlmhqq3ifwlz6ytp35wxu
+      '@backstage/core-app-api': 1.4.0_4tknkhmdkn726v6rgr7mg246jm
+      '@backstage/core-plugin-api': 1.3.0_sueyyaiqx2a24dbpeicw7rfxlu
       '@backstage/plugin-permission-common': 0.7.3
-      '@backstage/plugin-permission-react': 0.4.9_lje7mf367xpxmzxswr2o3srnje
+      '@backstage/plugin-permission-react': 0.4.9_4tknkhmdkn726v6rgr7mg246jm
       '@backstage/theme': 0.2.16_7ir5hbqdbfw4we5ecpxz77f25m
       '@backstage/types': 1.0.2
       '@material-ui/core': 4.12.4_7ir5hbqdbfw4we5ecpxz77f25m
@@ -3838,7 +3838,7 @@ packages:
       cross-fetch: 3.1.5
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom: 6.7.0_biqbaboplfbrettd7655fr4n2y
       zen-observable: 0.10.0
     transitivePeerDependencies:
       - '@testing-library/dom'
@@ -8135,7 +8135,6 @@ packages:
   /@remix-run/router/1.3.0:
     resolution: {integrity: sha512-nwQoYb3m4DDpHTeOwpJEuDt8lWVcujhYYSFGLluC+9es2PyLjm+jjq3IeRBQbwBtPLJE/lkuHuGHr8uQLgmJRA==}
     engines: {node: '>=14'}
-    dev: false
 
   /@repeaterjs/repeater/3.0.4:
     resolution: {integrity: sha512-AW8PKd6iX3vAZ0vA43nOUOnbq/X5ihgU+mSXXqunMkeQADGiqw/PY0JNeYtD5sr0PAy51YPgAPbDoeapv9r8WA==}
@@ -12634,12 +12633,6 @@ packages:
 
   /acorn/7.4.1:
     resolution: {integrity: sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
-    dev: true
-
-  /acorn/8.8.0:
-    resolution: {integrity: sha512-QOxyigPVrpZ2GXT+PFyZTl6TtOFc5egxHIP9IlQ+RbupQuX4RkT/Bee4/kQuC02Xkzg84JcT7oLYtDIQxp+v7w==}
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
@@ -25496,18 +25489,6 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /mini-create-react-context/0.4.0_sh5qlbywuemxd2y3xkrw2y2kr4:
-    resolution: {integrity: sha512-b0TytUgFSbgFJGzJqXPKCFCBWigAjpjo+Fl7Vf7ZbKRDptszpppKxXH6DRXEABZ/gcEQczeb0iZ7JvL8e8jjCA==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-    peerDependencies:
-      prop-types: ^15.0.0
-      react: ^0.14.0 || ^15.0.0 || ^16.0.0
-    dependencies:
-      '@babel/runtime': 7.20.6
-      prop-types: 15.8.1
-      react: 18.2.0
-      tiny-warning: 1.0.3
-
   /mini-css-extract-plugin/2.7.2_webpack@5.75.0:
     resolution: {integrity: sha512-EdlUizq13o0Pd+uCp+WO/JpkLvHRVGt97RqfeGhXqAcorYo1ypJSpkV+WDT0vY/kmh/p7wRdJNJtuyK540PXDw==}
     engines: {node: '>= 12.13.0'}
@@ -28776,19 +28757,17 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-router-dom/5.2.0_react@18.2.0:
-    resolution: {integrity: sha512-gxAmfylo2QUjcwxI63RhQ5G85Qqt4voZpUXSEqCwykV0baaOTQDR1f0PmY8AELqIyVc0NEZUj0Gov5lNGcXgsA==}
+  /react-router-dom/6.7.0_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-jQtXUJyhso3kFw430+0SPCbmCmY1/kJv8iRffGHwHy3CkoomGxeYzMkmeSPYo6Egzh3FKJZRAL22yg5p2tXtfg==}
+    engines: {node: '>=14'}
     peerDependencies:
-      react: '>=15'
+      react: '>=16.8'
+      react-dom: '>=16.8'
     dependencies:
-      '@babel/runtime': 7.20.6
-      history: 4.5.1
-      loose-envify: 1.4.0
-      prop-types: 15.8.1
+      '@remix-run/router': 1.3.0
       react: 18.2.0
-      react-router: 5.2.0_react@18.2.0
-      tiny-invariant: 1.3.1
-      tiny-warning: 1.0.3
+      react-dom: 18.2.0_react@18.2.0
+      react-router: 6.7.0_react@18.2.0
 
   /react-router/5.2.0_react@18.1.0:
     resolution: {integrity: sha512-smz1DUuFHRKdcJC0jobGo8cVbhO3x50tCL4icacOlcwDOEQPq4TMqwx3sY1TP+DvtTgz4nm3thuo7A+BK2U0Dw==}
@@ -28808,23 +28787,6 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-router/5.2.0_react@18.2.0:
-    resolution: {integrity: sha512-smz1DUuFHRKdcJC0jobGo8cVbhO3x50tCL4icacOlcwDOEQPq4TMqwx3sY1TP+DvtTgz4nm3thuo7A+BK2U0Dw==}
-    peerDependencies:
-      react: '>=15'
-    dependencies:
-      '@babel/runtime': 7.20.6
-      history: 4.5.1
-      hoist-non-react-statics: 3.3.2
-      loose-envify: 1.4.0
-      mini-create-react-context: 0.4.0_sh5qlbywuemxd2y3xkrw2y2kr4
-      path-to-regexp: 1.7.0
-      prop-types: 15.8.1
-      react: 18.2.0
-      react-is: 16.13.1
-      tiny-invariant: 1.3.1
-      tiny-warning: 1.0.3
-
   /react-router/6.7.0_react@18.1.0:
     resolution: {integrity: sha512-KNWlG622ddq29MAM159uUsNMdbX8USruoKnwMMQcs/QWZgFUayICSn2oB7reHce1zPj6CG18kfkZIunSSRyGHg==}
     engines: {node: '>=14'}
@@ -28834,6 +28796,15 @@ packages:
       '@remix-run/router': 1.3.0
       react: 18.1.0
     dev: false
+
+  /react-router/6.7.0_react@18.2.0:
+    resolution: {integrity: sha512-KNWlG622ddq29MAM159uUsNMdbX8USruoKnwMMQcs/QWZgFUayICSn2oB7reHce1zPj6CG18kfkZIunSSRyGHg==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@remix-run/router': 1.3.0
+      react: 18.2.0
 
   /react-shallow-renderer/16.15.0_react@18.1.0:
     resolution: {integrity: sha512-oScf2FqQ9LFVQgA73vr86xl2NaOIX73rh+YFqcOp68CWj56tSfgtGKrEbyhCj0rSijyG9M1CYprTh39fBi5hzA==}
@@ -33613,7 +33584,7 @@ packages:
     engines: {node: '>= 10.13.0'}
     hasBin: true
     dependencies:
-      acorn: 8.8.0
+      acorn: 8.8.1
       acorn-walk: 8.2.0
       chalk: 4.1.2
       commander: 7.2.0
