@@ -58,22 +58,19 @@ func SetupJobRoutes(handlers []ExecutorHandler, router *mux.Router) {
 		for path, route := range routes {
 			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(route)
 		}
-		// Setup auth on the endpoints
-		subRouter.Use(authMiddleware(h))
 	}
 }
 
-func authMiddleware(executorHandler ExecutorHandler) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if validateJobRequest(w, r, executorHandler) {
-				next.ServeHTTP(w, r)
-			}
-		})
-	}
+// JobAuthMiddleware authenticates job requests,
+func JobAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if validateJobRequest(w, r) {
+			next.ServeHTTP(w, r)
+		}
+	})
 }
 
-func validateJobRequest(w http.ResponseWriter, r *http.Request, executorHandler ExecutorHandler) bool {
+func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 	// Read the body and re-set the body, so we can parse the request payload.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
