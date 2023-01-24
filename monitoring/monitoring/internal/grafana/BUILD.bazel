@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grafana",
+    srcs = [
+        "alerts-defined.go",
+        "board.go",
+        "grafana.go",
+        "home.go",
+        "uid.go",
+    ],
+    embedsrcs = ["home.json.tmpl"],
+    importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana",
+    visibility = ["//monitoring/monitoring:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//monitoring/monitoring/internal/promql",
+        "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_prometheus_prometheus//model/labels",
+    ],
+)

@@ -37,10 +37,6 @@ type NotebooksTab = 'notebooks' | 'getting-started'
 type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName: string }[]
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
-    if (!authenticatedUser) {
-        return 'getting-started'
-    }
-
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
         case 'notebooks':
@@ -48,7 +44,7 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
         case 'getting-started':
             return 'getting-started'
     }
-    return 'notebooks'
+    return authenticatedUser ? 'notebooks' : 'getting-started'
 }
 
 function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: NotebooksTab): void {

@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "esnext",
+    "module": "commonjs",
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {

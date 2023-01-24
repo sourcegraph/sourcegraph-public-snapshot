@@ -52,7 +52,7 @@ type TestChangesetOpts struct {
 }
 
 type CreateChangeseter interface {
-	CreateChangeset(ctx context.Context, changeset *btypes.Changeset) error
+	CreateChangeset(ctx context.Context, changesets ...*btypes.Changeset) error
 }
 
 func CreateChangeset(
