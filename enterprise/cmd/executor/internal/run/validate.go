@@ -46,7 +46,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	if err = validateSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions); err != nil {
 		if errors.Is(err, ErrSrcPatchBehind) {
 			// This is ok. The patch just doesn't match but still works.
-			logger.Warn("Src patch version mismatch", log.Error(err))
+			logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
 		} else {
 			return err
 		}
