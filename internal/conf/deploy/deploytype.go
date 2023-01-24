@@ -11,6 +11,7 @@ const (
 	PureDocker    = "pure-docker"
 	Dev           = "dev"
 	Helm          = "helm"
+	Kustomize     = "kustomize"
 )
 
 // Default to Kubernetes cluster so that every Kubernetes
@@ -43,7 +44,7 @@ func Mock(val string) {
 func IsDeployTypeKubernetes(deployType string) bool {
 	switch deployType {
 	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", Kubernetes, Helm:
+	case "k8s", "cluster", Kubernetes, Helm, Kustomize:
 		return true
 	}
 

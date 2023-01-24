@@ -37,7 +37,7 @@ var (
 	symbolsURLs     *endpoint.Map
 )
 
-func SearcherURLs() string {
+func SymbolsURLs() string {
 	symbolsURLsOnce.Do(func() {
 		symbolsURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
 			return conns.Symbols
@@ -57,7 +57,7 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:                 SearcherURLs(),
+	URL:                 SymbolsURLs(),
 	HTTPClient:          defaultDoer,
 	HTTPLimiter:         parallel.NewRun(500),
 	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },

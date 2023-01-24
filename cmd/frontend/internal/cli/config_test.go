@@ -203,6 +203,13 @@ func TestGitserverAddr(t *testing.T) {
 		},
 		want: "gitserver-0:3178 gitserver-1:3178",
 	}, {
+		name: "unsupported deploy type",
+		environ: []string{
+			"DEPLOY_TYPE=podman",
+			"SRC_GIT_SERVERS=5",
+		},
+		want: "",
+	}, {
 		name: "unset",
 		environ: []string{
 			"SRC_GIT_SERVERS=",
@@ -212,7 +219,7 @@ func TestGitserverAddr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserverAddr(tc.environ)
+			got, _ := gitserverAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
@@ -257,6 +264,13 @@ func TestSearcherAddr(t *testing.T) {
 		},
 		want: "http://searcher-0:3181 http://searcher-1:3181",
 	}, {
+		name: "unsupported deploy type",
+		environ: []string{
+			"DEPLOY_TYPE=dock",
+			"SEARCHER_URL=2",
+		},
+		want: "",
+	}, {
 		name: "unset",
 		environ: []string{
 			"SEARCHER_URL=",
@@ -266,7 +280,7 @@ func TestSearcherAddr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := searcherAddr(tc.environ)
+			got, _ := searcherAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
@@ -311,6 +325,13 @@ func TestSymbolsAddr(t *testing.T) {
 		},
 		want: "http://symbols-0:3184 http://symbols-1:3184",
 	}, {
+		name: "unsupported deploy type",
+		environ: []string{
+			"DEPLOY_TYPE=docker",
+			"SYMBOLS_URL=2",
+		},
+		want: "",
+	}, {
 		name: "unset",
 		environ: []string{
 			"SYMBOLS_URL=",
@@ -320,7 +341,7 @@ func TestSymbolsAddr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := symbolsAddr(tc.environ)
+			got, _ := symbolsAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
@@ -379,6 +400,13 @@ func TestZoektAddr(t *testing.T) {
 		},
 		want: "",
 	}, {
+		name: "unsupported deploy type",
+		environ: []string{
+			"DEPLOY_TYPE=dockers",
+			"INDEXED_SEARCH_SERVERS=2",
+		},
+		want: "",
+	}, {
 		name: "unset old",
 		environ: []string{
 			"ZOEKT_HOST=",
@@ -388,7 +416,7 @@ func TestZoektAddr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := zoektAddr(tc.environ)
+			got, _ := zoektAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}

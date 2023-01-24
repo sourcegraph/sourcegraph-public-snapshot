@@ -494,14 +494,17 @@ var (
 
 func gitservers() *endpoint.Map {
 	gitserversOnce.Do(func() {
-		if addr := gitserverAddr(os.Environ()); addr != "" {
+		addr, err := gitserverAddr(os.Environ())
+		if err != nil {
+			gitserversVal = endpoint.Empty(errors.New("a gitserver service has not been configured"))
+		} else {
 			gitserversVal = endpoint.New(addr)
 		}
 	})
 	return gitserversVal
 }
 
-func gitserverAddr(environ []string) string {
+func gitserverAddr(environ []string) (string, error) {
 	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
 	if !ok {
 		deployType = deploy.Default
@@ -513,21 +516,18 @@ func gitserverAddr(environ []string) string {
 	)
 
 	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
-		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
-			return addrs
-		}
-
-		return addr
+		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		return addrs, err
 	}
 
 	// Detect 'go test' and setup default addresses in that case.
 	p, err := os.Executable()
 	if err == nil && strings.HasSuffix(p, ".test") {
-		return "gitserver:3178"
+		return "gitserver:3178", nil
 	}
 
 	// Not set, use the default (service discovery on searcher)
-	return "k8s+rpc://gitserver:3178?kind=sts"
+	return "k8s+rpc://gitserver:3178?kind=sts", nil
 }
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
@@ -604,14 +604,17 @@ var (
 
 func computeSymbolsEndpoints() *endpoint.Map {
 	symbolsURLsOnce.Do(func() {
-		if addr := symbolsAddr(os.Environ()); addr != "" {
+		addr, err := symbolsAddr(os.Environ())
+		if err != nil {
+			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
+		} else {
 			symbolsURLs = endpoint.New(addr)
 		}
 	})
 	return symbolsURLs
 }
 
-func symbolsAddr(environ []string) string {
+func symbolsAddr(environ []string) (string, error) {
 	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
 	if !ok {
 		deployType = deploy.Default
@@ -623,27 +626,27 @@ func symbolsAddr(environ []string) string {
 	)
 
 	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
-		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
-			return addrs
-		}
-
-		return addr
+		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		return addrs, err
 	}
 
 	// Not set, use the default (non-service discovery on searcher)
-	return "http://symbols:3184"
+	return "http://symbols:3184", nil
 }
 
 func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		if addr := searcherAddr(os.Environ()); addr != "" {
+		addr, err := searcherAddr(os.Environ())
+		if err != nil {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
 			searcherURLs = endpoint.New(addr)
 		}
 	})
 	return searcherURLs
 }
 
-func searcherAddr(environ []string) string {
+func searcherAddr(environ []string) (string, error) {
 	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
 	if !ok {
 		deployType = deploy.Default
@@ -655,30 +658,32 @@ func searcherAddr(environ []string) string {
 	)
 
 	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
-		if addrs, ok := replicaAddrs(deployType, addr, serviceName, port); ok {
-			return addrs
-		}
-
-		return addr
+		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		return addrs, err
 	}
 
 	// Not set, use the default (service discovery on searcher)
-	return "k8s+http://searcher:3181"
+	return "k8s+http://searcher:3181", nil
 }
 
 func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(addr)
+		addr, err := zoektAddr(os.Environ())
+		if err != nil {
+			indexedEndpoints = endpoint.Empty(errors.New("a indexed search service has not been configured"))
 		} else {
-			// It is OK to have no indexed search endpoints.
-			indexedEndpoints = endpoint.Static()
+			if addr != "" {
+				indexedEndpoints = endpoint.New(addr)
+			} else {
+				// It is OK to have no indexed search endpoints.
+				indexedEndpoints = endpoint.Static()
+			}
 		}
 	})
 	return indexedEndpoints
 }
 
-func zoektAddr(environ []string) string {
+func zoektAddr(environ []string) (string, error) {
 	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
 	if !ok {
 		deployType = deploy.Default
@@ -691,27 +696,26 @@ func zoektAddr(environ []string) string {
 	}
 
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
-		if addrs, ok := replicaAddrs(deployType, addr, baseName, port); ok {
-			return addrs
-		}
-		return addr
+		addrs, err := replicaAddrs(deployType, addr, baseName, port)
+		return addrs, err
 	}
 
 	// Backwards compatibility: We used to call this variable ZOEKT_HOST
 	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
-		return addr
+		return addr, nil
 	}
 
 	// Not set, use the default (service discovery on the indexed-search
 	// statefulset)
-	return "k8s+rpc://indexed-search:6070?kind=sts"
+	return "k8s+rpc://indexed-search:6070?kind=sts", nil
 }
 
-// Generate endpoints if replica number is used
-func replicaAddrs(deployType, countStr, serviceName, port string) (string, bool) {
+// Generate endpoints based on replica number when set
+func replicaAddrs(deployType, countStr, serviceName, port string) (string, error) {
 	count, err := strconv.Atoi(countStr)
+	// If countStr is not an int, return string without error
 	if err != nil {
-		return "", false
+		return countStr, nil
 	}
 
 	fmtStrHead := ""
@@ -722,19 +726,19 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, bool)
 
 	var fmtStrTail string
 	switch deployType {
-	case deploy.Kubernetes, deploy.Helm:
+	case deploy.Kubernetes, deploy.Helm, deploy.Kustomize:
 		fmtStrTail = fmt.Sprintf(".%s:%s", serviceName, port)
 	case deploy.DockerCompose:
 		fmtStrTail = fmt.Sprintf(":%s", port)
 	default:
-		return "", false
+		return "", fmt.Errorf("Error: unsupported deployment type: %v", deployType)
 	}
 
 	var addrs []string
 	for i := 0; i < count; i++ {
 		addrs = append(addrs, fmt.Sprintf(fmtStrHead+"%s-%d"+fmtStrTail, serviceName, i))
 	}
-	return strings.Join(addrs, " "), true
+	return strings.Join(addrs, " "), nil
 }
 
 func getEnv(environ []string, key string) (string, bool) {
