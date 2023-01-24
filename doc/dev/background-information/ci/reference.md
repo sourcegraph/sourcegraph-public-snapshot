@@ -110,6 +110,7 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
+- Package dependency foobar
 - Build stuff foobar
 - Upload build trace
 
