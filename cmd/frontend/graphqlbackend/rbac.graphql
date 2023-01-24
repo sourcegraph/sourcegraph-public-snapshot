@@ -128,7 +128,7 @@ extend type User {
     """
     The list of all roles assigned to this user.
     """
-    roles (
+    roles(
         """
         Only return N records.
         """
@@ -141,7 +141,7 @@ extend type User {
     """
     The list of all permissions belonging to roles assigned to this user.
     """
-    permissions (
+    permissions(
         """
         Only return N records.
         """
