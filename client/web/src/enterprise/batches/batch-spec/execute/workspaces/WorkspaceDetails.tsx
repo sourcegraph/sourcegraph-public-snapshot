@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import React, { Fragment, useCallback, useMemo, useState } from 'react'
 
 import {
     mdiClose,
@@ -14,7 +14,6 @@ import {
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import classNames from 'classnames'
-import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
@@ -63,7 +62,6 @@ import {
     FileDiffFields,
     BatchSpecWorkspaceStepResult,
     BatchSpecWorkspaceStepVariables,
-    BatchSpecWorkspaceStepOutputLines,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
