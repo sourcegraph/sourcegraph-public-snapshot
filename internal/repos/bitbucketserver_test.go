@@ -449,7 +449,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 				"SOURCEGRAPH",
 			}
 
-			ctxWithTimeOut, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctxWithTimeOut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
 			results := make(chan SourceResult, 5)
