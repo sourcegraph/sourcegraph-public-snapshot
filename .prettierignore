@@ -41,5 +41,5 @@ client/jetbrains/.gradle
 code-intel-extensions.json
 .direnv
 pnpm-lock.yaml
-client/plugin-backstage/
+client/backstage/
 node_modules/
