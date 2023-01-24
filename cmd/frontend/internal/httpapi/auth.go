@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -96,7 +97,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+			subjectUserID, tokenID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					logger.Error(
@@ -259,15 +260,10 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				)
 			}
 
-			r = r.WithContext(
-				actor.WithActor(
-					r.Context(),
-					&actor.Actor{
-						UID:                 actorUserID,
-						SourcegraphOperator: sourcegraphOperator,
-					},
-				),
-			)
+			r = r.WithContext(trace.WithAccessTokenID(r.Context(), tokenID))
+
+			a := &actor.Actor{UID: actorUserID, SourcegraphOperator: sourcegraphOperator}
+			r = r.WithContext(actor.WithActor(r.Context(), a))
 		}
 
 		next.ServeHTTP(w, r)

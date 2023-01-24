@@ -150,6 +150,8 @@ type traceData struct {
 	limited     bool
 	limitError  error
 	limitResult throttled.RateLimitResult
+
+	accessTokenID int64
 }
 
 func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
@@ -173,18 +175,24 @@ func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
 		return
 	}
 
+	fields := []sglog.Field{
+		sglog.Object("request",
+			sglog.String("name", data.requestName),
+			sglog.String("source", data.requestSource),
+			sglog.String("variables", toJson(data.queryParams.Variables)),
+			sglog.String("query", data.queryParams.Query)),
+		sglog.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
+		sglog.Bool("successful", len(data.queryErrors) == 0),
+	}
+
+	if tokenID, ok := trace.AccessTokenID(ctx); ok {
+		fields = append(fields, sglog.Int64("accessTokenID", tokenID))
+	}
+
 	audit.Log(ctx, logger, audit.Record{
 		Entity: "GraphQL",
 		Action: "request",
-		Fields: []sglog.Field{
-			sglog.Object("request",
-				sglog.String("name", data.requestName),
-				sglog.String("source", data.requestSource),
-				sglog.String("variables", toJson(data.queryParams.Variables)),
-				sglog.String("query", data.queryParams.Query)),
-			sglog.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
-			sglog.Bool("successful", len(data.queryErrors) == 0),
-		},
+		Fields: fields,
 	})
 }
 

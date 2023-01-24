@@ -36,6 +36,7 @@ const (
 	originKey
 	sourceKey
 	GraphQLQueryKey
+	accessTokenIDKey
 )
 
 var (
@@ -66,6 +67,17 @@ func GraphQLRequestName(ctx context.Context) string {
 // WithGraphQLRequestName sets the GraphQL request name in the context.
 func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, graphQLRequestNameKey, name)
+}
+
+// AccessTokenID returns the access token ID  for a GraphQL request.
+func AccessTokenID(ctx context.Context) (int64, bool) {
+	v, ok := ctx.Value(accessTokenIDKey).(int64)
+	return v, ok
+}
+
+// WithAccessTokenID sets the database ID of the used access token on the context
+func WithAccessTokenID(ctx context.Context, id int64) context.Context {
+	return context.WithValue(ctx, accessTokenIDKey, id)
 }
 
 // SourceType indicates the type of source that likely created the request.
