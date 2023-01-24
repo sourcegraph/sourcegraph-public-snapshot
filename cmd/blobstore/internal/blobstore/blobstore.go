@@ -51,7 +51,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.Log.Error("serving request", sglog.Error(err))
-		fmt.Fprintf(w, "error: %v", err)
+		fmt.Fprintf(w, "blobstore: error: %v", err)
 		return
 	}
 }
@@ -61,7 +61,8 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 	path := strings.FieldsFunc(r.URL.Path, func(r rune) bool { return r == '/' })
 	switch r.Method {
 	case "PUT":
-		if len(path) == 1 {
+		switch len(path) {
+		case 1:
 			// PUT /<bucket>
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html
 			if r.ContentLength != 0 {
@@ -76,8 +77,14 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			}
 			w.WriteHeader(http.StatusOK)
 			return nil
+		case 2:
+			// PUT /<bucket>/<key>
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
+			// TODO(blobstore): implement me!
+			return nil
+		default:
+			return errors.Newf("unsupported method: PUT request: %s", r.URL)
 		}
-		return errors.Newf("unexpected PUT request: %s", r.URL)
 	case "GET":
 		if len(path) == 2 && r.URL.Query().Get("x-id") == "GetObject" {
 			// GET /<bucket>/<key>?x-id=GetObject
