@@ -17,6 +17,7 @@ export type FeatureFlagName =
     | 'plg-enable-add-codehost-widget'
     | 'enable-rbac'
     | 'local-setup-wizard'
+    | 'accessible-file-tree'
 
 interface OrgFlagOverride {
     orgID: string

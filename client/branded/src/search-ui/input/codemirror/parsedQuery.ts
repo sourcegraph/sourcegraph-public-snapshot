@@ -64,6 +64,10 @@ export function tokens(state: EditorState): Token[] {
     return state.facet(queryTokens).tokens
 }
 
+export function getParsedQuery(state: EditorState): Node | null {
+    return state.facet(parsedQuery)
+}
+
 interface ParseOptions {
     patternType: SearchPatternType
     interpretComments?: boolean
