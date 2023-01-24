@@ -24,12 +24,18 @@
     "postpack": "backstage-cli package postpack"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.22.1"
+    "@backstage/cli": "^0.22.1",
+    "@jest/globals": "^29.4.0",
+    "@types/highlight.js": "9.12.4",
+    "@types/jest": "^29.4.0",
+    "highlight.js": "^10.5.0",
+    "ts-jest": "^29.0.5"
   },
   "dependencies": {
     "@backstage/catalog-model": "^1.1.5",
     "@backstage/config": "^1.0.6",
-    "@backstage/plugin-catalog-backend": "^1.7.1"
+    "@backstage/plugin-catalog-backend": "^1.7.1",
+    "@sourcegraph/shared": "workspace:^1.0.0"
   },
   "files": [
     "dist"

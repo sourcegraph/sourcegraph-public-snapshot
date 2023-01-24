@@ -3,19 +3,23 @@ import {
   EntityProviderConnection,
 } from '@backstage/plugin-catalog-backend';
 import { Config } from '@backstage/config';
-import { SearchQuery, SourcegraphClient } from '../client/SourcegraphClient';
+import { SourcegraphService, createService } from '../client';
 import { parseCatalog } from '../catalog/parsers';
 
 export class SourcegraphEntityProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
-  private readonly sourcegraph: SourcegraphClient;
+  private readonly sourcegraph: SourcegraphService;
 
   static create(config: Config) {
     return new SourcegraphEntityProvider(config);
   }
 
   private constructor(config: Config) {
-    this.sourcegraph = SourcegraphClient.create(config)
+    const endpoint = config.getString("sourcegraph.endpoint")
+    const token = config.getString("sourcegraph.token")
+    const sudoUsername = config.getOptionalString("sourcegraph.sudoUsername")
+
+    this.sourcegraph = createService({ endpoint, token, sudoUsername })
   }
 
   getProviderName(): string {
@@ -27,9 +31,7 @@ export class SourcegraphEntityProvider implements EntityProvider {
   }
 
   async fullMutation() {
-    const query: SearchQuery = new SearchQuery(`"file:^catalog-info.yaml$"`)
-
-    const results = await this.sourcegraph.fetch(query)
+    const results = await this.sourcegraph.Search.SearchQuery(`"file:^catalog-info.yaml$"`)
 
     const entities = parseCatalog(results, this.getProviderName());
 
