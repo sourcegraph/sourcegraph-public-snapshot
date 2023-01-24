@@ -195,8 +195,11 @@ func ProvidersFromConfig(
 	}
 
 	if len(gerritConns) > 0 {
-		gerritProviders := gerrit.NewAuthzProviders(gerritConns)
+		gerritProviders, gerritProblems, gerritWarnings, gerritInvalidConnections := gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders)
 		providers = append(providers, gerritProviders...)
+		seriousProblems = append(seriousProblems, gerritProblems...)
+		warnings = append(warnings, gerritWarnings...)
+		invalidConnections = append(invalidConnections, gerritInvalidConnections...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
