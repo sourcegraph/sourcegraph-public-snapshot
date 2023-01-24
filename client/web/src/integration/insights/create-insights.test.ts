@@ -186,10 +186,6 @@ describe('Code insight create insight page', () => {
                                     },
                                 ],
                             },
-                            repositoryDefinition: {
-                                repositories: ['github.com/sourcegraph/sourcegraph'],
-                                __typename: 'InsightRepositoryScope',
-                            },
                             dataSeriesDefinitions: [
                                 {
                                     seriesId: '1',
