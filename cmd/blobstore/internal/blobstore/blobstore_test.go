@@ -15,19 +15,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-// Tests that initializing an uploadstore with blobstore as the backend works (performing no operations.)
+// Initialize an uploadstore and shutdown.
 func TestInit(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
-	defer server.Close()
+	_, server := initTestStore(ctx, t, t.TempDir())
 
-	_ = store
+	defer server.Close()
+}
+
+// Initialize an uploadstore, but the bucket already exists.
+func TestInit_BucketAlreadyExists(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+
+	_, server1 := initTestStore(ctx, t, dir)
+	_, server2 := initTestStore(ctx, t, dir)
+	server1.Close()
+	server2.Close()
 }
 
 // Tests that getting an object that does not exist works.
 func TestGetNotExists(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	reader, err := store.Get(ctx, "does-not-exist-key")
@@ -50,7 +60,7 @@ func TestGetNotExists(t *testing.T) {
 // Tests uploading an object works.
 func TestUpload(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	// TODO(blobstore): call store.Upload(ctx context.Context, key string, r io.Reader) (int64, error)
@@ -60,7 +70,7 @@ func TestUpload(t *testing.T) {
 // Tests uploading an object and getting it back works.
 func TestGetExists(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	// TODO(blobstore): call store.Get(ctx context.Context, key string) (io.ReadCloser, error)
@@ -70,7 +80,7 @@ func TestGetExists(t *testing.T) {
 // Tests uploading two objects and then composing them together works.
 func TestCompose(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	// TODO(blobstore): call store.Compose(ctx context.Context, destination string, sources ...string) (int64, error)
@@ -84,7 +94,7 @@ func TestCompose(t *testing.T) {
 // Tests deleting an object works.
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	// TODO(blobstore): call store.Delete(ctx context.Context, key string) error
@@ -94,17 +104,17 @@ func TestDelete(t *testing.T) {
 // Tests expiring objects works.
 func TestExpireObjects(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
 	// TODO(blobstore): call store.ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
 	_ = store
 }
 
-func initTestStore(ctx context.Context, t *testing.T) (uploadstore.Store, *httptest.Server) {
+func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadstore.Store, *httptest.Server) {
 	observationCtx := observation.TestContextTB(t)
 	ts := httptest.NewServer(&blobstore.Service{
-		DataDir:        t.TempDir(),
+		DataDir:        dataDir,
 		Log:            logtest.Scoped(t),
 		ObservationCtx: observationCtx,
 	})
