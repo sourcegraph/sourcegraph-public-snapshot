@@ -56,7 +56,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 
 	if callCount := len(store.MarkCompleteFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark complete call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkCompleteFunc.History()[0].Arg1; id != 42 {
+	} else if id := store.MarkCompleteFunc.History()[0].Arg1.RecordID(); id != 42 {
 		t.Errorf("unexpected id argument to mark complete. want=%v have=%v", 42, id)
 	}
 }
@@ -93,7 +93,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 
 	if callCount := len(store.MarkErroredFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark errored call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkErroredFunc.History()[0].Arg1; id != 42 {
+	} else if id := store.MarkErroredFunc.History()[0].Arg1.RecordID(); id != 42 {
 		t.Errorf("unexpected id argument to mark errored. want=%v have=%v", 42, id)
 	} else if failureMessage := store.MarkErroredFunc.History()[0].Arg2; failureMessage != "oops" {
 		t.Errorf("unexpected failure message argument to mark errored. want=%q have=%q", "oops", failureMessage)
@@ -139,7 +139,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 
 	if callCount := len(store.MarkFailedFunc.History()); callCount != 1 {
 		t.Errorf("unexpected mark failed call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkFailedFunc.History()[0].Arg1; id != 42 {
+	} else if id := store.MarkFailedFunc.History()[0].Arg1.RecordID(); id != 42 {
 		t.Errorf("unexpected id argument to mark failed. want=%v have=%v", 42, id)
 	} else if failureMessage := store.MarkFailedFunc.History()[0].Arg2; failureMessage != testErr.Error() {
 		t.Errorf("unexpected failure message argument to mark failed. want=%q have=%q", testErr.Error(), failureMessage)
@@ -496,7 +496,7 @@ func TestWorkerCancelJobs(t *testing.T) {
 
 	// Record when markFailed is called.
 	markedFailedCalled := make(chan struct{})
-	store.MarkFailedFunc.SetDefaultHook(func(c context.Context, i int, s string) (bool, error) {
+	store.MarkFailedFunc.SetDefaultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
 		close(markedFailedCalled)
 		return true, nil
 	})
@@ -571,7 +571,7 @@ func TestWorkerDeadline(t *testing.T) {
 
 	// Record when markErrored is called.
 	markedErroredCalled := make(chan struct{})
-	store.MarkErroredFunc.SetDefaultHook(func(c context.Context, i int, s string) (bool, error) {
+	store.MarkErroredFunc.SetDefaultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
 		if !strings.Contains(s, "job exceeded maximum execution time of 10ms") {
 			t.Fatal("incorrect error message")
 		}
