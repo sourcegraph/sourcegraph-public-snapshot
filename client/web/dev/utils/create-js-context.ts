@@ -35,7 +35,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
-        deployType: 'dev',
+        deployType: 'docker-container',
         debug: true,
         emailEnabled: false,
         experimentalFeatures: {},
