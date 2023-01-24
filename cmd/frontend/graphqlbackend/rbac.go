@@ -15,7 +15,7 @@ type RoleResolver interface {
 	Name() string
 	System() bool
 	CreatedAt() gqlutil.DateTime
-	Permissions() (PermissionConnectionResolver, error)
+	Permissions() PermissionConnectionResolver
 }
 
 type RoleConnectionResolver interface {

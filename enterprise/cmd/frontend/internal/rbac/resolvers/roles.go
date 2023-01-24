@@ -51,5 +51,5 @@ func (r *Resolver) roleByID(ctx context.Context, id graphql.ID) (gql.RoleResolve
 	if err != nil {
 		return nil, err
 	}
-	return &roleResolver{role: role}, nil
+	return &roleResolver{role: role, db: r.db}, nil
 }

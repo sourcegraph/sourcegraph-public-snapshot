@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 
@@ -31,7 +30,6 @@ func (r *permissionConnectionResolver) TotalCount(ctx context.Context) (int32, e
 }
 
 func (r *permissionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	fmt.Println(r.err, "<===", r.permissions)
 	permissions, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err

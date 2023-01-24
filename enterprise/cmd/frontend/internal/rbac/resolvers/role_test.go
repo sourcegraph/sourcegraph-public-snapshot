@@ -83,7 +83,7 @@ func TestRoleResolver(t *testing.T) {
 
 	input := map[string]any{"role": mrid}
 	{
-		var response struct{ Node apitest.Permission }
+		var response struct{ Node apitest.Role }
 		apitest.MustExec(ctx, t, s, input, &response, queryRoleNode)
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -99,7 +99,7 @@ query ($role: ID!) {
 		... on Role {
 			id
 			name
-			readonly
+			system
 			createdAt
 			permissions {
 				nodes {

@@ -38,13 +38,13 @@ func (r *roleResolver) System() bool {
 	return r.role.System
 }
 
-func (r *roleResolver) Permissions() (graphqlbackend.PermissionConnectionResolver, error) {
+func (r *roleResolver) Permissions() graphqlbackend.PermissionConnectionResolver {
 	return &permissionConnectionResolver{
 		db: r.db,
 		opts: database.PermissionListOpts{
 			RoleID: r.role.ID,
 		},
-	}, nil
+	}
 }
 
 func (r *roleResolver) CreatedAt() gqlutil.DateTime {
