@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -13,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Test_applyCodeOwnershipFiltering(t *testing.T) {
+func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	type args struct {
 		includeOwners []string
 		excludeOwners []string
@@ -71,6 +72,54 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
+			name: "match username without search term containing a leading @",
+			args: args{
+				includeOwners: []string{"test"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "README.md @test\n",
+				},
+			},
+			want: autogold.Want("results matching ownership", []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "README.md",
+					},
+				},
+			}),
+		},
+		{
+			name: "match on email",
+			args: args{
+				includeOwners: []string{"test@example.com"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "README.md test@example.com\n",
+				},
+			},
+			want: autogold.Want("results matching ownership", []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "README.md",
+					},
+				},
+			}),
+		},
+		{
 			name: "selects only results without excluded owners",
 			args: args{
 				includeOwners: []string{},
@@ -95,6 +144,120 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 				&result.FileMatch{
 					File: result.File{
 						Path: "package.json",
+					},
+				},
+			}),
+		},
+		{
+			name: "do not match on email if search term includes leading @",
+			args: args{
+				includeOwners: []string{"@test@example.com"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "README.md test@example.com\n",
+				},
+			},
+			want: autogold.Want("no matching results", []result.Match{}),
+		},
+		{
+			name: "selects results with any owner assigned",
+			args: args{
+				includeOwners: []string{""},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "package.json",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "/test/AbstractFactoryTest.java",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "/test/fixture-data.json",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": strings.Join([]string{
+						"README.md @test",
+						"/test/* @example",
+						"/test/*.json", // explicitly unassigned ownership
+					}, "\n"),
+				},
+			},
+			want: autogold.Want("results matching ownership", []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "README.md",
+					},
+				},
+				&result.FileMatch{
+					File: result.File{
+						Path: "/test/AbstractFactoryTest.java",
+					},
+				},
+			}),
+		},
+		{
+			name: "selects results without an owner",
+			args: args{
+				includeOwners: []string{},
+				excludeOwners: []string{""},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "package.json",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "/test/AbstractFactoryTest.java",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "/test/fixture-data.json",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": strings.Join([]string{
+						"README.md @test",
+						"/test/* @example",
+						"/test/*.json", // explicitly unassigned ownership
+					}, "\n"),
+				},
+			},
+			want: autogold.Want("results matching ownership", []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "package.json",
+					},
+				},
+				&result.FileMatch{
+					File: result.File{
+						Path: "/test/fixture-data.json",
 					},
 				},
 			}),

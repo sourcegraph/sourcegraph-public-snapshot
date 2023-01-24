@@ -458,25 +458,17 @@ func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 	return res
 }
 
-func (p Parameters) FileHasOwner() (onlyOwned, onlyUnowned bool, include, exclude []string) {
+func (p Parameters) FileHasOwner() (include, exclude []string) {
 	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate) {
 		if pred.Negated {
-			if pred.Owner == "" {
-				onlyUnowned = true
-			} else {
-				exclude = append(exclude, pred.Owner)
-			}
+			exclude = append(exclude, pred.Owner)
 		} else {
-			if pred.Owner == "" {
-				onlyOwned = true
-			} else {
-				include = append(include, pred.Owner)
-			}
+			include = append(include, pred.Owner)
 		}
 
 	})
 
-	return onlyOwned, onlyUnowned, include, exclude
+	return include, exclude
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).
