@@ -21,7 +21,6 @@ func Init() {
 
 	go conf.Watch(func() {
 		newProviders, _ := parseConfig(conf.Get())
-		fmt.Println(newProviders)
 		newProviderList := make([]providers.Provider, len(newProviders))
 		for i, p := range newProviders {
 			p := p // capture loop variable
@@ -43,8 +42,7 @@ func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.
 			continue
 		}
 
-		provider, providerProblems := parseProvider(pr.Gerrit)
-		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
+		provider := parseProvider(pr.Gerrit)
 		if _, ok := seen[provider.ServiceID]; !ok {
 			ps = append(ps, provider)
 			seen[provider.ServiceID] = struct{}{}
@@ -56,12 +54,11 @@ func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.
 	return ps, problems
 }
 
-func parseProvider(p *schema.GerritAuthProvider) (Provider, []string) {
-
+func parseProvider(p *schema.GerritAuthProvider) Provider {
 	return Provider{
 		ServiceID:   p.Url,
 		ServiceType: p.Type,
-	}, []string{}
+	}
 }
 
 func (p *Provider) ConfigID() providers.ConfigID {
