@@ -531,5 +531,5 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 }
 
 func (c *Client) isGRPCEnabled(ctx context.Context) bool {
-	return featureflag.FromContext(ctx).GetBoolOr("grpc_symbols", false)
+	return featureflag.FromContext(ctx).GetBoolOr("grpc", false)
 }
