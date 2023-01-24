@@ -93,7 +93,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
     return (
         <TreeView
             {...rest}
-            className={`${styles.fileTree} ${rest.className ?? ''}`}
+            className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}
             onLoadData={_onLoadData}

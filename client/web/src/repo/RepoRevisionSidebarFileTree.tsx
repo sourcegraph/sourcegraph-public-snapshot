@@ -58,14 +58,13 @@ const QUERY = gql`
 // TODO(philipp-spiess): Figure out why we can't use a GraphQL fragment here.
 // The issue is that on `TreeEntry` does not match because the type is either
 // `GitTree` or `GitBlob` and it needs to match?
-interface FileTreeEntry {
-    name: string
-    path: string
-    isDirectory: boolean
-    url: string
-    isSingleChild: boolean
-    submodule: { __typename?: 'Submodule'; url: string; commit: string } | null
-}
+type FileTreeEntry = Extract<
+    Extract<
+        Extract<FileTreeEntriesResult['repository'], { __typename?: 'Repository' }>['commit'],
+        { __typename?: 'GitCommit' }
+    >['tree'],
+    { __typename?: 'GitTree' }
+>['entries'][number]
 
 interface Props {
     repoName: string
@@ -75,7 +74,7 @@ interface Props {
     initialFilePathIsDirectory: boolean
     telemetryService: TelemetryService
 }
-export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
+export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
     // Ensure that the initial file path does not update when the props change
     const [initialFilePath] = useState(
         props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
@@ -100,7 +99,6 @@ export function RepoRevisionSidebarFileTree(props: Props): JSX.Element {
             // initial file path.
             ancestors: true,
         },
-        fetchPolicy: 'cache-and-network',
         onCompleted(data) {
             const tree = data?.repository?.commit?.tree?.entries
             if (!tree) {
