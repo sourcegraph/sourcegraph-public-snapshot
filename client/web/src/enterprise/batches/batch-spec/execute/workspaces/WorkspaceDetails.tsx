@@ -511,11 +511,7 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
         getConnection: result => {
             const data = dataOrThrowErrors(result)
             if (data.node?.__typename !== 'VisibleBatchSpecWorkspace' || data.node.step === null) {
-                throw new Error('Not a visible batch spec workspace')
-            }
-
-            if (data.node.step.outputLines === null) {
-                throw new Error('Ouutput lines is empty')
+                throw new Error('unable to fetch workspace step')
             }
 
             return data.node.step.outputLines

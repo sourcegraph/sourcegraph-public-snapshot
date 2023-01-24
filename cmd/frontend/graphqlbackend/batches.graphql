@@ -2486,7 +2486,7 @@ type BatchSpecWorkspaceStep {
         Return the log lines after N lines.
         """
         after: String
-    ): BatchSpecWorkspaceStepOutputLineConnection
+    ): BatchSpecWorkspaceStepOutputLineConnection!
 
     """
     The time when the step started processing. Null, if not yet started.
