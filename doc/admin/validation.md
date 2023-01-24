@@ -74,6 +74,7 @@ insight:
         "timeScopeValue": 1
       }
     ]
+  deleteWhenDone: true
 ```
 #### JSON File Specification
 
@@ -124,7 +125,8 @@ insight:
         "timeScopeUnit": "MONTH",
         "timeScopeValue": 1
       }
-    ]
+    ],
+    "deleteWhenDone": true
   }
 
 }
