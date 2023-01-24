@@ -39,12 +39,14 @@ fi
 
 name=${1%/}
 
-if [ ! -f "wolfi-packages/${name}.yaml" ]; then
+cd "wolfi-packages"
+pwd
+ls -al
+
+if [ ! -e "${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
   exit 1
 fi
-
-cd "wolfi-packages"
 
 # NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
 # bubblewrap release in buildkite-agent-stateless-bazel's Dockerfile, and ship it in /usr/local/bin
