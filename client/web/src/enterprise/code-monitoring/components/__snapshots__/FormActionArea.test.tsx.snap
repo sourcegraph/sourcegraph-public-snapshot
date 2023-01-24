@@ -30,7 +30,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       data-testid="action-form-email"
     >
       <label
-        class="label w-100 mb-2"
+        class="label label mb-2"
       >
         <div
           class="mb-2"

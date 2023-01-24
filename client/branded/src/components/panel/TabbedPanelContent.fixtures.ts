@@ -9,6 +9,8 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { TabbedPanelContentProps } from './TabbedPanelContent'
+
 export const panels: PanelViewData[] = [
     {
         id: 'panel_1',
@@ -68,7 +70,7 @@ export const panelMenus = {
     ],
 }
 
-export const panelProps = {
+export const panelProps: TabbedPanelContentProps = {
     repoName: 'git://github.com/foo/bar',
     fetchHighlightedFileLineRanges: () => of([]),
     isLightTheme: true,
