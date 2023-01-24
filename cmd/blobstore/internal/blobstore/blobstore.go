@@ -97,21 +97,34 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 		}
 	case "GET":
 		if len(path) == 2 && r.URL.Query().Get("x-id") == "GetObject" {
-			// GET /<bucket>/<key>?x-id=GetObject
+			// GET /<bucket>/<object>?x-id=GetObject
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
-			// TODO(blobstore): implement me!
-			w.WriteHeader(http.StatusNotFound)
-			return nil
+			bucketName := path[0]
+			objectName := path[1]
+
+			reader, err := s.getObject(ctx, bucketName, objectName)
+			if err != nil {
+				if err == ErrNoSuchKey {
+					return writeS3Error(w, s3ErrorNoSuchKey, bucketName, err, http.StatusNotFound)
+				}
+				return errors.Wrap(err, "getObject")
+			}
+			defer reader.Close()
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+			w.WriteHeader(http.StatusOK)
+			_, err = io.Copy(w, reader)
+			return errors.Wrap(err, "Copy")
 		}
-		return errors.Newf("unexpected GET request: %s", r.URL)
+		return errors.Newf("unsupported method: unexpected GET request: %s", r.URL)
 	default:
-		return errors.Newf("unexpected request: %s %s", r.Method, r.URL)
+		return errors.Newf("unsupported method: unexpected request: %s %s", r.Method, r.URL)
 	}
 }
 
 var (
 	ErrBucketAlreadyExists = errors.New("bucket already exists")
 	ErrNoSuchBucket        = errors.New("no such bucket")
+	ErrNoSuchKey           = errors.New("no such key")
 )
 
 func (s *Service) createBucket(ctx context.Context, name string) error {
@@ -165,6 +178,28 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	}
 	s.Log.Debug("put object", sglog.String("key", bucketName+"/"+objectName))
 	return nil
+}
+
+func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
+	_ = ctx
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	// Read the object
+	objectFile := s.objectFile(bucketName, objectName)
+	f, err := os.Open(objectFile)
+	if err != nil {
+		s.Log.Debug("get object", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))
+		if os.IsNotExist(err) {
+			return nil, ErrNoSuchKey
+		}
+		return nil, errors.Wrap(err, "Open")
+	}
+	s.Log.Debug("get object", sglog.String("key", bucketName+"/"+objectName))
+	return f, nil
 }
 
 // Returns a bucket-level lock

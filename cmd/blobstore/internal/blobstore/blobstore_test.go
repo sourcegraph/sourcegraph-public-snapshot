@@ -1,9 +1,7 @@
 package blobstore_test
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
@@ -53,8 +51,8 @@ func TestGetNotExists(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "NotFound") {
-		t.Fatalf("expected NotFound error, got %+v", err)
+	if !strings.Contains(err.Error(), "NoSuchKey") {
+		t.Fatalf("expected NoSuchKey error, got %+v", err)
 	}
 	if len(data) != 0 {
 		t.Fatal("expected no data")
@@ -90,11 +88,8 @@ func TestGetExists(t *testing.T) {
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "hello world!")
-
 	// Upload our object
-	uploaded, err := store.Upload(ctx, "foobar", &buf)
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
 	autogold.Expect([2]interface{}{12, nil}).Equal(t, [2]interface{}{uploaded, err})
 
 	// Get the object back out
@@ -106,10 +101,9 @@ func TestGetExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Expect(nil).Equal(t, []interface{}{
+	autogold.Expect([]interface{}{12, 12, "Hello world!"}).Equal(t, []interface{}{
 		uploaded,
 		len(data),
-		buf.String(),
 		string(data),
 	})
 }

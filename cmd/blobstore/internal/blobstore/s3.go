@@ -10,6 +10,7 @@ import (
 var (
 	s3ErrorBucketAlreadyOwnedByYou = "BucketAlreadyOwnedByYou"
 	s3ErrorNoSuchBucket            = "NoSuchBucket"
+	s3ErrorNoSuchKey               = "NoSuchKey"
 )
 
 type s3Error struct {
