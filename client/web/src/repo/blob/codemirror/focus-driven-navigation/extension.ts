@@ -9,8 +9,8 @@ import {
     Tooltip,
     ViewPlugin,
 } from '@codemirror/view'
-import { StateEffect, StateField } from '@codemirror/state'
-import { positionToOffset, preciseOffsetAtCoords, sortRangeValuesByStart } from '../utils'
+import { Extension, StateEffect, StateField } from '@codemirror/state'
+import { isSelectionInsideDocument, positionToOffset, preciseOffsetAtCoords, sortRangeValuesByStart } from '../utils'
 import {
     closestOccurrenceByCharacter,
     occurrenceAtPosition,
@@ -18,7 +18,7 @@ import {
     rangeToCmSelection,
 } from '../occurrence-utils'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
-import { fallbackOccurrences } from '../token-selection/selections'
+import { fallbackOccurrences, selectionFromLocation } from '../token-selection/selections'
 import { syntaxHighlight } from '../highlight'
 import {
     documentHighlightsExtension,
@@ -26,7 +26,7 @@ import {
 } from '../token-selection/document-highlights'
 import { showDocumentHighlights } from '../document-highlights'
 import { closeHover, getHoverTooltip, hoverCache } from '../token-selection/hover'
-import { definitionCache, underlinedDefinitionFacet } from '../token-selection/definition'
+import { definitionCache, goToDefinitionAtOccurrence, underlinedDefinitionFacet } from '../token-selection/definition'
 import { from, fromEvent, of, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON } from '../hovercard'
@@ -40,6 +40,8 @@ import {
     selectLineUp,
 } from '@codemirror/commands'
 import { blobPropsFacet } from '../index'
+import { isModifierKeyHeld, modifierClickFacet } from '../token-selection/modifier-click'
+import * as H from 'history'
 
 const setFocusedOccurrence = StateEffect.define<Occurrence | null>()
 const setHoveredOccurrence = StateEffect.define<{ occurrence: Occurrence; tooltip: Tooltip | null } | null>()
@@ -175,7 +177,7 @@ const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     }
 }
 
-const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     // TODO: warmup occurrence
     view.dispatch({
         effects: setFocusedOccurrence.of(occurrence),
@@ -248,6 +250,35 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Enter',
         run(view) {
+            const selected = view.state.field(selectedOccurrenceField).focus
+            if (!selected?.occurrence) {
+                return false
+            }
+
+            const offset = positionToOffset(view.state.doc, selected.occurrence.range.start)
+            if (offset === null) {
+                return true
+            }
+
+            // show loading tooltip
+            view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
+
+            goToDefinitionAtOccurrence(view, selected.occurrence)
+                .then(
+                    ({ handler, url }) => {
+                        if (view.state.field(isModifierKeyHeld) && url) {
+                            window.open(url, '_blank')
+                        } else {
+                            handler(selected.occurrence.range.start)
+                        }
+                    },
+                    () => {}
+                )
+                .finally(() => {
+                    // hide loading tooltip
+                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                })
+
             // TODO: go to definition at occurrence
             return true
         },
@@ -564,11 +595,38 @@ function isOffsetInHoverRange(offset: number, range: { from: number; to: number 
     return range.from <= offset && offset <= range.to
 }
 
+// View plugin that listens to history location changes and updates editor
+// selection accordingly.
+const syncSelectionWithURL: Extension = ViewPlugin.fromClass(
+    class implements PluginValue {
+        private onDestroy: H.UnregisterCallback
+        constructor(public view: EditorView) {
+            const history = view.state.facet(blobPropsFacet).history
+            this.onDestroy = history.listen(location => this.onLocation(location))
+        }
+        public onLocation(location: H.Location): void {
+            const { selection } = selectionFromLocation(this.view, location)
+            if (selection && isSelectionInsideDocument(selection, this.view.state.doc)) {
+                const position = positionAtCmPosition(this.view, selection.from)
+                const occurrence = occurrenceAtPosition(this.view.state, position)
+                if (occurrence) {
+                    selectOccurrence(this.view, occurrence)
+                }
+            }
+        }
+        public destroy(): void {
+            this.onDestroy()
+        }
+    }
+)
+
 export function focusDrivenCodeNavigation() {
     return [
         documentHighlightsExtension(),
         selectedOccurrenceField,
 
+        syncSelectionWithURL,
+        modifierClickFacet.of(false),
         fallbackOccurrences,
         hoverCache,
         definitionCache,

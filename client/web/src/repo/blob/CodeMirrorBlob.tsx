@@ -36,7 +36,8 @@ import { selectionFromLocation, selectRange } from './codemirror/token-selection
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
-import { focusDrivenCodeNavigation } from './codemirror/focus-driven-navigation/extension'
+import { focusDrivenCodeNavigation, selectOccurrence } from './codemirror/focus-driven-navigation/extension'
+import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -244,6 +245,18 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // any existing state should be discarded.
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
+
+            if (enableFocusDrivenCodeNavigation) {
+                const { selection } = selectionFromLocation(editor, historyRef.current.location)
+                if (selection) {
+                    const position = positionAtCmPosition(editor, selection.from)
+                    const occurrence = occurrenceAtPosition(editor.state, position)
+                    if (occurrence) {
+                        selectOccurrence(editor, occurrence)
+                        editor.contentDOM.focus({ preventScroll: true })
+                    }
+                }
+            }
 
             if (!enableSelectionDrivenCodeNavigation) {
                 return
