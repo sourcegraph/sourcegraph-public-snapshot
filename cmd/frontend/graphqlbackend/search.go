@@ -86,7 +86,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db, gitserver.NewClient(db)).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, gitserver.NewClient()).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

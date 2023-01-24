@@ -67,7 +67,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(logger, urn, host, user, password, depotIDs, db), nil
+	return NewProvider(logger, urn, host, user, password, depotIDs), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

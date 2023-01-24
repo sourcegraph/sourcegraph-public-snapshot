@@ -30,20 +30,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func newMockDB() database.DB {
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
-	return db
-}
 
 func TestClient_Remove(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
@@ -66,7 +58,6 @@ func TestClient_Remove(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		newMockDB(),
 		addrs,
 	)
 
@@ -109,7 +100,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 	srv := httptest.NewServer((&server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
-		DB:       newMockDB(),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			testData := tests[name]
 			if testData.remote != "" {
@@ -125,7 +115,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 	ctx := context.Background()
 	for name, test := range tests {
@@ -311,7 +301,7 @@ func TestAddrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", newMockDB(), tc.repo, gitserver.GitServerAddresses{
+			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", tc.repo, gitserver.GitServerAddresses{
 				Addresses:     addrs,
 				PinnedServers: pinned,
 			})
@@ -378,7 +368,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(server.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, newMockDB(), addrs)
+			cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -437,7 +427,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
 	}}
 
-	db := newMockDB()
 	srv := httptest.NewServer((&server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
@@ -447,13 +436,12 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 			return &server.GitRepoSyncer{}, nil
 		},
-		DB: db,
 	}).Handler())
 	defer srv.Close()
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, db, addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -475,7 +463,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 	ctx := context.Background()
-	client := gitserver.NewTestClient(&http.Client{}, newMockDB(), []string{"gitserver1", "gitserver2"})
+	client := gitserver.NewTestClient(&http.Client{}, []string{"gitserver1", "gitserver2"})
 	setPinnedRepos(map[string]string{
 		"repo1": "gitserver2",
 	})
@@ -529,7 +517,6 @@ func TestClient_BatchLog(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
-		newMockDB(),
 		addrs,
 	)
 
@@ -649,7 +636,6 @@ func TestClient_ReposStats(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		newMockDB(),
 		addrs,
 	)
 

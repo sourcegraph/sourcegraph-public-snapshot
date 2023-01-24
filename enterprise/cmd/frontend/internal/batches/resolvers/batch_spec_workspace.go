@@ -49,7 +49,7 @@ func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes
 		execution:    execution,
 		batchSpec:    batchSpec,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserver.NewClient(store.DatabaseDB()), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserver.NewClient(), repo),
 	}
 }
 

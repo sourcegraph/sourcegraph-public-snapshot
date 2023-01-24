@@ -19,14 +19,14 @@ import (
 func toComputeResult(ctx context.Context, db database.DB, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
 	if v, ok := match.(*result.CommitMatch); ok && v.DiffPreview != nil {
 		for _, diffMatch := range v.CommitToDiffMatches() {
-			result, err := cmd.Run(ctx, db, diffMatch)
+			result, err := cmd.Run(ctx, diffMatch)
 			if err != nil {
 				return nil, err
 			}
 			out = append(out, result)
 		}
 	} else {
-		result, err := cmd.Run(ctx, db, match)
+		result, err := cmd.Run(ctx, match)
 		if err != nil {
 			return nil, err
 		}
