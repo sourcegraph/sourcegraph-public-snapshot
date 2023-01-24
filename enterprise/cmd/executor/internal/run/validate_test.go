@@ -132,7 +132,7 @@ func TestExecCommandHelper(t *testing.T) {
 		return
 	}
 
-	_, err := fmt.Fprintf(os.Stdout, os.Getenv("STDOUT"))
+	_, err := fmt.Fprint(os.Stdout, os.Getenv("STDOUT"))
 	require.NoError(t, err)
 
 	i, err := strconv.Atoi(os.Getenv("EXIT_STATUS"))
