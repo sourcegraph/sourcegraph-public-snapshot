@@ -93,13 +93,10 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
-var (
-	ErrBucketAlreadyExists = errors.New("bucket already exists")
-)
+var ErrBucketAlreadyExists = errors.New("bucket already exists")
 
 func (s *Service) createBucket(ctx context.Context, name string) error {
 	_ = ctx
-	defer s.Log.Info("created bucket", sglog.String("name", name))
 
 	// Lock the bucket so nobody can read or write to the same bucket while we create it.
 	bucketLock := s.bucketLock(name)
@@ -111,6 +108,7 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 	if _, err := os.Stat(bucketDir); err == nil {
 		return ErrBucketAlreadyExists
 	}
+	defer s.Log.Info("created bucket", sglog.String("name", name), sglog.String("dir", bucketDir))
 	if err := os.Mkdir(bucketDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "MkdirAll")
 	}
