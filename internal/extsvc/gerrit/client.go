@@ -117,7 +117,6 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	// Currently, if you want to only get CODE projects and want to know if there is another page
 	// to query for, the only way to do that is to query both CODE and ALL projects and compare
 	// the number of projects returned.
-	qsNextPageProjects := make(url.Values)
 	qsCodeProjects := make(url.Values)
 
 	if opts.Cursor == nil {
@@ -126,13 +125,9 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 
 	// Number of results to return.
 	qsCodeProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
-	// We only need to fetch the first Project of the next page to see if there are more.
-	qsNextPageProjects.Set("n", fmt.Sprintf("%d", 1))
 
 	// Skip the first S projects.
 	qsCodeProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
-	// Query all projects from next page
-	qsNextPageProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page)*opts.Cursor.PerPage))
 
 	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
 	qsCodeProjects.Set("type", "CODE")
@@ -150,20 +145,32 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 		return nil, false, err
 	}
 
-	uNextPageProjects := url.URL{Path: urlPath, RawQuery: qsNextPageProjects.Encode()}
-	reqNextPageProjects, err := http.NewRequest("GET", uNextPageProjects.String(), nil)
-	if err != nil {
-		return nil, false, err
-	}
+	// We always assume there is a next page, unless the number of CODE projects
+	// returned is zero.
+	// This means we will do one extra request in the case where the number of CODE projects
+	// is only one page, but we make one less request for every page there after.
+	nextPage = true
+	if len(respCodeProjects) == 0 {
+		qsNextPageProjects := make(url.Values)
+		// We only need to fetch the first Project of the next page to see if there are more.
+		qsNextPageProjects.Set("n", fmt.Sprintf("%d", 1))
+		qsNextPageProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page)*opts.Cursor.PerPage))
 
-	var respNextPageProjects ListProjectsResponse
-	if _, err = c.do(ctx, reqNextPageProjects, &respNextPageProjects); err != nil {
-		return nil, false, err
-	}
+		uNextPageProjects := url.URL{Path: urlPath, RawQuery: qsNextPageProjects.Encode()}
+		reqNextPageProjects, err := http.NewRequest("GET", uNextPageProjects.String(), nil)
+		if err != nil {
+			return nil, false, err
+		}
 
-	// If we find projects on the next page, there is possibly more CODE projects to fetch,
-	// even if the current returned page is empty.
-	nextPage = len(respNextPageProjects) > 0
+		var respNextPageProjects ListProjectsResponse
+		if _, err = c.do(ctx, reqNextPageProjects, &respNextPageProjects); err != nil {
+			return nil, false, err
+		}
+
+		// If we find projects on the next page, there is possibly more CODE projects to fetch,
+		// even if the current returned page is empty.
+		nextPage = len(respNextPageProjects) > 0
+	}
 
 	return &respCodeProjects, nextPage, nil
 }
