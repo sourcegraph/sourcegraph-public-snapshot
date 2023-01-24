@@ -153,21 +153,32 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 }
 
 const roleListQueryFmtstr = `
-SELECT
-	%s
-FROM roles
+SELECT %s FROM roles
+%s
 WHERE %s
 %s
 `
 
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
 	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	var joins = sqlf.Sprintf("")
 
 	if opts.System {
 		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
 	}
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(conds, " AND "), orderByQuery)
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
+		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
+	}
+
+	q := sqlf.Sprintf(
+		roleListQueryFmtstr,
+		selects,
+		joins,
+		sqlf.Join(conds, " AND "),
+		orderByQuery,
+	)
 
 	if opts.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())

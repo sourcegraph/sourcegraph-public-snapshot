@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -10,6 +11,7 @@ import (
 )
 
 func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleConnectionResolver, error) {
+	fmt.Println("here it is")
 	var err error
 	var opts = database.RolesListOptions{}
 

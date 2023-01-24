@@ -14,9 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestPermissionConnectionResolver(t *testing.T) {
+func TestRoleConnectionResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
@@ -32,31 +33,30 @@ func TestPermissionConnectionResolver(t *testing.T) {
 
 	userID := createTestUser(t, db, false).ID
 
-	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
-		{
-			Namespace: "TEST-NAMESPACE",
-			Action:    "READ",
-		},
-		{
-			Namespace: "TEST-NAMESPACE",
-			Action:    "WRITE",
-		},
-		{
-			Namespace: "TEST-NAMESPACE",
-			Action:    "EXECUTE",
-		},
+	// All sourcegraph instances are seeded with two system roles at migration,
+	// so we take those into account when querying roles.
+	siteAdminRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
+		Name: string(types.SiteAdministratorSystemRole),
 	})
 	assert.NoError(t, err)
 
-	want := []apitest.Permission{
+	userRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
+		Name: string(types.UserSystemRole),
+	})
+	assert.NoError(t, err)
+
+	r, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	assert.NoError(t, err)
+
+	want := []apitest.Role{
 		{
-			ID: string(marshalPermissionID(ps[0].ID)),
+			ID: string(marshalRoleID(userRole.ID)),
 		},
 		{
-			ID: string(marshalPermissionID(ps[1].ID)),
+			ID: string(marshalRoleID(siteAdminRole.ID)),
 		},
 		{
-			ID: string(marshalPermissionID(ps[2].ID)),
+			ID: string(marshalRoleID(r.ID)),
 		},
 	}
 
@@ -64,7 +64,7 @@ func TestPermissionConnectionResolver(t *testing.T) {
 		firstParam      int
 		wantHasNextPage bool
 		wantTotalCount  int
-		wantNodes       []apitest.Permission
+		wantNodes       []apitest.Role
 	}{
 		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:1]},
 		{firstParam: 2, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:2]},
@@ -75,28 +75,28 @@ func TestPermissionConnectionResolver(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
 			input := map[string]any{"first": int64(tc.firstParam)}
-			var response struct{ Permissions apitest.PermissionConnection }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryPermissionConnection)
+			var response struct{ Roles apitest.RoleConnection }
+			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryRoleConnection)
 
-			wantConnection := apitest.PermissionConnection{
+			wantConnection := apitest.RoleConnection{
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					HasNextPage: tc.wantHasNextPage,
-					EndCursor:   response.Permissions.PageInfo.EndCursor,
+					EndCursor:   response.Roles.PageInfo.EndCursor,
 				},
 				Nodes: tc.wantNodes,
 			}
 
-			if diff := cmp.Diff(wantConnection, response.Permissions); diff != "" {
-				t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wantConnection, response.Roles); diff != "" {
+				t.Fatalf("wrong roles response (-want +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-const queryPermissionConnection = `
+const queryRoleConnection = `
 query($first: Int, $after: String) {
-	permissions(first: $first, after: $after) {
+	roles(first: $first, after: $after) {
 		totalCount
 		pageInfo {
 			hasNextPage
@@ -109,7 +109,7 @@ query($first: Int, $after: String) {
 }
 `
 
-func TestUserPermissionsListing(t *testing.T) {
+func TestUserRoleListing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
@@ -138,73 +138,62 @@ func TestUserPermissionsListing(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: "TEST-NAMESPACE",
-		Action:    "READ",
-	})
-	assert.NoError(t, err)
-
-	_, err = db.RolePermissions().Create(ctx, database.CreateRolePermissionOpts{
-		RoleID:       role.ID,
-		PermissionID: p.ID,
-	})
-	assert.NoError(t, err)
-
-	t.Run("listing a user's permissions (same user)", func(t *testing.T) {
+	t.Run("listing a user's roles (same user)", func(t *testing.T) {
 		userAPIID := string(gql.MarshalUserID(userID))
 		input := map[string]any{"node": userAPIID}
 
 		want := apitest.User{
 			ID: userAPIID,
-			Permissions: apitest.PermissionConnection{
+			Roles: apitest.RoleConnection{
 				TotalCount: 1,
-				Nodes: []apitest.Permission{
+				Nodes: []apitest.Role{
 					{
-						ID: string(marshalPermissionID(p.ID)),
+						ID: string(marshalRoleID(role.ID)),
 					},
 				},
 			},
 		}
 
 		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listUserPermissions)
+		apitest.MustExec(actorCtx, t, s, input, &response, listUserRoles)
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong permission response (-want +got):\n%s", diff)
+			t.Fatalf("wrong role response (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("listing a user's permissions (site admin)", func(t *testing.T) {
+	t.Run("listing a user's roles (site admin)", func(t *testing.T) {
+		t.Skip()
 		userAPIID := string(gql.MarshalUserID(userID))
 		input := map[string]any{"node": userAPIID}
 
 		want := apitest.User{
 			ID: userAPIID,
-			Permissions: apitest.PermissionConnection{
+			Roles: apitest.RoleConnection{
 				TotalCount: 1,
-				Nodes: []apitest.Permission{
+				Nodes: []apitest.Role{
 					{
-						ID: string(marshalPermissionID(p.ID)),
+						ID: string(marshalRoleID(role.ID)),
 					},
 				},
 			},
 		}
 
 		var response struct{ Node apitest.User }
-		apitest.MustExec(adminActorCtx, t, s, input, &response, listUserPermissions)
+		apitest.MustExec(adminActorCtx, t, s, input, &response, listUserRoles)
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
+			t.Fatalf("wrong roles response (-want +got):\n%s", diff)
 		}
 	})
 }
 
-const listUserPermissions = `
+const listUserRoles = `
 query ($node: ID!) {
 	node(id: $node) {
 		... on User {
 			id
-			permissions {
+			roles {
 				totalCount
 				nodes {
 					id

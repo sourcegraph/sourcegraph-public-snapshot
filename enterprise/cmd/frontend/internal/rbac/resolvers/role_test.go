@@ -61,7 +61,7 @@ func TestRoleResolver(t *testing.T) {
 		Typename:  "Role",
 		ID:        mrid,
 		Name:      role.Name,
-		Readonly:  role.System,
+		System:    role.System,
 		CreatedAt: gqlutil.DateTime{Time: role.CreatedAt.Truncate(time.Second)},
 		DeletedAt: nil,
 		Permissions: apitest.PermissionConnection{
