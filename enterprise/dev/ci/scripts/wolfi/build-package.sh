@@ -1,7 +1,6 @@
 #!/bin/bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
-cd "/root" # TODO: Only used in local Docker
 
 set -euf -o pipefail
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
@@ -39,9 +38,6 @@ fi
 
 name=${1%/}
 
-pwd
-ls -al ./
-ls -al ./wolfi-packages
 cd "wolfi-packages"
 
 if [ ! -e "${name}.yaml" ]; then
