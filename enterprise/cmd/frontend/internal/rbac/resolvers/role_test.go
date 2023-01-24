@@ -61,7 +61,7 @@ func TestRoleResolver(t *testing.T) {
 		Typename:  "Role",
 		ID:        mrid,
 		Name:      role.Name,
-		Readonly:  role.ReadOnly,
+		Readonly:  role.System,
 		CreatedAt: gqlutil.DateTime{Time: role.CreatedAt.Truncate(time.Second)},
 		DeletedAt: nil,
 		Permissions: apitest.PermissionConnection{
@@ -95,7 +95,7 @@ const queryRoleNode = `
 query ($role: ID!) {
 	node(id: $role) {
 		__typename
-		
+
 		... on Role {
 			id
 			name

@@ -6,13 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-
-func (r *Resolver) Role(ctx context.Context, args *gql.RoleArgs) (gql.RoleResolver, error) {
-	return r.roleByID(ctx, args.ID)
-}
 
 func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleConnectionResolver, error) {
 	var err error
@@ -21,11 +16,6 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (gql.RoleC
 	if args.User != nil {
 		userID, err := gql.UnmarshalUserID(*args.User)
 		if err != nil {
-			return nil, err
-		}
-
-		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 
@@ -53,7 +43,7 @@ func (r *Resolver) roleByID(ctx context.Context, id graphql.ID) (gql.RoleResolve
 		return nil, ErrIDIsZero{}
 	}
 
-	role, err := r.db.Roles().GetByID(ctx, database.GetRoleOpts{
+	role, err := r.db.Roles().Get(ctx, database.GetRoleOpts{
 		ID: roleID,
 	})
 	if err != nil {

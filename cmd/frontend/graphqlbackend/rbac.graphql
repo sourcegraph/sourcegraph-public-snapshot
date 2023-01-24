@@ -13,7 +13,7 @@ type Role implements Node {
     """
     This indicates whether a role can be modified or deleted.
     """
-    readonly: Boolean!
+    system: Boolean!
     """
     The list of permissions assigned to any user with this role.
     """
@@ -100,20 +100,6 @@ extend type Query {
         """
         user: ID
     ): RoleConnection!
-
-    role(
-        """
-        ID of the role to be retrieved
-        """
-        id: ID!
-    ): Role
-
-    permission(
-        """
-        ID of the permission to be retrieved
-        """
-        id: ID!
-    ): Permission
 
     """
     All permissions

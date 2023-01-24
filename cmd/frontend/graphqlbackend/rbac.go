@@ -13,7 +13,7 @@ import (
 type RoleResolver interface {
 	ID() graphql.ID
 	Name() string
-	Readonly() bool
+	System() bool
 	CreatedAt() gqlutil.DateTime
 	Permissions() (PermissionConnectionResolver, error)
 }
@@ -41,21 +41,11 @@ type RBACResolver interface {
 	// MUTATIONS
 
 	// QUERIES
-	Role(ctx context.Context, args *RoleArgs) (RoleResolver, error)
 	Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error)
 
-	Permission(ctx context.Context, args *PermissionArgs) (PermissionResolver, error)
 	Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
-}
-
-type RoleArgs struct {
-	ID graphql.ID
-}
-
-type PermissionArgs struct {
-	ID graphql.ID
 }
 
 type ListRoleArgs struct {

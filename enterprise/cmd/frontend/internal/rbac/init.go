@@ -13,8 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// Init initializes the given enterpriseServices to include the required
-// resolvers for RBAC.
+// Init initializes the given enterpriseServices to include the required resolvers for RBAC.
 func Init(
 	ctx context.Context,
 	_ *observation.Context,

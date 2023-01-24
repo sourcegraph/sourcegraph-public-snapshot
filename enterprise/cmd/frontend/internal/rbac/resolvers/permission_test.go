@@ -65,7 +65,7 @@ const queryPermissionNode = `
 query ($permission: ID!) {
 	node(id: $permission) {
 		__typename
-		
+
 		... on Permission {
 			id
 			namespace

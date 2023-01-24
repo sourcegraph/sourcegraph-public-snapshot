@@ -30,3 +30,11 @@ type Role struct {
 	DeletedAt   *gqlutil.DateTime
 	Permissions PermissionConnection
 }
+
+type User struct {
+	ID         string
+	DatabaseID int32
+	SiteAdmin  bool
+
+	Permissions PermissionConnection
+}

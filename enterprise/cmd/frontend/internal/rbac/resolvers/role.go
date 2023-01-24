@@ -34,8 +34,8 @@ func (r *roleResolver) Name() string {
 	return r.role.Name
 }
 
-func (r *roleResolver) Readonly() bool {
-	return r.role.ReadOnly
+func (r *roleResolver) System() bool {
+	return r.role.System
 }
 
 func (r *roleResolver) Permissions() (graphqlbackend.PermissionConnectionResolver, error) {

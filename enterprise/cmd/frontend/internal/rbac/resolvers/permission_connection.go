@@ -73,7 +73,6 @@ func (r *permissionConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 func (r *permissionConnectionResolver) compute(ctx context.Context) ([]*types.Permission, int, error) {
 	r.once.Do(func() {
 		r.permissions, r.err = r.db.Permissions().List(ctx, r.opts)
-		fmt.Println("computing")
 		if r.err != nil {
 			return
 		}

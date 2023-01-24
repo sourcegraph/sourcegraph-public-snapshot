@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -48,11 +47,6 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 			return nil, err
 		}
 
-		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-
 		opts.UserID = userID
 	}
 
@@ -65,8 +59,4 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		db:   r.db,
 		opts: opts,
 	}, nil
-}
-
-func (r *Resolver) Permission(ctx context.Context, args *gql.PermissionArgs) (gql.PermissionResolver, error) {
-	return r.permissionByID(ctx, args.ID)
 }
