@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -39,11 +37,11 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	var params search.SymbolsParameters
 	params.FromProto(r)
 
-	result, err := s.searchFunc(ctx, params)
+	symbols, err := s.searchFunc(ctx, params)
 	if err != nil {
 		arguments := fmt.Sprintf("%+v", params)
 
-		s.logger.Error("search failed",
+		s.logger.Error("symbol search failed",
 			logger.String("arguments", arguments),
 			logger.Error(err),
 		)
@@ -52,7 +50,7 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 		return response.ToProto(), nil
 	}
 
-	response := search.SymbolsResponse{Symbols: result}
+	response := search.SymbolsResponse{Symbols: symbols}
 	return response.ToProto(), nil
 }
 
@@ -97,20 +95,24 @@ func NewHandler(
 		return searchFunc(ctx, args)
 	}
 
+	rootLogger := logger.Scoped("symbolsServer", "symbols RPC server")
+
 	// Initialize the gRPC server
 	grpcServer := grpc.NewServer()
 	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
-		logger:       logger.Scoped("symbolsGRPCServer", "symbols service grpc server"),
+		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
 	reflection.Register(grpcServer)
 
+	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
+
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/search", handleSearchWith(searchFuncWrapper))
-	mux.HandleFunc("/healthz", handleHealthCheck)
+	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
+	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
 	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
@@ -120,7 +122,7 @@ func NewHandler(
 	return internalgrpc.MultiplexHandlers(grpcServer, mux)
 }
 
-func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
+func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var args search.SymbolsParameters
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
@@ -135,7 +137,13 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 				return
 			}
 
-			log15.Error("Symbol search failed", "args", args, "error", err)
+			argsStr := fmt.Sprintf("%+v", args)
+
+			l.Error("symbol search failed",
+				logger.String("arguments", argsStr),
+				logger.Error(err),
+			)
+
 			if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Err: err.Error()}); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
@@ -161,10 +169,12 @@ func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http
 	}
 }
 
-func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func handleHealthCheck(l logger.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 
-	if _, err := w.Write([]byte("OK")); err != nil {
-		log15.Error("failed to write response to health check, err: %s", err)
+		if _, err := w.Write([]byte("OK")); err != nil {
+			l.Error("failed to write healthcheck response", logger.Error(err))
+		}
 	}
 }
