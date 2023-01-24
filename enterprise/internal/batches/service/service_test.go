@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -661,6 +662,86 @@ index e5af166..d44c3fc 100644
 			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %v", err)
 			}
+		})
+	})
+
+	t.Run("CreateChangesetSpecs", func(t *testing.T) {
+		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(rs[0].ID), "d34db33f")
+
+		t.Run("success", func(t *testing.T) {
+			specs, err := svc.CreateChangesetSpecs(ctx, []string{rawSpec}, admin.ID)
+			require.NoError(t, err)
+
+			assert.Len(t, specs, 1)
+
+			for _, spec := range specs {
+				assert.NotZero(t, spec.ID)
+
+				want := &btypes.ChangesetSpec{
+					ID:   6,
+					Type: btypes.ChangesetSpecTypeBranch,
+					Diff: []byte(`diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`),
+					DiffStatAdded:     3,
+					DiffStatDeleted:   3,
+					BaseRepoID:        1,
+					UserID:            1,
+					BaseRev:           "d34db33f",
+					BaseRef:           "refs/heads/master",
+					HeadRef:           "refs/heads/my-branch",
+					Title:             "the title",
+					Body:              "the body of the PR",
+					Published:         batcheslib.PublishedValue{Val: false},
+					CommitMessage:     "git commit message\n\nand some more content in a second paragraph.",
+					CommitAuthorName:  "Mary McButtons",
+					CommitAuthorEmail: "mary@example.com",
+				}
+
+				if diff := cmp.Diff(want, spec, cmpopts.IgnoreFields(btypes.ChangesetSpec{}, "CreatedAt", "UpdatedAt", "RandID")); diff != "" {
+					t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+				}
+
+				wantDiffStat := *bt.ChangesetSpecDiffStat
+				if diff := cmp.Diff(wantDiffStat, spec.DiffStat()); diff != "" {
+					t.Fatalf("wrong diff stat (-want +got):\n%s", diff)
+				}
+			}
+		})
+
+		t.Run("invalid raw spec", func(t *testing.T) {
+			invalidRaw := `{"externalComputer": "beepboop"}`
+			_, err := svc.CreateChangesetSpecs(ctx, []string{invalidRaw}, admin.ID)
+			assert.Error(t, err)
+			assert.Equal(
+				t,
+				"4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed",
+				err.Error(),
+			)
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			bt.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+
+			_, err := svc.CreateChangesetSpecs(userCtx, []string{rawSpec}, admin.ID)
+			assert.Error(t, err)
+			assert.True(t, errcode.IsNotFound(err))
 		})
 	})
 

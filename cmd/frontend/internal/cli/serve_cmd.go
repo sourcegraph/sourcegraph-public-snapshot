@@ -282,6 +282,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
+			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,

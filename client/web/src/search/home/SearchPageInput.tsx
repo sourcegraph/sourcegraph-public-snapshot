@@ -130,12 +130,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 authenticatedUser: props.authenticatedUser,
                 fetchSearchContexts: props.fetchSearchContexts,
                 getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
             }),
         [
             props.platformContext,
             props.authenticatedUser,
             props.fetchSearchContexts,
             props.getUserSearchContextNamespaces,
+            props.isSourcegraphDotCom,
         ]
     )
 
