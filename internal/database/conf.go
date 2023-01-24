@@ -63,6 +63,7 @@ var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 
 type confStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 // SiteConfig contains the contents of a site config along with associated metadata.
@@ -92,7 +93,10 @@ func (s *confStore) transact(ctx context.Context) (*confStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &confStore{Store: txBase}, nil
+	return &confStore{
+		Store:  txBase,
+		logger: s.logger,
+	}, nil
 }
 
 func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
@@ -241,13 +245,15 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
-	logger := log.Scoped("createIfUpToDate", "confStore.createIfUpToDate")
 	redactedConf, err := conf.RedactSecrets(conftypes.RawUnified{Site: contents}, true)
 	var redactedContents string
 	if err != nil {
 		// Do not fail here. Instead continue writing to DB with an empty value for
 		// "redacted_contents".
-		logger.Warn("failed to redact secrets", log.Error(err))
+		s.logger.Warn(
+			"failed to redact secrets during site config creation (secrets are safely stored but diff generation in site config history will not work)",
+			log.Error(err),
+		)
 	} else {
 		redactedContents = redactedConf.Site
 	}
