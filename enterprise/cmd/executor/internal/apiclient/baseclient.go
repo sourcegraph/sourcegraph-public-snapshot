@@ -192,6 +192,7 @@ func (c *BaseClient) NewJSONJobRequest(method, path string, token string, payloa
 		return nil, err
 	}
 
+	// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
 	if len(token) > 0 {
 		r.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", token))
 	} else {
