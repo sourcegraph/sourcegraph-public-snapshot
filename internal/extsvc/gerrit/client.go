@@ -149,9 +149,9 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 		return nil, false, err
 	}
 
-	// If the number of projects returned matches the page length, we assume
-	// there are more projects to fetch.
-	nextPage = len(respProjects) == opts.Cursor.PerPage
+	// If the number of projects returned matches the page length, or if we're
+	// only fetching CODE projects, we assume there are more projects to fetch.
+	nextPage = len(respProjects) == opts.Cursor.PerPage || opts.OnlyCodeProjects
 
 	// If we're only fetching CODE projects, an empty page does not imply that
 	// there are no more projects to fetch. Instead we need to check if the
