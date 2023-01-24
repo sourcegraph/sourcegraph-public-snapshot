@@ -17,12 +17,16 @@ const CHARS_PER_TOKEN = 4
 export class Prompt {
 	private messages: Message[] = []
 
-	constructor(private embeddingsClient: EmbeddingsClient) {}
+	constructor(private embeddingsClient: EmbeddingsClient | null) {}
 
 	// We split the context into multiple messages instead of joining them into a single giant message.
 	// We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
 	// when we run out of tokens.
 	private async getContextMessages(query: string, options: ContextSearchOptions): Promise<Message[]> {
+		if (!this.embeddingsClient) {
+			return []
+		}
+
 		const embeddingsSearchResults = await this.embeddingsClient.search(
 			query,
 			options.numCodeResults,
@@ -116,7 +120,9 @@ export class Prompt {
 		const truncatedHumanInput = this.truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
 
 		// TODO: Add context from currently active text editor if embeddingsClient is not available
-		const inputNeedsAdditionalContext = await this.embeddingsClient.queryNeedsAdditionalContext(truncatedHumanInput)
+		const inputNeedsAdditionalContext = this.embeddingsClient
+			? await this.embeddingsClient.queryNeedsAdditionalContext(truncatedHumanInput)
+			: false
 
 		// Load more context at the start of a chat to give the model as much information as possible.
 		// On subsequent messages load less context to avoid too many duplicates and overwhelming

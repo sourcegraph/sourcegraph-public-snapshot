@@ -35,7 +35,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	constructor(
 		private extensionPath: string,
 		private wsclient: Promise<WSChatClient | null>,
-		private embeddingsClient: EmbeddingsClient
+		private embeddingsClient: EmbeddingsClient | null
 	) {
 		this.prompt = new Prompt(this.embeddingsClient)
 	}

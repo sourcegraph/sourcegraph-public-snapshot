@@ -23,8 +23,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	const embeddingsAddr = settings.get('cody.embeddingsEndpoint') || CODY_ENDPOINT
 	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${embeddingsAddr}`
 
-	const codebaseID: string = settings.get('cody.codebase', '')
-	if (!codebaseID) {
+	const codebaseId: string = settings.get('cody.codebase', '')
+	if (!codebaseId) {
 		vscode.window.showWarningMessage(
 			'Cody needs a codebase to work with. Please set the "cody.codebase" setting in your workspace settings and reload the editor.'
 		)
@@ -39,7 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const wsCompletionsClient = WSCompletionsClient.new(`${serverUrl}/completions`, accessToken)
 	const wsChatClient = WSChatClient.new(`${serverUrl}/chat`, accessToken)
-	const embeddingsClient = new EmbeddingsClient(embeddingsUrl, accessToken, codebaseID)
+	const embeddingsClient = codebaseId ? new EmbeddingsClient(embeddingsUrl, accessToken, codebaseId) : null
 
 	const chatProvider = new ChatViewProvider(context.extensionPath, wsChatClient, embeddingsClient)
 

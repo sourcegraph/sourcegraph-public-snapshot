@@ -16,13 +16,13 @@ export interface EmbeddingSearchResults {
 export class EmbeddingsClient {
 	headers: { headers: { authorization: string } }
 
-	constructor(private embeddingsUrl: string, private accessToken: string, private codebaseID: string) {
+	constructor(private embeddingsUrl: string, private accessToken: string, private codebaseId: string) {
 		this.headers = { headers: { authorization: `Bearer ${this.accessToken}` } }
 	}
 
 	async search(query: string, codeCount: number, markdownCount: number): Promise<EmbeddingSearchResults> {
 		const url = `${this.embeddingsUrl}/embeddings/search/${encodeURIComponent(
-			this.codebaseID
+			this.codebaseId
 		)}?query=${encodeURIComponent(query)}&codeCount=${encodeURIComponent(
 			codeCount
 		)}&markdownCount=${encodeURIComponent(markdownCount)}`
