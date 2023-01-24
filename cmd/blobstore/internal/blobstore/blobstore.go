@@ -67,11 +67,10 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			if r.ContentLength != 0 {
 				return errors.Newf("expected CreateBucket request to have content length 0: %s %s", r.Method, r.URL)
 			}
-			if err := s.createBucket(ctx, path[0]); err != nil {
+			bucketName := path[0]
+			if err := s.createBucket(ctx, bucketName); err != nil {
 				if err == ErrBucketAlreadyExists {
-					w.WriteHeader(http.StatusConflict)
-					fmt.Fprintf(w, "bucket already exists")
-					return nil
+					return writeS3Error(w, s3ErrorBucketAlreadyOwnedByYou, bucketName, err)
 				}
 				return errors.Wrap(err, "createBucket")
 			}
@@ -108,6 +107,7 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 	if _, err := os.Stat(bucketDir); err == nil {
 		return ErrBucketAlreadyExists
 	}
+
 	defer s.Log.Info("created bucket", sglog.String("name", name), sglog.String("dir", bucketDir))
 	if err := os.Mkdir(bucketDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "MkdirAll")
