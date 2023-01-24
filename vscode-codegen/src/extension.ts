@@ -7,6 +7,7 @@ import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
 import { EmbeddingsClient } from './embeddings-client'
 
 const CODY_ENDPOINT = 'cody.sgdev.org'
+const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('Cody extension activated')
@@ -48,13 +49,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		return chatProvider.executeRecipe(recipe)
 	}
 
-	const storeAccessToken = async (accessToken: string | undefined) => {
-		if (!accessToken) {
-			return
-		}
-		context.secrets.store('cody.access-token', accessToken)
-	}
-
 	context.subscriptions.push(
 		vscode.workspace.registerTextDocumentContentProvider('codegen', documentProvider),
 		vscode.languages.registerHoverProvider({ scheme: 'codegen' }, documentProvider),
@@ -81,8 +75,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		vscode.commands.registerCommand('cody.set-access-token', async () => {
 			const tokenInput = await vscode.window.showInputBox()
-			await storeAccessToken(tokenInput)
-		})
+			if (tokenInput === undefined) {
+				return
+			}
+			return context.secrets.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
+		}),
+
+		vscode.commands.registerCommand('cody.delete-access-token', async () =>
+			context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
+		)
 	)
 }
 
