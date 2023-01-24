@@ -62,7 +62,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 		{
 			name:                 "No request body",
 			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "Failed to read parse request body\n",
+			expectedResponseBody: "Failed to parse request body\n",
 		},
 		{
 			name:                 "Malformed request body",
