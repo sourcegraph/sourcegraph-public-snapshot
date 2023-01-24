@@ -39,9 +39,10 @@ fi
 
 name=${1%/}
 
-cd "wolfi-packages"
 pwd
-ls -al
+ls -al ./
+ls -al ./wolfi-packages
+cd "wolfi-packages"
 
 if [ ! -e "${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
