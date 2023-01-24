@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 
 import { AddExternalAccountResult, AddExternalAccountVariables } from 'src/graphql-operations'
 
@@ -21,40 +21,33 @@ export const AddGerritAccountModal: React.FunctionComponent<
         isOpen: boolean
     }>
 > = ({ onDidAdd, serviceID, isOpen, onDismiss }) => {
-    const [isLoading, setIsLoading] = useState(false)
-    const [addExternalAccount, { error }] = useMutation<AddExternalAccountResult, AddExternalAccountVariables>(
-        ADD_EXTERNAL_ACCOUNT
+    const [addExternalAccount, { error, loading }] = useMutation<AddExternalAccountResult, AddExternalAccountVariables>(
+        ADD_EXTERNAL_ACCOUNT,
+        {
+            onCompleted: () => {
+                onDidAdd()
+            },
+        }
     )
 
-    const onAccountAdd = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
-            const target = event.target as typeof event.target & {
-                username: { value: string }
-                password: { value: string }
-            }
-            event.preventDefault()
-            setIsLoading(true)
+    const onAccountAdd: React.FormEventHandler<HTMLFormElement> = event => {
+        event.preventDefault()
+        const target = event.target as typeof event.target & {
+            username: { value: string }
+            password: { value: string }
+        }
 
-            addExternalAccount({
-                variables: {
-                    serviceType: 'gerrit',
-                    serviceID,
-                    accountDetails: JSON.stringify({
-                        username: target.username.value,
-                        password: target.password.value,
-                    }),
-                },
-            })
-                .then(() => {
-                    setIsLoading(false)
-                    onDidAdd()
-                })
-                .catch(() => {
-                    setIsLoading(false)
-                })
-        },
-        [addExternalAccount, onDidAdd, serviceID]
-    )
+        addExternalAccount({
+            variables: {
+                serviceType: 'gerrit',
+                serviceID,
+                accountDetails: JSON.stringify({
+                    username: target.username.value,
+                    password: target.password.value,
+                }),
+            },
+        }).catch(() => {})
+    }
 
     return (
         <Modal
@@ -74,16 +67,10 @@ export const AddGerritAccountModal: React.FunctionComponent<
                 <Input type="text" name="username" placeholder="Username" className="mb-4" />
                 <Input type="password" name="password" placeholder="Password" className="mb-4" />
                 <div className="d-flex justify-content-end">
-                    <Button
-                        className="mr-2"
-                        disabled={isLoading}
-                        onClick={onDismiss}
-                        outline={true}
-                        variant="secondary"
-                    >
+                    <Button className="mr-2" disabled={loading} onClick={onDismiss} outline={true} variant="secondary">
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isLoading} variant="primary">
+                    <Button type="submit" disabled={loading} variant="primary">
                         Add account
                     </Button>
                 </div>
