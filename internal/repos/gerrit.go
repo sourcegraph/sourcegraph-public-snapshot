@@ -148,5 +148,6 @@ func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.R
 			},
 		},
 		Metadata: p,
+		Private:  s.private,
 	}, nil
 }
