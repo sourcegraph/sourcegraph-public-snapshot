@@ -5,12 +5,12 @@ interactions:
     body: ""
     form: {}
     headers: {}
-    url: https://gerrit-review.googlesource.com/projects/?S=0&n=5&type=CODE
+    url: https://gerrit-review.googlesource.com/projects/?S=0&n=5
     method: GET
   response:
     body: |
       )]}'
-      {"TestRepo":{"id":"TestRepo","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/TestRepo/","target":"_blank"}]},"apps/analytics-etl":{"id":"apps%2Fanalytics-etl","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/apps/analytics-etl/","target":"_blank"}]}}
+      {"Core-Plugins":{"id":"Core-Plugins","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Core-Plugins/","target":"_blank"}]},"Public-Plugins":{"id":"Public-Plugins","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Public-Plugins/","target":"_blank"}]},"Public-Projects":{"id":"Public-Projects","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Public-Projects/","target":"_blank"}]},"TestRepo":{"id":"TestRepo","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/TestRepo/","target":"_blank"}]},"apps/analytics-etl":{"id":"apps%2Fanalytics-etl","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/apps/analytics-etl/","target":"_blank"}]}}
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
@@ -20,56 +20,13 @@ interactions:
       Content-Disposition:
       - attachment
       Content-Security-Policy-Report-Only:
-      - 'script-src ''nonce-mjQcSAoVw8k2WsAtaoE7uQ'' ''unsafe-inline'' ''strict-dynamic''
+      - 'script-src ''nonce-LqYfkker0cyXan8LHVCJDw'' ''unsafe-inline'' ''strict-dynamic''
         https: http: ''unsafe-eval'';object-src ''none'';base-uri ''self'';report-uri
         https://csp.withgoogle.com/csp/gerritcodereview/1'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Jan 2023 09:11:08 GMT
-      Expires:
-      - Mon, 01 Jan 1990 00:00:00 GMT
-      Pragma:
-      - no-cache
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers: {}
-    url: https://gerrit-review.googlesource.com/projects/?S=5&n=1
-    method: GET
-  response:
-    body: |
-      )]}'
-      {"apps/kibana-dashboard":{"id":"apps%2Fkibana-dashboard","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/apps/kibana-dashboard/","target":"_blank"}]}}
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
-        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
-      Cache-Control:
-      - no-cache, no-store, max-age=0, must-revalidate
-      Content-Disposition:
-      - attachment
-      Content-Length:
-      - "194"
-      Content-Security-Policy-Report-Only:
-      - 'script-src ''nonce-fQ4kYBKYg95Egce8zVQzbw'' ''unsafe-inline'' ''strict-dynamic''
-        https: http: ''unsafe-eval'';object-src ''none'';base-uri ''self'';report-uri
-        https://csp.withgoogle.com/csp/gerritcodereview/1'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 24 Jan 2023 09:11:09 GMT
+      - Tue, 24 Jan 2023 12:14:13 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:
