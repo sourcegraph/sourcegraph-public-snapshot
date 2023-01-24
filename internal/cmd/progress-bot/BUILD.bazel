@@ -7,8 +7,8 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "@com_github_cockroachdb_errors//:errors",
-        "@com_github_drexedam_gravatar//:go_default_library",
-        "@com_github_ozankasikci_go_image_merge//:go_default_library",
+        "@com_github_drexedam_gravatar//:gravatar",
+        "@com_github_ozankasikci_go_image_merge//:go-image-merge",
         "@com_github_slack_go_slack//:slack",
         "@com_github_yuin_goldmark//:goldmark",
         "@com_github_yuin_goldmark//ast",

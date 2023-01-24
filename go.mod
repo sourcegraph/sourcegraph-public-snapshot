@@ -199,13 +199,13 @@ require (
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
-	github.com/gosimple/slug v1.1.1 // indirect
+	github.com/gosimple/slug v1.12.0 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
-	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
@@ -458,7 +458,18 @@ require (
 // or intentional forks.
 // We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 // See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-replace github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+replace (
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+	// We publish 'lib' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// We publish 'monitoring' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+)
 
 // Temporary replace directives
 // ============================
