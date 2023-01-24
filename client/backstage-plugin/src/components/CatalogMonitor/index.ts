@@ -1,1 +1,0 @@
-export { CatalogMonitor } from './CatalogMonitor';
