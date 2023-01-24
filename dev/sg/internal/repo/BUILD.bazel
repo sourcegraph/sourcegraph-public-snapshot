@@ -13,6 +13,6 @@ go_library(
         "//dev/sg/root",
         "//lib/errors",
         "@com_github_sourcegraph_go_diff//diff",
-        "@com_github_sourcegraph_run//:go_default_library",
+        "@com_github_sourcegraph_run//:run",
     ],
 )

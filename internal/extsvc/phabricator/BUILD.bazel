@@ -10,9 +10,9 @@ go_library(
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@com_github_uber_gonduit//:go_default_library",
-        "@com_github_uber_gonduit//core:go_default_library",
-        "@com_github_uber_gonduit//requests:go_default_library",
+        "@com_github_uber_gonduit//:gonduit",
+        "@com_github_uber_gonduit//core",
+        "@com_github_uber_gonduit//requests",
     ],
 )
 
@@ -24,7 +24,7 @@ go_test(
         ":phabricator",
         "//internal/httpcli",
         "//internal/httptestutil",
-        "@com_github_dnaeon_go_vcr//cassette:go_default_library",
+        "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sergi_go_diff//diffmatchpatch",
     ],

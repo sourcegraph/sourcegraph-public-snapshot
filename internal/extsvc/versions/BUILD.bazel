@@ -38,7 +38,7 @@ go_test(
         "//internal/repos",
         "//internal/types",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

@@ -44,7 +44,7 @@ go_library(
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],

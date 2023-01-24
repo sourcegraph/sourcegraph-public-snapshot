@@ -9,6 +9,6 @@ go_library(
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//lib/errors",
-        "@com_github_slack_go_slack//:go_default_library",
+        "@com_github_slack_go_slack//:slack",
     ],
 )

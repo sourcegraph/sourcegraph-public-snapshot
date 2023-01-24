@@ -9,7 +9,7 @@ go_library(
         "//dev/codeintel-qa/internal",
         "//dev/sg/root",
         "//lib/errors",
-        "@com_github_sourcegraph_conc//pool:go_default_library",
+        "@com_github_sourcegraph_conc//pool",
         "@com_google_cloud_go_storage//:storage",
     ],
 )

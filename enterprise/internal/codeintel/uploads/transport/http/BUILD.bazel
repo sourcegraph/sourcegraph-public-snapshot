@@ -55,7 +55,7 @@ go_test(
         "//internal/uploadstore/mocks",
         "//lib/errors",
         "//schema",
-        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
     ],
 )

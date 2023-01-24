@@ -34,7 +34,7 @@ go_library(
         "//internal/service",
         "//internal/trace",
         "//lib/errors",
-        "@com_github_sourcegraph_go_ctags//:go_default_library",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_sync//semaphore",
     ],

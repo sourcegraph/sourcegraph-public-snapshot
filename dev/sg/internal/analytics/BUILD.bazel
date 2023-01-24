@@ -15,7 +15,7 @@ go_library(
         "//dev/sg/root",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_run//:go_default_library",
+        "@com_github_sourcegraph_run//:run",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",

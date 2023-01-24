@@ -41,9 +41,9 @@ go_library(
         "//internal/observation",
         "//lib/codeintel/precise",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_go_diff//diff",
-        "@com_github_sourcegraph_go_lsp//:go_default_library",
+        "@com_github_sourcegraph_go_lsp//:go-lsp",
         "@com_github_sourcegraph_log//:log",
     ],
 )

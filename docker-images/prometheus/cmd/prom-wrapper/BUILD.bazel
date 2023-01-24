@@ -23,7 +23,7 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_go_openapi_strfmt//:strfmt",
-        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_gorilla_mux//:mux",
         "@com_github_masterminds_semver//:semver",
         "@com_github_prometheus_alertmanager//api/v2/client",
         "@com_github_prometheus_alertmanager//api/v2/client/alert",

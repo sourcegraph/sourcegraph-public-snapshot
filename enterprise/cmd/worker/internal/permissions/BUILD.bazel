@@ -32,7 +32,7 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
         "//schema",
-        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
     ],

@@ -14,7 +14,7 @@ go_library(
         "//enterprise/internal/batches/types/scheduler/window",
         "//internal/goroutine",
         "//internal/goroutine/recorder",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )
 

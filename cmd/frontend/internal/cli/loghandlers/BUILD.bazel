@@ -5,12 +5,12 @@ go_library(
     srcs = ["loghandlers.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers",
     visibility = ["//cmd/frontend:__subpackages__"],
-    deps = ["@com_github_inconshreveable_log15//:go_default_library"],
+    deps = ["@com_github_inconshreveable_log15//:log15"],
 )
 
 go_test(
     name = "loghandlers_test",
     srcs = ["loghandlers_test.go"],
     embed = [":loghandlers"],
-    deps = ["@com_github_inconshreveable_log15//:go_default_library"],
+    deps = ["@com_github_inconshreveable_log15//:log15"],
 )

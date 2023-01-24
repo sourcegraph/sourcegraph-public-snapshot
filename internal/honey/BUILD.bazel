@@ -15,8 +15,8 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/hostname",
-        "@com_github_honeycombio_libhoney_go//:go_default_library",
-        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_honeycombio_libhoney_go//:libhoney-go",
+        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
     ],

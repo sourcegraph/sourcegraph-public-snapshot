@@ -28,8 +28,8 @@ go_library(
         "//internal/observation",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_yuin_gopher_lua//:go_default_library",
-        "@com_layeh_gopher_luar//:go_default_library",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+        "@com_layeh_gopher_luar//:gopher-luar",
     ],
 )
 
@@ -41,6 +41,6 @@ go_test(
         "//internal/luasandbox/util",
         "//internal/observation",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_yuin_gopher_lua//:go_default_library",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
     ],
 )

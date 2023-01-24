@@ -25,7 +25,7 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_machinebox_graphql//:go_default_library",
+        "@com_github_machinebox_graphql//:graphql",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
@@ -44,7 +44,7 @@ go_test(
     deps = [
         "//internal/testutil",
         "//lib/errors",
-        "@com_github_machinebox_graphql//:go_default_library",
+        "@com_github_machinebox_graphql//:graphql",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )

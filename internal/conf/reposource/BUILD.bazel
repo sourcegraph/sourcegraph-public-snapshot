@@ -34,7 +34,7 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_inconshreveable_log15//:go_default_library",
+        "@com_github_inconshreveable_log15//:log15",
         "@org_golang_x_mod//module",
         "@org_golang_x_mod//semver",
     ],
