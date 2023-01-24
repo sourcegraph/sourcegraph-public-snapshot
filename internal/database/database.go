@@ -147,7 +147,10 @@ func (d *db) Authz() AuthzStore {
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+	return &confStore{
+		Store:  basestore.NewWithHandle(d.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
 }
 
 func (d *db) EventLogs() EventLogStore {
