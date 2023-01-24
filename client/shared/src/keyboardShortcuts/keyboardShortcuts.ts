@@ -13,6 +13,9 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
     | 'copyFullQuery'
+    | 'blobCode'
+    | 'blobReferences'
+    | 'blobHistory'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
