@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights has a new display option: "Max number of series points to display". This setting controls the number of data points you see per series on an insight. [#46653](https://github.com/sourcegraph/sourcegraph/pull/46653)
 - Added out-of-band migration that will migrate all existing data from LSIF to SCIP (see additional [migration documentation](https://docs.sourcegraph.com/admin/how-to/lsif_scip_migration)). [#45106](https://github.com/sourcegraph/sourcegraph/pull/45106)
 - Code Insights has a new search-powered repositories field that allows you to select repositories with Sourcegraph search syntax. [#45687](https://github.com/sourcegraph/sourcegraph/pull/45687)
+- You can now export all data for a Code Insight from the card menu or the standalone page. [#46795](https://github.com/sourcegraph/sourcegraph/pull/46795), [#46694](https://github.com/sourcegraph/sourcegraph/pull/46694)
 
 ### Changed
 
