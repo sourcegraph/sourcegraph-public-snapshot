@@ -1,8 +1,6 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
 
-# gazelle:aspect_js enabled
-
 ts_project(
     name = "common",
     srcs = [

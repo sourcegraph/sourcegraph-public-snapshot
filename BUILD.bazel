@@ -10,7 +10,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 # Disable some by default, only include configured BUILDs
 #
-# gazelle:aspect_js disabled
+# gazelle:js disabled
 
 package(default_visibility = ["//visibility:public"])
 
