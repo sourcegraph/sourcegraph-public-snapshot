@@ -39,7 +39,7 @@ export const Draft: Story = () => (
     </WebStory>
 )
 
-export const Open: Story = args => (
+export const Open: Story<OpenArgs> = args => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -70,6 +70,16 @@ export const Open: Story = args => (
         )}
     </WebStory>
 )
+
+interface OpenArgs {
+    closed: number
+    deleted: number
+    merged: number
+    draft: number
+    open: number
+    archived: number
+    unpublished: number
+}
 
 Open.argTypes = {
     closed: {
