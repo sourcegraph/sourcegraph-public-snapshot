@@ -43,6 +43,14 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	}
 }
 
+func ExecutorsAccessToken() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return confdefaults.SingleProgramInMemoryExecutorPassword
+	}
+	return Get().ExecutorsAccessToken
+}
+
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var config []*schema.BitbucketServerConnection
 	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
