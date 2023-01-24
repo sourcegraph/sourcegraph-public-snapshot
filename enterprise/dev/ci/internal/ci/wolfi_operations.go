@@ -7,10 +7,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func WolfiOperations() *operations.Set {
+func WolfiBaseImagesOperations() *operations.Set {
+	// TODO: Only rebuild packages that have changed
+
+	ops := operations.NewSet()
+	ops.Append(buildWolfi("foobar"))
+	return ops
+}
+
+func WolfiPackagesOperations() *operations.Set {
+	// TODO: Only rebuild packages that have changed
+
 	ops := operations.NewSet()
 	ops.Append(buildPackages("foobar"))
-	ops.Append(buildWolfi("foobar"))
 	return ops
 }
 

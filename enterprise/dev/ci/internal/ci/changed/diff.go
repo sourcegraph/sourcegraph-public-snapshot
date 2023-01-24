@@ -25,6 +25,8 @@ const (
 	SVG
 	Shell
 	DockerImages
+	WolfiPackages
+	WolfiBaseImages
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -170,6 +172,16 @@ func ParseDiff(files []string) (diff Diff) {
 			// quite a while.
 			f.Close()
 		}
+
+		// Affects Wolfi packages
+		if strings.HasPrefix(p, "wolfi-packages/") && strings.HasSuffix(p, ".yaml") {
+			diff |= WolfiPackages
+		}
+
+		// Affects Wolfi base images
+		if strings.HasPrefix(p, "wolfi-images/") && strings.HasSuffix(p, ".yaml") {
+			diff |= WolfiBaseImages
+		}
 	}
 	return
 }
@@ -205,6 +217,10 @@ func (d Diff) String() string {
 		return "Shell"
 	case DockerImages:
 		return "DockerImages"
+	case WolfiPackages:
+		return "WolfiPackages"
+	case WolfiBaseImages:
+		return "WolfiBaseImages"
 
 	case All:
 		return "All"
