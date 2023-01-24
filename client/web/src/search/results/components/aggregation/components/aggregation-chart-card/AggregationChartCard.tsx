@@ -61,9 +61,11 @@ export function getAggregationData(aggregations: SearchAggregationResult, limit?
 export function getOtherGroupCount(aggregations: SearchAggregationResult, limit: number): number {
     switch (aggregations?.__typename) {
         case 'ExhaustiveSearchAggregationResult':
-            return (aggregations.otherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
+            return Number(aggregations.otherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
         case 'NonExhaustiveSearchAggregationResult':
-            return (aggregations.approximateOtherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
+            return (
+                Number(aggregations.approximateOtherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
+            )
 
         default:
             return 0

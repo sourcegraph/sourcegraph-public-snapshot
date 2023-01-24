@@ -78,9 +78,11 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 	if PermissionSyncWorkerEnabled(ctx, db, logger) {
 		for _, userID := range req.UserIDs {
 			opts := database.PermissionSyncJobOpts{
-				HighPriority:     true,
-				InvalidateCaches: req.Options.InvalidateCaches,
-				Reason:           req.Reason,
+				HighPriority:      true,
+				InvalidateCaches:  req.Options.InvalidateCaches,
+				Reason:            req.Reason,
+				TriggeredByUserID: req.TriggeredByUserID,
+				ProcessAfter:      req.ProcessAfter,
 			}
 			err := db.PermissionSyncJobs().CreateUserSyncJob(ctx, userID, opts)
 			if err != nil {
@@ -90,9 +92,11 @@ func SchedulePermsSync(ctx context.Context, logger log.Logger, db database.DB, r
 
 		for _, repoID := range req.RepoIDs {
 			opts := database.PermissionSyncJobOpts{
-				HighPriority:     true,
-				InvalidateCaches: req.Options.InvalidateCaches,
-				Reason:           req.Reason,
+				HighPriority:      true,
+				InvalidateCaches:  req.Options.InvalidateCaches,
+				Reason:            req.Reason,
+				TriggeredByUserID: req.TriggeredByUserID,
+				ProcessAfter:      req.ProcessAfter,
 			}
 			err := db.PermissionSyncJobs().CreateRepoSyncJob(ctx, repoID, opts)
 			if err != nil {

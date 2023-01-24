@@ -1712,10 +1712,13 @@ CREATE TABLE critical_and_site_config (
     contents text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    author_user_id integer
+    author_user_id integer,
+    redacted_contents text
 );
 
 COMMENT ON COLUMN critical_and_site_config.author_user_id IS 'A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.';
+
+COMMENT ON COLUMN critical_and_site_config.redacted_contents IS 'This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.';
 
 CREATE SEQUENCE critical_and_site_config_id_seq
     START WITH 1
@@ -3180,9 +3183,110 @@ CREATE SEQUENCE out_of_band_migrations_id_seq
 
 ALTER SEQUENCE out_of_band_migrations_id_seq OWNED BY out_of_band_migrations.id;
 
+CREATE TABLE outbound_webhook_event_types (
+    id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text
+);
+
+CREATE SEQUENCE outbound_webhook_event_types_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_event_types_id_seq OWNED BY outbound_webhook_event_types.id;
+
+CREATE TABLE outbound_webhook_jobs (
+    id bigint NOT NULL,
+    event_type text NOT NULL,
+    scope text,
+    encryption_key_id text,
+    payload bytea NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_jobs_id_seq OWNED BY outbound_webhook_jobs.id;
+
+CREATE TABLE outbound_webhook_logs (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    outbound_webhook_id bigint NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL,
+    status_code integer NOT NULL,
+    encryption_key_id text,
+    request bytea NOT NULL,
+    response bytea NOT NULL,
+    error bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhook_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhook_logs_id_seq OWNED BY outbound_webhook_logs.id;
+
+CREATE TABLE outbound_webhooks (
+    id bigint NOT NULL,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text,
+    url bytea NOT NULL,
+    secret bytea NOT NULL
+);
+
+CREATE SEQUENCE outbound_webhooks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE outbound_webhooks_id_seq OWNED BY outbound_webhooks.id;
+
+CREATE VIEW outbound_webhooks_with_event_types AS
+ SELECT outbound_webhooks.id,
+    outbound_webhooks.created_by,
+    outbound_webhooks.created_at,
+    outbound_webhooks.updated_by,
+    outbound_webhooks.updated_at,
+    outbound_webhooks.encryption_key_id,
+    outbound_webhooks.url,
+    outbound_webhooks.secret,
+    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object
+           FROM outbound_webhook_event_types
+          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
+   FROM outbound_webhooks;
+
 CREATE TABLE permission_sync_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
+    reason text NOT NULL,
     failure_message text,
     queued_at timestamp with time zone DEFAULT now(),
     started_at timestamp with time zone,
@@ -3196,15 +3300,18 @@ CREATE TABLE permission_sync_jobs (
     cancel boolean DEFAULT false NOT NULL,
     repository_id integer,
     user_id integer,
+    triggered_by_user_id integer,
     high_priority boolean DEFAULT false NOT NULL,
     invalidate_caches boolean DEFAULT false NOT NULL,
-    reason text,
-    triggered_by_user_id integer
+    cancellation_reason text,
+    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
 COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';
 
 COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
+
+COMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
@@ -3468,13 +3575,13 @@ CREATE TABLE roles (
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    readonly boolean DEFAULT false NOT NULL,
+    system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
 
 COMMENT ON COLUMN roles.name IS 'The uniquely identifying name of the role.';
 
-COMMENT ON COLUMN roles.readonly IS 'This is used to indicate whether a role is read-only or can be modified.';
+COMMENT ON COLUMN roles.system IS 'This is used to indicate whether a role is read-only or can be modified.';
 
 CREATE SEQUENCE roles_id_seq
     AS integer
@@ -3811,34 +3918,6 @@ CREATE TABLE versions (
     first_version text NOT NULL
 );
 
-CREATE SEQUENCE webhook_build_jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-CREATE TABLE webhook_build_jobs (
-    repo_id integer,
-    repo_name text,
-    extsvc_kind text,
-    queued_at timestamp with time zone DEFAULT now(),
-    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,
-    state text DEFAULT 'queued'::text NOT NULL,
-    failure_message text,
-    started_at timestamp with time zone,
-    finished_at timestamp with time zone,
-    process_after timestamp with time zone,
-    num_resets integer DEFAULT 0 NOT NULL,
-    num_failures integer DEFAULT 0 NOT NULL,
-    execution_logs json[],
-    last_heartbeat_at timestamp with time zone,
-    worker_hostname text DEFAULT ''::text NOT NULL,
-    org text,
-    extsvc_id integer,
-    cancel boolean DEFAULT false NOT NULL
-);
-
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -4028,6 +4107,14 @@ ALTER TABLE ONLY orgs ALTER COLUMN id SET DEFAULT nextval('orgs_id_seq'::regclas
 ALTER TABLE ONLY out_of_band_migrations ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_id_seq'::regclass);
 
 ALTER TABLE ONLY out_of_band_migrations_errors ALTER COLUMN id SET DEFAULT nextval('out_of_band_migrations_errors_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_event_types ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_event_types_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_jobs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outbound_webhook_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
 ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
 
@@ -4339,6 +4426,18 @@ ALTER TABLE ONLY out_of_band_migrations_errors
 
 ALTER TABLE ONLY out_of_band_migrations
     ADD CONSTRAINT out_of_band_migrations_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_jobs
+    ADD CONSTRAINT outbound_webhook_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_pkey PRIMARY KEY (id);
@@ -4748,11 +4847,23 @@ CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (r
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
 
+CREATE INDEX outbound_webhook_event_types_event_type_idx ON outbound_webhook_event_types USING btree (event_type, scope);
+
+CREATE INDEX outbound_webhook_jobs_state_idx ON outbound_webhook_jobs USING btree (state);
+
+CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_logs USING btree (outbound_webhook_id);
+
+CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
+
+CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
+
 CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
 
 CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING btree (repository_id);
 
 CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
+
+CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (high_priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
 
 CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 
@@ -4842,10 +4953,6 @@ CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
 
-CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
-
-CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
-
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
 CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_at);
@@ -4931,7 +5038,7 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
     ADD CONSTRAINT batch_spec_resolution_jobs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_resolution_jobs
-    ADD CONSTRAINT batch_spec_resolution_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE;
+    ADD CONSTRAINT batch_spec_resolution_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
@@ -5212,6 +5319,21 @@ ALTER TABLE ONLY org_stats
 ALTER TABLE ONLY out_of_band_migrations_errors
     ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY outbound_webhook_event_types
+    ADD CONSTRAINT outbound_webhook_event_types_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_job_id_fkey FOREIGN KEY (job_id) REFERENCES outbound_webhook_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhook_logs
+    ADD CONSTRAINT outbound_webhook_logs_outbound_webhook_id_fkey FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY outbound_webhooks
+    ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
+
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_triggered_by_user_id_fkey FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
@@ -5334,3 +5456,8 @@ INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention 
 INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
+
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+
+SELECT pg_catalog.setval('roles_id_seq', 3, true);

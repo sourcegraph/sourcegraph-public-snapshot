@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { History } from 'history'
+import inRange from 'lodash/inRange'
 import { useHistory } from 'react-router'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
@@ -15,10 +16,11 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { singleLine } from '../codemirror'
-import { parseInputAsQuery } from '../codemirror/parsedQuery'
-import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { singleLine, placeholder as placeholderExtension } from '../codemirror'
+import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
+import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 
+import { filterHighlight } from './codemirror/syntax-highlighting'
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
@@ -34,6 +36,38 @@ interface ExtensionConfig {
     suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
     history: History
+}
+
+// We want to show a placeholder also if the query only contains a context
+// filter.
+function showWhenEmptyWithoutContext(state: EditorState): boolean {
+    // Show placeholder when empty
+    if (state.doc.length === 0) {
+        return true
+    }
+
+    const queryTokens = tokens(state)
+
+    if (queryTokens.length > 2) {
+        return false
+    }
+    // Only show the placeholder if the cursor is at the end of the content
+    if (state.selection.main.from !== state.doc.length) {
+        return false
+    }
+
+    // If there are two tokens, only show the placeholder if the second one is a
+    // whitespace.
+    if (queryTokens.length === 2 && queryTokens[1].type !== 'whitespace') {
+        return false
+    }
+
+    return (
+        queryTokens.length > 0 &&
+        queryTokens[0].type === 'filter' &&
+        queryTokens[0].field.value === 'context' &&
+        !inRange(state.selection.main.from, queryTokens[0].range.start, queryTokens[0].range.end + 1)
+    )
 }
 
 // For simplicity we will recompute all extensions when input changes using
@@ -69,12 +103,7 @@ function configureExtensions({
     ]
 
     if (placeholder) {
-        // Passing a DOM element instead of a string makes the CodeMirror
-        // extension set aria-hidden="true" on the placeholder, which is
-        // what we want.
-        const element = document.createElement('span')
-        element.append(document.createTextNode(placeholder))
-        extensions.push(placeholderExtension(element))
+        extensions.push(placeholderExtension(placeholder, showWhenEmptyWithoutContext))
     }
 
     if (onSubmit) {
@@ -117,6 +146,7 @@ function createEditor(
     return new EditorView({
         state: EditorState.create({
             doc: queryState.query,
+            selection: { anchor: queryState.query.length },
             extensions: [
                 EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
@@ -161,7 +191,10 @@ function updateEditor(editor: EditorView | null, extensions: Extension): void {
 
 function updateValueIfNecessary(editor: EditorView | null, queryState: QueryState): void {
     if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: queryState.query } })
+        editor.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: queryState.query },
+            selection: { anchor: queryState.query.length },
+        })
     }
 }
 
@@ -269,14 +302,14 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
                     <div ref={setContainer} className="d-contents" />
                     <button
                         type="button"
-                        className={classNames({ [styles.showWhenFocused]: hasValue })}
+                        className={classNames(styles.inputButton, { [styles.showWhenFocused]: hasValue })}
                         onClick={clear}
                     >
                         <Icon svgPath={mdiClose} aria-label="Clear" />
                     </button>
                     <button
                         type="button"
-                        className={classNames(styles.globalShortcut, styles.hideWhenFocused)}
+                        className={classNames(styles.inputButton, styles.globalShortcut, styles.hideWhenFocused)}
                         onClick={focus}
                     >
                         /

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -57,6 +58,10 @@ func (p *provider) Refresh(ctx context.Context) error {
 	defer p.mu.Unlock()
 	p.samlSP, p.refreshErr = getServiceProvider(ctx, &p.config)
 	return p.refreshErr
+}
+
+func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	return GetPublicExternalAccountData(ctx, &account.AccountData)
 }
 
 func providerIDQuery(pc *schema.SAMLAuthProvider, multiple bool) url.Values {

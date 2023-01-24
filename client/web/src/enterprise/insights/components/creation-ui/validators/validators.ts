@@ -21,7 +21,7 @@ export const insightTitleValidator = createRequiredValidator('Title is a require
  * we have a creation UI insight sandbox demo widget.
  */
 export const insightRepositoriesValidator: Validator<string> = value => {
-    if (value !== undefined && dedupeWhitespace(value).trim() === '') {
+    if (value !== undefined && dedupeWhitespace(value) === '') {
         return 'Repositories is a required field.'
     }
 

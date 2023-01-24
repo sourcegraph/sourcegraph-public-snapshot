@@ -52,7 +52,6 @@ function createWebApplicationCompiler() {
 
 async function webpack() {
   const compiler = createWebApplicationCompiler()
-  debugger
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
     compiler.run((error, stats) => (error ? reject(error) : resolve(stats)))

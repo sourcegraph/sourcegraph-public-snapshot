@@ -24,7 +24,7 @@ import { CodeIntelUploadsPageProps } from '../uploads/pages/CodeIntelUploadsPage
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
-    repo: { id: string }
+    repo: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
 }
 

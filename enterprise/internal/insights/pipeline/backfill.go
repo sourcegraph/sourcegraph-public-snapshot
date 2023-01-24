@@ -34,8 +34,7 @@ type BackfillRequest struct {
 }
 
 type requestContext struct {
-	backfillRequest    *BackfillRequest
-	compressionSavings float64
+	backfillRequest *BackfillRequest
 }
 
 type Backfiller interface {
@@ -149,6 +148,11 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 			return &reqContext, jobs, err
 		}
+		// Rate limit starting compression
+		err = rateLimit.Wait(ctx)
+		if err != nil {
+			return &reqContext, jobs, err
+		}
 		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
 		var ratio float64 = 1.0
 		if numberOfFrames > 0 {
@@ -166,10 +170,6 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 			execution := searchPlan.Executions[i]
 			g.Go(func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
-				err := rateLimit.Wait(ctx)
-				if err != nil {
-					return errors.Wrap(err, "limiter.Wait")
-				}
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       execution,
 					repoName:        req.Repo.Name,

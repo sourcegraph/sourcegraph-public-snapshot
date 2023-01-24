@@ -230,16 +230,17 @@ const JobItem: React.FunctionComponent<{ job: BackgroundJob; hostNames: string[]
 
 const LegendList: React.FunctionComponent<{ jobs: BackgroundJob[]; hostNameCount: number }> = React.memo(
     ({ jobs, hostNameCount }) => {
-        const routineCount = jobs.reduce((acc, job) => acc + job.routines.length, 0)
+        const routineCount = jobs.reduce((acc, job) => Number(acc) + job.routines.length, 0)
         const routineInstanceCount = jobs.reduce(
-            (acc, job) => acc + job.routines.reduce((acc, routine) => acc + routine.instances.length, 0),
+            (acc, job) =>
+                Number(acc) + job.routines.reduce((acc, routine) => Number(acc) + routine.instances.length, 0),
             0
         )
         const recentRunErrors = jobs.reduce(
             (acc, job) =>
-                acc +
+                Number(acc) +
                 job.routines.reduce(
-                    (acc, routine) => acc + routine.recentRuns.filter(run => run.errorMessage).length,
+                    (acc, routine) => Number(acc) + routine.recentRuns.filter(run => run.errorMessage).length,
                     0
                 ),
             0
@@ -422,7 +423,7 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
         routine.intervalMs &&
         routine.type !== BackgroundRoutineType.DB_BACKED &&
         (!mostRecentRunDate ||
-            mostRecentRunDate.getTime() +
+            Number(mostRecentRunDate.getTime()) +
                 routine.intervalMs +
                 routine.stats.maxDurationMs +
                 BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS <=
@@ -436,7 +437,7 @@ Stopped at: ${format(new Date(earliestStopDateString), 'yyyy-MM-dd HH:mm:ss')}`
         : isUnseenInAWhile
         ? mostRecentRunDate
             ? `This routine has not been seen in a while. It should've run at ${format(
-                  new Date(mostRecentRunDate.getTime() + (routine.intervalMs || 0)),
+                  new Date(Number(mostRecentRunDate.getTime()) + Number(routine.intervalMs || 0)),
                   'yyyy-MM-dd HH:mm:ss'
               )}.`
             : 'This routine was started but it has never been seen running.'

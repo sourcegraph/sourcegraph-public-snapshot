@@ -6,8 +6,8 @@ import { NEVER } from 'rxjs'
 import { assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import { createBarrier } from '../testing/testHelpers'
 
 import { ActionItem } from './ActionItem'
 

@@ -13,8 +13,5 @@
     {
       "path": "../common",
     },
-    {
-      "path": "../shared",
-    },
   ],
 }

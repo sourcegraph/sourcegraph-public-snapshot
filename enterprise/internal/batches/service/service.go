@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -808,6 +809,32 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
 }
 
+// CreateChangesetSpecs validates the given raw spec inputs and creates the ChangesetSpecs.
+func (s *Service) CreateChangesetSpecs(ctx context.Context, rawSpecs []string, userID int32) (specs []*btypes.ChangesetSpec, err error) {
+	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	specs = make([]*btypes.ChangesetSpec, len(rawSpecs))
+
+	for i, rawSpec := range rawSpecs {
+		spec, err := btypes.NewChangesetSpecFromRaw(rawSpec)
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
+		// the repository or not.
+		if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
+			return nil, err
+		}
+
+		spec.UserID = userID
+		specs[i] = spec
+	}
+
+	return specs, s.store.CreateChangesetSpec(ctx, specs...)
+}
+
 // changesetSpecNotFoundErr is returned by CreateBatchSpec if a
 // ChangesetSpec with the given RandID doesn't exist.
 // It fulfills the interface required by errcode.IsNotFound.
@@ -972,6 +999,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return nil, err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeClose, batchChange)
 	if !closeChangesets {
 		return batchChange, nil
 	}
@@ -1003,6 +1031,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
+	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeDelete, batchChange)
 	return s.store.DeleteBatchChange(ctx, id)
 }
 
@@ -1675,4 +1704,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, bc *btypes.BatchChange) {
+	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, bc)
 }

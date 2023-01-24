@@ -25,12 +25,7 @@ func addHandlers(
 	}
 
 	mux.HandleFunc("/localCodeIntel", jsonResponseHandler(internaltypes.LocalCodeIntelPayload{Symbols: []internaltypes.Symbol{}}))
-	mux.HandleFunc("/debugLocalCodeIntel", notEnabledHandler)
 	mux.HandleFunc("/symbolInfo", jsonResponseHandler(internaltypes.SymbolInfo{}))
-}
-
-func notEnabledHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "feature not enabled in this build", http.StatusNotImplemented)
 }
 
 func jsonResponseHandler(v any) http.HandlerFunc {

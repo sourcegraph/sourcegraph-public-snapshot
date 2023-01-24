@@ -113,7 +113,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		nodes = append(nodes, &UsersFrequencyNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	if err := setArrayToCache(cacheKey, nodes); err != nil {
 		return nil, err
 	}
 
@@ -187,7 +187,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 		nodes = append(nodes, &MonthlyActiveUsersRow{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	if err := setArrayToCache(cacheKey, nodes); err != nil {
 		return nil, err
 	}
 

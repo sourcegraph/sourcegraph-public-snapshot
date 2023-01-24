@@ -9,7 +9,7 @@ describe('decodeSearchInsightUrl', () => {
 
     test('should return a valid search insight initial values object', () => {
         const queryString = encodeURIComponent(
-            `?repositories=github.com/sourcegraph/sourcegraph, github.com/example/example&title=Insight title&allRepos=true&series=${JSON.stringify(
+            `?repositories=github.com/sourcegraph/sourcegraph, github.com/example/example&title=Insight title&series=${JSON.stringify(
                 [
                     {
                         id: 1,
@@ -23,9 +23,10 @@ describe('decodeSearchInsightUrl', () => {
         )
 
         expect(decodeSearchInsightUrl(queryString)).toStrictEqual({
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
             repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
             title: 'Insight title',
-            allRepos: true,
             series: [
                 { id: 1, edit: false, valid: true, autofocus: false, name: 'series 1', query: 'test1', stroke: 'red' },
                 { id: 2, edit: false, valid: true, autofocus: false, name: 'series 2', query: 'test2', stroke: 'blue' },
@@ -39,7 +40,6 @@ describe('encodeSearchInsightUrl', () => {
         const encodedSearchInsightParameters = encodeSearchInsightUrl({
             repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
             title: 'Insight title',
-            allRepos: true,
             series: [
                 { id: '1', name: 'series 1', query: 'test1', stroke: 'red' },
                 { id: '2', name: 'series 2', query: 'test2', stroke: 'blue' },
@@ -47,9 +47,10 @@ describe('encodeSearchInsightUrl', () => {
         })
 
         expect(decodeSearchInsightUrl(encodedSearchInsightParameters)).toStrictEqual({
+            repoMode: 'urls-list',
+            repoQuery: { query: '' },
             repositories: 'github.com/sourcegraph/sourcegraph, github.com/example/example',
             title: 'Insight title',
-            allRepos: true,
             series: [
                 {
                     id: '1',

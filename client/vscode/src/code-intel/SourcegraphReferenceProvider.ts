@@ -14,7 +14,7 @@ export class SourcegraphReferenceProvider implements vscode.ReferenceProvider {
         private readonly fs: SourcegraphFileSystemProvider,
         private readonly sourcegraphExtensionHostAPI: Comlink.Remote<SearchSidebarAPI>
     ) {}
-    public async provideReferences(
+    public provideReferences(
         document: vscode.TextDocument,
         position: vscode.Position,
         referenceContext: vscode.ReferenceContext,

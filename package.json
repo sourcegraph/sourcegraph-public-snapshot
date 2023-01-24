@@ -304,7 +304,21 @@
         "dependencies": {
           "@lezer/common": "*"
         }
+      },
+      "react-router-dom-v5-compat": {
+        "dependencies": {
+          "@remix-run/router": "*"
+        }
       }
     }
+  },
+  "resolutions": {
+    "@types/webpack": "5",
+    "history": "4.5.1",
+    "cssnano": "4.1.10",
+    "webpack": "5",
+    "tslib": "2.1.0",
+    "jsprim": "1.4.2"
   }
+
 }

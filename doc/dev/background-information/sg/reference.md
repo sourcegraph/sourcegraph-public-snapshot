@@ -37,10 +37,12 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* enterprise-single-program
 * iam
 * monitoring
 * monitoring-alerts
 * oss
+* oss-single-program
 * oss-web-standalone
 * oss-web-standalone-prod
 * otel
@@ -122,6 +124,8 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
+* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
+* sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols
 * syntax-highlighter
@@ -236,6 +240,8 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
+* bzl
+* wolfi
 * main-dry-run
 * docker-images-patch
 * docker-images-patch-notest
@@ -490,7 +496,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:

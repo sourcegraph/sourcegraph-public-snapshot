@@ -94,7 +94,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	tests := []struct {
 		name string
 
-		input *ChangesetSpecInput
+		input  *ChangesetSpecInput
+		author *ChangesetSpecAuthor
 
 		want    []*ChangesetSpec
 		wantErr string
@@ -145,11 +146,23 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			},
 			wantErr: "",
 		},
+		{
+			name:   "publish with fallback author",
+			input:  defaultInput,
+			author: &ChangesetSpecAuthor{Name: "Sourcegrapher", Email: "sourcegrapher@sourcegraph.com"},
+			want: []*ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+					s.Commits[0].AuthorEmail = "sourcegrapher@sourcegraph.com"
+					s.Commits[0].AuthorName = "Sourcegrapher"
+				}),
+			},
+			wantErr: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input, true)
+			have, err := BuildChangesetSpecs(tt.input, true, tt.author)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {

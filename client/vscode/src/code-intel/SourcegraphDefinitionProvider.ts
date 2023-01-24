@@ -14,7 +14,7 @@ export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider 
         private readonly fs: SourcegraphFileSystemProvider,
         private readonly sourcegraphExtensionHostAPI: Comlink.Remote<SearchSidebarAPI>
     ) {}
-    public async provideDefinition(
+    public provideDefinition(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken

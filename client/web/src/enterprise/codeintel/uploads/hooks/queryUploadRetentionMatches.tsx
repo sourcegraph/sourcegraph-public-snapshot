@@ -119,7 +119,8 @@ export const queryUploadRetentionMatches = (
         map(({ node, lsifUploads }) => {
             const conn: Connection<NormalizedUploadRetentionMatch> = {
                 totalCount:
-                    (node.retentionPolicyOverview.totalCount ?? 0) + ((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
+                    Number(node.retentionPolicyOverview.totalCount ?? 0) +
+                    Number((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
                 nodes: [],
             }
 

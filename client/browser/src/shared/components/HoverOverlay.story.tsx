@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/extensions
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'

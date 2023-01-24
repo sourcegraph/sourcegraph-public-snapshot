@@ -1,64 +1,85 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { lowerCase } from 'lodash'
 import { useHistory } from 'react-router'
 
+import { LegacyBatchChangesFilter } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../../graphql-operations'
 
-import { STATUS_OPTIONS } from './BatchChangeListFilters'
+const STATUS_OPTIONS = [BatchChangeState.OPEN, BatchChangeState.DRAFT, BatchChangeState.CLOSED]
 
-const statesToFilters = (states: string[]): MultiSelectState<BatchChangeState> =>
-    STATUS_OPTIONS.filter(option => states.map(lowerCase).includes(option.value.toLowerCase()))
+// Drafts are a new feature of serverside execution that for now should not be shown if
+// execution is not enabled.
+const STATUS_OPTIONS_NO_DRAFTS: BatchChangeState[] = [BatchChangeState.OPEN, BatchChangeState.CLOSED]
 
-const filtersToStates = (filters: MultiSelectState<BatchChangeState>): BatchChangeState[] =>
-    filters.map(filter => filter.value)
+const fromLegacyFilters = (legacyFilters: LegacyBatchChangesFilter[]): BatchChangeState[] =>
+    legacyFilters.map(legacyFilter => legacyFilter.value)
+
+const toLegacyFilters = (filters: BatchChangeState[]): LegacyBatchChangesFilter[] =>
+    filters.map(filter => ({ label: filter.toString(), value: filter }))
+
+interface UseBatchChangeListFiltersProps {
+    isExecutionEnabled: boolean
+}
 
 interface UseBatchChangeListFiltersResult {
     /** State representing the different filters selected in the `MultiSelect` UI. */
-    selectedFilters: MultiSelectState<BatchChangeState>
+    selectedFilters: BatchChangeState[]
+
     /** Method to set the filters selected in the `MultiSelect`. */
-    setSelectedFilters: (filters: MultiSelectState<BatchChangeState>) => void
+    setSelectedFilters: (filters: BatchChangeState[]) => void
+
     /**
-     * Array of raw `BatchChangeState`s corresponding to `selectedFilters`, i.e. for
-     * passing in GraphQL connection query parameters.
+     * List of available batch changes filters, it may be different based on
+     * {@link isExecutionEnabled} prop
      */
-    selectedStates: BatchChangeState[]
+    availableFilters: BatchChangeState[]
 }
 
 /**
- * Custom hook for managing, persisting, and transforming the state options selected from
- * the `MultiSelect` UI to filter a list of batch changes.
+ * Custom hook for managing and persisting filter options selected from
+ * the MultiCombobox UI to filter a list of batch changes.
  */
-export const useBatchChangeListFilters = (): UseBatchChangeListFiltersResult => {
+export const useBatchChangeListFilters = (props: UseBatchChangeListFiltersProps): UseBatchChangeListFiltersResult => {
+    const { isExecutionEnabled } = props
+
     const history = useHistory()
+    const availableFilters = isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS
 
     // NOTE: Fetching this setting is an async operation, so we can't use it as the
     // initial value for `useState`. Instead, we will set the value of the filter state in
     // a `useEffect` hook once we've loaded it.
     const [defaultFilters, setDefaultFilters] = useTemporarySetting('batches.defaultListFilters', [])
 
-    const [selectedFilters, setSelectedFiltersRaw] = useState<MultiSelectState<BatchChangeState>>(() => {
+    const [hasModifiedFilters, setHasModifiedFilters] = useState(false)
+    const [selectedFilters, setSelectedFiltersRaw] = useState<BatchChangeState[]>(() => {
         const searchParameters = new URLSearchParams(history.location.search).get('states')
+
         if (searchParameters) {
-            return statesToFilters(searchParameters.split(','))
+            const loweredCaseFilters = new Set(availableFilters.map(filter => filter.toLowerCase()))
+            const urlFilters = searchParameters.split(',').map(option => option.toLowerCase())
+
+            return urlFilters
+                .filter(urlFilter => loweredCaseFilters.has(urlFilter))
+                .map(urlFilters => urlFilters.toUpperCase() as BatchChangeState)
         }
+
         return []
     })
 
-    const [hasModifiedFilters, setHasModifiedFilters] = useState(false)
-
     const setSelectedFilters = useCallback(
-        (filters: MultiSelectState<BatchChangeState>) => {
-            setHasModifiedFilters(true)
-            setSelectedFiltersRaw(filters)
-            setDefaultFilters(filters)
-
+        (filters: BatchChangeState[]) => {
             const searchParameters = new URLSearchParams(history.location.search)
+
             if (filters.length > 0) {
-                searchParameters.set('states', filtersToStates(filters).join(',').toLowerCase())
+                searchParameters.set(
+                    'states',
+                    filters
+                        .map(filter => filter.toLowerCase())
+                        .join(',')
+                        .toLowerCase()
+                )
             } else {
                 searchParameters.delete('states')
             }
@@ -66,6 +87,10 @@ export const useBatchChangeListFilters = (): UseBatchChangeListFiltersResult => 
             if (history.location.search !== searchParameters.toString()) {
                 history.replace({ ...history.location, search: searchParameters.toString() })
             }
+
+            setHasModifiedFilters(true)
+            setSelectedFiltersRaw(filters)
+            setDefaultFilters(toLegacyFilters(filters))
         },
         [setDefaultFilters, history]
     )
@@ -77,15 +102,13 @@ export const useBatchChangeListFilters = (): UseBatchChangeListFiltersResult => 
         const searchParameters = new URLSearchParams(history.location.search).get('states')
 
         if (defaultFilters && !hasModifiedFilters && !searchParameters) {
-            setSelectedFiltersRaw(defaultFilters)
+            setSelectedFiltersRaw(fromLegacyFilters(defaultFilters))
         }
     }, [defaultFilters, hasModifiedFilters, history.location.search])
-
-    const selectedStates = useMemo<BatchChangeState[]>(() => filtersToStates(selectedFilters), [selectedFilters])
 
     return {
         selectedFilters,
         setSelectedFilters,
-        selectedStates,
+        availableFilters,
     }
 }

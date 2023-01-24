@@ -235,6 +235,61 @@ func TestRedactSecrets(t *testing.T) {
 	assert.Equal(t, want, redacted.Site)
 }
 
+func TestRedactConfSecrets(t *testing.T) {
+	conf := `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "strongsecret",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`
+
+	want := `{
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "%s",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`
+
+	testCases := []struct {
+		name           string
+		hasSecrets     bool
+		redactedFmtStr string
+	}{
+		{
+			name:       "hasSecrets true",
+			hasSecrets: true,
+			// This is the first 10 chars of the SHA256 of "strongsecret". See this go playground to
+			// verify: https://go.dev/play/p/N-4R4_fO9XI.
+			redactedFmtStr: "REDACTED-DATA-CHUNK-f434ecc765",
+		},
+		{
+			name:           "hasSecrets false",
+			hasSecrets:     false,
+			redactedFmtStr: "REDACTED",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hasSecrets)
+			require.NoError(t, err)
+
+			want := fmt.Sprintf(want, tc.redactedFmtStr)
+			assert.Equal(t, want, redacted.Site)
+		})
+	}
+}
+
 func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 	const cfgWithoutAuthProviders = `{
   "executors.accessToken": "%s"

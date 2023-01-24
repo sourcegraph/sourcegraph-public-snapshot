@@ -14,7 +14,7 @@ export class SourcegraphHoverProvider implements vscode.HoverProvider {
         private readonly fs: SourcegraphFileSystemProvider,
         private readonly sourcegraphExtensionHostAPI: Comlink.Remote<SearchSidebarAPI>
     ) {}
-    public async provideHover(
+    public provideHover(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
@@ -47,15 +47,15 @@ export class SourcegraphHoverProvider implements vscode.HoverProvider {
                     const prefix =
                         result?.aggregatedBadges?.reduce((prefix, badge) => {
                             if (badge.linkURL) {
-                                return prefix + `[${badge.text}](${badge.linkURL})\n`
+                                return prefix.concat(`[${badge.text}](${badge.linkURL})\n`)
                             }
-                            return prefix + `${badge.text}\n`
+                            return prefix.concat(`${badge.text}\n`)
                         }, `![*](${sourcegraphLogoDataURI}) `) || ''
 
                     return of<vscode.Hover>({
                         contents: [
                             ...(result?.contents ?? []).map(
-                                content => new vscode.MarkdownString(prefix + content.value)
+                                content => new vscode.MarkdownString(prefix.concat(content.value))
                             ),
                         ],
                     })

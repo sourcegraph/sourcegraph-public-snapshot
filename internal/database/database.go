@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DB is an interface that embeds dbutil.DB, adding methods to
@@ -36,6 +37,9 @@ type DB interface {
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	OrgStats() OrgStatsStore
+	OutboundWebhooks(encryption.Key) OutboundWebhookStore
+	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
+	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
@@ -61,6 +65,7 @@ type DB interface {
 	ZoektRepos() ZoektReposStore
 
 	Transact(context.Context) (DB, error)
+	WithTransact(context.Context, func(tx DB) error) error
 	Done(error) error
 }
 
@@ -101,6 +106,30 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
+var ErrPanicDuringTransaction = errors.New("encountered panic during transaction")
+
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) (err error) {
+	tx, err := d.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			// If we're panicking, roll back the transaction
+			// even when err is nil.
+			err = tx.Done(ErrPanicDuringTransaction)
+			// Re-throw the panic after rolling back the transaction
+			panic(r)
+		} else {
+			// If we're not panicking, roll back the transaction if the
+			// operation on the transaction failed for whatever reason.
+			err = tx.Done(err)
+		}
+	}()
+	return f(&db{logger: d.logger, Store: tx})
+}
+
 func (d *db) Done(err error) error {
 	return d.Store.Done(err)
 }
@@ -118,7 +147,10 @@ func (d *db) Authz() AuthzStore {
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+	return &confStore{
+		Store:  basestore.NewWithHandle(d.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -167,6 +199,18 @@ func (d *db) Orgs() OrgStore {
 
 func (d *db) OrgStats() OrgStatsStore {
 	return OrgStatsWith(d.Store)
+}
+
+func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
+	return OutboundWebhooksWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookJobs(key encryption.Key) OutboundWebhookJobStore {
+	return OutboundWebhookJobsWith(d.Store, key)
+}
+
+func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
+	return OutboundWebhookLogsWith(d.Store, key)
 }
 
 func (d *db) Permissions() PermissionStore {
