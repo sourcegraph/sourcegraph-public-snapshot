@@ -1,66 +1,70 @@
 package executorqueue
 
 import (
-	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
+func TestAuthMiddleware(t *testing.T) {
 	accessToken := "hunter2"
 
-	ts := httptest.NewServer(authMiddleware(
-		func() string { return accessToken },
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusTeapot)
-		}),
-	))
-	defer ts.Close()
+	accessTokenFunc := func() string { return accessToken }
 
-	req, err := http.NewRequest("GET", ts.URL, nil)
-	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
-	}
+	router := mux.NewRouter()
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	})
+	router.Use(authExecutorMiddleware(accessTokenFunc))
 
-	// no auth
-	req.Header.Del("Authorization")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
+	tests := []struct {
+		name                 string
+		headers              http.Header
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name:               "Authorized",
+			headers:            http.Header{"Authorization": {"token-executor hunter2"}},
+			expectedStatusCode: http.StatusTeapot,
+		},
+		{
+			name:                 "Missing Authorization header",
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)\n",
+		},
+		{
+			name:               "Wrong token",
+			headers:            http.Header{"Authorization": {"token-executor foobar"}},
+			expectedStatusCode: http.StatusForbidden,
+		},
+		{
+			name:                 "Invalid prefix",
+			headers:              http.Header{"Authorization": {"foo hunter2"}},
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: "unrecognized HTTP Authorization request header scheme (supported values: \"token-executor\")\n",
+		},
 	}
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", "/", nil)
+			require.NoError(t, err)
+			req.Header = test.headers
 
-	// malformed token
-	req.Header.Set("Authorization", fmt.Sprintf("token-unknown %s", strings.ToUpper(accessToken)))
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
-	}
+			rw := httptest.NewRecorder()
 
-	// wrong token
-	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", strings.ToUpper(accessToken)))
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
-	}
+			router.ServeHTTP(rw, req)
 
-	// correct token
-	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", accessToken))
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
+			assert.Equal(t, test.expectedStatusCode, rw.Code)
+
+			b, err := io.ReadAll(rw.Body)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedResponseBody, string(b))
+		})
 	}
 }
