@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-// Initialize an uploadstore and shutdown.
+// Initialize uploadstore, shutdown.
 func TestInit(t *testing.T) {
 	ctx := context.Background()
 	_, server := initTestStore(ctx, t, t.TempDir())
@@ -23,7 +23,7 @@ func TestInit(t *testing.T) {
 	defer server.Close()
 }
 
-// Initialize an uploadstore, but the bucket already exists.
+// Initialize uploadstore twice (the bucket already exists.)
 func TestInit_BucketAlreadyExists(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
@@ -34,7 +34,7 @@ func TestInit_BucketAlreadyExists(t *testing.T) {
 	server2.Close()
 }
 
-// Tests that getting an object that does not exist works.
+// Initialize uploadstore, get an object that doesn't exist
 func TestGetNotExists(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
@@ -57,7 +57,7 @@ func TestGetNotExists(t *testing.T) {
 	}
 }
 
-// Tests uploading an object works.
+// Initialize uploadstore, upload an object
 func TestUpload(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
@@ -67,7 +67,7 @@ func TestUpload(t *testing.T) {
 	_ = store
 }
 
-// Tests uploading an object and getting it back works.
+// Initialize uploadstore, upload an object, get it back
 func TestGetExists(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
@@ -77,7 +77,7 @@ func TestGetExists(t *testing.T) {
 	_ = store
 }
 
-// Tests uploading two objects and then composing them together works.
+// Initialize uploadstore, upload two objects, compose them together
 func TestCompose(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
@@ -91,7 +91,7 @@ func TestCompose(t *testing.T) {
 	_ = store
 }
 
-// Tests deleting an object works.
+// Initialize uploadstore, upload an object, delete it
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
@@ -101,7 +101,7 @@ func TestDelete(t *testing.T) {
 	_ = store
 }
 
-// Tests expiring objects works.
+// Initialize uploadstore, upload objects, expire them
 func TestExpireObjects(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
