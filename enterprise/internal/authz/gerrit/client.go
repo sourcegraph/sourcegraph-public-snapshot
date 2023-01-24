@@ -10,8 +10,6 @@ import (
 )
 
 type client interface {
-	ListAccountsByEmail(ctx context.Context, email string) (gerrit.ListAccountsResponse, error)
-	ListAccountsByUsername(ctx context.Context, username string) (gerrit.ListAccountsResponse, error)
 	ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error)
 	GetGroup(ctx context.Context, groupName string) (gerrit.Group, error)
 	WithAuthenticator(a auth.Authenticator) client
@@ -24,6 +22,7 @@ type ClientAdapter struct {
 	*gerrit.Client
 }
 
+// NewClient creates a new Gerrit client and wraps it in a ClientAdapter.
 func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (client, error) {
 	c, err := gerrit.NewClient(urn, config, httpClient)
 	if err != nil {
@@ -38,24 +37,8 @@ func (m *ClientAdapter) WithAuthenticator(a auth.Authenticator) client {
 }
 
 type mockClient struct {
-	mockListAccountsByEmail    func(ctx context.Context, email string) (gerrit.ListAccountsResponse, error)
-	mockListAccountsByUsername func(ctx context.Context, username string) (gerrit.ListAccountsResponse, error)
-	mockListProjects           func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error)
-	mockGetGroup               func(ctx context.Context, groupName string) (gerrit.Group, error)
-}
-
-func (m *mockClient) ListAccountsByEmail(ctx context.Context, email string) (gerrit.ListAccountsResponse, error) {
-	if m.mockListAccountsByEmail != nil {
-		return m.mockListAccountsByEmail(ctx, email)
-	}
-	return nil, nil
-}
-
-func (m *mockClient) ListAccountsByUsername(ctx context.Context, username string) (gerrit.ListAccountsResponse, error) {
-	if m.mockListAccountsByUsername != nil {
-		return m.mockListAccountsByUsername(ctx, username)
-	}
-	return nil, nil
+	mockListProjects func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error)
+	mockGetGroup     func(ctx context.Context, groupName string) (gerrit.Group, error)
 }
 
 func (m *mockClient) ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error) {

@@ -52,8 +52,6 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 	}, nil
 }
 
-type ListAccountsResponse []Account
-
 func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &Client{
 		httpClient: c.httpClient,
@@ -61,37 +59,6 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 		rateLimit:  c.rateLimit,
 		auther:     a,
 	}
-}
-
-func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
-	qsAccounts := make(url.Values)
-	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
-	return c.listAccounts(ctx, qsAccounts)
-}
-
-func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
-	qsAccounts := make(url.Values)
-	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
-	return c.listAccounts(ctx, qsAccounts)
-}
-
-func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
-	qsAccounts.Set("o", "details")
-
-	urlPath := "a/accounts/"
-
-	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAccounts.Encode()}
-
-	reqAllAccounts, err := http.NewRequest("GET", uAllProjects.String(), nil)
-
-	if err != nil {
-		return nil, err
-	}
-	respAllAccts := ListAccountsResponse{}
-	if _, err = c.do(ctx, reqAllAccounts, &respAllAccts); err != nil {
-		return respAllAccts, err
-	}
-	return respAllAccts, nil
 }
 
 func (c *Client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
