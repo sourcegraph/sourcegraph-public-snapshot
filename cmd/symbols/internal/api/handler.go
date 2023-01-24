@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
+	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"golang.org/x/net/http2"
@@ -29,6 +31,7 @@ type grpcService struct {
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	ctagsBinary  string
 	proto.UnimplementedSymbolsServer
+	logger logger.Logger
 }
 
 func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
@@ -37,9 +40,12 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 
 	result, err := s.searchFunc(ctx, params)
 	if err != nil {
-		// How do we handle client disconnections? Can we test this?
+		arguments := fmt.Sprintf("%+v", params)
 
-		log15.Error("GRPC symbol search failed", "args", params, "error", err)
+		s.logger.Error("search failed",
+			logger.String("arguments", arguments),
+			logger.Error(err),
+		)
 
 		response := search.SymbolsResponse{Err: err.Error()}
 		return response.ToProto(), nil
@@ -96,6 +102,7 @@ func NewHandler(
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
+		logger:       logger.Scoped("symbolsGRPCServer", "symbols service grpc server"),
 	})
 	reflection.Register(grpcServer)
 
