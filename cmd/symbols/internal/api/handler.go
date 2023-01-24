@@ -6,22 +6,23 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const maxNumSymbolResults = 500
@@ -116,18 +117,7 @@ func NewHandler(
 		mux.HandleFunc("/status", handleStatus)
 	}
 
-	handler := h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// If the request is for the gRPC server, serve it.
-		if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
-			grpcServer.ServeHTTP(w, r)
-			return
-		}
-
-		// Otherwise, serve the JSON API server.
-		mux.ServeHTTP(w, r)
-	}), &http2.Server{})
-
-	return handler
+	return internalgrpc.MultiplexHandlers(grpcServer, mux)
 }
 
 func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
