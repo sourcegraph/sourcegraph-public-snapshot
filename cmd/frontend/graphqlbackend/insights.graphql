@@ -1349,50 +1349,26 @@ extend type Query {
 
 type InsightDetailsPayload {
     insightTitle: String!
-    insightSeries: [InsightSeriesMetadata!]!
     creator: String
     createdAt: DateTime!
+    queueItems: [InsightBackfillQueueItem!]!
 }
 
-type InsightSeriesMetadata {
+type InsightBackfillQueueItem {
     seriesID: String!
     seriesLabel: String!
     searchQuery: String!
-    backfill: InsightBackfillPayload!
-    recording: InsightRecordingPayload!
-
-}
-
-interface InsightQueueRecord {
-    seriesID: String!
     positionInQueue: Int!
-    state: InsightQueueRecordState!
-    errors: [String!]
-    cost: Int!
-}
-
-type InsightBackfillPayload implements InsightQueueRecord {
-    seriesID: String!
-    positionInQueue: Int!
-    state: InsightQueueRecordState!
+    state: InsightQueueItemState!
     errors: [String!]
     cost: Int!
     percentComplete: Int!
 }
 
-type InsightRecordingPayload implements InsightQueueRecord {
-    seriesID: String!
-    positionInQueue: Int!
-    state: InsightQueueRecordState!
-    errors: [String!]
-    cost: Int!
-    snapshot: Boolean!
-}
-
 """
 Possible queue states
 """
-enum InsightQueueRecordState {
+enum InsightQueueItemState {
     QUEUED
     COMPLETED
     PROCESSING
@@ -1404,10 +1380,14 @@ extend type Mutation {
     """
     Retry a failed search for an insight series. Can only be used by a site admin.
     """
-    retryInsightSeriesSearch(seriesID: String!, backfill: Boolean!): InsightQueueRecord!
+    retryInsightBackfill(seriesID: String!): InsightBackfillQueueItem!
     """
-    Update insight series priority. Setting priority = 0 will move the insight to the back of the queue and setting
-    priority = 1 will move it to the front. Can only be used by a site admin.
+    Update insight backfill priority.
     """
-    updateInsightSeriesPriority(seriesID: String!, priority: Int!): InsightQueueRecord!
+    updateInsightBackfillPriority(seriesID: String!, priority: InsightQueueItemPriority!): InsightBackfillQueueItem!
+}
+
+enum InsightQueueItemPriority {
+    MOVE_TO_FRONT
+    MOVE_TO_BACK
 }
