@@ -3,11 +3,10 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // AccountData stores information of a Gerrit account.
@@ -70,17 +69,16 @@ func SetExternalAccountData(data *extsvc.AccountData, usr *Account, creds *Accou
 	return nil
 }
 
-var MockVerifyAccount func(context.Context, *types.GerritConnection, *AccountCredentials) (*Account, error)
+var MockVerifyAccount func(context.Context, *url.URL, *AccountCredentials) (*Account, error)
 
-func VerifyAccount(ctx context.Context, conn *types.GerritConnection, creds *AccountCredentials) (*Account, error) {
+func VerifyAccount(ctx context.Context, u *url.URL, creds *AccountCredentials) (*Account, error) {
 	if MockVerifyAccount != nil {
-		return MockVerifyAccount(ctx, conn, creds)
+		return MockVerifyAccount(ctx, u, creds)
 	}
 
-	auther := &auth.BasicAuth{Username: creds.Username, Password: creds.Password}
-	client, err := NewClient(conn.URN, conn.GerritConnection, nil)
+	client, err := NewClient("", u, creds, nil)
 	if err != nil {
 		return nil, err
 	}
-	return client.WithAuthenticator(auther).GetAuthenticatedUserAccount(ctx)
+	return client.GetAuthenticatedUserAccount(ctx)
 }

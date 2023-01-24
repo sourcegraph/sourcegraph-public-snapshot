@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"net/url"
 	"path"
 	"sort"
 
@@ -46,7 +47,15 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, err
 	}
 
-	cli, err := gerrit.NewClient(svc.URN(), &c, httpCli)
+	u, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := gerrit.NewClient(svc.URN(), u, &gerrit.AccountCredentials{
+		Username: c.Username,
+		Password: c.Password,
+	}, httpCli)
 	if err != nil {
 		return nil, err
 	}
