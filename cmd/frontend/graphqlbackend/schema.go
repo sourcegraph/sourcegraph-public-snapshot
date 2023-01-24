@@ -68,3 +68,8 @@ var insightsAggregationsSchema string
 //
 //go:embed outbound_webhooks.graphql
 var outboundWebhooksSchema string
+
+// ownSchema is the Sourcegraph Own raw graqhql schema.
+//
+//go:embed own.graphql
+var ownSchema string

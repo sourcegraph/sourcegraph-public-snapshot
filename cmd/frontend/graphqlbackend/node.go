@@ -328,3 +328,8 @@ func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
 	n, ok := r.Node.(OutboundWebhookResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
+	n, ok := r.Node.(*TeamResolver)
+	return n, ok
+}

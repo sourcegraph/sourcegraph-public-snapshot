@@ -512,3 +512,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
+
+func (r *UserResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
+}

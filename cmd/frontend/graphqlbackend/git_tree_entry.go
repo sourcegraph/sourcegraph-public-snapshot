@@ -403,6 +403,13 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	if r, ok := r.ToGitTree(); ok {
+		return EnterpriseResolvers.ownResolver.GitTreeOwnership(ctx, r, args)
+	}
+	return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
+}
+
 type symbolInfoArgs struct {
 	Line      int32
 	Character int32
