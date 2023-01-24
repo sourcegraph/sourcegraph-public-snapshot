@@ -1339,3 +1339,75 @@ type RepositoryPreviewPayload {
     """
     numberOfRepositories: Int
 }
+
+extend type Query {
+    """
+    Fetch metadata attached to an insight view. Can only be used by a site admin.
+    """
+    insightAdminDetails(insightViewID: ID!): InsightDetailsPayload!
+}
+
+type InsightDetailsPayload {
+    insightTitle: String!
+    insightSeries: [InsightSeriesMetadata!]!
+    creator: String
+    createdAt: DateTime!
+}
+
+type InsightSeriesMetadata {
+    seriesID: String!
+    seriesLabel: String!
+    searchQuery: String!
+    backfill: InsightBackfillPayload!
+    recording: InsightRecordingPayload!
+
+}
+
+interface InsightQueueRecord {
+    seriesID: String!
+    positionInQueue: Int!
+    state: InsightQueueRecordState!
+    errors: [String!]
+    cost: Int!
+}
+
+type InsightBackfillPayload implements InsightQueueRecord {
+    seriesID: String!
+    positionInQueue: Int!
+    state: InsightQueueRecordState!
+    errors: [String!]
+    cost: Int!
+    percentComplete: Int!
+}
+
+type InsightRecordingPayload implements InsightQueueRecord {
+    seriesID: String!
+    positionInQueue: Int!
+    state: InsightQueueRecordState!
+    errors: [String!]
+    cost: Int!
+    snapshot: Boolean!
+}
+
+"""
+Possible queue states
+"""
+enum InsightQueueRecordState {
+    QUEUED
+    COMPLETED
+    PROCESSING
+    ERRORED
+    FAILED
+}
+
+extend type Mutation {
+    """
+    Retry a failed search for an insight series. Can only be used by a site admin.
+    """
+    retryInsightSeriesSearch(seriesID: String!, backfill: Boolean!): InsightQueueRecord!
+    """
+    Update insight series priority. Setting priority = 0 will move the insight to the back of the queue and setting
+    priority = 1 will move it to the front. Can only be used by a site admin.
+    """
+    updateInsightSeriesPriority(seriesID: String!, priority: Int!): InsightQueueRecord!
+}
