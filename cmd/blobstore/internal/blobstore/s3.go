@@ -7,7 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var s3ErrorBucketAlreadyOwnedByYou = "BucketAlreadyOwnedByYou"
+var (
+	s3ErrorBucketAlreadyOwnedByYou = "BucketAlreadyOwnedByYou"
+	s3ErrorNoSuchBucket            = "NoSuchBucket"
+)
 
 type s3Error struct {
 	XMLName xml.Name `xml:"Error"`
@@ -24,9 +27,9 @@ type s3BucketName struct {
 	BucketName string   `xml:",chardata"`
 }
 
-func writeS3Error(w http.ResponseWriter, code, bucketName string, err error) error {
+func writeS3Error(w http.ResponseWriter, code, bucketName string, err error, statusCode int) error {
 	w.Header().Set("Content-Type", "application/xml;charset=utf-8")
-	w.WriteHeader(http.StatusConflict)
+	w.WriteHeader(statusCode)
 
 	if _, err := w.Write([]byte(xml.Header)); err != nil {
 		return errors.Wrap(err, "writing XML header")

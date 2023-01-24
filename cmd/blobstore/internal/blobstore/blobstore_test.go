@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
@@ -63,8 +64,21 @@ func TestUpload(t *testing.T) {
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Upload(ctx context.Context, key string, r io.Reader) (int64, error)
-	_ = store
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
+}
+
+// Initialize uploadstore, upload an object twice and confirm there is no conflict
+func TestUploadTwice(t *testing.T) {
+	ctx := context.Background()
+	store, server := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
+
+	uploaded, err = store.Upload(ctx, "foobar", strings.NewReader("Hello world 2!"))
+	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
 }
 
 // Initialize uploadstore, upload an object, get it back
