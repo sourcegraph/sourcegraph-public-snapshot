@@ -70,7 +70,8 @@ async function getAccessTokenNoCache(server: Server, oauth2Client: OAuth2Client)
         ;(async () => open(authUrl, { wait: false }).then(cp => cp.unref()))()
     })
 
-    return (await oauth2Client.getToken(authCode)).tokens
+    const { tokens } = await oauth2Client.getToken(authCode)
+    return tokens
 }
 
 export interface EventOptions {
