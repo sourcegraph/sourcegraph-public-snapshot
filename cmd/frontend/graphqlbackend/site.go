@@ -146,7 +146,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(conf.Raw(), false)
+	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
 }
 

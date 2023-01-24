@@ -245,7 +245,7 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
-	redactedConf, err := conf.RedactSecrets(conftypes.RawUnified{Site: contents}, true)
+	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents}, true)
 	var redactedContents string
 	if err != nil {
 		// Do not fail here. Instead continue writing to DB with an empty value for

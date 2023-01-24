@@ -213,35 +213,30 @@ func TestProblems(t *testing.T) {
 }
 
 func TestRedactSecrets(t *testing.T) {
-	t.Run("do not hashSecrets", func(t *testing.T) {
-		redacted, err := RedactSecrets(
-			conftypes.RawUnified{
-				Site: getTestSiteWithSecrets(
-					executorsAccessToken,
-					authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
-					emailSMTPPassword,
-					organizationInvitationsSigningKey,
-					githubClientSecret,
-					dotcomGitHubAppCloudClientSecret,
-					dotcomGitHubAppCloudPrivateKey,
-					dotcomSrcCliVersionCacheGitHubToken,
-					dotcomSrcCliVersionCacheGitHubWebhookSecret,
-					authUnlockAccountLinkSigningKey,
-				),
-			},
-			false,
-		)
-		require.NoError(t, err)
+	redacted, err := RedactSecrets(
+		conftypes.RawUnified{
+			Site: getTestSiteWithSecrets(
+				executorsAccessToken,
+				authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
+				emailSMTPPassword,
+				organizationInvitationsSigningKey,
+				githubClientSecret,
+				dotcomGitHubAppCloudClientSecret,
+				dotcomGitHubAppCloudPrivateKey,
+				dotcomSrcCliVersionCacheGitHubToken,
+				dotcomSrcCliVersionCacheGitHubWebhookSecret,
+				authUnlockAccountLinkSigningKey,
+			),
+		},
+	)
+	require.NoError(t, err)
 
-		want := getTestSiteWithRedactedSecrets()
-		assert.Equal(t, want, redacted.Site)
-	})
+	want := getTestSiteWithRedactedSecrets()
+	assert.Equal(t, want, redacted.Site)
+}
 
-	t.Run("hashSecrets", func(t *testing.T) {
-
-		redacted, err := RedactSecrets(
-			conftypes.RawUnified{
-				Site: `{
+func TestRedactConfSecrets(t *testing.T) {
+	conf := `{
   "auth.providers": [
     {
       "clientID": "sourcegraph-client-openid",
@@ -251,19 +246,13 @@ func TestRedactSecrets(t *testing.T) {
       "type": "openidconnect"
     }
   ]
-}`,
-			},
-			true,
-		)
+}`
 
-		require.NoError(t, err)
-
-		// See this for the SHA256 of "strongsecret": https://go.dev/play/p/N-4R4_fO9XI
-		want := `{
+	want := `{
   "auth.providers": [
     {
       "clientID": "sourcegraph-client-openid",
-      "clientSecret": "REDACTED-DATA-CHUNK-f434ecc765",
+      "clientSecret": "%s",
       "displayName": "Keycloak local OpenID Connect #1 (dev)",
       "issuer": "http://localhost:3220/auth/realms/master",
       "type": "openidconnect"
@@ -271,8 +260,34 @@ func TestRedactSecrets(t *testing.T) {
   ]
 }`
 
-		assert.Equal(t, want, redacted.Site)
-	})
+	testCases := []struct {
+		name           string
+		hasSecrets     bool
+		redactedFmtStr string
+	}{
+		{
+			name:       "hasSecrets true",
+			hasSecrets: true,
+			// This is the first 10 chars of the SHA256 of "strongsecret". See this go playground to
+			// verify: https://go.dev/play/p/N-4R4_fO9XI.
+			redactedFmtStr: "REDACTED-DATA-CHUNK-f434ecc765",
+		},
+		{
+			name:           "hasSecrets false",
+			hasSecrets:     false,
+			redactedFmtStr: "REDACTED",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hasSecrets)
+			require.NoError(t, err)
+
+			want := fmt.Sprintf(want, tc.redactedFmtStr)
+			assert.Equal(t, want, redacted.Site)
+		})
+	}
 }
 
 func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
@@ -283,7 +298,6 @@ func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 		conftypes.RawUnified{
 			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
 		},
-		false,
 	)
 	require.NoError(t, err)
 

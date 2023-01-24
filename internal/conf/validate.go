@@ -286,12 +286,20 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	return formattedSite, err
 }
 
-// RedactSecrets redacts defined list of secrets from the given configuration. It
-// returns empty configuration if any error occurs during redacting process to
-// prevent accidental leak of secrets in the configuration.
+func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, false)
+}
+
+func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, true)
+}
+
+// redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
+// configuration if any error occurs during redacting process to prevent accidental leak of secrets
+// in the configuration.
 //
-// Updates to this function should also being reflected in the UnredactSecrets.
-func RedactSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
+// Updates to this function should also be reflected in the UnredactSecrets.
+func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
 	getRedactedSecret := func(_ string) string { return redactedSecret }
 	if hashSecrets {
 		getRedactedSecret = func(secret string) string {
