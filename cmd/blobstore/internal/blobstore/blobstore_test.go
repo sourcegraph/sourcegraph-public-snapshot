@@ -65,7 +65,7 @@ func TestUpload(t *testing.T) {
 	defer server.Close()
 
 	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
-	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
+	autogold.Expect([]interface{}{12, nil}).Equal(t, []interface{}{uploaded, err})
 }
 
 // Initialize uploadstore, upload an object twice and confirm there is no conflict
@@ -75,10 +75,10 @@ func TestUploadTwice(t *testing.T) {
 	defer server.Close()
 
 	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
-	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
+	autogold.Expect([]interface{}{12, nil}).Equal(t, []interface{}{uploaded, err})
 
 	uploaded, err = store.Upload(ctx, "foobar", strings.NewReader("Hello world 2!"))
-	autogold.Expect(nil).Equal(t, []interface{}{uploaded, err})
+	autogold.Expect([]interface{}{14, nil}).Equal(t, []interface{}{uploaded, err})
 }
 
 // Initialize uploadstore, upload an object, get it back
