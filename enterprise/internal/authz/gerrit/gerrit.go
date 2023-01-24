@@ -68,31 +68,27 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 	})
 
 	queryArgs := gerrit.ListProjectsArgs{
-		Cursor: &gerrit.Pagination{
-			PerPage: 100,
-			Page:    1,
-		},
+		Cursor: &gerrit.Pagination{PerPage: 100, Page: 1},
 	}
-	projects, nextPage, err := client.ListProjects(ctx, queryArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	var nextPageProjects *gerrit.ListProjectsResponse
-	for nextPage {
-		queryArgs.Cursor.Page++
-		nextPageProjects, nextPage, err = client.ListProjects(ctx, queryArgs)
+	allProjects := make(gerrit.ListProjectsResponse)
+	for {
+		projects, nextPage, err := client.ListProjects(ctx, queryArgs)
 		if err != nil {
 			return nil, err
 		}
 
-		for k, v := range *nextPageProjects {
-			(*projects)[k] = v
+		for k, v := range projects {
+			allProjects[k] = v
 		}
+
+		if !nextPage {
+			break
+		}
+		queryArgs.Cursor.Page++
 	}
 
-	extIDs := make([]extsvc.RepoID, 0, len(*projects))
-	for _, project := range *projects {
+	extIDs := make([]extsvc.RepoID, 0, len(allProjects))
+	for _, project := range allProjects {
 		extIDs = append(extIDs, extsvc.RepoID(project.ID))
 	}
 	return &authz.ExternalUserPermissions{

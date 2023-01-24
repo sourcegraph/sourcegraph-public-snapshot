@@ -10,7 +10,7 @@ import (
 )
 
 type client interface {
-	ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error)
+	ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)
 	GetGroup(ctx context.Context, groupName string) (gerrit.Group, error)
 	WithAuthenticator(a auth.Authenticator) client
 }
@@ -37,11 +37,11 @@ func (m *ClientAdapter) WithAuthenticator(a auth.Authenticator) client {
 }
 
 type mockClient struct {
-	mockListProjects func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error)
+	mockListProjects func(ctx context.Context, opts gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)
 	mockGetGroup     func(ctx context.Context, groupName string) (gerrit.Group, error)
 }
 
-func (m *mockClient) ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error) {
+func (m *mockClient) ListProjects(ctx context.Context, opts gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
 	if m.mockListProjects != nil {
 		return m.mockListProjects(ctx, opts)
 	}

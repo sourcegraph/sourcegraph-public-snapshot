@@ -80,7 +80,8 @@ func (s *GerritSource) CheckConnection(ctx context.Context) error {
 // ListRepos returns all Gerrit repositories configured with this GerritSource's config.
 func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	args := gerrit.ListProjectsArgs{
-		Cursor: &gerrit.Pagination{PerPage: s.perPage, Page: 1},
+		Cursor:           &gerrit.Pagination{PerPage: s.perPage, Page: 1},
+		OnlyCodeProjects: true,
 	}
 
 	for {
@@ -91,17 +92,16 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 		}
 
 		// Unfortunately, because Gerrit API responds with a map, we have to sort it to maintain proper ordering
-		pageAsMap := map[string]*gerrit.Project(*page)
-		pageKeySlice := make([]string, 0, len(pageAsMap))
+		pageKeySlice := make([]string, 0, len(page))
 
-		for p := range pageAsMap {
+		for p := range page {
 			pageKeySlice = append(pageKeySlice, p)
 		}
 
 		sort.Strings(pageKeySlice)
 
 		for _, p := range pageKeySlice {
-			repo, err := s.makeRepo(p, pageAsMap[p])
+			repo, err := s.makeRepo(p, page[p])
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				return

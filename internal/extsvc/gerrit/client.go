@@ -101,13 +101,15 @@ func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) 
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
 	Cursor *Pagination
+	// If true, only fetches repositories with type CODE
+	OnlyCodeProjects bool
 }
 
 // ListProjectsResponse defines a response struct returned from ListProjects method calls.
 type ListProjectsResponse map[string]*Project
 
 // ListProjects fetches a list of CODE projects from Gerrit.
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error) {
 
 	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
 	// e.g. when we request a list of 100 CODE projects, 100 projects are fetched and
@@ -117,40 +119,46 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	// Currently, if you want to only get CODE projects and want to know if there is another page
 	// to query for, the only way to do that is to query both CODE and ALL projects and compare
 	// the number of projects returned.
-	qsCodeProjects := make(url.Values)
 
+	qsProjects := make(url.Values)
 	if opts.Cursor == nil {
 		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
 	// Number of results to return.
-	qsCodeProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
+	qsProjects.Set("n", fmt.Sprintf("%d", opts.Cursor.PerPage))
 
 	// Skip the first S projects.
-	qsCodeProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
+	qsProjects.Set("S", fmt.Sprintf("%d", (opts.Cursor.Page-1)*opts.Cursor.PerPage))
 
-	// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
-	qsCodeProjects.Set("type", "CODE")
+	if opts.OnlyCodeProjects {
+		// Set the desired project type to CODE (ALL/CODE/PERMISSIONS).
+		qsProjects.Set("type", "CODE")
+	}
 
 	urlPath := "a/projects/"
 
-	uCodeProjects := url.URL{Path: urlPath, RawQuery: qsCodeProjects.Encode()}
-	reqCodeProjects, err := http.NewRequest("GET", uCodeProjects.String(), nil)
+	uProjects := url.URL{Path: urlPath, RawQuery: qsProjects.Encode()}
+	reqProjects, err := http.NewRequest("GET", uProjects.String(), nil)
 	if err != nil {
 		return nil, false, err
 	}
 
-	var respCodeProjects ListProjectsResponse
-	if _, err = c.do(ctx, reqCodeProjects, &respCodeProjects); err != nil {
+	var respProjects ListProjectsResponse
+	if _, err = c.do(ctx, reqProjects, &respProjects); err != nil {
 		return nil, false, err
 	}
 
-	// We always assume there is a next page, unless the number of CODE projects
-	// returned is zero.
-	// This means we will do one extra request in the case where the number of CODE projects
-	// is only one page, but we make one less request for every page there after.
-	nextPage = true
-	if len(respCodeProjects) == 0 {
+	// If the number of projects returned matches the page length, we assume
+	// there are more projects to fetch.
+	nextPage = len(respProjects) == opts.Cursor.PerPage
+
+	// If we're only fetching CODE projects, an empty page does not imply that
+	// there are no more projects to fetch. Instead we need to check if the
+	// next page of ALL projects has any projects.
+	// We only do this if the number of CODE projects returned is zero, otherwise
+	// we assume there is a next page.
+	if opts.OnlyCodeProjects && len(respProjects) == 0 {
 		qsNextPageProjects := make(url.Values)
 		// We only need to fetch the first Project of the next page to see if there are more.
 		qsNextPageProjects.Set("n", fmt.Sprintf("%d", 1))
@@ -167,12 +175,12 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 			return nil, false, err
 		}
 
-		// If we find projects on the next page, there is possibly more CODE projects to fetch,
+		// If we find projects on the next page, there are possibly more CODE projects to fetch,
 		// even if the current returned page is empty.
 		nextPage = len(respNextPageProjects) > 0
 	}
 
-	return &respCodeProjects, nextPage, nil
+	return respProjects, nextPage, nil
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.

@@ -81,12 +81,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	mClient := mockClient{}
-	mClient.mockListProjects = func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error) {
-		resp := make(gerrit.ListProjectsResponse)
-		resp["test-project"] = &gerrit.Project{
-			ID: "test-project",
+	mClient.mockListProjects = func(ctx context.Context, opts gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+		resp := gerrit.ListProjectsResponse{
+			"test-project": &gerrit.Project{
+				ID: "test-project",
+			},
 		}
-		return &resp, false, nil
+
+		return resp, false, nil
 	}
 
 	testCases := map[string]struct {
