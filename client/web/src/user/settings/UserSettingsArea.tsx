@@ -2,7 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -162,8 +163,8 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                 {props.routes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
-                                            <Route
-                                                render={routeComponentProps =>
+                                            <CompatRoute
+                                                render={(routeComponentProps: RouteComponentProps) =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                                 path={props.match.url + path}
@@ -172,7 +173,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                             />
                                         )
                                 )}
-                                <Route component={NotFoundPage} key="hardcoded-key" />
+                                <CompatRoute component={NotFoundPage} key="hardcoded-key" />
                             </Switch>
                         </React.Suspense>
                     </ErrorBoundary>

@@ -2,7 +2,8 @@ import * as React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -259,11 +260,11 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                         {this.props.orgAreaRoutes.map(
                             ({ path, exact, render, condition = () => true, fullPage }) =>
                                 condition(context) && (
-                                    <Route
+                                    <CompatRoute
                                         path={this.props.match.url + path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         exact={exact}
-                                        render={routeComponentProps =>
+                                        render={(routeComponentProps: RouteComponentProps) =>
                                             fullPage ? (
                                                 render({ ...context, ...routeComponentProps })
                                             ) : (
@@ -283,7 +284,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                     />
                                 )
                         )}
-                        <Route key="hardcoded-key" component={NotFoundPage} />
+                        <CompatRoute key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 </React.Suspense>
             </ErrorBoundary>

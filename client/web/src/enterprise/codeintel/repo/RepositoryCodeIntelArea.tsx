@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -185,16 +186,18 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<
                     {routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(props) && (
-                                <Route
+                                <CompatRoute
                                     path={match.url + path}
                                     exact={exact}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    render={routeComponentProps => render({ ...props, ...routeComponentProps })}
+                                    render={(routeComponentProps: RouteComponentProps<{}>) =>
+                                        render({ ...props, ...routeComponentProps })
+                                    }
                                 />
                             )
                     )}
 
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <CompatRoute key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>
         </div>

@@ -1,7 +1,8 @@
 import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -26,14 +27,14 @@ export const ExecutorsOrgArea: React.FunctionComponent<React.PropsWithChildren<E
 }) => (
     <>
         <Switch>
-            <Route
+            <CompatRoute
                 path={`${match.url}/secrets`}
-                render={props => (
+                render={(props: RouteComponentProps<{}>) => (
                     <OrgExecutorSecretsListPage orgID={outerProps.namespaceID} {...outerProps} {...props} />
                 )}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <CompatRoute component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </>
 )

@@ -1,7 +1,8 @@
 import * as React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -53,19 +54,23 @@ export interface Props
 const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <Switch>
         {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
-            <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+            <CompatRoute path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
         )}
-        <Route
+        <CompatRoute
             path={`${props.match.url}/invitation/:token`}
             exact={true}
-            render={routeComponentProps => <OrgInvitationPage {...props} {...routeComponentProps} />}
+            render={(routeComponentProps: RouteComponentProps<{ token: string }>) => (
+                <OrgInvitationPage {...props} {...routeComponentProps} />
+            )}
         />
-        <Route
+        <CompatRoute
             path={`${props.match.url}/:name`}
-            render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
+            render={(routeComponentProps: RouteComponentProps<{ name: string }>) => (
+                <OrgArea {...props} {...routeComponentProps} />
+            )}
         />
 
-        <Route component={NotFoundPage} />
+        <CompatRoute component={NotFoundPage} />
     </Switch>
 )
 

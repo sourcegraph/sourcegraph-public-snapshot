@@ -1,6 +1,7 @@
 import React from 'react'
 
-import { Switch, Route, useRouteMatch } from 'react-router'
+import { Switch, useRouteMatch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -26,13 +27,13 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
 
     return (
         <Switch>
-            <Route
+            <CompatRoute
                 exact={true}
                 path={`${match.url}`}
                 render={() => <IntroCreationLazyPage telemetryService={telemetryService} />}
             />
 
-            <Route
+            <CompatRoute
                 path={`${match.url}/search`}
                 render={() => (
                     <InsightCreationLazyPage
@@ -42,7 +43,7 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
                 )}
             />
 
-            <Route
+            <CompatRoute
                 path={`${match.url}/capture-group`}
                 render={() => (
                     <InsightCreationLazyPage
@@ -52,7 +53,7 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
                 )}
             />
 
-            <Route
+            <CompatRoute
                 path={`${match.url}/lang-stats`}
                 exact={true}
                 render={() => (
@@ -64,7 +65,7 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
             />
 
             {codeInsightsCompute && (
-                <Route
+                <CompatRoute
                     path={`${match.url}/group-results`}
                     render={() => (
                         <InsightCreationLazyPage

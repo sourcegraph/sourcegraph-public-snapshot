@@ -4,7 +4,8 @@ import { mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
@@ -206,8 +207,8 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
             {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
 
             <Switch>
-                <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
-                <Route
+                <CompatRoute render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
+                <CompatRoute
                     path={`${match.url}/configuration`}
                     render={() => (
                         <>
@@ -221,7 +222,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     )}
                     exact={true}
                 />
-                <Route
+                <CompatRoute
                     path={`${match.url}/spec`}
                     render={() => (
                         <>
@@ -231,7 +232,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     )}
                     exact={true}
                 />
-                <Route
+                <CompatRoute
                     path={`${match.url}/execution/workspaces/:workspaceID`}
                     render={({ match }: RouteComponentProps<{ workspaceID: string }>) => (
                         <>
@@ -244,7 +245,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         </>
                     )}
                 />
-                <Route
+                <CompatRoute
                     path={`${match.url}/execution`}
                     render={() => (
                         <>
@@ -257,7 +258,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     )}
                 />
                 {batchSpec.applyURL ? (
-                    <Route
+                    <CompatRoute
                         path={`${match.url}/preview`}
                         render={() => (
                             <>
@@ -281,7 +282,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     // If the batch spec is not ready to be previewed, redirect to the spec instead.
                     <Redirect to={`${match.url}/spec`} />
                 )}
-                <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
+                <CompatRoute
+                    component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />}
+                    key="hardcoded-key"
+                />
             </Switch>
         </div>
     )

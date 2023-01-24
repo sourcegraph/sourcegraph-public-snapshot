@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -37,13 +38,15 @@ export const RepositoryBatchChangesArea: React.FunctionComponent<
     return (
         <div className="repository-batch-changes-area container mt-3">
             <Switch>
-                <Route
+                <CompatRoute
                     path={`${match.url}`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
-                    render={routeComponentProps => <BatchChangeRepoPage {...routeComponentProps} {...props} />}
+                    render={(routeComponentProps: RouteComponentProps<{}>) => (
+                        <BatchChangeRepoPage {...routeComponentProps} {...props} />
+                    )}
                 />
-                <Route key="hardcoded-key" component={NotFoundPage} />
+                <CompatRoute key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </div>
     )

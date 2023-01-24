@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -51,23 +52,23 @@ export const RepositoryBranchesArea: React.FunctionComponent<React.PropsWithChil
         <div className="repository-branches-area container px-3">
             <RepositoryBranchesNavbar className="my-3" repo={repo.name} />
             <Switch>
-                <Route
+                <CompatRoute
                     path={`${match.url}`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
-                    render={routeComponentProps => (
+                    render={(routeComponentProps: RouteComponentProps) => (
                         <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
                     )}
                 />
-                <Route
+                <CompatRoute
                     path={`${match.url}/all`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
-                    render={routeComponentProps => (
+                    render={(routeComponentProps: RouteComponentProps) => (
                         <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
                     )}
                 />
-                <Route key="hardcoded-key" component={NotFoundPage} />
+                <CompatRoute key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </div>
     )

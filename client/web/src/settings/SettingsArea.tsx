@@ -3,7 +3,8 @@ import * as React from 'react'
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { combineLatest, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
@@ -177,13 +178,15 @@ export class SettingsArea extends React.Component<Props, State> {
                 </PageHeader>
                 {this.props.extraHeader}
                 <Switch>
-                    <Route
+                    <CompatRoute
                         path={this.props.match.url}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
+                        render={(routeComponentProps: RouteComponentProps) => (
+                            <SettingsPage {...routeComponentProps} {...transferProps} />
+                        )}
                     />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <CompatRoute key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>
         )

@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { RouteComponentProps, Switch, Route, Redirect } from 'react-router'
+import { RouteComponentProps, Switch, Redirect } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -66,9 +66,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
 
     return (
         <Switch>
-            <Route
+            <CompatRoute
                 path={match.url}
-                render={props => (
+                render={(props: RouteComponentProps) => (
                     <ExternalServicesPage
                         {...outerProps}
                         {...props}
@@ -79,10 +79,10 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 )}
                 exact={true}
             />
-            <Route path={match.url + '/add'} render={() => <Redirect to="new" />} exact={true} />
-            <Route
+            <CompatRoute path={match.url + '/add'} render={() => <Redirect to="new" />} exact={true} />
+            <CompatRoute
                 path={`${match.url}/new`}
-                render={props => (
+                render={(props: RouteComponentProps) => (
                     <AddExternalServicesPage
                         {...outerProps}
                         {...props}
@@ -95,9 +95,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 )}
                 exact={true}
             />
-            <Route
+            <CompatRoute
                 path={`${match.url}/:id`}
-                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
+                render={({ match, ...props }: RouteComponentProps<{ id: string }>) => (
                     <ExternalServicePage
                         {...outerProps}
                         {...props}
@@ -110,9 +110,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 )}
                 exact={true}
             />
-            <Route
+            <CompatRoute
                 path={`${match.url}/:id/edit`}
-                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
+                render={({ match, ...props }: RouteComponentProps<{ id: string }>) => (
                     <ExternalServiceEditPage
                         {...outerProps}
                         {...props}

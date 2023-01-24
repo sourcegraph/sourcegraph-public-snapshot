@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -189,8 +190,8 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                     {userAreaRoutes.map(
                         ({ path, exact, render, condition = () => true, fullPage }) =>
                             condition(context) && (
-                                <Route
-                                    render={routeComponentProps =>
+                                <CompatRoute
+                                    render={(routeComponentProps: RouteComponentProps) =>
                                         fullPage ? (
                                             render({ ...context, ...routeComponentProps })
                                         ) : (
@@ -213,9 +214,9 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                                 />
                             )
                     )}
-                    <Route key="hardcoded-key">
+                    <CompatRoute key="hardcoded-key">
                         <NotFoundPage />
-                    </Route>
+                    </CompatRoute>
                 </Switch>
             </React.Suspense>
         </ErrorBoundary>

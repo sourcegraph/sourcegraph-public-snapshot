@@ -1,7 +1,8 @@
 import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -29,13 +30,19 @@ export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChil
 }) => (
     <>
         <Switch>
-            <Route render={props => <ExecutorsListPage {...outerProps} {...props} />} path={match.url} exact={true} />
-            <Route
-                path={`${match.url}/secrets`}
-                render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
+            <CompatRoute
+                render={(props: RouteComponentProps<{}>) => <ExecutorsListPage {...outerProps} {...props} />}
+                path={match.url}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <CompatRoute
+                path={`${match.url}/secrets`}
+                render={(props: RouteComponentProps<{}>) => (
+                    <GlobalExecutorSecretsListPage {...outerProps} {...props} />
+                )}
+                exact={true}
+            />
+            <CompatRoute component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </>
 )

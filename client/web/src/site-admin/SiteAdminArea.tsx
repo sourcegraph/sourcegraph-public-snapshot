@@ -2,7 +2,8 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -109,18 +110,18 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                                 {props.routes.map(
                                     ({ render, path, exact, condition = () => true }) =>
                                         condition(context) && (
-                                            <Route
+                                            <CompatRoute
                                                 // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 key="hardcoded-key"
                                                 path={props.match.url + path}
                                                 exact={exact}
-                                                render={routeComponentProps =>
+                                                render={(routeComponentProps: RouteComponentProps) =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
                                 )}
-                                <Route component={NotFoundPage} />
+                                <CompatRoute component={NotFoundPage} />
                             </Switch>
                         </React.Suspense>
                     </ErrorBoundary>

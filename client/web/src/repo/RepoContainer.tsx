@@ -5,7 +5,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -333,11 +334,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 ...props.repoContainerRoutes.map(
                     ({ path, render, exact, condition = () => true }) =>
                         condition(repoContainerContext) && (
-                            <Route
+                            <CompatRoute
                                 path={repoContainerContext.routePrefix + path}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={exact}
-                                render={routeComponentProps =>
+                                render={(routeComponentProps: RouteComponentProps) =>
                                     render({
                                         ...repoContainerContext,
                                         ...routeComponentProps,
@@ -346,7 +347,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             />
                         )
                 ),
-                <Route key="hardcoded-key" component={RepoPageNotFound} />,
+                <CompatRoute key="hardcoded-key" component={RepoPageNotFound} />,
             ]
         }
 
@@ -443,11 +444,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             '/-/tag',
                             '/-/home',
                         ].map(routePath => (
-                            <Route
+                            <CompatRoute
                                 path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={routePath === ''}
-                                render={routeComponentProps => (
+                                render={(routeComponentProps: RouteComponentProps) => (
                                     <RepoRevisionContainer
                                         {...routeComponentProps}
                                         {...repoRevisionContainerContext}

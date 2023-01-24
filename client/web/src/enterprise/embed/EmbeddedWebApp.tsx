@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useMemo } from 'react'
 
-import { BrowserRouter, Route, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { BrowserRouter, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
+import { CompatRoute, CompatRouter } from 'react-router-dom-v5-compat'
 
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -73,7 +73,7 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                             }
                         >
                             <Switch>
-                                <Route
+                                <CompatRoute
                                     path="/embed/notebooks/:notebookId"
                                     render={(props: RouteComponentProps<{ notebookId: string }>) => (
                                         <EmbeddedNotebookPage
@@ -87,7 +87,7 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                         />
                                     )}
                                 />
-                                <Route
+                                <CompatRoute
                                     path="*"
                                     render={() => (
                                         <Alert variant="danger">

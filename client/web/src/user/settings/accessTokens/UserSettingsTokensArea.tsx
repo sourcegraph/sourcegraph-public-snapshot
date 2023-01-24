@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -29,10 +30,10 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
     }, [])
     return (
         <Switch>
-            <Route
+            <CompatRoute
                 exact={true}
                 path={outerProps.match.url + '/new'}
-                render={props => (
+                render={(props: RouteComponentProps) => (
                     <UserSettingsCreateAccessTokenPage
                         {...outerProps}
                         {...props}
@@ -40,10 +41,10 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 )}
             />
-            <Route
+            <CompatRoute
                 exact={true}
                 path={outerProps.match.url + '/new/callback'}
-                render={props => (
+                render={(props: RouteComponentProps) => (
                     <UserSettingsCreateAccessTokenCallbackPage
                         {...outerProps}
                         {...props}
@@ -51,10 +52,10 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 )}
             />
-            <Route
+            <CompatRoute
                 exact={true}
                 path={outerProps.match.url}
-                render={props => (
+                render={(props: RouteComponentProps) => (
                     <UserSettingsTokensPage
                         {...outerProps}
                         {...props}
@@ -63,7 +64,7 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 )}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <CompatRoute component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     )
 }

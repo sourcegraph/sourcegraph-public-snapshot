@@ -2,7 +2,8 @@ import * as React from 'react'
 
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -77,8 +78,8 @@ export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
                             {props.routes.map(
                                 ({ path, exact, render, condition = () => true }) =>
                                     condition(context) && (
-                                        <Route
-                                            render={routeComponentProps =>
+                                        <CompatRoute
+                                            render={(routeComponentProps: RouteComponentProps) =>
                                                 render({ ...context, ...routeComponentProps })
                                             }
                                             path={props.match.url + path}
@@ -87,7 +88,7 @@ export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
                                         />
                                     )
                             )}
-                            <Route component={NotFoundPage} />
+                            <CompatRoute component={NotFoundPage} />
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>

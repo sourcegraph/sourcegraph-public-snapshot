@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -51,11 +52,11 @@ export const RepositoryStatsArea: React.FunctionComponent<React.PropsWithChildre
         <div className="repository-stats-area container mt-3">
             {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repoName} />}
             <Switch>
-                <Route
+                <CompatRoute
                     path={`${props.match.url}/contributors`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
-                    render={routeComponentProps =>
+                    render={(routeComponentProps: RouteComponentProps) =>
                         props.repo ? (
                             <RepositoryStatsContributorsPage {...routeComponentProps} {...props} repo={props.repo} />
                         ) : (
@@ -63,7 +64,7 @@ export const RepositoryStatsArea: React.FunctionComponent<React.PropsWithChildre
                         )
                     }
                 />
-                <Route key="hardcoded-key" component={NotFoundPage} />
+                <CompatRoute key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </div>
     )

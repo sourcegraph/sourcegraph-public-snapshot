@@ -4,6 +4,7 @@ import { gql, useLazyQuery } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,27 +47,30 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
+            {/* TODO: Investigate why we have a Route that is not directly a child of a Switch */}
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
-                <Route path={match.url} exact={true} component={CodeInsightsSmartRoutingRedirect} />
+                <CompatRoute path={match.url} exact={true} component={CodeInsightsSmartRoutingRedirect} />
 
-                <Route
+                <CompatRoute
                     path={`${match.url}/create`}
                     render={() => <CreationRoutes telemetryService={telemetryService} />}
                 />
 
-                <Route
+                <CompatRoute
                     path={`${match.url}/dashboards/:dashboardId/edit`}
-                    render={props => <EditDashboardPage dashboardId={props.match.params.dashboardId} />}
+                    render={(props: RouteComponentProps<{ dashboardId: string }>) => (
+                        <EditDashboardPage dashboardId={props.match.params.dashboardId} />
+                    )}
                 />
 
-                <Route
+                <CompatRoute
                     path={`${match.url}/add-dashboard`}
                     render={() => <InsightsDashboardCreationPage telemetryService={telemetryService} />}
                 />
 
-                <Route
+                <CompatRoute
                     path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/all`, `${match.url}/about`]}
                     render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
@@ -77,26 +81,32 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     )}
                 />
 
-                <Route
+                <CompatRoute
                     // Deprecated URL, delete this in the 4.10
                     path={`${match.url}/edit/:insightId`}
-                    render={props => <Redirect to={`${match.url}/${props.match.params.insightId}/edit`} />}
+                    render={(props: RouteComponentProps<{ insightId: string }>) => (
+                        <Redirect to={`${match.url}/${props.match.params.insightId}/edit`} />
+                    )}
                 />
 
-                <Route
+                <CompatRoute
                     path={`${match.url}/:insightId/edit`}
-                    render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
+                    render={(props: RouteComponentProps<{ insightId: string }>) => (
+                        <EditInsightLazyPage insightID={props.match.params.insightId} />
+                    )}
                 />
 
-                <Route
+                <CompatRoute
                     // Deprecated URL, delete this in the 4.10
                     path={`${match.url}/insight/:id`}
-                    render={props => <Redirect to={`${match.url}/${props.match.params.id}`} />}
+                    render={(props: RouteComponentProps<{ id: string }>) => (
+                        <Redirect to={`${match.url}/${props.match.params.id}`} />
+                    )}
                 />
 
-                <Route
+                <CompatRoute
                     path={`${match.url}/:id`}
-                    render={props => (
+                    render={(props: RouteComponentProps<{ id: string }>) => (
                         <CodeInsightIndependentPage
                             insightId={props.match.params.id}
                             telemetryService={telemetryService}
@@ -104,7 +114,10 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     )}
                 />
 
-                <Route render={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
+                <CompatRoute
+                    render={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />}
+                    key="hardcoded-key"
+                />
             </Switch>
         </CodeInsightsBackendContext.Provider>
     )

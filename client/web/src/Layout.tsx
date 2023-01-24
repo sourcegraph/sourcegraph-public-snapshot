@@ -1,7 +1,8 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Redirect, RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -253,11 +254,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
-                                    <Route
+                                    <CompatRoute
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
-                                        render={routeComponentProps => (
+                                        render={(routeComponentProps: RouteComponentProps<{}>) => (
                                             <AppRouterContainer>
                                                 {render({ ...context, ...routeComponentProps })}
                                             </AppRouterContainer>

@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import * as H from 'history'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
@@ -220,11 +221,11 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                     {props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(repoRevisionContainerContext) && (
-                                <Route
+                                <CompatRoute
                                     path={props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
-                                    render={routeComponentProps =>
+                                    render={(routeComponentProps: RouteComponentProps) =>
                                         render({
                                             ...repoRevisionContainerContext,
                                             ...routeComponentProps,

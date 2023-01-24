@@ -3,7 +3,8 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -85,11 +86,11 @@ export const RepositoryCompareArea: React.FunctionComponent<RepositoryCompareAre
                 <Alert variant="danger">Invalid comparison specifier</Alert>
             ) : (
                 <Switch>
-                    <Route
+                    <CompatRoute
                         path={`${match.url}`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        render={routeComponentProps => (
+                        render={(routeComponentProps: RouteComponentProps) => (
                             <RepositoryCompareOverviewPage
                                 {...routeComponentProps}
                                 {...commonProps}
@@ -98,7 +99,7 @@ export const RepositoryCompareArea: React.FunctionComponent<RepositoryCompareAre
                             />
                         )}
                     />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <CompatRoute key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             )}
         </div>

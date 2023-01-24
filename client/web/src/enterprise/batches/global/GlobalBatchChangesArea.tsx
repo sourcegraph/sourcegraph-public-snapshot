@@ -1,7 +1,8 @@
 import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { RouteComponentProps, Switch, Route } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -61,7 +62,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
 }) => (
     <div className="w-100">
         <Switch>
-            <Route path={match.url} exact={true}>
+            <CompatRoute path={match.url} exact={true}>
                 <BatchChangeListPage
                     headingElement="h1"
                     canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
@@ -70,17 +71,17 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                     {...props}
                     location={location}
                 />
-            </Route>
+            </CompatRoute>
             {!isSourcegraphDotCom && (
-                <Route path={`${match.url}/create`} exact={true}>
+                <CompatRoute path={`${match.url}/create`} exact={true}>
                     <AuthenticatedCreateBatchChangePage
                         {...props}
                         headingElement="h1"
                         authenticatedUser={authenticatedUser}
                     />
-                </Route>
+                </CompatRoute>
             )}
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <CompatRoute component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </div>
 )
@@ -102,13 +103,13 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
 >(({ match, namespaceID, ...outerProps }) => (
     <div className="pb-3">
         <Switch>
-            <Route
+            <CompatRoute
                 path={`${match.url}/apply/:specID`}
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
                     <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
                 )}
             />
-            <Route
+            <CompatRoute
                 path={`${match.url}/:batchChangeName/close`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <BatchChangeClosePage
@@ -119,7 +120,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                     />
                 )}
             />
-            <Route
+            <CompatRoute
                 path={`${match.url}/:batchChangeName/executions`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <BatchChangeDetailsPage
@@ -131,7 +132,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                     />
                 )}
             />
-            <Route
+            <CompatRoute
                 path={`${match.url}/:batchChangeName`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <BatchChangeDetailsPage
@@ -142,9 +143,9 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                     />
                 )}
             />
-            <Route
+            <CompatRoute
                 path={match.url}
-                render={props => (
+                render={(props: RouteComponentProps<{}>) => (
                     <NamespaceBatchChangeListPage
                         headingElement="h2"
                         {...props}

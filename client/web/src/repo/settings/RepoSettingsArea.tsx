@@ -4,7 +4,8 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { RouteComponentProps, Switch } from 'react-router'
+import { CompatRoute } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -100,16 +101,18 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
                     {props.repoSettingsAreaRoutes.map(
                         ({ render, path, exact, condition = () => true }) =>
                             condition(context) && (
-                                <Route
+                                <CompatRoute
                                     // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     key="hardcoded-key"
                                     path={props.match.url + path}
                                     exact={exact}
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    render={(routeComponentProps: RouteComponentProps) =>
+                                        render({ ...context, ...routeComponentProps })
+                                    }
                                 />
                             )
                     )}
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <CompatRoute key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>
         </div>
