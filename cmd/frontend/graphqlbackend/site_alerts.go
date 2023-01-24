@@ -90,7 +90,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if !deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -241,7 +241,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || !deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
