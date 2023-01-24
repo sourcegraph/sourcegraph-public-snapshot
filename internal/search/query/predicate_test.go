@@ -180,9 +180,10 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`literal`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
-			{`regexp`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
-			{`regexp`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+			{`just text`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
+			{`handle starting with @`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
+			{`email`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+			{`empty`, ``, &FileHasOwnerPredicate{Owner: ""}},
 		}
 
 		for _, tc := range valid {
@@ -195,20 +196,6 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 
 				if !reflect.DeepEqual(tc.expected, p) {
 					t.Fatalf("expected %#v, got %#v", tc.expected, p)
-				}
-			})
-		}
-
-		invalid := []test{
-			{`empty`, ``, nil},
-		}
-
-		for _, tc := range invalid {
-			t.Run(tc.name, func(t *testing.T) {
-				p := &FileHasOwnerPredicate{}
-				err := p.Unmarshal(tc.params, false)
-				if err == nil {
-					t.Fatal("expected error but got none")
 				}
 			})
 		}
