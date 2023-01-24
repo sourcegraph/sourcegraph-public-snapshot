@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router'

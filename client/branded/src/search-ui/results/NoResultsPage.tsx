@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect } from 'react'
-import { RouteComponentProps } from 'react-router'
 
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -15,6 +14,7 @@ import { SmartSearchPreview } from '@sourcegraph/web/src/search/suggestion/Smart
 import { QueryExamples } from '../components/QueryExamples'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
+
 import styles from './NoResultsPage.module.scss'
 
 interface ContainerProps {
