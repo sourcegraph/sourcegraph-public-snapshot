@@ -19,11 +19,7 @@ jobs:
       with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
 
     - name: Install dependencies
-<<<<<<< HEAD
-      run: pnpm --ignore-engines --ignore-scripts
-=======
       run: pnpm --ignore-scripts
->>>>>>> 1ffffed26240c81b6e1663f14dfc3f518df55d32
 
     - name: Run Lighthouse
       run: |
