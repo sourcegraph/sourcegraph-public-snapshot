@@ -30,12 +30,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func newMockDB() database.DB {
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
+	return db
+}
 
 func TestClient_Remove(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
@@ -100,6 +108,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 	srv := httptest.NewServer((&server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
+		DB:       newMockDB(),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			testData := tests[name]
 			if testData.remote != "" {
@@ -427,6 +436,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
 	}}
 
+	db := newMockDB()
 	srv := httptest.NewServer((&server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
@@ -436,6 +446,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 			return &server.GitRepoSyncer{}, nil
 		},
+		DB: db,
 	}).Handler())
 	defer srv.Close()
 
