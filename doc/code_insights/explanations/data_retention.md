@@ -22,10 +22,22 @@ If you want to access this data, you are given the option to export all data for
 
 > IMPORTANT: Your data is never deleted. It is only moved to a separate database table.
 
+## Data exporting
+
+You can download all data for a Code Insight, including data that has been archived. You can do this:
+
+* From the insight card menu
+* From the standalone page
+
+The data will be exported as a CSV file. 
+Only data that you are permitted to see will be excluded (i.e. repository permissions are enforced).
+
+If you have filtered your Code Insight using repository filters or a search context, the data exported will be filtered according to those.
+
 ## Dynamic filtering
 
-The option now exists on Code Insights filters to limit the number of samples loaded per series. 
-There is one setting per insight that applies to all series on that insight. 
+The option now exists on Code Insights filters to limit the number of samples loaded per series.
+There is one setting per insight that applies to all series on that insight.
 Adjusting this setting will only apply to one insight and will not have any impact on stored Code Insights data.
 
 ## Benefits
