@@ -42,6 +42,16 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
             searchContexts
         }
         dashboardReferenceCount
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         dashboards {
             nodes {
                 id

@@ -27,7 +27,10 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
         excludeRepoRegex: '',
     },
     dashboards: { nodes: [] },
-
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Migration to new GraphQL TS types',
@@ -99,6 +102,10 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
         excludeRepoRegex: '',
         searchContexts: [],
     },
+    repositoryDefinition: {
+        __typename: 'InsightRepositoryScope',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+    },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Team head count',
@@ -128,47 +135,6 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
                 value: 6,
             },
             groupBy: null,
-        },
-    ],
-}
-
-export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
-    __typename: 'InsightView',
-    id: '003',
-    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
-    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
-    dashboardReferenceCount: 0,
-    dashboards: { nodes: [] },
-
-    isFrozen: false,
-    appliedFilters: {
-        __typename: 'InsightViewFilters',
-        includeRepoRegex: '',
-        excludeRepoRegex: '',
-        searchContexts: [],
-    },
-    presentation: {
-        __typename: 'PieChartInsightViewPresentation',
-        title: 'Sourcegraph languages',
-        otherThreshold: 0.03,
-    },
-    dataSeriesDefinitions: [
-        {
-            seriesId: '001',
-            query: '',
-            repositoryScope: {
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                __typename: 'InsightRepositoryScope',
-            },
-            timeScope: {
-                unit: TimeIntervalStepUnit.MONTH,
-                value: 0,
-                __typename: 'InsightIntervalTimeScope',
-            },
-            isCalculated: false,
-            generatedFromCaptureGroups: false,
-            groupBy: null,
-            __typename: 'SearchInsightDataSeriesDefinition',
         },
     ],
 }

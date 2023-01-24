@@ -91,6 +91,10 @@ export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
             },
         ],
     },
+    repositoryDefinition: {
+        repositories: [],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
@@ -178,6 +182,15 @@ export const SEARCH_BASED_INSIGHT: InsightViewNode = {
                 __typename: 'LineChartDataSeriesPresentation',
             },
         ],
+    },
+    repositoryDefinition: {
+        repositories: [
+            'github.com/sourcegraph/sourcegraph',
+            'github.com/sourcegraph/deploy-sourcegraph-managed',
+            'github.com/sourcegraph/infrastructure',
+            'github.com/sourcegraph/deploy-sourcegraph-cloud',
+        ],
+        __typename: 'InsightRepositoryScope',
     },
     dataSeriesDefinitions: [
         {
@@ -276,6 +289,10 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
         title: 'Lang Stats',
         otherThreshold: 0.03,
     },
+    repositoryDefinition: {
+        repositories: [],
+        __typename: 'InsightRepositoryScope',
+    },
     dataSeriesDefinitions: [
         {
             seriesId: '2CuLABWoJVNlP8KqoB49hdes8MK',
@@ -339,6 +356,10 @@ export const COMPUTE_INSIGHT: InsightViewNode = {
                 __typename: 'LineChartDataSeriesPresentation',
             },
         ],
+    },
+    repositoryDefinition: {
+        repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
+        __typename: 'InsightRepositoryScope',
     },
     dataSeriesDefinitions: [
         {

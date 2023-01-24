@@ -43,6 +43,10 @@ export function getCaptureGroupInsightCreateInput(
     const [unit, value] = getStepInterval(insight.step)
 
     const input: LineChartSearchInsightInput = {
+        repositoryScope: {
+            repositories: insight.repositories,
+            repositoryCriteria: insight.repoQuery,
+        },
         dataSeries: [
             {
                 query: insight.query,
@@ -75,17 +79,20 @@ export function getSearchInsightCreateInput(
     insight: MinimalSearchBasedInsightData,
     dashboardId: string | null
 ): LineChartSearchInsightInput {
-    const repositories = insight.repositories
+    const { step, repositories, repoQuery } = insight
+    const [unit, value] = getStepInterval(step)
 
-    const [unit, value] = getStepInterval(insight.step)
     const input: LineChartSearchInsightInput = {
+        repositoryScope: {
+            repositories,
+            repositoryCriteria: repoQuery.trim() === '' ? null : repoQuery,
+        },
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             query: series.query,
             options: {
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories },
             timeScope: { stepInterval: { unit, value } },
         })),
         options: { title: insight.title },
@@ -134,16 +141,17 @@ export function getComputeInsightCreateInput(
     insight: MinimalComputeInsightData,
     dashboardId: string | null
 ): LineChartSearchInsightInput {
+    const { repositories, groupBy, series } = insight
     const input: LineChartSearchInsightInput = {
-        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+        repositoryScope: { repositories },
+        dataSeries: series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             query: series.query,
             options: {
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories: insight.repositories },
+            groupBy,
             timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
-            groupBy: insight.groupBy,
             generatedFromCaptureGroups: true,
         })),
         options: { title: insight.title },

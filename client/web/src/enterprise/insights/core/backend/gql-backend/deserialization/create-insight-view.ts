@@ -1,5 +1,4 @@
 import { Duration } from 'date-fns'
-import { uniq } from 'lodash'
 
 import {
     InsightViewNode,
@@ -42,9 +41,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             const { appliedFilters } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
-            const repositories = uniq(
-                insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
-            )
+            const { repositories, repoSearch } = getInsightRepositories(insight.repositoryDefinition)
 
             // Transform display options into format compatible with our input forms
             // TODO: Remove when we consume GQL types directly
@@ -69,6 +66,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
                     repositories,
+                    repoQuery: repoSearch,
                     query,
                     step,
                     filters: {
@@ -119,6 +117,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
                 repositories,
+                repoQuery: repoSearch,
                 series,
                 step,
                 filters: {
@@ -160,5 +159,26 @@ function getDurationFromStep(step: TimeIntervalStepInput): Duration {
             return { months: step.value }
         case TimeIntervalStepUnit.YEAR:
             return { years: step.value }
+    }
+}
+
+type ResponseRepositoryDefinition = InsightViewNode['repositoryDefinition']
+
+interface InsightRepositories {
+    repoSearch: string
+    repositories: string[]
+}
+
+export function getInsightRepositories(response: ResponseRepositoryDefinition): InsightRepositories {
+    if (response.__typename === 'InsightRepositoryScope') {
+        return {
+            repoSearch: '',
+            repositories: response.repositories,
+        }
+    }
+
+    return {
+        repoSearch: response.search,
+        repositories: [],
     }
 }

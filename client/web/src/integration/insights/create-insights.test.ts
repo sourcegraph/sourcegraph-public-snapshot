@@ -163,6 +163,11 @@ describe('Code insight create insight page', () => {
                             dashboardReferenceCount: 0,
                             dashboards: { nodes: [] },
 
+                            repositoryDefinition: {
+                                repositories: ['github.com/sourcegraph/sourcegraph'],
+                                __typename: 'InsightRepositoryScope',
+                            },
+
                             presentation: {
                                 __typename: 'LineChartInsightViewPresentation',
                                 title: 'Test insight title',

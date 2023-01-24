@@ -15,8 +15,9 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const repositories = insight.repositories
+    const { repositories, repoQuery, series } = insight
     const [unit, value] = getStepInterval(insight.step)
+
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: insight.filters.includeRepoRegexp,
         excludeRepoRegex: insight.filters.excludeRepoRegexp,
@@ -26,14 +27,17 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
     const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesDisplayOptions)
 
     return {
-        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+        repositoryScope: {
+            repositories,
+            repositoryCriteria: repoQuery.trim() === '' ? null : repoQuery,
+        },
+        dataSeries: series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             seriesId: series.id,
             query: series.query,
             options: {
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories },
             timeScope: { stepInterval: { unit, value } },
         })),
         presentationOptions: {
@@ -46,17 +50,17 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
+    const { step, filters, query, title, repositories, repoQuery, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
     const _seriesDisplayOptions = parseSeriesDisplayOptions(seriesDisplayOptions)
 
     return {
+        repositoryScope: { repositories, repositoryCriteria: repoQuery },
         dataSeries: [
             {
                 query,
                 options: {},
-                repositoryScope: { repositories },
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
