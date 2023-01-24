@@ -507,18 +507,13 @@ func gitservers() *endpoint.Map {
 }
 
 func gitserverAddr(environ []string) (string, error) {
-	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
-	if !ok {
-		deployType = deploy.Default
-	}
-
 	const (
 		serviceName = "gitserver"
 		port        = "3178"
 	)
 
 	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
-		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
 		return addrs, err
 	}
 
@@ -619,18 +614,13 @@ func computeSymbolsEndpoints() *endpoint.Map {
 }
 
 func symbolsAddr(environ []string) (string, error) {
-	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
-	if !ok {
-		deployType = deploy.Default
-	}
-
 	const (
 		serviceName = "symbols"
 		port        = "3184"
 	)
 
 	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
-		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
 		return addrs, err
 	}
 
@@ -657,18 +647,13 @@ func computeSearcherEndpoints() *endpoint.Map {
 }
 
 func searcherAddr(environ []string) (string, error) {
-	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
-	if !ok {
-		deployType = deploy.Default
-	}
-
 	const (
 		serviceName = "searcher"
 		port        = "3181"
 	)
 
 	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
-		addrs, err := replicaAddrs(deployType, addr, serviceName, port)
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
 		return addrs, err
 	}
 
@@ -694,10 +679,7 @@ func computeIndexedEndpoints() *endpoint.Map {
 }
 
 func zoektAddr(environ []string) (string, error) {
-	deployType, ok := getEnv(environ, deploy.DeployTypeEnvName)
-	if !ok {
-		deployType = deploy.Default
-	}
+	deployType := deploy.Type()
 
 	const port = "6070"
 	var baseName = "indexed-search"

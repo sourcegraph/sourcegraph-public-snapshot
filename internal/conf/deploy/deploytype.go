@@ -15,14 +15,6 @@ const (
 	SingleProgram = "single-program"
 )
 
-// Default to Kubernetes cluster so that every Kubernetes
-// cluster deployment doesn't need to be configured with Deplo.
-const Default = Kubernetes
-
-// DeployTypeEnvName is the environment variable name that users can use to
-// specify the deployment type.
-const DeployTypeEnvName = "DEPLOY_TYPE"
-
 var mock string
 
 var forceType string // force a deploy type (can be injected with `go build -ldflags "-X ..."`)
@@ -35,10 +27,12 @@ func Type() string {
 	if mock != "" {
 		return mock
 	}
-	if e := os.Getenv(DeployTypeEnvName); e != "" {
+	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	return Default
+	// Default to Kubernetes cluster so that every Kubernetes
+	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
+	return Kubernetes
 }
 
 func Mock(val string) {

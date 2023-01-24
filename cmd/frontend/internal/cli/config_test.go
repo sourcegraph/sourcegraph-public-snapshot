@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -168,9 +169,10 @@ func TestReadSiteConfigFile(t *testing.T) {
 
 func TestGitserverAddr(t *testing.T) {
 	cases := []struct {
-		name    string
-		environ []string
-		want    string
+		name       string
+		deployType string
+		environ    []string
+		want       string
 	}{{
 		name: "test default",
 		want: "gitserver:3178",
@@ -189,23 +191,23 @@ func TestGitserverAddr(t *testing.T) {
 		},
 		want: "gitserver-0.gitserver:3178 gitserver-1.gitserver:3178",
 	}, {
-		name: "replicas helm",
+		name:       "replicas helm",
+		deployType: deploy.Helm,
 		environ: []string{
-			"DEPLOY_TYPE=helm",
 			"SRC_GIT_SERVERS=2",
 		},
 		want: "gitserver-0.gitserver:3178 gitserver-1.gitserver:3178",
 	}, {
-		name: "replicas docker-compose",
+		name:       "replicas docker-compose",
+		deployType: deploy.DockerCompose,
 		environ: []string{
-			"DEPLOY_TYPE=docker-compose",
 			"SRC_GIT_SERVERS=2",
 		},
 		want: "gitserver-0:3178 gitserver-1:3178",
 	}, {
-		name: "unsupported deploy type",
+		name:       "unsupported deploy type",
+		deployType: deploy.PureDocker,
 		environ: []string{
-			"DEPLOY_TYPE=podman",
 			"SRC_GIT_SERVERS=5",
 		},
 		want: "",
@@ -219,6 +221,7 @@ func TestGitserverAddr(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			deploy.Mock(tc.deployType)
 			got, _ := gitserverAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
@@ -229,9 +232,10 @@ func TestGitserverAddr(t *testing.T) {
 
 func TestSearcherAddr(t *testing.T) {
 	cases := []struct {
-		name    string
-		environ []string
-		want    string
+		name       string
+		deployType string
+		environ    []string
+		want       string
 	}{{
 		name: "default",
 		want: "k8s+http://searcher:3181",
@@ -244,42 +248,33 @@ func TestSearcherAddr(t *testing.T) {
 		environ: []string{"SEARCHER_URL=http://searcher-0:3181 http://searcher-1:3181"},
 		want:    "http://searcher-0:3181 http://searcher-1:3181",
 	}, {
-		name: "replicas",
-		environ: []string{
-			"SEARCHER_URL=2",
-		},
-		want: "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
+		name:    "replicas",
+		environ: []string{"SEARCHER_URL=2"},
+		want:    "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
 	}, {
-		name: "replicas helm",
-		environ: []string{
-			"DEPLOY_TYPE=helm",
-			"SEARCHER_URL=2",
-		},
-		want: "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
+		name:       "replicas helm",
+		deployType: deploy.Helm,
+		environ:    []string{"SEARCHER_URL=2"},
+		want:       "http://searcher-0.searcher:3181 http://searcher-1.searcher:3181",
 	}, {
-		name: "replicas docker-compose",
-		environ: []string{
-			"DEPLOY_TYPE=docker-compose",
-			"SEARCHER_URL=2",
-		},
-		want: "http://searcher-0:3181 http://searcher-1:3181",
+		name:       "replicas docker-compose",
+		deployType: deploy.DockerCompose,
+		environ:    []string{"SEARCHER_URL=2"},
+		want:       "http://searcher-0:3181 http://searcher-1:3181",
 	}, {
-		name: "unsupported deploy type",
-		environ: []string{
-			"DEPLOY_TYPE=dock",
-			"SEARCHER_URL=2",
-		},
-		want: "",
+		name:       "unsupported deploy type",
+		deployType: deploy.SingleDocker,
+		environ:    []string{"SEARCHER_URL=2"},
+		want:       "",
 	}, {
-		name: "unset",
-		environ: []string{
-			"SEARCHER_URL=",
-		},
-		want: "",
+		name:    "unset",
+		environ: []string{"SEARCHER_URL="},
+		want:    "",
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			deploy.Mock(tc.deployType)
 			got, _ := searcherAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
@@ -290,9 +285,10 @@ func TestSearcherAddr(t *testing.T) {
 
 func TestSymbolsAddr(t *testing.T) {
 	cases := []struct {
-		name    string
-		environ []string
-		want    string
+		name       string
+		deployType string
+		environ    []string
+		want       string
 	}{{
 		name: "default",
 		want: "http://symbols:3184",
@@ -305,42 +301,33 @@ func TestSymbolsAddr(t *testing.T) {
 		environ: []string{"SYMBOLS_URL=http://symbols-0:3184 http://symbols-1:3184"},
 		want:    "http://symbols-0:3184 http://symbols-1:3184",
 	}, {
-		name: "replicas",
-		environ: []string{
-			"SYMBOLS_URL=2",
-		},
-		want: "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
+		name:    "replicas",
+		environ: []string{"SYMBOLS_URL=2"},
+		want:    "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
 	}, {
-		name: "replicas helm",
-		environ: []string{
-			"DEPLOY_TYPE=helm",
-			"SYMBOLS_URL=2",
-		},
-		want: "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
+		name:       "replicas kustomize",
+		deployType: deploy.Kustomize,
+		environ:    []string{"SYMBOLS_URL=2"},
+		want:       "http://symbols-0.symbols:3184 http://symbols-1.symbols:3184",
 	}, {
-		name: "replicas docker-compose",
-		environ: []string{
-			"DEPLOY_TYPE=docker-compose",
-			"SYMBOLS_URL=2",
-		},
-		want: "http://symbols-0:3184 http://symbols-1:3184",
+		name:       "replicas docker-compose",
+		deployType: deploy.DockerCompose,
+		environ:    []string{"SYMBOLS_URL=2"},
+		want:       "http://symbols-0:3184 http://symbols-1:3184",
 	}, {
-		name: "unsupported deploy type",
-		environ: []string{
-			"DEPLOY_TYPE=docker",
-			"SYMBOLS_URL=2",
-		},
-		want: "",
+		name:       "unsupported deploy type",
+		deployType: deploy.SingleDocker,
+		environ:    []string{"SYMBOLS_URL=2"},
+		want:       "",
 	}, {
-		name: "unset",
-		environ: []string{
-			"SYMBOLS_URL=",
-		},
-		want: "",
+		name:    "unset",
+		environ: []string{"SYMBOLS_URL="},
+		want:    "",
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			deploy.Mock(tc.deployType)
 			got, _ := symbolsAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
@@ -351,9 +338,10 @@ func TestSymbolsAddr(t *testing.T) {
 
 func TestZoektAddr(t *testing.T) {
 	cases := []struct {
-		name    string
-		environ []string
-		want    string
+		name       string
+		deployType string
+		environ    []string
+		want       string
 	}{{
 		name: "default",
 		want: "k8s+rpc://indexed-search:6070?kind=sts",
@@ -373,25 +361,19 @@ func TestZoektAddr(t *testing.T) {
 		},
 		want: "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
 	}, {
-		name: "replicas",
-		environ: []string{
-			"INDEXED_SEARCH_SERVERS=2",
-		},
-		want: "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
+		name:    "replicas",
+		environ: []string{"INDEXED_SEARCH_SERVERS=2"},
+		want:    "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
 	}, {
-		name: "replicas helm",
-		environ: []string{
-			"DEPLOY_TYPE=helm",
-			"INDEXED_SEARCH_SERVERS=2",
-		},
-		want: "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
+		name:       "replicas helm",
+		deployType: deploy.Helm,
+		environ:    []string{"INDEXED_SEARCH_SERVERS=2"},
+		want:       "indexed-search-0.indexed-search:6070 indexed-search-1.indexed-search:6070",
 	}, {
-		name: "replicas docker-compose",
-		environ: []string{
-			"DEPLOY_TYPE=docker-compose",
-			"INDEXED_SEARCH_SERVERS=2",
-		},
-		want: "zoekt-webserver-0:6070 zoekt-webserver-1:6070",
+		name:       "replicas docker-compose",
+		deployType: deploy.DockerCompose,
+		environ:    []string{"INDEXED_SEARCH_SERVERS=2"},
+		want:       "zoekt-webserver-0:6070 zoekt-webserver-1:6070",
 	}, {
 		name: "unset new",
 		environ: []string{
@@ -400,22 +382,19 @@ func TestZoektAddr(t *testing.T) {
 		},
 		want: "",
 	}, {
-		name: "unsupported deploy type",
-		environ: []string{
-			"DEPLOY_TYPE=dockers",
-			"INDEXED_SEARCH_SERVERS=2",
-		},
-		want: "",
+		name:       "unsupported deploy type",
+		deployType: deploy.SingleDocker,
+		environ:    []string{"INDEXED_SEARCH_SERVERS=2"},
+		want:       "",
 	}, {
-		name: "unset old",
-		environ: []string{
-			"ZOEKT_HOST=",
-		},
-		want: "",
+		name:    "unset old",
+		environ: []string{"ZOEKT_HOST="},
+		want:    "",
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			deploy.Mock(tc.deployType)
 			got, _ := zoektAddr(tc.environ)
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
