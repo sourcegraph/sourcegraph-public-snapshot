@@ -188,7 +188,7 @@ The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental comm
 * Persistent Volume Claim (PVC) validation 
 * Inter-Service network connection validation
 
-These validations can also include warnings for non-failure states that should be address, e.g. high restart counts.
+These validations can also include warnings for non-failure states that should be addressed, e.g. high restart counts.
 
 ### Cluster Authentication
 
