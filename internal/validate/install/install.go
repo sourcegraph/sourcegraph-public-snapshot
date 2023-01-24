@@ -56,8 +56,9 @@ type GitHub struct {
 }
 
 type Insight struct {
-	Title      string           `yaml:"title"`
-	DataSeries []map[string]any `yaml:"dataSeries"`
+	Title          string           `yaml:"title"`
+	DataSeries     []map[string]any `yaml:"dataSeries"`
+	DeleteWhenDone bool             `yaml:"deleteWhenDone"`
 }
 
 type ValidationSpec struct {
@@ -114,6 +115,7 @@ func DefaultConfig() *ValidationSpec {
 					"timeScopeValue":  1,
 				},
 			},
+			DeleteWhenDone: true,
 		},
 	}
 }
@@ -171,7 +173,7 @@ func Validate(ctx context.Context, client api.Client, config *ValidationSpec) er
 
 	cloned, err := repoCloneTimeout(ctx, client, config.ExternalService)
 	if err != nil {
-		return err //TODO make sure errors are wrapped once
+		return err
 	}
 	if !cloned {
 		return errors.Newf("%s validate failed, repo did not clone\n", validate.FailureEmoji)
@@ -207,7 +209,7 @@ func Validate(ctx context.Context, client api.Client, config *ValidationSpec) er
 		log.Printf("%s insight successfully added", validate.SuccessEmoji)
 
 		defer func() {
-			if insightId != "" {
+			if insightId != "" && config.Insight.DeleteWhenDone {
 				_ = removeInsight(ctx, client, insightId)
 				log.Printf("%s insight %s has been removed", validate.SuccessEmoji, config.Insight.Title)
 
