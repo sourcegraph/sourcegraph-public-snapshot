@@ -2,10 +2,7 @@ package gerrit
 
 import (
 	"context"
-	"encoding/json"
 	"net/url"
-
-	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -47,52 +44,7 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 // FetchAccount is unused for Gerrit. Users need to provide their own account
 // credentials instead.
 func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (*extsvc.Account, error) {
-	return nil, authz.ErrUnimplemented{Feature: "gerrit.FetchAccount"}
-}
-
-func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool, error) {
-	if len(accts) == 0 {
-		return nil, false, nil
-	}
-	for _, email := range verifiedEmails {
-		for _, acct := range accts {
-			if acct.Email == email && acct.Username == user.Username {
-				foundAcct, err := p.buildExtsvcAccount(acct, user, email)
-				return foundAcct, true, err
-			}
-		}
-	}
-	return nil, false, nil
-}
-
-func (p Provider) buildExtsvcAccount(acct gerrit.Account, user *types.User, email string) (*extsvc.Account, error) {
-	acctData, err := marshalAccountData(acct.Username, acct.Email, acct.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshaling account data")
-	}
-	return &extsvc.Account{
-		UserID: user.ID,
-		AccountSpec: extsvc.AccountSpec{
-			ServiceType: p.codeHost.ServiceType,
-			ServiceID:   p.codeHost.ServiceID,
-			AccountID:   email,
-		},
-		AccountData: extsvc.AccountData{
-			Data: extsvc.NewUnencryptedData(acctData),
-		},
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}, nil
-}
-
-func marshalAccountData(username, email string, acctID int32) (json.RawMessage, error) {
-	return jsoniter.Marshal(
-		gerrit.AccountData{
-			Username:  username,
-			Email:     email,
-			AccountID: acctID,
-		},
-	)
+	return nil, nil
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
