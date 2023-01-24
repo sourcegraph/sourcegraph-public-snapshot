@@ -425,7 +425,7 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
-    description: Buildd development web application for integration tests
+    description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
       ENTERPRISE: 1
