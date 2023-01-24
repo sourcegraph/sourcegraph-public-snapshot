@@ -49,10 +49,6 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
             },
         ],
     },
-    repositoryDefinition: {
-        __typename: 'InsightRepositoryScope',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-    },
     dataSeriesDefinitions: [
         {
             __typename: 'SearchInsightDataSeriesDefinition',
@@ -112,10 +108,6 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
                 color: 'var(--oc-blue-7)',
             },
         ],
-    },
-    repositoryDefinition: {
-        __typename: 'InsightRepositoryScope',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
     },
     dataSeriesDefinitions: [
         {
