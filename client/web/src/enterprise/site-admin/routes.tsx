@@ -202,9 +202,9 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             path: '/roles',
             exact: true,
-            render: () => lazyComponent<SiteAdminRolesPageProps, 'RolesSiteAdminPage'>(
+            render: () => lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
                 () => import('./SiteAdminRolesPage'),
-                'RolesSiteAdminPage'
+                'SiteAdminRolesPage'
             )
         }
     ] as readonly (SiteAdminAreaRoute | undefined)[]
