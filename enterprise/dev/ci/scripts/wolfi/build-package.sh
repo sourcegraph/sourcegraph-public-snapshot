@@ -53,4 +53,4 @@ echo " * Building melange package '$name'"
 melange build "$name.yaml" --arch x86_64
 
 # Upload package as build artifact
-buildkite-agent upload wolfi-packages/packages/*/*
+buildkite-agent artifact upload wolfi-packages/packages/*/*
