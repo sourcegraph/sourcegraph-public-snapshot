@@ -461,13 +461,13 @@ replace (
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
 	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+	// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
 	// We publish 'lib' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// github.com/sourcegraph/sourcegraph/lib => ./lib
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+	// github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
 )
 
 // Temporary replace directives

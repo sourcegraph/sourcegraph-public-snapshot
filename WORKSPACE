@@ -118,9 +118,23 @@ jest_npm_repositories()
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("//:deps.bzl", "go_dependencies")
+# load("//:local_deps.bzl", "local_go_dependencies")
+
+# Needed to build the dependencies github.com/sourcegraph/scip which in turns
+# depends on github.com/sourcegraph/lib.
+#
+# bazel run //:gazelle -- update-repos github.com/sourcegraph/sourcegraph/lib@v0.0.0-20221216195033-42d26a0a2063
+# Version is taken from https://github.com/sourcegraph/scip/blob/main/go.sum#L300
+# go_repository(
+#     name = "com_github_sourcegraph_sourcegraph_lib",
+#     importpath = "github.com/sourcegraph/sourcegraph/lib",
+#     sum = "h1:O/rv0ucxERpLfDmoj1lx5ECznDYuroL2qQQbeSP/ShU=",
+#     version = "v0.0.0-20221216195033-42d26a0a2063",
+# )
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
+# local_go_dependencies()
 
 go_rules_dependencies()
 

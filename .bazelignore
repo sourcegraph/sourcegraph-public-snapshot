@@ -26,3 +26,5 @@ client/plugin-backstage/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
 docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/
+
+lib/codeintel/precise/diff/testdata/
