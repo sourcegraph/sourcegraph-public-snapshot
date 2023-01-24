@@ -216,11 +216,11 @@ func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
-	if !r.logEntryFound {
-		return nil
+	lines := []string{}
+	if r.logEntryFound {
+		lines = strings.Split(r.logEntry.Out, "\n")
 	}
 
-	lines := strings.Split(r.logEntry.Out, "\n")
 	return &batchSpecWorkspaceOutputLinesResolver{
 		lines: lines,
 		first: args.First,
@@ -364,9 +364,10 @@ func (r *batchSpecWorkspaceOutputVariableResolver) Value() graphqlbackend.JSONVa
 type batchSpecWorkspaceOutputLinesResolver struct {
 	lines []string
 	first int32
-	after *int32
+	after *string
 
 	once        sync.Once
+	err         error
 	total       int32
 	linesSubset []string
 	hasNextPage bool
@@ -382,7 +383,12 @@ func (r *batchSpecWorkspaceOutputLinesResolver) compute() ([]string, int32, bool
 
 		var after int32
 		if r.after != nil {
-			after = *r.after
+			a, err := strconv.Atoi(*r.after)
+			if err != nil {
+				r.err = err
+				return
+			}
+			after = int32(a)
 		}
 
 		offset := (after + r.first)
@@ -402,20 +408,20 @@ func (r *batchSpecWorkspaceOutputLinesResolver) compute() ([]string, int32, bool
 	return r.linesSubset, r.total, r.hasNextPage
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() int32 {
+func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() (int32, error) {
 	_, totalCount, _ := r.compute()
-	return totalCount
+	return totalCount, r.err
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() *graphqlutil.PageInfo {
+func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() (*graphqlutil.PageInfo, error) {
 	_, _, hasNextPage := r.compute()
 	if hasNextPage {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor)))
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), r.err
 	}
-	return graphqlutil.HasNextPage(hasNextPage)
+	return graphqlutil.HasNextPage(hasNextPage), r.err
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() []string {
+func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() ([]string, error) {
 	lines, _, _ := r.compute()
-	return lines
+	return lines, r.err
 }

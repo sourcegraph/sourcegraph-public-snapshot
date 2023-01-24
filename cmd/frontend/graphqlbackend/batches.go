@@ -638,7 +638,7 @@ type ListRecentlyErroredWorkspacesArgs struct {
 
 type BatchSpecWorkspaceStepOutputLinesArgs struct {
 	First int32
-	After *int32
+	After *string
 }
 
 type BatchChangeResolver interface {
@@ -908,9 +908,9 @@ type BatchSpecWorkspaceStagesResolver interface {
 }
 
 type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
-	Nodes() []string
+	TotalCount() (int32, error)
+	PageInfo() (*graphqlutil.PageInfo, error)
+	Nodes() ([]string, error)
 }
 
 type BatchSpecWorkspaceStepResolver interface {

@@ -2485,7 +2485,7 @@ type BatchSpecWorkspaceStep {
         """
         Return the log lines after N lines.
         """
-        after: Int
+        after: String
     ): BatchSpecWorkspaceStepOutputLineConnection
 
     """

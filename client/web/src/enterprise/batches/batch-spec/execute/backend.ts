@@ -27,6 +27,7 @@ import {
 
 export const batchSpecWorkspaceStepOutputLinesFieldsFragment = gql`
     fragment BatchSpecWorkspaceStepOutputLines on BatchSpecWorkspaceStepOutputLineConnection {
+        __typename
         nodes
         totalCount
         pageInfo {
@@ -120,9 +121,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
         ifCondition
         cachedResultFound
         skipped
-        outputLines(first: 500) {
-            ...BatchSpecWorkspaceStepOutputLines
-        }
         startedAt
         finishedAt
         exitCode
@@ -170,8 +168,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
             }
         }
     }
-
-    ${batchSpecWorkspaceStepOutputLinesFieldsFragment}
 `
 
 const batchSpecWorkspaceStatsFragment = gql`
@@ -251,13 +247,13 @@ export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
     ${batchSpecWorkspaceFieldsFragment}
 `
 
-export const BATCH_SPEC_WORKSPACE_STEP_BY_INDEX = gql`
-    query BatchSpecWorkspaceStepByIndex($workspaceID: ID!, $stepIndex: Int!, $after: Int!) {
+export const BATCH_SPEC_WORKSPACE_STEP = gql`
+    query BatchSpecWorkspaceStep($workspaceID: ID!, $stepIndex: Int!, $first: Int!, $after: String) {
         node(id: $workspaceID) {
             __typename
             ... on VisibleBatchSpecWorkspace {
                 step(index: $stepIndex) {
-                    outputLines(first: 500, after: $after) {
+                    outputLines(first: $first, after: $after) {
                         ...BatchSpecWorkspaceStepOutputLines
                     }
                 }
