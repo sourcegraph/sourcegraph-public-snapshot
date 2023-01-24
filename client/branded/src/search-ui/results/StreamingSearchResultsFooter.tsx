@@ -35,9 +35,9 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
             <div className="pr-3 mt-3 align-self-stretch">
                 <Alert variant="info">
-                    <H2 as={H3} className="m-0 py-1">
+                    <H3 as={H2} className="m-0 py-1">
                         No results matched your search.
-                    </H2>
+                    </H3>
                 </Alert>
             </div>
         )}

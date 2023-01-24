@@ -42,7 +42,6 @@ export interface StreamingSearchResultsListProps
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<RouteComponentProps, 'history'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
@@ -98,7 +97,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFile,
     prefetchFileEnabled,
     enableKeyboardNavigation,
-    history,
     showQueryExamplesOnNoResultsPage,
     setQueryState,
 }) => {
@@ -288,7 +286,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
-                                history={history}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}

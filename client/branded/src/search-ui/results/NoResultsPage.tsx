@@ -45,11 +45,7 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-interface NoResultsPageProps
-    extends ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<RouteComponentProps, 'history'> {
+interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
     /** Available to web app through JS Context */
@@ -66,7 +62,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
-    history,
     showQueryExamples,
     setQueryState,
     selectedSearchContextSpec,
@@ -89,11 +84,11 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <SmartSearchPreview history={history} />
+            <SmartSearchPreview />
 
             {showQueryExamples && setQueryState && (
                 <>
-                    <H2 as={H3}>Search basics</H2>
+                    <H3 as={H2}>Search basics</H3>
                     <div className={styles.queryExamplesContainer}>
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}

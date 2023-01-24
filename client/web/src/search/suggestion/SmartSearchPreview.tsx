@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { useHistory } from 'react-router'
 
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,28 +17,24 @@ import { Link, Icon, H3, H2, Text, Button, createLinkUrl, useObservable } from '
 import { useNavbarQueryState, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
 
+import shimmerStyle from './SmartSearchPreview.module.scss'
 import styles from './QuerySuggestion.module.scss'
 
-interface SmartSearchPreviewProps extends Pick<RouteComponentProps, 'history'> {}
-
-export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren<SmartSearchPreviewProps>> = ({
-    history,
-}) => {
+export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
     const [resultNumber, setResultNumber] = useState<number | string>(0)
 
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
-    const patternType = useNavbarQueryState(state => state.searchPatternType)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const results = useObservable(
         useMemo(() => {
             return aggregateStreamingSearch(of(query), {
                 version: LATEST_VERSION,
-                patternType,
+                patternType: SearchPatternType.standard,
                 caseSensitive,
                 trace: undefined,
                 searchMode: SearchMode.SmartSearch,
-            }).pipe(tap(() => {}))
+            }).pipe()
         }, [query])
     )
 
@@ -51,7 +47,7 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
                         ({ name }) => name === 'ResultCount'
                     )
                     proposedQueryResultCountGroup?.forEach(
-                        r => (proposedQueryResultCount += Number(r.value.replace(/\D/g, '')))
+                        r => (proposedQueryResultCount += parseInt(r.value.replace(/\D/g, '')))
                     )
                     acc += proposedQueryResultCount
                     return acc
@@ -59,36 +55,40 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
                 0
             )
 
-            // SmartSearch count stops after 500
-            setResultNumber(resultNum > 500 ? '500+' : resultNum)
+            setResultNumber(resultNum)
         }
         return
     }, [results])
 
+    if (results?.state === 'complete' && !!!results?.alert?.proposedQueries) {
+        return null
+    }
+
     return (
-        <>
-            {results?.state === 'loading' ? (
-                <div className="mb-5">
-                    <H2 as={H3}>Please wait. Smart Search is trying variations on your query...</H2>
+        <div className="mb-5">
+            {results?.state === 'loading' && (
+                <>
+                    <H3 as={H2}>Please wait. Smart Search is trying variations on your query...</H3>
 
-                    <div className={classNames(styles.shimmerContainer, 'rounded my-3 col-6')}>
-                        <div className={classNames(styles.shimmerAnimate, 'absolute top-0 overflow-hidden')} />
+                    <div className={classNames(shimmerStyle.shimmerContainer, 'rounded my-3 col-6')}>
+                        <div className={classNames(shimmerStyle.shimmerAnimate, 'absolute top-0 overflow-hidden')} />
                     </div>
 
-                    <div className={classNames(styles.shimmerContainer, 'rounded mb-3 col-4')}>
-                        <div className={classNames(styles.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')} />
+                    <div className={classNames(shimmerStyle.shimmerContainer, 'rounded mb-3 col-4')}>
+                        <div
+                            className={classNames(shimmerStyle.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')}
+                        />
                     </div>
 
-                    <EnableSmartSearch
-                        query={query}
-                        history={history}
-                        patternType={patternType}
-                        caseSensitive={caseSensitive}
-                    />
-                </div>
-            ) : results?.state === 'complete' && !!results?.alert?.proposedQueries ? (
-                <div className="mb-5">
-                    <H2 as={H3}>However, Smart Smart found {resultNumber} results:</H2>
+                    <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
+                </>
+            )}
+
+            {results?.state === 'complete' && !!results?.alert?.proposedQueries && (
+                <>
+                    <H3 as={H2}>
+                        However, Smart Smart found {resultNumber >= 500 ? `${resultNumber}+` : resultNumber} results:
+                    </H3>
 
                     <ul className={classNames(styles.container, 'px-0 mb-3')}>
                         {results?.alert?.proposedQueries?.map(item => (
@@ -101,13 +101,9 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
                                     className={classNames(styles.link, 'px-0')}
                                 >
                                     <span className="p-1 bg-code">
-                                        <SyntaxHighlightedSearchQuery
-                                            query={query}
-                                            history={history}
-                                            patternType={patternType}
-                                            caseSensitive={caseSensitive}
-                                        />
+                                        <SyntaxHighlightedSearchQuery query={item.query} />
                                     </span>
+                                    <span className="ml-2 text-muted">({item.description})</span>
                                     <Icon svgPath={mdiArrowRight} aria-hidden={true} className="ml-2 mr-1 text-body" />
                                     <span>
                                         {item.annotations
@@ -123,45 +119,39 @@ export const SmartSearchPreview: React.FunctionComponent<React.PropsWithChildren
                             </li>
                         ))}
                     </ul>
+                </>
+            )}
 
-                    <EnableSmartSearch
-                        query={query}
-                        history={history}
-                        patternType={patternType}
-                        caseSensitive={caseSensitive}
-                    />
-                </div>
-            ) : null}
-        </>
+            <EnableSmartSearch query={query} />
+        </div>
     )
 }
 
-interface EnableSmartSearchProps extends Pick<RouteComponentProps, 'history'> {
+interface EnableSmartSearchProps {
     query: string
-    patternType: SearchPatternType
     caseSensitive: boolean
 }
 
 const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableSmartSearchProps>> = ({
-    history,
     query,
-    patternType,
     caseSensitive,
 }) => {
+    const history = useHistory()
+
     const enableSmartSearch = useCallback((): void => {
         setSearchMode(SearchMode.SmartSearch)
         submitSearch({
             history,
             query,
-            patternType,
+            patternType: SearchPatternType.standard,
             caseSensitive,
             searchMode: SearchMode.SmartSearch,
             source: 'smartSearchDisabled',
         })
-    }, [])
+    }, [history])
 
     return (
-        <Text className="text-muted d-flex align-items-center">
+        <Text className="text-muted d-flex align-items-center mt-2">
             <Icon
                 aria-hidden={true}
                 svgPath={smartSearchIconSvgPath}
