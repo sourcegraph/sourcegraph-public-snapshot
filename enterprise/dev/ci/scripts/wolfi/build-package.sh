@@ -11,10 +11,6 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-# Install requisite packages
-apt update
-apt install -y bubblewrap
-
 (
   cd "$tmpdir"
   mkdir bin
@@ -27,6 +23,11 @@ apt install -y bubblewrap
   # Install apk
   wget https://gitlab.alpinelinux.org/alpine/apk-tools/-/package_files/62/download -O bin/apk
   chmod +x bin/apk
+
+  # Fetch custom-built bubblewrap 0.7.0 (temporary, until https://github.com/sourcegraph/infrastructure/pull/4520 is merged)
+  wget https://dollman.org/files/bwrap
+  chmod +x bwrap
+  mv bwrap bin/
 )
 
 export PATH="$tmpdir/bin:$PATH"
@@ -44,6 +45,9 @@ if [ ! -f "wolfi-packages/${name}.yaml" ]; then
 fi
 
 cd "wolfi-packages"
+
+# NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
+# bubblewrap release in buildkite-agent-stateless-bazel's Dockerfile, and ship it in /usr/local/bin
 
 echo " * Building melange package '$name'"
 # TODO: Signing key
