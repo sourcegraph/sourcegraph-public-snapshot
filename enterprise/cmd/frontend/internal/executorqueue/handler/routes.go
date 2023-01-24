@@ -72,6 +72,11 @@ func JobAuthMiddleware(next http.Handler) http.Handler {
 
 func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 	// Read the body and re-set the body, so we can parse the request payload.
+	if r.Body == nil {
+		log15.Error("no request body provided")
+		http.Error(w, "No request body provided", http.StatusBadRequest)
+		return false
+	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("failed to read request body", "err", err)
@@ -83,8 +88,8 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 	// Every job requests has the basics. Parse out the info we need to see whether the request is valid/authenticated.
 	var payload apiclient.JobOperationRequest
 	if err := json.Unmarshal(body, &payload); err != nil {
-		log15.Error("failed to read parse request body", "err", err)
-		http.Error(w, "Failed to read parse request body", http.StatusBadRequest)
+		log15.Error("failed to parse request body", "err", err)
+		http.Error(w, "Failed to parse request body", http.StatusBadRequest)
 		return false
 	}
 
