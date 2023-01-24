@@ -1,11 +1,14 @@
 import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
+import { createServer } from 'http'
 import { OAuth2Client } from 'googleapis-common'
 import { readFile, writeFile } from 'mz/fs'
 import open from 'open'
+import type { IncomingMessage, Server, ServerResponse } from 'http'
 
 import { readLine, cacheFolder } from './util'
+import { AddressInfo } from 'net'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
@@ -17,32 +20,56 @@ export async function getClient(): Promise<OAuth2Client> {
             `${cacheFolder}/google-calendar-credentials.json`
         )
     )
-    const { client_secret, client_id, redirect_uris } = credentials.installed
-    const oauth2Client = new OAuth2Client(client_id, client_secret, redirect_uris[0])
-    oauth2Client.setCredentials(await getAccessToken(oauth2Client))
+    const { client_secret, client_id } = credentials.installed
+    const server = await new Promise<Server>(resolve => {
+        const s = createServer()
+        s.listen(0, () => resolve(s))
+    })
+    const { port } = server.address() as AddressInfo
+    const oauth2Client = new OAuth2Client({
+        clientId: client_id,
+        clientSecret: client_secret,
+        redirectUri: `http://localhost:${port}`,
+    })
+    oauth2Client.setCredentials(await getAccessToken(server, oauth2Client))
+    server.close()
     return oauth2Client
 }
 
-async function getAccessToken(oauth2Client: OAuth2Client): Promise<Credentials> {
+async function getAccessToken(server: Server, oauth2Client: OAuth2Client): Promise<Credentials> {
     try {
         const content = await readFile(TOKEN_PATH, { encoding: 'utf8' })
         return JSON.parse(content)
     } catch {
-        const token = await getAccessTokenNoCache(oauth2Client)
+        const token = await getAccessTokenNoCache(server, oauth2Client)
         await writeFile(TOKEN_PATH, JSON.stringify(token))
         return token
     }
 }
 
-async function getAccessTokenNoCache(oauth2Client: OAuth2Client): Promise<Credentials> {
+async function getAccessTokenNoCache(server: Server, oauth2Client: OAuth2Client): Promise<Credentials> {
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
     })
-    await open(authUrl)
-    const code = await readLine('Log in via the browser page that just opened and enter the code that appears: ')
-    const token = await oauth2Client.getToken(code)
-    return token.tokens
+
+    const authCode = await new Promise<string>((resolve, reject) => {
+        server.on('request', (request: IncomingMessage, response: ServerResponse) => {
+            const urlParts = new URL(request.url ?? '', 'http://localhost').searchParams
+            const code = urlParts.get('code')
+            const error = urlParts.get('error')
+            if (code) {
+                resolve(code)
+            } else {
+                reject(error)
+            }
+
+            response.end('Authentication successful! Please return to the console')
+        })
+        ;(async () => open(authUrl, { wait: false }).then(cp => cp.unref()))()
+    })
+
+    return (await oauth2Client.getToken(authCode)).tokens
 }
 
 export interface EventOptions {
