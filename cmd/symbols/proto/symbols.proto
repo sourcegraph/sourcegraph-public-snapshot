@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package symbols.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/cmd/symbols/proto";
@@ -47,8 +48,10 @@ message SearchRequest {
   // first indicates that only the first n symbols should be returned.
   int32 first = 8;
 
-  // timeout in seconds.
-  int32 timeout = 9;
+  // timeout is the maximum amount of time the symbols search should take.
+  //
+  // If timeout isn't specified, a default timeout of 60 seconds is used.
+  google.protobuf.Duration timeout = 9;
 }
 
 message SymbolsResponse {

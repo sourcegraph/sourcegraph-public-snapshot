@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -20,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Inputs contains fields we set before kicking off search.
@@ -107,8 +110,10 @@ type SymbolsParameters struct {
 	// First indicates that only the first n symbols should be returned.
 	First int
 
-	// Timeout in seconds.
-	Timeout int
+	// Timeout is the maximum amount of time the symbols search should take.
+	//
+	// If Timeout isn't specified, a default timeout of 60 seconds is used.
+	Timeout time.Duration
 }
 
 func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
@@ -125,7 +130,7 @@ func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
 		IncludePatterns: p.GetIncludePatterns(),
 		ExcludePattern:  p.GetExcludePattern(),
 		First:           int(p.GetFirst()),
-		Timeout:         int(p.GetTimeout()),
+		Timeout:         p.GetTimeout().AsDuration(),
 	}
 }
 
@@ -145,7 +150,7 @@ func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
 		ExcludePattern:  s.ExcludePattern,
 
 		First:   int32(s.First),
-		Timeout: int32(s.Timeout),
+		Timeout: durationpb.New(s.Timeout),
 	}
 }
 
