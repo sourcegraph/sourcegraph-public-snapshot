@@ -3,9 +3,9 @@ module resources-report
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go-v2 v0.31.0
+	github.com/aws/aws-sdk-go-v2 v1.17.3
 	github.com/aws/aws-sdk-go-v2/config v0.4.0
-	github.com/aws/aws-sdk-go-v2/service/ec2 v0.31.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.80.1
 	github.com/aws/aws-sdk-go-v2/service/eks v0.31.0
 	github.com/cockroachdb/errors v1.8.5
 	google.golang.org/api v0.36.0
@@ -15,9 +15,12 @@ require (
 	cloud.google.com/go v0.72.0 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v0.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v0.1.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v0.2.0 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.21 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.28 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.21 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v0.31.0 // indirect
-	github.com/aws/smithy-go v0.5.0 // indirect
+	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
 	github.com/cockroachdb/redact v1.1.0 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2 // indirect
