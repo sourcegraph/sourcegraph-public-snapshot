@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
@@ -15,6 +18,7 @@ import (
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDequeue(t *testing.T) {
@@ -56,6 +60,52 @@ func TestDequeue(t *testing.T) {
 	if diff := cmp.Diff(transformedJob, job); diff != "" {
 		t.Errorf("unexpected job (-want +got):\n%s", diff)
 	}
+	assert.Empty(t, job.Token)
+}
+
+func TestDequeue_Jobtoken(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExecutorsAccessToken: "hunter2",
+			Executors: &schema.Executors{
+				JobAccessToken: &schema.JobAccessToken{
+					SigningKey: "ZXhlY3V0b3JzLnRlc3Quc2lnbmluZ0tleQo=",
+				},
+			},
+		},
+	})
+
+	store := workerstoremocks.NewMockStore[testRecord]()
+	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, true, nil)
+	recordTransformer := func(ctx context.Context, _ string, tr testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+		if tr.Payload != "secret" {
+			t.Errorf("unexpected payload. want=%q have=%q", "secret", tr.Payload)
+		}
+
+		return apiclient.Job{
+			ID: 42,
+			DockerSteps: []apiclient.DockerStep{
+				{
+					Image:    "alpine:latest",
+					Commands: []string{"ls", "-a"},
+				},
+			},
+		}, nil
+	}
+
+	executorStore := database.NewMockExecutorStore()
+	metricsStore := metricsstore.NewMockDistributedStore()
+
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	require.NoError(t, err)
+	assert.True(t, dequeued)
+	assert.Equal(t, 42, job.ID)
+	assert.NotEmpty(t, job.Token)
+	assert.Len(t, job.DockerSteps, 1)
+	assert.Equal(t, "alpine:latest", job.DockerSteps[0].Image)
+	assert.Equal(t, []string{"ls", "-a"}, job.DockerSteps[0].Commands)
 }
 
 func TestDequeueNoRecord(t *testing.T) {
