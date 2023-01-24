@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -65,6 +66,99 @@ func TestProvider_ValidateConnection(t *testing.T) {
 				t.Fatalf("warnings did not match: %s", diff)
 			}
 
+		})
+	}
+}
+
+func TestProvider_FetchUserPerms(t *testing.T) {
+	accountData := extsvc.AccountData{}
+	err := gerrit.SetExternalAccountData(&accountData, &gerrit.Account{}, &gerrit.AccountCredentials{
+		Username: "test-user",
+		Password: "test-password",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mClient := mockClient{}
+	mClient.mockListProjects = func(ctx context.Context, opts gerrit.ListProjectsArgs) (*gerrit.ListProjectsResponse, bool, error) {
+		resp := make(gerrit.ListProjectsResponse)
+		resp["test-project"] = &gerrit.Project{
+			ID: "test-project",
+		}
+		return &resp, false, nil
+	}
+
+	testCases := map[string]struct {
+		client    mockClient
+		account   *extsvc.Account
+		wantErr   bool
+		wantPerms *authz.ExternalUserPermissions
+	}{
+		"nil account gives error": {
+			client:  mClient,
+			account: nil,
+			wantErr: true,
+		},
+		"account of wrong service type gives error": {
+			client: mClient,
+			account: &extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "github",
+					ServiceID:   "https://gerrit.sgdev.org/",
+				},
+			},
+			wantErr: true,
+		},
+		"account of wrong service id gives error": {
+			client: mClient,
+			account: &extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gerrit",
+					ServiceID:   "https://github.sgdev.org/",
+				},
+			},
+			wantErr: true,
+		},
+		"account with no data gives error": {
+			client: mClient,
+			account: &extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gerrit",
+					ServiceID:   "https://gerrit.sgdev.org/",
+				},
+				AccountData: extsvc.AccountData{},
+			},
+			wantErr: true,
+		},
+		"correct account gives correct permissions": {
+			client: mClient,
+			account: &extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gerrit",
+					ServiceID:   "https://gerrit.sgdev.org/",
+				},
+				AccountData: accountData,
+			},
+			wantPerms: &authz.ExternalUserPermissions{
+				Exacts: []extsvc.RepoID{"test-project"},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			p := NewTestProvider(&tc.client)
+			perms, err := p.FetchUserPerms(context.Background(), tc.account, authz.FetchPermsOptions{})
+			if err != nil && !tc.wantErr {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if err == nil && tc.wantErr {
+				t.Fatalf("expected error but got none")
+			}
+			if diff := cmp.Diff(perms, tc.wantPerms); diff != "" {
+				t.Fatalf("permissions did not match: %s", diff)
+			}
 		})
 	}
 }
