@@ -126,7 +126,10 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 	}
 
 	// To not break users right away, if job tokens are not configured then we will default to the general access token.
-	if len(conf.SiteConfig().Executors.JobAccessToken.SigningKey) > 0 {
+	if conf.SiteConfig().Executors != nil &&
+		conf.SiteConfig().Executors.JobAccessToken != nil &&
+		len(conf.SiteConfig().Executors.JobAccessToken.SigningKey) > 0 {
+
 		token, err := newJobToken(metadata.Name, job.ID)
 		if err != nil {
 			return apiclient.Job{}, false, errors.Wrap(err, "Job Token")
