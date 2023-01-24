@@ -44,7 +44,7 @@ go_library(
         "//schema",
         "@com_github_json_iterator_go//:go",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_tidwall_gjson//:gjson",
+        "@com_github_tidwall_gjson//:go_default_library",
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],

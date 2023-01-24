@@ -23,7 +23,7 @@ go_library(
         "//lib/batches",
         "//lib/batches/template",
         "//lib/errors",
-        "@com_github_kballard_go_shellquote//:go-shellquote",
+        "@com_github_kballard_go_shellquote//:go_default_library",
         "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -15,7 +15,7 @@ go_library(
     deps = [
         "//lib/errors",
         "//schema",
-        "@org_uber_go_ratelimit//:ratelimit",
+        "@org_uber_go_ratelimit//:go_default_library",
     ],
 )
 

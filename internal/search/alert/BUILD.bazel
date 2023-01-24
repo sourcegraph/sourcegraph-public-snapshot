@@ -20,7 +20,7 @@ go_library(
         "//internal/search/searchcontexts",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//:go_default_library",
     ],
 )
 

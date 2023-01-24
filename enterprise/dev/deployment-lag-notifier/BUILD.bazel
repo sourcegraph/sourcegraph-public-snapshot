@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
-        "@com_github_joho_godotenv//autoload",
+        "@com_github_joho_godotenv//autoload:go_default_library",
     ],
 )
 

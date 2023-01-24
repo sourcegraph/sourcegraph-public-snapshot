@@ -12,7 +12,7 @@ go_library(
         "//internal/database/connections/test",
         "//internal/database/migration/schemas",
         "//internal/database/postgresdsn",
-        "@com_github_lib_pq//:pq",
+        "@com_github_lib_pq//:go_default_library",
         "@com_github_sourcegraph_log//:log",
     ],
 )

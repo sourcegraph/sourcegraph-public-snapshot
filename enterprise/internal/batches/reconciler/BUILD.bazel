@@ -27,7 +27,7 @@ go_library(
         "//internal/workerutil",
         "//lib/batches",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_inconshreveable_log15//:go_default_library",
         "@com_github_sourcegraph_log//:log",
     ],
 )

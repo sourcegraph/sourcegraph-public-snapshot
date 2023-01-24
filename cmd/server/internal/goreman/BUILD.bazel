@@ -15,6 +15,6 @@ go_library(
     deps = [
         "//internal/lazyregexp",
         "//lib/errors",
-        "@com_github_daviddengcn_go_colortext//:go-colortext",
+        "@com_github_daviddengcn_go_colortext//:go_default_library",
     ],
 )

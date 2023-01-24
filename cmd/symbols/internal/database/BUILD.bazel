@@ -10,6 +10,6 @@ go_library(
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_mattn_go_sqlite3//:go-sqlite3",
+        "@com_github_mattn_go_sqlite3//:go_default_library",
     ],
 )

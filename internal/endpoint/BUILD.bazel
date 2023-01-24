@@ -15,7 +15,7 @@ go_library(
         "@com_github_cespare_xxhash_v2//:xxhash",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@com_github_sourcegraph_go_rendezvous//:go-rendezvous",
+        "@com_github_sourcegraph_go_rendezvous//:go_default_library",
         "@com_github_sourcegraph_log//:log",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",

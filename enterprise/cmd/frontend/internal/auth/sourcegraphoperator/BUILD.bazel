@@ -47,7 +47,7 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_coreos_go_oidc//:go-oidc",
+        "@com_github_coreos_go_oidc//:go_default_library",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

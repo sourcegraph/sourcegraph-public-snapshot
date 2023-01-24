@@ -13,8 +13,7 @@ go_library(
         "//internal/redispool",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
-        "@com_github_inconshreveable_log15//:log15",
-        "@org_uber_go_atomic//:atomic",
+        "@com_github_inconshreveable_log15//:go_default_library",
     ],
 )
 

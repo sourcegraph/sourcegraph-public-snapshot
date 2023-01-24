@@ -13,10 +13,10 @@ go_library(
     deps = [
         "//dev/team",
         "//lib/errors",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_google_go_github_v41//github",
-        "@com_github_gorilla_mux//:mux",
-        "@com_github_slack_go_slack//:slack",
+        "@com_github_buildkite_go_buildkite_v3//buildkite:go_default_library",
+        "@com_github_google_go_github_v41//github:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_slack_go_slack//:go_default_library",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -37,8 +37,8 @@ go_test(
     embed = [":build-tracker_lib"],
     deps = [
         "//dev/team",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_gorilla_mux//:mux",
+        "@com_github_buildkite_go_buildkite_v3//buildkite:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
         "@com_github_hexops_autogold//:autogold",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

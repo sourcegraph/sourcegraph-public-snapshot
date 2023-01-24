@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//internal/database/migration/definition",
         "//internal/database/migration/schemas",
-        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )

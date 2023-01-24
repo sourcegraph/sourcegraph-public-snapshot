@@ -10,6 +10,6 @@ go_library(
         "//cmd/frontend/hubspot",
         "//internal/env",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_inconshreveable_log15//:go_default_library",
     ],
 )

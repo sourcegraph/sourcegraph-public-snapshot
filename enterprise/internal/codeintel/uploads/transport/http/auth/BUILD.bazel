@@ -24,7 +24,7 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_tomnomnom_linkheader//:linkheader",
+        "@com_github_tomnomnom_linkheader//:go_default_library",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -40,6 +40,6 @@ go_test(
     deps = [
         "//internal/extsvc/github",
         "//lib/errors",
-        "@com_github_tomnomnom_linkheader//:linkheader",
+        "@com_github_tomnomnom_linkheader//:go_default_library",
     ],
 )

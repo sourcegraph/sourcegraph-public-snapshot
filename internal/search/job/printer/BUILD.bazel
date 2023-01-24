@@ -12,7 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/job",
-        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
     ],
 )
 
@@ -29,6 +29,6 @@ go_test(
     deps = [
         "//internal/search/job",
         "@com_github_hexops_autogold//:autogold",
-        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
     ],
 )

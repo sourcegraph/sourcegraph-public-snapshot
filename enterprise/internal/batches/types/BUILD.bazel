@@ -46,8 +46,8 @@ go_library(
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_graph_gophers_graphql_go//:go_default_library",
+        "@com_github_inconshreveable_log15//:go_default_library",
         "@com_github_sourcegraph_go_diff//diff",
     ],
 )

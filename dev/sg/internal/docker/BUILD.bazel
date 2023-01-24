@@ -11,11 +11,11 @@ go_library(
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_docker_docker_credential_helpers//client",
-        "@com_github_docker_docker_credential_helpers//credentials",
+        "@com_github_docker_docker_credential_helpers//client:go_default_library",
+        "@com_github_docker_docker_credential_helpers//credentials:go_default_library",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_moby_buildkit//frontend/dockerfile/instructions",
-        "@com_github_moby_buildkit//frontend/dockerfile/parser",
+        "@com_github_moby_buildkit//frontend/dockerfile/instructions:go_default_library",
+        "@com_github_moby_buildkit//frontend/dockerfile/parser:go_default_library",
     ],
 )
 
@@ -24,8 +24,8 @@ go_test(
     srcs = ["lints_test.go"],
     embed = [":docker"],
     deps = [
-        "@com_github_moby_buildkit//frontend/dockerfile/instructions",
-        "@com_github_moby_buildkit//frontend/dockerfile/parser",
+        "@com_github_moby_buildkit//frontend/dockerfile/instructions:go_default_library",
+        "@com_github_moby_buildkit//frontend/dockerfile/parser:go_default_library",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

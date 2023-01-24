@@ -13,7 +13,7 @@ go_library(
     deps = [
         "//internal/httpcli",
         "//lib/errors",
-        "@com_github_gomodule_oauth1//oauth",
+        "@com_github_gomodule_oauth1//oauth:go_default_library",
     ],
 )
 
@@ -25,5 +25,5 @@ go_test(
         "oauth_bearer_test.go",
     ],
     embed = [":auth"],
-    deps = ["@com_github_gomodule_oauth1//oauth"],
+    deps = ["@com_github_gomodule_oauth1//oauth:go_default_library"],
 )

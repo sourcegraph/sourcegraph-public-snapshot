@@ -39,7 +39,7 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_jsonx//:jsonx",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_tidwall_gjson//:gjson",
+        "@com_github_tidwall_gjson//:go_default_library",
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",
     ],
 )

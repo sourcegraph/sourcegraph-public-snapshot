@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_golang_jwt_jwt//:jwt",
-        "@com_github_google_go_github_v47//github",
+        "@com_github_google_go_github_v47//github:go_default_library",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
@@ -25,8 +25,8 @@ go_test(
     embed = [":app-token_lib"],
     deps = [
         "//internal/httptestutil",
-        "@com_github_dnaeon_go_vcr//cassette",
-        "@com_github_google_go_github_v47//github",
+        "@com_github_dnaeon_go_vcr//cassette:go_default_library",
+        "@com_github_google_go_github_v47//github:go_default_library",
         "@com_github_stretchr_testify//require",
         "@org_golang_x_oauth2//:oauth2",
     ],

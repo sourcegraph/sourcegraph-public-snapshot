@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
     ],
 )

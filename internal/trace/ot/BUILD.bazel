@@ -7,6 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/trace/policy",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
     ],
 )
