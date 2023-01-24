@@ -49,6 +49,9 @@ fi
 # NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
 # bubblewrap release in buildkite-agent-stateless-bazel's Dockerfile, and ship it in /usr/local/bin
 
+# NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
+# bubblewrap release in buildkite-agent-stateless-bazel's Dockerfile, and ship it in /usr/local/bin
+
 echo " * Building melange package '$name'"
 # TODO: Signing key
 melange build "$name.yaml" --arch x86_64
