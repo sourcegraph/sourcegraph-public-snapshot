@@ -39,8 +39,8 @@ func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []
 
 		jobRouter := base.PathPrefix("/queue").Subrouter()
 		handler.SetupJobRoutes(queueHandlers, jobRouter)
-		// The job routes are treated as internal actor.
-		// Each job endpoint has an auth middleware setup within SetupJobRoutes.
+		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
+		// checked in handler.JobAuthMiddleware.
 		jobRouter.Use(withInternalActor, handler.JobAuthMiddleware)
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
