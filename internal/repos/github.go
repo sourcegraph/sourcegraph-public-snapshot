@@ -262,7 +262,9 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 }
 
 func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	return checkConnection(s.config.Url)
+	// On github.com the error is always going to be nil.
+	_, err := s.v3Client.GetVersion(ctx)
+	return err
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
