@@ -777,6 +777,15 @@ Maps commits within a repository to the commit date as reported by gitserver.
 
 **repository_id**: Identifies a row in the `repo` table.
 
+# Table "public.codeintel_global_ranks"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ payload    | jsonb                    |           | not null | 
+ updated_at | timestamp with time zone |           | not null | now()
+
+```
+
 # Table "public.codeintel_inference_scripts"
 ```
       Column      |           Type           | Collation | Nullable | Default 
@@ -918,6 +927,7 @@ Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
+    update_codeintel_global_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_global_ranks_updated_at_column()
     update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
 
 ```

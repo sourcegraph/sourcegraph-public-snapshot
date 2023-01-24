@@ -118,5 +118,5 @@ var ConfigExportInst = &exportConfig{}
 
 func (c *exportConfig) Load() {
 	c.RankingInterval = c.GetInterval("CODEINTEL_UPLOADS_RANKING_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
-	c.NumRankingRoutines = c.GetInt("CODEINTEL_UPLOADS_RANKING_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
+	c.NumRankingRoutines = c.GetInt("CODEINTEL_UPLOADS_RANKING_NUM_ROUTINES", "1", "The number of concurrent ranking graph serializer routines to run per worker instance.")
 }

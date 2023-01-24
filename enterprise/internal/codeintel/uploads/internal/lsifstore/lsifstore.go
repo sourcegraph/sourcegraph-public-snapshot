@@ -34,7 +34,7 @@ type LsifStore interface {
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error)
 
 	// Stream
-	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
+	ScanDocuments(ctx context.Context, id int, repo, root string, f func(ctx context.Context, id int, repo, root, path string, document *scip.Document) error) (err error)
 }
 
 type SCIPWriter interface {

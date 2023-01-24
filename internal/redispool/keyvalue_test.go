@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -83,16 +84,59 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"horse":  "graph",
 		})
 
+		require.Works(kv.HSet("hash:map", "key1", "path1"))
+		require.Works(kv.HSet("hash:map", "key2", "path2"))
+		require.AllEqual(kv.HGetAll("hash:map"), map[string]string{"key1": "path1", "key2": "path2"})
+
+		// Ensure we can handle keys with spaces
+		require.Works(kv.HSet("hash:space", "key1 space1", "path1"))
+		require.Works(kv.HSet("hash:space", "key2 space2", "path2"))
+		require.Equal(kv.HGet("hash:space", "key2 space2"), "path2")
+		require.AllEqual(kv.HGetAll("hash:space"), map[string]string{"key1 space1": "path1", "key2 space2": "path2"})
+		require.AllEqual(kv.HMGet("hash:space", "key1 space1", "key2 space2"), []string{"path1", "path2"})
+
 		// Redis returns nil on unset fields
 		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
+		require.Equal(kv.HGet("hash", "hi"), nil)
+
+		require.Works(kv.HSet("hash", "hellofriend", "world"))
 
 		// Ensure we can handle funky bytes
 		require.Works(kv.HSet("hash", "funky", []byte{0, 10, 100, 255}))
 		require.Equal(kv.HGet("hash", "funky"), []byte{0, 10, 100, 255})
+
+		// Ensure we can handle multiple fields and values
+		multiple := map[string]interface{}{
+			"field1": "value1",
+			"field2": "value2",
+			"field3": "value3",
+		}
+		require.Equal(kv.HMSet("hash:multiple", multiple), len(multiple))
+		require.AllEqual(kv.HGetAll("hash:multiple"), map[string]string{
+			"field1": "value1",
+			"field2": "value2",
+			"field3": "value3",
+		})
+
+		// Ensure increment works
+		require.Works(kv.HSet("hash:increment", "increment", "1"))
+		require.Equal(kv.HIncrBy("hash:increment", "increment", 1), 2)
+		require.Equal(kv.HIncrBy("hash:increment", "increment", 2), 4)
+
+		// Ensure increment works on unset fields
+		require.Equal(kv.HIncrBy("hash:increment", "notsetincrement", 1), 1)
 	})
 
 	t.Run("list", func(t *testing.T) {
 		require := require{TB: t}
+
+		require.Works(kv.LPush("anotherlist", "name"))
+		require.Works(kv.LPush("anotherlist", "company"))
+		require.Works(kv.LPush("anotherlist", "location"))
+		require.AllEqual(kv.LRange("anotherlist", 0, 10), []string{"location", "company", "name"})
+
+		require.AllEqual(kv.LPop("anotherlist", 1), []string{"location"})
+		require.AllEqual(kv.LPop("anotherlist", 2), []string{"company", "name"})
 
 		// Redis behaviour on unset lists
 		require.ListLen(kv, "list-unset-0", 0)
@@ -161,12 +205,20 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.SetEx("expires-setex", 1, "2"))
 		require.Works(kv.Set("expires-set", "2"))
 		require.Works(kv.Expire("expires-set", 1))
-
 		time.Sleep(1100 * time.Millisecond)
 		require.Equal(kv.Get("expires-setex"), nil)
 		require.Equal(kv.Get("expires-set"), nil)
 		require.TTL(kv, "expires-setex", -2)
 		require.TTL(kv, "expires-set", -2)
+	})
+
+	t.Run("sets", func(t *testing.T) {
+		require := require{TB: t}
+
+		require.Equal(kv.SAdd("myset", "hello"), 1)
+		require.Equal(kv.SAdd("myset", "hello"), 0)
+		require.Equal(kv.SAdd("myset", "world"), 1)
+		require.AllEqual(kv.SMembers("myset"), []string{"world", "hello"})
 	})
 }
 
@@ -304,6 +356,7 @@ func (t require) Equal(got redispool.Value, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) AllEqual(got redispool.Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
@@ -329,6 +382,7 @@ func (t require) AllEqual(got redispool.Values, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.LLen(key)
@@ -339,6 +393,7 @@ func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 		t.Fatalf("unexpected list length got=%d want=%d", got, want)
 	}
 }
+
 func (t require) TTL(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.TTL(key)

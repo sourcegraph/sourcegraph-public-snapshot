@@ -2507,6 +2507,9 @@ type MockStore struct {
 	// RepoNamesFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoNames.
 	RepoNamesFunc *StoreRepoNamesFunc
+	// SetGlobalRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method SetGlobalRanks.
+	SetGlobalRanksFunc *StoreSetGlobalRanksFunc
 	// SetRepositoriesForRetentionScanFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SetRepositoriesForRetentionScan.
@@ -2767,6 +2770,11 @@ func NewMockStore() *MockStore {
 		},
 		RepoNamesFunc: &StoreRepoNamesFunc{
 			defaultHook: func(context.Context, ...int) (r0 map[int]string, r1 error) {
+				return
+			},
+		},
+		SetGlobalRanksFunc: &StoreSetGlobalRanksFunc{
+			defaultHook: func(context.Context, map[string]int) (r0 error) {
 				return
 			},
 		},
@@ -3057,6 +3065,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.RepoNames")
 			},
 		},
+		SetGlobalRanksFunc: &StoreSetGlobalRanksFunc{
+			defaultHook: func(context.Context, map[string]int) error {
+				panic("unexpected invocation of MockStore.SetGlobalRanks")
+			},
+		},
 		SetRepositoriesForRetentionScanFunc: &StoreSetRepositoriesForRetentionScanFunc{
 			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
 				panic("unexpected invocation of MockStore.SetRepositoriesForRetentionScan")
@@ -3259,6 +3272,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		RepoNamesFunc: &StoreRepoNamesFunc{
 			defaultHook: i.RepoNames,
+		},
+		SetGlobalRanksFunc: &StoreSetGlobalRanksFunc{
+			defaultHook: i.SetGlobalRanks,
 		},
 		SetRepositoriesForRetentionScanFunc: &StoreSetRepositoriesForRetentionScanFunc{
 			defaultHook: i.SetRepositoriesForRetentionScan,
@@ -8033,6 +8049,111 @@ func (c StoreRepoNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreSetGlobalRanksFunc describes the behavior when the SetGlobalRanks
+// method of the parent MockStore instance is invoked.
+type StoreSetGlobalRanksFunc struct {
+	defaultHook func(context.Context, map[string]int) error
+	hooks       []func(context.Context, map[string]int) error
+	history     []StoreSetGlobalRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// SetGlobalRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) SetGlobalRanks(v0 context.Context, v1 map[string]int) error {
+	r0 := m.SetGlobalRanksFunc.nextHook()(v0, v1)
+	m.SetGlobalRanksFunc.appendCall(StoreSetGlobalRanksFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetGlobalRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreSetGlobalRanksFunc) SetDefaultHook(hook func(context.Context, map[string]int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetGlobalRanks method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreSetGlobalRanksFunc) PushHook(hook func(context.Context, map[string]int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSetGlobalRanksFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, map[string]int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSetGlobalRanksFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, map[string]int) error {
+		return r0
+	})
+}
+
+func (f *StoreSetGlobalRanksFunc) nextHook() func(context.Context, map[string]int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSetGlobalRanksFunc) appendCall(r0 StoreSetGlobalRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSetGlobalRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreSetGlobalRanksFunc) History() []StoreSetGlobalRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSetGlobalRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSetGlobalRanksFuncCall is an object that describes an invocation of
+// method SetGlobalRanks on an instance of MockStore.
+type StoreSetGlobalRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 map[string]int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSetGlobalRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSetGlobalRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // StoreSetRepositoriesForRetentionScanFunc describes the behavior when the
 // SetRepositoriesForRetentionScan method of the parent MockStore instance
 // is invoked.
@@ -9969,7 +10090,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) (r0 error) {
+			defaultHook: func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) (r0 error) {
 				return
 			},
 		},
@@ -10056,7 +10177,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) error {
+			defaultHook: func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
 				panic("unexpected invocation of MockLsifStore.ScanDocuments")
 			},
 		},
@@ -11040,24 +11161,24 @@ func (c LsifStoreReconcileCandidatesFuncCall) Results() []interface{} {
 // LsifStoreScanDocumentsFunc describes the behavior when the ScanDocuments
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreScanDocumentsFunc struct {
-	defaultHook func(context.Context, int, func(path string, document *scip.Document) error) error
-	hooks       []func(context.Context, int, func(path string, document *scip.Document) error) error
+	defaultHook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error
+	hooks       []func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error
 	history     []LsifStoreScanDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // ScanDocuments delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path string, document *scip.Document) error) error {
-	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2)
-	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, r0})
+func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 string, v3 string, v4 func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
+	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ScanDocuments method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
+func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error) {
 	f.defaultHook = hook
 }
 
@@ -11065,7 +11186,7 @@ func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, i
 // ScanDocuments method of the parent MockLsifStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
+func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11074,19 +11195,19 @@ func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, fu
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreScanDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
+	f.SetDefaultHook(func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreScanDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
+	f.PushHook(func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
-func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, func(path string, document *scip.Document) error) error {
+func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11127,7 +11248,13 @@ type LsifStoreScanDocumentsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 func(path string, document *scip.Document) error
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -11136,7 +11263,7 @@ type LsifStoreScanDocumentsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LsifStoreScanDocumentsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

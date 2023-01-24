@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -93,6 +95,9 @@ type Store interface {
 	// Workerutil
 	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
 
+	// TODO: Move it out of here and the ranking service
+	SetGlobalRanks(ctx context.Context, ranks map[string]int) error
+
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
@@ -141,3 +146,17 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
 }
+
+// TODO: Move it out of here and the ranking service
+func (s *store) SetGlobalRanks(ctx context.Context, ranks map[string]int) error {
+	payload, err := json.Marshal(ranks)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setGlobalRanksQuery, payload))
+}
+
+const setGlobalRanksQuery = `
+INSERT INTO codeintel_global_ranks (payload) VALUES (%s)
+`

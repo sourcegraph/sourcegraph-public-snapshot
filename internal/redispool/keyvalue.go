@@ -30,13 +30,21 @@ type KeyValue interface {
 	Expire(key string, ttlSeconds int) error
 
 	HGet(key, field string) Value
+	HMGet(key string, fields ...string) Values
 	HGetAll(key string) Values
+	Exists(key ...string) Value
 	HSet(key, field string, value any) error
+	HMSet(key string, fields map[string]interface{}) Value
+	HIncrBy(key, field string, value int) Value
 
 	LPush(key string, value any) error
+	LPop(key string, count int) Values
 	LTrim(key string, start, stop int) error
 	LLen(key string) (int, error)
 	LRange(key string, start, stop int) Values
+
+	SAdd(key string, members ...any) Value
+	SMembers(key string) Values
 
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
@@ -149,8 +157,25 @@ func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
 	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
 }
 
+func (r *redisKeyValue) Exists(key ...string) Value {
+	args := make([]interface{}, len(key))
+	for i, k := range key {
+		args[i] = r.prefix + k
+	}
+	return r.do("EXISTS", args...)
+}
+
 func (r *redisKeyValue) HGet(key, field string) Value {
 	return r.do("HGET", r.prefix+key, field)
+}
+
+func (r *redisKeyValue) HMGet(key string, fields ...string) Values {
+	args := make([]interface{}, len(fields)+1)
+	args[0] = r.prefix + key
+	for i, f := range fields {
+		args[i+1] = f
+	}
+	return Values(r.do("HMGET", args...))
 }
 
 func (r *redisKeyValue) HGetAll(key string) Values {
@@ -161,18 +186,55 @@ func (r *redisKeyValue) HSet(key, field string, val any) error {
 	return r.do("HSET", r.prefix+key, field, val).err
 }
 
+// func (r *redisKeyValue) HMSet(key string, fields map[string]interface{}) Value {
+// 	args := make([]interface{}, 0, len(fields)*2+1)
+// 	args = append(args, r.prefix+key)
+// 	for k, v := range fields {
+// 		args = append(args, k, v)
+// 	}
+// 	return r.do("HSET", args...)
+// }
+
+func (r *redisKeyValue) HMSet(key string, fields map[string]interface{}) Value {
+	args := make([]interface{}, 0, len(fields)+1)
+	args = append(args, r.prefix+key)
+	for k, v := range fields {
+		args = append(args, k, v)
+	}
+	return r.do("HSET", args...)
+}
+
+func (r *redisKeyValue) HIncrBy(key, field string, value int) Value {
+	return r.do("HINCRBY", r.prefix+key, field, value)
+}
+
 func (r *redisKeyValue) LPush(key string, value any) error {
 	return r.do("LPUSH", r.prefix+key, value).err
 }
+
+func (r *redisKeyValue) LPop(key string, count int) Values {
+	return Values(r.do("LPOP", r.prefix+key, count))
+}
+
 func (r *redisKeyValue) LTrim(key string, start, stop int) error {
 	return r.do("LTRIM", r.prefix+key, start, stop).err
 }
+
 func (r *redisKeyValue) LLen(key string) (int, error) {
 	raw := r.do("LLEN", r.prefix+key)
 	return redis.Int(raw.reply, raw.err)
 }
+
 func (r *redisKeyValue) LRange(key string, start, stop int) Values {
 	return Values(r.do("LRANGE", r.prefix+key, start, stop))
+}
+
+func (r *redisKeyValue) SAdd(key string, members ...any) Value {
+	return r.do("SADD", append([]interface{}{r.prefix + key}, members...)...)
+}
+
+func (r *redisKeyValue) SMembers(key string) Values {
+	return Values(r.do("SMEMBERS", r.prefix+key))
 }
 
 func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
