@@ -1,0 +1,1 @@
+export { SourcegraphClient } from './SourcegraphClient';

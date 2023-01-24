@@ -1,9 +1,12 @@
 {
   "extends": "@backstage/cli/config/tsconfig.json",
-  "include": ["src", "dev", "migrations"],
-  "exclude": ["node_modules"],
+  "include": [
+    "src"
+  ],
   "compilerOptions": {
     "outDir": "dist-types",
     "rootDir": ".",
-  },
+    "jsx": "react-jsx",
+    "useUnknownInCatchVariables": false
+  }
 }

@@ -1,0 +1,1 @@
+export { SourcegraphEntityProvider } from './SourcegraphEntityProvider';

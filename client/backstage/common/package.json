@@ -1,0 +1,37 @@
+{
+  "name": "backstage-plugin-sourcegraph-common",
+  "description": "Common functionalities for the Sourcegraph plugin",
+  "version": "0.1.0",
+  "main": "dist/index.cjs.js",
+  "types": "dist/index.d.ts",
+  "license": "Apache-2.0",
+  "private": true,
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts"
+  },
+  "backstage": {
+    "role": "common-library"
+  },
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.22.1"
+  },
+  "dependencies": {
+    "@backstage/catalog-model": "^1.1.5",
+    "@backstage/config": "^1.0.6",
+    "@backstage/plugin-catalog-backend": "^1.7.1"
+  },
+  "files": [
+    "dist"
+  ]
+}
