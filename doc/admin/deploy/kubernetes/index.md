@@ -48,7 +48,7 @@ Follow our [reference repository docs](../repositories.md) to create a private c
 The default deployment includes the necessary services to start Sourcegraph. It does not includes services or configurations that your cluster needs to run Sourcegraph successfully. As a result, additional configuration might be required in order to deploy Sourcegraph to your Kubernetes cluster successfully.
 Common configurations include:
 
-- Adjust resources [Kustomize](kustomize/configure.md#resources-adjustment) / [Helm](helm.md#configuration)
+- Adjust resources [Kustomize](kustomize/configure.md#resources) / [Helm](helm.md#configuration)
 - Create storage class [Kustomize](kustomize/configure.md#storage-class) / [Helm](helm.md#cloud-providers-guides)
 - Configure network settings [Kustomize](kustomize/configure.md#ingress-controller) / [Helm](helm.md#helm-subcharts)
 - Set up an external PostgreSQL Database [Kustomize](kustomize/configure.md#external-databases) / [Helm](helm.md#using-external-postgresql-databases)

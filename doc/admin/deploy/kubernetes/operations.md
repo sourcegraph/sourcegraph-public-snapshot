@@ -36,19 +36,25 @@ Refer to our [installation guide](./index.md) for details on how to deploy Sourc
 
 Migrating from another [deployment type](../index.md)? Refer to our [migration guides](../migrate-backup.md).
 
-### Applying manifests
-
 In order to deploy Sourcegraph that is configured for your cluster:
 
-#### 1. Build manifests
+#### Building manifests
 
-Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/configure.md)
+Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/configure.md):
    
 ```bash
 kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
 ```
 
-#### 2. Apply manifests
+#### Reviewing manifests
+
+Review the manifests generated in the previous step:
+   
+```bash
+less cluster.yaml
+```
+
+#### Applying manifests
 
 Run the command below to apply the manifests from the ouput file `cluster.yaml` to the connected cluster:
 

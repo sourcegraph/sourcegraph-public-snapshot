@@ -2,6 +2,8 @@
 
 This guide will demonstrate how to customize your Sourcegraph deployment by creating a [Kustomize overlay](#create-an-overlay-for-sourcegraph). 
 
+> NOTE: All commands in this guide should be run from the root of this repository.
+
 ## Create an overlay for Sourcegraph
 
 **IMPORTANT NOTE**: It is recommended to create your own overlays within the [overlays](index.md#overlays) directory of your reference repository and avoid making changes to other directories to prevent potential merge conflicts during future updates.
@@ -153,13 +155,12 @@ components:
 
 ## Resources
 
-The standard practice is to configure resource allocation using the `sizes component`, which we have preconfigured based on load test results for each [instance size](../../instance-size.md). This will ensure that your instance size is properly allocated
+The standard practice is to configure resource allocation using one of our [sizes components](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/main/components/sizes), which we have preconfigured based on load test results for each [instance size](../../instance-size.md). This ensures your instance has sufficiant resources allocated.
 
 ```yaml
 # overlays/$OVERLAY_NAME/kustomization.yaml
 components:
-# Include the component for your instance size
-# Pick ONE only
+# Include the component for your instance size - pick ONE only
 - ../../components/sizes/xs
 - ../../components/sizes/s
 - ../../components/sizes/m
@@ -169,7 +170,7 @@ components:
 
 ## Storage class
 
-A storage class is required for all persistent volume claims by default. The default storage class is called `sourcegraph`. This storage class must be configured before applying the base configuration to your cluster.
+A storage class is required for all persistent volume claims by default. The default storage class is called `sourcegraph`. This storage class must be configured and created before deploying Sourcegraph to your cluster.
 
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about configuring persistent volumes.
 
@@ -273,17 +274,17 @@ We recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-ngin
 
 ### Ingress controller
 
-To utilize the sourcegraph-frontend ingress, you'll need to install a NGINX ingress controller (ingress-nginx) in your cluster by following the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/.
+To utilize the `sourcegraph-frontend` ingress, you'll need to install a NGINX ingress controller (ingress-nginx) in your cluster. Follow the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to install the ingress-nginx controller in your cluster.
 
-Follow the official instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to install the ingress-nginx controller in your cluster.
-
-Alternatively, you can use one of our pre-configured ingress-nginx-controller overlays:
+Alternatively, you can build the manifests using one of our pre-configured ingress-nginx-controller overlays:
 
   ```bash
-  # aws
-  $ kubectl apply -k quick-start/ingress-nginx-controller/aws
-  # or other cloud providers
-  $ kubectl apply -k quick-start/ingress-nginx-controller/cloud
+  # Build manifests for AWS
+  $ kubectl kustomize examples/ingress-controller/aws -o ingress-controller.yaml
+  # Build manifests for other cloud providers
+  $ kubectl kustomize examples/ingress-controller/cloud -o ingress-controller.yaml
+  # Deploy to cluster after reviewing the manifests in ingress-controller.yaml
+  $ kubectl apply -f ingress-controller.yaml
   ```
 
 Check the external address by running the following command and look for the `LoadBalancer` entry:
@@ -382,9 +383,9 @@ To ensure secure communication, it is recommended to enable Transport Layer Secu
 
 To manually configure a certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets), follow these steps:
 
-**Step 1**: Move the `tls.crt` and `tls.key` files to the `config` folder within your overlay directory (e.g. `overlays/$OVERLAY_NAME/config`).
+**Step 1**: Move the `tls.crt` and `tls.key` files to the root of your overlay directory (e.g. `overlays/$OVERLAY_NAME`).
 
-**Step 2**: include the `secretGenerator` to generate secrets with the provided files by adding the following to your kustomization file:
+**Step 2**: Include the following lines in your overlay to generate secrets with the provided files:
 
 ```yaml
 # overlays/$OVERLAY_NAME/kustomization.yaml
@@ -393,8 +394,8 @@ secretGenerator:
 - name: sourcegraph-frontend-tls
   behavior: create
   files:
-  - env/tls.crt
-  - env/tls.key
+  - tls.crt
+  - tls.key
 ...
 ```
 
