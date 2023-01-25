@@ -8,7 +8,7 @@
 }
 
 .header {
-    background: radial-gradient(113.96% 113.96% at 50% -8.21%, #6112A3 0%, #270741 57.81%, #160425 100%);
+    background: radial-gradient(113.96% 113.96% at 50% -8.21%, var(--violet-06) 0%, var(--violet-07) 57.81%, var(--violet-08) 100%);
     width: 100%;
     padding: 1.5rem;
     display: flex;
