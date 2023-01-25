@@ -8986,7 +8986,22 @@ type Team implements Node {
     """
     The list of direct child teams.
     """
-    childTeams: TeamConnection!
+    childTeams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
 
     """
     True, if the current user can modify this team.
@@ -9006,7 +9021,7 @@ type TeamConnection {
         If true, the total count of teams, including deeply nested child teams will
         be returned. Note that those teams will NOT be part of the nodes.
         """
-        includeChildTeams: Boolean = false
+        countDeeplyNestedTeamMembers: Boolean = false
     ): Int!
 
     """
@@ -9033,7 +9048,7 @@ type TeamMemberConnection {
         child teams members will be returned. Note that child team members will NOT
         be part of the nodes.
         """
-        includeChildTeamMembers: Boolean = false
+        countDeeplyNestedTeamMembers: Boolean = false
     ): Int!
 
     """
