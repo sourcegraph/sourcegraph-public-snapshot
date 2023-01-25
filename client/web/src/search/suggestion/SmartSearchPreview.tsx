@@ -79,8 +79,6 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                             className={classNames(shimmerStyle.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')}
                         />
                     </div>
-
-                    <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
                 </>
             )}
 
@@ -122,7 +120,7 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                 </>
             )}
 
-            <EnableSmartSearch query={query} />
+            <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
         </div>
     )
 }
