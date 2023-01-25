@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
@@ -95,6 +96,12 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 		orgStore:            r.postgresDB.Orgs(),
 		args:                args,
 	}, nil
+}
+
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (graphqlutil.ConnectionResolver[*graphqlbackend.InsightBackfillQueueItemResolver], error) {
+	store := &adminBackfillQueueConnectionStore{insightsDB: r.insightsDB, logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
+	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.InsightBackfillQueueItemResolver](store, args, &graphqlutil.ConnectionResolverOptions{})
+
 }
 
 // 🚨 SECURITY
