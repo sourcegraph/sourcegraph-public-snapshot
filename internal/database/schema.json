@@ -20759,7 +20759,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+          "ConstraintDefinition": "CHECK (name ~ '^[a-zA-Z0-9/.-]+$'::citext)"
         },
         {
           "Name": "teams_parent_team_fkey",

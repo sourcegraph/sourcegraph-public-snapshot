@@ -3792,7 +3792,7 @@ CREATE TABLE teams (
     parent_team integer,
     CONSTRAINT teams_display_name_check CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT teams_name_check CHECK ((char_length((name)::text) <= 255)),
-    CONSTRAINT teams_name_check1 CHECK ((name OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT teams_name_check1 CHECK ((name OPERATOR(~) '^[a-zA-Z0-9/.-]+$'::citext))
 );
 
 CREATE SEQUENCE teams_id_seq

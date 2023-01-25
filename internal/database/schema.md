@@ -3245,7 +3245,7 @@ Indexes:
 Check constraints:
     "teams_display_name_check" CHECK (char_length(display_name) <= 255)
     "teams_name_check" CHECK (char_length(name::text) <= 255)
-    "teams_name_check1" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+    "teams_name_check1" CHECK (name ~ '^[a-zA-Z0-9/.-]+$'::citext)
 Foreign-key constraints:
     "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     "teams_parent_team_fkey" FOREIGN KEY (parent_team) REFERENCES teams(id) ON DELETE CASCADE

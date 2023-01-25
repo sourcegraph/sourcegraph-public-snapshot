@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS teams (
     id SERIAL PRIMARY KEY,
-    name citext NOT NULL CHECK (char_length(name::text) <= 255) CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext), -- this is copied from user and org, let's see if we need this.
+    name citext NOT NULL CHECK (char_length(name::text) <= 255) CHECK (name ~ '^[a-zA-Z0-9/.-]+$'::citext),
     display_name text CHECK (char_length(display_name) <= 255),
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
