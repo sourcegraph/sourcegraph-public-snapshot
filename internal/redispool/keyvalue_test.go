@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -83,6 +84,31 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"horse":  "graph",
 		})
 
+		// hmget
+		require.AllEqual(kv.HMGet("hash", "simple", "horse"), []string{"1", "graph"})
+
+		// hmset
+		// Ensure we can handle multiple fields and values
+		multiple := map[string]interface{}{
+			"field1": "value1",
+			"field2": "value2",
+			"field3": "value3",
+		}
+		require.Equal(kv.HMSet("hash:multiple", multiple), len(multiple))
+		require.AllEqual(kv.HGetAll("hash:multiple"), map[string]string{
+			"field1": "value1",
+			"field2": "value2",
+			"field3": "value3",
+		})
+
+		// Ensure increment works
+		require.Works(kv.HSet("hash:increment", "increment", "1"))
+		require.Equal(kv.HIncrBy("hash:increment", "increment", 1), 2)
+		require.Equal(kv.HIncrBy("hash:increment", "increment", 2), 4)
+
+		// Ensure increment works on unset fields
+		require.Equal(kv.HIncrBy("hash:increment", "notsetincrement", 1), 1)
+
 		// Redis returns nil on unset fields
 		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
 
@@ -135,6 +161,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.LPush("funky2D", []byte{100, 255}))
 		require.Works(kv.LPush("funky2D", []byte{0, 10}))
 		require.AllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
+
+		// Ensure LPop works
+		require.Works(kv.LPush("anotherlist", "name"))
+		require.Works(kv.LPush("anotherlist", "company"))
+		require.Works(kv.LPush("anotherlist", "location"))
+		require.AllEqual(kv.LRange("anotherlist", 0, 10), []string{"location", "company", "name"})
+
+		require.AllEqual(kv.LPop("anotherlist", 1), []string{"location"})
+		require.AllEqual(kv.LPop("anotherlist", 2), []string{"company", "name"})
 	})
 
 	t.Run("expire", func(t *testing.T) {
@@ -167,6 +202,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Equal(kv.Get("expires-set"), nil)
 		require.TTL(kv, "expires-setex", -2)
 		require.TTL(kv, "expires-set", -2)
+	})
+
+	t.Run("sets", func(t *testing.T) {
+		require := require{TB: t}
+
+		require.Equal(kv.SAdd("myset", "hello"), 1)
+		require.Equal(kv.SAdd("myset", "hello"), 0)
+		require.Equal(kv.SAdd("myset", "world"), 1)
+		require.AllEqual(kv.SMembers("myset"), []string{"world", "hello"})
 	})
 }
 
@@ -304,6 +348,7 @@ func (t require) Equal(got redispool.Value, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) AllEqual(got redispool.Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
@@ -329,6 +374,7 @@ func (t require) AllEqual(got redispool.Values, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.LLen(key)
@@ -339,6 +385,7 @@ func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 		t.Fatalf("unexpected list length got=%d want=%d", got, want)
 	}
 }
+
 func (t require) TTL(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.TTL(key)
