@@ -8,7 +8,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -123,7 +122,7 @@ func toTextExtraResult(content string, r result.Match) *TextExtra {
 	}
 }
 
-func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result, error) {
+func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
 	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
 	chunks := resultChunks(r, c.Kind, onlyPath)
 

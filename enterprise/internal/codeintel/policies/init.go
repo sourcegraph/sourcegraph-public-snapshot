@@ -24,13 +24,6 @@ func NewService(
 	)
 }
 
-type serviceDependencies struct {
-	db             database.DB
-	uploadSvc      UploadService
-	gitserver      GitserverClient
-	observationCtx *observation.Context
-}
-
 func scopedContext(component string, parent *observation.Context) *observation.Context {
 	return observation.ScopedContext("codeintel", "policies", component, parent)
 }

@@ -155,7 +155,7 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(s.db),
+		Gitserver:    gitserver.NewClient(),
 	}
 }
 

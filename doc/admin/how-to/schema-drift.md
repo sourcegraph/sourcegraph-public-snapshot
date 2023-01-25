@@ -1,11 +1,13 @@
 # How to use `migrator` operation `drift`
 
+> WARNING: When running the drift command, the version supplied (or inferred from your instance's state) is meant to indicate the **most recently running version of the instance** (not the target version during an upgrade process). Drift output is meant to show you the difference between the schema expected by Sourcegraph during operation and upgrades against your database's actual schema so that the database can be put in a healthy, known state. Following the instructions provided when supplying a different version will move your database schema **further out of sync**.
+
 During an upgrade you may run into the following message.
 
 ```
 * Sourcegraph migrator v4.1.3
 ❌ Schema drift detected for frontend
-💡 Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema. See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions.
+💡 Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema to the expected current state. See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions.
 ```
 
 This error indicates that `migrator` has detected some difference between the state of the schema in your database and the expected schema for the database in the `-from` or current version of your Sourcegraph instance.

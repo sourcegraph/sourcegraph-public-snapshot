@@ -17,7 +17,33 @@ import {
 
 export type SelectedExternalService = 'unmatched' | 'all' | Scalars['ID']
 
+export const WEBHOOK_LOG_REQUEST_FIELDS_FRAGMENT = gql`
+    fragment WebhookLogRequestFields on WebhookLogRequest {
+        headers {
+            name
+            values
+        }
+        body
+        method
+        url
+        version
+    }
+`
+
+export const WEBHOOK_LOG_RESPONSE_FIELDS_FRAGMENT = gql`
+    fragment WebhookLogResponseFields on WebhookLogResponse {
+        headers {
+            name
+            values
+        }
+        body
+    }
+`
+
 const WEBHOOK_LOG_FIELDS_FRAGMENT = gql`
+    ${WEBHOOK_LOG_REQUEST_FIELDS_FRAGMENT}
+    ${WEBHOOK_LOG_RESPONSE_FIELDS_FRAGMENT}
+
     fragment WebhookLogFields on WebhookLog {
         id
         receivedAt
@@ -26,21 +52,10 @@ const WEBHOOK_LOG_FIELDS_FRAGMENT = gql`
         }
         statusCode
         request {
-            headers {
-                name
-                values
-            }
-            body
-            method
-            url
-            version
+            ...WebhookLogRequestFields
         }
         response {
-            headers {
-                name
-                values
-            }
-            body
+            ...WebhookLogResponseFields
         }
     }
 `

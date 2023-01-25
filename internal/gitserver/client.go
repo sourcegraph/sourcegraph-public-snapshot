@@ -36,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -70,14 +69,13 @@ func ResetClientMocks() {
 var _ Client = &clientImplementor{}
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		pinned:      pinnedReposFromConfig,
-		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -90,7 +88,7 @@ func NewClient(db database.DB) Client {
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger: logger,
@@ -104,7 +102,6 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
-		db:         db,
 		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
@@ -204,9 +201,6 @@ type clientImplementor struct {
 	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
 	// and sync the pinned map.
 	pinned func() map[string]string
-
-	// db is a connection to the database
-	db database.DB
 
 	// operations are used for internal observability
 	operations *operations
@@ -455,7 +449,7 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.userAgent, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.userAgent, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -468,7 +462,7 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+func AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName, addresses GitServerAddresses) (string, error) {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it

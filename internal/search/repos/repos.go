@@ -944,22 +944,6 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	return repoPattern
 }
 
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
-}
-
 var ErrNoResolvedRepos = errors.New("no resolved repositories")
 
 type MissingRepoRevsError struct {

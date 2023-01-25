@@ -133,7 +133,7 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     return (
         <Input
             as={RepositoriesField}
-            message="Use a full repo URL (github.com/...). Separate repositories with commas"
+            message="Use a list of repository names separated with commas"
             placeholder="Example: github.com/sourcegraph/sourcegraph"
             aria-labelledby={ariaLabelledby}
             value={fieldValue}
@@ -229,6 +229,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const previewQuery = value.query ? `(${value.query}) archived:yes fork:yes count:all` : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
 
@@ -256,7 +257,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 />
 
                 <MonacoPreviewLink
-                    query={value.query}
+                    query={previewQuery}
                     patternType={SearchPatternType.standard}
                     className={styles.repoLabelPreviewLink}
                     tabIndex={disabled ? -1 : 0}

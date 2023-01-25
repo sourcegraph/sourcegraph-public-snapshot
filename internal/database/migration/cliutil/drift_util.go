@@ -488,7 +488,7 @@ func compareNamedLists[T schemas.Namer](
 		av := am[k]
 
 		if bv, ok := bm[k]; ok {
-			if cmp.Diff(av, bv) != "" {
+			if cmp.Diff(schemas.Normalize(av), schemas.Normalize(bv)) != "" {
 				if primaryCallback(&av, bv) {
 					outOfSync = true
 				}

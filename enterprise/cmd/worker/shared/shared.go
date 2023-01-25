@@ -55,6 +55,7 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 
 	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
+	"auth-permission-sync-job-cleaner":  auth.NewPermissionSyncJobCleaner(),
 
 	// Note: experimental (not documented)
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
