@@ -111,7 +111,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"field2": "value2",
 			"field3": "value3",
 		}
-		require.Equal(kv.HMSet("hash:multiple", multiple), len(multiple))
+		// require.Equal(kv.HMSet("hash:multiple", multiple), len(multiple))
+		require.Equal(kv.HMSet("hash:multiple", multiple), 3)
 		require.AllEqual(kv.HGetAll("hash:multiple"), map[string]string{
 			"field1": "value1",
 			"field2": "value2",
@@ -129,6 +130,9 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 	t.Run("list", func(t *testing.T) {
 		require := require{TB: t}
+
+		list := []interface{}{"1", "2", "3"}
+		require.Works(kv.LPush("secondlist", list...))
 
 		require.Works(kv.LPush("anotherlist", "name"))
 		require.Works(kv.LPush("anotherlist", "company"))

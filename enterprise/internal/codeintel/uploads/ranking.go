@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/storage"
@@ -67,7 +68,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 
 	// if there are consumable references in the queue, then we need to process them
 	fmt.Println("=================== WE ARE IN ==========================")
-	countMap := make(map[string]int)
+	// countMap := make(map[string]int)
 
 	/*
 		TODO:
@@ -108,6 +109,8 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 				return err
 			}
 
+			countMap := make(map[string]int)
+
 			for _, d := range definitionPath {
 				if d != "" {
 					countMap[d] = countMap[d] + 1
@@ -116,6 +119,36 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 					// 	return err
 					// }
 				}
+			}
+
+			fields := make([]string, 0, 1000)
+			for k := range countMap {
+				fields = append(fields, k)
+			}
+			f, err := redisStore.HMGet("graph:globalfiles:counts", fields...).Strings()
+			if err != nil {
+				return err
+			}
+
+			for i, v := range fields {
+				value := f[i]
+				if value != "" {
+					vx, err := strconv.Atoi(value)
+					if err != nil {
+						return nil
+					}
+					countMap[v] = countMap[v] + vx
+				}
+			}
+
+			redisCountMap := make(map[string]interface{})
+			for k, v := range countMap {
+				redisCountMap[k] = v
+			}
+
+			err = redisStore.HMSet("graph:globalfiles:counts", redisCountMap).Err()
+			if err != nil {
+				return err
 			}
 
 			start = stop + 1
@@ -140,14 +173,24 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 	// 	return err
 	// }
 
-	for k, v := range countMap {
-		fmt.Printf("OHBOY OHBOY OHBOY %s: %d \n", k, v)
-	}
-
-	err = s.store.SetGlobalRanks(ctx, countMap)
+	countMap, err := redisStore.HGetAll("graph:globalfiles:counts").StringMap()
 	if err != nil {
 		return err
 	}
+
+	err = redisStore.Del("graph:globalfiles:counts")
+	if err != nil {
+		return err
+	}
+
+	for k, v := range countMap {
+		fmt.Printf("OHBOY OHBOY OHBOY %s: %s \n", k, v)
+	}
+
+	// err = s.store.SetGlobalRanks(ctx, countMap)
+	// if err != nil {
+	// 	return err
+	// }
 
 	redisStore.Incr("ranking:graph:processed")
 	// dirty goes up by 1
@@ -344,7 +387,6 @@ var redisStore = redispool.Store
 
 func (s *Service) populateDefsAndRefs(ctx context.Context, uploadID int, repo, root, path string, document *scip.Document) error {
 	definitions := map[string]interface{}{}
-	// references := map[string]interface{}{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
 			continue
@@ -357,19 +399,42 @@ func (s *Service) populateDefsAndRefs(ctx context.Context, uploadID int, repo, r
 			// if err != nil {
 			// 	return err
 			// }
-		} else {
-			hashKey := fmt.Sprintf("graph:references:%d", uploadID)
-			item := fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol)
-			err := redisStore.LPush(hashKey, item)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
-	_, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
-	if err != nil {
-		return err
+	references := []interface{}{}
+	for _, occ := range document.Occurrences {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+			continue
+		}
+
+		if _, ok := definitions[occ.Symbol]; ok {
+			continue
+		}
+		if !scip.SymbolRole_Definition.Matches(occ) {
+			// hashKey := fmt.Sprintf("graph:references:%d", uploadID)
+			// item :=
+			references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
+			// err := redisStore.LPush(hashKey, item)
+			// if err != nil {
+			// 	return err
+			// }
+		}
+	}
+
+	if len(definitions) > 0 {
+		_, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(references) > 0 {
+		hashKey := fmt.Sprintf("graph:references:%d", uploadID)
+		err := redisStore.LPush(hashKey, references...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
