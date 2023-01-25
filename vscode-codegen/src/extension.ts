@@ -53,10 +53,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.registerTextDocumentContentProvider('codegen', documentProvider),
 		vscode.languages.registerHoverProvider({ scheme: 'codegen' }, documentProvider),
 
-		vscode.commands.registerCommand('cody.suggest', async () => {
-			await fetchAndShowCompletions(wsCompletionsClient, documentProvider, history)
-		}),
-
 		vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explainCode')),
 
 		vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
@@ -85,6 +81,14 @@ export async function activate(context: vscode.ExtensionContext) {
 			context.secrets.delete(CODY_ACCESS_TOKEN_SECRET)
 		)
 	)
+
+	if (settings.get('cody.experimental.suggest')) {
+		context.subscriptions.push(
+			vscode.commands.registerCommand('cody.experimental.suggest', async () => {
+				await fetchAndShowCompletions(wsCompletionsClient, documentProvider, history)
+			})
+		)
+	}
 }
 
 export function deactivate() {}

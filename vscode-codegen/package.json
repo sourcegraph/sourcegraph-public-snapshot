@@ -33,7 +33,7 @@
     },
     "commands": [
       {
-        "command": "cody.suggest",
+        "command": "cody.experimental.suggest",
         "title": "Ask Cody: View Suggestions"
       },
       {
@@ -89,12 +89,6 @@
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "cody.suggest",
-        "key": "alt+\\"
-      }
-    ],
     "configuration": {
       "type": "object",
       "title": "Cody settings",
