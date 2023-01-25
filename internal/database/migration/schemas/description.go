@@ -1,6 +1,10 @@
 package schemas
 
-import "github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
 
 type SchemaDescription struct {
 	Extensions []string
@@ -115,7 +119,7 @@ type Normalizer[T any] interface{ Normalize() T }
 var whitespacePattern = lazyregexp.New(`\s+`)
 
 func (d FunctionDescription) Normalize() FunctionDescription {
-	d.Definition = whitespacePattern.ReplaceAllString(d.Definition, " ")
+	d.Definition = strings.TrimSpace(whitespacePattern.ReplaceAllString(d.Definition, " "))
 	return d
 }
 
