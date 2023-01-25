@@ -96,6 +96,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - Build //dev/sg
+- Build //lib/...
 - Upload build trace
 
 ### Wolfi Exp Branch
