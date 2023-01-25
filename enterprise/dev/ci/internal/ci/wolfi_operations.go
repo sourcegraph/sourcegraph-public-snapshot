@@ -34,7 +34,6 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewSet()
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
-	changedFiles = append(changedFiles, "hello/world")
 
 	for _, c := range changedFiles {
 		match := packageRegex.FindStringSubmatch(c)
