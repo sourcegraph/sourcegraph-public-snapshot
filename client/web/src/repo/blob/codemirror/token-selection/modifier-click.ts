@@ -58,9 +58,16 @@ export function isModifierKey(event: KeyboardEvent | MouseEvent): boolean {
     return event.ctrlKey
 }
 
-export const modifierClickFacet = Facet.define<boolean, boolean>({
-    combine: sources => sources[0],
-    enables: [isModifierKeyHeld, cmdPointerCursor],
-})
+export function modifierClickExtension() {
+    return [
+        isModifierKeyHeld,
+        cmdPointerCursor,
+        EditorView.theme({
+            '.cm-token-selection-clickable:hover': {
+                cursor: 'pointer',
+            },
+        }),
+    ]
+}
 
 export const modifierClickDescription = isMacPlatform() ? 'cmd+click' : 'ctrl+click'

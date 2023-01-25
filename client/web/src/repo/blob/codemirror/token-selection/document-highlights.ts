@@ -8,15 +8,12 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { showDocumentHighlights } from '../document-highlights'
 
-export const documentHighlightCache = StateField.define<Map<Occurrence, Promise<DocumentHighlight[]>>>({
+const documentHighlightCache = StateField.define<Map<Occurrence, Promise<DocumentHighlight[]>>>({
     create: () => new Map(),
     update: value => value,
 })
-const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([], field =>
-    showDocumentHighlights.from(field)
-)
+export const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([])
 
 async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): Promise<DocumentHighlight[]> {
     const cache = view.state.field(documentHighlightCache)

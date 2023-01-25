@@ -16,7 +16,8 @@ import { preciseOffsetAtCoords } from '../utils'
 
 import { hoveredOccurrenceField } from './hover'
 import { isModifierKey, isModifierKeyHeld } from './modifier-click'
-import { selectOccurrence, selectRange } from './selections'
+import { selectRange } from './selections'
+import { selectOccurrence } from './code-intel-tooltips'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -28,7 +29,7 @@ const definitionReady = Decoration.mark({
     class: 'cm-token-selection-definition-ready',
 })
 const setDefinitionEffect = StateEffect.define<OccurrenceMap<string>>()
-const definitionUrlField = StateField.define<OccurrenceMap<string>>({
+export const definitionUrlField = StateField.define<OccurrenceMap<string>>({
     create: () => new OccurrenceMap(new Map(), 'empty-definition'),
     update(value, transaction) {
         for (const effect of transaction.effects) {
@@ -45,32 +46,36 @@ export const definitionCache = StateField.define<Map<Occurrence, Promise<Definit
     update: value => value,
 })
 
+export function definitionExtension() {
+    return [definitionCache, definitionUrlField]
+}
+
 export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
     combine: props => props[0],
     enables: () => [
         definitionUrlField,
-        // EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
-        //     const occ = state.field(hoveredOccurrenceField)
-        //     const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
-        //     if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
-        //         const range = rangeToCmSelection(state, occ.range)
-        //         if (range.from === range.to) {
-        //             return RangeSet.empty
-        //         }
-        //         if (url) {
-        //             // Insert an HTML link to support Context-menu>Open-link-in-new-tab
-        //             const definitionURL = Decoration.mark({
-        //                 attributes: {
-        //                     href: url,
-        //                 },
-        //                 tagName: 'a',
-        //             })
-        //             return RangeSet.of([definitionURL.range(range.from, range.to)])
-        //         }
-        //         return RangeSet.of([definitionReady.range(range.from, range.to)])
-        //     }
-        //     return RangeSet.empty
-        // }),
+        EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
+            const occ = state.field(hoveredOccurrenceField)
+            const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
+            if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
+                const range = rangeToCmSelection(state, occ.range)
+                if (range.from === range.to) {
+                    return RangeSet.empty
+                }
+                if (url) {
+                    // Insert an HTML link to support Context-menu>Open-link-in-new-tab
+                    const definitionURL = Decoration.mark({
+                        attributes: {
+                            href: url,
+                        },
+                        tagName: 'a',
+                    })
+                    return RangeSet.of([definitionURL.range(range.from, range.to)])
+                }
+                return RangeSet.of([definitionReady.range(range.from, range.to)])
+            }
+            return RangeSet.empty
+        }),
     ],
 })
 

@@ -32,12 +32,12 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
-import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
+import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
-import { focusDrivenCodeNavigation, selectOccurrence } from './codemirror/focus-driven-navigation/extension'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
+import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -107,7 +107,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         blameHunks,
         enableLinkDrivenCodeNavigation,
         enableSelectionDrivenCodeNavigation,
-        enableFocusDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -195,7 +194,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             }),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
-            enableFocusDrivenCodeNavigation ? focusDrivenCodeNavigation() : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -246,34 +244,26 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
-            if (enableFocusDrivenCodeNavigation) {
-                const { selection } = selectionFromLocation(editor, historyRef.current.location)
-                if (selection) {
-                    const position = positionAtCmPosition(editor, selection.from)
-                    const occurrence = occurrenceAtPosition(editor.state, position)
-                    if (occurrence) {
-                        selectOccurrence(editor, occurrence)
-                        editor.contentDOM.focus({ preventScroll: true })
-                    }
-                }
-            }
-
             if (!enableSelectionDrivenCodeNavigation) {
                 return
             }
 
-            // Sync editor selection with the URL so that triggering
+            // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
             // command in VS Code.
-            const { range } = selectionFromLocation(editor, historyRef.current.location)
-            if (range) {
-                selectRange(editor, range)
-                // Automatically focus the content DOM to enable keyboard
-                // navigation. Without this automatic focus, users need to click
-                // on the blob view with the mouse.
-                // NOTE: this focus statment does not seem to have an effect
-                // when using macOS VoiceOver.
-                editor.contentDOM.focus({ preventScroll: true })
+            const { selection } = selectionFromLocation(editor, historyRef.current.location)
+            if (selection) {
+                const position = positionAtCmPosition(editor, selection.from)
+                const occurrence = occurrenceAtPosition(editor.state, position)
+                if (occurrence) {
+                    selectOccurrence(editor, occurrence)
+                    // Automatically focus the content DOM to enable keyboard
+                    // navigation. Without this automatic focus, users need to click
+                    // on the blob view with the mouse.
+                    // NOTE: this focus statment does not seem to have an effect
+                    // when using macOS VoiceOver.
+                    editor.contentDOM.focus({ preventScroll: true })
+                }
             }
         }
         // editor is not provided because this should only be triggered after the

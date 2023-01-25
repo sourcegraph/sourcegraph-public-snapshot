@@ -40,23 +40,23 @@ const highlightDecoration = Decoration.mark({ class: 'sourcegraph-document-highl
 export const showDocumentHighlights = Facet.define<DocumentHighlight[], DocumentHighlight[]>({
     combine: highlights => highlights.flat(),
     compare: (a, b) => a === b || (a.length === 0 && b.length === 0),
-    // enables: facet =>
-    //     EditorView.decorations.compute([facet], state => {
-    //         const documentHighlights = state.facet(facet)
-    //         let decorations: DecorationSet | null = null
-    //
-    //         return view => {
-    //             if (decorations) {
-    //                 return decorations
-    //             }
-    //
-    //             return (decorations = documentHighlightsToRangeSet(
-    //                 view.state.doc,
-    //                 documentHighlights,
-    //                 highlightDecoration
-    //             ))
-    //         }
-    //     }),
+    enables: facet =>
+        EditorView.decorations.compute([facet], state => {
+            const documentHighlights = state.facet(facet)
+            let decorations: DecorationSet | null = null
+
+            return view => {
+                if (decorations) {
+                    return decorations
+                }
+
+                return (decorations = documentHighlightsToRangeSet(
+                    view.state.doc,
+                    documentHighlights,
+                    highlightDecoration
+                ))
+            }
+        }),
 })
 
 // This helper function is exported for testing purposes

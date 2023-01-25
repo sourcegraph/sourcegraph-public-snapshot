@@ -100,7 +100,7 @@ const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null
     return occurrenceAtPosition(view.state, positionAtCmPosition(view, offset)) ?? null
 }
 
-export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
+export async function getHoverTooltip(view: EditorView, pos: number): Promise<CodeIntelTooltip | null> {
     const cmLine = view.state.doc.lineAt(pos)
     const line = cmLine.number - 1
     const character = countColumn(cmLine.text, 1, pos - cmLine.from)
@@ -112,8 +112,8 @@ export async function getHoverTooltip(view: EditorView, pos: number): Promise<To
     if (!result.markdownContents) {
         return null
     }
-    // const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
-    return new CodeIntelTooltip(view, occurrence, result, false)
+    const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
+    return new CodeIntelTooltip(view, occurrence, result, occurrence === pinnedOccurrence)
 }
 
 export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<HoverResult> {
@@ -234,33 +234,6 @@ function isPrecise(hover: HoverMerged | null): boolean {
     }
     return false
 }
-
-const tooltipStyles = EditorView.theme({
-    // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
-    // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
-    // ignoring the min/max width rules.
-    '.cm-tooltip.tmp-tooltip': {
-        fontSize: '0.875rem',
-        backgroundClip: 'padding-box',
-        backgroundColor: 'var(--dropdown-bg)',
-        border: '1px solid var(--dropdown-border-color)',
-        borderRadius: 'var(--popover-border-radius)',
-        color: 'var(--body-color)',
-        boxShadow: 'var(--dropdown-shadow)',
-        padding: '0.5rem',
-    },
-
-    '.cm-tooltip-above:not(.tmp-tooltip), .cm-tooltip-below:not(.tmp-tooltip)': {
-        border: 'unset',
-    },
-
-    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:before': {
-        borderTopColor: 'var(--dropdown-border-color)',
-    },
-    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:after': {
-        borderTopColor: 'var(--dropdown-bg)',
-    },
-})
 
 /**
  * Field for storing visible hovered occurrence range and visible code-intel tooltip for this occurrence.

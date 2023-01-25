@@ -564,7 +564,8 @@ export class HovercardView implements TooltipView {
         private readonly view: EditorView,
         private readonly tokenRange: UIRange,
         pinned: boolean,
-        hovercardData: Observable<HoverData>
+        hovercardData: Observable<HoverData>,
+        private eventListeners: Record<string, EventListenerOrEventListenerObject> = {}
     ) {
         this.dom = document.createElement('div')
 
@@ -577,12 +578,17 @@ export class HovercardView implements TooltipView {
             if (!this.root) {
                 this.root = createRoot(container)
             }
+
             this.render(this.root, hovercardData, props, pinned)
         })
     }
 
     public mount(): void {
         this.nextContainer.next(this.dom)
+
+        for (const key in this.eventListeners) {
+            this.dom.addEventListener(key, this.eventListeners[key])
+        }
     }
 
     public update(update: ViewUpdate): void {
@@ -597,6 +603,10 @@ export class HovercardView implements TooltipView {
     public destroy(): void {
         this.subscription.unsubscribe()
         this.root?.unmount()
+
+        for (const key in this.eventListeners) {
+            this.dom.removeEventListener(key, this.eventListeners[key])
+        }
     }
 
     private render(root: Root, { hoverOrError, actionsOrError }: HoverData, props: BlobProps, pinned: boolean): void {
