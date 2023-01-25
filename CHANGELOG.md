@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Endpoint environment variables (`SEARCHER_URL`, `SYMBOLS_URL`, `INDEXED_SEARCH_SERVERS`, `SRC_GIT_SERVERS`) now can be set to replica count values in Kubernetes, Kustomize, Helm and Docker Compose environments. This avoids the need to use service discovery or generating the respective list of addresses in those environments. [#45862](https://github.com/sourcegraph/sourcegraph/pull/45862)
 - The default author and email for changesets will now be pulled from user account details when possible. [#46385](https://github.com/sourcegraph/sourcegraph/pull/46385)
 - Code Insights has a new display option: "Max number of series points to display". This setting controls the number of data points you see per series on an insight. [#46653](https://github.com/sourcegraph/sourcegraph/pull/46653)
 - Added out-of-band migration that will migrate all existing data from LSIF to SCIP (see additional [migration documentation](https://docs.sourcegraph.com/admin/how-to/lsif_scip_migration)). [#45106](https://github.com/sourcegraph/sourcegraph/pull/45106)

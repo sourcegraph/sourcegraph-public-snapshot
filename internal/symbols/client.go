@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -21,8 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -32,10 +31,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func defaultEndpoints() *endpoint.Map {
+	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		return conns.Symbols
+	})
+}
+
 func LoadConfig() {
-	symbolsURL := env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
 	DefaultClient = &Client{
-		URL:                 symbolsURL,
+		Endpoints:           defaultEndpoints(),
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         parallel.NewRun(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
@@ -56,8 +60,8 @@ var defaultDoer = func() httpcli.Doer {
 
 // Client is a symbols service client.
 type Client struct {
-	// URL to symbols service.
-	URL string
+	// Endpoints to symbols service.
+	Endpoints *endpoint.Map
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
@@ -70,22 +74,15 @@ type Client struct {
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 
-	endpointOnce sync.Once
-	endpoint     *endpoint.Map
-
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {
-	c.endpointOnce.Do(func() {
-		if len(strings.Fields(c.URL)) == 0 {
-			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
-		} else {
-			c.endpoint = endpoint.New(c.URL)
-		}
-	})
-	return c.endpoint.Get(string(repo))
+	if c.Endpoints == nil {
+		return "", errors.New("a symbols service has not been configured")
+	}
+	return c.Endpoints.Get(string(repo))
 }
 
 func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
