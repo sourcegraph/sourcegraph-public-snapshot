@@ -9101,6 +9101,9 @@ extend type Query {
     Get the global list of all teams.
     """
     teams(
+        """
+        Returns the first n teams from the list.
+        """
         first: Int
 
         """
