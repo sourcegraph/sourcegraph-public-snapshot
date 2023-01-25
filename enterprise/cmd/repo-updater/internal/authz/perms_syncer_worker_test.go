@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,7 +20,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	worker := MakePermsSyncerWorker(ctx, &observation.TestContext, dummySyncer)
 
 	t.Run("user sync request", func(t *testing.T) {
-		worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
+		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               99,
 			UserID:           1234,
 			InvalidateCaches: true,
@@ -43,7 +42,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	})
 
 	t.Run("repo sync request", func(t *testing.T) {
-		worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
+		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               777,
 			RepositoryID:     4567,
 			InvalidateCaches: false,
@@ -69,6 +68,6 @@ type dummyPermsSyncer struct {
 	request *syncRequest
 }
 
-func (d *dummyPermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
+func (d *dummyPermsSyncer) syncPerms(_ context.Context, _ map[requestType]group.ContextGroup, request *syncRequest) {
 	d.request = request
 }
