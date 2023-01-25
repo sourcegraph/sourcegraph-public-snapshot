@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+set -eu -o pipefail
+
 # Run this script to rebuild all Wolfi base images.
 #
 # Normally Buildkite only rebuilds a base image when its YAML file changes - this scripts bumps a
