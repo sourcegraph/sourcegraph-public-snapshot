@@ -222,7 +222,12 @@ func TestGitserverAddr(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			deploy.Mock(tc.deployType)
-			got, _ := gitserverAddr(tc.environ)
+			got, err := gitserverAddr(tc.environ)
+			if (tc.wantErr == "") != (err == nil) {
+				t.Errorf("unexpected error. want=%q got=%v", tc.wantErr, err)
+			} else if err != nil && !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("error does not contain %q: %v", tc.wantErr, err)
+			}
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}

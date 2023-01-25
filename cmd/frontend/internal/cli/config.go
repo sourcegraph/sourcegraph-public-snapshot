@@ -498,7 +498,7 @@ func gitservers() *endpoint.Map {
 	gitserversOnce.Do(func() {
 		addr, err := gitserverAddr(os.Environ())
 		if err != nil {
-			gitserversVal = endpoint.Empty(errors.New("a gitserver service has not been configured"))
+			gitserversVal = endpoint.Empty(errors.Wrap(err, "failed to parse SRC_GIT_SERVERS"))
 		} else {
 			gitserversVal = endpoint.New(addr)
 		}
@@ -523,7 +523,7 @@ func gitserverAddr(environ []string) (string, error) {
 		return "gitserver:3178", nil
 	}
 
-	// Not set, use the default (service discovery on searcher)
+	// Not set, use the default (service discovery on gitserver)
 	return "k8s+rpc://gitserver:3178?kind=sts", nil
 }
 
@@ -624,7 +624,7 @@ func symbolsAddr(environ []string) (string, error) {
 		return addrs, err
 	}
 
-	// Not set, use the default (non-service discovery on searcher)
+	// Not set, use the default (non-service discovery on symbols)
 	return "http://symbols:3184", nil
 }
 
@@ -723,7 +723,7 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 	case deploy.DockerCompose:
 		fmtStrTail = fmt.Sprintf(":%s", port)
 	default:
-		return "", errors.New("Error: unsupported deployment type: " + deployType)
+		return "", errors.Errorf("unsupported deployment type: %s", deployType)
 	}
 
 	var addrs []string
