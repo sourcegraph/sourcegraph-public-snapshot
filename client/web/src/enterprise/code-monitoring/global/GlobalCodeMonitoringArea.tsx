@@ -37,12 +37,12 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithCh
         <Page>
             <Switch>
                 <CompatRoute
-                    path={match.url}
+                    path=""
                     render={(props: RouteComponentProps<{}>) => <CodeMonitoringPage {...outerProps} {...props} />}
                     exact={true}
                 />
                 <CompatRoute
-                    path={`${match.url}/new`}
+                    path="new"
                     render={(props: RouteComponentProps<{}>) => <CreateCodeMonitorPage {...outerProps} {...props} />}
                     exact={true}
                 />
