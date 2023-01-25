@@ -75,22 +75,36 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 
 	if _, err := dbt.ExecContext(context.Background(), `
+		INSERT INTO users (id, username)
+		VALUES (1, 'test_user_1')
+	`); err != nil {
+		t.Fatalf("unexpected error creating user: %s", err)
+	}
+
+	if _, err := dbt.ExecContext(context.Background(), `
+		INSERT INTO repo (id, name)
+		VALUES (1, 'test_repo_1')
+	`); err != nil {
+		t.Fatalf("unexpected error creating repo: %s", err)
+	}
+
+	if _, err := dbt.ExecContext(context.Background(), `
 		INSERT INTO permission_sync_jobs (id, state, user_id, repository_id, priority, process_after, reason)
 		VALUES
 			(1, 'queued', 1, null, 0, null, 'test'),
-			(2, 'queued', 0, null, 0, null, 'test'),
+			(2, 'queued', null, 1, 0, null, 'test'),
 			(3, 'queued', 1, null, 5, null, 'test'),
-			(4, 'queued', 0, null, 5, null, 'test'),
+			(4, 'queued', null, 1, 5, null, 'test'),
 			(5, 'queued', 1, null, 10, null, 'test'),
-			(6, 'queued', 0, null, 10, null, 'test'),
+			(6, 'queued', null, 1, 10, null, 'test'),
 			(7, 'queued', 1, null, 10, NOW() - '1 minute'::interval, 'test'),
-			(8, 'queued', 0, null, 10, NOW() - '2 minute'::interval, 'test'),
+			(8, 'queued', null, 1, 10, NOW() - '2 minute'::interval, 'test'),
 			(9, 'queued', 1, null, 5, NOW() - '1 minute'::interval, 'test'),
-			(10, 'queued', 0, null, 5, NOW() - '2 minute'::interval, 'test'),
+			(10, 'queued', null, 1, 5, NOW() - '2 minute'::interval, 'test'),
 			(11, 'queued', 1, null, 0, NOW() - '1 minute'::interval, 'test'),
-			(12, 'queued', 0, null, 0, NOW() - '2 minute'::interval, 'test'),
+			(12, 'queued', null, 1, 0, NOW() - '2 minute'::interval, 'test'),
 			(13, 'processing', 1, null, 10, null, 'test'),
-			(14, 'completed', 0, null, 10, null, 'test'),
+			(14, 'completed', null, 1, 10, null, 'test'),
 			(15, 'cancelled', 1, null, 10, null, 'test'),
 			(16, 'queued', 1, null, 10, NOW() + '2 minute'::interval, 'test')
 	`); err != nil {
