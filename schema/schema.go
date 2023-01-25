@@ -1121,6 +1121,8 @@ type GitLabWebhook struct {
 type GitRecorder struct {
 	// Repos description: List of repositories whose git operations should be recorded.
 	Repos []string `json:"repos,omitempty"`
+	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
+	Size int `json:"size,omitempty"`
 }
 
 // Github description: GitHub configuration, both for queries and receiving release webhooks.

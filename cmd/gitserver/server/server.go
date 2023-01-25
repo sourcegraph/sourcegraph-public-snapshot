@@ -495,7 +495,7 @@ func (s *Server) Handler() http.Handler {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
-		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf), recordingConf.MaxItems)
+		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf), recordingConf.Size)
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that

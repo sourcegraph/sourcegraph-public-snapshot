@@ -115,14 +115,14 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 // while being externally updated by the caller, through the Update method.
 type RecordingCommandFactory struct {
 	shouldRecord ShouldRecordFunc
-	maxItems     int
+	maxSize      int
 
 	sync.Mutex
 }
 
 // NewRecordingCommandFactory returns a new RecordingCommandFactory.
 func NewRecordingCommandFactory(shouldRecord ShouldRecordFunc, max int) *RecordingCommandFactory {
-	return &RecordingCommandFactory{shouldRecord: shouldRecord, maxItems: max}
+	return &RecordingCommandFactory{shouldRecord: shouldRecord, maxSize: max}
 }
 
 // Update will modify the RecordingCommandFactory so that from that point, it will use the
@@ -131,18 +131,18 @@ func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int
 	rf.Lock()
 	defer rf.Unlock()
 	rf.shouldRecord = shouldRecord
-	rf.maxItems = max
+	rf.maxSize = max
 }
 
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxItems)
+	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
 	return RecordingCommand(ctx, logger, rf.shouldRecord, store, name, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
 // currently set in the factory.
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxItems)
+	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
