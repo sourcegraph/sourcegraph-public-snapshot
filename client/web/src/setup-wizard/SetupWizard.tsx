@@ -1,21 +1,26 @@
 import { FC, useState } from 'react'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
-import { Text } from '@sourcegraph/wildcard'
+import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ThemePreference, useTheme } from '../theme'
 
-import { SetupTabs, SetupList, SetupTab, SetupSteps } from './components/SetupTabs'
-import { AddRepositoriesStep } from './steps/AddRepositoriesStep'
-import { CloningRepositoriesStep } from './steps/CloningRepositoriesStep'
-import { ConnectToCodeHostStep } from './steps/ConnectToCodeHostsStep'
+import { SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
 
 import styles from './Setup.module.scss'
 
 export const SetupWizard: FC = props => {
     const {} = props
 
+    const [isSetupWizardEnabled] = useFeatureFlag('local-setup-wizard')
+    const navigate = useNavigate()
     const [step, setStep] = useState(0)
+
+    if (!isSetupWizardEnabled) {
+        navigate('/')
+    }
 
     // Enforce the right class is added on the body for supporting different
     // themes based on user OS preferences
@@ -26,7 +31,9 @@ export const SetupWizard: FC = props => {
         <div className={styles.root}>
             <BrandLogo variant="logo" isLightTheme={isLightTheme} className={styles.logo} />
 
-            <Text className={styles.description}>Single docker setup - Version 4.4</Text>
+            <H2 as={H1} className={styles.description}>
+                Welcome to Sourcegraph! Let's get your instance ready.
+            </H2>
 
             <SetupTabs activeTabIndex={step} defaultActiveIndex={0} onTabChange={setStep}>
                 <SetupList>
@@ -34,11 +41,6 @@ export const SetupWizard: FC = props => {
                     <SetupTab index={1}>Add Repositories</SetupTab>
                     <SetupTab index={2}>Finish</SetupTab>
                 </SetupList>
-                <SetupSteps>
-                    <ConnectToCodeHostStep />
-                    <AddRepositoriesStep />
-                    <CloningRepositoriesStep />
-                </SetupSteps>
             </SetupTabs>
         </div>
     )

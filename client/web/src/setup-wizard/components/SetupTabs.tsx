@@ -79,10 +79,6 @@ export const SetupTab: FC<PropsWithChildren<SetupTabProps>> = props => {
     )
 }
 
-export const SetupSteps: FC<PropsWithChildren<TabPanelsProps>> = props => (
-    <TabPanels {...props} as={Card} className={classNames(styles.panels, props.className)} />
-)
-
 export { TabPanel as SetupStep }
 
 interface SetupStepActions {
