@@ -42,8 +42,7 @@ export class CodeIntelTooltip implements Tooltip {
         private readonly occurrence: Occurrence,
         private readonly hover: HoverResult,
         // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
-        readonly pinned: boolean,
-        readonly eventListeners: Record<string, EventListenerOrEventListenerObject> = {}
+        readonly pinned: boolean
     ) {
         const range = rangeToCmSelection(view.state, occurrence.range)
         this.pos = range.from
@@ -76,13 +75,7 @@ export class CodeIntelTooltip implements Tooltip {
             const hovercardData: Observable<HoverData> = definitionResults.pipe(
                 map(result => this.hovercardData(result))
             )
-            return new HovercardView(
-                view,
-                occurrence.range.withIncrementedValues(),
-                pinned,
-                hovercardData,
-                eventListeners
-            )
+            return new HovercardView(view, occurrence.range.withIncrementedValues(), pinned, hovercardData)
         }
     }
     private hovercardData(definition: AsyncDefinitionResult): HoverData {
