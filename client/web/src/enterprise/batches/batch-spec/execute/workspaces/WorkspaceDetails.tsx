@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import {
     mdiClose,
@@ -12,12 +12,12 @@ import {
     mdiOpenInNew,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Badge,
@@ -49,6 +49,7 @@ import {
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import { FileDiffNode, FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
@@ -78,7 +79,6 @@ import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
-import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 
 export interface WorkspaceDetailsProps {
     id: Scalars['ID']
@@ -558,7 +558,7 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
         <>
             {connection.nodes.length > 0 && <LogOutput text={connection.nodes.join('\n')} />}
             {hasNextPage && (
-                <Fragment>
+                <>
                     {loading ? (
                         <LoadingSpinner />
                     ) : (
@@ -566,7 +566,7 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
                             Load more ...
                         </Button>
                     )}
-                </Fragment>
+                </>
             )}
             <LogOutput text={additionalOutputLines.join('\n')} />
         </>

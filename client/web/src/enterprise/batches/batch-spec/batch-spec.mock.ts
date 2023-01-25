@@ -237,7 +237,6 @@ export const mockStep = (
     finishedAt: subMinutes(now, 1).toISOString(),
     ifCondition: null,
     number,
-    outputLines: ['stdout: Hello World', 'stdout: '],
     outputVariables: [],
     run: `echo Hello World Step ${number} | tee -a $(find -name README.md)`,
     skipped: false,
