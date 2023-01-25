@@ -36,7 +36,7 @@ func NewService(
 	gsc GitserverClient,
 ) *Service {
 	store := store.New(scopedContext("store", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient(db))
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(db, "codeintel")

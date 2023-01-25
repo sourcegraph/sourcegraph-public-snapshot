@@ -65,7 +65,7 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 	// the same graphQL request, not across different request.
 	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db))
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
 
 	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
 	if err != nil || !exists {

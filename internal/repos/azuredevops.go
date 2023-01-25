@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"path"
 
 	"github.com/goware/urlx"
@@ -25,6 +26,7 @@ type AzureDevOpsSource struct {
 	serviceID string
 	config    schema.AzureDevOpsConnection
 	logger    log.Logger
+	exclude   excludeFunc
 }
 
 // NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
@@ -52,12 +54,24 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
+	var eb excludeBuilder
+	for _, r := range c.Exclude {
+		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
+	}
+
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
+	}
+
 	return &AzureDevOpsSource{
 		svc:       svc,
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
 		config:    c,
 		logger:    logger,
+		exclude:   exclude,
 	}, nil
 }
 
@@ -89,6 +103,9 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 	}
 
 	for _, repo := range repos {
+		if s.exclude(fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)) {
+			continue
+		}
 		repo, err := s.makeRepo(repo)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
