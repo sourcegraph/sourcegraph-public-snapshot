@@ -1493,6 +1493,11 @@
       "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
       "type": "object",
       "properties": {
+        "maxItems": {
+          "description": "How many recordings in total to keep. Default is 100 000. A Value of 0 will mean no recordings will be kept.",
+          "type": "integer",
+          "default": 100000
+        },
         "repos": {
           "description": "List of repositories whose git operations should be recorded.",
           "type": "array",

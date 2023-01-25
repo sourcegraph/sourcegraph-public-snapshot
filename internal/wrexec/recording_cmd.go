@@ -3,7 +3,6 @@ package wrexec
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os/exec"
 	"sync"
 	"time"
@@ -11,9 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
-
-// TTL sets the default time to live of recorded command in the redis database.
-const TTL = time.Hour * 24 * 7
 
 // KeyPrefix is the prefix that will be used to initialise the redis database with.
 // All keys stored will have this prefix.
@@ -34,7 +30,7 @@ type RecordingCmd struct {
 	*Cmd
 
 	shouldRecord ShouldRecordFunc
-	r            *rcache.Cache
+	store        *rcache.FIFOList
 	recording    bool
 	start        time.Time
 	done         bool
@@ -47,11 +43,11 @@ type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 // or not the command should be recorded.
 //
 // The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
-func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, name string, args ...string) *RecordingCmd {
+func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, name string, args ...string) *RecordingCmd {
 	cmd := CommandContext(ctx, logger, name, args...)
 	rc := &RecordingCmd{
 		Cmd:          cmd,
-		r:            rcache.New(KeyPrefix),
+		store:        store,
 		shouldRecord: shouldRecord,
 	}
 	rc.Cmd.SetBeforeHooks(rc.before)
@@ -60,23 +56,16 @@ func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord Shoul
 }
 
 // RecordingWrap wraps an existing os/exec.Cmd into a RecordingCommand.
-func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, cmd *exec.Cmd) *RecordingCmd {
+func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, cmd *exec.Cmd) *RecordingCmd {
 	c := Wrap(ctx, logger, cmd)
 	rc := &RecordingCmd{
 		Cmd:          c,
-		r:            rcache.New("recording-cmd"),
+		store:        store,
 		shouldRecord: shouldRecord,
 	}
 	rc.Cmd.SetBeforeHooks(rc.before)
 	rc.Cmd.SetAfterHooks(rc.after)
 	return rc
-}
-
-// Key returns the key used to store the recording in redis
-func (rc *RecordingCmd) Key() string {
-	// Using %p here, because timestamp + cmd address makes it unique. Your own command can't be
-	// ran multiple time.
-	return fmt.Sprintf("%v:%p", time.Now().Unix(), rc.Cmd)
 }
 
 func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec.Cmd) error {
@@ -119,36 +108,41 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 		logger.Warn("failed to marshal recordingCmd", log.Error(err))
 	}
 
-	rc.r.SetWithTTL(rc.Key(), data, int(TTL.Seconds())) // TODO
+	rc.store.Insert(data)
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
 // while being externally updated by the caller, through the Update method.
 type RecordingCommandFactory struct {
 	shouldRecord ShouldRecordFunc
+	maxItems     int
+
 	sync.Mutex
 }
 
 // NewRecordingCommandFactory returns a new RecordingCommandFactory.
-func NewRecordingCommandFactory(shouldRecord ShouldRecordFunc) *RecordingCommandFactory {
-	return &RecordingCommandFactory{shouldRecord: shouldRecord}
+func NewRecordingCommandFactory(shouldRecord ShouldRecordFunc, max int) *RecordingCommandFactory {
+	return &RecordingCommandFactory{shouldRecord: shouldRecord, maxItems: max}
 }
 
 // Update will modify the RecordingCommandFactory so that from that point, it will use the
 // newly given ShouldRecordFunc.
-func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc) {
+func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int) {
 	rf.Lock()
 	defer rf.Unlock()
 	rf.shouldRecord = shouldRecord
+	rf.maxItems = max
 }
 
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
-	return RecordingCommand(ctx, logger, rf.shouldRecord, name, args...)
+	store := rcache.NewFIFOList(KeyPrefix, rf.maxItems)
+	return RecordingCommand(ctx, logger, rf.shouldRecord, store, name, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
 // currently set in the factory.
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
-	return RecordingWrap(ctx, logger, rf.shouldRecord, cmd)
+	store := rcache.NewFIFOList(KeyPrefix, rf.maxItems)
+	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }

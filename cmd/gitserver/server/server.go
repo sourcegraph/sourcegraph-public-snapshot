@@ -490,12 +490,12 @@ func (s *Server) Handler() http.Handler {
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
-	s.recordingCommandFactory = wrexec.NewRecordingCommandFactory(nil)
+	s.recordingCommandFactory = wrexec.NewRecordingCommandFactory(nil, 0)
 	conf.Watch(func() {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
-		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf))
+		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf), recordingConf.MaxItems)
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
