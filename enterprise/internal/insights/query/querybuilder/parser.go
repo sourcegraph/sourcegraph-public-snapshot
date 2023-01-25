@@ -90,14 +90,15 @@ func IsValidScopeQuery(plan searchquery.Plan) (string, bool) {
 			// Only allowed filter is repo (including repo:has predicates).
 			if field != searchquery.FieldRepo {
 				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
-			} else {
-				repoRevs, err := query.ParseRepositoryRevisions(parameter.Value)
-				if err != nil {
-					return containsInvalidExpression, false
-				}
-				if len(repoRevs.Revs) > 0 {
-					return containsDisallowedRevision, false
-				}
+			}
+			// This is a repo filter make sure no revision was specified
+			repoRevs, err := query.ParseRepositoryRevisions(parameter.Value)
+			if err != nil {
+				// This shouldn't be possible because it should have failed earlier when parsed
+				return containsInvalidExpression, false
+			}
+			if len(repoRevs.Revs) > 0 {
+				return containsDisallowedRevision, false
 			}
 		}
 	}
