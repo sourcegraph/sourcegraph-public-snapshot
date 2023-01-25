@@ -3,6 +3,8 @@ package ci
 import (
 	"fmt"
 
+	"github.com/sourcegraph/log"
+
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -14,13 +16,14 @@ var packageRegex = lazyregexp.New(`wolfi-packages\/(\w+)[.]yaml`)
 func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewSet()
+	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	for _, c := range changedFiles {
 		match := baseImageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
 			ops.Append(buildWolfi(match[1]))
 		} else {
-			fmt.Printf("Unable to extract base image name from '%s', matches were %+v\n", c, match)
+			logger.Fatal(fmt.Sprintf("Unable to extract base image name from '%s', matches were %+v\n", c, match))
 		}
 	}
 
@@ -30,13 +33,15 @@ func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewSet()
+	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	changedFiles = append(changedFiles, "hello/world")
 
 	for _, c := range changedFiles {
 		match := packageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
 			ops.Append(buildPackages(match[1]))
 		} else {
-			fmt.Printf("Unable to extract package name from '%s', matches were %+v\n", c, match)
+			logger.Fatal(fmt.Sprintf("Unable to extract package name from '%s', matches were %+v\n", c, match))
 		}
 	}
 
