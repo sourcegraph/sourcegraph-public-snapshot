@@ -6,7 +6,7 @@
 #   value in a comment to force a rebuild.
 # This is helpful to fix vulnerabilities as it will fetch the latest versions of packages.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")" || exit
 
 COMMENT_TOKEN="MANUAL REBUILD"
 DATE=$(date)
