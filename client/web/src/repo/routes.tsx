@@ -115,9 +115,9 @@ export const RepoCommits: React.FunctionComponent<
 > = ({ revision, repo, ...context }) =>
     repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />
 
-const blobPath = '/-/:objectType(blob)/:filePath*'
-const treePath = '/-/:objectType(tree)/:filePath*'
-export const commitsPath = '/-/commits/:filePath*'
+const blobPath = '/-/:objectType(blob)/:filePath?'
+const treePath = '/-/:objectType(tree)/:filePath?'
+export const commitsPath = '/-/commits/:filePath?'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...[
@@ -132,7 +132,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         '/-/compare/tab/:spec*',
     ].map(routePath => ({
         path: routePath,
-        exact: routePath === '',
+        exact: true,
         render: (props: RepositoryFileTreePageProps) => (
             <TraceSpanProvider
                 name="RepositoryFileTreePage"
@@ -158,19 +158,23 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     {
         path: commitsPath,
         render: RepoCommits,
+        exact: true,
     },
     {
         path: '/-/branch',
+        exact: true,
         render: ({ repo, location, history }) => (
             <RepositoryBranchesTab repo={repo} location={location} history={history} />
         ),
     },
     {
         path: '/-/tag',
+        exact: true,
         render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
     },
     {
         path: compareSpecPath,
+        exact: true,
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryCompareArea {...context} />
@@ -189,6 +193,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/contributors',
+        exact: true,
         render: RepoContributors,
     },
 ]

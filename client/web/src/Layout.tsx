@@ -118,12 +118,12 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
-    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
+    const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
-    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+    const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true

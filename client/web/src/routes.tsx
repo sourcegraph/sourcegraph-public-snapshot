@@ -171,6 +171,7 @@ export const routes: readonly LayoutRouteProps<any>[] = (
         ...communitySearchContextsRoutes,
         {
             path: PageRoutes.RepoContainer,
+            exact: true,
             render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
         },
     ] as readonly (LayoutRouteProps<any> | undefined)[]

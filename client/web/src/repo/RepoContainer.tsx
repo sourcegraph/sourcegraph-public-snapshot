@@ -104,7 +104,7 @@ const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>
 )
 
 interface RepoContainerProps
-    extends RouteComponentProps<{ repoRevAndRest: string }>,
+    extends RouteComponentProps<{ [0]: string }>,
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
         TelemetryProps,
@@ -483,7 +483,7 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
     // Remove leading repository name and possible leading revision, then compare the remaining routes to
     // see if we should display the code graph badge for this route. We want this to be visible on
     // the repo root page, as well as directory and code views, but not administrative/non-code views.
-    const matchRevisionAndRest = match.params.repoRevAndRest.slice(repoName.length)
+    const matchRevisionAndRest = match.params[0].slice(repoName.length)
     const matchOnlyRest =
         revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
             ? matchRevisionAndRest.slice(revision.length + 1)
