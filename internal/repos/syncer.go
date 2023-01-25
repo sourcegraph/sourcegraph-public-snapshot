@@ -544,7 +544,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	if err := src.CheckConnection(ctx); err != nil {
-		return err
+		logger.Warn("connection check failed. syncing repositories might still succeed.", log.Error(err))
 	}
 
 	results := make(chan SourceResult)
