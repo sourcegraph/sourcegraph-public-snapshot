@@ -92,14 +92,14 @@
 //   3. Generate preliminary color variables: `[css code here]`.split("\n").filter(_ => _.includes("color")).map(_ => `--${_.slice(_.indexOf("/* ")+3, _.indexOf(" */"))}-fg: ${_.slice(_.indexOf("color: ")+7, _.indexOf(" ", _.indexOf("color: ") + 7))}`).join("\n")
 //   4. Paste them in `colors.scss` and fix any background-foreground issues
 //   5. Prepend "chroma-" prefix to the child classes
-:global {
+:global { /* stylelint-disable */
     /* chroma-error */ .chroma .chroma-err { color: var(--chroma-error-fg); background-color: var(--chroma-error-bg); }
     /* chroma-line-link */ .chroma .chroma-lnlinks { outline: none; text-decoration: none; color: var(--chroma-line-link-fg); }
     /* chroma-line-table-td */ .chroma .chroma-lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
     /* chroma-line-table */ .chroma .chroma-lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
     /* chroma-line-highlight */ .chroma .chroma-hl { background-color: var(--chroma-line-highlight-bg); }
-    /* chroma-line-numbers-table */ .chroma .chroma-lnt { white-space: pre; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; color: var(--chroma-line-numbers-table-fg) }
-    /* chroma-line-numbers */ .chroma .chroma-ln { white-space: pre; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; color: var(--chroma-line-numbers-fg) }
+    /* chroma-line-numbers-table */ .chroma .chroma-lnt { white-space: pre; user-select: none; margin-right: 0.4rem; padding: 0 0.4rem 0 0.4rem; color: var(--chroma-line-numbers-table-fg) }
+    /* chroma-line-numbers */ .chroma .chroma-ln { white-space: pre; user-select: none; margin-right: 0.4rem; padding: 0 0.4rem 0 0.4rem; color: var(--chroma-line-numbers-fg) }
     /* chroma-line */ .chroma .chroma-line { display: flex; }
     /* chroma-keyword */ .chroma .chroma-k { color: var(--chroma-keyword-fg); font-weight: bold; }
     /* chroma-keyword-constant */ .chroma .chroma-kc { color: var(--chroma-keyword-constant-fg); font-weight: bold; }

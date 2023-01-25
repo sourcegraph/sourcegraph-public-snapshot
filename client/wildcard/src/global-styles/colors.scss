@@ -219,7 +219,7 @@ $theme-colors: (
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
     --collapse-results-color: var(--gray-08);
-
+    // Chroma rules, for rendered markdown blocks
     --chroma-error-fg: #a61717;
     --chroma-error-bg: #e3d2d2;
     --chroma-line-link-fg: inherit;
@@ -237,13 +237,13 @@ $theme-colors: (
     --chroma-name-builtin-fg: #0086b3;
     --chroma-name-builtin-pseudo-fg: #999999;
     --chroma-name-class-fg: #445588;
-    --chroma-name-constant-fg: #008080
+    --chroma-name-constant-fg: #008080;
     --chroma-name-decorator-fg: #3c5d5d;
     --chroma-name-entity-fg: #800080;
     --chroma-name-exception-fg: #990000;
     --chroma-name-function-fg: #990000;
     --chroma-name-label-fg: #990000;
-    --chroma-name-namespace-fg: #555555
+    --chroma-name-namespace-fg: #555555;
     --chroma-name-tag-fg: #000080;
     --chroma-name-variable-fg: #008080;
     --chroma-name-variable-class-fg: #008080;
@@ -386,7 +386,7 @@ $theme-colors: (
     --sidebar-bg: var(--black);
     --sidebar-border-color: var(--color-bg-2);
     --collapse-results-color: var(--gray-05);
-
+    // Chroma rules, for rendered markdown blocks
     --chroma-error-fg: #f85149;
     --chroma-line-link-fg: inherit;
     --chroma-line-highlight-fg: #6e7681;
