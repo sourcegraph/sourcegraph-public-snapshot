@@ -21,6 +21,7 @@ import {
     FAILED_WORKSPACE,
     CANCELING_WORKSPACE,
     CANCELED_WORKSPACE,
+    WORKSPACE_STEP_OUTPUT_LINES,
 } from '../../batch-spec.mock'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
@@ -81,30 +82,11 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
                 query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
                 variables: MATCH_ANY_PARAMETERS,
             },
-            result: { data: {
-               node: {
-                __typename: 'VisibleBatchSpecWorkspace',
-                    step: {
-                        outputLines: {
-                            __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
-                            nodes: [
-                                'stdout: Hello world 1',
-                                'stdout: Hello world 2',
-                                'stdout: Hello world 3',
-                                'stdout: Hello world 4',
-                                'stdout: Hello world 5',
-                            ],
-                            totalCount: 5,
-                            pageInfo: {
-                                endCursor: null,
-                                hasNextPage: false,
-                            }
-                        }
-                    }
-               }
-            } },
+            result: {
+                data: WORKSPACE_STEP_OUTPUT_LINES,
+            },
             nMatches: Number.POSITIVE_INFINITY,
-        }
+        },
     ])
 
     return (
