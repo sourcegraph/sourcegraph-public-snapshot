@@ -54,7 +54,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 
 	if len(users) != len(ids) {
 		missingUserIds := missingUserIds(ids, users)
-		return nil, errors.Errorf("some users were not found, expected to recover %d, but found only %d: %s", len(ids), len(users), missingUserIds)
+		return nil, errors.Errorf("some users were not found, expected to recover %d users, but found only %d users. Missing user IDs: %s", len(ids), len(users), missingUserIds)
 	}
 
 	return &EmptyResponse{}, nil
