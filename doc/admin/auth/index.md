@@ -309,6 +309,8 @@ You can use the following filters to control how users can create accounts and s
 
   If combined with `"allowSignup": true` or with `allowSignup` unset, only members of  the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
 
+> WARNING: Users will require a minimum access level of `Guest` in at least one of the specified groups in order to gain access to Sourcegraph. GitLab offers a lower user permission level, [Minimal Access](https://docs.gitlab.com/ee/user/permissions.html#users-with-minimal-access), for Premium and Ultimate tier customers, which is often used to configure SAML SSO on GitLab. Sourcegraph does not currently support the `Minimal Access` access level, and users with this access level will not be allowed to sign in. In these cases it is recommended to create a subgroup and add all users that require access to Sourcegraph to that subgroup with a minimum access level of `Guest`, and then add that subgroup to the `allowGroups` list.
+
   ```json
     {
       "type": "gitlab",
