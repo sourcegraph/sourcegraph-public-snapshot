@@ -681,7 +681,8 @@ type SymbolsResponse_Symbol struct {
 	ParentKind string `protobuf:"bytes,8,opt,name=parent_kind,json=parentKind,proto3" json:"parent_kind,omitempty"`
 	// signature is the signature of the symbol (TODO@ggilmore - what is this?)
 	Signature string `protobuf:"bytes,9,opt,name=signature,proto3" json:"signature,omitempty"`
-	// file_limited indicates that the symbol is file-limited (e.g. private in Java) (TODO@ggilmore - this is a guess)
+	// file_limited indicates that the search ran into the limit set by "first" in the request, and so the result
+	// set may be incomplete.
 	FileLimited bool `protobuf:"varint,10,opt,name=file_limited,json=fileLimited,proto3" json:"file_limited,omitempty"`
 }
 

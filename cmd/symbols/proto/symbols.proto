@@ -80,7 +80,8 @@ message SymbolsResponse {
     // signature is the signature of the symbol (TODO@ggilmore - what is this?)
     string signature = 9;
 
-    // file_limited indicates that the symbol is file-limited (e.g. private in Java) (TODO@ggilmore - this is a guess)
+    // file_limited indicates that the search ran into the limit set by "first" in the request, and so the result
+    // set may be incomplete.
     bool file_limited = 10;
   }
 
