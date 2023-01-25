@@ -799,6 +799,7 @@ Flags:
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--skip-version-check`: Skip validation of the instance's current version.
 * `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log
