@@ -3,18 +3,7 @@ import { createContext, FC, PropsWithChildren, useContext } from 'react'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import {
-    Button,
-    Card,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
-    TabListProps,
-    TabPanelsProps,
-    useTabsContext,
-} from '@sourcegraph/wildcard'
+import { Button, Tab, TabList, TabPanel, Tabs, TabListProps, useTabsContext } from '@sourcegraph/wildcard'
 
 import styles from './SetupTabs.module.scss'
 
@@ -47,7 +36,7 @@ export const SetupTabs: FC<PropsWithChildren<SetupTabsProps>> = props => {
                 size="large"
                 index={activeTabIndex}
                 defaultIndex={defaultActiveIndex}
-                className={styles.tabs}
+                className={classNames(styles.tabs, 'mx-auto')}
                 onChange={onTabChange}
             >
                 {children}

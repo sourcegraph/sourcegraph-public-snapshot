@@ -1,20 +1,22 @@
 .root {
+    position: absolute;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    width: 70%;
-    max-width: 600px;
-    margin: 6rem auto;
-    padding-bottom: 2rem;
+    background: var(--white);
+}
+
+.header {
+    background: radial-gradient(113.96% 113.96% at 50% -8.21%, #6112A3 0%, #270741 57.81%, #160425 100%);
+    width: 100%;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .logo {
     align-self: center;
     width: 12rem;
-}
-
-.description {
-    align-self: center;
-    margin-top: 1.5rem;
-    margin-bottom: 3rem;
-    font-weight: normal;
 }

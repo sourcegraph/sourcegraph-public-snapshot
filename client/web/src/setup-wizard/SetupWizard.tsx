@@ -29,17 +29,19 @@ export const SetupWizard: FC = props => {
 
     return (
         <div className={styles.root}>
-            <BrandLogo variant="logo" isLightTheme={isLightTheme} className={styles.logo} />
+            <header className={styles.header}>
+                <BrandLogo variant="logo" isLightTheme={isLightTheme} className={styles.logo} />
 
-            <H2 as={H1} className={styles.description}>
-                Welcome to Sourcegraph! Let's get your instance ready.
-            </H2>
+                <H2 as={H1} className="font-weight-normal mt-3 mb-4">
+                    Welcome to Sourcegraph! Let's get your instance ready.
+                </H2>
+            </header>
 
             <SetupTabs activeTabIndex={step} defaultActiveIndex={0} onTabChange={setStep}>
                 <SetupList>
-                    <SetupTab index={0}>Connect to code hosts</SetupTab>
+                    <SetupTab index={0}>Connect your code</SetupTab>
                     <SetupTab index={1}>Add Repositories</SetupTab>
-                    <SetupTab index={2}>Finish</SetupTab>
+                    <SetupTab index={2}>Start searching</SetupTab>
                 </SetupList>
             </SetupTabs>
         </div>
