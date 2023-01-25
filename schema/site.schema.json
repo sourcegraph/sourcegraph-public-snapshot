@@ -1507,7 +1507,7 @@
         }
       }
     },
-   "dotcom": {
+    "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
