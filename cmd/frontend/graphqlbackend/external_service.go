@@ -57,11 +57,15 @@ const externalServiceIDKind = "ExternalService"
 // availabilityCheck indicates which code host types have an availability check implemented. For any
 // new code hosts where this check is implemented, add a new entry for the respective kind and set
 // the value to true.
+//
+// TODO: disabling availability checks for now because of a problem this causes to customers behind
+// proxies that block TCP dial calls.
+// We should fix the checks in a followup release.
 var availabilityCheck = map[string]bool{
-	extsvc.KindGitHub:          true,
-	extsvc.KindGitLab:          true,
-	extsvc.KindBitbucketServer: true,
-	extsvc.KindBitbucketCloud:  true,
+	extsvc.KindGitHub:          false,
+	extsvc.KindGitLab:          false,
+	extsvc.KindBitbucketServer: false,
+	extsvc.KindBitbucketCloud:  false,
 }
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {

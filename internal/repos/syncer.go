@@ -543,9 +543,12 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
-	if err := src.CheckConnection(ctx); err != nil {
-		return err
-	}
+	// TODO: disabling availability checks for now because of a problem this causes to customers behind
+	// proxies that block TCP dial calls.
+	// We should fix the checks in a followup release.
+	// if err := src.CheckConnection(ctx); err != nil {
+	// 	return err
+	// }
 
 	results := make(chan SourceResult)
 	go func() {

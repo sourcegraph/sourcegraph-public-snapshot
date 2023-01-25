@@ -182,6 +182,10 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                         headingElement="h2"
                         actions={
                             <div className="d-flex align-items-center justify-content-between">
+                                {/*
+                                // TODO: disabling availability checks for now because of a problem this causes to customers behind
+                                // proxies that block TCP dial calls.
+                                // We should fix the checks in a followup release.
                                 <div className="align-self-start">
                                     <Tooltip
                                         content={
@@ -200,7 +204,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                                             <Icon aria-hidden={true} svgPath={mdiConnection} /> Test connection
                                         </Button>
                                     </Tooltip>
-                                </div>
+                                </div> */}
                                 {editingEnabled && (
                                     <div className="flex-grow-1 ml-1">
                                         <Tooltip content="Edit code host connection settings">
