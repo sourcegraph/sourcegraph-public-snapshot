@@ -80,9 +80,8 @@ func EnterpriseInit(
 	workerStore := authz.MakeStore(observationCtx, db.Handle())
 	worker := authz.MakeWorker(ctx, observationCtx, workerStore, permsSyncer)
 	resetter := authz.MakeResetter(observationCtx, workerStore)
-	cleaner := authz.MakeCleaner(ctx, observationCtx, db)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, worker, resetter, cleaner)
+	go goroutine.MonitorBackgroundRoutines(ctx, worker, resetter)
 
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 
