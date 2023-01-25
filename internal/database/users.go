@@ -704,7 +704,7 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) ([]int32,
 		return nil, err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL and revoked_at IS NOT NULL and expires_at >= now() AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL and revoked_at IS NULL and expires_at >= now() AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return nil, err
 	}
 
