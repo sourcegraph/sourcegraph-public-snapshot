@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -23,9 +22,9 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(conns []*types.PerforceConnection, db database.DB) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots, db)
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
 		if err != nil {
 			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
 			problems = append(problems, err.Error())
@@ -42,7 +41,6 @@ func newAuthzProvider(
 	a *schema.PerforceAuthorization,
 	host, user, password string,
 	depots []string,
-	db database.DB,
 ) (authz.Provider, error) {
 	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
@@ -67,7 +65,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(logger, urn, host, user, password, depotIDs, db), nil
+	return NewProvider(logger, urn, host, user, password, depotIDs), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce

@@ -40,6 +40,33 @@
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this Azure DevOps Services/Server instance.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedAzureDevOpsServerRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
+        "properties": {
+          "name": {
+            "description": "The name of an Azure DevOps Services/Server project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^~?[\\w-]+/[\\w.-]+$"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of an Azure DevOps Services/Server repo.",
+            "type": "string",
+            "format": "regex"
+          }
+        }
+      },
+      "examples": [
+        [{ "name": "myproject/myrepo" }],
+        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+      ]
     }
   }
 }

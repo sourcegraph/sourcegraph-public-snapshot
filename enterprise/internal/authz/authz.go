@@ -171,7 +171,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(perforceConns) > 0 {
-		pfProviders, pfProblems, pfWarnings, pfInvalidConnections := perforce.NewAuthzProviders(perforceConns, db)
+		pfProviders, pfProblems, pfWarnings, pfInvalidConnections := perforce.NewAuthzProviders(perforceConns)
 		providers = append(providers, pfProviders...)
 		seriousProblems = append(seriousProblems, pfProblems...)
 		warnings = append(warnings, pfWarnings...)

@@ -23,7 +23,7 @@ import (
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
-	client := gitserver.NewClient(db)
+	client := gitserver.NewClient()
 
 	commit := &gitdomain.Commit{
 		ID:      "c1",
@@ -42,7 +42,7 @@ func TestGitCommitResolver(t *testing.T) {
 	}
 
 	t.Run("URL Escaping", func(t *testing.T) {
-		repo := NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "xyz"})
+		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{Name: "xyz"})
 		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
 		{
 			inputRev := "master^1"
@@ -120,7 +120,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
 				r := NewGitCommitResolver(db, client, repo, "c1", nil)
