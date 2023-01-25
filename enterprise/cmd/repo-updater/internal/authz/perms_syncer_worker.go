@@ -41,11 +41,6 @@ type permsSyncerWorker struct {
 }
 
 func (h *permsSyncerWorker) Handle(_ context.Context, _ log.Logger, record *database.PermissionSyncJob) error {
-	prio := priorityLow
-	if record.HighPriority {
-		prio = priorityHigh
-	}
-
 	reqType := requestTypeUser
 	reqID := int32(record.UserID)
 	if record.RepositoryID != 0 {
@@ -57,8 +52,18 @@ func (h *permsSyncerWorker) Handle(_ context.Context, _ log.Logger, record *data
 		"Handling permission sync job",
 		log.String("type", reqType.String()),
 		log.Int32("id", reqID),
-		log.String("priority", prio.String()),
+		log.Int("priority", int(record.Priority)),
 	)
+
+	// TODO(naman): when removing old perms syncer, `requestMeta` must be replaced
+	// by a new type to include new priority enum. `requestMeta.Priority` itself
+	// is not used anywhere in `syncer.syncPerms()`, therefore it is okay for now
+	// to pass old priority enum values.
+	// `requestQueue` can also be removed as it is only used by the old perms syncer.
+	prio := priorityLow
+	if record.Priority == database.HighPriorityPermissionSync {
+		prio = priorityHigh
+	}
 
 	// We use a background context here because right now syncPerms is an async operation.
 	//
@@ -85,8 +90,11 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 		TableName:         "permission_sync_jobs",
 		ColumnExpressions: database.PermissionSyncJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(database.ScanPermissionSyncJob),
-		// TODO(sashaostrikov): We need to take `NextSyncAt`/`process_after` into account
-		OrderByExpression: sqlf.Sprintf("permission_sync_jobs.high_priority, permission_sync_jobs.repository_id, permission_sync_jobs.user_id"),
+		// NOTE(naman): the priority order to process the queue is as follows:
+		// 1. priority: 10(high) > 5(medium) > 0(low)
+		// 2. process_after: null(scheduled for immediate processing) > 1 > 2(scheudled for processing at a later time than 1)
+		// 3. job_id: 1(old) > 2(enqueued after 1)
+		OrderByExpression: sqlf.Sprintf("permission_sync_jobs.priority DESC, permission_sync_jobs.process_after ASC NULLS FIRST, permission_sync_jobs.id ASC"),
 		MaxNumResets:      5,
 		StalledMaxAge:     time.Second * 30,
 	})

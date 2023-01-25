@@ -2652,12 +2652,12 @@ Referenced by:
  repository_id        | integer                  |           |          | 
  user_id              | integer                  |           |          | 
  triggered_by_user_id | integer                  |           |          | 
- high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
+ priority             | integer                  |           | not null | 0
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
-    "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
+    "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
     "permission_sync_jobs_process_after" btree (process_after)
     "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
@@ -2670,6 +2670,8 @@ Foreign-key constraints:
 ```
 
 **cancellation_reason**: Specifies why permissions sync job was cancelled.
+
+**priority**: Specifies numeric priority for the permissions sync job.
 
 **reason**: Specifies why permissions sync job was triggered.
 

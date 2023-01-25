@@ -3301,9 +3301,9 @@ CREATE TABLE permission_sync_jobs (
     repository_id integer,
     user_id integer,
     triggered_by_user_id integer,
-    high_priority boolean DEFAULT false NOT NULL,
     invalidate_caches boolean DEFAULT false NOT NULL,
     cancellation_reason text,
+    priority integer DEFAULT 0 NOT NULL,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3312,6 +3312,8 @@ COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync
 COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
 
 COMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';
+
+COMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
@@ -4863,7 +4865,7 @@ CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING bt
 
 CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
 
-CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (high_priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
+CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
 
 CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 
