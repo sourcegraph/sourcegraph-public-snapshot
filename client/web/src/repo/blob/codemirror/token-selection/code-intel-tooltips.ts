@@ -51,9 +51,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                 return { ...value, pin: effect.value }
             }
         }
-        if (transaction.selection) {
-            console.log(transaction.selection.main)
-        }
+
         return value
     },
     provide(field) {

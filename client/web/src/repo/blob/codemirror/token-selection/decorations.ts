@@ -22,7 +22,7 @@ export function interactiveOccurrencesExtension() {
                     const valueRangeEnd = positionToOffset(state.doc, focus.occurrence.range.end)
 
                     if (valueRangeStart !== null && valueRangeEnd !== null) {
-                        const classes = ['interactive-occurrence', 'sourcegraph-document-highlight']
+                        const classes = ['interactive-occurrence', 'focus-visible', 'sourcegraph-document-highlight']
                         const attributes: { [key: string]: string } = { tabindex: '0' }
 
                         const { value: url, hasOccurrence: hasDefinition } = state
