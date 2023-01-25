@@ -5,22 +5,23 @@ import (
 	"regexp" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark-highlighting/v2"
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 )
 
 var (
-	once   sync.Once
-	policy *bluemonday.Policy
+	once     sync.Once
+	policy   *bluemonday.Policy
+	renderer goldmark.Markdown
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
-func Render(content string) string {
+func Render(content string) (string, error) {
 	once.Do(func() {
 		policy = bluemonday.UGCPolicy()
 		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
@@ -30,27 +31,29 @@ func Render(content string) string {
 		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
 		policy.AllowAttrs("class").OnElements("pre", "code", "span")
-	})
 
-	md := goldmark.New(
-		goldmark.WithExtensions(
-			extension.GFM,
-			highlighting.NewHighlighting(
-				highlighting.WithFormatOptions(
-					chromahtml.WithClasses(true),
-					chromahtml.WithLineNumbers(false),
+		renderer = goldmark.New(
+			goldmark.WithExtensions(
+				extension.GFM,
+				highlighting.NewHighlighting(
+					highlighting.WithFormatOptions(
+						chromahtml.WithClasses(true),
+						chromahtml.WithLineNumbers(false),
+					),
 				),
 			),
-		),
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithRendererOptions(
-			html.WithUnsafe(),
-		),
-	)
+			goldmark.WithParserOptions(
+				parser.WithAutoHeadingID(),
+			),
+			goldmark.WithRendererOptions(
+				html.WithUnsafe(),
+			),
+		)
+	})
 
 	var buf bytes.Buffer
-	md.Convert([]byte(content), &buf)
-	return string(policy.SanitizeBytes(buf.Bytes()))
+	if err := renderer.Convert([]byte(content), &buf); err != nil {
+		return "", err
+	}
+	return string(policy.SanitizeBytes(buf.Bytes())), nil
 }
