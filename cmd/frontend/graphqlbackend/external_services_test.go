@@ -11,11 +11,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -725,74 +726,77 @@ func TestExternalServices(t *testing.T) {
 			}
 		`,
 		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "Check connection",
-			Query: `
-				{
-					externalServices() {
-						nodes {
-							id
-							checkConnection {
-								... on ExternalServiceAvailable {
-									lastCheckedAt
-								}
-								... on ExternalServiceUnavailable {
-									suspectedReason
-								}
-								... on ExternalServiceAvailabilityUnknown {
-									implementationNote
-								}
-							}
-							hasConnectionCheck
-						}
-					}
-				}
-			`,
-			ExpectedResult: fmt.Sprintf(`
-			{
-				"externalServices": {
-					"nodes": [
-						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
-							"checkConnection": {
-								"implementationNote": "not implemented"
-							},
-							"hasConnectionCheck": false
-						},
-						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
-							"checkConnection": {
-								"suspectedReason": "failed to connect"
-							},
-							"hasConnectionCheck": true
-						},
-						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
-							"checkConnection": {
-								"lastCheckedAt": %q
-							},
-							"hasConnectionCheck": true
-						},
-						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-							"checkConnection": {
-								"implementationNote": "not implemented"
-							},
-							"hasConnectionCheck": false
-						},
-						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
-							"checkConnection": {
-								"implementationNote": "not implemented"
-							},
-							"hasConnectionCheck": false
-						}
-					]
-				}
-			}
-			`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
-		},
+		// TODO: disabling availability checks for now because of a problem this causes to customers behind
+		// proxies that block TCP dial calls.
+		// We should fix the checks in a followup release.
+		// {
+		// 	Schema: mustParseGraphQLSchema(t, db),
+		// 	Label:  "Check connection",
+		// 	Query: `
+		// 		{
+		// 			externalServices() {
+		// 				nodes {
+		// 					id
+		// 					checkConnection {
+		// 						... on ExternalServiceAvailable {
+		// 							lastCheckedAt
+		// 						}
+		// 						... on ExternalServiceUnavailable {
+		// 							suspectedReason
+		// 						}
+		// 						... on ExternalServiceAvailabilityUnknown {
+		// 							implementationNote
+		// 						}
+		// 					}
+		// 					hasConnectionCheck
+		// 				}
+		// 			}
+		// 		}
+		// 	`,
+		// 	ExpectedResult: fmt.Sprintf(`
+		// 	{
+		// 		"externalServices": {
+		// 			"nodes": [
+		// 				{
+		// 					"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+		// 					"checkConnection": {
+		// 						"implementationNote": "not implemented"
+		// 					},
+		// 					"hasConnectionCheck": false
+		// 				},
+		// 				{
+		// 					"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+		// 					"checkConnection": {
+		// 						"suspectedReason": "failed to connect"
+		// 					},
+		// 					"hasConnectionCheck": true
+		// 				},
+		// 				{
+		// 					"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
+		// 					"checkConnection": {
+		// 						"lastCheckedAt": %q
+		// 					},
+		// 					"hasConnectionCheck": true
+		// 				},
+		// 				{
+		// 					"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+		// 					"checkConnection": {
+		// 						"implementationNote": "not implemented"
+		// 					},
+		// 					"hasConnectionCheck": false
+		// 				},
+		// 				{
+		// 					"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
+		// 					"checkConnection": {
+		// 						"implementationNote": "not implemented"
+		// 					},
+		// 					"hasConnectionCheck": false
+		// 				}
+		// 			]
+		// 		}
+		// 	}
+		// 	`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
+		// },
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Label:  "PageInfo included, using first",
