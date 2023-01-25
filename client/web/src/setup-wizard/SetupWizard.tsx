@@ -1,4 +1,5 @@
 import { FC, useState } from 'react'
+
 import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { H1, H2 } from '@sourcegraph/wildcard'
