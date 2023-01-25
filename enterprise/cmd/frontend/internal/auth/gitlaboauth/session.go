@@ -16,16 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	clientID    string
-	db          database.DB
-	allowSignup *bool
-	allowGroups []string
+	clientID             string
+	db                   database.DB
+	allowSignup          *bool
+	allowGroups          []string
+	groupValidationToken string
 }
 
 func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
@@ -37,12 +39,12 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
-	gUser, err := UserFromContext(ctx)
+	glUser, err := UserFromContext(ctx)
 	if err != nil {
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
 	}
 
-	login, err := auth.NormalizeUsername(gUser.Username)
+	login, err := auth.NormalizeUsername(glUser.Username)
 	if err != nil {
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
@@ -51,7 +53,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
-	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)
+	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient, glUser)
 	if err != nil {
 		message := "Error verifying user groups."
 		return nil, message, err
@@ -66,7 +68,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
 	var data extsvc.AccountData
-	if err := gitlab.SetExternalAccountData(&data, gUser, token); err != nil {
+	if err := gitlab.SetExternalAccountData(&data, glUser, token); err != nil {
 		return nil, "", err
 	}
 
@@ -76,16 +78,16 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,
-			Email:           gUser.Email,
-			EmailIsVerified: gUser.Email != "",
-			DisplayName:     gUser.Name,
-			AvatarURL:       gUser.AvatarURL,
+			Email:           glUser.Email,
+			EmailIsVerified: glUser.Email != "",
+			DisplayName:     glUser.Name,
+			AvatarURL:       glUser.AvatarURL,
 		},
 		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: s.ServiceType,
 			ServiceID:   s.ServiceID,
 			ClientID:    s.clientID,
-			AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
+			AccountID:   strconv.FormatInt(int64(glUser.ID), 10),
 		},
 		ExternalAccountData: data,
 		CreateIfNotExist:    signupAllowed,
@@ -95,8 +97,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	// There is no need to send record if we know email is empty as it's a primary property
-	if gUser.Email != "" {
-		go hubspotutil.SyncUser(gUser.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+	if glUser.Email != "" {
+		go hubspotutil.SyncUser(glUser.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 			AnonymousUserID: anonymousUserID,
 			FirstSourceURL:  firstSourceURL,
 			LastSourceURL:   lastSourceURL,
@@ -125,9 +127,14 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 }
 
 // verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowGroups option is set.
-func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) (bool, error) {
+func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client, glUser *gitlab.User) (bool, error) {
 	if len(s.allowGroups) == 0 {
 		return true, nil
+	}
+
+	if s.groupValidationToken != "" {
+		auther := &eauth.OAuthBearerToken{Token: s.groupValidationToken}
+		glClient = glClient.WithAuthenticator(auther)
 	}
 
 	allowed := make(map[string]bool, len(s.allowGroups))
@@ -147,9 +154,20 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 
 		// Check the full path instead of name so we can better handle subgroups.
 		for _, glGroup := range gitlabGroups {
-			if allowed[glGroup.FullPath] {
-				return true, nil
+			if !allowed[glGroup.FullPath] {
+				continue
 			}
+			if s.groupValidationToken != "" {
+				membership, err := glClient.GetGroupMembership(ctx, glGroup.ID, glUser.ID)
+				if err != nil {
+					continue
+				}
+				if membership.State == "active" {
+					return true, nil
+				}
+			}
+
+			return true, nil
 		}
 	}
 

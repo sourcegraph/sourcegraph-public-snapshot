@@ -57,11 +57,12 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 			return CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
-					db:          db,
-					CodeHost:    codeHost,
-					clientID:    p.ClientID,
-					allowSignup: p.AllowSignup,
-					allowGroups: p.AllowGroups,
+					db:                   db,
+					CodeHost:             codeHost,
+					clientID:             p.ClientID,
+					allowSignup:          p.AllowSignup,
+					allowGroups:          p.AllowGroups,
+					groupValidationToken: p.GroupValidationToken,
 				}, sessionKey),
 				nil,
 			)

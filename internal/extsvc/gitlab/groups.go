@@ -11,6 +11,13 @@ type Group struct {
 	FullPath string `json:"full_path"`
 }
 
+type Membership struct {
+	ID          int32  `json:"id"`
+	AccessLevel int32  `json:"access_level"`
+	Username    string `json:"username"`
+	State       string `json:"state"`
+}
+
 var MockListGroups func(ctx context.Context, page int) ([]*Group, bool, error)
 
 // ListGroups returns a list of groups for the authenticated user.
@@ -31,4 +38,20 @@ func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, has
 	}
 
 	return groups, len(groups) > 0, nil
+}
+
+func (c *Client) GetGroupMembership(ctx context.Context, groupID int32, userID int32) (*Membership, error) {
+	url := fmt.Sprintf("groups/%d/members/%d", groupID, userID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var membership Membership
+	_, _, err = c.do(ctx, req, &membership)
+	if err != nil {
+		return nil, err
+	}
+
+	return &membership, nil
 }
