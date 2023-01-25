@@ -6,7 +6,7 @@ import { ApolloProvider } from '@apollo/client'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { Route, Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { CompatRoute, CompatRouter } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { first, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
@@ -93,6 +93,7 @@ import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './SourcegraphWebApp.module.scss'
+import { XCompatRoute } from './XCompatRoute'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -361,8 +362,8 @@ export class SourcegraphWebApp extends React.Component<
             >
                 <Router history={history} key={0}>
                     <CompatRouter>
-                        <Route
-                            path="/"
+                        <XCompatRoute
+                            pathV6="/*"
                             render={routeComponentProps => (
                                 <Layout
                                     {...props}

@@ -1,14 +1,15 @@
 import React from 'react'
 
 import { RouteComponentProps, Switch } from 'react-router'
-import { CompatRoute } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { H2, Text } from '@sourcegraph/wildcard'
 
+import { XCompatRoute } from '../../../XCompatRoute'
 import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
 
@@ -32,28 +33,39 @@ const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPa
 export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     match,
     ...outerProps
-}) => (
-    <div className="w-100">
-        <Page>
-            <Switch>
-                <CompatRoute
-                    path=""
-                    render={(props: RouteComponentProps<{}>) => <CodeMonitoringPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <CompatRoute
-                    path="new"
-                    render={(props: RouteComponentProps<{}>) => <CreateCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <CompatRoute
-                    path={`${match.path}/:id`}
-                    render={(props: RouteComponentProps<{ id: string }>) => (
-                        <ManageCodeMonitorPage {...outerProps} {...props} />
-                    )}
-                    exact={true}
-                />
-            </Switch>
-        </Page>
-    </div>
-)
+}) => {
+    console.log('GlobalCodeMonitoringArea', match)
+
+    return (
+        <div className="w-100">
+            <Page>
+                <H2>GlobalCodeMonitoringArea content</H2>
+                <Text className="mb-5">`match.url` value is: {match.url}</Text>
+                <Switch>
+                    <XCompatRoute
+                        path="/code-monitoring/new"
+                        pathV6="new"
+                        render={(props: RouteComponentProps<{}>) => (
+                            <CreateCodeMonitorPage {...outerProps} {...props} />
+                        )}
+                    />
+                    <XCompatRoute
+                        path="/code-monitoring/:id"
+                        pathV6=":id"
+                        render={(props: RouteComponentProps<{ id: string }>) => {
+                            console.log('render route ManageCodeMonitorPage')
+
+                            return <ManageCodeMonitorPage {...outerProps} {...props} />
+                        }}
+                        exact={true}
+                    />
+                    <XCompatRoute
+                        path="/code-monitoring"
+                        pathV6=""
+                        render={(props: RouteComponentProps<{}>) => <CodeMonitoringPage {...outerProps} {...props} />}
+                    />
+                </Switch>
+            </Page>
+        </div>
+    )
+}

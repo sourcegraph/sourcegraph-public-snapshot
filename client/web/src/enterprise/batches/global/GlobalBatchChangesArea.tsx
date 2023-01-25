@@ -9,16 +9,20 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
+import { EnterprisePageRoutes } from '../../../routes.constants'
+import { XCompatRoute } from '../../../XCompatRoute'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { TabName } from '../detail/BatchChangeDetailsTabs'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
+import { Page } from '../../../components/Page'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -61,28 +65,32 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
     ...props
 }) => (
     <div className="w-100">
-        <Switch>
-            <CompatRoute path={match.url} exact={true}>
-                <BatchChangeListPage
-                    headingElement="h1"
-                    canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    {...props}
-                    location={location}
-                />
-            </CompatRoute>
-            {!isSourcegraphDotCom && (
-                <CompatRoute path={`${match.url}/create`} exact={true}>
-                    <AuthenticatedCreateBatchChangePage
-                        {...props}
+        <Page>
+            <H2>GlobalCodeMonitoringArea content</H2>
+            <Text className="mb-5">`match.url` value is: {match.url}</Text>
+            <Switch>
+                <XCompatRoute pathV6="" path={match.url} exact={true}>
+                    <BatchChangeListPage
                         headingElement="h1"
+                        canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        {...props}
+                        location={location}
                     />
-                </CompatRoute>
-            )}
-            <CompatRoute component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
+                </XCompatRoute>
+                {!isSourcegraphDotCom && (
+                    <CompatRoute path={`${match.url}/create`} exact={true}>
+                        <AuthenticatedCreateBatchChangePage
+                            {...props}
+                            headingElement="h1"
+                            authenticatedUser={authenticatedUser}
+                        />
+                    </CompatRoute>
+                )}
+                <CompatRoute component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
+        </Page>
     </div>
 )
 

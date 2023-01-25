@@ -17,7 +17,7 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, H1, Link, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
@@ -62,6 +62,7 @@ import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
+import { XCompatRoute } from './XCompatRoute'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -186,128 +187,68 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         isMacPlatform: isMacPlatform(),
     }
 
+    const limitedRoutes = props.routes
+    //.filter(r => [EnterprisePageRoutes.CodeMonitoring].includes(r.path))
+
+    console.log(limitedRoutes.map(r => r.path))
+
+    // return (
+    //     <div className={classNames(styles.layout)}>
+    //         <Switch>
+    //             <CompatRoute path="code-monitoring" render={() => <div>code monitoring</div>} />
+    //             <XCompatRoute pathV6="code-monitoring" render={() => <div>code monitoring X</div>} />
+    //         </Switch>
+    //     </div>
+    // )
+
+    /**
+     * There're two issues with the CompatRoute:
+     * 1. "*" doesn't work properly because of https://github.com/remix-run/react-router/blame/4d915e3305df5b01f51abdeb1c01bf442453522e/packages/react-router-dom-v5-compat/lib/components.tsx#L18
+     * 2. Nested routes in Switch doesn't work properly because RR6 and RR5 paths
+     * should be different before the migration is completed. It seems that the CompatRoute
+     * still renders the element if RR5 path is not specified. See implementation here:
+     * https://github.com/remix-run/react-router/blob/4d915e3305df5b01f51abdeb1c01bf442453522e/packages/react-router-dom-v5-compat/lib/components.tsx#L21
+     *
+     * More context:
+     * 1. https://github.com/remix-run/react-router/issues/9558#issuecomment-1315168000
+     * 2. https://github.com/remix-run/react-router/discussions/9509
+     *
+     * We can implement an ugly migration keeping both RR5 and RR6 path props.
+     * On migration completion we can remove `path` and renamed pathV6` or whatever seems
+     * the best combination.
+     */
     return (
-        <div
-            className={classNames(
-                styles.layout,
-                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
-            )}
-        >
-            {showHelpShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
-            ))}
-            <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+        <div className={classNames(styles.layout)}>
+            <header className="align-self-start m-3">
+                <H1>Layout content</H1>
+                <Link className="mr-3" to="/">
+                    Home
+                </Link>
+                <Link className="mr-3" to="/code-monitoring">
+                    Code monitoring
+                </Link>
+                <Link className="mr-3" to="/code-monitoring/new">
+                    New code monitor
+                </Link>
+                <Link to="/batch-changes">Batch changes</Link>
+            </header>
 
-            {feedbackModalOpen && (
-                <FeedbackPrompt
-                    onSubmit={handleSubmitFeedback}
-                    modal={true}
-                    openByDefault={true}
-                    authenticatedUser={
-                        props.authenticatedUser
-                            ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
-                            : null
-                    }
-                    onClose={() => setFeedbackModalOpen(false)}
-                />
-            )}
+            <Suspense fallback={<LoadingSpinner className="m-2" />}>
+                <Switch>
+                    {limitedRoutes.map(({ render, ...route }) => (
+                        <XCompatRoute
+                            key="hardcoded-key"
+                            path={route.path}
+                            pathV6={`${route.path}/*`}
+                            render={(routeComponentProps: RouteComponentProps<{}>) => {
+                                console.log('render route', route.path)
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
-            )}
-            {!isSiteInit && !isSignInOrUp && (
-                <GlobalNavbar
-                    {...props}
-                    {...themeProps}
-                    showSearchBox={
-                        isSearchRelatedPage &&
-                        !isSearchHomepage &&
-                        !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
-                        !isSearchNotebooksPage
-                    }
-                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    showFeedbackModal={showFeedbackModal}
-                    enableLegacyExtensions={window.context.enableLegacyExtensions}
-                />
-            )}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <ErrorBoundary location={props.location}>
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1">
-                            <LoadingSpinner className="m-2" />
-                        </div>
-                    }
-                >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <CompatRoute
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={(routeComponentProps: RouteComponentProps<{}>) => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
-                </Suspense>
-            </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel
-                        className={styles.panel}
-                        position="bottom"
-                        defaultSize={350}
-                        storageKey="panel-size"
-                        ariaLabel="References panel"
-                        id="references-panel"
-                    >
-                        <TabbedPanelContent
-                            {...props}
-                            {...themeProps}
-                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                                return render({ ...context, ...routeComponentProps })
+                            }}
                         />
-                    </Panel>
-                )}
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-                history={props.history}
-            />
-            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
-            )}
-            {fuzzyFinder && (
-                <LazyFuzzyFinder
-                    isVisible={isFuzzyFinderVisible}
-                    setIsVisible={setFuzzyFinderVisible}
-                    themeState={themeStateRef}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    settingsCascade={props.settingsCascade}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    userHistory={userHistory}
-                />
-            )}
+                    ))}
+                </Switch>
+            </Suspense>
         </div>
     )
 }
