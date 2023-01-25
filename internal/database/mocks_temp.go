@@ -46133,27 +46133,27 @@ func NewMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, ...[]*Team) (r0 error) {
+			defaultHook: func(context.Context, *types.Team) (r0 error) {
 				return
 			},
 		},
 		CreateTeamMemberFunc: &TeamStoreCreateTeamMemberFunc{
-			defaultHook: func(context.Context, ...[]*TeamMember) (r0 error) {
+			defaultHook: func(context.Context, ...*types.TeamMember) (r0 error) {
 				return
 			},
 		},
 		DeleteTeamFunc: &TeamStoreDeleteTeamFunc{
-			defaultHook: func(context.Context, ...[]int32) (r0 error) {
+			defaultHook: func(context.Context, int32) (r0 error) {
 				return
 			},
 		},
 		DeleteTeamMemberFunc: &TeamStoreDeleteTeamMemberFunc{
-			defaultHook: func(context.Context, ...[]*TeamMember) (r0 error) {
+			defaultHook: func(context.Context, ...*types.TeamMember) (r0 error) {
 				return
 			},
 		},
 		GetTeamFunc: &TeamStoreGetTeamFunc{
-			defaultHook: func(context.Context, int32) (r0 *Team, r1 error) {
+			defaultHook: func(context.Context, int32) (r0 *types.Team, r1 error) {
 				return
 			},
 		},
@@ -46163,17 +46163,17 @@ func NewMockTeamStore() *MockTeamStore {
 			},
 		},
 		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
-			defaultHook: func(context.Context, ListTeamMembersOpts) (r0 []*TeamMember, r1 int32, r2 error) {
+			defaultHook: func(context.Context, ListTeamMembersOpts) (r0 []*types.TeamMember, r1 *TeamMemberListCursor, r2 error) {
 				return
 			},
 		},
 		ListTeamsFunc: &TeamStoreListTeamsFunc{
-			defaultHook: func(context.Context, ListTeamsOpts) (r0 []*Team, r1 int32, r2 error) {
+			defaultHook: func(context.Context, ListTeamsOpts) (r0 []*types.Team, r1 int32, r2 error) {
 				return
 			},
 		},
 		UpdateTeamFunc: &TeamStoreUpdateTeamFunc{
-			defaultHook: func(context.Context, ...[]*Team) (r0 error) {
+			defaultHook: func(context.Context, *types.Team) (r0 error) {
 				return
 			},
 		},
@@ -46195,27 +46195,27 @@ func NewStrictMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, ...[]*Team) error {
+			defaultHook: func(context.Context, *types.Team) error {
 				panic("unexpected invocation of MockTeamStore.CreateTeam")
 			},
 		},
 		CreateTeamMemberFunc: &TeamStoreCreateTeamMemberFunc{
-			defaultHook: func(context.Context, ...[]*TeamMember) error {
+			defaultHook: func(context.Context, ...*types.TeamMember) error {
 				panic("unexpected invocation of MockTeamStore.CreateTeamMember")
 			},
 		},
 		DeleteTeamFunc: &TeamStoreDeleteTeamFunc{
-			defaultHook: func(context.Context, ...[]int32) error {
+			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockTeamStore.DeleteTeam")
 			},
 		},
 		DeleteTeamMemberFunc: &TeamStoreDeleteTeamMemberFunc{
-			defaultHook: func(context.Context, ...[]*TeamMember) error {
+			defaultHook: func(context.Context, ...*types.TeamMember) error {
 				panic("unexpected invocation of MockTeamStore.DeleteTeamMember")
 			},
 		},
 		GetTeamFunc: &TeamStoreGetTeamFunc{
-			defaultHook: func(context.Context, int32) (*Team, error) {
+			defaultHook: func(context.Context, int32) (*types.Team, error) {
 				panic("unexpected invocation of MockTeamStore.GetTeam")
 			},
 		},
@@ -46225,17 +46225,17 @@ func NewStrictMockTeamStore() *MockTeamStore {
 			},
 		},
 		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
-			defaultHook: func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+			defaultHook: func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 				panic("unexpected invocation of MockTeamStore.ListTeamMembers")
 			},
 		},
 		ListTeamsFunc: &TeamStoreListTeamsFunc{
-			defaultHook: func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+			defaultHook: func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error) {
 				panic("unexpected invocation of MockTeamStore.ListTeams")
 			},
 		},
 		UpdateTeamFunc: &TeamStoreUpdateTeamFunc{
-			defaultHook: func(context.Context, ...[]*Team) error {
+			defaultHook: func(context.Context, *types.Team) error {
 				panic("unexpected invocation of MockTeamStore.UpdateTeam")
 			},
 		},
@@ -46500,23 +46500,23 @@ func (c TeamStoreCountTeamsFuncCall) Results() []interface{} {
 // TeamStoreCreateTeamFunc describes the behavior when the CreateTeam method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreCreateTeamFunc struct {
-	defaultHook func(context.Context, ...[]*Team) error
-	hooks       []func(context.Context, ...[]*Team) error
+	defaultHook func(context.Context, *types.Team) error
+	hooks       []func(context.Context, *types.Team) error
 	history     []TeamStoreCreateTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateTeam delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 ...[]*Team) error {
-	r0 := m.CreateTeamFunc.nextHook()(v0, v1...)
+func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 *types.Team) error {
+	r0 := m.CreateTeamFunc.nextHook()(v0, v1)
 	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the CreateTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, ...[]*Team) error) {
+func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) error) {
 	f.defaultHook = hook
 }
 
@@ -46524,7 +46524,7 @@ func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, ...[
 // CreateTeam method of the parent MockTeamStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, ...[]*Team) error) {
+func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Team) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -46533,19 +46533,19 @@ func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, ...[]*Team
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...[]*Team) error {
+	f.SetDefaultHook(func(context.Context, *types.Team) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *TeamStoreCreateTeamFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...[]*Team) error {
+	f.PushHook(func(context.Context, *types.Team) error {
 		return r0
 	})
 }
 
-func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, ...[]*Team) error {
+func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, *types.Team) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -46581,25 +46581,18 @@ type TeamStoreCreateTeamFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 [][]*Team
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Team
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c TeamStoreCreateTeamFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -46611,15 +46604,15 @@ func (c TeamStoreCreateTeamFuncCall) Results() []interface{} {
 // TeamStoreCreateTeamMemberFunc describes the behavior when the
 // CreateTeamMember method of the parent MockTeamStore instance is invoked.
 type TeamStoreCreateTeamMemberFunc struct {
-	defaultHook func(context.Context, ...[]*TeamMember) error
-	hooks       []func(context.Context, ...[]*TeamMember) error
+	defaultHook func(context.Context, ...*types.TeamMember) error
+	hooks       []func(context.Context, ...*types.TeamMember) error
 	history     []TeamStoreCreateTeamMemberFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateTeamMember delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockTeamStore) CreateTeamMember(v0 context.Context, v1 ...[]*TeamMember) error {
+func (m *MockTeamStore) CreateTeamMember(v0 context.Context, v1 ...*types.TeamMember) error {
 	r0 := m.CreateTeamMemberFunc.nextHook()(v0, v1...)
 	m.CreateTeamMemberFunc.appendCall(TeamStoreCreateTeamMemberFuncCall{v0, v1, r0})
 	return r0
@@ -46628,7 +46621,7 @@ func (m *MockTeamStore) CreateTeamMember(v0 context.Context, v1 ...[]*TeamMember
 // SetDefaultHook sets function that is called when the CreateTeamMember
 // method of the parent MockTeamStore instance is invoked and the hook queue
 // is empty.
-func (f *TeamStoreCreateTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...[]*TeamMember) error) {
+func (f *TeamStoreCreateTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...*types.TeamMember) error) {
 	f.defaultHook = hook
 }
 
@@ -46636,7 +46629,7 @@ func (f *TeamStoreCreateTeamMemberFunc) SetDefaultHook(hook func(context.Context
 // CreateTeamMember method of the parent MockTeamStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *TeamStoreCreateTeamMemberFunc) PushHook(hook func(context.Context, ...[]*TeamMember) error) {
+func (f *TeamStoreCreateTeamMemberFunc) PushHook(hook func(context.Context, ...*types.TeamMember) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -46645,19 +46638,19 @@ func (f *TeamStoreCreateTeamMemberFunc) PushHook(hook func(context.Context, ...[
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *TeamStoreCreateTeamMemberFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...[]*TeamMember) error {
+	f.SetDefaultHook(func(context.Context, ...*types.TeamMember) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *TeamStoreCreateTeamMemberFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...[]*TeamMember) error {
+	f.PushHook(func(context.Context, ...*types.TeamMember) error {
 		return r0
 	})
 }
 
-func (f *TeamStoreCreateTeamMemberFunc) nextHook() func(context.Context, ...[]*TeamMember) error {
+func (f *TeamStoreCreateTeamMemberFunc) nextHook() func(context.Context, ...*types.TeamMember) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -46695,7 +46688,7 @@ type TeamStoreCreateTeamMemberFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg1 [][]*TeamMember
+	Arg1 []*types.TeamMember
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -46723,23 +46716,23 @@ func (c TeamStoreCreateTeamMemberFuncCall) Results() []interface{} {
 // TeamStoreDeleteTeamFunc describes the behavior when the DeleteTeam method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreDeleteTeamFunc struct {
-	defaultHook func(context.Context, ...[]int32) error
-	hooks       []func(context.Context, ...[]int32) error
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
 	history     []TeamStoreDeleteTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteTeam delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockTeamStore) DeleteTeam(v0 context.Context, v1 ...[]int32) error {
-	r0 := m.DeleteTeamFunc.nextHook()(v0, v1...)
+func (m *MockTeamStore) DeleteTeam(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteTeamFunc.nextHook()(v0, v1)
 	m.DeleteTeamFunc.appendCall(TeamStoreDeleteTeamFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the DeleteTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreDeleteTeamFunc) SetDefaultHook(hook func(context.Context, ...[]int32) error) {
+func (f *TeamStoreDeleteTeamFunc) SetDefaultHook(hook func(context.Context, int32) error) {
 	f.defaultHook = hook
 }
 
@@ -46747,7 +46740,7 @@ func (f *TeamStoreDeleteTeamFunc) SetDefaultHook(hook func(context.Context, ...[
 // DeleteTeam method of the parent MockTeamStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreDeleteTeamFunc) PushHook(hook func(context.Context, ...[]int32) error) {
+func (f *TeamStoreDeleteTeamFunc) PushHook(hook func(context.Context, int32) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -46756,19 +46749,19 @@ func (f *TeamStoreDeleteTeamFunc) PushHook(hook func(context.Context, ...[]int32
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *TeamStoreDeleteTeamFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...[]int32) error {
+	f.SetDefaultHook(func(context.Context, int32) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *TeamStoreDeleteTeamFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...[]int32) error {
+	f.PushHook(func(context.Context, int32) error {
 		return r0
 	})
 }
 
-func (f *TeamStoreDeleteTeamFunc) nextHook() func(context.Context, ...[]int32) error {
+func (f *TeamStoreDeleteTeamFunc) nextHook() func(context.Context, int32) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -46804,25 +46797,18 @@ type TeamStoreDeleteTeamFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 [][]int32
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c TeamStoreDeleteTeamFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -46834,15 +46820,15 @@ func (c TeamStoreDeleteTeamFuncCall) Results() []interface{} {
 // TeamStoreDeleteTeamMemberFunc describes the behavior when the
 // DeleteTeamMember method of the parent MockTeamStore instance is invoked.
 type TeamStoreDeleteTeamMemberFunc struct {
-	defaultHook func(context.Context, ...[]*TeamMember) error
-	hooks       []func(context.Context, ...[]*TeamMember) error
+	defaultHook func(context.Context, ...*types.TeamMember) error
+	hooks       []func(context.Context, ...*types.TeamMember) error
 	history     []TeamStoreDeleteTeamMemberFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteTeamMember delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockTeamStore) DeleteTeamMember(v0 context.Context, v1 ...[]*TeamMember) error {
+func (m *MockTeamStore) DeleteTeamMember(v0 context.Context, v1 ...*types.TeamMember) error {
 	r0 := m.DeleteTeamMemberFunc.nextHook()(v0, v1...)
 	m.DeleteTeamMemberFunc.appendCall(TeamStoreDeleteTeamMemberFuncCall{v0, v1, r0})
 	return r0
@@ -46851,7 +46837,7 @@ func (m *MockTeamStore) DeleteTeamMember(v0 context.Context, v1 ...[]*TeamMember
 // SetDefaultHook sets function that is called when the DeleteTeamMember
 // method of the parent MockTeamStore instance is invoked and the hook queue
 // is empty.
-func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...[]*TeamMember) error) {
+func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...*types.TeamMember) error) {
 	f.defaultHook = hook
 }
 
@@ -46859,7 +46845,7 @@ func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultHook(hook func(context.Context
 // DeleteTeamMember method of the parent MockTeamStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *TeamStoreDeleteTeamMemberFunc) PushHook(hook func(context.Context, ...[]*TeamMember) error) {
+func (f *TeamStoreDeleteTeamMemberFunc) PushHook(hook func(context.Context, ...*types.TeamMember) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -46868,19 +46854,19 @@ func (f *TeamStoreDeleteTeamMemberFunc) PushHook(hook func(context.Context, ...[
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...[]*TeamMember) error {
+	f.SetDefaultHook(func(context.Context, ...*types.TeamMember) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *TeamStoreDeleteTeamMemberFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...[]*TeamMember) error {
+	f.PushHook(func(context.Context, ...*types.TeamMember) error {
 		return r0
 	})
 }
 
-func (f *TeamStoreDeleteTeamMemberFunc) nextHook() func(context.Context, ...[]*TeamMember) error {
+func (f *TeamStoreDeleteTeamMemberFunc) nextHook() func(context.Context, ...*types.TeamMember) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -46918,7 +46904,7 @@ type TeamStoreDeleteTeamMemberFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg1 [][]*TeamMember
+	Arg1 []*types.TeamMember
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -46946,15 +46932,15 @@ func (c TeamStoreDeleteTeamMemberFuncCall) Results() []interface{} {
 // TeamStoreGetTeamFunc describes the behavior when the GetTeam method of
 // the parent MockTeamStore instance is invoked.
 type TeamStoreGetTeamFunc struct {
-	defaultHook func(context.Context, int32) (*Team, error)
-	hooks       []func(context.Context, int32) (*Team, error)
+	defaultHook func(context.Context, int32) (*types.Team, error)
+	hooks       []func(context.Context, int32) (*types.Team, error)
 	history     []TeamStoreGetTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // GetTeam delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockTeamStore) GetTeam(v0 context.Context, v1 int32) (*Team, error) {
+func (m *MockTeamStore) GetTeam(v0 context.Context, v1 int32) (*types.Team, error) {
 	r0, r1 := m.GetTeamFunc.nextHook()(v0, v1)
 	m.GetTeamFunc.appendCall(TeamStoreGetTeamFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -46962,7 +46948,7 @@ func (m *MockTeamStore) GetTeam(v0 context.Context, v1 int32) (*Team, error) {
 
 // SetDefaultHook sets function that is called when the GetTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreGetTeamFunc) SetDefaultHook(hook func(context.Context, int32) (*Team, error)) {
+func (f *TeamStoreGetTeamFunc) SetDefaultHook(hook func(context.Context, int32) (*types.Team, error)) {
 	f.defaultHook = hook
 }
 
@@ -46970,7 +46956,7 @@ func (f *TeamStoreGetTeamFunc) SetDefaultHook(hook func(context.Context, int32) 
 // GetTeam method of the parent MockTeamStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreGetTeamFunc) PushHook(hook func(context.Context, int32) (*Team, error)) {
+func (f *TeamStoreGetTeamFunc) PushHook(hook func(context.Context, int32) (*types.Team, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -46978,20 +46964,20 @@ func (f *TeamStoreGetTeamFunc) PushHook(hook func(context.Context, int32) (*Team
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TeamStoreGetTeamFunc) SetDefaultReturn(r0 *Team, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (*Team, error) {
+func (f *TeamStoreGetTeamFunc) SetDefaultReturn(r0 *types.Team, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*types.Team, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TeamStoreGetTeamFunc) PushReturn(r0 *Team, r1 error) {
-	f.PushHook(func(context.Context, int32) (*Team, error) {
+func (f *TeamStoreGetTeamFunc) PushReturn(r0 *types.Team, r1 error) {
+	f.PushHook(func(context.Context, int32) (*types.Team, error) {
 		return r0, r1
 	})
 }
 
-func (f *TeamStoreGetTeamFunc) nextHook() func(context.Context, int32) (*Team, error) {
+func (f *TeamStoreGetTeamFunc) nextHook() func(context.Context, int32) (*types.Team, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -47032,7 +47018,7 @@ type TeamStoreGetTeamFuncCall struct {
 	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *Team
+	Result0 *types.Team
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -47151,15 +47137,15 @@ func (c TeamStoreHandleFuncCall) Results() []interface{} {
 // TeamStoreListTeamMembersFunc describes the behavior when the
 // ListTeamMembers method of the parent MockTeamStore instance is invoked.
 type TeamStoreListTeamMembersFunc struct {
-	defaultHook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)
-	hooks       []func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)
+	defaultHook func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)
+	hooks       []func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)
 	history     []TeamStoreListTeamMembersFuncCall
 	mutex       sync.Mutex
 }
 
 // ListTeamMembers delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockTeamStore) ListTeamMembers(v0 context.Context, v1 ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+func (m *MockTeamStore) ListTeamMembers(v0 context.Context, v1 ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 	r0, r1, r2 := m.ListTeamMembersFunc.nextHook()(v0, v1)
 	m.ListTeamMembersFunc.appendCall(TeamStoreListTeamMembersFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -47168,7 +47154,7 @@ func (m *MockTeamStore) ListTeamMembers(v0 context.Context, v1 ListTeamMembersOp
 // SetDefaultHook sets function that is called when the ListTeamMembers
 // method of the parent MockTeamStore instance is invoked and the hook queue
 // is empty.
-func (f *TeamStoreListTeamMembersFunc) SetDefaultHook(hook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)) {
+func (f *TeamStoreListTeamMembersFunc) SetDefaultHook(hook func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -47176,7 +47162,7 @@ func (f *TeamStoreListTeamMembersFunc) SetDefaultHook(hook func(context.Context,
 // ListTeamMembers method of the parent MockTeamStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *TeamStoreListTeamMembersFunc) PushHook(hook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)) {
+func (f *TeamStoreListTeamMembersFunc) PushHook(hook func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -47184,20 +47170,20 @@ func (f *TeamStoreListTeamMembersFunc) PushHook(hook func(context.Context, ListT
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TeamStoreListTeamMembersFunc) SetDefaultReturn(r0 []*TeamMember, r1 int32, r2 error) {
-	f.SetDefaultHook(func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+func (f *TeamStoreListTeamMembersFunc) SetDefaultReturn(r0 []*types.TeamMember, r1 *TeamMemberListCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TeamStoreListTeamMembersFunc) PushReturn(r0 []*TeamMember, r1 int32, r2 error) {
-	f.PushHook(func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+func (f *TeamStoreListTeamMembersFunc) PushReturn(r0 []*types.TeamMember, r1 *TeamMemberListCursor, r2 error) {
+	f.PushHook(func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *TeamStoreListTeamMembersFunc) nextHook() func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+func (f *TeamStoreListTeamMembersFunc) nextHook() func(context.Context, ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -47238,10 +47224,10 @@ type TeamStoreListTeamMembersFuncCall struct {
 	Arg1 ListTeamMembersOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*TeamMember
+	Result0 []*types.TeamMember
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 int32
+	Result1 *TeamMemberListCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -47262,15 +47248,15 @@ func (c TeamStoreListTeamMembersFuncCall) Results() []interface{} {
 // TeamStoreListTeamsFunc describes the behavior when the ListTeams method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreListTeamsFunc struct {
-	defaultHook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)
-	hooks       []func(context.Context, ListTeamsOpts) ([]*Team, int32, error)
+	defaultHook func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error)
+	hooks       []func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error)
 	history     []TeamStoreListTeamsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListTeams delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockTeamStore) ListTeams(v0 context.Context, v1 ListTeamsOpts) ([]*Team, int32, error) {
+func (m *MockTeamStore) ListTeams(v0 context.Context, v1 ListTeamsOpts) ([]*types.Team, int32, error) {
 	r0, r1, r2 := m.ListTeamsFunc.nextHook()(v0, v1)
 	m.ListTeamsFunc.appendCall(TeamStoreListTeamsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -47278,7 +47264,7 @@ func (m *MockTeamStore) ListTeams(v0 context.Context, v1 ListTeamsOpts) ([]*Team
 
 // SetDefaultHook sets function that is called when the ListTeams method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreListTeamsFunc) SetDefaultHook(hook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)) {
+func (f *TeamStoreListTeamsFunc) SetDefaultHook(hook func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -47286,7 +47272,7 @@ func (f *TeamStoreListTeamsFunc) SetDefaultHook(hook func(context.Context, ListT
 // ListTeams method of the parent MockTeamStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreListTeamsFunc) PushHook(hook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)) {
+func (f *TeamStoreListTeamsFunc) PushHook(hook func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -47294,20 +47280,20 @@ func (f *TeamStoreListTeamsFunc) PushHook(hook func(context.Context, ListTeamsOp
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TeamStoreListTeamsFunc) SetDefaultReturn(r0 []*Team, r1 int32, r2 error) {
-	f.SetDefaultHook(func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+func (f *TeamStoreListTeamsFunc) SetDefaultReturn(r0 []*types.Team, r1 int32, r2 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TeamStoreListTeamsFunc) PushReturn(r0 []*Team, r1 int32, r2 error) {
-	f.PushHook(func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+func (f *TeamStoreListTeamsFunc) PushReturn(r0 []*types.Team, r1 int32, r2 error) {
+	f.PushHook(func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *TeamStoreListTeamsFunc) nextHook() func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+func (f *TeamStoreListTeamsFunc) nextHook() func(context.Context, ListTeamsOpts) ([]*types.Team, int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -47348,7 +47334,7 @@ type TeamStoreListTeamsFuncCall struct {
 	Arg1 ListTeamsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*Team
+	Result0 []*types.Team
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int32
@@ -47372,23 +47358,23 @@ func (c TeamStoreListTeamsFuncCall) Results() []interface{} {
 // TeamStoreUpdateTeamFunc describes the behavior when the UpdateTeam method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreUpdateTeamFunc struct {
-	defaultHook func(context.Context, ...[]*Team) error
-	hooks       []func(context.Context, ...[]*Team) error
+	defaultHook func(context.Context, *types.Team) error
+	hooks       []func(context.Context, *types.Team) error
 	history     []TeamStoreUpdateTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateTeam delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockTeamStore) UpdateTeam(v0 context.Context, v1 ...[]*Team) error {
-	r0 := m.UpdateTeamFunc.nextHook()(v0, v1...)
+func (m *MockTeamStore) UpdateTeam(v0 context.Context, v1 *types.Team) error {
+	r0 := m.UpdateTeamFunc.nextHook()(v0, v1)
 	m.UpdateTeamFunc.appendCall(TeamStoreUpdateTeamFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpdateTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreUpdateTeamFunc) SetDefaultHook(hook func(context.Context, ...[]*Team) error) {
+func (f *TeamStoreUpdateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) error) {
 	f.defaultHook = hook
 }
 
@@ -47396,7 +47382,7 @@ func (f *TeamStoreUpdateTeamFunc) SetDefaultHook(hook func(context.Context, ...[
 // UpdateTeam method of the parent MockTeamStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreUpdateTeamFunc) PushHook(hook func(context.Context, ...[]*Team) error) {
+func (f *TeamStoreUpdateTeamFunc) PushHook(hook func(context.Context, *types.Team) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -47405,19 +47391,19 @@ func (f *TeamStoreUpdateTeamFunc) PushHook(hook func(context.Context, ...[]*Team
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *TeamStoreUpdateTeamFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...[]*Team) error {
+	f.SetDefaultHook(func(context.Context, *types.Team) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *TeamStoreUpdateTeamFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...[]*Team) error {
+	f.PushHook(func(context.Context, *types.Team) error {
 		return r0
 	})
 }
 
-func (f *TeamStoreUpdateTeamFunc) nextHook() func(context.Context, ...[]*Team) error {
+func (f *TeamStoreUpdateTeamFunc) nextHook() func(context.Context, *types.Team) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -47453,25 +47439,18 @@ type TeamStoreUpdateTeamFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 [][]*Team
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Team
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c TeamStoreUpdateTeamFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
