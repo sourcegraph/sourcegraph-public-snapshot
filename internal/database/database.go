@@ -62,6 +62,7 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	Teams() TeamStore
 
 	Transact(context.Context) (DB, error)
 	WithTransact(context.Context, func(tx DB) error) error
@@ -284,4 +285,8 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) Teams() TeamStore {
+	return TeamsWith(d.Store)
 }

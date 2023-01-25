@@ -1794,3 +1794,20 @@ type SlowRequest struct {
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
 }
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  *string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}

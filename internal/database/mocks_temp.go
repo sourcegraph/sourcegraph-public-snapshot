@@ -3982,6 +3982,9 @@ type MockDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
+	// TeamsFunc is an instance of a mock function object controlling the
+	// behavior of the method Teams.
+	TeamsFunc *DBTeamsFunc
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
@@ -4208,6 +4211,11 @@ func NewMockDB() *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() (r0 SettingsStore) {
+				return
+			},
+		},
+		TeamsFunc: &DBTeamsFunc{
+			defaultHook: func() (r0 TeamStore) {
 				return
 			},
 		},
@@ -4463,6 +4471,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Settings")
 			},
 		},
+		TeamsFunc: &DBTeamsFunc{
+			defaultHook: func() TeamStore {
+				panic("unexpected invocation of MockDB.Teams")
+			},
+		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: func() TemporarySettingsStore {
 				panic("unexpected invocation of MockDB.TemporarySettings")
@@ -4638,6 +4651,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
+		},
+		TeamsFunc: &DBTeamsFunc{
+			defaultHook: i.Teams,
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
@@ -8483,6 +8499,104 @@ func (c DBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBTeamsFunc describes the behavior when the Teams method of the parent
+// MockDB instance is invoked.
+type DBTeamsFunc struct {
+	defaultHook func() TeamStore
+	hooks       []func() TeamStore
+	history     []DBTeamsFuncCall
+	mutex       sync.Mutex
+}
+
+// Teams delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Teams() TeamStore {
+	r0 := m.TeamsFunc.nextHook()()
+	m.TeamsFunc.appendCall(DBTeamsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Teams method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBTeamsFunc) SetDefaultHook(hook func() TeamStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Teams method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBTeamsFunc) PushHook(hook func() TeamStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBTeamsFunc) SetDefaultReturn(r0 TeamStore) {
+	f.SetDefaultHook(func() TeamStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBTeamsFunc) PushReturn(r0 TeamStore) {
+	f.PushHook(func() TeamStore {
+		return r0
+	})
+}
+
+func (f *DBTeamsFunc) nextHook() func() TeamStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBTeamsFunc) appendCall(r0 DBTeamsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBTeamsFuncCall objects describing the
+// invocations of this function.
+func (f *DBTeamsFunc) History() []DBTeamsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBTeamsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBTeamsFuncCall is an object that describes an invocation of method Teams
+// on an instance of MockDB.
+type DBTeamsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 TeamStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBTeamsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBTeamsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -45962,6 +46076,1407 @@ func (c SettingsStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SettingsStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockTeamStore is a mock implementation of the TeamStore interface (from
+// the package github.com/sourcegraph/sourcegraph/internal/database) used
+// for unit testing.
+type MockTeamStore struct {
+	// CountTeamMembersFunc is an instance of a mock function object
+	// controlling the behavior of the method CountTeamMembers.
+	CountTeamMembersFunc *TeamStoreCountTeamMembersFunc
+	// CountTeamsFunc is an instance of a mock function object controlling
+	// the behavior of the method CountTeams.
+	CountTeamsFunc *TeamStoreCountTeamsFunc
+	// CreateTeamFunc is an instance of a mock function object controlling
+	// the behavior of the method CreateTeam.
+	CreateTeamFunc *TeamStoreCreateTeamFunc
+	// CreateTeamMemberFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateTeamMember.
+	CreateTeamMemberFunc *TeamStoreCreateTeamMemberFunc
+	// DeleteTeamFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteTeam.
+	DeleteTeamFunc *TeamStoreDeleteTeamFunc
+	// DeleteTeamMemberFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteTeamMember.
+	DeleteTeamMemberFunc *TeamStoreDeleteTeamMemberFunc
+	// GetTeamFunc is an instance of a mock function object controlling the
+	// behavior of the method GetTeam.
+	GetTeamFunc *TeamStoreGetTeamFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *TeamStoreHandleFunc
+	// ListTeamMembersFunc is an instance of a mock function object
+	// controlling the behavior of the method ListTeamMembers.
+	ListTeamMembersFunc *TeamStoreListTeamMembersFunc
+	// ListTeamsFunc is an instance of a mock function object controlling
+	// the behavior of the method ListTeams.
+	ListTeamsFunc *TeamStoreListTeamsFunc
+	// UpdateTeamFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateTeam.
+	UpdateTeamFunc *TeamStoreUpdateTeamFunc
+}
+
+// NewMockTeamStore creates a new mock of the TeamStore interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockTeamStore() *MockTeamStore {
+	return &MockTeamStore{
+		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
+			defaultHook: func(context.Context, ListTeamMembersOpts) (r0 int32, r1 error) {
+				return
+			},
+		},
+		CountTeamsFunc: &TeamStoreCountTeamsFunc{
+			defaultHook: func(context.Context, ListTeamsOpts) (r0 int32, r1 error) {
+				return
+			},
+		},
+		CreateTeamFunc: &TeamStoreCreateTeamFunc{
+			defaultHook: func(context.Context, ...[]*Team) (r0 error) {
+				return
+			},
+		},
+		CreateTeamMemberFunc: &TeamStoreCreateTeamMemberFunc{
+			defaultHook: func(context.Context, ...[]*TeamMember) (r0 error) {
+				return
+			},
+		},
+		DeleteTeamFunc: &TeamStoreDeleteTeamFunc{
+			defaultHook: func(context.Context, ...[]int32) (r0 error) {
+				return
+			},
+		},
+		DeleteTeamMemberFunc: &TeamStoreDeleteTeamMemberFunc{
+			defaultHook: func(context.Context, ...[]*TeamMember) (r0 error) {
+				return
+			},
+		},
+		GetTeamFunc: &TeamStoreGetTeamFunc{
+			defaultHook: func(context.Context, int32) (r0 *Team, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &TeamStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
+			defaultHook: func(context.Context, ListTeamMembersOpts) (r0 []*TeamMember, r1 int32, r2 error) {
+				return
+			},
+		},
+		ListTeamsFunc: &TeamStoreListTeamsFunc{
+			defaultHook: func(context.Context, ListTeamsOpts) (r0 []*Team, r1 int32, r2 error) {
+				return
+			},
+		},
+		UpdateTeamFunc: &TeamStoreUpdateTeamFunc{
+			defaultHook: func(context.Context, ...[]*Team) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockTeamStore creates a new mock of the TeamStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockTeamStore() *MockTeamStore {
+	return &MockTeamStore{
+		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
+			defaultHook: func(context.Context, ListTeamMembersOpts) (int32, error) {
+				panic("unexpected invocation of MockTeamStore.CountTeamMembers")
+			},
+		},
+		CountTeamsFunc: &TeamStoreCountTeamsFunc{
+			defaultHook: func(context.Context, ListTeamsOpts) (int32, error) {
+				panic("unexpected invocation of MockTeamStore.CountTeams")
+			},
+		},
+		CreateTeamFunc: &TeamStoreCreateTeamFunc{
+			defaultHook: func(context.Context, ...[]*Team) error {
+				panic("unexpected invocation of MockTeamStore.CreateTeam")
+			},
+		},
+		CreateTeamMemberFunc: &TeamStoreCreateTeamMemberFunc{
+			defaultHook: func(context.Context, ...[]*TeamMember) error {
+				panic("unexpected invocation of MockTeamStore.CreateTeamMember")
+			},
+		},
+		DeleteTeamFunc: &TeamStoreDeleteTeamFunc{
+			defaultHook: func(context.Context, ...[]int32) error {
+				panic("unexpected invocation of MockTeamStore.DeleteTeam")
+			},
+		},
+		DeleteTeamMemberFunc: &TeamStoreDeleteTeamMemberFunc{
+			defaultHook: func(context.Context, ...[]*TeamMember) error {
+				panic("unexpected invocation of MockTeamStore.DeleteTeamMember")
+			},
+		},
+		GetTeamFunc: &TeamStoreGetTeamFunc{
+			defaultHook: func(context.Context, int32) (*Team, error) {
+				panic("unexpected invocation of MockTeamStore.GetTeam")
+			},
+		},
+		HandleFunc: &TeamStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockTeamStore.Handle")
+			},
+		},
+		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
+			defaultHook: func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+				panic("unexpected invocation of MockTeamStore.ListTeamMembers")
+			},
+		},
+		ListTeamsFunc: &TeamStoreListTeamsFunc{
+			defaultHook: func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+				panic("unexpected invocation of MockTeamStore.ListTeams")
+			},
+		},
+		UpdateTeamFunc: &TeamStoreUpdateTeamFunc{
+			defaultHook: func(context.Context, ...[]*Team) error {
+				panic("unexpected invocation of MockTeamStore.UpdateTeam")
+			},
+		},
+	}
+}
+
+// NewMockTeamStoreFrom creates a new mock of the MockTeamStore interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockTeamStoreFrom(i TeamStore) *MockTeamStore {
+	return &MockTeamStore{
+		CountTeamMembersFunc: &TeamStoreCountTeamMembersFunc{
+			defaultHook: i.CountTeamMembers,
+		},
+		CountTeamsFunc: &TeamStoreCountTeamsFunc{
+			defaultHook: i.CountTeams,
+		},
+		CreateTeamFunc: &TeamStoreCreateTeamFunc{
+			defaultHook: i.CreateTeam,
+		},
+		CreateTeamMemberFunc: &TeamStoreCreateTeamMemberFunc{
+			defaultHook: i.CreateTeamMember,
+		},
+		DeleteTeamFunc: &TeamStoreDeleteTeamFunc{
+			defaultHook: i.DeleteTeam,
+		},
+		DeleteTeamMemberFunc: &TeamStoreDeleteTeamMemberFunc{
+			defaultHook: i.DeleteTeamMember,
+		},
+		GetTeamFunc: &TeamStoreGetTeamFunc{
+			defaultHook: i.GetTeam,
+		},
+		HandleFunc: &TeamStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListTeamMembersFunc: &TeamStoreListTeamMembersFunc{
+			defaultHook: i.ListTeamMembers,
+		},
+		ListTeamsFunc: &TeamStoreListTeamsFunc{
+			defaultHook: i.ListTeams,
+		},
+		UpdateTeamFunc: &TeamStoreUpdateTeamFunc{
+			defaultHook: i.UpdateTeam,
+		},
+	}
+}
+
+// TeamStoreCountTeamMembersFunc describes the behavior when the
+// CountTeamMembers method of the parent MockTeamStore instance is invoked.
+type TeamStoreCountTeamMembersFunc struct {
+	defaultHook func(context.Context, ListTeamMembersOpts) (int32, error)
+	hooks       []func(context.Context, ListTeamMembersOpts) (int32, error)
+	history     []TeamStoreCountTeamMembersFuncCall
+	mutex       sync.Mutex
+}
+
+// CountTeamMembers delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTeamStore) CountTeamMembers(v0 context.Context, v1 ListTeamMembersOpts) (int32, error) {
+	r0, r1 := m.CountTeamMembersFunc.nextHook()(v0, v1)
+	m.CountTeamMembersFunc.appendCall(TeamStoreCountTeamMembersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountTeamMembers
+// method of the parent MockTeamStore instance is invoked and the hook queue
+// is empty.
+func (f *TeamStoreCountTeamMembersFunc) SetDefaultHook(hook func(context.Context, ListTeamMembersOpts) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountTeamMembers method of the parent MockTeamStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *TeamStoreCountTeamMembersFunc) PushHook(hook func(context.Context, ListTeamMembersOpts) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreCountTeamMembersFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamMembersOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreCountTeamMembersFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, ListTeamMembersOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *TeamStoreCountTeamMembersFunc) nextHook() func(context.Context, ListTeamMembersOpts) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreCountTeamMembersFunc) appendCall(r0 TeamStoreCountTeamMembersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreCountTeamMembersFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreCountTeamMembersFunc) History() []TeamStoreCountTeamMembersFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreCountTeamMembersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreCountTeamMembersFuncCall is an object that describes an
+// invocation of method CountTeamMembers on an instance of MockTeamStore.
+type TeamStoreCountTeamMembersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListTeamMembersOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreCountTeamMembersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreCountTeamMembersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TeamStoreCountTeamsFunc describes the behavior when the CountTeams method
+// of the parent MockTeamStore instance is invoked.
+type TeamStoreCountTeamsFunc struct {
+	defaultHook func(context.Context, ListTeamsOpts) (int32, error)
+	hooks       []func(context.Context, ListTeamsOpts) (int32, error)
+	history     []TeamStoreCountTeamsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountTeams delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) CountTeams(v0 context.Context, v1 ListTeamsOpts) (int32, error) {
+	r0, r1 := m.CountTeamsFunc.nextHook()(v0, v1)
+	m.CountTeamsFunc.appendCall(TeamStoreCountTeamsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountTeams method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreCountTeamsFunc) SetDefaultHook(hook func(context.Context, ListTeamsOpts) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountTeams method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreCountTeamsFunc) PushHook(hook func(context.Context, ListTeamsOpts) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreCountTeamsFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamsOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreCountTeamsFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, ListTeamsOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *TeamStoreCountTeamsFunc) nextHook() func(context.Context, ListTeamsOpts) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreCountTeamsFunc) appendCall(r0 TeamStoreCountTeamsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreCountTeamsFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreCountTeamsFunc) History() []TeamStoreCountTeamsFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreCountTeamsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreCountTeamsFuncCall is an object that describes an invocation of
+// method CountTeams on an instance of MockTeamStore.
+type TeamStoreCountTeamsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListTeamsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreCountTeamsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreCountTeamsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TeamStoreCreateTeamFunc describes the behavior when the CreateTeam method
+// of the parent MockTeamStore instance is invoked.
+type TeamStoreCreateTeamFunc struct {
+	defaultHook func(context.Context, ...[]*Team) error
+	hooks       []func(context.Context, ...[]*Team) error
+	history     []TeamStoreCreateTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateTeam delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 ...[]*Team) error {
+	r0 := m.CreateTeamFunc.nextHook()(v0, v1...)
+	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateTeam method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, ...[]*Team) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateTeam method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, ...[]*Team) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...[]*Team) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreCreateTeamFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...[]*Team) error {
+		return r0
+	})
+}
+
+func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, ...[]*Team) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreCreateTeamFunc) appendCall(r0 TeamStoreCreateTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreCreateTeamFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreCreateTeamFunc) History() []TeamStoreCreateTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreCreateTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreCreateTeamFuncCall is an object that describes an invocation of
+// method CreateTeam on an instance of MockTeamStore.
+type TeamStoreCreateTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 [][]*Team
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c TeamStoreCreateTeamFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreCreateTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TeamStoreCreateTeamMemberFunc describes the behavior when the
+// CreateTeamMember method of the parent MockTeamStore instance is invoked.
+type TeamStoreCreateTeamMemberFunc struct {
+	defaultHook func(context.Context, ...[]*TeamMember) error
+	hooks       []func(context.Context, ...[]*TeamMember) error
+	history     []TeamStoreCreateTeamMemberFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateTeamMember delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTeamStore) CreateTeamMember(v0 context.Context, v1 ...[]*TeamMember) error {
+	r0 := m.CreateTeamMemberFunc.nextHook()(v0, v1...)
+	m.CreateTeamMemberFunc.appendCall(TeamStoreCreateTeamMemberFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateTeamMember
+// method of the parent MockTeamStore instance is invoked and the hook queue
+// is empty.
+func (f *TeamStoreCreateTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...[]*TeamMember) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateTeamMember method of the parent MockTeamStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *TeamStoreCreateTeamMemberFunc) PushHook(hook func(context.Context, ...[]*TeamMember) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreCreateTeamMemberFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...[]*TeamMember) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreCreateTeamMemberFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...[]*TeamMember) error {
+		return r0
+	})
+}
+
+func (f *TeamStoreCreateTeamMemberFunc) nextHook() func(context.Context, ...[]*TeamMember) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreCreateTeamMemberFunc) appendCall(r0 TeamStoreCreateTeamMemberFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreCreateTeamMemberFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreCreateTeamMemberFunc) History() []TeamStoreCreateTeamMemberFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreCreateTeamMemberFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreCreateTeamMemberFuncCall is an object that describes an
+// invocation of method CreateTeamMember on an instance of MockTeamStore.
+type TeamStoreCreateTeamMemberFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 [][]*TeamMember
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c TeamStoreCreateTeamMemberFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreCreateTeamMemberFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TeamStoreDeleteTeamFunc describes the behavior when the DeleteTeam method
+// of the parent MockTeamStore instance is invoked.
+type TeamStoreDeleteTeamFunc struct {
+	defaultHook func(context.Context, ...[]int32) error
+	hooks       []func(context.Context, ...[]int32) error
+	history     []TeamStoreDeleteTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteTeam delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) DeleteTeam(v0 context.Context, v1 ...[]int32) error {
+	r0 := m.DeleteTeamFunc.nextHook()(v0, v1...)
+	m.DeleteTeamFunc.appendCall(TeamStoreDeleteTeamFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteTeam method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreDeleteTeamFunc) SetDefaultHook(hook func(context.Context, ...[]int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteTeam method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreDeleteTeamFunc) PushHook(hook func(context.Context, ...[]int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreDeleteTeamFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...[]int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreDeleteTeamFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...[]int32) error {
+		return r0
+	})
+}
+
+func (f *TeamStoreDeleteTeamFunc) nextHook() func(context.Context, ...[]int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreDeleteTeamFunc) appendCall(r0 TeamStoreDeleteTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreDeleteTeamFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreDeleteTeamFunc) History() []TeamStoreDeleteTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreDeleteTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreDeleteTeamFuncCall is an object that describes an invocation of
+// method DeleteTeam on an instance of MockTeamStore.
+type TeamStoreDeleteTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 [][]int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c TeamStoreDeleteTeamFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreDeleteTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TeamStoreDeleteTeamMemberFunc describes the behavior when the
+// DeleteTeamMember method of the parent MockTeamStore instance is invoked.
+type TeamStoreDeleteTeamMemberFunc struct {
+	defaultHook func(context.Context, ...[]*TeamMember) error
+	hooks       []func(context.Context, ...[]*TeamMember) error
+	history     []TeamStoreDeleteTeamMemberFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteTeamMember delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTeamStore) DeleteTeamMember(v0 context.Context, v1 ...[]*TeamMember) error {
+	r0 := m.DeleteTeamMemberFunc.nextHook()(v0, v1...)
+	m.DeleteTeamMemberFunc.appendCall(TeamStoreDeleteTeamMemberFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteTeamMember
+// method of the parent MockTeamStore instance is invoked and the hook queue
+// is empty.
+func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultHook(hook func(context.Context, ...[]*TeamMember) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteTeamMember method of the parent MockTeamStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *TeamStoreDeleteTeamMemberFunc) PushHook(hook func(context.Context, ...[]*TeamMember) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreDeleteTeamMemberFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...[]*TeamMember) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreDeleteTeamMemberFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...[]*TeamMember) error {
+		return r0
+	})
+}
+
+func (f *TeamStoreDeleteTeamMemberFunc) nextHook() func(context.Context, ...[]*TeamMember) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreDeleteTeamMemberFunc) appendCall(r0 TeamStoreDeleteTeamMemberFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreDeleteTeamMemberFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreDeleteTeamMemberFunc) History() []TeamStoreDeleteTeamMemberFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreDeleteTeamMemberFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreDeleteTeamMemberFuncCall is an object that describes an
+// invocation of method DeleteTeamMember on an instance of MockTeamStore.
+type TeamStoreDeleteTeamMemberFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 [][]*TeamMember
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c TeamStoreDeleteTeamMemberFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreDeleteTeamMemberFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TeamStoreGetTeamFunc describes the behavior when the GetTeam method of
+// the parent MockTeamStore instance is invoked.
+type TeamStoreGetTeamFunc struct {
+	defaultHook func(context.Context, int32) (*Team, error)
+	hooks       []func(context.Context, int32) (*Team, error)
+	history     []TeamStoreGetTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// GetTeam delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockTeamStore) GetTeam(v0 context.Context, v1 int32) (*Team, error) {
+	r0, r1 := m.GetTeamFunc.nextHook()(v0, v1)
+	m.GetTeamFunc.appendCall(TeamStoreGetTeamFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetTeam method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreGetTeamFunc) SetDefaultHook(hook func(context.Context, int32) (*Team, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetTeam method of the parent MockTeamStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreGetTeamFunc) PushHook(hook func(context.Context, int32) (*Team, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreGetTeamFunc) SetDefaultReturn(r0 *Team, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*Team, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreGetTeamFunc) PushReturn(r0 *Team, r1 error) {
+	f.PushHook(func(context.Context, int32) (*Team, error) {
+		return r0, r1
+	})
+}
+
+func (f *TeamStoreGetTeamFunc) nextHook() func(context.Context, int32) (*Team, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreGetTeamFunc) appendCall(r0 TeamStoreGetTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreGetTeamFuncCall objects describing
+// the invocations of this function.
+func (f *TeamStoreGetTeamFunc) History() []TeamStoreGetTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreGetTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreGetTeamFuncCall is an object that describes an invocation of
+// method GetTeam on an instance of MockTeamStore.
+type TeamStoreGetTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Team
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreGetTeamFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreGetTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// TeamStoreHandleFunc describes the behavior when the Handle method of the
+// parent MockTeamStore instance is invoked.
+type TeamStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []TeamStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockTeamStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(TeamStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockTeamStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *TeamStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreHandleFunc) appendCall(r0 TeamStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreHandleFuncCall objects describing
+// the invocations of this function.
+func (f *TeamStoreHandleFunc) History() []TeamStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockTeamStore.
+type TeamStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// TeamStoreListTeamMembersFunc describes the behavior when the
+// ListTeamMembers method of the parent MockTeamStore instance is invoked.
+type TeamStoreListTeamMembersFunc struct {
+	defaultHook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)
+	hooks       []func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)
+	history     []TeamStoreListTeamMembersFuncCall
+	mutex       sync.Mutex
+}
+
+// ListTeamMembers delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockTeamStore) ListTeamMembers(v0 context.Context, v1 ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+	r0, r1, r2 := m.ListTeamMembersFunc.nextHook()(v0, v1)
+	m.ListTeamMembersFunc.appendCall(TeamStoreListTeamMembersFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListTeamMembers
+// method of the parent MockTeamStore instance is invoked and the hook queue
+// is empty.
+func (f *TeamStoreListTeamMembersFunc) SetDefaultHook(hook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListTeamMembers method of the parent MockTeamStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *TeamStoreListTeamMembersFunc) PushHook(hook func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreListTeamMembersFunc) SetDefaultReturn(r0 []*TeamMember, r1 int32, r2 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreListTeamMembersFunc) PushReturn(r0 []*TeamMember, r1 int32, r2 error) {
+	f.PushHook(func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *TeamStoreListTeamMembersFunc) nextHook() func(context.Context, ListTeamMembersOpts) ([]*TeamMember, int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreListTeamMembersFunc) appendCall(r0 TeamStoreListTeamMembersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreListTeamMembersFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreListTeamMembersFunc) History() []TeamStoreListTeamMembersFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreListTeamMembersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreListTeamMembersFuncCall is an object that describes an
+// invocation of method ListTeamMembers on an instance of MockTeamStore.
+type TeamStoreListTeamMembersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListTeamMembersOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*TeamMember
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int32
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreListTeamMembersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreListTeamMembersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// TeamStoreListTeamsFunc describes the behavior when the ListTeams method
+// of the parent MockTeamStore instance is invoked.
+type TeamStoreListTeamsFunc struct {
+	defaultHook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)
+	hooks       []func(context.Context, ListTeamsOpts) ([]*Team, int32, error)
+	history     []TeamStoreListTeamsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListTeams delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockTeamStore) ListTeams(v0 context.Context, v1 ListTeamsOpts) ([]*Team, int32, error) {
+	r0, r1, r2 := m.ListTeamsFunc.nextHook()(v0, v1)
+	m.ListTeamsFunc.appendCall(TeamStoreListTeamsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListTeams method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreListTeamsFunc) SetDefaultHook(hook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListTeams method of the parent MockTeamStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreListTeamsFunc) PushHook(hook func(context.Context, ListTeamsOpts) ([]*Team, int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreListTeamsFunc) SetDefaultReturn(r0 []*Team, r1 int32, r2 error) {
+	f.SetDefaultHook(func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreListTeamsFunc) PushReturn(r0 []*Team, r1 int32, r2 error) {
+	f.PushHook(func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *TeamStoreListTeamsFunc) nextHook() func(context.Context, ListTeamsOpts) ([]*Team, int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreListTeamsFunc) appendCall(r0 TeamStoreListTeamsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreListTeamsFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreListTeamsFunc) History() []TeamStoreListTeamsFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreListTeamsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreListTeamsFuncCall is an object that describes an invocation of
+// method ListTeams on an instance of MockTeamStore.
+type TeamStoreListTeamsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListTeamsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Team
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int32
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c TeamStoreListTeamsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreListTeamsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// TeamStoreUpdateTeamFunc describes the behavior when the UpdateTeam method
+// of the parent MockTeamStore instance is invoked.
+type TeamStoreUpdateTeamFunc struct {
+	defaultHook func(context.Context, ...[]*Team) error
+	hooks       []func(context.Context, ...[]*Team) error
+	history     []TeamStoreUpdateTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateTeam delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockTeamStore) UpdateTeam(v0 context.Context, v1 ...[]*Team) error {
+	r0 := m.UpdateTeamFunc.nextHook()(v0, v1...)
+	m.UpdateTeamFunc.appendCall(TeamStoreUpdateTeamFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateTeam method of
+// the parent MockTeamStore instance is invoked and the hook queue is empty.
+func (f *TeamStoreUpdateTeamFunc) SetDefaultHook(hook func(context.Context, ...[]*Team) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateTeam method of the parent MockTeamStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *TeamStoreUpdateTeamFunc) PushHook(hook func(context.Context, ...[]*Team) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *TeamStoreUpdateTeamFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...[]*Team) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *TeamStoreUpdateTeamFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...[]*Team) error {
+		return r0
+	})
+}
+
+func (f *TeamStoreUpdateTeamFunc) nextHook() func(context.Context, ...[]*Team) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *TeamStoreUpdateTeamFunc) appendCall(r0 TeamStoreUpdateTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of TeamStoreUpdateTeamFuncCall objects
+// describing the invocations of this function.
+func (f *TeamStoreUpdateTeamFunc) History() []TeamStoreUpdateTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]TeamStoreUpdateTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// TeamStoreUpdateTeamFuncCall is an object that describes an invocation of
+// method UpdateTeam on an instance of MockTeamStore.
+type TeamStoreUpdateTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 [][]*Team
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c TeamStoreUpdateTeamFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c TeamStoreUpdateTeamFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
