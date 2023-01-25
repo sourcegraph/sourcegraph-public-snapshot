@@ -18,19 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RecoveryUserRequest struct {
-	UserID graphql.ID
-}
 type RecoverUsersRequest struct {
-	UserIDs []RecoveryUserRequest
-}
-
-func (r *schemaResolver) RecoverUser(ctx context.Context, args *RecoveryUserRequest) (*EmptyResponse, error) {
-	return r.RecoverUsers(ctx, &RecoverUsersRequest{
-		UserIDs: []RecoveryUserRequest{
-			{UserID: args.UserID},
-		},
-	})
+	UserIDs []graphql.ID
 }
 
 func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
@@ -48,7 +37,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 
 	ids := make([]int32, len(args.UserIDs))
 	for index, user := range args.UserIDs {
-		id, err := UnmarshalUserID(user.UserID)
+		id, err := UnmarshalUserID(user)
 		if err != nil {
 			return nil, err
 		}
@@ -58,9 +47,14 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 		ids[index] = id
 	}
 
-	err := r.db.Users().RecoverList(ctx, ids)
+	users, err := r.db.Users().RecoverUsersList(ctx, ids)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(users) != len(ids) {
+		missingUserIds := missingUserIds(ids, users)
+		return nil, errors.Errorf("some users were not found, expected to recover %d, but found only %d: %s", len(ids), len(users), missingUserIds)
 	}
 
 	return &EmptyResponse{}, nil
@@ -369,4 +363,19 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+}
+
+func missingUserIds(id, affectedIds []int32) []graphql.ID {
+	maffectedIds := make(map[int32]struct{}, len(affectedIds))
+	for _, x := range affectedIds {
+		maffectedIds[x] = struct{}{}
+	}
+	var diff []graphql.ID
+	for _, x := range id {
+		if _, found := maffectedIds[x]; !found {
+			strId := MarshalUserID(x)
+			diff = append(diff, strId)
+		}
+	}
+	return diff
 }

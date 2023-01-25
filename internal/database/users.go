@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -82,8 +81,7 @@ type UserStore interface {
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
-	RecoverUserByID(context.Context, int32) error
-	RecoverList(context.Context, []int32) error
+	RecoverUsersList(context.Context, []int32) ([]int32, error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -679,54 +677,42 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	db.SecurityEventLogs().LogEventList(ctx, events)
 }
 
-// RecoverUserByID recovers a user by their ID.
-func (u *userStore) RecoverUserByID(ctx context.Context, id int32) error {
-	return u.RecoverList(ctx, []int32{id})
-}
-
 // RecoverList recovers a list of users by their IDs.
-func (u *userStore) RecoverList(ctx context.Context, ids []int32) error {
+func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) ([]int32, error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-
 	userIDs := make([]*sqlf.Query, len(ids))
 	for i := range ids {
 		userIDs[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	idsCond := sqlf.Join(userIDs, ",")
+
 	affectedUserID, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if len(affectedUserID) != len(ids) {
-		missingUserIds := missingUserIds(ids, affectedUserID)
-		return errors.Errorf("some users were not found, expected to recover %d, but found only %d: %s", len(userIDs), len(affectedUserID), strings.Join(missingUserIds, ","))
-	}
-	users, err := u.getBySQL(ctx, sqlf.Sprintf("WHERE id IN (%s)", idsCond))
-	if err != nil {
-		return err
+	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
+		return nil, err
 	}
 
-	for _, user := range users {
-		if err := u.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) VALUES(%s, %s)", user.Username, user.ID)); err != nil {
-			return err
-		}
-	}
+	//todo: @mucles - need add where condition to query to only update if deleted_at is within 10 secs of users.deleted_at
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=NULL, updated_at=now() WHERE user_id IN (%s) AND deleted_at IS NOT NULL", idsCond)); err != nil {
-		return err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
-		return err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL and revoked_at IS NOT NULL and expires_at >= now() AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
+		return nil, err
+	}
+
+	return affectedUserID, nil
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -1437,8 +1423,4 @@ func missingUserIds(id, affectedIds []int32) []string {
 		}
 	}
 	return diff
-}
-
-func MarshalUserID(strId string) {
-	panic("unimplemented")
 }

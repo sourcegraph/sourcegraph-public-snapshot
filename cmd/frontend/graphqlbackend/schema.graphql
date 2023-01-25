@@ -248,10 +248,6 @@ type Mutation {
     """
     deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
     """
-    Recover a deleted user account. Only site admins may perform this mutation.
-    """
-    recoverUser(userID: ID!): EmptyResponse
-    """
     Bulk "recoverUser" action.
     """
     recoverUsers(userIDs: [ID!]!): EmptyResponse
