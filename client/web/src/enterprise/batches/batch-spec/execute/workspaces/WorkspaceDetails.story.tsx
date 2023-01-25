@@ -25,6 +25,7 @@ import {
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
@@ -75,6 +76,35 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
             result: { data: { node } },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: {
+               node: {
+                __typename: 'VisibleBatchSpecWorkspace',
+                    step: {
+                        outputLines: {
+                            __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
+                            nodes: [
+                                'stdout: Hello world 1',
+                                'stdout: Hello world 2',
+                                'stdout: Hello world 3',
+                                'stdout: Hello world 4',
+                                'stdout: Hello world 5',
+                            ],
+                            totalCount: 5,
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            }
+                        }
+                    }
+               }
+            } },
+            nMatches: Number.POSITIVE_INFINITY,
+        }
     ])
 
     return (
