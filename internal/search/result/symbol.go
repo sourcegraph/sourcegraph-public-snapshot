@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 )
 
 // Symbol is a code symbol.
@@ -27,47 +26,6 @@ type Symbol struct {
 	Signature  string
 
 	FileLimited bool
-}
-
-// FromProto converts a proto.Symbol to a result.Symbol.
-func (s *Symbol) FromProto(p *proto.SymbolsResponse_Symbol) {
-	if s == nil {
-		return
-	}
-
-	s.Name = p.GetName()
-	s.Path = p.GetPath()
-
-	s.Line = int(p.GetLine())
-	s.Character = int(p.GetCharacter())
-
-	s.Kind = p.GetKind()
-	s.Language = p.GetLanguage()
-
-	s.Parent = p.GetParent()
-	s.ParentKind = p.GetParentKind()
-
-	s.Signature = p.GetSignature()
-	s.FileLimited = p.GetFileLimited()
-}
-
-func (s *Symbol) ToProto() *proto.SymbolsResponse_Symbol {
-	if s == nil {
-		return &proto.SymbolsResponse_Symbol{}
-	}
-
-	return &proto.SymbolsResponse_Symbol{
-		Name:        s.Name,
-		Path:        s.Path,
-		Line:        int32(s.Line),
-		Character:   int32(s.Character),
-		Kind:        s.Kind,
-		Language:    s.Language,
-		Parent:      s.Parent,
-		ParentKind:  s.ParentKind,
-		Signature:   s.Signature,
-		FileLimited: s.FileLimited,
-	}
 }
 
 // NewSymbolMatch returns a new SymbolMatch. Passing -1 as the character will make NewSymbolMatch infer

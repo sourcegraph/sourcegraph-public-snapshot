@@ -34,24 +34,22 @@ type grpcService struct {
 }
 
 func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
-	var params search.SymbolsParameters
-	params.FromProto(r)
+	var response proto.SymbolsResponse
 
+	params := r.ToInternal()
 	symbols, err := s.searchFunc(ctx, params)
 	if err != nil {
-		arguments := fmt.Sprintf("%+v", params)
-
 		s.logger.Error("symbol search failed",
-			logger.String("arguments", arguments),
+			logger.String("arguments", fmt.Sprintf("%+v", params)),
 			logger.Error(err),
 		)
 
-		response := search.SymbolsResponse{Err: err.Error()}
-		return response.ToProto(), nil
+		response.FromInternal(&search.SymbolsResponse{Err: err.Error()})
+	} else {
+		response.FromInternal(&search.SymbolsResponse{Symbols: symbols})
 	}
 
-	response := search.SymbolsResponse{Symbols: symbols}
-	return response.ToProto(), nil
+	return &response, nil
 }
 
 func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {

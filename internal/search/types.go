@@ -8,8 +8,7 @@ import (
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
-
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,12 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Inputs contains fields we set before kicking off search.
@@ -116,88 +112,9 @@ type SymbolsParameters struct {
 	Timeout time.Duration
 }
 
-func (s *SymbolsParameters) FromProto(p *proto.SearchRequest) {
-	if s == nil {
-		return
-	}
-
-	*s = SymbolsParameters{
-		Repo:            api.RepoName(p.GetRepo()), // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
-		CommitID:        api.CommitID(p.GetCommitId()),
-		Query:           p.GetQuery(),
-		IsRegExp:        p.GetIsRegExp(),
-		IsCaseSensitive: p.GetIsCaseSensitive(),
-		IncludePatterns: p.GetIncludePatterns(),
-		ExcludePattern:  p.GetExcludePattern(),
-		First:           int(p.GetFirst()),
-		Timeout:         p.GetTimeout().AsDuration(),
-	}
-}
-
-func (s *SymbolsParameters) ToProto() *proto.SearchRequest {
-	if s == nil {
-		return &proto.SearchRequest{}
-	}
-
-	return &proto.SearchRequest{
-		Repo:     string(s.Repo),
-		CommitId: string(s.CommitID),
-
-		Query:           s.Query,
-		IsRegExp:        s.IsRegExp,
-		IsCaseSensitive: s.IsCaseSensitive,
-		IncludePatterns: s.IncludePatterns,
-		ExcludePattern:  s.ExcludePattern,
-
-		First:   int32(s.First),
-		Timeout: durationpb.New(s.Timeout),
-	}
-}
-
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
-}
-
-func (r *SymbolsResponse) FromProto(p *proto.SymbolsResponse) {
-	if r == nil {
-		return
-	}
-
-	var symbols []result.Symbol
-
-	for _, s := range p.GetSymbols() {
-		var symbol result.Symbol
-		symbol.FromProto(s)
-		symbols = append(symbols, symbol)
-	}
-
-	*r = SymbolsResponse{
-		Symbols: symbols,
-		Err:     p.GetError(),
-	}
-
-}
-
-func (r *SymbolsResponse) ToProto() *proto.SymbolsResponse {
-	if r == nil {
-		return &proto.SymbolsResponse{}
-	}
-
-	var symbols []*proto.SymbolsResponse_Symbol
-	for _, s := range r.Symbols {
-		symbols = append(symbols, s.ToProto())
-	}
-
-	var err *string
-	if r.Err != "" {
-		err = &r.Err
-	}
-
-	return &proto.SymbolsResponse{
-		Symbols: symbols,
-		Error:   err,
-	}
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global

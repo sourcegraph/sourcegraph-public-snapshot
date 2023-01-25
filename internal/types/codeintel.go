@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 )
 
 // CodeIntelAggregatedEvent represents the total events and unique users within
@@ -141,67 +139,8 @@ func (r RepoCommitPath) String() string {
 	return fmt.Sprintf("%s %s %s", r.Repo, r.Commit, r.Path)
 }
 
-func (r *RepoCommitPath) ToProto() *proto.RepoCommitPath {
-	if r == nil {
-		return &proto.RepoCommitPath{}
-	}
-
-	return &proto.RepoCommitPath{
-		Repo:   r.Repo,
-		Commit: r.Commit,
-		Path:   r.Path,
-	}
-}
-
-func (r *RepoCommitPath) FromProto(p *proto.RepoCommitPath) {
-	if r == nil {
-		return
-	}
-
-	*r = RepoCommitPath{
-		Repo:   p.GetRepo(),
-		Commit: p.GetCommit(),
-		Path:   p.GetPath(),
-	}
-}
-
 type LocalCodeIntelPayload struct {
 	Symbols []Symbol `json:"symbols"`
-}
-
-func (p *LocalCodeIntelPayload) ToProto() *proto.LocalCodeIntelResponse {
-	if p == nil {
-		return &proto.LocalCodeIntelResponse{}
-	}
-
-	var symbols []*proto.LocalCodeIntelResponse_Symbol
-
-	for _, s := range p.Symbols {
-		symbols = append(symbols, s.ToProto())
-	}
-
-	return &proto.LocalCodeIntelResponse{
-		Symbols: symbols,
-	}
-}
-
-func (p *LocalCodeIntelPayload) FromProto(r *proto.LocalCodeIntelResponse) {
-	if p == nil {
-		return
-	}
-
-	var symbols []Symbol
-
-	for _, s := range r.GetSymbols() {
-		var symbol Symbol
-		symbol.FromProto(s)
-
-		symbols = append(symbols, symbol)
-	}
-
-	*p = LocalCodeIntelPayload{
-		Symbols: symbols,
-	}
 }
 
 type RepoCommitPathRange struct {
@@ -224,77 +163,11 @@ type Point struct {
 	Column int `json:"column"`
 }
 
-func (p *Point) ToProto() *proto.Point {
-	if p == nil {
-		return &proto.Point{}
-	}
-
-	return &proto.Point{
-		Row:    int32(p.Row),
-		Column: int32(p.Column),
-	}
-}
-
-func (p *Point) FromProto(pp *proto.Point) {
-	if p == nil {
-		return
-	}
-
-	*p = Point{
-		Row:    int(pp.GetRow()),
-		Column: int(pp.GetColumn()),
-	}
-}
-
 type Symbol struct {
 	Name  string  `json:"name"`
 	Hover string  `json:"hover,omitempty"`
 	Def   Range   `json:"def,omitempty"`
 	Refs  []Range `json:"refs,omitempty"`
-}
-
-func (s *Symbol) ToProto() *proto.LocalCodeIntelResponse_Symbol {
-	if s == nil {
-		return &proto.LocalCodeIntelResponse_Symbol{}
-	}
-
-	var refs []*proto.Range
-
-	for _, r := range s.Refs {
-		refs = append(refs, r.ToProto())
-	}
-
-	return &proto.LocalCodeIntelResponse_Symbol{
-		Name:  s.Name,
-		Hover: s.Hover,
-		Def:   s.Def.ToProto(),
-		Refs:  refs,
-	}
-}
-
-func (s *Symbol) FromProto(p *proto.LocalCodeIntelResponse_Symbol) {
-	if s == nil {
-		return
-	}
-
-	var def Range
-	def.FromProto(p.GetDef())
-
-	var refs []Range
-
-	for _, ref := range p.GetRefs() {
-		var r Range
-		r.FromProto(ref)
-
-		refs = append(refs, r)
-	}
-
-	*s = Symbol{
-		Name:  p.GetName(),
-		Hover: p.GetHover(),
-		Def:   def,
-		Refs:  refs,
-	}
 }
 
 func (s Symbol) String() string {
@@ -307,30 +180,6 @@ type Range struct {
 	Length int `json:"length"`
 }
 
-func (r *Range) ToProto() *proto.Range {
-	if r == nil {
-		return &proto.Range{}
-	}
-
-	return &proto.Range{
-		Row:    int32(r.Row),
-		Column: int32(r.Column),
-		Length: int32(r.Length),
-	}
-}
-
-func (r *Range) FromProto(p *proto.Range) {
-	if r == nil {
-		return
-	}
-
-	*r = Range{
-		Row:    int(p.GetRow()),
-		Column: int(p.GetColumn()),
-		Length: int(p.GetLength()),
-	}
-}
-
 func (r Range) String() string {
 	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
 }
@@ -338,50 +187,6 @@ func (r Range) String() string {
 type SymbolInfo struct {
 	Definition RepoCommitPathMaybeRange `json:"definition"`
 	Hover      *string                  `json:"hover,omitempty"`
-}
-
-func (si *SymbolInfo) ToProto() *proto.SymbolInfoResponse {
-	if si == nil {
-		return &proto.SymbolInfoResponse{}
-	}
-
-	var result proto.SymbolInfoResponse_DefinitionResult
-
-	var definition proto.SymbolInfoResponse_Definition
-	definition.RepoCommitPath = si.Definition.RepoCommitPath.ToProto()
-	if si.Definition.Range != nil {
-		definition.Range = si.Definition.Range.ToProto()
-	}
-
-	result.Definition = &definition
-	result.Hover = si.Hover
-
-	return &proto.SymbolInfoResponse{
-		Result: &result,
-	}
-}
-
-func (si *SymbolInfo) FromProto(p *proto.SymbolInfoResponse) {
-	if si == nil {
-		return
-	}
-
-	result := p.GetResult()
-
-	if result == nil {
-		return
-	}
-
-	var definition RepoCommitPathMaybeRange
-
-	definition.RepoCommitPath.FromProto(result.GetDefinition().GetRepoCommitPath())
-	definition.Range.FromProto(result.GetDefinition().GetRange())
-
-	*si = SymbolInfo{
-		Definition: definition,
-		Hover:      result.Hover, // don't use GetHover() because it returns a string, not a pointer to a string
-	}
-
 }
 
 func (s SymbolInfo) String() string {

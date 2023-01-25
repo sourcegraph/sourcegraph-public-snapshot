@@ -249,14 +249,15 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 
 	grpcClient := proto.NewSymbolsClient(conn)
 
-	protoResponse, err := grpcClient.Search(ctx, args.ToProto())
+	var protoArgs proto.SearchRequest
+	protoArgs.FromInternal(&args)
+
+	protoResponse, err := grpcClient.Search(ctx, &protoArgs)
 	if err != nil {
 		return search.SymbolsResponse{}, err
 	}
 
-	var response search.SymbolsResponse
-	response.FromProto(protoResponse)
-
+	response := protoResponse.ToInternal()
 	return response, nil
 }
 
@@ -318,15 +319,16 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 
 	grpcClient := proto.NewSymbolsClient(conn)
 
-	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: path.ToProto()}
+	var rcp proto.RepoCommitPath
+	rcp.FromInternal(&path)
+
+	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
 	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	var response types.LocalCodeIntelPayload
-	response.FromProto(protoResponse)
-
+	response := protoResponse.ToInternal()
 	return &response, nil
 }
 
@@ -414,18 +416,24 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	client := proto.NewSymbolsClient(conn)
 
-	var protoArgs proto.SymbolInfoRequest
-	protoArgs.RepoCommitPath = args.RepoCommitPath.ToProto()
-	protoArgs.Point = args.Point.ToProto()
+	var rcp proto.RepoCommitPath
+	rcp.FromInternal(&args.RepoCommitPath)
+
+	var point proto.Point
+	point.FromInternal(&args.Point)
+
+	protoArgs := proto.SymbolInfoRequest{
+		RepoCommitPath: &rcp,
+		Point:          &point,
+	}
 
 	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	result.FromProto(protoResponse)
-
-	return result, nil
+	response := protoResponse.ToInternal()
+	return &response, nil
 }
 
 func (c *Client) symbolInfoJSON(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
