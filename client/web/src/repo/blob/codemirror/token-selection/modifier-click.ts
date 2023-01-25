@@ -1,4 +1,4 @@
-import { Facet, StateEffect, StateField } from '@codemirror/state'
+import { Extension, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, PluginValue, ViewPlugin } from '@codemirror/view'
 
 import { isMacPlatform } from '@sourcegraph/common'
@@ -58,7 +58,7 @@ export function isModifierKey(event: KeyboardEvent | MouseEvent): boolean {
     return event.ctrlKey
 }
 
-export function modifierClickExtension() {
+export function modifierClickExtension(): Extension {
     return [
         isModifierKeyHeld,
         cmdPointerCursor,

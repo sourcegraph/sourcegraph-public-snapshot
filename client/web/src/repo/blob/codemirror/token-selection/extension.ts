@@ -3,12 +3,12 @@ import { EditorView } from '@codemirror/view'
 
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
+import { codeIntelTooltipsExtension } from './code-intel-tooltips'
+import { interactiveOccurrencesExtension } from './decorations'
 import { definitionExtension, goToDefinitionOnMouseEvent } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
 import { keyboardShortcutsExtension } from './keybindings'
 import { modifierClickExtension } from './modifier-click'
-import { codeIntelTooltipsExtension } from './code-intel-tooltips'
-import { interactiveOccurrencesExtension } from './decorations'
 import { fallbackOccurrences, syncSelectionWithURL } from './selections'
 
 const LONG_CLICK_DURATION = 500

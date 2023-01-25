@@ -8,6 +8,7 @@ import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { blobPropsFacet } from '..'
 import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isSelectionInsideDocument } from '../utils'
+
 import { setFocusedOccurrence } from './code-intel-tooltips'
 
 export const fallbackOccurrences = StateField.define<Map<number, Occurrence>>({

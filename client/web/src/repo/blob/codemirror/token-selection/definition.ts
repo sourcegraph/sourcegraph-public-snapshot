@@ -1,5 +1,5 @@
-import { Facet, RangeSet, StateEffect, StateField } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { Extension, StateEffect, StateField } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import * as H from 'history'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
@@ -19,8 +19,8 @@ import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
 import { preciseOffsetAtCoords } from '../utils'
 
-import { isModifierKey } from './modifier-click'
 import { getCodeIntelTooltipState, selectOccurrence, setFocusedOccurrenceTooltip } from './code-intel-tooltips'
+import { isModifierKey } from './modifier-click'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -47,7 +47,7 @@ export const definitionCache = StateField.define<Map<Occurrence, Promise<Definit
     update: value => value,
 })
 
-export function definitionExtension() {
+export function definitionExtension(): Extension {
     return [definitionCache, definitionUrlField]
 }
 
@@ -173,12 +173,6 @@ async function goToDefinition(
                         previousURL?: string
                     }
                     const history = view.state.facet(blobPropsFacet).history as H.History<DefinitionState>
-                    const selectionRange = Range.fromNumbers(
-                        range.start.line,
-                        range.start.character,
-                        range.end.line,
-                        range.end.character
-                    )
                     const hrefFrom = locationToURL(locationFrom)
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This

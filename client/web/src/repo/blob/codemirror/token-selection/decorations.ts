@@ -1,11 +1,14 @@
+import { Extension } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
-import { isModifierKeyHeld } from './modifier-click'
-import { positionToOffset, sortRangeValuesByStart } from '../utils'
-import { codeIntelTooltipsState } from './code-intel-tooltips'
-import { documentHighlightsField } from './document-highlights'
-import { definitionUrlField } from './definition'
 
-export function interactiveOccurrencesExtension() {
+import { positionToOffset, sortRangeValuesByStart } from '../utils'
+
+import { codeIntelTooltipsState } from './code-intel-tooltips'
+import { definitionUrlField } from './definition'
+import { documentHighlightsField } from './document-highlights'
+import { isModifierKeyHeld } from './modifier-click'
+
+export function interactiveOccurrencesExtension(): Extension {
     return [
         EditorView.decorations.compute(
             [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld],

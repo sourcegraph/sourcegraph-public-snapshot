@@ -6,6 +6,7 @@ import {
     selectLineDown,
     selectLineUp,
 } from '@codemirror/commands'
+import { Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
@@ -13,16 +14,16 @@ import { syntaxHighlight } from '../highlight'
 import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
 import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-
-import { goToDefinitionAtOccurrence } from './definition'
-import { isModifierKeyHeld } from './modifier-click'
 import { positionToOffset } from '../utils'
+
 import {
     getCodeIntelTooltipState,
     setFocusedOccurrenceTooltip,
     selectOccurrence,
     getHoverTooltip,
 } from './code-intel-tooltips'
+import { goToDefinitionAtOccurrence } from './definition'
+import { isModifierKeyHeld } from './modifier-click'
 
 const keybindings: KeyBinding[] = [
     {
@@ -159,7 +160,7 @@ const keybindings: KeyBinding[] = [
     },
 ]
 
-function keyDownHandler(event: KeyboardEvent, view: EditorView) {
+function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
     switch (event.key) {
         case 'ArrowLeft': {
             const selectedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
@@ -219,20 +220,21 @@ function keyDownHandler(event: KeyboardEvent, view: EditorView) {
     }
 }
 
+// TODO: add comment (https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102)
 const selectionLayer = layer({
     above: false,
     markers(view) {
         return view.state.selection.ranges
-            .map(r => (r.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', r)))
+            .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
             .reduce((a, b) => a.concat(b))
     },
-    update(update, dom) {
+    update(update) {
         return update.docChanged || update.selectionSet || update.viewportChanged
     },
     class: 'cm-selectionLayer',
 })
 
-function selectionLayerExtension() {
+function selectionLayerExtension(): Extension {
     return [
         selectionLayer,
         EditorView.theme({
@@ -247,6 +249,6 @@ function selectionLayerExtension() {
     ]
 }
 
-export function keyboardShortcutsExtension() {
+export function keyboardShortcutsExtension(): Extension {
     return [selectionLayerExtension(), keymap.of(keybindings), EditorView.domEventHandlers({ keydown: keyDownHandler })]
 }

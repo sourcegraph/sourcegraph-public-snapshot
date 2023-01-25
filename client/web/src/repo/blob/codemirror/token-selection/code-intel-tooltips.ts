@@ -1,26 +1,28 @@
-import { countColumn, StateEffect, StateField } from '@codemirror/state'
-import { Occurrence, Position } from '@sourcegraph/shared/out/src/codeintel/scip'
+import { countColumn, Extension, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
+import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
-import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
+import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
+import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+
+import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
+import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
     occurrenceAtPosition,
     positionAtCmPosition,
     rangeToCmSelection,
 } from '../occurrence-utils'
-import { showDocumentHighlightsForOccurrence } from './document-highlights'
-import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
-import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
-import { blobPropsFacet } from '../index'
-import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
+import { LoadingTooltip } from '../tooltips/LoadingTooltip'
+import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
+
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
-import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { showDocumentHighlightsForOccurrence } from './document-highlights'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
 type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
@@ -77,8 +79,8 @@ const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     const offset = positionToOffset(view.state.doc, occurrence.range.end)
     if (offset !== null) {
         const node = view.domAtPos(offset).node
-        const el = node instanceof HTMLElement ? node : node.parentElement
-        const lineEl = el?.matches('.cm-line') ? el : el?.closest('.cm-line')
+        const element = node instanceof HTMLElement ? node : node.parentElement
+        const lineEl = element?.matches('.cm-line') ? element : element?.closest('.cm-line')
         const interactiveOccurrenceEl = lineEl?.querySelector<HTMLElement>('.interactive-occurrence')
         if (interactiveOccurrenceEl) {
             interactiveOccurrenceEl?.focus()
@@ -478,6 +480,6 @@ const tooltipStyles = EditorView.theme({
     },
 })
 
-export function codeIntelTooltipsExtension() {
+export function codeIntelTooltipsExtension(): Extension {
     return [codeIntelTooltipsState, hoverCache, hoverManager, pinManager, tooltipStyles]
 }
