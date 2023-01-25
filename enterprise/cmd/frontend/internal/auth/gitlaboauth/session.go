@@ -165,6 +165,7 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 				if membership.State == "active" {
 					return true, nil
 				}
+				continue
 			}
 
 			return true, nil
