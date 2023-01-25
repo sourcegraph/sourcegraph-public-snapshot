@@ -139,11 +139,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to frontend database")
-	}
-	git := gitserver.NewClient(db)
+	git := gitserver.NewClient()
 
 	service := &search.Service{
 		Store: &search.Store{
@@ -175,7 +171,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			MaxCacheSizeBytes: cacheSizeBytes,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
-			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),

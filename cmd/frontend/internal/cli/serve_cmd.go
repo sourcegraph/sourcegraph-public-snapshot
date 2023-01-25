@@ -205,7 +205,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
-		gitserver.NewClient(db),
+		gitserver.NewClient(),
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
 		enterprise.InsightsResolver,
