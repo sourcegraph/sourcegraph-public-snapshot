@@ -2,6 +2,7 @@ package blobstore_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
@@ -66,7 +67,7 @@ func TestUpload(t *testing.T) {
 	defer server.Close()
 
 	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
-	autogold.Expect([]any{12, nil}).Equal(t, []any{uploaded, err})
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 }
 
 // Initialize uploadstore, upload an object twice and confirm there is no conflict
@@ -76,10 +77,10 @@ func TestUploadTwice(t *testing.T) {
 	defer server.Close()
 
 	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
-	autogold.Expect([]any{12, nil}).Equal(t, []any{uploaded, err})
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
 	uploaded, err = store.Upload(ctx, "foobar", strings.NewReader("Hello world 2!"))
-	autogold.Expect([]any{14, nil}).Equal(t, []any{uploaded, err})
+	autogold.Expect([]interface{}{14, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 }
 
 // Initialize uploadstore, upload an object, get it back
@@ -90,7 +91,7 @@ func TestGetExists(t *testing.T) {
 
 	// Upload our object
 	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
-	autogold.Expect([]any{12, nil}).Equal(t, []any{uploaded, err})
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
 	// Get the object back out
 	reader, err := store.Get(ctx, "foobar")
