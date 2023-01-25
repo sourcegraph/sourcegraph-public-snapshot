@@ -1,20 +1,29 @@
 .tabs {
     background-color: unset;
-    position: relative;
-    top: -1.5rem;
 }
 
 .header-list {
     display: flex;
+    gap: 1rem !important;
 }
 
 .tab {
     &[data-selected] {
+        color: var(--black) !important;
         border-bottom: 2px solid var(--primary) !important;
     }
-
+    
     &--completed {
+        color: var(--black) !important;
         border-bottom: 2px solid var(--primary) !important;
+    }
+    
+    &[data-reach-tab] {
+        color: var(--black) !important;
+
+        &:hover {
+            border-bottom: none !important;
+        }
     }
 }
 

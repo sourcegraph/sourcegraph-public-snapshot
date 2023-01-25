@@ -6,7 +6,6 @@ import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { ThemePreference, useTheme } from '../theme'
 
 import { SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
 
@@ -21,23 +20,18 @@ export const SetupWizard: FC = props => {
         navigate('/')
     }
 
-    // Enforce the right class is added on the body for supporting different
-    // themes based on user OS preferences
-    const { enhancedThemePreference } = useTheme()
-    const isLightTheme = enhancedThemePreference === ThemePreference.Light
-
     return (
         <div className={styles.root}>
             <header className={styles.header}>
-                <BrandLogo variant="logo" isLightTheme={isLightTheme} className={styles.logo} />
+                <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
-                <H2 as={H1} className="font-weight-normal mt-3 mb-4">
+                <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
                     Welcome to Sourcegraph! Let's get your instance ready.
                 </H2>
             </header>
 
             <SetupTabs activeTabIndex={step} defaultActiveIndex={0} onTabChange={setStep}>
-                <SetupList>
+                <SetupList wrapperClassName="border-bottom-0">
                     <SetupTab index={0}>Connect your code</SetupTab>
                     <SetupTab index={1}>Add Repositories</SetupTab>
                     <SetupTab index={2}>Start searching</SetupTab>
