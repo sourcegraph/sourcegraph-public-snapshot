@@ -74,7 +74,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		return nil, errors.Wrap(err, msg)
 	}
 
-	logger = logger.With(log.Int32("user.id", user.ID))
+	logger = logger.With(log.Int32("userID", user.ID))
 	logger.Debug("user created")
 
 	if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{

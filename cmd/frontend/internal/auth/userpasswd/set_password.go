@@ -16,7 +16,7 @@ import (
 //
 // If the primary user's email is not verified, a special version of the reset link is
 // emailed that also verifies the email.
-func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, username string, email string, emailVerified bool) (string, error) {
+func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, username, email string, emailVerified bool) (string, error) {
 	resetURL, err := backend.MakePasswordResetURL(ctx, db, id)
 	if err == database.ErrPasswordResetRateLimit {
 		return "", err
