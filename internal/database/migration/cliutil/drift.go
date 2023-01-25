@@ -60,7 +60,6 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		// the user to skip erroring here if they are explicitly skipping this
 		// version check.
 		inferredVersion, ok, err := func() (string, bool, error) {
-
 			v, patch, ok, err := getServiceVersion(ctx, r)
 			if err != nil || !ok {
 				return "", false, err
@@ -79,6 +78,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 
 			if version == "" {
 				version = inferredVersion
+				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking drift against version %q", version))
 			} else if version != inferredVersion {
 				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
 				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
@@ -115,6 +115,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			schemaNameFlag,
 			versionFlag,
 			fileFlag,
+			skipVersionCheckFlag,
 		},
 	}
 }
