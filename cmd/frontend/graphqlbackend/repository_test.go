@@ -106,7 +106,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -121,7 +121,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -245,7 +245,7 @@ func TestRepository_KVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db, gitserver.NewClient(db))
+	schema := newSchemaResolver(db, gitserver.NewClient())
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	strPtr := func(s string) *string { return &s }

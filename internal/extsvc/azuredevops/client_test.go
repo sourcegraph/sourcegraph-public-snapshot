@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -24,8 +25,7 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 	ctx := context.Background()
 
 	opts := ListRepositoriesByProjectOrOrgArgs{
-		// TODO: use an sg owned org rather than a personal.
-		ProjectOrOrgName: "sgadotest",
+		ProjectOrOrgName: "sgtestazure",
 	}
 
 	resp, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
@@ -53,10 +53,10 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	c := &AzureDevOpsConnection{
-		URL:      "https://dev.azure.com",
+	c := &schema.AzureDevOpsConnection{
+		Url:      "https://dev.azure.com",
 		Username: "testuser",
-		Token:    "testpassword",
+		Token:    "testtoken",
 	}
 
 	cli, err := NewClient("urn", c, hc)

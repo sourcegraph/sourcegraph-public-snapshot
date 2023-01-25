@@ -1712,10 +1712,13 @@ CREATE TABLE critical_and_site_config (
     contents text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    author_user_id integer
+    author_user_id integer,
+    redacted_contents text
 );
 
 COMMENT ON COLUMN critical_and_site_config.author_user_id IS 'A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.';
+
+COMMENT ON COLUMN critical_and_site_config.redacted_contents IS 'This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.';
 
 CREATE SEQUENCE critical_and_site_config_id_seq
     START WITH 1
@@ -3298,9 +3301,9 @@ CREATE TABLE permission_sync_jobs (
     repository_id integer,
     user_id integer,
     triggered_by_user_id integer,
-    high_priority boolean DEFAULT false NOT NULL,
     invalidate_caches boolean DEFAULT false NOT NULL,
     cancellation_reason text,
+    priority integer DEFAULT 0 NOT NULL,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3309,6 +3312,8 @@ COMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync
 COMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';
 
 COMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';
+
+COMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';
 
 CREATE SEQUENCE permission_sync_jobs_id_seq
     AS integer
@@ -4860,7 +4865,7 @@ CREATE INDEX permission_sync_jobs_repository_id ON permission_sync_jobs USING bt
 
 CREATE INDEX permission_sync_jobs_state ON permission_sync_jobs USING btree (state);
 
-CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (high_priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
+CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (priority, user_id, repository_id, cancel, process_after) WHERE (state = 'queued'::text);
 
 CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (user_id);
 

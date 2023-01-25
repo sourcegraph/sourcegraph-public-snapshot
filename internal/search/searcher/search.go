@@ -11,11 +11,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -109,7 +110,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
 							attribute.String("repo", string(repo.Name)),
@@ -174,7 +175,6 @@ var MockSearchFilesInRepo func(
 
 func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
-	db database.DB,
 	searcherURLs *endpoint.Map,
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
@@ -192,9 +192,19 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := gitserver.NewClient(db).ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.NewClient().ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		onMatches := func(searcherMatch *proto.FileMatch) {
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+			})
+		}
+
+		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
 	}
 
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
@@ -204,6 +214,69 @@ func (s *TextSearchJob) searchFilesInRepo(
 	}
 
 	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+}
+
+func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
+	chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
+	for _, cm := range fm.ChunkMatches {
+		ranges := make(result.Ranges, 0, len(cm.Ranges))
+		for _, rr := range cm.Ranges {
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(rr.GetStart().GetOffset()),
+					Line:   int(rr.GetStart().GetLine()),
+					Column: int(rr.GetStart().GetColumn()),
+				},
+				End: result.Location{
+					Offset: int(rr.GetEnd().GetOffset()),
+					Line:   int(rr.GetEnd().GetLine()),
+					Column: int(rr.GetEnd().GetColumn()),
+				},
+			})
+		}
+
+		chunkMatches = append(chunkMatches, result.ChunkMatch{
+			Content: cm.Content,
+			ContentStart: result.Location{
+				Offset: int(cm.GetContentStart().GetOffset()),
+				Line:   int(cm.GetContentStart().GetLine()),
+				Column: 0,
+			},
+			Ranges: ranges,
+		})
+
+	}
+
+	var pathMatches []result.Range
+	for _, pathRe := range pathRegexps {
+		pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.GetPath(), -1)
+		for _, sm := range pathSubmatches {
+			pathMatches = append(pathMatches, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0,
+					Column: utf8.RuneCountInString(fm.GetPath()[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(fm.GetPath()[:sm[1]]),
+				},
+			})
+		}
+	}
+
+	return &result.FileMatch{
+		File: result.File{
+			Path:     fm.GetPath(),
+			Repo:     repo,
+			CommitID: commit,
+			InputRev: rev,
+		},
+		ChunkMatches: chunkMatches,
+		PathMatches:  pathMatches,
+		LimitHit:     fm.GetLimitHit(),
+	}
 }
 
 // convert converts a set of searcher matches into []result.Match

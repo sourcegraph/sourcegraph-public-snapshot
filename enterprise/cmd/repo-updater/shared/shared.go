@@ -65,7 +65,7 @@ func EnterpriseInit(
 
 		// If the feature flag is enabled, create job...
 		if permssync.PermissionSyncWorkerEnabled(ctx, db, observationCtx.Logger) {
-			opts := ossDB.PermissionSyncJobOpts{HighPriority: true, Reason: reason}
+			opts := ossDB.PermissionSyncJobOpts{Priority: ossDB.HighPriorityPermissionSync, Reason: reason}
 			return permsJobStore.CreateRepoSyncJob(ctx, repo, opts)
 		}
 		// ... otherwise, we just call the PermsSyncer

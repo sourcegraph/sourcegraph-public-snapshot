@@ -963,14 +963,15 @@ Indexes:
 
 # Table "public.critical_and_site_config"
 ```
-     Column     |           Type           | Collation | Nullable |                       Default                        
-----------------+--------------------------+-----------+----------+------------------------------------------------------
- id             | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
- type           | critical_or_site         |           | not null | 
- contents       | text                     |           | not null | 
- created_at     | timestamp with time zone |           | not null | now()
- updated_at     | timestamp with time zone |           | not null | now()
- author_user_id | integer                  |           |          | 
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type              | critical_or_site         |           | not null | 
+ contents          | text                     |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ author_user_id    | integer                  |           |          | 
+ redacted_contents | text                     |           |          | 
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
@@ -978,6 +979,8 @@ Indexes:
 ```
 
 **author_user_id**: A null value indicates that this config was most likely added by code on the start-up path, for example from the SITE_CONFIG_FILE unless the config itself was added before this column existed in which case it could also have been a user.
+
+**redacted_contents**: This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.
 
 # Table "public.discussion_comments"
 ```
@@ -2649,12 +2652,12 @@ Referenced by:
  repository_id        | integer                  |           |          | 
  user_id              | integer                  |           |          | 
  triggered_by_user_id | integer                  |           |          | 
- high_priority        | boolean                  |           | not null | false
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
+ priority             | integer                  |           | not null | 0
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
-    "permission_sync_jobs_unique" UNIQUE, btree (high_priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
+    "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
     "permission_sync_jobs_process_after" btree (process_after)
     "permission_sync_jobs_repository_id" btree (repository_id)
     "permission_sync_jobs_state" btree (state)
@@ -2667,6 +2670,8 @@ Foreign-key constraints:
 ```
 
 **cancellation_reason**: Specifies why permissions sync job was cancelled.
+
+**priority**: Specifies numeric priority for the permissions sync job.
 
 **reason**: Specifies why permissions sync job was triggered.
 

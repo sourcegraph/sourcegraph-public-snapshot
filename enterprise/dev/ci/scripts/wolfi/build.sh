@@ -26,6 +26,11 @@ trap cleanup EXIT
 
 export PATH="$tmpdir/bin:$PATH"
 
+if [ $# -eq 0 ]; then
+  echo "No arguments supplied - provide the base image name to build"
+  exit 0
+fi
+
 name=${1%/}
 
 if [ ! -d "wolfi-images/${name}" ]; then

@@ -224,6 +224,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "azureDevOps": {
+          "description": "Allow adding Azure DevOps code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
@@ -945,6 +951,12 @@
       "description": "The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.",
       "type": "integer",
       "default": 1
+    },
+    "permissions.syncJobsHistorySize": {
+      "description": "The number of last repo/user permission jobs to keep for history.",
+      "type": "integer",
+      "default": 5,
+      "!go": { "pointer": true }
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",

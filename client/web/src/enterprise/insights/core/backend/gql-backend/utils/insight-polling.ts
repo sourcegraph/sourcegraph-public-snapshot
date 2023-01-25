@@ -1,4 +1,5 @@
 import { BackendInsight } from '../../..'
+
 const ALL_REPOS_POLL_INTERVAL = 30000
 const SOME_REPOS_POLL_INTERVAL = 2000
 

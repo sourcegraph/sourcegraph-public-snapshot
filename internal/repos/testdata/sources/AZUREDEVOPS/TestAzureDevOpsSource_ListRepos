@@ -1,8 +1,8 @@
 [
   {
    "ID": 0,
-   "Name": "dev.azure.com/sgadotest",
-   "URI": "dev.azure.com/sgadotest",
+   "Name": "dev.azure.com/sgtestazure",
+   "URI": "dev.azure.com/sgtestazure",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -11,54 +11,31 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "d43b669c-d6da-4c9e-9952-11f411153cf9",
+    "ID": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
     "ServiceType": "azuredevops",
     "ServiceID": "https://dev.azure.com/"
    },
    "Sources": {
     "extsvc:azuredevops:0": {
      "ID": "extsvc:azuredevops:0",
-     "CloneURL": "https://dev.azure.com/sgadotest"
+     "CloneURL": "https://dev.azure.com/sgtestazure"
     }
    },
    "Metadata": {
-    "id": "d43b669c-d6da-4c9e-9952-11f411153cf9",
-    "name": "sgadotest",
-    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/d43b669c-d6da-4c9e-9952-11f411153cf9",
-    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/sgadotest",
-    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/sgadotest",
-    "isDisabled": false
-   }
-  },
-  {
-   "ID": 0,
-   "Name": "dev.azure.com/idano",
-   "URI": "dev.azure.com/idano",
-   "Description": "",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
-    "ServiceType": "azuredevops",
-    "ServiceID": "https://dev.azure.com/"
-   },
-   "Sources": {
-    "extsvc:azuredevops:0": {
-     "ID": "extsvc:azuredevops:0",
-     "CloneURL": "https://dev.azure.com/idano"
+    "id": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "name": "sgtestazure",
+    "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
+    "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "isDisabled": false,
+    "project": {
+     "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+     "name": "sgtestazure",
+     "state": "wellFormed",
+     "revision": 11,
+     "visibility": "private"
     }
-   },
-   "Metadata": {
-    "id": "47c49ea1-5dc8-468e-ae6d-52410a1084a7",
-    "name": "idano",
-    "url": "https://dev.azure.com/sgadotest/889cc0c6-c7ed-40f0-b6f1-053acfc1397d/_apis/git/repositories/47c49ea1-5dc8-468e-ae6d-52410a1084a7",
-    "sshUrl": "git@ssh.dev.azure.com:v3/sgadotest/sgadotest/idano",
-    "webUrl": "https://dev.azure.com/sgadotest/sgadotest/_git/idano",
-    "isDisabled": false
    }
   }
  ]

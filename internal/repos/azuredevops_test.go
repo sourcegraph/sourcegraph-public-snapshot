@@ -5,17 +5,25 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
-	conf := &azuredevops.AzureDevOpsConnection{
-		URL:      "https://dev.azure.com",
+	conf := &schema.AzureDevOpsConnection{
+		Url:      "https://dev.azure.com",
 		Username: "testuser",
 		Token:    "testtoken",
-		Projects: []string{"sgadotest/sgadotest"},
+		Orgs:     []string{"sgtestazure"},
+		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
+			{
+				Name: "sgtestazure/sgtestazure2",
+			},
+			{
+				Pattern: "^sgtestazure/sgtestazure[3-9]",
+			},
+		},
 	}
 	cf, save := newClientFactory(t, t.Name())
 	defer save(t)
@@ -26,7 +34,7 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	src, err := NewAzureDevOpsSource(ctx, svc, cf)
+	src, err := NewAzureDevOpsSource(ctx, nil, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

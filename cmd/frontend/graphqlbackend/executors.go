@@ -77,7 +77,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 }
 
 func (r *schemaResolver) AreExecutorsConfigured() bool {
-	return conf.Get().ExecutorsAccessToken != ""
+	return conf.ExecutorsAccessToken() != ""
 }
 
 func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*ExecutorResolver, error) {

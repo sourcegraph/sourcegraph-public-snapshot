@@ -83,6 +83,14 @@ The default run type.
   - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan sg
   - Upload build trace
 
+- Pipeline for `WolfiPackages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
+- Pipeline for `WolfiBaseImages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
 ### Bazel Exp Branch
 
 The run type for branches matching `bzl/`.
@@ -110,7 +118,6 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build stuff foobar
 - Upload build trace
 
 ### Release branch nightly healthcheck build

@@ -564,8 +564,8 @@ export function randomizeUserPassword(
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
     return mutateGraphQL<CreateUserResult>(
         gql`
-            mutation CreateUser($username: String!, $email: String) {
-                createUser(username: $username, email: $email) {
+            mutation SiteAdminCreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email, verifiedEmail: false) {
                     resetPasswordURL
                 }
             }
