@@ -267,6 +267,8 @@ to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 ### How to control user sign-up and sign-in with GitLab auth provider
 
+> WARNING: GitLab offers an additional user permission level, [minimal access](https://docs.gitlab.com/ee/user/permissions.html#users-with-minimal-access), for Premium and Ultimate tier customers. Sourcegraph currently does not support this tier level and will not prevent these users from signing up if using this Sourcegraph configuration option. Contact your support representitive with any further questions. 
+
 You can use the following filters to control how users can create accounts and sign in to your Sourcegraph instance via the GitLab auth provider.
 
 **allowSignup**
