@@ -11,7 +11,6 @@ import (
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,6 +31,8 @@ type batchChange struct {
 	ClosedAt      *time.Time  `json:"closed_at"`
 }
 
+// gqlBatchChangeQuery is a graphQL query that fetches all the required
+// batch change fields to craft the webhook payload from the internal API.
 const gqlBatchChangeQuery = `query BatchChange($id: ID!) {
 	node(id: $id) {
 		... on BatchChange {
@@ -57,11 +58,14 @@ type gqlBatchChangeResponse struct {
 	}
 }
 
-func MarshalBatchChange(ctx context.Context, db basestore.ShareableStore, bc *types.BatchChange) ([]byte, error) {
+func MarshalBatchChange(ctx context.Context, bc *types.BatchChange) ([]byte, error) {
 	marshalledBatchChangeID := bgql.MarshalBatchChangeID(bc.ID)
-	input := map[string]any{"id": marshalledBatchChangeID}
 
-	reqBody, err := json.Marshal(map[string]any{"query": gqlBatchChangeQuery})
+	q := queryInfo{}
+	q.Query = gqlBatchChangeQuery
+	q.Variables = map[string]any{"id": marshalledBatchChangeID}
+
+	reqBody, err := json.Marshal(q)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal request body")
 	}

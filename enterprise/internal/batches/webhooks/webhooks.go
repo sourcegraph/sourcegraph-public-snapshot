@@ -35,7 +35,7 @@ func getService(db basestore.ShareableStore) outbound.OutboundWebhookService {
 func Enqueue[T any](
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string,
-	marshaller func(context.Context, basestore.ShareableStore, T) ([]byte, error),
+	marshaller func(context.Context, T) ([]byte, error),
 	value T,
 ) {
 	svc := getService(db)
@@ -47,7 +47,7 @@ func Enqueue[T any](
 		log.String("event_type", eventType),
 	)
 
-	payload, err := marshaller(ctx, db, value)
+	payload, err := marshaller(ctx, value)
 	if err != nil {
 		logger.Error("error marshalling webhook payload", log.Error(err))
 		return
