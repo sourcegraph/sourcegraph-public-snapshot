@@ -10,18 +10,23 @@ function cleanup() {
 }
 trap cleanup EXIT
 
+# TODO: Install these binaries as part of the buildkite base image
 (
   cd "$tmpdir"
   mkdir bin
 
-  # Install apko
-  wget https://github.com/chainguard-dev/apko/releases/download/v0.6.0/apko_0.6.0_linux_amd64.tar.gz
+  # Install apko from Sourcegraph cache
+  # Source: https://github.com/chainguard-dev/apko/releases/download/v0.6.0/apko_0.6.0_linux_amd64.tar.gz
+  wget https://storage.googleapis.com/package-repository/ci-binaries/apko_0.6.0_linux_amd64.tar.gz
   tar zxf apko_0.6.0_linux_amd64.tar.gz
   mv apko_0.6.0_linux_amd64/apko bin/apko
 
-  # Install apk
-  wget https://gitlab.alpinelinux.org/alpine/apk-tools/-/package_files/62/download -O bin/apk
-  chmod +x bin/apk
+  # Install apk from Sourcegraph cache
+  # Source: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic//v2.12.11/x86_64/apk.static
+  wget https://storage.googleapis.com/package-repository/ci-binaries/apk-v2.12.11.tar.gz
+  tar zxf apk-v2.12.11.tar.gz
+  chmod +x apk
+  mv apk bin/apk
 )
 
 export PATH="$tmpdir/bin:$PATH"
