@@ -106,6 +106,7 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 	data, err := json.Marshal(&val)
 	if err != nil {
 		logger.Warn("failed to marshal recordingCmd", log.Error(err))
+		return
 	}
 
 	rc.store.Insert(data)

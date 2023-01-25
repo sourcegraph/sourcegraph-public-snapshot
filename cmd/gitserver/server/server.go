@@ -61,7 +61,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -441,7 +440,17 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	})
 }
 
-func recordCommandsOnRepos(conf *schema.GitRecorder) wrexec.ShouldRecordFunc {
+// recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
+// for a particular repository.
+func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
+	// empty repos, means we should never record since there is nothing to match on
+	if len(repos) == 0 {
+		return func(ctx context.Context, c *exec.Cmd) bool {
+			return false
+		}
+	}
+
+	// we won't record any git commands with these commands since they are considered to be not destructive
 	ignoredGitCommands := map[string]struct{}{
 		"show":      {},
 		"rev-parse": {},
@@ -450,18 +459,13 @@ func recordCommandsOnRepos(conf *schema.GitRecorder) wrexec.ShouldRecordFunc {
 		"ls-tree":   {},
 	}
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
-		if conf == nil {
-			// no config so we record nothing
-			return false
-		}
-
 		base := filepath.Base(cmd.Path)
 		if base != "git" {
 			return false
 		}
 
 		repoMatch := false
-		for _, repo := range conf.Repos {
+		for _, repo := range repos {
 			if strings.Contains(cmd.Dir, repo) {
 				repoMatch = true
 				break
@@ -495,7 +499,10 @@ func (s *Server) Handler() http.Handler {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
-		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf), recordingConf.Size)
+		if recordingConf == nil {
+			return
+		}
+		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
