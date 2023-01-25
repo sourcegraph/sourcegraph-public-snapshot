@@ -4,6 +4,8 @@ package jscontext
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -48,6 +51,10 @@ type authPasswordPolicy struct {
 	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
 
+type CurrentUser struct {
+	// Specify current user fields.
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -64,7 +71,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
+	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
+	AuthenticatedUser   *types.User  `json:"AuthenticatedUser"`
+	CurrentUser         *CurrentUser `json:"CurrentUser"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -184,12 +193,65 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
+	// Ignore err as we don't care if user does not exist
+	user, _ := actor.User(req.Context(), db.Users())
+	resolvers, _ := graphqlbackend.NewSchemaWithoutResolvers(db)
+
+	// We need to load all the fields from this GraphQL query here and inject the
+	// result into the jscontext object because `user` that we have here already doesn't
+	// have all the fields that web application needs to boot.
+	//
+	// Related user resolvers `cmd/frontend/graphqlbackend/user.go` that we can looks at
+	// to load missing fields without referencing the graphqlbackend resolvers.
+	resp := resolvers.Exec(req.Context(), fmt.Sprintf(`
+query CurrentAuthState {
+	currentUser {
+		__typename
+		id
+		databaseID
+		username
+		avatarURL
+		displayName
+		siteAdmin
+		tags
+		url
+		settingsURL
+		organizations {
+			nodes {
+				__typename
+				id
+				name
+				displayName
+				url
+				settingsURL
+			}
+		}
+		session {
+			canSignOut
+		}
+		viewerCanAdminister
+		tags
+		tosAccepted
+		searchable
+		emails {
+			email
+			verified
+			isPrimary
+		}
+		latestSettings {
+			id
+			contents
+		}
+	}
+}`), "currentUser", nil)
+
+	currentUser := &CurrentUser{}
+	json.Unmarshal(resp.Data, currentUser)
+
 	var licenseInfo *hooks.LicenseInfo
 	if !actor.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
-		// Ignore err as we don't care if user does not exist
-		user, _ := actor.User(req.Context(), db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
@@ -205,6 +267,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AssetsRoot:                 assetsutil.URL("").String(),
 		Version:                    version.Version(),
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		AuthenticatedUser:          user,
+		CurrentUser:                currentUser,
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
