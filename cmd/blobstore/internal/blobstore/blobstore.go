@@ -136,8 +136,4 @@ var (
 		Name: "blobstore_service_running",
 		Help: "Number of running blobstore requests.",
 	})
-	metricRequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "blobstore_service_request_total",
-		Help: "Number of returned blobstore requests.",
-	}, []string{"code"})
 )
