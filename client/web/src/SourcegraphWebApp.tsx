@@ -81,6 +81,7 @@ import {
     setQueryStateFromSettings,
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
+    useExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
@@ -146,6 +147,9 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
+
+    /** Experimental feature flag */
+    isSetupWizardEnabled: boolean
 }
 
 const notificationStyles: BrandedNotificationItemStyleProps = {
@@ -193,12 +197,18 @@ export class SourcegraphWebApp extends React.Component<
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
+            isSetupWizardEnabled: false,
         }
     }
 
     public componentDidMount(): void {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
+
+        if (process.env.NODE_ENV === 'development') {
+            useExperimentalFeatures.setState({ enableSetupWizard: true })
+            this.setState({ isSetupWizardEnabled: !!getExperimentalFeatures().enableSetupWizard })
+        }
 
         document.documentElement.classList.add('theme')
 
@@ -341,6 +351,45 @@ export class SourcegraphWebApp extends React.Component<
             return null
         }
 
+        const root = (
+            <Route
+                path="/"
+                render={routeComponentProps => (
+                    <Layout
+                        {...props}
+                        {...routeComponentProps}
+                        authenticatedUser={authenticatedUser}
+                        viewerSubject={this.state.viewerSubject}
+                        settingsCascade={this.state.settingsCascade}
+                        batchChangesEnabled={this.props.batchChangesEnabled}
+                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
+                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                        // Search query
+                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                        // Extensions
+                        platformContext={this.platformContext}
+                        extensionsController={this.extensionsController}
+                        telemetryService={eventLogger}
+                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                        searchContextsEnabled={this.props.searchContextsEnabled}
+                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                        fetchSearchContexts={fetchSearchContexts}
+                        fetchSearchContextBySpec={fetchSearchContextBySpec}
+                        fetchSearchContext={fetchSearchContext}
+                        createSearchContext={createSearchContext}
+                        updateSearchContext={updateSearchContext}
+                        deleteSearchContext={deleteSearchContext}
+                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                        globbing={this.state.globbing}
+                        streamSearch={aggregateStreamingSearch}
+                        onCreateNotebookFromNotepad={this.onCreateNotebook}
+                    />
+                )}
+            />
+        )
+
         const { children, ...props } = this.props
 
         return (
@@ -362,49 +411,16 @@ export class SourcegraphWebApp extends React.Component<
             >
                 <Router history={history} key={0}>
                     <CompatRouter>
-                        <Switch>
-                            <Route path="/setup" exact={true}>
-                                <SetupWizard />
-                            </Route>
-                            <Route
-                                path="/"
-                                render={routeComponentProps => (
-                                    <Layout
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        batchChangesEnabled={this.props.batchChangesEnabled}
-                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                            this.state.settingsCascade
-                                        )}
-                                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                        // Search query
-                                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                                        // Extensions
-                                        platformContext={this.platformContext}
-                                        extensionsController={this.extensionsController}
-                                        telemetryService={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        searchContextsEnabled={this.props.searchContextsEnabled}
-                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                        fetchSearchContexts={fetchSearchContexts}
-                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                        fetchSearchContext={fetchSearchContext}
-                                        createSearchContext={createSearchContext}
-                                        updateSearchContext={updateSearchContext}
-                                        deleteSearchContext={deleteSearchContext}
-                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                        globbing={this.state.globbing}
-                                        streamSearch={aggregateStreamingSearch}
-                                        onCreateNotebookFromNotepad={this.onCreateNotebook}
-                                    />
-                                )}
-                            />
-                        </Switch>
+                        {this.state.isSetupWizardEnabled ? (
+                            <Switch>
+                                <Route path="/setup" exact={true}>
+                                    <SetupWizard />
+                                </Route>
+                                {root}
+                            </Switch>
+                        ) : (
+                            root
+                        )}
                     </CompatRouter>
                 </Router>
                 {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
