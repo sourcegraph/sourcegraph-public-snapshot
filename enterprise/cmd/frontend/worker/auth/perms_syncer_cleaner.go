@@ -16,21 +16,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ job.Job = (*permissionsSyncerCleaner)(nil)
+var _ job.Job = (*permissionSyncJobCleaner)(nil)
 
-// permissionsSyncerCleaner is a worker responsible for cleaning up processed
+// permissionSyncJobCleaner is a worker responsible for cleaning up processed
 // permission sync jobs.
-type permissionsSyncerCleaner struct{}
+type permissionSyncJobCleaner struct{}
 
-func (p *permissionsSyncerCleaner) Description() string {
-	return "Removes completed or failed permissions sync jobs"
+func (p *permissionSyncJobCleaner) Description() string {
+	return "Cleans up completed or failed permissions sync jobs"
 }
 
-func (p *permissionsSyncerCleaner) Config() []env.Config {
+func (p *permissionSyncJobCleaner) Config() []env.Config {
 	return nil
 }
 
-func (p *permissionsSyncerCleaner) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")
@@ -49,35 +49,32 @@ func (p *permissionsSyncerCleaner) Routines(_ context.Context, observationCtx *o
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutineWithMetrics(
 			context.Background(),
-			"authz.permission_sync_job_worker_cleaner",
-			"removes completed or failed permissions sync jobs",
-			10*time.Second, goroutine.HandlerFunc(
+			"auth.permission_sync_job_cleaner",
+			p.Description(),
+			1*time.Minute, goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					start := time.Now()
 					cleanedJobs, err := cleanJobs(ctx, db)
-					m.Observe(time.Since(start).Seconds(), cleanedJobs, &err)
+					m.Observe(time.Since(start).Seconds(), float64(cleanedJobs), &err)
 					return err
 				},
 			), operation,
 		)}, nil
 }
 
-func NewPermissionsSyncerCleaner() job.Job {
-	return &permissionsSyncerCleaner{}
+func NewPermissionSyncJobCleaner() job.Job {
+	return &permissionSyncJobCleaner{}
 }
 
 // cleanJobs runs an SQL query which finds and deletes all non-queued/processing
 // permission sync jobs of users/repos which number exceeds `jobsToKeep`.
-func cleanJobs(ctx context.Context, store database.DB) (float64, error) {
+func cleanJobs(ctx context.Context, store database.DB) (int64, error) {
 	jobsToKeep := 5
 	if conf.Get().PermissionsSyncJobsHistorySize != nil {
 		jobsToKeep = *conf.Get().PermissionsSyncJobsHistorySize
 	}
 
-	result, err := store.ExecContext(
-		ctx,
-		fmt.Sprintf(cleanJobsFmtStr, jobsToKeep),
-	)
+	result, err := store.ExecContext(ctx, fmt.Sprintf(cleanJobsFmtStr, jobsToKeep))
 	if err != nil {
 		return 0, err
 	}
@@ -85,7 +82,7 @@ func cleanJobs(ctx context.Context, store database.DB) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return float64(deleted), err
+	return deleted, err
 }
 
 const cleanJobsFmtStr = `
