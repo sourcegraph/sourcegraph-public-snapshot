@@ -8935,7 +8935,8 @@ type Team implements Node {
 
     """
     The name of the team. Needs to be globally unique across usernames, organization
-    names, and team names. Team names can only be alphanumeric characters.
+    names, and team names. Team names can use alphanumeric characters, - dash
+    and / forward slash.
     """
     name: String!
 
