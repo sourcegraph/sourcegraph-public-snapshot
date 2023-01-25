@@ -3,17 +3,26 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -245,4 +254,162 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 
 	}
 	return viewDebug, nil
+}
+
+type adminBackfillQueueConnectionStore struct {
+	insightsDB edb.InsightsDB
+	logger     log.Logger
+}
+
+// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
+func (a *adminBackfillQueueConnectionStore) ComputeTotal(context.Context) (*int32, error) {
+	return nil, nil
+}
+
+// ComputeNodes returns the list of nodes based on the pagination args.
+func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*backfillQueueItemResolver, error) {
+
+	backfillStore := scheduler.NewBackfillStore(a.insightsDB)
+	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{})
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*backfillQueueItemResolver, 0, len(backfillItems))
+	for _, item := range backfillItems {
+		resolvers = append(resolvers, newBackfillQueueItemResolver(item))
+	}
+
+	return resolvers, nil
+}
+
+// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
+func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *backfillQueueItemResolver, _ database.OrderBy) (*string, error) {
+
+	cursor := marshalBackfillItemCursor(
+		&itypes.Cursor{
+			Column: "id",
+			Value:  fmt.Sprintf("%d@%d", node.IDInt32(), node.IDInt32()),
+		},
+	)
+
+	return &cursor, nil
+}
+
+// UnmarshalCursor returns node id from after/before cursor string.
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	csv := ""
+	values := strings.Split(backfillCursor.Value, "@")
+	if len(values) != 2 {
+		return nil, errors.New("Invalid cursor. Expected Value: <column>@<id>")
+	}
+
+	csv = fmt.Sprintf("%v, %v", values[0], values[1])
+
+	return &csv, err
+}
+
+const backfillCursorKind = "InsightsBackfillItem"
+
+func marshalBackfillItemCursor(cursor *itypes.Cursor) string {
+	return string(relay.MarshalID(backfillCursorKind, cursor))
+}
+
+func unmarshalBackfillItemCursor(cursor *string) (*itypes.Cursor, error) {
+	if cursor == nil {
+		return nil, nil
+	}
+	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != backfillCursorKind {
+		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+	}
+	var spec *itypes.Cursor
+	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+		return nil, err
+	}
+	return spec, nil
+}
+
+func newBackfillQueueItemResolver(item scheduler.BackfillQueueItem) *backfillQueueItemResolver {
+	return &backfillQueueItemResolver{queueItem: item}
+}
+
+type backfillQueueItemResolver struct {
+	queueItem scheduler.BackfillQueueItem
+}
+
+func (r *backfillQueueItemResolver) ID() graphql.ID {
+	return relay.MarshalID("backfill", r.queueItem.ID)
+}
+
+func (r *backfillQueueItemResolver) IDInt32() int32 {
+	return int32(r.queueItem.ID)
+}
+
+func (r *backfillQueueItemResolver) InsightViewTitle() string {
+	return r.queueItem.InsightTitle
+}
+func (r *backfillQueueItemResolver) Creator(ctx context.Context) (graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserResolver{}, errors.New("not implemented")
+}
+func (r *backfillQueueItemResolver) SeriesLabel() string {
+	return r.queueItem.SeriesLabel
+}
+func (r *backfillQueueItemResolver) SeriesSearchQuery() string {
+	return r.queueItem.SeriesSearchQuery
+}
+func (r *backfillQueueItemResolver) BackfillQueueStatus() (graphqlbackend.BackfillQueueStatusResolver, error) {
+	return &backfillStatusResolver{queueItem: r.queueItem}, nil
+}
+
+type backfillStatusResolver struct {
+	queueItem scheduler.BackfillQueueItem
+}
+
+func (r *backfillStatusResolver) State() string {
+	return r.queueItem.State
+}
+
+func (r *backfillStatusResolver) QueuePosition() *int {
+	return nil
+}
+
+func (r *backfillStatusResolver) Cost() *int {
+	return nil
+}
+
+func (r *backfillStatusResolver) PercentComplete() *int {
+	return r.queueItem.PercentComplete
+}
+
+func (r *backfillStatusResolver) CreatedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCreatedAt)
+}
+
+func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillStartedAt)
+}
+
+func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
+}
+func (r *backfillStatusResolver) Errors() []string {
+	return []string{}
+}
+
+func (r *backfillStatusResolver) Runtime() *string {
+	if r.queueItem.RuntimeDuration != nil {
+		tmp := r.queueItem.RuntimeDuration.String()
+		return &tmp
+	}
+	return nil
+}
+
+func unmarshalBackfillID(id graphql.ID) (backfillID int, err error) {
+	err = relay.UnmarshalSpec(id, &backfillID)
+	return
 }

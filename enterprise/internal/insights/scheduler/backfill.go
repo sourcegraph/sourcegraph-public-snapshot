@@ -225,3 +225,79 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 	}
 	return results, nil
 }
+
+type BackfillQueueArgs struct {
+}
+type BackfillQueueItem struct {
+	ID                  int
+	InsightTitle        string
+	SeriesID            int
+	SeriesLabel         string
+	SeriesSearchQuery   string
+	State               string
+	PercentComplete     *int
+	BackfillCost        *int
+	RuntimeDuration     *time.Duration
+	BackfillCreatedAt   *time.Time
+	BackfillStartedAt   *time.Time
+	BackfillCompletedAt *time.Time
+}
+
+func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
+
+	query := backfillQueueSQL
+	results, err = scanAllBackfillQueueItems(s.Query(ctx, sqlf.Sprintf(query)))
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueueItem, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []BackfillQueueItem
+	for rows.Next() {
+		var temp BackfillQueueItem
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.InsightTitle,
+			&temp.SeriesID,
+			&temp.SeriesLabel,
+			&temp.SeriesSearchQuery,
+			&temp.State,
+			&temp.PercentComplete,
+			&temp.BackfillCost,
+			&temp.RuntimeDuration,
+			&temp.BackfillCreatedAt,
+			&temp.BackfillStartedAt,
+			&temp.BackfillCompletedAt,
+		); err != nil {
+			return []BackfillQueueItem{}, err
+		}
+
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+var backfillQueueSQL = `select isb.id,
+       title insight_title,
+       s.id series_id,
+       label series_label,
+	   s.query,
+       isb.state,
+       round(ri.percent_complete *100) percent_complete,
+	   isb.estimated_cost,
+       ri.runtime_duration runtime_duration,
+       ri.created_at backfill_created_at,
+       started_at backfill_started_at,
+       completed_at backfill_completed_at
+from insight_series_backfill isb
+    left join repo_iterator ri on isb.repo_iterator_id = ri.id
+    join insight_view_series ivs on ivs.insight_series_id = isb.series_id
+    join insight_series s on isb.series_id = s.id
+    join insight_view iv on ivs.insight_view_id = iv.id`

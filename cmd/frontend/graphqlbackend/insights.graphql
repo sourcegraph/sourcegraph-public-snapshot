@@ -1390,10 +1390,6 @@ type InsightBackfillQueueItem implements Node {
     """
     id: ID!
     """
-    The ID of the InsightView this item belongs to
-    """
-    insightViewID: ID!
-    """
     The title of the insight view
     """
     insightViewTitle: String!
@@ -1402,21 +1398,13 @@ type InsightBackfillQueueItem implements Node {
     """
     creator: User
     """
-    The ID of the series for this items
-    """
-    seriesID: String!
-    """
     The name of the series on the associated insight view
     """
     seriesLabel: String!
     """
-    The time the series was created
+    The search query for the series
     """
-    seriesCreatedAt: DateTime
-    """
-    Information on the series was generated
-    """
-    seriesDefinition: SearchInsightDataSeriesDefinition
+    seriesSearchQuery: String!
     """
     Information on the current backfill status
     """
@@ -1447,6 +1435,10 @@ type BackfillStatus {
     The percent complete of the backfill
     """
     percentComplete: Int
+    """
+    The date/time when the backfill was created
+    """
+    createdAt: DateTime
     """
     The date/time when the backfill started processing
     """

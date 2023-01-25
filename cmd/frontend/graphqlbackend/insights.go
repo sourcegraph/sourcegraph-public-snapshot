@@ -41,9 +41,14 @@ type InsightsResolver interface {
 	SaveInsightAsNewView(ctx context.Context, args SaveInsightAsNewViewArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
-	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
 	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
+	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (InsightBackfillQueueItemsConnectionResolver, error)
+	// Admin Mutations
+	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
+	// RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
+	// MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
+	// MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -515,4 +520,39 @@ type PreviewRepositoriesFromQueryArgs struct {
 type RepositoryPreviewPayloadResolver interface {
 	Query(ctx context.Context) string
 	NumberOfRepositories(ctx context.Context) *int32
+}
+
+type InsightBackfillQueueItemsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]InsightBackfillQueueItemResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+type InsightBackfillQueueItemResolver interface {
+	ID() graphql.ID
+	InsightViewTitle() string
+	Creator(ctx context.Context) (UserResolver, error)
+	SeriesLabel() string
+	SeriesSearchQuery() string
+	BackfillQueueStatus() (BackfillQueueStatusResolver, error)
+}
+
+type BackfillQueueStatusResolver interface {
+	State() string // enum
+	QueuePosition() *int
+	Errors() []string
+	Cost() *int
+	PercentComplete() *int
+	CreatedAt() *gqlutil.DateTime
+	StartedAt() *gqlutil.DateTime
+	CompletedAt() *gqlutil.DateTime
+	Runtime() *string
+}
+
+type BackfillArgs struct {
+	Id graphql.ID
+}
+
+type AdminBackfillQueueArgs struct {
+	//TODO add filters
+	graphqlutil.ConnectionResolverArgs
 }
