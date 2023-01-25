@@ -67,6 +67,10 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes/webhook-logs',
             condition: props => props.batchChangesWebhookLogsEnabled,
         },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/outbound-webhooks',
+        },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
