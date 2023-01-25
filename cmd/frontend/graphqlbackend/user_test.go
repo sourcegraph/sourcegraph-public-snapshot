@@ -503,6 +503,44 @@ func TestUpdateUser(t *testing.T) {
 		}
 	})
 
+	t.Run("success with an empty avatarURL", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					username: "alice.bob-chris-",
+					avatarURL: ""
+				) {
+					username
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"updateUser": {
+					"username": "1"
+				}
+			}
+		`,
+			},
+		})
+
+	})
+
 	t.Run("success", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
