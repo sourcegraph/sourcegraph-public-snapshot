@@ -34,7 +34,7 @@ func (x *SearchRequest) ToInternal() search.SymbolsParameters {
 	}
 
 	return search.SymbolsParameters{
-		Repo:            api.RepoName(x.GetRepo()), // TODO@ggilmore: This api.RepoName is just a go type alias - is it worth creating a new message type just for this?
+		Repo:            api.RepoName(x.GetRepo()),
 		CommitID:        api.CommitID(x.GetCommitId()),
 		Query:           x.GetQuery(),
 		IsRegExp:        x.GetIsRegExp(),
