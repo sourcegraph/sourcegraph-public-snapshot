@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -55,7 +54,7 @@ func NewRankMerger(
 }
 
 func (m *rankMerger) mergeRanks(ctx context.Context, config RankMergerConfig) (err error) {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if !envvar.SourcegraphDotComMode() || m.resultsBucket == nil {
 		return nil
 	}
 

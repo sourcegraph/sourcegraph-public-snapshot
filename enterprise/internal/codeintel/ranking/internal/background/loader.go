@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -63,11 +62,7 @@ const (
 )
 
 func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (err error) {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
-	if l.resultsBucket == nil {
-		l.logger.Warn("No result bucket is configured")
+	if !envvar.SourcegraphDotComMode() || l.resultsBucket == nil {
 		return nil
 	}
 
