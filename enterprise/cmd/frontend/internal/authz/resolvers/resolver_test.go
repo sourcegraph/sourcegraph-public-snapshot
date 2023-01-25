@@ -315,7 +315,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -329,6 +329,9 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		called = true
 		if len(req.RepoIDs) != 1 && req.RepoIDs[0] == api.RepoID(repoID) {
 			t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, req.RepoIDs[0])
+		}
+		if req.TriggeredByUserID != 1 {
+			t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
 		}
 	}
 	t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -367,7 +370,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -382,6 +385,9 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 			called = true
 			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
 				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
+			}
+			if req.TriggeredByUserID != 123 {
+				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
 			}
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })

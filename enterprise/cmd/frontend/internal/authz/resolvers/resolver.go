@@ -199,8 +199,14 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 	}
 
 	// 🚨 SECURITY: Only site admins can trigger user permissions syncs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	user, err := auth.CheckCurrentUserIsSiteAdminAndReturn(ctx, r.db)
+	if err != nil {
 		return nil, err
+	}
+	currentUserID := int32(0)
+	// user is nil in case of internal actor
+	if user != nil {
+		currentUserID = user.ID
 	}
 
 	userID, err := graphqlbackend.UnmarshalUserID(args.User)
@@ -208,7 +214,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: userID}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: currentUserID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
