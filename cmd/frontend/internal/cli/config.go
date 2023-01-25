@@ -523,7 +523,7 @@ func gitserverAddr(environ []string) (string, error) {
 		return "gitserver:3178", nil
 	}
 
-	// Not set, use the default (service discovery on gitserver)
+	// Not set, use the default (service discovery on searcher)
 	return "k8s+rpc://gitserver:3178?kind=sts", nil
 }
 
@@ -605,7 +605,7 @@ func computeSymbolsEndpoints() *endpoint.Map {
 	symbolsURLsOnce.Do(func() {
 		addr, err := symbolsAddr(os.Environ())
 		if err != nil {
-			symbolsURLs = endpoint.Empty(errors.New("a symbols service has not been configured"))
+			symbolsURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SYMBOLS_URL"))
 		} else {
 			symbolsURLs = endpoint.New(addr)
 		}
@@ -638,7 +638,7 @@ func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
 		addr, err := searcherAddr(os.Environ())
 		if err != nil {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+			searcherURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SEARCHER_URL"))
 		} else {
 			searcherURLs = endpoint.New(addr)
 		}
@@ -665,7 +665,7 @@ func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		addr, err := zoektAddr(os.Environ())
 		if err != nil {
-			indexedEndpoints = endpoint.Empty(errors.New("a indexed search service has not been configured"))
+			indexedEndpoints = endpoint.Empty(errors.Wrap(err, "failed to parse INDEXED_SEARCH_SERVERS"))
 		} else {
 			if addr != "" {
 				indexedEndpoints = endpoint.New(addr)
@@ -723,7 +723,7 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 	case deploy.DockerCompose:
 		fmtStrTail = fmt.Sprintf(":%s", port)
 	default:
-		return "", errors.Errorf("unsupported deployment type: %s", deployType)
+		return "", errors.New("Error: unsupported deployment type: " + deployType)
 	}
 
 	var addrs []string

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServiceConnections(t *testing.T) {
@@ -173,6 +174,7 @@ func TestGitserverAddr(t *testing.T) {
 		deployType string
 		environ    []string
 		want       string
+		wantErr    error
 	}{{
 		name: "test default",
 		want: "gitserver:3178",
@@ -210,7 +212,7 @@ func TestGitserverAddr(t *testing.T) {
 		environ: []string{
 			"SRC_GIT_SERVERS=5",
 		},
-		want: "",
+		wantErr: errors.New("unsupported deployment type: pure-docker"),
 	}, {
 		name: "unset",
 		environ: []string{
@@ -223,10 +225,8 @@ func TestGitserverAddr(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			deploy.Mock(tc.deployType)
 			got, err := gitserverAddr(tc.environ)
-			if (tc.wantErr == "") != (err == nil) {
-				t.Errorf("unexpected error. want=%q got=%v", tc.wantErr, err)
-			} else if err != nil && !strings.Contains(err.Error(), tc.wantErr) {
-				t.Errorf("error does not contain %q: %v", tc.wantErr, err)
+			if (err != nil) != (tc.wantErr != nil) {
+				t.Fatalf("got err %v, want %s", err, tc.wantErr)
 			}
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
@@ -241,6 +241,7 @@ func TestSearcherAddr(t *testing.T) {
 		deployType string
 		environ    []string
 		want       string
+		wantErr    error
 	}{{
 		name: "default",
 		want: "k8s+http://searcher:3181",
@@ -268,9 +269,9 @@ func TestSearcherAddr(t *testing.T) {
 		want:       "http://searcher-0:3181 http://searcher-1:3181",
 	}, {
 		name:       "unsupported deploy type",
-		deployType: deploy.SingleDocker,
-		environ:    []string{"SEARCHER_URL=2"},
-		want:       "",
+		deployType: deploy.PureDocker,
+		environ:    []string{"SEARCHER_URL=5"},
+		wantErr:    errors.New("unsupported deployment type: pure-docker"),
 	}, {
 		name:    "unset",
 		environ: []string{"SEARCHER_URL="},
@@ -280,7 +281,10 @@ func TestSearcherAddr(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			deploy.Mock(tc.deployType)
-			got, _ := searcherAddr(tc.environ)
+			got, err := searcherAddr(tc.environ)
+			if (err != nil) != (tc.wantErr != nil) {
+				t.Fatalf("got err %v, want %s", err, tc.wantErr)
+			}
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
@@ -294,6 +298,7 @@ func TestSymbolsAddr(t *testing.T) {
 		deployType string
 		environ    []string
 		want       string
+		wantErr    error
 	}{{
 		name: "default",
 		want: "http://symbols:3184",
@@ -320,10 +325,15 @@ func TestSymbolsAddr(t *testing.T) {
 		environ:    []string{"SYMBOLS_URL=2"},
 		want:       "http://symbols-0:3184 http://symbols-1:3184",
 	}, {
+		name:       "ignore duplicate",
+		deployType: deploy.DockerCompose,
+		environ:    []string{"SYMBOLS_URL=k8s+rpc://symbols:3184?kind=sts", "SYMBOLS_URL=2"},
+		want:       "k8s+rpc://symbols:3184?kind=sts",
+	}, {
 		name:       "unsupported deploy type",
 		deployType: deploy.SingleDocker,
 		environ:    []string{"SYMBOLS_URL=2"},
-		want:       "",
+		wantErr:    errors.New("unsupported deployment type: single-docker"),
 	}, {
 		name:    "unset",
 		environ: []string{"SYMBOLS_URL="},
@@ -333,7 +343,10 @@ func TestSymbolsAddr(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			deploy.Mock(tc.deployType)
-			got, _ := symbolsAddr(tc.environ)
+			got, err := symbolsAddr(tc.environ)
+			if (err != nil) != (tc.wantErr != nil) {
+				t.Fatalf("got err %v, want %s", err, tc.wantErr)
+			}
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
@@ -347,6 +360,7 @@ func TestZoektAddr(t *testing.T) {
 		deployType string
 		environ    []string
 		want       string
+		wantErr    error
 	}{{
 		name: "default",
 		want: "k8s+rpc://indexed-search:6070?kind=sts",
@@ -380,17 +394,19 @@ func TestZoektAddr(t *testing.T) {
 		environ:    []string{"INDEXED_SEARCH_SERVERS=2"},
 		want:       "zoekt-webserver-0:6070 zoekt-webserver-1:6070",
 	}, {
-		name: "unset new",
-		environ: []string{
-			"ZOEKT_HOST=127.0.0.1:3070",
-			"INDEXED_SEARCH_SERVERS=",
-		},
-		want: "",
+		name:    "unset new",
+		environ: []string{"ZOEKT_HOST=127.0.0.1:3070", "INDEXED_SEARCH_SERVERS="},
+		want:    "",
+	}, {
+		name:       "ignore duplicate",
+		deployType: deploy.DockerCompose,
+		environ:    []string{"INDEXED_SEARCH_SERVERS=2", "INDEXED_SEARCH_SERVERS=k8s+rpc://indexed-search:6070?kind=sts"},
+		want:       "zoekt-webserver-0:6070 zoekt-webserver-1:6070",
 	}, {
 		name:       "unsupported deploy type",
 		deployType: deploy.SingleDocker,
 		environ:    []string{"INDEXED_SEARCH_SERVERS=2"},
-		want:       "",
+		wantErr:    errors.New("unsupported deployment type: single-docker"),
 	}, {
 		name:    "unset old",
 		environ: []string{"ZOEKT_HOST="},
@@ -400,7 +416,10 @@ func TestZoektAddr(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			deploy.Mock(tc.deployType)
-			got, _ := zoektAddr(tc.environ)
+			got, err := zoektAddr(tc.environ)
+			if (err != nil) != (tc.wantErr != nil) {
+				t.Fatalf("got err %v, want %s", err, tc.wantErr)
+			}
 			if got != tc.want {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
