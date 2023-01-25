@@ -91,6 +91,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	switch c.RunType {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
+	case runtype.WolfiExpBranch:
+		ops.Merge(WolfiOperations())
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.

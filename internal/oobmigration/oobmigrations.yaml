@@ -116,3 +116,13 @@
   is_enterprise: false
   introduced_version_major: 4
   introduced_version_minor: 5
+- id: 20
+  team: code-intelligence
+  component: codeintel-db.lsif_data_*
+  description: Convert LSIF data to SCIP.
+  non_destructive: false
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
+  deprecated_version_major: 4
+  deprecated_version_minor: 6

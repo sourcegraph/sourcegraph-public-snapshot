@@ -171,6 +171,19 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"})
 }
 
+// AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
+type AzureDevOpsConnection struct {
+	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
+	Orgs []string `json:"orgs,omitempty"`
+	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.
+	Projects []string `json:"projects,omitempty"`
+	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
+	Token string `json:"token"`
+	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	Url string `json:"url"`
+	// Username description: A username for authentication withe the Gerrit code host.
+	Username string `json:"username"`
+}
 type BackendInsight struct {
 	// Description description: The description of this insight
 	Description string          `json:"description,omitempty"`
@@ -656,6 +669,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
+	// AzureDevOps description: Allow adding Azure DevOps code host connections
+	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -750,6 +765,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
+	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")

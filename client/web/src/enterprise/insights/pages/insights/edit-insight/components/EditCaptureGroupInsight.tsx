@@ -23,18 +23,22 @@ interface EditCaptureGroupInsightProps {
 export const EditCaptureGroupInsight: FC<EditCaptureGroupInsightProps> = props => {
     const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
-    const insightFormValues = useMemo<CaptureGroupFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CaptureGroupFormFields>(() => {
+        const isAllReposInsight = insight.repoQuery === '' && insight.repositories.length === 0
+        const repoQuery = isAllReposInsight ? 'repo:.*' : insight.repoQuery
+
+        return {
             title: insight.title,
+            repoMode: repoQuery ? 'search-query' : 'urls-list',
+            repoQuery: { query: repoQuery },
             repositories: insight.repositories.join(', '),
             groupSearchQuery: insight.query,
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-        }),
-        [insight]
-    )
+        }
+    }, [insight])
 
     const handleSubmit = (values: CaptureGroupFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedCaptureGroupInsight(values)

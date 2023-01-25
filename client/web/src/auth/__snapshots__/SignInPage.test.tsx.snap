@@ -58,7 +58,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class=""
           >
             <label
-              class="label w-100 form-group"
+              class="label label form-group"
             >
               <div
                 class="mb-2"
@@ -235,7 +235,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class=""
           >
             <label
-              class="label w-100 form-group"
+              class="label label form-group"
             >
               <div
                 class="mb-2"
@@ -412,7 +412,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
             class=""
           >
             <label
-              class="label w-100 form-group"
+              class="label label form-group"
             >
               <div
                 class="mb-2"
@@ -589,7 +589,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
             class=""
           >
             <label
-              class="label w-100 form-group"
+              class="label label form-group"
             >
               <div
                 class="mb-2"

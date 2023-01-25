@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "root",
+    srcs = ["root.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/root",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)
+
+go_test(
+    name = "root_test",
+    srcs = ["root_test.go"],
+    embed = [":root"],
+)
