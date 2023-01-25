@@ -296,6 +296,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	licensing.MockCheckFeatureError("")
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -304,7 +305,6 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
@@ -336,7 +336,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	}
 	t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
-	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
+	_, err := r.ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{
 		Repository: graphqlbackend.MarshalRepositoryID(api.RepoID(repoID)),
 	})
 	if err != nil {
@@ -351,6 +351,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	reset := licensing.TestingSkipFeatureChecks()
 	t.Cleanup(reset)
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -359,7 +360,6 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
@@ -392,9 +392,8 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
-		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User: graphqlbackend.MarshalUserID(userID),
-		})
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
+			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(userID)})
 		if err != nil {
 			t.Fatal(err)
 		}
