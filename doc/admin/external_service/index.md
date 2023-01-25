@@ -212,6 +212,6 @@ It may be the case that you'd like to temporarily disable all `git` and API requ
 
 ### Testing Code Host Connections
 
-> WARNING: Sourcegraph 4.4 customers are reporting a bug with the test connection functionality when Sourcegraph is running behind a proxy which blocks TCP dial. This causes repositories to stop syncing. If you're experiencing this issue, please contact your support representative or email us at [support@sourcegraph.com](mailto:support@sourcegraph.com).
+> WARNING: Sourcegraph 4.4.0 customers are reporting a bug where the connection test is failing when Sourcegraph is running behind proxies where TCP dial cannot be used with ports 80/443. This causes repositories to stop syncing. If you're experiencing this issue, please upgrade to 4.4.1 where normal HTTP requests are used instead.
 
 In Sourcegraph 4.4, site administrators have the ability to test a code host connection via the site-admin UI to improve the debuggability when something goes wrong. This check confirms that Sourcegraph has the ability to connect with the respective code host via TCP dial. 
