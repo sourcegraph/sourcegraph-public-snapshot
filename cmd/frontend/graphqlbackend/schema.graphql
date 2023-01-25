@@ -9102,6 +9102,10 @@ extend type Query {
     """
     teams(
         first: Int
+
+        """
+        Opaque pagination cursor.
+        """
         after: String
         """
         Search can be used to do a text-search over the team names.
