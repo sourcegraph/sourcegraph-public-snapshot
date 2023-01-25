@@ -1013,7 +1013,7 @@ type GitLabAuthProvider struct {
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	// GroupValidationToken description: An optional access token that is used to validated group membership. This is required if Minimal Access is used for group membership, as user accounts would not be able to verify membership on their own. This token must have access to the groups specified in allowGroups.
+	// GroupValidationToken description: An optional access token that is used to validated group membership. This is required if [Minimal Access](https://docs.gitlab.com/ee/user/permissions.html#users-with-minimal-access) is used for group membership, as user accounts would not be able to verify membership on their own. This token must have access to the groups specified in allowGroups.
 	GroupValidationToken string `json:"groupValidationToken,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
