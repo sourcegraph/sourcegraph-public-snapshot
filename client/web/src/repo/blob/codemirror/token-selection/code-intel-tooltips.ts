@@ -1,25 +1,32 @@
-import { StateEffect, StateField } from '@codemirror/state'
-import { Occurrence } from '@sourcegraph/shared/out/src/codeintel/scip'
+import { countColumn, StateEffect, StateField } from '@codemirror/state'
+import { Occurrence, Position } from '@sourcegraph/shared/out/src/codeintel/scip'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
-import { occurrenceAtPosition, positionAtCmPosition, rangeToCmSelection } from '../occurrence-utils'
+import {
+    isInteractiveOccurrence,
+    occurrenceAtPosition,
+    positionAtCmPosition,
+    rangeToCmSelection,
+} from '../occurrence-utils'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
-import { getHoverTooltip, hoverCache } from './hover'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from '../hovercard'
 import { blobPropsFacet } from '../index'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
-import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
-import { warmupOccurrence } from './selections'
+import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
+import { definitionCache, goToDefinitionAtOccurrence } from './definition'
+import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
-type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: LoadingTooltip | CodeIntelTooltip | null } | null
+type CodeIntelTooltipState = { occurrence: Occurrence; tooltip: Tooltip | null } | null
 
-const setFocusedOccurrence = StateEffect.define<Occurrence | null>()
-export const setFocusedOccurrenceTooltip = StateEffect.define<LoadingTooltip | CodeIntelTooltip | null>()
+export const setFocusedOccurrence = StateEffect.define<Occurrence | null>()
+export const setFocusedOccurrenceTooltip = StateEffect.define<Tooltip | null>()
 const setPinnedCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 const setHoveredCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 
@@ -56,20 +63,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
     },
     provide(field) {
         return [
-            showTooltip.computeN([field], state => {
-                const { hover, focus, pin } = state.field(field)
-                const tooltips = []
-                if (focus?.tooltip) {
-                    tooltips.push(focus.tooltip)
-                }
-                if (pin?.tooltip) {
-                    tooltips.push(pin.tooltip)
-                }
-                if (hover?.tooltip && hover.occurrence !== pin?.occurrence && hover.occurrence !== focus?.occurrence) {
-                    tooltips.push(hover.tooltip)
-                }
-                return tooltips
-            }),
+            showTooltip.computeN([field], state => Object.values(state.field(field)).map(val => val?.tooltip ?? null)),
         ]
     },
 })
@@ -92,6 +86,21 @@ const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     }
 }
 
+const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+    if (!view.state.field(hoverCache).has(occurrence)) {
+        hoverAtOccurrence(view, occurrence).then(
+            () => {},
+            () => {}
+        )
+    }
+    if (!view.state.field(definitionCache).has(occurrence)) {
+        goToDefinitionAtOccurrence(view, occurrence).then(
+            () => {},
+            () => {}
+        )
+    }
+}
+
 export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     warmupOccurrence(view, occurrence)
     view.dispatch({
@@ -102,9 +111,75 @@ export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void
     focusOccurrence(view, occurrence)
 }
 
+const hoverCache = StateField.define<Map<Occurrence, Promise<HoverResult>>>({
+    create: () => new Map(),
+    update: value => value,
+})
+
+export async function getHoverTooltip(view: EditorView, pos: number): Promise<Tooltip | null> {
+    const cmLine = view.state.doc.lineAt(pos)
+    const line = cmLine.number - 1
+    const character = countColumn(cmLine.text, 1, pos - cmLine.from)
+    const occurrence = occurrenceAtPosition(view.state, new Position(line, character))
+    if (!occurrence) {
+        return null
+    }
+    const result = await hoverAtOccurrence(view, occurrence)
+    if (!result.markdownContents) {
+        return null
+    }
+    const pinnedOccurrence = getPinnedOccurrence(view, view.state.field(pin))
+    return new CodeIntelTooltip(view, occurrence, result, occurrence === pinnedOccurrence)
+}
+
+export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<HoverResult> {
+    const cache = view.state.field(hoverCache)
+    const fromCache = cache.get(occurrence)
+    if (fromCache) {
+        return fromCache
+    }
+    const uri = toURIWithPath(view.state.facet(blobPropsFacet).blobInfo)
+    const contents = hoverRequest(view, occurrence, {
+        position: occurrence.range.start,
+        textDocument: { uri },
+    })
+    cache.set(occurrence, contents)
+    return contents
+}
+
+async function hoverRequest(
+    view: EditorView,
+    occurrence: Occurrence,
+    params: TextDocumentPositionParameters
+): Promise<HoverResult> {
+    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const hover = await api.getHover(params).toPromise()
+
+    let markdownContents: string =
+        hover === null || hover.contents.length === 0
+            ? ''
+            : hover.contents
+                  .map(({ value }) => value)
+                  .join('\n\n----\n\n')
+                  .trimEnd()
+    if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
+        markdownContents = 'No hover information available'
+    }
+    return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
+}
+
+function isPrecise(hover: HoverMerged | null): boolean {
+    for (const badge of hover?.aggregatedBadges || []) {
+        if (badge.text === 'precise') {
+            return true
+        }
+    }
+    return false
+}
+
 /**
  * Listens to mousemove events, determines whether the position under the mouse
- * cursor is a valid {@link Occurrence}, fetches hover information as necessary and updates {@link hoverTooltip}.
+ * cursor is a valid {@link Occurrence}, fetches hover information as necessary and updates {@link codeIntelTooltipsState}.
  */
 const hoverManager = ViewPlugin.fromClass(
     class HoverManager implements PluginValue {

@@ -9,15 +9,18 @@ import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/s
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { isInteractiveOccurrence, occurrenceAtMouseEvent, OccurrenceMap, rangeToCmSelection } from '../occurrence-utils'
+import {
+    isInteractiveOccurrence,
+    occurrenceAtMouseEvent,
+    occurrenceAtPosition,
+    OccurrenceMap,
+} from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
 import { preciseOffsetAtCoords } from '../utils'
 
-import { hoveredOccurrenceField } from './hover'
-import { isModifierKey, isModifierKeyHeld } from './modifier-click'
-import { selectRange } from './selections'
-import { selectOccurrence } from './code-intel-tooltips'
+import { isModifierKey } from './modifier-click'
+import { getCodeIntelTooltipState, selectOccurrence, setFocusedOccurrenceTooltip } from './code-intel-tooltips'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -25,9 +28,7 @@ export interface DefinitionResult {
     locations: Location[]
     atTheDefinition?: boolean
 }
-const definitionReady = Decoration.mark({
-    class: 'cm-token-selection-definition-ready',
-})
+
 const setDefinitionEffect = StateEffect.define<OccurrenceMap<string>>()
 export const definitionUrlField = StateField.define<OccurrenceMap<string>>({
     create: () => new OccurrenceMap(new Map(), 'empty-definition'),
@@ -50,35 +51,6 @@ export function definitionExtension() {
     return [definitionCache, definitionUrlField]
 }
 
-export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
-    combine: props => props[0],
-    enables: () => [
-        definitionUrlField,
-        EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
-            const occ = state.field(hoveredOccurrenceField)
-            const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
-            if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
-                const range = rangeToCmSelection(state, occ.range)
-                if (range.from === range.to) {
-                    return RangeSet.empty
-                }
-                if (url) {
-                    // Insert an HTML link to support Context-menu>Open-link-in-new-tab
-                    const definitionURL = Decoration.mark({
-                        attributes: {
-                            href: url,
-                        },
-                        tagName: 'a',
-                    })
-                    return RangeSet.of([definitionURL.range(range.from, range.to)])
-                }
-                return RangeSet.of([definitionReady.range(range.from, range.to)])
-            }
-            return RangeSet.empty
-        }),
-    ],
-})
-
 export function goToDefinitionOnMouseEvent(
     view: EditorView,
     event: MouseEvent,
@@ -94,13 +66,26 @@ export function goToDefinitionOnMouseEvent(
     if (!isModifierKey(event) && !options?.isLongClick) {
         return
     }
-    const spinner = new LoadingTooltip(view, preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY }))
+
+    const offset = preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY })
+    if (offset === null) {
+        return
+    }
+
+    // show loading tooltip
+    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
     goToDefinitionAtOccurrence(view, atEvent.occurrence)
         .then(
             ({ handler }) => handler(atEvent.position),
             () => {}
         )
-        .finally(() => spinner.stop())
+        .finally(() => {
+            // close loading tooltip if any
+            const current = getCodeIntelTooltipState(view, 'focus')
+            if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === atEvent.occurrence) {
+                view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+            }
+        })
 }
 
 export function goToDefinitionAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<DefinitionResult> {
@@ -205,7 +190,13 @@ async function goToDefinition(
                         history.push(hrefFrom)
                     }
                     if (uri === params.textDocument.uri) {
-                        selectRange(view, selectionRange)
+                        const definitionOccurrence = occurrenceAtPosition(
+                            view.state,
+                            new Position(range.start.line, range.start.character)
+                        )
+                        if (definitionOccurrence) {
+                            selectOccurrence(view, definitionOccurrence)
+                        }
                     }
                     if (shouldPushHistory) {
                         history.push(hrefTo, { previousURL: hrefFrom })

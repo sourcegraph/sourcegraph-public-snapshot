@@ -1,15 +1,15 @@
 import { Extension } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 
-import { MOUSE_MAIN_BUTTON, MOUSE_SECONDARY_BUTTON } from '../utils'
+import { MOUSE_MAIN_BUTTON } from '../utils'
 
-import { definitionCache, definitionExtension, goToDefinitionOnMouseEvent } from './definition'
+import { definitionExtension, goToDefinitionOnMouseEvent } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
-import { keybindings, keyboardShortcutsExtension, keyDownHandler } from './keybindings'
+import { keyboardShortcutsExtension } from './keybindings'
 import { modifierClickExtension } from './modifier-click'
 import { codeIntelTooltipsExtension } from './code-intel-tooltips'
 import { interactiveOccurrencesExtension } from './decorations'
-import { fallbackOccurrences } from './selections'
+import { fallbackOccurrences, syncSelectionWithURL } from './selections'
 
 const LONG_CLICK_DURATION = 500
 
@@ -49,19 +49,18 @@ export function tokenSelectionExtension(): Extension {
 
     return [
         fallbackOccurrences,
+        syncSelectionWithURL,
 
         documentHighlightsExtension(),
         codeIntelTooltipsExtension(),
         interactiveOccurrencesExtension(),
 
         modifierClickExtension(),
-        // tokenSelectionTheme,
 
         definitionExtension(),
 
         keyboardShortcutsExtension(),
 
-        // syncSelectionWithURL,
         EditorView.domEventHandlers({
             // Approximate `click` with `mouseup` because `click` does not get
             // triggered in the scenario when the user holds down the meta-key,

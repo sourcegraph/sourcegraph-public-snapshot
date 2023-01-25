@@ -15,10 +15,14 @@ import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 
 import { goToDefinitionAtOccurrence } from './definition'
-import { getHoverTooltip } from './hover'
 import { isModifierKeyHeld } from './modifier-click'
 import { positionToOffset } from '../utils'
-import { getCodeIntelTooltipState, setFocusedOccurrenceTooltip, selectOccurrence } from './code-intel-tooltips'
+import {
+    getCodeIntelTooltipState,
+    setFocusedOccurrenceTooltip,
+    selectOccurrence,
+    getHoverTooltip,
+} from './code-intel-tooltips'
 
 const keybindings: KeyBinding[] = [
     {

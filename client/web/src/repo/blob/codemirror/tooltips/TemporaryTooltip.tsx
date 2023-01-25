@@ -1,8 +1,8 @@
-import { EditorView, getTooltip, Tooltip, TooltipView } from '@codemirror/view'
+import { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 
 import * as sourcegraph from '@sourcegraph/extension-api-types'
 
-import { closeHover, showHover } from '../token-selection/hover'
+import { getCodeIntelTooltipState, setFocusedOccurrenceTooltip } from '../token-selection/code-intel-tooltips'
 
 class TemporaryTooltip implements Tooltip {
     public readonly above = true
@@ -32,10 +32,12 @@ export function showTemporaryTooltip(
     const line = view.state.doc.line(position.line + 1)
     const pos = line.from + position.character + 1
     const tooltip = new TemporaryTooltip(message, pos, options?.arrow)
-    showHover(view, tooltip)
+    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(tooltip) })
     setTimeout(() => {
-        if (getTooltip(view, tooltip)) {
-            closeHover(view)
+        // close loading tooltip if any
+        const current = getCodeIntelTooltipState(view, 'focus')
+        if (current?.tooltip === tooltip) {
+            view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
         }
     }, clearTimeout)
 }

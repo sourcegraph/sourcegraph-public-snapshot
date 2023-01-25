@@ -9,7 +9,6 @@ import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
  * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
  */
 export const MOUSE_MAIN_BUTTON = 0
-export const MOUSE_SECONDARY_BUTTON = 2
 
 export function zeroToOneBasedPosition(position: Position): { line: number; character: number } {
     return {
