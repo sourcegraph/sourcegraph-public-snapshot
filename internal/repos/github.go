@@ -262,7 +262,11 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 }
 
 func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	return checkConnection(s.config.Url)
+	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
