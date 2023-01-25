@@ -54,10 +54,20 @@ external identity provider.
 
 The [`builtin` auth provider](../config/site_config.md#builtin-password-authentication) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
 
-Password reset links expire after 4 hours.
+Password reset links expire after 4 hours by default - this can be configured in site configuration with the [`auth.passwordResetLinkExpiry`](../config/site_config.md#auth-passwordResetLinkExpiry) field.
 
+### Creating builtin authentication users
 
-###  How to control user sign-up
+Users can be created with builtin password authentication in several ways:
+
+- through the site admin page `/site-admin/users/new`
+- through users [signing up](#how-to-control-user-sign-up)
+- through the `createUser` mutation in the GraphQL API
+- through [`src users create`](../../cli/references/users/create.md)
+
+When [SMTP is enabled](../config/email.md), special behaviours apply to whether a builtin authentication user's email is marked as verified by default - refer to [email verification](../config/email.md#user-email-verification) for more details.
+
+### How to control user sign-up
 
 You can use the filter `allowSignup`, available in the builtin configuration, to control who can create an account in your Sourcegraph instance.
 
@@ -78,7 +88,6 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
   }
 ```
 > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
-
 
 ### Account lockout
 
