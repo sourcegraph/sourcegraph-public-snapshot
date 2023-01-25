@@ -26,7 +26,7 @@
 
 _Upgrade notes for the next version will appear here._
 
-## v4.3 ➔ v4.4
+## v4.3 ➔ v4.4.1
 
 <!-- Add changes changes to this section before release. -->
 
