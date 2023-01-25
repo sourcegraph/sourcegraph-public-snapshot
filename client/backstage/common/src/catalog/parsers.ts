@@ -3,7 +3,7 @@ import {
   ANNOTATION_ORIGIN_LOCATION,
 } from '@backstage/catalog-model';
 import { CatalogProcessorEntityResult, DeferredEntity, parseEntityYaml } from '@backstage/plugin-catalog-backend';
-import { SearchResult } from '../client/SourcegraphClient';
+import { SearchResult } from '../client';
 
 export const parseCatalog = (src: SearchResult[], providerName: string): DeferredEntity[] => {
   const results: DeferredEntity[] = [];

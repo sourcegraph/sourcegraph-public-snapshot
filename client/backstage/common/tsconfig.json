@@ -1,12 +1,17 @@
 {
   "extends": "@backstage/cli/config/tsconfig.json",
-  "include": [
-    "src"
-  ],
+    "include": [
+      "src"
+    ],
+    "exclude": [
+      "node_modules"
+    ],
   "compilerOptions": {
     "outDir": "dist-types",
-    "rootDir": ".",
+    "rootDir": "./",
+    "strict": true,
+    "sourceMap": true,
     "jsx": "react-jsx",
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
   }
 }
