@@ -229,7 +229,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const queryState = disabled ? EMPTY_QUERY_STATA : value
-    const previewQuery = value.query ? `${value.query} archived:yes fork:yes count:all` : value.query
+    const previewQuery = value.query ? `(${value.query}) archived:yes fork:yes count:all` : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
 
