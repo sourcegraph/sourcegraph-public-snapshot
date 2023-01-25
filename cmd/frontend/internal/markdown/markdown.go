@@ -2,9 +2,11 @@ package markdown
 
 import (
 	"bytes"
+	"fmt"
 	"regexp" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
+	chroma "github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
@@ -30,7 +32,18 @@ func Render(content string) (string, error) {
 		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
 		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-		policy.AllowAttrs("class").OnElements("pre", "code", "span")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile("^(?:chroma-[a-zA-Z0-9\\-]+)|chroma$")).OnElements("pre", "code", "span")
+
+		origTypes := chroma.StandardTypes
+		sourcegraphTypes := map[chroma.TokenType]string{}
+		for k, v := range origTypes {
+			if k == chroma.PreWrapper {
+				sourcegraphTypes[k] = v
+			} else {
+				sourcegraphTypes[k] = fmt.Sprintf("chroma-%s", v)
+			}
+		}
+		chroma.StandardTypes = sourcegraphTypes
 
 		renderer = goldmark.New(
 			goldmark.WithExtensions(
