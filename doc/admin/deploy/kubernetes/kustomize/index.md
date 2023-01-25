@@ -35,6 +35,10 @@ Follow the steps below to deploy Sourcegraph on a Kubernetes cluster.
 
 **Step 3:** Review the generated manifests to ensure they match your intended configuration.
 
+  ```bash
+  $ less cluster.yaml
+  ```
+
 **Step 4:**  Deploy the generated manifests
 
   ```bash
