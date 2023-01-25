@@ -5,7 +5,6 @@ import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { of } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
