@@ -894,11 +894,3 @@ func syncErrorReason(err error) string {
 		return "unknown"
 	}
 }
-
-func getOrgFromRepoName(repoName api.RepoName) string {
-	parts := strings.Split(string(repoName), "/")
-	if len(parts) == 1 {
-		return string(repoName)
-	}
-	return parts[1]
-}
