@@ -22,13 +22,6 @@ var dependencies = []dependency{
 	"google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1",
 }
 
-// ignoreDirectories are directories that we do not want to walk through when
-// generating protobuf files.
-var ignoreDirectories = []string{
-	".git",
-	"node_modules",
-}
-
 func Generate(ctx context.Context) *generate.Report {
 	// Save working directory
 	cwd, err := os.Getwd()
@@ -60,22 +53,15 @@ func Generate(ctx context.Context) *generate.Report {
 	// Run buf generate in every directory with buf.gen.yaml
 	var bufGenFilePaths []string
 
-	err = filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
-		name := info.Name()
-
-		if info.IsDir() {
-			for _, d := range ignoreDirectories {
-				if name == d {
-					return filepath.SkipDir
-				}
-			}
+	err = filepath.WalkDir(rootDir, root.SkipGitIgnoreWalkFunc(func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-
-		if name == "buf.gen.yaml" {
+		if entry.Name() == "buf.gen.yaml" {
 			bufGenFilePaths = append(bufGenFilePaths, path)
 		}
 		return nil
-	})
+	}))
 
 	if err != nil {
 		return &generate.Report{Err: err}
