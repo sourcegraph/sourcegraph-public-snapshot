@@ -19,7 +19,7 @@ const onClickCTA = (): void => {
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string }>
 > = ({ className }) => {
-    const [isSetupWizardEnabled] = useFeatureFlag('local-setup-wizard')
+    const [isSetupWizardEnabled] = useFeatureFlag('setup-wizard')
 
     if (isSetupWizardEnabled) {
         return null
