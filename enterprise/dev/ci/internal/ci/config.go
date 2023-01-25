@@ -101,8 +101,6 @@ func NewConfig(now time.Time) Config {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
-	// fmt.Printf("List of changed files:\n%+v\n", changedFiles)
-
 	// special tag adjustments based on run type
 	switch {
 	case runType.Is(runtype.TaggedRelease):
