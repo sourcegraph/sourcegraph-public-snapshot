@@ -75,6 +75,8 @@ func ContainsField(rawQuery, field string) (bool, error) {
 // Possible reasons that a scope query is invalid.
 const containsPattern = "the query cannot be used for scoping because it contains a pattern: `%s`."
 const containsDisallowedFilter = "the query cannot be used for scoping because it contains a disallowed filter: `%s`."
+const containsDisallowedRevision = "the query cannot be used for scoping because it contains a revision."
+const containsInvalidExpression = "the query cannot be used for scoping because it is not a valid regular expression."
 
 // IsValidScopeQuery takes a query plan and returns whether the query is a valid scope query, that is it only contains
 // repo filters or boolean predicates.
@@ -88,8 +90,17 @@ func IsValidScopeQuery(plan searchquery.Plan) (string, bool) {
 			// Only allowed filter is repo (including repo:has predicates).
 			if field != searchquery.FieldRepo {
 				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
+			} else {
+				repoRevs, err := query.ParseRepositoryRevisions(parameter.Value)
+				if err != nil {
+					return containsInvalidExpression, false
+				}
+				if len(repoRevs.Revs) > 0 {
+					return containsDisallowedRevision, false
+				}
 			}
 		}
 	}
+
 	return "", true
 }
