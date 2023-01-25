@@ -47,7 +47,7 @@ export const SetupTabs: FC<PropsWithChildren<SetupTabsProps>> = props => {
 
 /** UI component to declare list of steps headers (tabs) UI */
 export const SetupList: FC<PropsWithChildren<TabListProps>> = props => (
-    <TabList {...props} className={classNames(styles.headerList, props.className)} />
+    <TabList {...props} className={classNames(styles.headerList, props.wrapperClassName)} />
 )
 
 interface SetupTabProps {

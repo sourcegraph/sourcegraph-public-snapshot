@@ -14,7 +14,7 @@ import styles from './Setup.module.scss'
 export const SetupWizard: FC = props => {
     const {} = props
 
-    const [isSetupWizardEnabled] = useFeatureFlag('local-setup-wizard')
+    const [isSetupWizardEnabled] = useFeatureFlag('setup-wizard')
     const navigate = useNavigate()
     const [step, setStep] = useState(0)
 
