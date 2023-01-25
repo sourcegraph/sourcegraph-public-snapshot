@@ -63,9 +63,6 @@ type Client struct {
 	// Endpoints to symbols service.
 	Endpoints *endpoint.Map
 
-	// replica number of symbols service.
-	ReplicaCount string
-
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
