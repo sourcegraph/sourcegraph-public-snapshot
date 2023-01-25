@@ -28,7 +28,6 @@ type StreamingQueryExecutor struct {
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
 		previewExecutor: previewExecutor{
-			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
