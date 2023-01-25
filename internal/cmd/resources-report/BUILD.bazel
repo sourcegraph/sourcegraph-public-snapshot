@@ -14,10 +14,10 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2/types",
+        "@com_github_aws_aws_sdk_go_v2//service/eks",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
-        "@com_github_aws_aws_sdk_go_v2_service_ec2//:ec2",
-        "@com_github_aws_aws_sdk_go_v2_service_ec2//types",
-        "@com_github_aws_aws_sdk_go_v2_service_eks//:eks",
         "@com_github_cockroachdb_errors//:errors",
         "@org_golang_google_api//cloudresourcemanager/v1:cloudresourcemanager",
         "@org_golang_google_api//compute/v1:compute",
