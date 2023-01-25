@@ -78,7 +78,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
                     }}
                     data-tree-node-id={element.id}
-                    className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
+                    className={classNames(styles.node, isSelected && styles.selected)}
                 >
                     {isBranch ? (
                         // We already handle accessibility events for expansion in the <TreeView />

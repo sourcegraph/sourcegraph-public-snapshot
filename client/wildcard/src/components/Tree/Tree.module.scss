@@ -64,6 +64,7 @@
         min-height: 1.75rem;
         align-items: center;
         border-radius: 0.25rem;
+        flex-grow: 1;
     }
 
     .content-in-branch {
@@ -75,10 +76,6 @@
     .collapse-icon,
     .collapse-icon > * {
         flex-shrink: 0;
-    }
-
-    .content {
-        flex-grow: 1;
     }
 
     a {
