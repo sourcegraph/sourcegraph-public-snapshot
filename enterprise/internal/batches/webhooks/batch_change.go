@@ -1,16 +1,18 @@
 package webhooks
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,36 +32,61 @@ type batchChange struct {
 	ClosedAt      *time.Time  `json:"closed_at"`
 }
 
+const gqlBatchChangeQuery = `query BatchChange($id: ID!) {
+	node(id: $id) {
+		... on BatchChange {
+			id
+			namespace
+			name
+			description
+			state
+			creator
+			lastApplier
+			url
+			createdAt
+			updatedAt
+			lastAppliedAt
+			closedAt
+		}
+	}
+}`
+
+type gqlBatchChangeResponse struct {
+	Data struct {
+		Node batchChange
+	}
+}
+
 func MarshalBatchChange(ctx context.Context, db basestore.ShareableStore, bc *types.BatchChange) ([]byte, error) {
-	namespaceID, err := bgql.MarshalNamespaceID(bc.NamespaceUserID, bc.NamespaceOrgID)
+	marshalledBatchChangeID := bgql.MarshalBatchChangeID(bc.ID)
+	input := map[string]any{"id": marshalledBatchChangeID}
+
+	reqBody, err := json.Marshal(map[string]any{"query": gqlBatchChangeQuery})
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling namespace")
+		return nil, errors.Wrap(err, "marshal request body")
 	}
 
-	namespace, err := database.NamespacesWith(db).GetByID(ctx, bc.NamespaceOrgID, bc.NamespaceUserID)
+	url, err := gqlURL("BatchChange")
 	if err != nil {
-		return nil, errors.Wrap(err, "querying namespace")
+		return nil, errors.Wrap(err, "construct frontend URL")
 	}
 
-	url, err := bc.URL(ctx, namespace.Name)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, errors.Wrap(err, "building URL")
+		return nil, errors.Wrap(err, "construct request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	var res gqlBatchChangeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, errors.Wrap(err, "decode response")
 	}
 
-	payload := batchChange{
-		ID:            bgql.MarshalBatchChangeID(bc.ID),
-		Namespace:     namespaceID,
-		Name:          bc.Name,
-		Description:   bc.Description,
-		State:         bc.State().ToGraphQL(),
-		Creator:       bgql.MarshalUserID(bc.CreatorID),
-		LastApplier:   nullableMap(bc.LastApplierID, bgql.MarshalUserID),
-		URL:           url,
-		CreatedAt:     bc.CreatedAt,
-		UpdatedAt:     bc.UpdatedAt,
-		LastAppliedAt: nullable(bc.LastAppliedAt),
-		ClosedAt:      nullable(bc.ClosedAt),
-	}
-
-	return json.Marshal(&payload)
+	return json.Marshal(res.Data.Node)
 }
