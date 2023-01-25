@@ -42,7 +42,11 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		file := fileFlag.Get(cmd)
 		skipVersionCheck := skipVersionCheckFlag.Get(cmd)
 
-		store, err := setupStore(ctx, factory, schemaName)
+		r, err := factory([]string{schemaName})
+		if err != nil {
+			return err
+		}
+		store, err := r.Store(ctx, schemaName)
 		if err != nil {
 			return err
 		}
@@ -56,10 +60,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		// the user to skip erroring here if they are explicitly skipping this
 		// version check.
 		inferredVersion, ok, err := func() (string, bool, error) {
-			r, err := factory([]string{schemaName})
-			if err != nil {
-				return "", false, err
-			}
+
 			v, patch, ok, err := getServiceVersion(ctx, r)
 			if err != nil || !ok {
 				return "", false, err
