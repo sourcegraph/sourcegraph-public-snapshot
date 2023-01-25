@@ -1,5 +1,7 @@
 package schemas
 
+import "github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+
 type SchemaDescription struct {
 	Extensions []string
 	Enums      []EnumDescription
@@ -107,3 +109,30 @@ func (d IndexDescription) GetName() string      { return d.Name }
 func (d ConstraintDescription) GetName() string { return d.Name }
 func (d TriggerDescription) GetName() string    { return d.Name }
 func (d ViewDescription) GetName() string       { return d.Name }
+
+type Normalizer[T any] interface{ Normalize() T }
+
+var whitespacePattern = lazyregexp.New(`\s+`)
+
+func (d FunctionDescription) Normalize() FunctionDescription {
+	d.Definition = whitespacePattern.ReplaceAllString(d.Definition, " ")
+	return d
+}
+
+func (d TableDescription) Normalize() TableDescription {
+	d.Comment = ""
+	return d
+}
+
+func (d ColumnDescription) Normalize() ColumnDescription {
+	d.Comment = ""
+	return d
+}
+
+func Normalize[T any](v T) T {
+	if normalizer, ok := any(v).(Normalizer[T]); ok {
+		return normalizer.Normalize()
+	}
+
+	return v
+}
