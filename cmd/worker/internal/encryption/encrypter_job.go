@@ -27,7 +27,7 @@ func (j *recordEncrypterJob) Config() []env.Config {
 	}
 }
 
-func (j *recordEncrypterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *recordEncrypterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	metrics := newMetrics(observationCtx)
 
 	db, err := workerdb.InitDB(observationCtx)

@@ -51,8 +51,8 @@ func (squirrel *SquirrelService) Close() {
 	squirrel.parser.Close()
 }
 
-// symbolInfo finds the symbol at the given point in a file.
-func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+// SymbolInfo finds the symbol at the given point in a file, or nil the definition can't be determined.
+func (squirrel *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
 	// First, find the definition.
 	var def *types.RepoCommitPathMaybeRange
 	{

@@ -16,10 +16,10 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
+import { integrationTestContext } from '@sourcegraph/shared/src/testing/testHelpers'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ResolveRepoResult } from '../../../graphql-operations'

@@ -2,7 +2,6 @@ package ranking
 
 import (
 	"context"
-	"os"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
@@ -31,7 +30,7 @@ func NewService(
 	}
 
 	resultsBucket := func() *storage.BucketHandle {
-		if resultsBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		if resultsBucketCredentialsFile == "" {
 			return nil
 		}
 

@@ -60,7 +60,7 @@ func (m *Recorder) RegistrationDone() {
 
 	// Save/update all known recordables
 	for _, r := range m.recordables {
-		m.saveKnownRoutine(r)
+		m.SaveKnownRoutine(r)
 	}
 }
 
@@ -93,8 +93,8 @@ func (m *Recorder) saveKnownHostName() {
 	}
 }
 
-// saveKnownRoutine updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
-func (m *Recorder) saveKnownRoutine(recordable Recordable) {
+// SaveKnownRoutine updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
+func (m *Recorder) SaveKnownRoutine(recordable Recordable) {
 	r := serializableRoutineInfo{
 		Name:        recordable.Name(),
 		Type:        recordable.Type(),
@@ -151,7 +151,7 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 	m.logger.Debug("Hello from " + r.Name() + "! 😄")
 }
 
-// saveRun saves a run in the Redis list under the "*:recentRuns" key and trims the list.
+// saveRun saves a run in the Redis list under the "*:recentRuns" key.
 func (m *Recorder) saveRun(jobName string, routineName string, hostName string, durationMs int32, err error) error {
 	errorMessage := ""
 	if err != nil {
@@ -173,15 +173,9 @@ func (m *Recorder) saveRun(jobName string, routineName string, hostName string, 
 	}
 
 	// Save run
-	err = m.rcache.AddToList(jobName+":"+routineName+":"+hostName+":"+"recentRuns", string(runJson))
+	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(runJson)
 	if err != nil {
 		return errors.Wrap(err, "save run")
-	}
-
-	// Trim list
-	err = m.rcache.LTrimList(jobName+":"+routineName+":"+hostName+":"+"recentRuns", maxRecentRunsLength)
-	if err != nil {
-		return errors.Wrap(err, "trim list")
 	}
 
 	return nil
@@ -229,4 +223,10 @@ func addRunToStats(stats RoutineRunStats, durationMs int32, errored bool) Routin
 		AvgDurationMs: durationMs,
 		MaxDurationMs: durationMs,
 	})
+}
+
+// getRecentRuns returns the FIFOList under the ":*recentRuns" key.
+func getRecentRuns(c *rcache.Cache, jobName string, routineName string, hostName string) *rcache.FIFOList {
+	key := jobName + ":" + routineName + ":" + hostName + ":" + "recentRuns"
+	return c.FIFOList(key, maxRecentRunsLength)
 }

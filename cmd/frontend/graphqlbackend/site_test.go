@@ -22,7 +22,7 @@ func TestSiteConfiguration(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(db)).Site().Configuration(ctx)
+		_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx)
 
 		if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
 			t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
@@ -34,7 +34,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient(stubs.db)).Site().Configuration(ctx)
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx)
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		},
 		{
 			name:                  "last: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(5)},
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(20)},
 			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
 		},
 		{

@@ -32,7 +32,7 @@ func NewService(
 	store := store.New(scopedContext("store", observationCtx), db)
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService(db)
+	inferenceSvc := inference.NewService()
 
 	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 

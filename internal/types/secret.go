@@ -57,6 +57,8 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
 		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
+	case *schema.AzureDevOpsConnection:
+		es.redactString(c.Token, "token")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
@@ -247,6 +249,12 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
 	case *schema.PagureConnection:
 		o := oldCfg.(*schema.PagureConnection)
+		if c.Token == RedactedSecret && c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "token"}
+		}
+		es.unredactString(c.Token, o.Token, "token")
+	case *schema.AzureDevOpsConnection:
+		o := oldCfg.(*schema.AzureDevOpsConnection)
 		if c.Token == RedactedSecret && c.Url != o.Url {
 			return errCodeHostIdentityChanged{"url", "token"}
 		}

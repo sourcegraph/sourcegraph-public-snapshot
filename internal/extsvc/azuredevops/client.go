@@ -3,44 +3,41 @@ package azuredevops
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// Client used to access an ADO code host via the REST API.
+// Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
 	// Config is the code host connection config for this client.
-	Config *ADOConnection
+	Config *schema.AzureDevOpsConnection
 
-	// URL is the base URL of ADO.
+	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
-	// RateLimit is the self-imposed rate limiter (since ADO does not have a concept
+	// RateLimit is the self-imposed rate limiter (since AzureDevOps does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
+	auth      auth.Authenticator
 }
 
-// TODO: @varsanojidan remove this when the shcema is updated to include ADO: https://github.com/sourcegraph/sourcegraph/issues/46266.
-type ADOConnection struct {
-	Username string
-	Token    string
-}
-
-// NewClient returns an authenticated ADO API client with
+// NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse("https://dev.azure.com")
+func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +51,10 @@ func NewClient(urn string, config *ADOConnection, httpClient httpcli.Doer) (*Cli
 		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auth: &auth.BasicAuth{
+			Username: config.Username,
+			Password: config.Token,
+		},
 	}, nil
 }
 
@@ -63,7 +64,7 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 	ProjectOrOrgName string
 }
 
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) (*ListRepositoriesResponse, error) {
+func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
 	qs := make(url.Values)
 
 	// TODO: @varsanojidan look into which API version/s we want to support.
@@ -81,7 +82,7 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 		return nil, err
 	}
 
-	return &repos, nil
+	return repos.Value, nil
 }
 
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
@@ -89,14 +90,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
-	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Token)))
+	c.auth.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		return nil, err
 	}
@@ -120,18 +119,48 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	return resp, json.Unmarshal(bs, result)
 }
 
-type ListRepositoriesResponse struct {
-	Value []RepositoriesValue `json:"value"`
-	Count int                 `json:"count"`
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated with
+// the given authenticator instance.
+//
+// Note that using an unsupported Authenticator implementation may result in
+// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
+// supported.
+func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
+	if _, ok := a.(*auth.BasicAuth); !ok {
+		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
+	}
+
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		auth:       a,
+		rateLimit:  c.rateLimit,
+	}, nil
 }
 
-type RepositoriesValue struct {
+type ListRepositoriesResponse struct {
+	Value []Repository `json:"value"`
+	Count int          `json:"count"`
+}
+
+type Repository struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	CloneURL   string  `json:"remoteURL"`
+	APIURL     string  `json:"url"`
+	SSHURL     string  `json:"sshUrl"`
+	WebURL     string  `json:"webUrl"`
+	IsDisabled bool    `json:"isDisabled"`
+	Project    Project `json:"project"`
+}
+
+type Project struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
-	APIURL     string `json:"url"`
-	SSHURL     string `json:"sshUrl"`
-	WebURL     string `json:"webUrl"`
-	IsDisabled bool   `json:"isDisabled"`
+	State      string `json:"state"`
+	Revision   int    `json:"revision"`
+	Visibility string `json:"visibility"`
 }
 
 type httpError struct {
@@ -141,5 +170,5 @@ type httpError struct {
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("ADO API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }

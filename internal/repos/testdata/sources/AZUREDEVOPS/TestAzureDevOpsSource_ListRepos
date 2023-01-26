@@ -1,0 +1,119 @@
+[
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/sgtestazure2",
+   "URI": "dev.azure.com/sgtestazure2",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "d66c87ea-6548-4a67-9f1f-560528393e73",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/sgtestazure2"
+    }
+   },
+   "Metadata": {
+    "id": "d66c87ea-6548-4a67-9f1f-560528393e73",
+    "name": "sgtestazure2",
+    "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2",
+    "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/d66c87ea-6548-4a67-9f1f-560528393e73",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure2",
+    "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2",
+    "isDisabled": false,
+    "project": {
+     "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+     "name": "sgtestazure",
+     "state": "wellFormed",
+     "revision": 11,
+     "visibility": "private"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/sgtestazure",
+   "URI": "dev.azure.com/sgtestazure",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/sgtestazure"
+    }
+   },
+   "Metadata": {
+    "id": "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "name": "sgtestazure",
+    "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
+    "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+    "isDisabled": false,
+    "project": {
+     "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+     "name": "sgtestazure",
+     "state": "wellFormed",
+     "revision": 11,
+     "visibility": "private"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "dev.azure.com/sg test with spaces 2",
+   "URI": "dev.azure.com/sg test with spaces 2",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "00e0ad0a-66df-4dc2-bd1b-4c34e05b9225",
+    "ServiceType": "azuredevops",
+    "ServiceID": "https://dev.azure.com/"
+   },
+   "Sources": {
+    "extsvc:azuredevops:0": {
+     "ID": "extsvc:azuredevops:0",
+     "CloneURL": "https://dev.azure.com/sg%20test%20with%20spaces%202"
+    }
+   },
+   "Metadata": {
+    "id": "00e0ad0a-66df-4dc2-bd1b-4c34e05b9225",
+    "name": "sg test with spaces 2",
+    "remoteURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202",
+    "url": "https://dev.azure.com/sgtestazure/8c1230da-3631-41e8-8df3-c94a705227d8/_apis/git/repositories/00e0ad0a-66df-4dc2-bd1b-4c34e05b9225",
+    "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20spaces/sg%20test%20with%20spaces%202",
+    "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202",
+    "isDisabled": false,
+    "project": {
+     "id": "8c1230da-3631-41e8-8df3-c94a705227d8",
+     "name": "sg test with spaces",
+     "state": "wellFormed",
+     "revision": 19,
+     "visibility": "private"
+    }
+   }
+  }
+ ]

@@ -102,24 +102,20 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) []string {
-	required := p.requiredAuthScopes()
-	if len(required) == 0 {
-		return []string{}
+func (p *Provider) ValidateConnection(ctx context.Context) error {
+	required, ok := p.requiredAuthScopes()
+	if !ok {
+		return nil
 	}
 
 	client, err := p.client()
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Unable to get client: %v", err),
-		}
+		return errors.Wrap(err, "unable to get client")
 	}
 
 	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
 	if err != nil {
-		return []string{
-			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
-		}
+		return errors.Wrap(err, "additional OAuth scopes are required, but failed to get available scopes")
 	}
 
 	gotScopes := make(map[string]struct{})
@@ -127,22 +123,19 @@ func (p *Provider) ValidateConnection(ctx context.Context) []string {
 		gotScopes[gotScope] = struct{}{}
 	}
 
-	var problems []string
 	// check if required scopes are satisfied
-	for _, requiredScope := range required {
-		satisfiesScope := false
-		for _, s := range requiredScope.oneOf {
-			if _, found := gotScopes[s]; found {
-				satisfiesScope = true
-				break
-			}
-		}
-		if !satisfiesScope {
-			problems = append(problems, requiredScope.message)
+	satisfiesScope := false
+	for _, s := range required.oneOf {
+		if _, found := gotScopes[s]; found {
+			satisfiesScope = true
+			break
 		}
 	}
+	if !satisfiesScope {
+		return errors.New(required.message)
+	}
 
-	return problems
+	return nil
 }
 
 type requiredAuthScope struct {
@@ -152,20 +145,18 @@ type requiredAuthScope struct {
 	message string
 }
 
-func (p *Provider) requiredAuthScopes() []requiredAuthScope {
-	scopes := []requiredAuthScope{}
-
-	if p.groupsCache != nil {
-		// Needs extra scope to pull group permissions
-		scopes = append(scopes, requiredAuthScope{
-			oneOf: []string{"read:org", "write:org", "admin:org"},
-			message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
-				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
-				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
-		})
+func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
+	if p.groupsCache == nil {
+		return requiredAuthScope{}, false
 	}
 
-	return scopes
+	// Needs extra scope to pull group permissions
+	return requiredAuthScope{
+		oneOf: []string{"read:org", "write:org", "admin:org"},
+		message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
+			"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
+			"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+	}, true
 }
 
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.

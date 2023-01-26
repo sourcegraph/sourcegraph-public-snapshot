@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "integration_test",
+    srcs = ["integration_test.go"],
+    deps = [
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

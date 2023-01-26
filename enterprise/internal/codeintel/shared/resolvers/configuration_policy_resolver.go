@@ -54,7 +54,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 	)
 
 	db := r.svc.GetUnsafeDB()
-	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}

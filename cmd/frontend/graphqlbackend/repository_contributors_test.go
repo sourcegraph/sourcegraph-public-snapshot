@@ -11,9 +11,9 @@ import (
 func TestOffsetBasedCursorSlice(t *testing.T) {
 	slice := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-	int1 := 1
 	int2 := 2
-	int8 := 8
+	string1 := "1"
+	string8 := "8"
 
 	testCases := []struct {
 		name string
@@ -27,7 +27,7 @@ func TestOffsetBasedCursorSlice(t *testing.T) {
 		},
 		{
 			"next page",
-			&database.PaginationArgs{First: &int2, After: &int1},
+			&database.PaginationArgs{First: &int2, After: &string1},
 			autogold.Want("first two items", []int{3, 4}),
 		},
 		{
@@ -37,7 +37,7 @@ func TestOffsetBasedCursorSlice(t *testing.T) {
 		},
 		{
 			"previous page",
-			&database.PaginationArgs{Last: &int2, Before: &int8},
+			&database.PaginationArgs{Last: &int2, Before: &string8},
 			autogold.Want("first two items", []int{7, 8}),
 		},
 	}

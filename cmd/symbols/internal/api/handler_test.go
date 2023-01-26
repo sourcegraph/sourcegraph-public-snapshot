@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -71,7 +72,7 @@ func TestHandler(t *testing.T) {
 	defer server.Close()
 
 	client := symbolsclient.Client{
-		URL:        server.URL,
+		Endpoints:  endpoint.Static(server.URL),
 		HTTPClient: httpcli.InternalDoer,
 	}
 
