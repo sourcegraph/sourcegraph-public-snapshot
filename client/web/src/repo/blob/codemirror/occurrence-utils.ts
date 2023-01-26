@@ -65,7 +65,7 @@ export function occurrenceAtPosition(state: EditorState, position: Position): Oc
         return fromHighlighting
     }
     // If the syntax highlighting data is incomplete then we fallback to a
-    // heuristic to infer the occurrence.
+    // heursitic to infer the occurrence.
     return inferOccurrenceAtPosition(state, position)
 }
 
@@ -93,7 +93,7 @@ export function highlightingOccurrenceAtPosition(state: EditorState, position: P
 // Returns the occurrence at this position based on CodeMirror's built-in
 // "wordAt" helper method.  This helper is a heuristic that works reasonably
 // well for languages with C/Java-like identifiers, but we may want to customize
-// the heuristic for other languages like Clojure where kebab-case identifiers
+// the heurstic for other languages like Clojure where kebab-case identifiers
 // are common.
 export function inferOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
     const fallback = state.field(fallbackOccurrences)
@@ -149,8 +149,8 @@ export function closestOccurrenceByCharacter(
     return undefined
 }
 
-export function positionAtCmPosition({ state }: EditorView, position: number): Position {
-    const cmLine = state.doc.lineAt(position)
+export function positionAtCmPosition(view: EditorView, position: number): Position {
+    const cmLine = view.state.doc.lineAt(position)
     const line = cmLine.number - 1
     // The lack of "- 1" at the end of the line below is intentional because it
     // makes clicking on the first character of a token have no effect.
@@ -174,7 +174,7 @@ export const rangeToCmSelection = (state: EditorState, range: Range): SelectionR
     return EditorSelection.range(Math.max(0, start), Math.min(state.doc.length - 1, end))
 }
 
-// Wrapper around a `Map<Occurrence, T>` with special support to insert undefined values.
+// Wrapper arounds a `Map<Occurrence, T>` with special support to insert undefined values.
 export class OccurrenceMap<T> {
     constructor(private readonly occurrences: Map<Occurrence, T>, private readonly emptyValue: T) {}
     public withOccurrence(occurrence: Occurrence, value?: T): OccurrenceMap<T> {
