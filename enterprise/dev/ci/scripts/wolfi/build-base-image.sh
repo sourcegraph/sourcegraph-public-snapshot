@@ -1,8 +1,9 @@
 #!/bin/bash
 
+set -euf -o pipefail
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
-set -euf -o pipefail
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
 function cleanup() {
   echo "Removing $tmpdir"
