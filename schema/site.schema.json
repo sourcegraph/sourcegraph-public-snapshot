@@ -956,6 +956,7 @@
       "description": "The number of last repo/user permission jobs to keep for history.",
       "type": "integer",
       "default": 5,
+      "minimum": 5,
       "!go": { "pointer": true }
     },
     "branding": {

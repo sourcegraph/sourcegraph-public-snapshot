@@ -32,7 +32,7 @@
     "projects": {
       "description": "An array of projects \"org/project\" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" },
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+([ ]*[\\w.-]+)*$" },
       "examples": [["org/project"]]
     },
     "orgs": {
@@ -54,7 +54,7 @@
           "name": {
             "description": "The name of an Azure DevOps Services/Server project and repository (\"projectName/repositoryName\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^~?[\\w-]+/[\\w.-]+$"
+            "pattern": "^~?[\\w.-]+([ ]*[\\w.-]+)*/[\\w.-]+([ ]*[\\w.-]+)*?$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of an Azure DevOps Services/Server repo.",

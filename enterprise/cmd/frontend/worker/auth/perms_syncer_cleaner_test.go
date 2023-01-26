@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 )
@@ -39,11 +40,24 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "horse"})
 	require.NoError(t, err)
 
+	// create repos
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err = db.Repos().Create(ctx, &repo1)
+	require.NoError(t, err)
+
+	repo2 := types.Repo{Name: "test-repo-2", ID: 102}
+	err = db.Repos().Create(ctx, &repo2)
+	require.NoError(t, err)
+
+	repo3 := types.Repo{Name: "test-repo-3", ID: 103}
+	err = db.Repos().Create(ctx, &repo3)
+	require.NoError(t, err)
+
 	// Adding some jobs for user and repos.
 	addSyncJobs(t, ctx, db, "user_id", int(user.ID))
-	addSyncJobs(t, ctx, db, "repository_id", 1)
-	addSyncJobs(t, ctx, db, "repository_id", 2)
-	addSyncJobs(t, ctx, db, "repository_id", 3)
+	addSyncJobs(t, ctx, db, "repository_id", int(repo1.ID))
+	addSyncJobs(t, ctx, db, "repository_id", int(repo2.ID))
+	addSyncJobs(t, ctx, db, "repository_id", int(repo3.ID))
 
 	// We should have 20 jobs now.
 	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{})
