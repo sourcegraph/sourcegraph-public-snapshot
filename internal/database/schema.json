@@ -17150,7 +17150,7 @@
         },
         {
           "Name": "priority",
-          "Index": 21,
+          "Index": 18,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17350,11 +17350,25 @@
           "ConstraintDefinition": "CHECK ((user_id IS NULL) \u003c\u003e (repository_id IS NULL))"
         },
         {
+          "Name": "permission_sync_jobs_repository_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE"
+        },
+        {
           "Name": "permission_sync_jobs_triggered_by_user_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
+          "Name": "permission_sync_jobs_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
