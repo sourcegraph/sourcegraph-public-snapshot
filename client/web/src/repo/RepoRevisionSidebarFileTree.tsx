@@ -140,7 +140,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
             const fullPath = element.path
-            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedIds.has(fullPath)
+            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedIds.has(element.id)
             if (alreadyLoaded || !element.isBranch) {
                 return
             }
