@@ -1,0 +1,21 @@
+.roles-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.role-node {
+    padding: 12px;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+
+    &:not(:first-child)::after {
+        border: 1px solid green;
+    }
+
+    &__permissions {
+        background-color: darkslategrey;
+        grid-column: 1 / -1;
+    }
+}

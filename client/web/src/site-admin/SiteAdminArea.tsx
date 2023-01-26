@@ -21,7 +21,6 @@ import { RouteV6Descriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const NotFoundPage: React.ComponentType<React.PropsWithChildren<{}>> = () => (
     <HeroPage
