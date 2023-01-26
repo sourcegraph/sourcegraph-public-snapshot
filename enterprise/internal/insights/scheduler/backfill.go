@@ -234,13 +234,14 @@ type BackfillQueueItem struct {
 	SeriesID            int
 	SeriesLabel         string
 	SeriesSearchQuery   string
-	State               string
+	BackfillState       string
 	PercentComplete     *int
 	BackfillCost        *int
 	RuntimeDuration     *time.Duration
 	BackfillCreatedAt   *time.Time
 	BackfillStartedAt   *time.Time
 	BackfillCompletedAt *time.Time
+	QueuePosition       *int
 }
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
@@ -268,13 +269,14 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.SeriesID,
 			&temp.SeriesLabel,
 			&temp.SeriesSearchQuery,
-			&temp.State,
+			&temp.BackfillState,
 			&temp.PercentComplete,
 			&temp.BackfillCost,
 			&temp.RuntimeDuration,
 			&temp.BackfillCreatedAt,
 			&temp.BackfillStartedAt,
 			&temp.BackfillCompletedAt,
+			&temp.QueuePosition,
 		); err != nil {
 			return []BackfillQueueItem{}, err
 		}
@@ -284,20 +286,29 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 	return results, nil
 }
 
-var backfillQueueSQL = `select isb.id,
+var backfillQueueSQL = `
+WITH job_queue as (
+    select backfill_id, state, row_number() over () queue_position
+    from insights_jobs_backfill_in_progress where state = 'queued'  order by cost_bucket
+)
+select isb.id,
        title insight_title,
        s.id series_id,
-       label series_label,
-	   s.query,
+       label  series_label,
+       query,
        isb.state,
        round(ri.percent_complete *100) percent_complete,
-	   isb.estimated_cost,
+       isb.estimated_cost,
        ri.runtime_duration runtime_duration,
        ri.created_at backfill_created_at,
-       started_at backfill_started_at,
-       completed_at backfill_completed_at
+       ri.started_at backfill_started_at,
+       ri.completed_at backfill_completed_at,
+       jq.queue_position
 from insight_series_backfill isb
     left join repo_iterator ri on isb.repo_iterator_id = ri.id
+    left join job_queue jq on jq.backfill_id = isb.id
     join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id
-    join insight_view iv on ivs.insight_view_id = iv.id`
+    join insight_view iv on ivs.insight_view_id = iv.id
+where s.deleted_at is null
+`

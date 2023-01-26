@@ -360,15 +360,31 @@ type backfillStatusResolver struct {
 }
 
 func (r *backfillStatusResolver) State() string {
-	return r.queueItem.State
+
+	switch r.queueItem.BackfillState {
+	case string(scheduler.BackfillStateCompleted):
+		return "COMPLETED"
+	case string(scheduler.BackfillStateNew):
+		return "NEW"
+	case string(scheduler.BackfillStateProcessing):
+		if r.queueItem.QueuePosition != nil {
+			return "QUEUED"
+		}
+		return "PROCESSING"
+	case string(scheduler.BackfillStateFailed):
+		return "FAILED"
+	default:
+		return "UNKNOWN"
+	}
+
 }
 
 func (r *backfillStatusResolver) QueuePosition() *int32 {
-	return nil
+	return i32Ptr(r.queueItem.QueuePosition)
 }
 
 func (r *backfillStatusResolver) Cost() *int32 {
-	return nil
+	return i32Ptr(r.queueItem.BackfillCost)
 }
 
 func (r *backfillStatusResolver) PercentComplete() *int32 {

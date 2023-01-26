@@ -1461,8 +1461,8 @@ enum InsightQueueItemState {
     QUEUED
     COMPLETED
     PROCESSING
-    ERRORED
     FAILED
+    UNKNOWN
 }
 
 # extend type Mutation {
