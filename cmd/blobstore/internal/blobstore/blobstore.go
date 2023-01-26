@@ -323,7 +323,11 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 		return nil, ErrNoSuchBucket
 	}
 
-	// Write the object, relying on an atomic filesystem rename operation to prevent any parallel read/write issues.
+	// Write the object, relying on an atomic filesystem rename operation to prevent any parallel
+	// read/write issues.
+	//
+	// Note that the bucket lock guarantees the bucket (folder) cannot be created/deleted, but does NOT
+	// guarantee that nobody else is writing/deleting/reading the same object (file) within the bucket.
 	tmpFile, err := os.CreateTemp(bucketDir, "*-"+objectFileName(objectName))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating tmp file")
