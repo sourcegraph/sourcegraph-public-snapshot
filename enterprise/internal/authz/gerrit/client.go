@@ -2,11 +2,11 @@ package gerrit
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client interface {
@@ -23,8 +23,8 @@ type ClientAdapter struct {
 }
 
 // NewClient creates a new Gerrit client and wraps it in a ClientAdapter.
-func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.Doer) (client, error) {
-	c, err := gerrit.NewClient(urn, config, httpClient)
+func NewClient(urn string, baseURL *url.URL, creds *gerrit.AccountCredentials, httpClient httpcli.Doer) (client, error) {
+	c, err := gerrit.NewClient(urn, baseURL, creds, httpClient)
 	if err != nil {
 		return nil, err
 	}

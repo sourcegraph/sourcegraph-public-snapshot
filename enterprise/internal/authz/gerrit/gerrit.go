@@ -27,7 +27,7 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	gClient, err := gerrit.NewClient(conn.URN, baseURL, &gerrit.AccountCredentials{
+	gClient, err := NewClient(conn.URN, baseURL, &gerrit.AccountCredentials{
 		Username: conn.Username,
 		Password: conn.Password,
 	}, nil)
