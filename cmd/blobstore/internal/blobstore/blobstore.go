@@ -117,6 +117,21 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			return errors.Wrap(err, "Copy")
 		}
 		return errors.Newf("unsupported method: unexpected GET request: %s", r.URL)
+	case "DELETE":
+		if len(path) == 2 && r.URL.Query().Has("uploadId") {
+			// DELETE /<bucket>/<object>?uploadId=foobar
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html
+			// TODO(blobstore): implement me!
+			w.WriteHeader(http.StatusOK)
+			return nil
+		} else if len(path) == 2 {
+			// DELETE /<bucket>/<object>?uploadId=foobar
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html
+			// TODO(blobstore): implement me!
+			w.WriteHeader(http.StatusOK)
+			return nil
+		}
+		return errors.Newf("unsupported method: unexpected DELETE request: %s", r.URL)
 	case "HEAD":
 		if len(path) == 2 {
 			// HEAD /<bucket>/<object>
