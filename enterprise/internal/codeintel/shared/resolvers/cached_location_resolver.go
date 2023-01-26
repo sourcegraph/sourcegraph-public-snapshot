@@ -27,31 +27,31 @@ import (
 // repository. Similarly, resolution of a path holds a lock associated with the parent commit.
 type CachedLocationResolver struct {
 	sync.RWMutex
-	children        map[api.RepoID]*cachedRepositoryResolver
-	db              database.DB
-	gitserverClient gitserver.Client
-	logger          log.Logger
+	repositoryResolvers map[api.RepoID]*cachedRepositoryResolver
+	db                  database.DB
+	gitserverClient     gitserver.Client
+	logger              log.Logger
 }
 
 type cachedRepositoryResolver struct {
 	sync.RWMutex
-	resolver *RepositoryResolver
-	children map[string]*cachedCommitResolver
+	repositoryResolver *RepositoryResolver
+	commitResolvers    map[string]*cachedCommitResolver
 }
 
 type cachedCommitResolver struct {
 	sync.RWMutex
-	resolver *GitCommitResolver
-	children map[string]*GitTreeEntryResolver
+	commitResolver *GitCommitResolver
+	pathResolvers  map[string]*GitTreeEntryResolver
 }
 
 // NewCachedLocationResolver creates a location resolver with an empty cache.
 func NewCachedLocationResolver(db database.DB, gitserverClient gitserver.Client) *CachedLocationResolver {
 	return &CachedLocationResolver{
-		logger:          log.Scoped("CachedLocationResolver", ""),
-		db:              db,
-		gitserverClient: gitserverClient,
-		children:        map[api.RepoID]*cachedRepositoryResolver{},
+		logger:              log.Scoped("CachedLocationResolver", ""),
+		db:                  db,
+		gitserverClient:     gitserverClient,
+		repositoryResolvers: map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }
 
@@ -59,31 +59,27 @@ func NewCachedLocationResolver(db database.DB, gitserverClient gitserver.Client)
 // if the repository is not known by gitserver - this happens if there is exists still a bundle for a
 // repo that has since been deleted.
 func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
-	cachedRepositoryResolver, err := r.cachedRepository(ctx, id)
-	if err != nil || cachedRepositoryResolver == nil {
+	resolver, err := r.cachedRepository(ctx, id)
+	if err != nil || resolver == nil {
 		return nil, err
 	}
-	return cachedRepositoryResolver.resolver, nil
+	return resolver.repositoryResolver, nil
 }
 
 // Commit resolves the git commit with the given repository identifier and commit hash. This method may
 // return a nil resolver if the commit is not known by gitserver.
 func (r *CachedLocationResolver) Commit(ctx context.Context, id api.RepoID, commit string) (*GitCommitResolver, error) {
-	cachedCommitResolver, err := r.cachedCommit(ctx, id, commit)
-	if err != nil || cachedCommitResolver == nil {
+	resolver, err := r.cachedCommit(ctx, id, commit)
+	if err != nil || resolver == nil {
 		return nil, err
 	}
-	return cachedCommitResolver.resolver, nil
+	return resolver.commitResolver, nil
 }
 
 // Path resolves the git tree entry with the given repository identifier, commit hash, and relative path.
 // This method may return a nil resolver if the commit is not known by gitserver.
 func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
-	pathResolver, err := r.cachedPath(ctx, id, commit, path)
-	if err != nil {
-		return nil, err
-	}
-	return pathResolver, nil
+	return r.cachedPath(ctx, id, commit, path)
 }
 
 // cachedRepository resolves the repository with the given identifier if the resulting resolver does not
@@ -94,34 +90,35 @@ func (r *CachedLocationResolver) Path(ctx context.Context, id api.RepoID, commit
 func (r *CachedLocationResolver) cachedRepository(ctx context.Context, id api.RepoID) (*cachedRepositoryResolver, error) {
 	// Fast-path cache check
 	r.RLock()
-	cr, ok := r.children[id]
+	cachedResolver, ok := r.repositoryResolvers[id]
 	r.RUnlock()
 	if ok {
-		return cr, nil
+		return cachedResolver, nil
 	}
 
 	r.Lock()
 	defer r.Unlock()
 
 	// Check again once locked to avoid race
-	if resolver, ok := r.children[id]; ok {
-		return resolver, nil
+	if cachedResolver, ok := r.repositoryResolvers[id]; ok {
+		return cachedResolver, nil
 	}
 
 	// Resolve new value and store in cache
-	resolver, err := r.resolveRepository(ctx, id)
+	repositoryResolver, err := r.resolveRepository(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Ensure value written to the cache is nil and not a nil resolver wrapped
-	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
-	// of a path may result in a nil dereference.
-	var cachedResolver *cachedRepositoryResolver
-	if resolver != nil {
-		cachedResolver = &cachedRepositoryResolver{resolver: resolver, children: map[string]*cachedCommitResolver{}}
+	// Ensure value written to the cache is nil and not a nil resolver wrapped in a non-nil cached
+	// commit resolver. Otherwise, a subsequent resolution of a path may result in a nil dereference.
+	if repositoryResolver != nil {
+		cachedResolver = &cachedRepositoryResolver{
+			repositoryResolver: repositoryResolver,
+			commitResolvers:    map[string]*cachedCommitResolver{},
+		}
 	}
-	r.children[id] = cachedResolver
+	r.repositoryResolvers[id] = cachedResolver
 	return cachedResolver, nil
 }
 
@@ -131,40 +128,42 @@ func (r *CachedLocationResolver) cachedRepository(ctx context.Context, id api.Re
 //
 // See https://en.wikipedia.org/wiki/Double-checked_locking.
 func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID, commit string) (*cachedCommitResolver, error) {
-	parentResolver, err := r.cachedRepository(ctx, id)
-	if err != nil || parentResolver == nil {
+	repositoryResolver, err := r.cachedRepository(ctx, id)
+	if err != nil || repositoryResolver == nil {
 		return nil, err
 	}
 
 	// Fast-path cache check
-	parentResolver.RLock()
-	cr, ok := parentResolver.children[commit]
-	parentResolver.RUnlock()
+	repositoryResolver.RLock()
+	cachedResolver, ok := repositoryResolver.commitResolvers[commit]
+	repositoryResolver.RUnlock()
 	if ok {
-		return cr, nil
+		return cachedResolver, nil
 	}
 
-	parentResolver.Lock()
-	defer parentResolver.Unlock()
+	repositoryResolver.Lock()
+	defer repositoryResolver.Unlock()
 
 	// Check again once locked to avoid race
-	if resolver, ok := parentResolver.children[commit]; ok {
-		return resolver, nil
+	if cachedResolver, ok := repositoryResolver.commitResolvers[commit]; ok {
+		return cachedResolver, nil
 	}
 
 	// Resolve new value and store in cache
-	resolver, err := r.resolveCommit(ctx, parentResolver.resolver, commit)
+	commitResolver, err := r.resolveCommit(ctx, repositoryResolver.repositoryResolver, commit)
 	if err != nil {
 		return nil, err
 	}
-	// Ensure value written to the cache is nil and not a nil resolver wrapped
-	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
-	// of a path may result in a nil dereference.
-	var cachedResolver *cachedCommitResolver
-	if resolver != nil {
-		cachedResolver = &cachedCommitResolver{resolver: resolver, children: map[string]*GitTreeEntryResolver{}}
+
+	// Ensure value written to the cache is nil and not a nil resolver wrapped in a non-nil cached
+	// commit resolver. Otherwise, a subsequent resolution of a path may result in a nil dereference.
+	if commitResolver != nil {
+		cachedResolver = &cachedCommitResolver{
+			commitResolver: commitResolver,
+			pathResolvers:  map[string]*GitTreeEntryResolver{},
+		}
 	}
-	parentResolver.children[commit] = cachedResolver
+	repositoryResolver.commitResolvers[commit] = cachedResolver
 	return cachedResolver, nil
 }
 
@@ -174,31 +173,31 @@ func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID
 //
 // See https://en.wikipedia.org/wiki/Double-checked_locking.
 func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, commit, path string) (*GitTreeEntryResolver, error) {
-	parentResolver, err := r.cachedCommit(ctx, id, commit)
-	if err != nil || parentResolver == nil {
+	commitResolver, err := r.cachedCommit(ctx, id, commit)
+	if err != nil || commitResolver == nil {
 		return nil, err
 	}
 
 	// Fast-path cache check
-	parentResolver.Lock()
-	cr, ok := parentResolver.children[path]
-	parentResolver.Unlock()
+	commitResolver.Lock()
+	cachedResolver, ok := commitResolver.pathResolvers[path]
+	commitResolver.Unlock()
 	if ok {
-		return cr, nil
+		return cachedResolver, nil
 	}
 
-	parentResolver.Lock()
-	defer parentResolver.Unlock()
+	commitResolver.Lock()
+	defer commitResolver.Unlock()
 
 	// Check again once locked to avoid race
-	if resolver, ok := parentResolver.children[path]; ok {
-		return resolver, nil
+	if cachedResolver, ok := commitResolver.pathResolvers[path]; ok {
+		return cachedResolver, nil
 	}
 
 	// Resolve new value and store in cache
-	resolver := r.resolvePath(parentResolver.resolver, path)
-	parentResolver.children[path] = resolver
-	return resolver, nil
+	pathResolver := r.resolvePath(commitResolver.commitResolver, path)
+	commitResolver.pathResolvers[path] = pathResolver
+	return pathResolver, nil
 }
 
 // Repository resolves the repository with the given identifier. This method may return a nil resolver

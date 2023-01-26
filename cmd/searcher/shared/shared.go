@@ -15,11 +15,14 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,6 +33,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
@@ -134,11 +139,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to frontend database")
-	}
-	git := gitserver.NewClient(db)
+	git := gitserver.NewClient()
 
 	service := &search.Service{
 		Store: &search.Store{
@@ -170,7 +171,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			MaxCacheSizeBytes: cacheSizeBytes,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
-			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),
@@ -193,7 +193,12 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions()...)
+	reflection.Register(grpcServer)
+	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
+		Service: service,
+	})
 
 	host := ""
 	if env.InsecureDev {
@@ -207,7 +212,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -215,8 +220,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				return
 			}
 			handler.ServeHTTP(w, r)
-		}),
+		})),
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Listen
 	g.Go(func() error {

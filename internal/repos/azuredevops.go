@@ -2,16 +2,20 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"path"
 
 	"github.com/goware/urlx"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A AzureDevOpsSource yields repositories from a single Azure DevOps connection configured
@@ -20,17 +24,18 @@ type AzureDevOpsSource struct {
 	svc       *types.ExternalService
 	cli       *azuredevops.Client
 	serviceID string
-	perPage   int
-	config    azuredevops.AzureDevOpsConnection
+	config    schema.AzureDevOpsConnection
+	logger    log.Logger
+	exclude   excludeFunc
 }
 
 // NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
-func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
+func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*AzureDevOpsSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config", svc.ID)
 	}
-	var c azuredevops.AzureDevOpsConnection
+	var c schema.AzureDevOpsConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
@@ -49,12 +54,24 @@ func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *h
 		return nil, err
 	}
 
+	var eb excludeBuilder
+	for _, r := range c.Exclude {
+		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
+	}
+
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
+	}
+
 	return &AzureDevOpsSource{
 		svc:       svc,
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
-		perPage:   100,
 		config:    c,
+		logger:    logger,
+		exclude:   exclude,
 	}, nil
 }
 
@@ -86,6 +103,9 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 	}
 
 	for _, repo := range repos {
+		if s.exclude(fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)) {
+			continue
+		}
 		repo, err := s.makeRepo(repo)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -100,7 +120,21 @@ func (s *AzureDevOpsSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *AzureDevOpsSource) makeRepo(p azuredevops.RepositoriesValue) (*types.Repo, error) {
+// WithAuthenticator returns a copy of the original Source configured to use the
+// given authenticator, provided that authenticator type is supported by the
+// code host.
+func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	sc := *s
+	cli, err := sc.cli.WithAuthenticator(a)
+	if err != nil {
+		return nil, err
+	}
+	sc.cli = cli
+
+	return &sc, nil
+}
+
+func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
 
 	fullURL, err := urlx.Parse(s.cli.URL.String() + p.Name)

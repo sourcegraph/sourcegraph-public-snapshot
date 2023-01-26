@@ -221,10 +221,10 @@ func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			"outLen", len(current.Out),
 		)
 		if current.ExitCode != nil {
-			logArgs = append(logArgs, "exitCode", current.ExitCode)
+			logArgs = append(logArgs, "exitCode", *current.ExitCode)
 		}
 		if current.DurationMs != nil {
-			logArgs = append(logArgs, "durationMs", current.DurationMs)
+			logArgs = append(logArgs, "durationMs", *current.DurationMs)
 		}
 
 		log15.Debug("Updating executor log entry", logArgs...)

@@ -456,6 +456,8 @@ func getConfigPrototype(kind string) (any, error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
 		return &schema.AWSCodeCommitConnection{}, nil
+	case KindAzureDevOps:
+		return &schema.AzureDevOpsConnection{}, nil
 	case KindBitbucketServer:
 		return &schema.BitbucketServerConnection{}, nil
 	case KindBitbucketCloud:
@@ -488,8 +490,6 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
-	case KindAzureDevOps:
-		return nil, errors.New("TODO: @varsanojidan add for ADO once the schema is implemented.")
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
@@ -552,6 +552,8 @@ func extractToken(parsed any, kind string) (string, error) {
 	case *schema.GitHubConnection:
 		return c.Token, nil
 	case *schema.GitLabConnection:
+		return c.Token, nil
+	case *schema.AzureDevOpsConnection:
 		return c.Token, nil
 	case *schema.BitbucketServerConnection:
 		return c.Token, nil
@@ -765,6 +767,8 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		rawURL = c.Url
 	case *schema.GitHubConnection:
 		rawURL = c.Url
+	case *schema.AzureDevOpsConnection:
+		rawURL = c.Url
 	case *schema.BitbucketServerConnection:
 		rawURL = c.Url
 	case *schema.BitbucketCloudConnection:
@@ -798,7 +802,6 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return KindRubyPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
-	// TODO: @varsanojidan add ADO once the schema is implemented.
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}

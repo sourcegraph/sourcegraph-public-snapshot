@@ -62,6 +62,10 @@ type ReenqueueChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type CreateChangesetSpecsArgs struct {
+	ChangesetSpecs []string
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -271,6 +275,7 @@ type BatchChangesResolver interface {
 	DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
+	CreateChangesetSpecs(ctx context.Context, args *CreateChangesetSpecsArgs) ([]ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)

@@ -1283,6 +1283,26 @@ extend type Mutation {
     ): ChangesetSpec!
 
     """
+    FOR INTERNAL USE ONLY.
+
+    Upload multiple changeset specs that will be used in a future update to a batch change. The changeset specs
+    are stored and can be referenced by their ID in the applyBatchChange mutation. Just uploading the
+    changeset specs does not result in changes to the batch change or any of its changesets; you need
+    to call applyBatchChange to use it.
+
+    The returned ChangesetSpecs is immutable and expires after a certain period of time (if not
+    used in a call to applyBatchChange), which can be queried on ChangesetSpec.expiresAt.
+    """
+    createChangesetSpecs(
+        """
+        The raw changeset specs (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        changesetSpecs: [String!]!
+    ): [ChangesetSpec!]!
+
+    """
     Enqueue the given changeset for high-priority syncing.
     """
     syncChangeset(changeset: ID!): EmptyResponse!

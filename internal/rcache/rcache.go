@@ -88,12 +88,7 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 func (r *Cache) Increase(key string) {
-	// TODO(keegan) this logs a warning when redis is disabled. Currently only
-	// used by auth/userpasswd lockouts.
-	c := poolGet()
-	defer func() { _ = c.Close() }()
-
-	_, err := c.Do("INCR", r.rkeyPrefix()+key)
+	err := pool.Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return
@@ -103,7 +98,7 @@ func (r *Cache) Increase(key string) {
 		return
 	}
 
-	_, err = c.Do("EXPIRE", r.rkeyPrefix()+key, r.ttlSeconds)
+	err = pool.Expire(r.rkeyPrefix()+key, r.ttlSeconds)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "EXPIRE", "error", err)
 		return
@@ -111,12 +106,7 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
-	// TODO(keegan) this logs a warning when redis is disabled. Currently only
-	// used by auth/userpasswd lockouts.
-	c := poolGet()
-	defer func() { _ = c.Close() }()
-
-	ttl, err := redis.Int(c.Do("TTL", r.rkeyPrefix()+key))
+	ttl, err := pool.TTL(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
 		return -1, false

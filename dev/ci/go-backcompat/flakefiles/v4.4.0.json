@@ -128,5 +128,10 @@
     "path": "internal/database",
     "prefix": "TestRoleCreate",
     "reason": "The column `readonly` has been renamed to `system`, pre 4.4."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestPermissionSyncJobs_CreateAndList",
+    "reason": "The column boolean column`high_priority` has been replaced by numeric column `priority`. Table not in use for 4.4."
   }
 ]

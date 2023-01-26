@@ -42,7 +42,7 @@ func NewSCIPMigrator(store, codeintelStore *basestore.Store) *scipMigrator {
 	}
 }
 
-func (m *scipMigrator) ID() int                 { return 18 }
+func (m *scipMigrator) ID() int                 { return 20 }
 func (m *scipMigrator) Interval() time.Duration { return time.Second }
 
 // Progress returns the ratio between the number of SCIP upload records to SCIP+LSIF upload.

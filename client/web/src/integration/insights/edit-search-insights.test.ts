@@ -188,6 +188,10 @@ describe('Code insight edit insight page', () => {
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(editInsightMutationVariables, {
             input: {
+                repositoryScope: {
+                    repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
+                    repositoryCriteria: null,
+                },
                 dataSeries: [
                     {
                         seriesId: '001',
@@ -195,9 +199,6 @@ describe('Code insight edit insight page', () => {
                         options: {
                             label: 'test edited series title',
                             lineColor: 'var(--oc-cyan-7)',
-                        },
-                        repositoryScope: {
-                            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
                         },
                         timeScope: {
                             stepInterval: {
@@ -212,9 +213,6 @@ describe('Code insight edit insight page', () => {
                         options: {
                             label: 'new test series title',
                             lineColor: 'var(--oc-grape-7)',
-                        },
-                        repositoryScope: {
-                            repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
                         },
                         timeScope: {
                             stepInterval: {

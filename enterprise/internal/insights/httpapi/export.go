@@ -24,24 +24,24 @@ import (
 type ExportHandler struct {
 	primaryDB database.DB
 
-	seriesStore         *store.Store
-	permStore           *store.InsightPermStore
-	insightStore        *store.InsightStore
-	searchContextLoader *store.SCLoader
+	seriesStore          *store.Store
+	permStore            *store.InsightPermStore
+	insightStore         *store.InsightStore
+	searchContextHandler *store.SearchContextHandler
 }
 
 func NewExportHandler(db database.DB, insightsDB edb.InsightsDB) *ExportHandler {
 	insightPermStore := store.NewInsightPermissionStore(db)
 	seriesStore := store.New(insightsDB, insightPermStore)
 	insightsStore := store.NewInsightStore(insightsDB)
-	searchContextLoader := store.NewSCLoader(db)
+	searchContextHandler := store.NewSearchContextHandler(db)
 
 	return &ExportHandler{
-		primaryDB:           db,
-		seriesStore:         seriesStore,
-		permStore:           insightPermStore,
-		insightStore:        insightsStore,
-		searchContextLoader: searchContextLoader,
+		primaryDB:            db,
+		seriesStore:          seriesStore,
+		permStore:            insightPermStore,
+		insightStore:         insightsStore,
+		searchContextHandler: searchContextHandler,
 	}
 }
 
@@ -122,7 +122,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 		includeRepo(*visibleViewSeries[0].DefaultFilterExcludeRepoRegex)
 	}
 
-	inc, exc, err := h.searchContextLoader.UnwrapSearchContexts(ctx, visibleViewSeries[0].DefaultFilterSearchContexts)
+	inc, exc, err := h.searchContextHandler.UnwrapSearchContexts(ctx, visibleViewSeries[0].DefaultFilterSearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "search context error")
 	}
