@@ -126,10 +126,10 @@ func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *Back
 
 func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		s.inProgressWorker,
-		s.inProgressResetter,
-		s.newBackfillWorker,
-		s.newBackfillResetter,
+		// s.inProgressWorker,
+		// s.inProgressResetter,
+		// s.newBackfillWorker,
+		// s.newBackfillResetter,
 	}
 }
 
