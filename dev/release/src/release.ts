@@ -21,7 +21,7 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
-    createLatestRelease,
+    createLatestRelease, EditFunc,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -35,7 +35,7 @@ import {
     ensureReleaseBranchUpToDate,
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
-    getLatestTag,
+    getLatestTag, getAllUpgradeGuides, updateUpgradeGuides,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -65,6 +65,8 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:release-guide-content'
+    | '_test:release-guide-update'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -530,9 +532,14 @@ cc @${config.captainGitHubUsername}
                                     } else {
                                         updateContents = updateContents.replace(previous.version, release.version)
                                     }
+                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
+                                        const unreleasedHeader = '## Unreleased'
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
                                     writeFileSync(fullPath, updateContents)
                                 }
                             },
+                            // updateUpgradeGuides
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -812,6 +819,24 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Clear release tool cache',
         run: () => {
             rmdirSync(cacheFolder, { recursive: true })
+        },
+    },
+    {
+        id: '_test:release-guide-content',
+        description: 'Generate upgrade guides',
+        argNames: ['previous', 'next'],
+        run: (config, previous, next) => {
+            for (const content of getAllUpgradeGuides(previous, next)) {
+                console.log(content)
+            }
+        },
+    },
+    {
+        id: '_test:release-guide-update',
+        description: 'Test update the upgrade guides',
+        argNames: ['previous', 'next', 'dir'],
+        run: (config, previous, next, dir) => {
+            updateUpgradeGuides(previous, next)(dir)
         },
     },
     {
