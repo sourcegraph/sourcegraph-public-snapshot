@@ -57,7 +57,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	require.Len(t, jobs, 0, "jobs returned even though database is empty")
 
 	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionSync, InvalidateCaches: true, Reason: ReasonManualRepoSync, TriggeredByUserID: user.ID}
-	err = store.CreateRepoSyncJob(ctx, api.RepoID(repo1.ID), opts)
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, opts)
 	require.NoError(t, err)
 
 	processAfter := clock.Now().Add(5 * time.Minute)
@@ -333,7 +333,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.True(t, errcode.IsNotFound(err))
 
 	// Adding a job.
-	err = store.CreateRepoSyncJob(ctx, api.RepoID(repo1.ID), PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
 
 	// Cancelling a job should be successful now.
@@ -350,7 +350,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.True(t, errcode.IsNotFound(err))
 
 	// Adding another job and setting it to "processing" state.
-	err = store.CreateRepoSyncJob(ctx, api.RepoID(repo1.ID), PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
 	require.NoError(t, err)
 	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET state='processing' WHERE id=2")
 	require.NoError(t, err)
@@ -378,7 +378,7 @@ func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	// Adding a job.
-	err = store.CreateRepoSyncJob(ctx, api.RepoID(repo1.ID), PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
 	require.NoError(t, err)
 
 	// Checking that the job is created.
