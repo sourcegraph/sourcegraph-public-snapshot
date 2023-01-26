@@ -89,15 +89,9 @@ func (s *Service) getPendingUpload(ctx context.Context, bucketName, uploadID str
 // Upserts a pending upload descriptor object (which describes that the upload exists, time it was
 // created, how many parts have been uploaded so far, etc.)
 //
-// This function holds a mutex to ensure that we do not upsert the object _while_ someone is doing
-// an atomic mutation of it via mutatePendingUploadAtomic
+// This method must only be called when creating the object, as otherwise it would be racy with
+// mutatePendingUpload.
 func (s *Service) upsertPendingUpload(ctx context.Context, bucketName, uploadID string, upload *pendingUpload) error {
-	s.multipartUploadMu.Lock()
-	defer s.multipartUploadMu.Unlock()
-	return s.upsertPendingUploadRaw(ctx, bucketName, uploadID, upload)
-}
-
-func (s *Service) upsertPendingUploadRaw(ctx context.Context, bucketName, uploadID string, upload *pendingUpload) error {
 	uploadObjectName := uploadID
 	_, err := s.putObject(ctx, bucketName+multipartUploadsBucketSuffix, uploadObjectName, upload.reader())
 	return err
@@ -107,17 +101,17 @@ func (s *Service) upsertPendingUploadRaw(ctx context.Context, bucketName, upload
 // time it was created, how many parts have been uploaded so far, etc.)
 //
 // This function holds a mutex to ensure that between the time the object is read, mutated, and
-// written that nobody else upserts the object and loses their write.
+// written - that nobody else mutates the object and changes are lost.
 func (s *Service) mutatePendingUploadAtomic(ctx context.Context, bucketName, uploadID string, mutate func(*pendingUpload)) error {
-	s.multipartUploadMu.Lock()
-	defer s.multipartUploadMu.Unlock()
+	s.mutatePendingUploadMu.Lock()
+	defer s.mutatePendingUploadMu.Unlock()
 
 	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
 	if err != nil {
 		return err
 	}
 	mutate(upload)
-	if err := s.upsertPendingUploadRaw(ctx, bucketName, uploadID, upload); err != nil {
+	if err := s.upsertPendingUpload(ctx, bucketName, uploadID, upload); err != nil {
 		return errors.Wrap(err, "upsertPendingUpload")
 	}
 	return nil

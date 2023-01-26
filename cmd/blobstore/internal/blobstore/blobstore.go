@@ -30,11 +30,11 @@ type Service struct {
 	Log            log.Logger
 	ObservationCtx *observation.Context
 
-	initOnce          sync.Once
-	bucketLocksMu     sync.Mutex
-	bucketLocks       map[string]*sync.RWMutex
-	multipartUploadMu sync.Mutex
-	MockObjectAge     map[string]time.Time
+	initOnce              sync.Once
+	bucketLocksMu         sync.Mutex
+	bucketLocks           map[string]*sync.RWMutex
+	mutatePendingUploadMu sync.Mutex
+	MockObjectAge         map[string]time.Time
 }
 
 func (s *Service) init() {
