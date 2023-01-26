@@ -43,7 +43,11 @@ func TestGetNotExists(t *testing.T) {
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	reader, err := store.Get(ctx, "does-not-exist-key")
+	assertObjectDoesNotExist(ctx, store, t, "does-not-exist-key")
+}
+
+func assertObjectDoesNotExist(ctx context.Context, store uploadstore.Store, t *testing.T, key string) {
+	reader, err := store.Get(ctx, key)
 	if err != nil {
 		t.Fatal("expected a reader, got an error", err)
 	}
@@ -145,13 +149,9 @@ func TestCompose(t *testing.T) {
 	autogold.Expect("").Equal(t, string(data))
 
 	// Ensure the three objects we uploaded have been deleted.
-	// TODO(blobstore): note that these are not deleted, deleting is not implemented!
-	_, err = store.Get(ctx, "foobar1")
-	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
-	_, err = store.Get(ctx, "foobar2")
-	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
-	_, err = store.Get(ctx, "foobar3")
-	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
+	assertObjectDoesNotExist(ctx, store, t, "foobar1")
+	assertObjectDoesNotExist(ctx, store, t, "foobar2")
+	assertObjectDoesNotExist(ctx, store, t, "foobar3")
 }
 
 // Initialize uploadstore, upload an object, delete it
@@ -171,9 +171,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	// Confirm the object no longer exists
-	_, err = store.Get(ctx, "foobar")
-	// TODO(blobstore): note that these are not deleted, deleting is not implemented!
-	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
+	assertObjectDoesNotExist(ctx, store, t, "foobar")
 }
 
 // Initialize uploadstore, upload objects, expire them

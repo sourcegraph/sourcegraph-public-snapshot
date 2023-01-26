@@ -219,10 +219,16 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			w.WriteHeader(http.StatusOK)
 			return nil
 		} else if len(path) == 2 {
-			// DELETE /<bucket>/<object>?uploadId=foobar
+			// DELETE /<bucket>/<object>
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html
-			// TODO(blobstore): implement me!
-			w.WriteHeader(http.StatusOK)
+			bucketName := path[0]
+			objectName := path[1]
+			if err := s.deleteObject(ctx, bucketName, objectName); err != nil {
+				if err == ErrNoSuchKey {
+					return writeS3Error(w, s3ErrorNoSuchKey, bucketName, err, http.StatusNotFound)
+				}
+				return errors.Wrap(err, "deleteObject")
+			}
 			return nil
 		}
 		return errors.Newf("unsupported method: unexpected DELETE request: %s", r.URL)
