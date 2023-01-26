@@ -19,6 +19,7 @@ go_library(
         "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
+        "//internal/actor",
         "//internal/api",
         "//internal/auth",
         "//internal/authz",

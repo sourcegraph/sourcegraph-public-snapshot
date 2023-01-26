@@ -359,6 +359,7 @@ go_test(
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/highlight",
         "//internal/actor",
         "//internal/api",
