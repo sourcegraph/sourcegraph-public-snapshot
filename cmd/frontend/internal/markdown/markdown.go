@@ -65,9 +65,9 @@ func Render(content string) (string, error) {
 		)
 	})
 
-	var buf bytes.Buffer
+	var buf strings.Builder
 	if err := renderer.Convert([]byte(content), &buf); err != nil {
 		return "", err
 	}
-	return string(policy.SanitizeBytes(buf.Bytes())), nil
+	return policy.Sanitize(buf.String()), nil
 }
