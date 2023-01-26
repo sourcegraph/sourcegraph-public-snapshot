@@ -85,16 +85,60 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			return nil
 		case 2:
 			// PUT /<bucket>/<object>
-			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
 			bucketName := path[0]
 			objectName := path[1]
-			if _, err := s.putObject(ctx, bucketName, objectName, r.Body); err != nil {
-				if err == ErrNoSuchBucket {
-					return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusNotFound)
+			partNumberStr := r.URL.Query().Get("partNumber")
+			if partNumberStr != "" {
+				uploadID := r.URL.Query().Get("uploadId")
+				partNumber, err := strconv.Atoi(partNumberStr)
+				if err != nil {
+					return errors.Wrap(err, "partNumber query parameter must be an integer")
 				}
-				return errors.Wrap(err, "putObject")
+				var data io.ReadCloser
+				if copySource := r.Header.Get("x-amz-copy-source"); copySource != "" {
+					// PUT /<bucket>/<object>?uploadId=foobar&partNumber=123
+					// https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html
+					source := strings.SplitN(copySource, "/", 2)
+					if len(source) != 2 {
+						return errors.New("expected x-amz-copy-source header to have 2 components")
+					}
+					srcBucketName, srcObjectName := source[0], source[1]
+
+					if r.Header.Get("x-amz-copy-source-range") != "" {
+						return errors.New("x-amz-copy-source-range is not supported")
+					}
+					data, err = s.getObject(ctx, srcBucketName, srcObjectName)
+					if err != nil {
+						return errors.Wrap(err, "reading source object")
+					}
+					metadata, err := s.uploadPart(ctx, bucketName, objectName, uploadID, partNumber, data)
+					if err != nil {
+						if err == ErrNoSuchUpload {
+							return writeS3Error(w, s3ErrorNoSuchUpload, bucketName, err, http.StatusNotFound)
+						}
+						return errors.Wrap(err, "uploadPart")
+					}
+					return writeXML(w, http.StatusOK, s3CopyPartResult{
+						LastModified: metadata.LastModified.Format(time.RFC3339Nano),
+					})
+				} else {
+					// PUT /<bucket>/<object>?uploadId=foobar&partNumber=123
+					// https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html
+					data = r.Body
+					w.WriteHeader(http.StatusOK)
+					return nil
+				}
+			} else {
+				// PUT /<bucket>/<object>
+				// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
+				if _, err := s.putObject(ctx, bucketName, objectName, r.Body); err != nil {
+					if err == ErrNoSuchBucket {
+						return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusNotFound)
+					}
+					return errors.Wrap(err, "putObject")
+				}
+				return nil
 			}
-			return nil
 		default:
 			return errors.Newf("unsupported method: PUT request: %s", r.URL)
 		}
