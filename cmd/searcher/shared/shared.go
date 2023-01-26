@@ -194,7 +194,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions()...)
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
 		Service: service,
