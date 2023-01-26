@@ -322,18 +322,19 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
         ).toStrictEqual([
-            // Break the string to prevent ES lint from complaining about template
-            // syntax used outside of template string (no-template-curly-in-string).
             {
-                insertText: 'contains.content(${' + '1:TODO}) ',
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'contains.content(${1:TODO}) ',
                 label: 'contains.content(...)',
             },
             {
-                insertText: 'has.content(${' + '1:TODO}) ',
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.content(${1:TODO}) ',
                 label: 'has.content(...)',
             },
             {
-                insertText: 'has.owner(${' + '1}) ',
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.owner(${1}) ',
                 label: 'has.owner(...)',
             },
             {
@@ -379,8 +380,11 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toStrictEqual([
+            // eslint-disable-next-line no-template-curly-in-string
             'contains.content(${1:TODO}) ',
+            // eslint-disable-next-line no-template-curly-in-string
             'has.content(${1:TODO}) ',
+            // eslint-disable-next-line no-template-curly-in-string
             'has.owner(${1}) ',
             '^some/path/main\\.go$ ',
         ])
