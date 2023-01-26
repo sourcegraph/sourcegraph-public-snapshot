@@ -1,5 +1,7 @@
-import { formatDistanceToNowStrict } from 'date-fns'
 import React from 'react'
+
+import { formatDistanceToNowStrict } from 'date-fns'
+
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export const UserProfile: React.FunctionComponent<

@@ -3,9 +3,9 @@ import { Redirect } from 'react-router'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
+import { UserProfile } from '../profile/UserProfile'
 
 import { UserAreaRoute } from './UserArea'
-import { UserProfile } from '../profile/UserProfile'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 

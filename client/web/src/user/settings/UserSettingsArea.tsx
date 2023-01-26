@@ -59,12 +59,13 @@ const UserSettingsAreaGQLFragment = gql`
         settingsURL
         avatarURL
         viewerCanAdminister
-        siteAdmin @include(if: $siteAdmin)
+        siteAdmin
         builtinAuth
         createdAt
-        emails @include(if: $siteAdmin) {
+        emails {
             email
             verified
+            isPrimary
         }
         organizations {
             nodes {
