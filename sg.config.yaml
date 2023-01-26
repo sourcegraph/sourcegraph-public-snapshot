@@ -1132,7 +1132,6 @@ commandsets:
       - docsite
       - web
       - syntax-highlighter
-      - blobstore
       - caddy
 
   oss-single-program:

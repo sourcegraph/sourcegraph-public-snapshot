@@ -39,7 +39,7 @@ export const Draft: Story = () => (
     </WebStory>
 )
 
-export const Open: Story = () => (
+export const Open: Story<OpenArgs> = args => (
     <WebStory>
         {props => (
             <BatchChangeStatsCard
@@ -47,14 +47,21 @@ export const Open: Story = () => (
                 batchChange={{
                     changesetsStats: {
                         __typename: 'ChangesetsStats',
-                        closed: 10,
-                        deleted: 10,
-                        merged: 10,
-                        draft: 5,
-                        open: 10,
-                        total: 100,
-                        archived: 18,
-                        unpublished: 55,
+                        closed: args.closed,
+                        deleted: args.deleted,
+                        merged: args.merged,
+                        draft: args.draft,
+                        open: args.open,
+                        total:
+                            args.closed +
+                            args.deleted +
+                            args.merged +
+                            args.draft +
+                            args.open +
+                            args.archived +
+                            args.unpublished,
+                        archived: args.archived,
+                        unpublished: args.unpublished,
                     },
                     diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
                     state: BatchChangeState.OPEN,
@@ -63,6 +70,47 @@ export const Open: Story = () => (
         )}
     </WebStory>
 )
+
+interface OpenArgs {
+    closed: number
+    deleted: number
+    merged: number
+    draft: number
+    open: number
+    archived: number
+    unpublished: number
+}
+
+Open.argTypes = {
+    closed: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    deleted: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    merged: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    draft: {
+        control: { type: 'number' },
+        defaultValue: 5,
+    },
+    open: {
+        control: { type: 'number' },
+        defaultValue: 10,
+    },
+    archived: {
+        control: { type: 'number' },
+        defaultValue: 18,
+    },
+    unpublished: {
+        control: { type: 'number' },
+        defaultValue: 55,
+    },
+}
 
 export const OpenAndComplete: Story = () => (
     <WebStory>
@@ -78,7 +126,7 @@ export const OpenAndComplete: Story = () => (
                         draft: 0,
                         open: 0,
                         archived: 18,
-                        total: 100,
+                        total: 118,
                         unpublished: 0,
                     },
                     diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
@@ -105,7 +153,7 @@ export const Closed: Story = () => (
                         draft: 0,
                         open: 10,
                         archived: 18,
-                        total: 100,
+                        total: 118,
                         unpublished: 60,
                     },
                     diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },

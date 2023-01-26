@@ -249,7 +249,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 	}
 
-	if args.AvatarURL != nil {
+	if args.AvatarURL != nil && len(*args.AvatarURL) > 0 {
 		if len(*args.AvatarURL) > 3000 {
 			return nil, errors.New("avatar URL exceeded 3000 characters")
 		}

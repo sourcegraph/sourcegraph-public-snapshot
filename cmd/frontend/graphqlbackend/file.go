@@ -35,7 +35,7 @@ func richHTML(content, ext string) (string, error) {
 	default:
 		return "", nil
 	}
-	return markdown.Render(content), nil
+	return markdown.Render(content)
 }
 
 type markdownOptions struct {
@@ -45,7 +45,7 @@ type markdownOptions struct {
 func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
-}) string {
+}) (string, error) {
 	return markdown.Render(args.Markdown)
 }
 

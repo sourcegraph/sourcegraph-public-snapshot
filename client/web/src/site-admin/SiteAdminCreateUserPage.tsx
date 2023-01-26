@@ -89,6 +89,25 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
     }
 
     public render(): JSX.Element | null {
+        const postCreateText = (result: CreateUserResult['createUser'], emailProvided: boolean): React.ReactNode => {
+            let text = 'The user must authenticate using a configured authentication provider.'
+            let copyableURL = null
+            if (result.resetPasswordURL) {
+                copyableURL = <CopyableText text={result.resetPasswordURL} size={40} />
+                text = 'You must manually send this password reset link to the new user: '
+                if (window.context.emailEnabled && emailProvided) {
+                    text =
+                        "A password reset URL has been sent to the new user's email address. If they don't receive it, you can also share the following password reset link: "
+                }
+            }
+            return (
+                <>
+                    <Text>{text}</Text>
+                    {copyableURL}
+                </>
+            )
+        }
+
         return (
             <div className="site-admin-create-user-page">
                 <PageTitle title="Create user - Admin" />
@@ -106,16 +125,9 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 {this.state.createUserResult ? (
                     <Alert variant="success">
                         <Text>
-                            Account created for <strong>{this.state.username}</strong>.
+                            Account created for <Link to={`/users/${this.state.username}`}>{this.state.username}</Link>.
                         </Text>
-                        {this.state.createUserResult.resetPasswordURL !== null ? (
-                            <>
-                                <Text>You must manually send this password reset link to the new user:</Text>
-                                <CopyableText text={this.state.createUserResult.resetPasswordURL} size={40} />
-                            </>
-                        ) : (
-                            <Text>The user must authenticate using a configured authentication provider.</Text>
-                        )}
+                        {postCreateText(this.state.createUserResult, !!this.state.email)}
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
                         </Button>
@@ -147,7 +159,11 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                                 aria-describedby="site-admin-create-user-page__form-email-help"
                             />
                             <small id="site-admin-create-user-page__form-email-help" className="form-text text-muted">
-                                Optional verified email for the user.
+                                Optional email for the user{' '}
+                                {window.context.emailEnabled
+                                    ? 'that must be verified by the user'
+                                    : 'that will be marked as verified'}
+                                .
                             </small>
                         </div>
                         {this.state.errorDescription && (

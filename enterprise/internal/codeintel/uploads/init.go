@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -36,13 +35,13 @@ func NewService(
 	gsc GitserverClient,
 ) *Service {
 	store := store.New(scopedContext("store", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient(db))
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		if rankingBucketCredentialsFile == "" {
 			return nil
 		}
 

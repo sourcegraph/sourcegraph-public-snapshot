@@ -218,7 +218,7 @@ func (r *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 	opt := r.opt
 	opt.PaginationArgs = args
 
-	client := gitserver.NewClient(r.db)
+	client := gitserver.NewClient()
 	repos, err := backend.NewRepos(r.logger, r.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient())
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -318,7 +318,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	client := gitserver.NewClient(r.db)
+	client := gitserver.NewClient()
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break

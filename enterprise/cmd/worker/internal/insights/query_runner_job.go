@@ -24,7 +24,7 @@ func (s *insightsQueryRunnerJob) Config() []env.Config {
 	return nil
 }
 
-func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsQueryRunnerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
