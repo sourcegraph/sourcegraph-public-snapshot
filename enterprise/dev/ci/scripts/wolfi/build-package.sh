@@ -56,8 +56,12 @@ fi
 # bubblewrap release in buildkite-agent-stateless-bazel's Dockerfile, and ship it in /usr/local/bin
 
 echo " * Building melange package '$name'"
-# TODO: Signing key
-melange build "$name.yaml" --arch x86_64
+
+# Build package
+melange build "$name.yaml" --arch x86_64 --generate-index false
 
 # Upload package as build artifact
 buildkite-agent artifact upload packages/*/*
+
+# Upload package to repo
+./enterprise/dev/ci/scripts/wolfi/upload-package.sh
