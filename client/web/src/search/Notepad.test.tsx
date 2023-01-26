@@ -28,18 +28,18 @@ describe('Notepad', () => {
     // Notepad is hidden by default on small screens. jest-dom has no concept of
     // screen size, so this needs to be explicitly overriden to ensure that the
     // component renders.
-    window.matchMedia = spy(
-        (media: string): MediaQueryList => ({
-            matches: true,
-            media,
-            addListener: () => {},
-            removeListener: () => {},
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => false,
-            onchange: null,
-        })
-    )
+    window.matchMedia = spy((media: string) => {
+        const et: any = new EventTarget()
+        et.matches = true
+        et.media = media
+        et.addListener = () => {}
+        et.removeListener = () => {}
+        et.addEventListener = () => {}
+        et.dispatchEvent = () => false
+        et.onchange = null
+
+        return et as MediaQueryList
+    })
 
     afterEach(cleanup)
 

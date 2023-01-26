@@ -107,7 +107,6 @@
     "tabbable": "^5.1.5",
     "tagged-template-noop": "^2.1.1",
     "ts-key-enum": "^2.0.7",
-    "url": "^0.11.0",
     "use-deep-compare-effect": "^1.6.1",
     "use-resize-observer": "^9.0.2",
     "util": "^0.12.5",

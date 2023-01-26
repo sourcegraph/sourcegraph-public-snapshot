@@ -161,7 +161,7 @@
     "@types/mock-require": "^2.0.1",
     "@types/mockdate": "2.0.0",
     "@types/mz": "2.7.3",
-    "@types/node": "13.13.5",
+    "@types/node": "18.8.3",
     "@types/node-fetch": "2.5.10",
     "@types/pollyjs__adapter": "4.3.0",
     "@types/pollyjs__core": "4.3.1",
@@ -282,18 +282,11 @@
     "semver": "^7.3.2",
     "sourcegraph": "workspace:*",
     "tslib": "^2.1.0",
+    "url": "^0.11.0",
     "util": "^0.12.5"
   },
   "packageManager": "pnpm@7.24.2",
   "pnpm": {
-    "overrides": {
-      "@types/webpack": "5",
-      "history": "4.5.1",
-      "cssnano": "4.1.10",
-      "webpack": "5",
-      "tslib": "2.1.0",
-      "jsprim": "1.4.2"
-    },
     "packageExtensions": {
       "@codemirror/lang-html": {
         "dependencies": {
@@ -320,5 +313,4 @@
     "tslib": "2.1.0",
     "jsprim": "1.4.2"
   }
-
 }

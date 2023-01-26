@@ -400,7 +400,7 @@ export function createDefaultSuggestionSources(
                     options: resolvedFilter.definition
                         .discreteValues(value, options.isSourcegraphDotCom)
                         .map(({ label, insertText, asSnippet }, index) => {
-                            const apply = String(insertText || label).concat(' ')
+                            const apply = `${insertText || label} `
                             return {
                                 label,
                                 // See issue https://github.com/sourcegraph/sourcegraph/issues/38254

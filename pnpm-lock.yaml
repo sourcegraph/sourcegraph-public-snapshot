@@ -85,7 +85,7 @@ importers:
       '@types/mock-require': ^2.0.1
       '@types/mockdate': 2.0.0
       '@types/mz': 2.7.3
-      '@types/node': 13.13.5
+      '@types/node': 18.8.3
       '@types/node-fetch': 2.5.10
       '@types/pollyjs__adapter': 4.3.0
       '@types/pollyjs__core': 4.3.1
@@ -192,6 +192,7 @@ importers:
       tslib: 2.1.0
       typed-scss-modules: ^4.1.1
       typescript: ^4.9.3
+      url: ^0.11.0
       util: ^0.12.5
       vsce: ^2.7.0
       webpack: '5'
@@ -220,6 +221,7 @@ importers:
       semver: 7.3.8
       sourcegraph: link:client/extension-api
       tslib: 2.1.0
+      url: 0.11.0
       util: 0.12.5
     devDependencies:
       '@babel/core': 7.20.5
@@ -292,7 +294,7 @@ importers:
       '@types/mock-require': 2.0.1
       '@types/mockdate': 2.0.0
       '@types/mz': 2.7.3
-      '@types/node': 13.13.5
+      '@types/node': 18.8.3
       '@types/node-fetch': 2.5.10
       '@types/pollyjs__adapter': 4.3.0
       '@types/pollyjs__core': 4.3.1
@@ -353,7 +355,7 @@ importers:
       graphql-schema-linter: 2.0.1
       gulp: 4.0.2
       identity-obj-proxy: 3.0.0
-      jest: 28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny
+      jest: 28.1.3_pkv5rbbrzvo2m73htz5zokbhy4
       jest-canvas-mock: 2.3.0
       jest-environment-jsdom: 28.1.3
       jest-junit: 13.0.0
@@ -382,7 +384,7 @@ importers:
       stylelint: 14.3.0
       svgo: 2.8.0
       ts-loader: 9.4.2_vfotqvx6lgcbf3upbs6hgaza4q
-      ts-node: 10.9.1_wh55dwo6xja56jtfktvlrff6xu
+      ts-node: 10.9.1_xgevdmisu3khuza2izxq47gxuu
       typed-scss-modules: 4.1.1_sass@1.32.4
       typescript: 4.9.3
       vsce: 2.7.0
@@ -536,7 +538,6 @@ importers:
       sourcegraph: workspace:*
       string-score: ^1.0.1
       terser-webpack-plugin: ^5.3.6
-      url: ^0.11.0
       utc-version: ^2.0.2
       util: ^0.12.5
       utility-types: ^3.10.0
@@ -571,7 +572,6 @@ importers:
       semver: 7.3.8
       sourcegraph: link:../extension-api
       string-score: 1.0.1
-      url: 0.11.0
       util: 0.12.5
       utility-types: 3.10.0
       uuid: 8.3.2
@@ -787,7 +787,6 @@ importers:
       storybook-dark-mode: ^2.0.4
       stream-http: ^3.2.0
       ts-node: ^10.7.0
-      url: ^0.11.0
       util: ^0.12.5
     dependencies:
       '@mdi/js': 6.9.96
@@ -806,7 +805,6 @@ importers:
       react-dom: 18.1.0_react@18.1.0
       rxjs: 6.6.7
       stream-http: 3.2.0
-      url: 0.11.0
       util: 0.12.5
     devDependencies:
       '@sourcegraph/build-config': link:../build-config
@@ -1021,7 +1019,6 @@ importers:
       term-size: ^2.2.0
       ts-key-enum: ^2.0.7
       ts-node: ^10.7.0
-      url: ^0.11.0
       use-deep-compare-effect: ^1.6.1
       use-resize-observer: ^9.0.2
       util: ^0.12.5
@@ -1075,7 +1072,6 @@ importers:
       tabbable: 5.2.1
       tagged-template-noop: 2.1.1
       ts-key-enum: 2.0.8
-      url: 0.11.0
       use-deep-compare-effect: 1.6.1_react@18.1.0
       use-resize-observer: 9.0.2_ef5jwxihqo6n7gxfmzogljlgcm
       util: 0.12.5
@@ -5053,7 +5049,7 @@ packages:
       '@istanbuljs/schema': 0.1.2
       nyc: 15.1.0
       source-map-support: 0.5.21
-      ts-node: 10.9.1_wh55dwo6xja56jtfktvlrff6xu
+      ts-node: 10.9.1_xgevdmisu3khuza2izxq47gxuu
     dev: true
 
   /@istanbuljs/schema/0.1.2:
@@ -11449,10 +11445,6 @@ packages:
 
   /@types/node/12.20.50:
     resolution: {integrity: sha512-+9axpWx2b2JCVovr7Ilgt96uc6C1zBKOQMpGtRbWT9IoR/8ue32GGMfGA4woP8QyP2gBs6GQWEVM3tCybGCxDA==}
-    dev: true
-
-  /@types/node/13.13.5:
-    resolution: {integrity: sha512-3ySmiBYJPqgjiHA7oEaIo2Rzz0HrOZ7yrNO5HWyaE5q0lQ3BppDZ3N53Miz8bw2I7gh1/zir2MGVZBvpb1zq9g==}
     dev: true
 
   /@types/node/16.11.36:
@@ -21602,7 +21594,7 @@ packages:
       - utf-8-validate
     dev: true
 
-  /jest-cli/28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny:
+  /jest-cli/28.1.3_pkv5rbbrzvo2m73htz5zokbhy4:
     resolution: {integrity: sha512-roY3kvrv57Azn1yPgdTebPAXvdR2xfezaKKYzVxZ6It/5NCxzJym6tUI5P1zkdWhfUYkxEI9uZWcQdaFLo8mJQ==}
     engines: {node: ^12.13.0 || ^14.15.0 || ^16.10.0 || >=17.0.0}
     hasBin: true
@@ -21619,7 +21611,7 @@ packages:
       exit: 0.1.2
       graceful-fs: 4.2.10
       import-local: 3.0.2
-      jest-config: 28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny
+      jest-config: 28.1.3_pkv5rbbrzvo2m73htz5zokbhy4
       jest-util: 28.1.3
       jest-validate: 28.1.3
       prompts: 2.4.2
@@ -21768,47 +21760,7 @@ packages:
       pretty-format: 28.1.3
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.1_wh55dwo6xja56jtfktvlrff6xu
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
-  /jest-config/28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny:
-    resolution: {integrity: sha512-MG3INjByJ0J4AsNBm7T3hsuxKQqFIiRo/AUqb1q9LRKI5UU6Aar9JHbr9Ivn1TVwfUD9KirRoM/T6u8XlcQPHQ==}
-    engines: {node: ^12.13.0 || ^14.15.0 || ^16.10.0 || >=17.0.0}
-    peerDependencies:
-      '@types/node': '*'
-      ts-node: '>=9.0.0'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      ts-node:
-        optional: true
-    dependencies:
-      '@babel/core': 7.20.5
-      '@jest/test-sequencer': 28.1.3
-      '@jest/types': 28.1.3
-      '@types/node': 13.13.5
-      babel-jest: 28.1.3_@babel+core@7.20.5
-      chalk: 4.1.2
-      ci-info: 3.3.1
-      deepmerge: 4.2.2
-      glob: 7.2.3
-      graceful-fs: 4.2.10
-      jest-circus: 28.1.3
-      jest-environment-node: 28.1.3
-      jest-get-type: 28.0.2
-      jest-regex-util: 28.0.2
-      jest-resolve: 28.1.3
-      jest-runner: 28.1.3
-      jest-util: 28.1.3
-      jest-validate: 28.1.3
-      micromatch: 4.0.5
-      parse-json: 5.2.0
-      pretty-format: 28.1.3
-      slash: 3.0.0
-      strip-json-comments: 3.1.1
-      ts-node: 10.9.1_wh55dwo6xja56jtfktvlrff6xu
+      ts-node: 10.9.1_xgevdmisu3khuza2izxq47gxuu
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -23249,7 +23201,7 @@ packages:
       - utf-8-validate
     dev: true
 
-  /jest/28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny:
+  /jest/28.1.3_pkv5rbbrzvo2m73htz5zokbhy4:
     resolution: {integrity: sha512-N4GT5on8UkZgH0O5LUavMRV1EDEhNTL0KEfRmDIeZHSV7p2XgLoY9t9VDUgL6o+yfdgYHVxuz81G8oB9VG5uyA==}
     engines: {node: ^12.13.0 || ^14.15.0 || ^16.10.0 || >=17.0.0}
     hasBin: true
@@ -23262,7 +23214,7 @@ packages:
       '@jest/core': 28.1.3_ts-node@10.9.1
       '@jest/types': 28.1.3
       import-local: 3.0.2
-      jest-cli: 28.1.3_sgfsbmxe5qwkqmsj7h2d7flbny
+      jest-cli: 28.1.3_pkv5rbbrzvo2m73htz5zokbhy4
     transitivePeerDependencies:
       - '@types/node'
       - supports-color
@@ -27706,6 +27658,7 @@ packages:
       chalk: 1.1.3
       source-map: 0.5.7
       supports-color: 3.2.3
+      url: 0.11.0
 
   /postcss/7.0.39:
     resolution: {integrity: sha512-yioayjNbHn6z1/Bywyb2Y4s3yvDAeXGOyxqD+LnVOinq6Mdmd++SW2wUNVzavyyHxd6+DxzWGIuosg6P1Rj8uA==}
@@ -27713,6 +27666,7 @@ packages:
     dependencies:
       picocolors: 0.2.1
       source-map: 0.6.1
+      url: 0.11.0
     dev: true
 
   /postcss/8.4.19:
@@ -27722,6 +27676,7 @@ packages:
       nanoid: 3.3.4
       picocolors: 1.0.0
       source-map-js: 1.0.2
+      url: 0.11.0
 
   /preact-render-to-string/5.1.19_preact@10.11.3:
     resolution: {integrity: sha512-bj8sn/oytIKO6RtOGSS/1+5CrQyRSC99eLUnEVbqUa6MzJX5dYh7wu9bmT0d6lm/Vea21k9KhCQwvr2sYN3rrQ==}
@@ -32263,37 +32218,6 @@ packages:
       diff: 4.0.2
       make-error: 1.3.6
       typescript: 4.8.4
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    dev: true
-
-  /ts-node/10.9.1_wh55dwo6xja56jtfktvlrff6xu:
-    resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
-    hasBin: true
-    peerDependencies:
-      '@swc/core': '>=1.2.50'
-      '@swc/wasm': '>=1.2.50'
-      '@types/node': '*'
-      typescript: '>=2.7'
-    peerDependenciesMeta:
-      '@swc/core':
-        optional: true
-      '@swc/wasm':
-        optional: true
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.8
-      '@tsconfig/node12': 1.0.9
-      '@tsconfig/node14': 1.0.1
-      '@tsconfig/node16': 1.0.2
-      '@types/node': 13.13.5
-      acorn: 8.8.1
-      acorn-walk: 8.2.0
-      arg: 4.1.0
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 4.9.3
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     dev: true
