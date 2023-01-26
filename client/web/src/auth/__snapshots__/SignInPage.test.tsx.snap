@@ -412,7 +412,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
             class=""
           >
             <label
-              class="label w-100 form-group"
+              class="label label form-group"
             >
               <div
                 class="mb-2"
