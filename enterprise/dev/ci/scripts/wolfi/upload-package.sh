@@ -18,6 +18,11 @@ cd wolfi-packages/packages/$ARCH
 # TODO: Support branches for uploading
 # TODO: Check for existing files only if we're on main - overwriting is permitted on branches
 
+# TODO: Remove, do in https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless-bazel/pre-entrypoint.sh#L11-L16
+# TODO: (or somewhere better)
+echo " * Attempting to activate Gcloud Auth service account"
+gcloud auth activate-service-account --key-file "/mnt/gcloud-service-account/gcloud-service-account.json" --project "$GCP_PROJECT"
+
 echo " * Uploading package to repository"
 
 # List all .apk files under wolfi-packages/packages/$ARCH/
