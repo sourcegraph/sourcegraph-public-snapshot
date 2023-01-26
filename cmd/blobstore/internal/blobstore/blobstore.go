@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -118,6 +119,38 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			return errors.Wrap(err, "Copy")
 		}
 		return errors.Newf("unsupported method: unexpected GET request: %s", r.URL)
+	case "HEAD":
+		if len(path) == 2 {
+			// HEAD /<bucket>/<object>
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html
+			bucketName := path[0]
+			objectName := path[1]
+
+			// TODO(blobstore): HEAD should not need to actually read the entire file, implement this with os.Stat
+			reader, err := s.getObject(ctx, bucketName, objectName)
+			if err != nil {
+				if err == ErrNoSuchKey {
+					return writeS3Error(w, s3ErrorNoSuchKey, bucketName, err, http.StatusNotFound)
+				}
+				return errors.Wrap(err, "getObject")
+			}
+			defer reader.Close()
+			var numBytes int
+			for {
+				var buf [1024 * 10]byte
+				n, err := reader.Read(buf[:])
+				numBytes += n
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					return errors.Wrap(err, "Read")
+				}
+			}
+			w.Header().Set("Content-Length", strconv.Itoa(numBytes))
+			return nil
+		}
+		return errors.Newf("unsupported method: unexpected HEAD request: %s", r.URL)
 	default:
 		return errors.Newf("unsupported method: unexpected request: %s %s", r.Method, r.URL)
 	}
