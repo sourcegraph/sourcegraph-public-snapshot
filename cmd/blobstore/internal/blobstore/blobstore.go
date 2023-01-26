@@ -3,11 +3,10 @@ package blobstore
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -325,7 +324,7 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	}
 
 	// Write the object, relying on an atomic filesystem rename operation to prevent any parallel read/write issues.
-	tmpFile, err := os.CreateTemp(bucketDir, "*-"+strip(objectName))
+	tmpFile, err := os.CreateTemp(bucketDir, "*-"+objectFileName(objectName))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating tmp file")
 	}
@@ -333,7 +332,7 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	if _, err := io.Copy(tmpFile, data); err != nil {
 		return nil, errors.Wrap(err, "copying data into tmp file")
 	}
-	objectFile := s.objectFile(bucketName, objectName)
+	objectFile := s.objectFilePath(bucketName, objectName)
 	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
 		return nil, errors.Wrap(err, "renaming object file")
 	}
@@ -352,7 +351,7 @@ func (s *Service) getObject(ctx context.Context, bucketName, objectName string) 
 	defer bucketLock.RUnlock()
 
 	// Read the object
-	objectFile := s.objectFile(bucketName, objectName)
+	objectFile := s.objectFilePath(bucketName, objectName)
 	f, err := os.Open(objectFile)
 	if err != nil {
 		s.Log.Debug("get object", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))
@@ -374,7 +373,7 @@ func (s *Service) deleteObject(ctx context.Context, bucketName, objectName strin
 	defer bucketLock.RUnlock()
 
 	// Delete the object
-	objectFile := s.objectFile(bucketName, objectName)
+	objectFile := s.objectFilePath(bucketName, objectName)
 	if err := os.Remove(objectFile); err != nil {
 		if os.IsNotExist(err) {
 			return ErrNoSuchKey
@@ -407,30 +406,16 @@ func (s *Service) bucketDir(name string) string {
 	return filepath.Join(s.DataDir, "buckets", name)
 }
 
-func (s *Service) objectFile(bucketName, objectName string) string {
-	// An object name may not be a valid file path. As a result, we use an md5sum of the object name
-	// suffixed with valid filepath characters for readability in case someone wants to inspect the bucket
-	// dir manually.
-	md5Sum := md5.Sum([]byte(objectName))
-	objectNameHash := hex.EncodeToString(md5Sum[:]) + "-" + strip(objectName)
-	return filepath.Join(s.DataDir, "buckets", bucketName, objectNameHash)
+func (s *Service) objectFilePath(bucketName, objectName string) string {
+	return filepath.Join(s.DataDir, "buckets", bucketName, objectFileName(objectName))
 }
 
-// Replaces "/" with "--" and then strips any byte not in [^a-zA-Z0-9\-].
-func strip(s string) string {
-	s = strings.ReplaceAll(s, "/", "--")
-	var result strings.Builder
-	result.Grow(len(s))
-	for i := 0; i < len(s); i++ {
-		b := s[i]
-		if ('a' <= b && b <= 'z') ||
-			('A' <= b && b <= 'Z') ||
-			('0' <= b && b <= '9') ||
-			b == '-' {
-			result.WriteByte(b)
-		}
-	}
-	return result.String()
+// An object name may not be a valid file path, and may include slashes. We need to keep a flat
+// directory structure <bucket>/<object> and so we URL encode the object name. Note that object
+// listing requests require us to be able to get the original object name back, and require that
+// we be able to perform prefix matching on object keys.
+func objectFileName(objectName string) string {
+	return url.QueryEscape(objectName)
 }
 
 var (
