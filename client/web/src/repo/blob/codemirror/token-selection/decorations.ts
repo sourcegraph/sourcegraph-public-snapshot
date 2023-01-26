@@ -10,6 +10,7 @@ import { isModifierKeyHeld } from './modifier-click'
 
 /**
  * Extension providing decorations for focused, hovered, pinned occurrences, and document highlights.
+ * We combine all of these into a single extension to avoid the focused element blur caused by its removal from the DOM.
  */
 export function interactiveOccurrencesExtension(): Extension {
     return [
@@ -26,10 +27,10 @@ export function interactiveOccurrencesExtension(): Extension {
                         'sourcegraph-document-highlight', // highlights the selected (focused) occurrence
                     ]
 
-                    // If the user is hovering over an occurrence with a definition holding the modifier key,
+                    // If the user is hovering over a selected (focused) occurrence with a definition holding the modifier key,
                     // add a class to make an occurrence to look like a link.
                     const { hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(focus.occurrence)
-                    if (state.field(isModifierKeyHeld) && hasDefinition) {
+                    if (state.field(isModifierKeyHeld) && hasDefinition && focus.occurrence === hover?.occurrence) {
                         classes.push('cm-token-selection-definition-ready')
                     }
 
