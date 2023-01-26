@@ -97,7 +97,7 @@ func NewHandler(
 
 	// Initialize the gRPC server
 	grpcServer := grpc.NewServer(
-		defaults.ServerOptions()...,
+		defaults.ServerOptions(rootLogger)...,
 	)
 	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
