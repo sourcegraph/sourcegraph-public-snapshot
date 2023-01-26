@@ -2455,6 +2455,8 @@ type SiteConfiguration struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsSyncJobCleanupInterval description: Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.
+	PermissionsSyncJobCleanupInterval int `json:"permissions.syncJobCleanupInterval,omitempty"`
 	// PermissionsSyncJobsHistorySize description: The number of last repo/user permission jobs to keep for history.
 	PermissionsSyncJobsHistorySize *int `json:"permissions.syncJobsHistorySize,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
@@ -2612,6 +2614,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
 	delete(m, "parentSourcegraph")
+	delete(m, "permissions.syncJobCleanupInterval")
 	delete(m, "permissions.syncJobsHistorySize")
 	delete(m, "permissions.syncOldestRepos")
 	delete(m, "permissions.syncOldestUsers")

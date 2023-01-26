@@ -959,6 +959,12 @@
       "minimum": 5,
       "!go": { "pointer": true }
     },
+    "permissions.syncJobCleanupInterval": {
+      "description": "Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.",
+      "type": "integer",
+      "default": 60,
+      "minimum": 1
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
