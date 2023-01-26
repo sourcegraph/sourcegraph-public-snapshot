@@ -2,8 +2,7 @@
 
 set -euf -o pipefail
 
-ROOT_DIR=$(dirname "${BASH_SOURCE[0]}")/../../../../..""
-cd "$ROOT_DIR"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 function cleanup() {
@@ -47,7 +46,7 @@ fi
 
 name=${1%/}
 
-cd "wolfi-packages"
+pushd "wolfi-packages"
 
 if [ ! -e "${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
@@ -66,5 +65,5 @@ melange build "$name.yaml" --arch x86_64 --generate-index false
 buildkite-agent artifact upload packages/*/*
 
 # Upload package to repo
-cd "$ROOT_DIR"
+popd
 ./enterprise/dev/ci/scripts/wolfi/upload-package.sh
