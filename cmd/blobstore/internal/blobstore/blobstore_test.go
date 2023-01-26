@@ -110,17 +110,48 @@ func TestGetExists(t *testing.T) {
 }
 
 // Initialize uploadstore, upload two objects, compose them together
+//
+// Compose will concatenate the given source objects together and write to the given
+// destination object. The source objects will be removed if the composed write is
+// successful.
 func TestCompose(t *testing.T) {
 	ctx := context.Background()
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Compose(ctx context.Context, destination string, sources ...string) (int64, error)
-	//
-	// Compose will concatenate the given source objects together and write to the given
-	// destination object. The source objects will be removed if the composed write is
-	// successful.
-	_ = store
+	// Upload three objects
+	uploaded, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar3", strings.NewReader("Hello 3!"))
+	autogold.Expect([]interface{}{8, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 2! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// Compose the objects together.
+	resultLength, err := store.Compose(ctx, "foobar-result", "foobar1", "foobar2", "foobar3")
+	autogold.Expect([]interface{}{26, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
+
+	// Check the resulting object
+	reader, err := store.Get(ctx, "foobar-result")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Expect("Hello 1! Hello 2! Hello 3!").Equal(t, string(data))
+
+	// Ensure the three objects we uploaded have been deleted.
+	// TODO(blobstore): note that these are not deleted, deleting is not implemented!
+	_, err = store.Get(ctx, "foobar1")
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
+	_, err = store.Get(ctx, "foobar2")
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
+	_, err = store.Get(ctx, "foobar3")
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
 }
 
 // Initialize uploadstore, upload an object, delete it
