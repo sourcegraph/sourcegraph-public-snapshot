@@ -26,13 +26,13 @@ func (j *cratesSyncerJob) Config() []env.Config {
 	return nil
 }
 
-func (j *cratesSyncerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *cratesSyncerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient := gitserver.NewClient(db)
+	gitserverClient := gitserver.NewClient()
 	dependenciesService := dependencies.NewService(observationCtx, db)
 
 	return dependencies.CrateSyncerJob(

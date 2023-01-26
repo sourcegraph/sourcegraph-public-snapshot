@@ -130,12 +130,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 authenticatedUser: props.authenticatedUser,
                 fetchSearchContexts: props.fetchSearchContexts,
                 getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
             }),
         [
             props.platformContext,
             props.authenticatedUser,
             props.fetchSearchContexts,
             props.getUserSearchContextNamespaces,
+            props.isSourcegraphDotCom,
         ]
     )
 
@@ -178,7 +180,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
                     <TraceSpanProvider name="SearchBox">
-                        <div className="d-flex flex-grow-1">{input}</div>
+                        <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
                 <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />

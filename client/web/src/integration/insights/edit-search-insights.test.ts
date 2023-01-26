@@ -190,7 +190,7 @@ describe('Code insight edit insight page', () => {
             input: {
                 repositoryScope: {
                     repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
-                    repositoryCriteria: '',
+                    repositoryCriteria: null,
                 },
                 dataSeries: [
                     {

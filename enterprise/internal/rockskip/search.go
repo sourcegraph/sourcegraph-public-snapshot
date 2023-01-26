@@ -35,7 +35,7 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 
 	if args.Timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(args.Timeout)*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, args.Timeout)
 		defer cancel()
 		defer func() {
 			if !errors.Is(ctx.Err(), context.DeadlineExceeded) &&

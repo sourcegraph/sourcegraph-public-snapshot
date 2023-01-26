@@ -44,6 +44,7 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
 
     const settings = useDebounce(
         useDeepMemo({
+            disabled,
             repoScope: getSanitizedRepositoryScope(repositories, repoQuery, repoMode),
             step: { [step]: stepValue },
             series: series.map(srs => {
@@ -63,7 +64,10 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
     )
 
     const { state, refetch } = useLivePreviewSeriesInsight({
-        skip: disabled,
+        // If disabled goes from true to false then cancel live preview series fetching
+        // immediately, when it goes from false to true wait a little *use debounced
+        // value only when run preview search
+        skip: disabled || settings.disabled,
         ...settings,
     })
 

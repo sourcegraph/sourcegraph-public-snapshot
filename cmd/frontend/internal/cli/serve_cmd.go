@@ -104,7 +104,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
 		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
-			return errors.Wrap(err, "failed to synchronized out of band migration metadata")
+			return errors.Wrap(err, "failed to synchronize out of band migration metadata")
 		}
 
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
@@ -205,7 +205,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
-		gitserver.NewClient(db),
+		gitserver.NewClient(),
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
 		enterprise.InsightsResolver,

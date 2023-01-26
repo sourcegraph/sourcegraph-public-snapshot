@@ -21,6 +21,7 @@ import {
     UpdateWebhookVariables,
     WebhookFields,
 } from '../graphql-operations'
+import { generateSecret } from '../util/security'
 
 import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
@@ -328,13 +329,4 @@ function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhook
         codeHostURN: webhook.codeHostURN,
         secret,
     }
-}
-
-function generateSecret(): string {
-    let text = ''
-    const possible = 'ABCDEF0123456789'
-    for (let index = 0; index < 12; index++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
-    return text
 }

@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,6 +59,29 @@ type anyMatch struct{}
 func (p anyMatch) String() string      { return "*" }
 func (p anyMatch) Match(_ string) bool { return true }
 
+// asteriskPattern is a pattern that may contain * glob wildcard.
+type asteriskPattern struct {
+	glob     string
+	compiled *regexp.Regexp
+}
+
+func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
+	quoted := regexp.QuoteMeta(pattern)
+	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
+	compiled, err := regexp.Compile("^" + regular + "$")
+	if err != nil {
+		return asteriskPattern{}, err
+	}
+	return asteriskPattern{glob: pattern, compiled: compiled}, nil
+}
+func (p asteriskPattern) String() string { return p.glob }
+func (p asteriskPattern) Match(part string) bool {
+	if p.compiled == nil {
+		return false
+	}
+	return p.compiled.FindString(part) != ""
+}
+
 // compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
 func compile(pattern string) (globPattern, error) {
@@ -70,12 +95,20 @@ func compile(pattern string) (globPattern, error) {
 		switch part {
 		case "":
 			return nil, errors.New("two consecutive forward slashes")
-		case "*":
-			glob = append(glob, anyMatch{})
 		case "**":
 			glob = append(glob, anySubPath{})
+		case "*":
+			glob = append(glob, anyMatch{})
 		default:
-			glob = append(glob, exactMatch(part))
+			if strings.Contains(part, "*") {
+				p, err := makeAsteriskPattern(part)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to interpret %q within %q", part, pattern)
+				}
+				glob = append(glob, p)
+			} else {
+				glob = append(glob, exactMatch(part))
+			}
 		}
 	}
 	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
