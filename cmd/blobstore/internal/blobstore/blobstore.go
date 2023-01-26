@@ -97,8 +97,8 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			return errors.Newf("unsupported method: PUT request: %s", r.URL)
 		}
 	case "GET":
-		if len(path) == 2 && r.URL.Query().Get("x-id") == "GetObject" {
-			// GET /<bucket>/<object>?x-id=GetObject
+		if len(path) == 2 {
+			// GET /<bucket>/<object>
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
 			bucketName := path[0]
 			objectName := path[1]
