@@ -81,7 +81,7 @@ type UserStore interface {
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
-	RecoverUsersList(context.Context, []int32) ([]int32, error)
+	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -678,7 +678,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 }
 
 // RecoverList recovers a list of users by their IDs.
-func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) ([]int32, error) {
+func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -736,12 +736,12 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) ([]int32,
 		return nil, err
 	}
 
-	affectedUserID, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	updateIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
 	if err != nil {
 		return nil, err
 	}
 
-	return affectedUserID, nil
+	return updateIds, nil
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
