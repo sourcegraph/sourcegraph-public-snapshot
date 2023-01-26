@@ -371,7 +371,7 @@ func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// create repo
+	// Create repo.
 	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
 	err := reposStore.Create(ctx, &repo1)
 	require.NoError(t, err)
@@ -385,14 +385,14 @@ func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 
-	// Deleting repo
+	// Deleting repo.
 	_, err = db.ExecContext(context.Background(), fmt.Sprintf(`DELETE FROM repo WHERE id = %d`, int(repo1.ID)))
 	require.NoError(t, err)
 
 	// Checking that the job is deleted.
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
-	require.Len(t, jobs, 0)
+	require.Empty(t, jobs)
 }
 
 func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
@@ -407,7 +407,7 @@ func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
 
-	// create user
+	// Create a user.
 	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1"})
 	require.NoError(t, err)
 
@@ -420,12 +420,12 @@ func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 
-	// Deleting user
+	// Deleting user.
 	err = usersStore.HardDelete(ctx, user1.ID)
 	require.NoError(t, err)
 
 	// Checking that the job is deleted.
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: int(user1.ID)})
 	require.NoError(t, err)
-	require.Len(t, jobs, 0)
+	require.Empty(t, jobs)
 }
