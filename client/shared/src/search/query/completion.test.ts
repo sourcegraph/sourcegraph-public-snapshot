@@ -322,16 +322,18 @@ describe('getCompletionItems()', () => {
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
         ).toStrictEqual([
+            // Break the string to prevent ES lint from complaining about template
+            // syntax used outside of template string (no-template-curly-in-string).
             {
-                insertText: 'contains.content(${1:TODO}) ',
+                insertText: 'contains.content(${' + '1:TODO}) ',
                 label: 'contains.content(...)',
             },
             {
-                insertText: 'has.content(${1:TODO}) ',
+                insertText: 'has.content(${' + '1:TODO}) ',
                 label: 'has.content(...)',
             },
             {
-                insertText: 'has.owner(${1}) ',
+                insertText: 'has.owner(${' + '1}) ',
                 label: 'has.owner(...)',
             },
             {
@@ -376,14 +378,12 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toMatchInlineSnapshot(`
-            [
-              "contains.content(\${1:TODO}) ",
-              "has.content(\${1:TODO}) ",
-              "has.owner(\${1}) ",
-              "^some/path/main\\\\.go$ "
-            ]
-        `)
+        ).toStrictEqual([
+            'contains.content(${1:TODO}) ',
+            'has.content(${1:TODO}) ',
+            'has.owner(${1}) ',
+            '^some/path/main\\.go$ ',
+        ])
     })
 
     test('escapes spaces in repo value', async () => {
