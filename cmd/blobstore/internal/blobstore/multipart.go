@@ -70,12 +70,6 @@ func (s *Service) createUpload(ctx context.Context, bucketName, objectName strin
 }
 
 func (s *Service) getPendingUpload(ctx context.Context, bucketName, uploadID string) (*pendingUpload, error) {
-	s.multipartUploadMu.Lock()
-	defer s.multipartUploadMu.Unlock()
-	return s.getPendingUploadRaw(ctx, bucketName, uploadID)
-}
-
-func (s *Service) getPendingUploadRaw(ctx context.Context, bucketName, uploadID string) (*pendingUpload, error) {
 	uploadObjectName := uploadID
 	reader, err := s.getObject(ctx, bucketName+multipartUploadsBucketSuffix, uploadObjectName)
 	if err != nil {
@@ -118,7 +112,7 @@ func (s *Service) mutatePendingUploadAtomic(ctx context.Context, bucketName, upl
 	s.multipartUploadMu.Lock()
 	defer s.multipartUploadMu.Unlock()
 
-	upload, err := s.getPendingUploadRaw(ctx, bucketName, uploadID)
+	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
 	if err != nil {
 		return err
 	}
