@@ -3,8 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"path"
-
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"path"
 )
 
 // A AzureDevOpsSource yields repositories from a single Azure DevOps connection configured
@@ -79,7 +78,12 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
 func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
-	return checkConnection("https://dev.azure.com")
+	// If this isn't Azure DevOps Services (https://dev.azure.com), return a basic connection check.
+	if s.cli.URL.String() != "https://dev.azure.com/" {
+		return checkConnection("https://dev.azure.com")
+	}
+	_, err := s.cli.AzureServicesProfile(ctx)
+	return err
 }
 
 // ListRepos returns all Azure DevOps repositories configured with this AzureDevOpsSource's config.

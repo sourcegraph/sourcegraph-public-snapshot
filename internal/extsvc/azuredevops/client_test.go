@@ -36,6 +36,20 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
 }
 
+func TestClient_AzureServicesProfile(t *testing.T) {
+	cli, save := NewTestClient(t, "AzureServicesProfile", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.AzureServicesProfile(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/golden/AzureServicesConnectionData.json", *update, resp)
+}
+
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
 func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {

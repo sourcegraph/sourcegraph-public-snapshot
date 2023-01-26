@@ -78,16 +78,46 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 	}
 
 	var repos ListRepositoriesResponse
-	if _, err = c.do(ctx, req, &repos); err != nil {
+	if _, err = c.do(ctx, req, "", &repos); err != nil {
 		return nil, err
 	}
 
 	return repos.Value, nil
 }
 
+// AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
+func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
+	qs := make(url.Values)
+
+	qs.Set("api-version", "7.0")
+
+	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: qs.Encode()}
+
+	req, err := http.NewRequest("GET", urlProfile.String(), nil)
+	if err != nil {
+		return Profile{}, err
+	}
+
+	var p Profile
+	//The endpoint is https://vssps.dev.azure.com
+	if _, err = c.do(ctx, req, "https://app.vssps.visualstudio.com", &p); err != nil {
+		return Profile{}, err
+	}
+
+	return p, nil
+}
+
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	req.URL = c.URL.ResolveReference(req.URL)
+func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (*http.Response, error) {
+	var err error
+	u := c.URL
+	if urlOverride != "" {
+		u, err = url.Parse(urlOverride)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req.URL = u.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
 	c.auth.Authenticate(req)
@@ -161,6 +191,12 @@ type Project struct {
 	State      string `json:"state"`
 	Revision   int    `json:"revision"`
 	Visibility string `json:"visibility"`
+}
+
+type Profile struct {
+	ID           string `json:"id"`
+	DisplayName  string `json:"displayName"`
+	EmailAddress string `json:"emailAddress"`
 }
 
 type httpError struct {
