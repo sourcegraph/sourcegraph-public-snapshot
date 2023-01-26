@@ -72,7 +72,6 @@ export function goToDefinitionOnMouseEvent(
         return
     }
 
-    // show loading tooltip
     view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
     goToDefinitionAtOccurrence(view, atEvent.occurrence)
         .then(

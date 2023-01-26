@@ -8,6 +8,9 @@ import { definitionUrlField } from './definition'
 import { documentHighlightsField, findByOccurrence } from './document-highlights'
 import { isModifierKeyHeld } from './modifier-click'
 
+/**
+ * Extension providing decorations for focused, hovered, pinned occurrences, and document highlights.
+ */
 export function interactiveOccurrencesExtension(): Extension {
     return [
         EditorView.decorations.compute(
@@ -17,8 +20,11 @@ export function interactiveOccurrencesExtension(): Extension {
                 const decorations = []
 
                 if (focus) {
-                    const classes = ['interactive-occurrence', 'focus-visible', 'sourcegraph-document-highlight']
-                    const attributes: { [key: string]: string } = { tabindex: '0' }
+                    const classes = [
+                        'interactive-occurrence', // used as interactive occurrence selector
+                        'focus-visible', // prevents code editor from blur when focused element inside it changes
+                        'sourcegraph-document-highlight', // highlights the selected (focused) occurrence
+                    ]
 
                     // If the user is hovering over an occurrence with a definition holding the modifier key,
                     // add a class to make an occurrence to look like a link.
@@ -28,13 +34,20 @@ export function interactiveOccurrencesExtension(): Extension {
                     }
 
                     decorations.push({
-                        decoration: Decoration.mark({ class: classes.join(' '), attributes }),
+                        decoration: Decoration.mark({
+                            class: classes.join(' '),
+                            attributes: {
+                                // Selected (focused) occurrence is the only focusable element in the editor.
+                                // This helps to maintain the focus position when editor is blurred and then focused again.
+                                tabindex: '0',
+                            },
+                        }),
                         range: focus.occurrence.range,
                     })
 
+                    // Decorate selected (focused) occurrence document highlights.
                     const highlights = state.field(documentHighlightsField)
                     const focusedOccurrenceHighlight = findByOccurrence(highlights, focus.occurrence)
-
                     if (focusedOccurrenceHighlight) {
                         for (const highlight of sortRangeValuesByStart(highlights)) {
                             if (highlight === focusedOccurrenceHighlight) {

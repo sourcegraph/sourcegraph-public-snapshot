@@ -19,7 +19,11 @@ class TemporaryTooltip implements Tooltip {
     }
 }
 
-// Displays a simple tooltip that automatically hides after the provided timeout
+/**
+ * Displays a simple tooltip that automatically hides after the provided timeout.
+ * As temporary tooltips are only shown for selected (focused) occurrences currently,
+ * we use {@link setFocusedOccurrenceTooltip} to update {@link codeIntelTooltipsState}.
+ */
 export function showTemporaryTooltip(
     view: EditorView,
     message: string,

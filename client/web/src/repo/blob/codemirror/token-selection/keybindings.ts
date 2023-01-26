@@ -122,11 +122,13 @@ const keybindings: KeyBinding[] = [
             return true
         },
     },
+]
 
-    // TODO: window selection is not updated when manually setting CodeMirror selection.
-    // Check why updateSelection is not called in this case: https://sourcegraph.com/github.com/codemirror/view@fd097ac61a3ca0b3b6f6ea958d04071ecaf7c231/-/blob/src/docview.ts?L146:3-146:18#tab=references
-    // but is called when we select occurrence (via `view.dispatch({selection})`).
-
+/**
+ * Keybindings to support text selection.
+ * Modified version of a [standard CodeMirror keymap](https://sourcegraph.com/github.com/codemirror/commands@ca4171b381dc487ec0313cb0ea4dd29151c7a792/-/blob/src/commands.ts?L791-858).
+ */
+const textSelectionKeybindings: KeyBinding[] = [
     {
         key: 'ArrowLeft',
         shift: selectCharLeft,
@@ -220,7 +222,26 @@ function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
     }
 }
 
-// TODO: add comment (https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102)
+/**
+ * Occurrence keyboard navigation is handled in {@link EditorView.domEventHandlers} instead of {@link keymap} facet
+ * because events handled by the latter are not propagated to the screen readers.
+ */
+function occurrenceKeyboardNavigation() {
+    return [
+        EditorView.domEventHandlers({
+            keydown: keyDownHandler,
+        }),
+    ]
+}
+
+/**
+ * For some reason, editor selection updates made by {@link textSelectionKeybindings} handlers are not synced with the
+ * [browser selection](https://developer.mozilla.org/en-US/docs/Web/API/Selection). This function is a workaround to ensure
+ * that the browser selection is updated when the editor selection is updated.
+ *
+ * @see https://codemirror.net/docs/ref/#view.drawSelection
+ * @see https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102
+ */
 const selectionLayer = layer({
     above: false,
     markers(view) {
@@ -234,14 +255,22 @@ const selectionLayer = layer({
     class: 'cm-selectionLayer',
 })
 
-function selectionLayerExtension(): Extension {
+/**
+ * Extension that adds support for the text selection with keyboard.
+ */
+function textSelectionExtension(): Extension {
     return [
+        keymap.of(textSelectionKeybindings),
         selectionLayer,
         EditorView.theme({
-            // '.cm-line': {
-            //     '& ::selection': { backgroundColor: 'transparent !important' },
-            //     '&::selection': { backgroundColor: 'transparent !important' },
-            // },
+            '.cm-line': {
+                '& ::selection': {
+                    backgroundColor: 'transparent !important',
+                },
+                '&::selection': {
+                    backgroundColor: 'transparent !important',
+                },
+            },
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg)',
             },
@@ -250,5 +279,5 @@ function selectionLayerExtension(): Extension {
 }
 
 export function keyboardShortcutsExtension(): Extension {
-    return [selectionLayerExtension(), keymap.of(keybindings), EditorView.domEventHandlers({ keydown: keyDownHandler })]
+    return [textSelectionExtension(), keymap.of(keybindings), occurrenceKeyboardNavigation()]
 }

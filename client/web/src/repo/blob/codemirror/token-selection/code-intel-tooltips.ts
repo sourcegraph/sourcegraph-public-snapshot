@@ -32,6 +32,9 @@ export const setFocusedOccurrenceTooltip = StateEffect.define<Tooltip | null>()
 const setPinnedCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 const setHoveredCodeIntelTooltipState = StateEffect.define<CodeIntelTooltipState>()
 
+/**
+ * {@link StateField} storing focused (selected), hovered and pinned {@link Occurrence}s and {@link Tooltip}s associate with them.
+ */
 export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipTrigger, CodeIntelTooltipState>>({
     create() {
         return { hover: null, focus: null, pin: null }
@@ -102,6 +105,10 @@ const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     }
 }
 
+/**
+ * Sets given occurrence to {@link codeIntelTooltipsState}, syncs editor selection with occurrence range,
+ * fetches hover, definition data and document highlights for occurrence, and focuses the selected occurrence DOM node.
+ */
 export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     warmupOccurrence(view, occurrence)
     view.dispatch({

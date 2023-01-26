@@ -50,17 +50,12 @@ export function tokenSelectionExtension(): Extension {
     return [
         fallbackOccurrences,
         syncOccurrenceWithURL,
-
         documentHighlightsExtension(),
         codeIntelTooltipsExtension(),
         interactiveOccurrencesExtension(),
-
         modifierClickExtension(),
-
         definitionExtension(),
-
         keyboardShortcutsExtension(),
-
         EditorView.domEventHandlers({
             // Approximate `click` with `mouseup` because `click` does not get
             // triggered in the scenario when the user holds down the meta-key,
