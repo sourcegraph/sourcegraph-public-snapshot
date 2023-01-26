@@ -47,7 +47,7 @@ query debug {
 }
 ```
 
-where `INSIGHT_ID` can be found in the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. It will look like `https://yourdomain.sourcegraph.com/insights/edit/INSIGHT_ID?dashboardId=all`. The `INSIGHT_ID` can also be found in the url of the single insight view found by clicking on the title of the insight. The ID will be in the url, for example, `https://sourcegraph.yourdomain.com/insights/insight/{INSIGHT_ID}`
+where `INSIGHT_ID` can be found in the "edit" page for the insight (selectable from the three-dot dropdown on the insight) after `...edit/`. It will look like `https://yourdomain.sourcegraph.com/insights/INSIGHT_ID/edit?dashboardId=all`. The `INSIGHT_ID` can also be found in the url of the single insight view found by clicking on the title of the insight. The ID will be in the url, for example, `https://sourcegraph.yourdomain.com/insights/{INSIGHT_ID}`
 
 If there are `failedJobs`, there may be timeouts or similar issues affecting your insight. 
 `insightViewDebug` was added in 4.2 to give you more raw information on your insight. 
