@@ -1,18 +1,17 @@
 package resolvers
 
 import (
-	"context"
-	"regexp" //nolint:depguard // regexps are passed to bluemonday, which expects the std ones
+	"context" //nolint:depguard // regexps are passed to bluemonday, which expects the std ones
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/microcosm-cc/bluemonday"
-	gfm "github.com/shurcooL/github_flavored_markdown"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -302,31 +301,14 @@ func (m Markdown) Text() string {
 	return string(m)
 }
 
-func (m Markdown) HTML() string {
-	return render(string(m))
+func (m Markdown) HTML() (string, error) {
+	return markdown.Render(string(m))
 }
 
 var (
 	once   sync.Once
 	policy *bluemonday.Policy
 )
-
-// Render renders Markdown content into sanitized HTML that is safe to render anywhere.
-func render(content string) string {
-	once.Do(func() {
-		policy = bluemonday.UGCPolicy()
-		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
-		policy.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
-		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
-		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
-		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
-		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-		policy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	})
-
-	unsafeHTML := gfm.Markdown([]byte(content))
-	return string(policy.SanitizeBytes(unsafeHTML))
-}
 
 type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
