@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 
-import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { formatSearchParameters } from '@sourcegraph/common'
+import { smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { SearchMode } from '@sourcegraph/shared/src/search'
-import { Link, Icon, H3, H2, Text, Button, createLinkUrl, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 import { useNavbarQueryState, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
 
-import styles from './QuerySuggestion.module.scss'
-import shimmerStyle from './SmartSearchPreview.module.scss'
+import { SmartSearchListItem } from './SmartSearch'
+
+import iconStyles from './QuerySuggestion.module.scss'
+import styles from './SmartSearchPreview.module.scss'
 
 export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
     const [resultNumber, setResultNumber] = useState<number | string>(0)
@@ -73,14 +73,12 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                 <>
                     <H3 as={H2}>Please wait. Smart Search is trying variations on your query...</H3>
 
-                    <div className={classNames(shimmerStyle.shimmerContainer, 'rounded my-3 col-6')}>
-                        <div className={classNames(shimmerStyle.shimmerAnimate, 'absolute top-0 overflow-hidden')} />
+                    <div className={classNames(styles.shimmerContainer, 'rounded my-3 col-6')}>
+                        <div className={classNames(styles.shimmerAnimate, 'absolute top-0 overflow-hidden')} />
                     </div>
 
-                    <div className={classNames(shimmerStyle.shimmerContainer, 'rounded mb-3 col-4')}>
-                        <div
-                            className={classNames(shimmerStyle.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')}
-                        />
+                    <div className={classNames(styles.shimmerContainer, 'rounded mb-3 col-4')}>
+                        <div className={classNames(styles.shimmerAnimateSlower, 'absolute top-0 overflow-hidden')} />
                     </div>
                 </>
             )}
@@ -91,33 +89,9 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                         However, Smart Smart found {resultNumber >= 500 ? `${resultNumber}+` : resultNumber} results:
                     </H3>
 
-                    <ul className={classNames(styles.container, 'px-0 mb-3')}>
+                    <ul className={classNames('list-unstyled px-0 mb-2')}>
                         {results?.alert?.proposedQueries?.map(item => (
-                            <li key={item.query}>
-                                <Link
-                                    to={createLinkUrl({
-                                        pathname: '/search',
-                                        search: formatSearchParameters(new URLSearchParams({ q: item.query })),
-                                    })}
-                                    className={classNames(styles.link, 'px-0')}
-                                >
-                                    <span className="p-1 bg-code">
-                                        <SyntaxHighlightedSearchQuery query={item.query} />
-                                    </span>
-                                    <span className="ml-2 text-muted">({item.description})</span>
-                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="ml-2 mr-1 text-body" />
-                                    <span>
-                                        {item.annotations
-                                            ?.filter(({ name }) => name === 'ResultCount')
-                                            ?.map(({ name, value }) => (
-                                                <span key={name} className="text-muted">
-                                                    {' '}
-                                                    {value.replace('additional ', '')}
-                                                </span>
-                                            ))}
-                                    </span>
-                                </Link>
-                            </li>
+                            <SmartSearchListItem proposedQuery={item} previewStyle={true} key={item.query} />
                         ))}
                     </ul>
                 </>
@@ -156,7 +130,7 @@ const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableS
             <Icon
                 aria-hidden={true}
                 svgPath={smartSearchIconSvgPath}
-                className={classNames(styles.smartIcon, 'text-white my-auto')}
+                className={classNames(iconStyles.smartIcon, 'text-white my-auto')}
             />
             <Button variant="link" className="px-0 mr-1" onClick={enableSmartSearch}>
                 Enable Smart Search

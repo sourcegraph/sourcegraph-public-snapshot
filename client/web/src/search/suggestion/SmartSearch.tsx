@@ -1,10 +1,11 @@
 import { MouseEvent, useCallback } from 'react'
 
 import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { formatSearchParameters, pluralize } from '@sourcegraph/common'
-import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, AlertKind, ProposedQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Link,
@@ -127,36 +128,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                     <Text className={styles.description}>{content.subtitle}</Text>
                     <ul className={styles.container}>
                         {alert?.proposedQueries?.map(entry => (
-                            <li key={entry.query} className={styles.listItem}>
-                                <Link
-                                    to={createLinkUrl({
-                                        pathname: '/search',
-                                        search: formatSearchParameters(new URLSearchParams({ q: entry.query })),
-                                    })}
-                                    className={styles.link}
-                                >
-                                    <span>
-                                        <span className={styles.listItemDescription}>{`${processDescription(
-                                            entry.description || ''
-                                        )}`}</span>
-                                        {entry.annotations
-                                            ?.filter(({ name }) => name === 'ResultCount')
-                                            ?.map(({ name, value }) => (
-                                                <span key={name} className="text-muted">
-                                                    {' '}
-                                                    ({value})
-                                                </span>
-                                            ))}
-                                    </span>
-                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
-                                    <span className={styles.suggestion}>
-                                        <SyntaxHighlightedSearchQuery
-                                            query={entry.query}
-                                            searchPatternType={SearchPatternType.standard}
-                                        />
-                                    </span>
-                                </Link>
-                            </li>
+                            <SmartSearchListItem proposedQuery={entry} key={entry.query} />
                         ))}
                     </ul>
                 </CollapsePanel>
@@ -164,6 +136,49 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
         </div>
     )
 }
+
+interface SmartSearchListItemProps {
+    proposedQuery: ProposedQuery
+    key: string
+    previewStyle?: boolean
+}
+
+export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemProps> = ({
+    proposedQuery,
+    previewStyle = false,
+    key,
+}) => (
+    <li key={proposedQuery.query} className={classNames(previewStyle ? 'py-2' : styles.listItem)}>
+        <Link
+            to={createLinkUrl({
+                pathname: '/search',
+                search: formatSearchParameters(new URLSearchParams({ q: proposedQuery.query })),
+            })}
+            className={classNames(previewStyle ? 'text-decoration-none' : styles.link)}
+        >
+            <Text className="mb-0">
+                <span
+                    className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}
+                >{`${processDescription(proposedQuery.description || '')}`}</span>
+                <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
+                <span className={classNames(previewStyle ? 'p-1 bg-code' : styles.suggestion)}>
+                    <SyntaxHighlightedSearchQuery
+                        query={proposedQuery.query}
+                        searchPatternType={SearchPatternType.standard}
+                    />
+                </span>
+                {proposedQuery.annotations
+                    ?.filter(({ name }) => name === 'ResultCount')
+                    ?.map(({ name, value }) => (
+                        <span key={name} className="text-muted ml-2">
+                            {' '}
+                            ({value})
+                        </span>
+                    ))}
+            </Text>
+        </Link>
+    </li>
+)
 
 export const smartSearchEvent = (alertKind: AlertKind, alertTitle: string, descriptions: string[]): string[] => {
     const rules = descriptions.map(entry => {
