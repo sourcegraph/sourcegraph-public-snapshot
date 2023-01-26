@@ -44,6 +44,7 @@ for apk in "${apks[@]}"; do
     echo "   * File does not exist, uploading..."
   fi
 
+  # TODO: Pass -n when on main to avoid accidental overwriting?
   echo "   * Uploading package and index fragment to repo"
-  gsutil -u "$GCP_PROJECT" cp -n "$apk" "$index_fragment" "$dest_path"
+  gsutil -u "$GCP_PROJECT" cp "$apk" "$index_fragment" "$dest_path"
 done
