@@ -355,6 +355,7 @@ func (s *Service) getObject(ctx context.Context, bucketName, objectName string) 
 	defer bucketLock.RUnlock()
 
 	// Read the object
+	// Note that we return an io.ReadCloser here, so f.Close is intentionally NOT called.
 	objectFile := s.objectFilePath(bucketName, objectName)
 	f, err := os.Open(objectFile)
 	if err != nil {
