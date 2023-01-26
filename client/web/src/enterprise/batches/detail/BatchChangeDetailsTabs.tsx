@@ -269,10 +269,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 </TabPanel>
                 <TabPanel>
                     <Text className="my-3">
-                        Archived changesets are changesets created and published by an earlier version of the batch spec
-                        that are no longer in scope of the most recent one. They are still associated with the batch
-                        change, but they will be closed on the code host. They do not count towards the batch change
-                        completion percentage. See our{' '}
+                        Archived changesets are changesets created and published by an earlier version of the batch
+                        change to workspaces that are no longer in scope of the current version. They are still
+                        associated with the batch change, but they will be closed on the code host. They do not count
+                        towards the batch change completion percentage. See our{' '}
                         <Link to="/help/batch_changes/how-tos/updating_a_batch_change#removing-changesets">
                             how-to guide
                         </Link>{' '}

@@ -25,7 +25,7 @@ import {
 import styles from './BatchChangeStatsCard.module.scss'
 
 const ARCHIVED_TOOLTIP =
-    'Changesets created by an earlier spec that are not in scope of the spec anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
+    'Changesets created by an earlier version of the batch change for repos that are not in scope anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
 
 interface BatchChangeStatsCardProps {
     batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
@@ -41,6 +41,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
+    // TODO: We should just compute this and `isCompleted` on the backend batch change resolver.
     const percentComplete =
         // We don't count archived or deleted changesets when computing the percentage.
         stats.total === 0 ? 0 : ((stats.closed + stats.merged) / (stats.total - stats.archived - stats.deleted)) * 100
