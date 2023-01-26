@@ -113,8 +113,6 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 				return errors.Wrap(err, "getObject")
 			}
 			defer reader.Close()
-			w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-			w.WriteHeader(http.StatusOK)
 			_, err = io.Copy(w, reader)
 			return errors.Wrap(err, "Copy")
 		}
