@@ -1,9 +1,9 @@
 # Sourcegraph User Tutorials
 
-*Note: Work in Progress. Full Content & Links Coming Soon*
+> ⚠️ Note: Work in Progress. Full Content & Links Coming Soon.
 
-## Intro: Find Your Way Around Sourcegraph
 
+## Find Your Way Around Sourcegraph
 | Topic | Description |
 | ----------- | ----------- |
 | Home | TODO |
@@ -11,7 +11,7 @@
 | Code Monitoring | TODO |
 | Settings & Configuration | TODO |
 
-## Setup: Setting up your Sourcegraph User Environment
+## Setting Up Your Sourcegraph User Environment
 | Topic | Description |
 | -------- | --------|
 | Customizing your settings | TODO |
@@ -21,7 +21,7 @@
 | Saving Searches | TODO |
 | Search Contexts | TODO |
 
-## Concepts: Get Started Searching
+## Get Started Searching
 | Topic | Description |
 | -------- | --------|
 | Search features | TODO |
@@ -30,7 +30,7 @@
 | Search contexts | TODO |
 | Search Query Syntax | TODO |
 
-## Concepts: More Advanced Searching
+## More Advanced Searching
 | Topic | Description |
 | -------- | --------|
 | Commits | TODO |
@@ -40,12 +40,12 @@
 | Advanced Regex | TODO |
 | Structural Search | TODO |
 
-## Scenarios: Search
+## Search Scenarios
 | Topic | Description |
 | -------- | --------|
 | How to Space | TODO |
 
-## Concepts: Code Navigation
+## Code Navigation
 | Topic | Description |
 | -------- | --------|
 | Search vs Precise | TODO |
@@ -55,28 +55,24 @@
 | Symbol search | TODO |
 
 
-## Concepts: Notebooks
+## Search Notebooks
 | Topic | Description |
 | -------- | --------|
 | Web-based vs File-based | Description |
 | Blocks | Description |
 
 
-## Concepts: Code Insights
+## Code Insights
 | Topic | Description |
 | -------- | --------|
 | Report Types | TODO |
 | Filters | TODO |
 | Dashboards | TODO |
 | Access & Sharing | TODO |
-
-
-## Scenarios: Code Insights
-| Topic | Description |
-| -------- | --------|
 | Link to how-to space | TODO |
 
-## Concepts: Batch Changes
+
+## Batch Changes
 | Topic | Description |
 | -------- | --------|
 | Workflow | TODO |
@@ -85,14 +81,10 @@
 | Publishing | TODO |
 | Updating | TODO |
 | Error Handling | TODO |
-
-
-## Scenarios: Batch Changes
-| Topic | Description |
-| -------- | --------|
 | Link to how-to space | TODO |
 
-## Concepts: Using GraphQL
+
+## Using GraphQL
 | Topic | Description |
 | -------- | --------|
 | UI vs API | TODO |
