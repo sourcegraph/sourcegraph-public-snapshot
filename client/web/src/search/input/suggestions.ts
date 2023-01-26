@@ -14,6 +14,7 @@ import {
     submitQueryInfo,
     queryRenderer,
     filterRenderer,
+    filterValueRenderer,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -126,7 +127,7 @@ function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number
         type: 'goto',
         url: `/${result.item.name}`,
     }
-    option.render = queryRenderer
+    option.render = filterValueRenderer
     return option
 }
 
@@ -233,7 +234,7 @@ function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number
         type: 'goto',
         url: result.item.url,
     }
-    option.render = queryRenderer
+    option.render = filterValueRenderer
     return option
 }
 

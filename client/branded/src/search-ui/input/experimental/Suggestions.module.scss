@@ -93,15 +93,18 @@
     display: flex;
     font-family: var(--code-font-family);
     font-size: 0.75rem;
+
+    .separator {
+        color: var(--search-filter-keyword-color);
+    }
+}
+
+.filter-field {
     color: var(--search-filter-keyword-color);
     background-color: var(--oc-blue-0);
     // border: 1px solid var(--oc-blue-1);
     border-radius: 3px;
     padding: 0;
-
-    .separator {
-        color: var(--search-filter-keyword-color);
-    }
 }
 
 .icon {
