@@ -98,6 +98,7 @@ var Formatting = Target{
 	Description: "Check client code and docs for formatting errors",
 	Checks: []*linter{
 		prettier,
+		bufFormat,
 	},
 }
 
