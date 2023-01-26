@@ -83,7 +83,8 @@ func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
 		_, err := s.cli.AzureServicesProfile(ctx)
 		return err
 	}
-	// If this isn't Azure DevOps Services, i.e. not https://dev.azure.com, return a basic connection check.
+	// If this isn't Azure DevOps Services, i.e. not https://dev.azure.com, return
+	// ok but log a warning because it is not supported.
 	s.logger.Warn("connection check for Azure DevOps Server is not supported, skipping.")
 	return nil
 }
