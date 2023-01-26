@@ -134,7 +134,8 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
             (updates: QueryUpdate[]) =>
                 submitSearch(
                     {
-                        history,
+                        historyOrNavigate: history,
+                        location: history.location,
                         source: 'filter',
                     },
                     updates

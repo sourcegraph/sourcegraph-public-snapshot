@@ -369,11 +369,14 @@ function initCodeIntelligence({
 
     const containerComponentUpdates = new Subject<void>()
 
+    const history = H.createBrowserHistory()
+
     subscription.add(
         registerHoverContributions({
             extensionsController,
             platformContext,
-            history: H.createBrowserHistory(),
+            historyOrNavigate: history,
+            location: history.location,
             locationAssign: location.assign.bind(location),
         })
     )

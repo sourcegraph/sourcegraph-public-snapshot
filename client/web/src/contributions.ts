@@ -1,6 +1,7 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 
 import * as H from 'history'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -8,41 +9,46 @@ import { registerHoverContributions } from '@sourcegraph/shared/src/hover/action
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
-    history: H.History
+    historyOrNavigate: H.History | NavigateFunction
+    location: H.Location
 }
 
 /**
  * A component that registers global contributions. It is implemented as a React component so that its
  * registrations use the React lifecycle.
  */
-export class GlobalContributions extends React.Component<Props> {
-    private subscriptions = new Subscription()
+export function GlobalContributions(props: Props): null {
+    const { extensionsController, platformContext, historyOrNavigate, location } = props
 
-    public componentDidMount(): void {
+    const [error, setError] = useState<null | Error>(null)
+
+    useEffect(() => {
         // Lazy-load `highlight/contributions.ts` to make main application bundle ~25kb Gzip smaller.
         import('@sourcegraph/common/src/util/markdown/contributions')
             .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
-            .catch(error => {
-                throw error // Throw error to the <ErrorBoundary />
-            })
+            .catch(setError)
+    }, [])
 
-        const { extensionsController } = this.props
+    useEffect(() => {
+        const subscriptions = new Subscription()
         if (extensionsController !== null) {
-            this.subscriptions.add(
+            subscriptions.add(
                 registerHoverContributions({
-                    ...this.props,
+                    platformContext,
+                    historyOrNavigate,
+                    location,
                     extensionsController,
-                    locationAssign: location.assign.bind(location),
+                    locationAssign: globalThis.location.assign.bind(location),
                 })
             )
         }
+        return () => subscriptions.unsubscribe()
+    })
+
+    // Throw error to the <ErrorBoundary />
+    if (error) {
+        throw error
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return null
-    }
+    return null
 }

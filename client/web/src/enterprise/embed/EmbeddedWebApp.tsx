@@ -100,7 +100,8 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                         <GlobalContributions
                             extensionsController={extensionsController}
                             platformContext={platformContext}
-                            history={history}
+                            historyOrNavigate={history}
+                            location={history.location}
                         />
                     </div>
                 </WildcardThemeContext.Provider>
