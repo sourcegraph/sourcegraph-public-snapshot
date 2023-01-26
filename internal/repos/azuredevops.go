@@ -79,9 +79,9 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
 func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
-	// If this isn't Azure DevOps Services (https://dev.azure.com), return a basic connection check.
+	// If this isn't Azure DevOps Services, i.e. not https://dev.azure.com, return a basic connection check.
 	if !s.cli.IsAzureDevOpsServices() {
-		return checkConnection("https://dev.azure.com")
+		return checkConnection(s.cli.URL.String())
 	}
 	_, err := s.cli.AzureServicesProfile(ctx)
 	return err
