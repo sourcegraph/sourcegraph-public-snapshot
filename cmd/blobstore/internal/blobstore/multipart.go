@@ -92,6 +92,11 @@ func (s *Service) getPendingUploadRaw(ctx context.Context, bucketName, uploadID 
 	return upload, nil
 }
 
+// Upserts a pending upload descriptor object (which describes that the upload exists, time it was
+// created, how many parts have been uploaded so far, etc.)
+//
+// This function holds a mutex to ensure that we do not upsert the object _while_ someone is doing
+// an atomic mutation of it via mutatePendingUploadAtomic
 func (s *Service) upsertPendingUpload(ctx context.Context, bucketName, uploadID string, upload *pendingUpload) error {
 	s.multipartUploadMu.Lock()
 	defer s.multipartUploadMu.Unlock()
@@ -104,6 +109,11 @@ func (s *Service) upsertPendingUploadRaw(ctx context.Context, bucketName, upload
 	return err
 }
 
+// Atomically mutates a pending upload descriptor object (which describes that the upload exists,
+// time it was created, how many parts have been uploaded so far, etc.)
+//
+// This function holds a mutex to ensure that between the time the object is read, mutated, and
+// written that nobody else upserts the object and loses their write.
 func (s *Service) mutatePendingUploadAtomic(ctx context.Context, bucketName, uploadID string, mutate func(*pendingUpload)) error {
 	s.multipartUploadMu.Lock()
 	defer s.multipartUploadMu.Unlock()
