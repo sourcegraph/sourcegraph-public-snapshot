@@ -2,6 +2,7 @@ package redispool
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -211,7 +212,7 @@ func (r *redisKeyValue) LPush(key string, value ...any) error {
 }
 
 func (r *redisKeyValue) LPop(key string, count int) Values {
-	return Values(r.do("LPOP", r.prefix+key, count))
+	return Values(r.do("LPOP", r.prefix+key, strconv.Itoa(count)))
 }
 
 func (r *redisKeyValue) LTrim(key string, start, stop int) error {
