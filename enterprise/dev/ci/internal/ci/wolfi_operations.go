@@ -35,24 +35,45 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	ops := operations.NewSet()
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
+	var stepKeys []string
 	for _, c := range changedFiles {
 		match := packageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
-			ops.Append(buildPackages(match[1]))
+			buildFunc, key := buildPackages(match[1])
+			stepKeys = append(stepKeys, key)
+			ops.Append(buildFunc)
 		} else {
 			logger.Fatal(fmt.Sprintf("Unable to extract package name from '%s', matches were %+v\n", c, match))
 		}
 	}
 
+	ops.Append(buildRepoIndex("main", stepKeys))
+
 	return ops
 }
 
-func buildPackages(target string) func(*bk.Pipeline) {
+func buildPackages(target string) (func(*bk.Pipeline), string) {
+	// TODO: Can this be sanitised?
+	stepKey := fmt.Sprintf("package-dependency-%s", target)
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
+			bk.Key(stepKey),
+		)
+	}, stepKey
+}
+
+func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(fmt.Sprintf(":card_index_dividers: Building and signing repository index for branch '%s'", branch),
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-repo-index.sh %s", branch)),
+			// We want to run on the bazel queue, so we have a pretty minimal agent.
+			bk.Agent("queue", "bazel"),
+			// Depend on all previous package building steps
+			bk.DependsOn(packageKeys...),
 		)
 	}
 }
