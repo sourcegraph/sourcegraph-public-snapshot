@@ -4,7 +4,6 @@ package shared
 
 import (
 	"context"
-	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -14,23 +13,17 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 var dataDir = env.Get("BLOBSTORE_DATA_DIR", "/data", "directory to store blobstore buckets and objects.")
@@ -63,11 +56,11 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	return server.Shutdown(ctx)
 }
 
-func run(logger log.Logger) error {
+func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
+	logger := observationCtx.Logger
+
 	// Ready immediately
-	ready := make(chan struct{})
-	close(ready)
-	go debugserver.NewServerRoutine(ready).Start()
+	ready()
 
 	service := &blobstore.Service{
 		DataDir:        dataDir,
@@ -80,7 +73,7 @@ func run(logger log.Logger) error {
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -122,31 +115,4 @@ func run(logger log.Logger) error {
 	})
 
 	return g.Wait()
-}
-
-func Main() {
-	stdlog.SetFlags(0)
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
-
-	logger := log.Scoped("server", "the blobstore service")
-
-	err := run(logger)
-	if err != nil {
-		logger.Fatal("blobstore failed", log.Error(err))
-	}
 }
