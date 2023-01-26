@@ -52,7 +52,6 @@ func Init(
 
 	queueHandler := newExecutorQueueHandler(
 		logger,
-		db,
 		queueOptions,
 		accessToken,
 		codeintelUploadHandler,
