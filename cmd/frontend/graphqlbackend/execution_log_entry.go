@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExecutionLogEntryResolver interface {
@@ -17,7 +17,7 @@ type ExecutionLogEntryResolver interface {
 	DurationMilliseconds() *int32
 }
 
-func NewExecutionLogEntryResolver(db database.DB, entry workerutil.ExecutionLogEntry) *executionLogEntryResolver {
+func NewExecutionLogEntryResolver(db database.DB, entry executor.ExecutionLogEntry) *executionLogEntryResolver {
 	return &executionLogEntryResolver{
 		db:    db,
 		entry: entry,
@@ -26,7 +26,7 @@ func NewExecutionLogEntryResolver(db database.DB, entry workerutil.ExecutionLogE
 
 type executionLogEntryResolver struct {
 	db    database.DB
-	entry workerutil.ExecutionLogEntry
+	entry executor.ExecutionLogEntry
 }
 
 var _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
