@@ -226,7 +226,7 @@ function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
  * Occurrence keyboard navigation is handled in {@link EditorView.domEventHandlers} instead of {@link keymap} facet
  * because events handled by the latter are not propagated to the screen readers.
  */
-function occurrenceKeyboardNavigation() {
+function occurrenceKeyboardNavigation(): Extension {
     return [
         EditorView.domEventHandlers({
             keydown: keyDownHandler,
