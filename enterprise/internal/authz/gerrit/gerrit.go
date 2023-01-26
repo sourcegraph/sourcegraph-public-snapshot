@@ -49,7 +49,7 @@ func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
-		return nil, errors.New("no account provided")
+		return nil, errors.New("no gerrit account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
@@ -57,7 +57,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, errors.New("no account data")
 	}
 
-	_, credentials, err := gerrit.GetExternalAccountData(ctx, &account.AccountData)
+	credentials, err := gerrit.GetExternalAccountCredentials(ctx, &account.AccountData)
 	if err != nil {
 		return nil, err
 	}
