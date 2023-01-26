@@ -81,7 +81,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                     styles.visibleChangesetApplyPreviewNodeListCell,
                     styles.visibleChangesetApplyPreviewNodeCurrentState,
                     styles.visibleChangesetApplyPreviewNodeStatusCell,
-                    'd-block d-sm-flex align-self-stretch'
+                    'd-block d-xs-flex align-self-stretch'
                 )}
             />
             <PreviewNodeIndicator node={node} />
