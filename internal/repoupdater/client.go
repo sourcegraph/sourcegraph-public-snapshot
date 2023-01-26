@@ -276,6 +276,79 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	return &result, nil
 }
 
+// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
+var MockExternalServiceRepositories func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceRepositoriesResult, error)
+
+// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
+
+// TODO : add parameter for count
+
+func (c *Client) ExternalServiceRepositories(ctx context.Context, externalServiceID int64) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+	if MockExternalServiceRepositories != nil {
+		return MockExternalServiceRepositories(ctx, externalServiceID)
+	}
+
+	// TODO Spans
+	//span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
+	//defer func() {
+	//	if result != nil {
+	//		span.SetTag("found", result.Repo != nil)
+	//	}
+	//	if err != nil {
+	//		ext.Error.Set(span, true)
+	//		span.SetTag("err", err.Error())
+	//	}
+	//	span.Finish()
+	//}()
+	//if args.Repo != "" {
+	//	span.SetTag("Repo", string(args.Repo))
+	//}
+
+	args := &protocol.ExternalServiceRepositoriesArgs{ExternalServiceID: externalServiceID}
+	resp, err := c.httpPost(ctx, "ext-svc-repos", args)
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// TODO Errors
+	//if resp.StatusCode != http.StatusOK {
+	//	// best-effort inclusion of body in error message
+	//	body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	//	return nil, errors.Errorf(
+	//		"RepoLookup for %+v failed with http status %d: %s",
+	//		args,
+	//		resp.StatusCode,
+	//		string(body),
+	//	)
+	//}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil {
+
+		// TODO Errors
+		//switch {
+		//case result.ErrorNotFound:
+		//	err = &ErrNotFound{
+		//		Repo:       args.Repo,
+		//		IsNotFound: true,
+		//	}
+		//case result.ErrorUnauthorized:
+		//	err = &ErrUnauthorized{
+		//		Repo:    args.Repo,
+		//		NoAuthz: true,
+		//	}
+		//case result.ErrorTemporarilyUnavailable:
+		//	err = &ErrTemporary{
+		//		Repo:        args.Repo,
+		//		IsTemporary: true,
+		//	}
+		//}
+	}
+	return result, err
+}
+
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {

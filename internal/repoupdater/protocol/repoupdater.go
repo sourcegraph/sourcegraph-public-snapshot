@@ -271,3 +271,11 @@ type ExternalServiceSyncRequest struct {
 type ExternalServiceSyncResult struct {
 	Error string
 }
+
+type ExternalServiceRepositoriesArgs struct {
+	ExternalServiceID int64
+}
+type ExternalServiceRepositoriesResult struct {
+	Repos []*types.Repo
+	Error string
+}

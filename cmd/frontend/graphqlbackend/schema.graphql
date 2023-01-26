@@ -934,6 +934,10 @@ input AddExternalServiceInput {
     This can be used both for a user and an organization.
     """
     namespace: ID
+    """
+    Whether the external service can be added without defining repository criteria.
+    """
+    discovery: Boolean! = false
 }
 
 """
@@ -2907,6 +2911,45 @@ type ExternalService implements Node {
     True if this external service configuration supports `exclude` parameter.
     """
     supportsRepoExclusion: Boolean!
+
+    """
+    The list of source repositories discoverable by this external service.
+    """
+    sourceRepos(first: Int): ExternalServiceSourceRepositoryConnection!
+}
+
+"""
+TODO: Desc
+"""
+type ExternalServiceSourceRepositoryConnection {
+    """
+    A list of repositories available on the source.
+    """
+    nodes: [ExternalServiceSourceRepo!]!
+
+    """
+    The total number of source repos in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+TODO: Desc
+"""
+type ExternalServiceSourceRepo implements Node {
+    """
+    The unique identifier of the sync job.
+    """
+    id: ID!
+    """
+    TODO
+    """
+    name: String!
 }
 
 """

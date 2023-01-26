@@ -48,6 +48,7 @@ type addExternalServiceInput struct {
 	DisplayName string
 	Config      string
 	Namespace   *graphql.ID
+	Discovery   bool
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
@@ -69,6 +70,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+		Discovery:   args.Input.Discovery,
 	}
 
 	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
@@ -444,3 +446,74 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 
 	return &EmptyResponse{}, nil
 }
+
+//
+//type externalServiceRepositoriesArgs struct {
+//	Input externalServiceRepositoriesInput
+//}
+//
+//type externalServiceRepositoriesInput struct {
+//	Kind        string
+//	DisplayName string
+//	Config      string
+//}
+//
+//func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceResolver, error) {
+//	start := time.Now()
+//	var err error
+//	defer reportExternalServiceDuration(start, Add, &err)
+//
+//	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+//		err = auth.ErrMustBeSiteAdmin
+//		return nil, err
+//	}
+//
+//	externalService := &types.ExternalService{
+//		Kind:        args.Input.Kind,
+//		DisplayName: args.Input.DisplayName,
+//		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+//	}
+//
+//	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
+//
+//	// if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExternalServiceRepositories(ctx, externalService); err != nil {
+//	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExternalServiceRepositories(ctx, args.Input.DisplayName, args.Input.Kind, extsvc.NewUnencryptedConfig(args.Input.Config)); err != nil {
+//		//TODO err handling
+//		// res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
+//	}
+//
+//	return res, err
+//}
+
+//func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *getExternalServiceRepositoriesArgs) (*externalServiceResolver, error) {
+//	start := time.Now()
+//	// 🚨 SECURITY: Only site admins may add external services. User's external services are not supported anymore.
+//	var err error
+//	defer reportExternalServiceDuration(start, Add, &err)
+//
+//	if err := externalServicesWritable(); err != nil {
+//		return nil, err
+//	}
+//
+//	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+//		err = auth.ErrMustBeSiteAdmin
+//		return nil, err
+//	}
+//
+//	externalService := &types.ExternalService{
+//		Kind:        args.Input.Kind,
+//		DisplayName: args.Input.DisplayName,
+//		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+//	}
+//
+//	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
+//		return nil, err
+//	}
+//
+//	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
+//	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
+//		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
+//	}
+//
+//	return res, nil
+//}

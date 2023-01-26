@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -213,6 +215,46 @@ type externalServiceSyncJobsArgs struct {
 
 func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
 	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
+}
+
+// TODO Mock sourceRepos() for tests
+
+func (r *externalServiceResolver) SourceRepos(ctx context.Context, args *externalServiceSourceReposArgs) (*externalServiceSourceRepositoryConnectionResolver, error) {
+	es := r.externalService
+	//parsed, err := extsvc.ParseEncryptableConfig(ctx, es.Kind, es.Config)
+	//if err != nil {
+	// TODO
+
+	//r.webhookErr = errors.Wrap(err, "parsing external service config")
+	//return
+	//}
+
+	// TODO Don't use default, pass client as argument
+	repoupdaterClient := repoupdater.DefaultClient
+
+	//// Set a timeout to validate external service sync. It usually fails in
+	//// under 5s if there is a problem.
+	//ctx, cancel := context.WithTimeout(ctx, timeout)
+	//defer cancel()
+
+	// ERROR HANDLING TODO
+
+	//var repositories []string
+	//for _, repo := range res.Repos {
+	//	repositories = append(repositories, string(repo.Name))
+	//}
+	//
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	return &externalServiceSourceRepositoryConnectionResolver{
+		db:                r.db,
+		args:              args,
+		externalService:   es,
+		externalServiceID: es.ID,
+		repoupdaterClient: repoupdaterClient,
+	}, nil
 }
 
 // mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
@@ -437,3 +479,100 @@ func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.Rep
 func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+
+type externalServiceSourceRepositoryConnectionResolver struct {
+	args              *externalServiceSourceReposArgs
+	externalServiceID int64
+	externalService   *types.ExternalService
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceSourceRepo
+	totalCount int32
+	err        error
+}
+
+type externalServiceSourceReposArgs struct {
+	First *int32
+}
+
+func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSourceRepo, int32, error) {
+	r.once.Do(func() {
+
+		// TODO Handle first arg
+		//opts := database.ExternalServicesGetSyncJobsOptions{
+		//	ExternalServiceID: r.externalServiceID,
+		//}
+		//if r.args.First != nil {
+		//	opts.LimitOffset = &database.LimitOffset{
+		//		Limit: int(*r.args.First),
+		//	}
+		//}
+		//r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
+		//if r.err != nil {
+		//	return
+		//}
+		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
+
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.externalService.ID)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		for _, repo := range res.Repos {
+			//r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ExternalServiceID: r.externalServiceID, CloneURLs: repo.CloneURLs(), Name: repo.Name})
+
+			r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ID: repo.ID, ExternalServiceID: r.externalServiceID, CloneURLs: make([]string, 0, 1), Name: repo.Name})
+		}
+		r.totalCount = int32(len(r.nodes))
+	})
+
+	return r.nodes, r.totalCount, r.err
+}
+
+func (r *externalServiceSourceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceSourceRepoResolver, error) {
+	sourceRepos, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceSourceRepoResolver, totalCount)
+	for i, j := range sourceRepos {
+		nodes[i] = &externalServiceSourceRepoResolver{
+			repo: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+func (r *externalServiceSourceRepositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	return totalCount, err
+}
+
+func (r *externalServiceSourceRepositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	jobs, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
+}
+
+type externalServiceSourceRepoResolver struct {
+	repo *types.ExternalServiceSourceRepo
+}
+
+func (r *externalServiceSourceRepoResolver) IDInt32() api.RepoID {
+	return r.repo.ID
+}
+
+func (r *externalServiceSourceRepoResolver) ID() graphql.ID {
+	return MarshalRepositoryID(r.IDInt32())
+}
+
+func (r *externalServiceSourceRepoResolver) Name() string {
+	return string(r.repo.Name)
+}

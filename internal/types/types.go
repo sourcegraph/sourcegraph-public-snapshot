@@ -588,6 +588,7 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	Discovery      bool       // Whether this external service can have no repository criteria defined.
 }
 
 type ExternalServiceRepo struct {
@@ -620,6 +621,21 @@ type ExternalServiceSyncJob struct {
 	ReposDeleted    int32
 	ReposModified   int32
 	ReposUnmodified int32
+}
+
+// TODO Descr
+type ExternalServiceSourceRepo struct {
+	ID                api.RepoID `json:"id"`
+	ExternalServiceID int64      `json:"externalServiceID"` //TODO Remove?
+	// RepoID            api.RepoID `json:"repoID"`
+
+	CloneURLs []string `json:"cloneURLs"`
+
+	Name api.RepoName `json:"name"`
+
+	//UserID            int32      `json:"userID"`
+	//OrgID             int32      `json:"orgID"`
+	//CreatedAt         time.Time  `json:"createdAt"`
 }
 
 // URN returns a unique resource identifier of this external service,

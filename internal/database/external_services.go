@@ -294,6 +294,8 @@ type ValidateExternalServiceConfigOptions struct {
 	Config string
 	// The list of authN providers configured on the instance.
 	AuthProviders []schema.AuthProviders
+	// If enabled then an external service does not require repository positive matching configuration options
+	DiscoveryModeAllowed bool
 }
 
 type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
@@ -358,7 +360,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, &c)
+			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, opt.DiscoveryModeAllowed, &c)
 
 		case extsvc.KindGitLab:
 			var c schema.GitLabConnection
@@ -428,7 +430,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
+func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) error, id int64, allowDiscovery bool, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range githubValidators {
 		err = errors.Append(err,
@@ -442,7 +444,7 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 	if c.Token == "" && c.GithubAppInstallationID == "" {
 		err = errors.Append(err, errors.New("at least one of token or githubAppInstallationID must be set"))
 	}
-	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
+	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil && !allowDiscovery {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 	return err
@@ -513,9 +515,10 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
-		Kind:          es.Kind,
-		Config:        rawConfig,
-		AuthProviders: confGet().AuthProviders,
+		Kind:                 es.Kind,
+		Config:               rawConfig,
+		AuthProviders:        confGet().AuthProviders,
+		DiscoveryModeAllowed: es.Discovery,
 	})
 	if err != nil {
 		return err
