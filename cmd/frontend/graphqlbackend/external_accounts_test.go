@@ -152,7 +152,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient(db))
+			sr := newSchemaResolver(db, gitserver.NewClient())
 
 			args := struct {
 				ServiceType    string
