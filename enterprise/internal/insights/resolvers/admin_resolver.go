@@ -267,7 +267,7 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(context.Context) (*int3
 }
 
 // ComputeNodes returns the list of nodes based on the pagination args.
-func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*backfillQueueItemResolver, error) {
+func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
 
 	backfillStore := scheduler.NewBackfillStore(a.insightsDB)
 	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{})
@@ -275,16 +275,25 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 		return nil, err
 	}
 
-	resolvers := make([]*backfillQueueItemResolver, 0, len(backfillItems))
+	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
 	for _, item := range backfillItems {
-		resolvers = append(resolvers, newBackfillQueueItemResolver(item))
+		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
+			BackfillID:   item.ID,
+			InsightTitle: item.InsightTitle,
+			CreatorID:    nil,
+			Label:        item.SeriesLabel,
+			Query:        item.SeriesSearchQuery,
+			BackfillStatus: &backfillStatusResolver{
+				queueItem: item,
+			},
+		})
 	}
 
 	return resolvers, nil
 }
 
 // MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *backfillQueueItemResolver, _ database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, _ database.OrderBy) (*string, error) {
 
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
@@ -334,36 +343,16 @@ func unmarshalBackfillItemCursor(cursor *string) (*itypes.Cursor, error) {
 	return spec, nil
 }
 
-func newBackfillQueueItemResolver(item scheduler.BackfillQueueItem) *backfillQueueItemResolver {
-	return &backfillQueueItemResolver{queueItem: item}
-}
+// func newBackfillQueueItemResolver(item scheduler.BackfillQueueItem) *BackfillQueueItemResolver {
+// 	return &BackfillQueueItemResolver{queueItem: item}
+// }
 
-type backfillQueueItemResolver struct {
-	queueItem scheduler.BackfillQueueItem
-}
-
-func (r *backfillQueueItemResolver) ID() graphql.ID {
-	return relay.MarshalID("backfill", r.queueItem.ID)
-}
-
-func (r *backfillQueueItemResolver) IDInt32() int32 {
-	return int32(r.queueItem.ID)
-}
-
-func (r *backfillQueueItemResolver) InsightViewTitle() string {
-	return r.queueItem.InsightTitle
-}
-func (r *backfillQueueItemResolver) Creator(ctx context.Context) (graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserResolver{}, errors.New("not implemented")
-}
-func (r *backfillQueueItemResolver) SeriesLabel() string {
-	return r.queueItem.SeriesLabel
-}
-func (r *backfillQueueItemResolver) SeriesSearchQuery() string {
-	return r.queueItem.SeriesSearchQuery
-}
-func (r *backfillQueueItemResolver) BackfillQueueStatus() (graphqlbackend.BackfillQueueStatusResolver, error) {
-	return &backfillStatusResolver{queueItem: r.queueItem}, nil
+func i32Ptr(n *int) *int32 {
+	if n != nil {
+		tmp := int32(*n)
+		return &tmp
+	}
+	return nil
 }
 
 type backfillStatusResolver struct {
@@ -374,16 +363,16 @@ func (r *backfillStatusResolver) State() string {
 	return r.queueItem.State
 }
 
-func (r *backfillStatusResolver) QueuePosition() *int {
+func (r *backfillStatusResolver) QueuePosition() *int32 {
 	return nil
 }
 
-func (r *backfillStatusResolver) Cost() *int {
+func (r *backfillStatusResolver) Cost() *int32 {
 	return nil
 }
 
-func (r *backfillStatusResolver) PercentComplete() *int {
-	return r.queueItem.PercentComplete
+func (r *backfillStatusResolver) PercentComplete() *int32 {
+	return i32Ptr(r.queueItem.PercentComplete)
 }
 
 func (r *backfillStatusResolver) CreatedAt() *gqlutil.DateTime {
@@ -397,8 +386,9 @@ func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
 func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
 }
-func (r *backfillStatusResolver) Errors() []string {
-	return []string{}
+func (r *backfillStatusResolver) Errors() *[]*string {
+	tmp := []*string{}
+	return &tmp
 }
 
 func (r *backfillStatusResolver) Runtime() *string {
