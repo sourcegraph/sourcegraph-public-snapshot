@@ -30,9 +30,10 @@ type Service struct {
 	Log            log.Logger
 	ObservationCtx *observation.Context
 
-	initOnce      sync.Once
-	bucketLocksMu sync.Mutex
-	bucketLocks   map[string]*sync.RWMutex
+	initOnce          sync.Once
+	bucketLocksMu     sync.Mutex
+	bucketLocks       map[string]*sync.RWMutex
+	multipartUploadMu sync.Mutex
 }
 
 func (s *Service) init() {
@@ -126,6 +127,8 @@ var (
 	ErrBucketAlreadyExists = errors.New("bucket already exists")
 	ErrNoSuchBucket        = errors.New("no such bucket")
 	ErrNoSuchKey           = errors.New("no such key")
+	ErrNoSuchUpload        = errors.New("no such upload")
+	ErrInvalidPartOrder    = errors.New("invalid part order")
 )
 
 func (s *Service) createBucket(ctx context.Context, name string) error {
