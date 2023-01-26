@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euf -o pipefail
+set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
@@ -47,7 +47,9 @@ pushd "$apkindex_build_dir"
 # Fetch all fragments from bucket
 gsutil -u "$GCP_PROJECT" cp "gs://$GCS_BUCKET/packages/$branch/$ARCH/*.APKINDEX.fragment" ./
 
-# Concat all fragments into one index and tar.gz it
+# Concat all fragments into a single index and tar.gz it
+# TODO: Handle case where there are no fragments more cleanly
+touch placeholder.APKINDEX.fragment
 cat ./*.APKINDEX.fragment >APKINDEX
 touch DESCRIPTION
 tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
