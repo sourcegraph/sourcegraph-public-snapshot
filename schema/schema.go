@@ -658,12 +658,6 @@ type ExcludedGitoliteRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
 }
-
-// Executors description: Configuration for executors
-type Executors struct {
-	// JobAccessToken description: Configuration for job access token
-	JobAccessToken *JobAccessToken `json:"job.accessToken,omitempty"`
-}
 type ExistingChangesetSpec struct {
 	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
 	BaseRepository string `json:"baseRepository"`
@@ -1275,14 +1269,6 @@ type InsightSeries struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven *Maven `json:"maven,omitempty"`
-}
-
-// JobAccessToken description: Configuration for job access token
-type JobAccessToken struct {
-	// Expiry description: Validity expressed in minutes of the unlock account token
-	Expiry int `json:"expiry,omitempty"`
-	// SigningKey description: Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
-	SigningKey string `json:"signingKey,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -2382,8 +2368,6 @@ type SiteConfiguration struct {
 	EmailTemplates *EmailTemplates `json:"email.templates,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
-	// Executors description: Configuration for executors
-	Executors *Executors `json:"executors,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
@@ -2584,7 +2568,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "email.smtp")
 	delete(m, "email.templates")
 	delete(m, "encryption.keys")
-	delete(m, "executors")
 	delete(m, "executors.accessToken")
 	delete(m, "executors.batcheshelperImage")
 	delete(m, "executors.batcheshelperImageTag")

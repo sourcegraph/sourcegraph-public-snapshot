@@ -1129,29 +1129,6 @@
       "type": "string",
       "minLength": 20
     },
-    "executors": {
-      "description": "Configuration for executors",
-      "type": "object",
-      "properties": {
-        "job.accessToken": {
-          "description": "Configuration for job access token",
-          "type": "object",
-          "properties": {
-            "signingKey": {
-              "description": "Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs",
-              "type": "string",
-              "group": "Authentication"
-            },
-            "expiry": {
-              "description": "Validity expressed in minutes of the unlock account token",
-              "type": "integer",
-              "group": "Authentication",
-              "default": 60
-            }
-          }
-        }
-      }
-    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",
