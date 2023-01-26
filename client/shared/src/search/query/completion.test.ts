@@ -3,7 +3,7 @@ import { isSearchMatchOfType, SearchMatch } from '../stream'
 
 import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
+import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
 
 expect.addSnapshotSerializer({
@@ -321,7 +321,24 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
-        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
+        ).toStrictEqual([
+            {
+                insertText: 'contains.content(${1:TODO}) ',
+                label: 'contains.content(...)',
+            },
+            {
+                insertText: 'has.content(${1:TODO}) ',
+                label: 'has.content(...)',
+            },
+            {
+                insertText: 'has.owner(${1}) ',
+                label: 'has.owner(...)',
+            },
+            {
+                insertText: '^connect\\.go$ ',
+                label: 'connect.go',
+            },
+        ])
     })
 
     test('sets current filter value as filterText', async () => {
@@ -340,7 +357,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['^jsonrpc'])
+        ).toStrictEqual(['contains.content(...)', 'has.content(...)', 'has.owner(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -359,7 +376,14 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^some/path/main\\.go$ '])
+        ).toMatchInlineSnapshot(`
+            [
+              "contains.content(\${1:TODO}) ",
+              "has.content(\${1:TODO}) ",
+              "has.owner(\${1}) ",
+              "^some/path/main\\\\.go$ "
+            ]
+        `)
     })
 
     test('escapes spaces in repo value', async () => {
