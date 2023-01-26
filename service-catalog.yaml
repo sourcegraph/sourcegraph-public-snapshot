@@ -8,14 +8,15 @@
 protected_services:
   # $ go run ./dev/depgraph/ summary internal/gitserver
   # union of all dependent commands
-  consumers:
-    - frontend
-    - repo-updater
-    - searcher
-    - symbols
-    - worker
-    - migrator
-    - precise-code-intel-worker
+  gitserver:
+    consumers:
+      - frontend
+      - repo-updater
+      - searcher
+      - symbols
+      - worker
+      - migrator
+      - precise-code-intel-worker
 
   # $ go run ./dev/depgraph/ summary internal/redispool
   # $ go run ./dev/depgraph/ summary internal/rcache
