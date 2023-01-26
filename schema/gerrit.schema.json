@@ -29,16 +29,10 @@
       "type": "string",
       "minLength": 1
     },
-    "authorization": {
+    "enforceRepositoryPermissions": {
       "title": "GerritAuthorization",
-      "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",
-      "type": "object",
-      "properties": {
-        "identityProvider": {
-          "description": "The identity provider to use for user information. If not set, the `url` field is used.",
-          "type": "string"
-        }
-      }
+      "description": "If true, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",
+      "type": "boolean"
     }
   }
 }

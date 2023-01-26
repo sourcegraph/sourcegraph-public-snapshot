@@ -882,16 +882,10 @@ type GerritAuthProvider struct {
 	Url string `json:"url"`
 }
 
-// GerritAuthorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
-type GerritAuthorization struct {
-	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
-	IdentityProvider string `json:"identityProvider,omitempty"`
-}
-
 // GerritConnection description: Configuration for a connection to Gerrit.
 type GerritConnection struct {
-	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
-	Authorization *GerritAuthorization `json:"authorization,omitempty"`
+	// EnforceRepositoryPermissions description: If true, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+	EnforceRepositoryPermissions bool `json:"enforceRepositoryPermissions,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
