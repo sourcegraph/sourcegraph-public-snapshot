@@ -771,6 +771,7 @@ importers:
       '@types/react': 18.0.8
       '@types/react-dom': 18.0.2
       buffer: ^6.0.3
+      classnames: ^2.2.6
       date-fns: ^2.16.1
       express: ^4.17.1
       https-browserify: ^1.0.0
@@ -795,6 +796,7 @@ importers:
       '@sourcegraph/http-client': link:../http-client
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
+      classnames: 2.3.1
       date-fns: 2.16.1
       https-browserify: 1.0.0
       js-base64: 3.7.2
