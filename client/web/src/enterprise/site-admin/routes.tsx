@@ -198,15 +198,15 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: props => <SiteAdminCodyPage {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
-        // Auth-related routes
+        // rbac-related routes
         {
             path: '/roles',
             exact: true,
             render: () => lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
                 () => import('./SiteAdminRolesPage'),
                 'SiteAdminRolesPage'
-            )
-        }
+            ),
+        },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]
 

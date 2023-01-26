@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
@@ -9,13 +9,15 @@ import { PageTitle } from '../../components/PageTitle'
 
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
 
-export const SiteAdminRolesPage: React.FunctionComponent<
-React.PropsWithChildren<SiteAdminRolesPageProps>
-> = ({ history, telemetryService }) => {
+export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
+    history,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
+    console.log('inside roles page')
     return (
         <div className="site-admin-roles-page">
             <PageTitle title="Roles - Admin" />

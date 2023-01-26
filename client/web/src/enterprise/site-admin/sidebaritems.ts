@@ -152,8 +152,9 @@ const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Roles',
             to: '/site-admin/roles',
-        }
-    ]
+            condition: ctx => ctx.isRbacEnabled
+        },
+    ],
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
