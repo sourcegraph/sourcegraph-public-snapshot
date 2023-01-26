@@ -1,5 +1,6 @@
 import { gql } from 'graphql-request';
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '../../../shared/src/auth'
+import { currentAuthStateQuery } from '../../../shared/src/auth'
 
 export interface Query<T> {
   gql(): string

@@ -2,13 +2,13 @@
   "name": "backstage-plugin-sourcegraph-common",
   "description": "Common functionalities for the Sourcegraph plugin",
   "version": "0.1.0",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "Apache-2.0",
   "private": true,
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.cjs.js",
+    "main": "dist/index.js",
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts"
   },
@@ -16,6 +16,7 @@
     "role": "common-library"
   },
   "scripts": {
+    "es": "ts-node --transpile-only ./scripts/esbuild.ts && cp package.dist.json dist/",
     "build": "backstage-cli package build",
     "lint": "backstage-cli package lint",
     "test": "backstage-cli package test",
@@ -26,9 +27,8 @@
   "devDependencies": {
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
-    "@types/highlight.js": "9.12.4",
+    "@sourcegraph/tsconfig": "^4.0.1",
     "@types/jest": "^29.4.0",
-    "highlight.js": "^10.5.0",
     "ts-jest": "^29.0.5"
   },
   "dependencies": {
