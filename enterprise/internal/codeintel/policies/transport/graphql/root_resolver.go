@@ -235,7 +235,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
 	for _, id := range ids {
 		db := r.policySvc.GetUnsafeDB()
-		repo, err := backend.NewRepos(logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

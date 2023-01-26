@@ -20,7 +20,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
     return {
         repositoryScope: {
             repositories,
-            repositoryCriteria: repoQuery,
+            repositoryCriteria: repoQuery || null,
         },
         dataSeries: series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             seriesId: series.id,
@@ -50,7 +50,7 @@ export function getCaptureGroupInsightUpdateInput(
     const [unit, value] = getStepInterval(step)
 
     return {
-        repositoryScope: { repositories, repositoryCriteria: repoQuery },
+        repositoryScope: { repositories, repositoryCriteria: repoQuery || null },
         dataSeries: [
             {
                 query,

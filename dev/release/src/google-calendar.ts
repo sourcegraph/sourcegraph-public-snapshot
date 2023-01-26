@@ -1,3 +1,6 @@
+import { createServer, IncomingMessage, Server, ServerResponse } from 'http'
+import { AddressInfo } from 'net'
+
 import { addMinutes } from 'date-fns'
 import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
@@ -7,42 +10,94 @@ import open from 'open'
 
 import { readLine, cacheFolder } from './util'
 
+export interface Installed {
+    client_id?: string
+    client_secret?: string
+    redirect_uri?: string
+}
+export interface OAuth2ClientOptions {
+    installed: Installed
+}
+
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
 
 export async function getClient(): Promise<OAuth2Client> {
-    const credentials = JSON.parse(
+    const credentials: OAuth2ClientOptions = JSON.parse(
         await readLine(
             'Paste Google Calendar credentials (1Password "Release automation Google Calendar API App credentials"): ',
             `${cacheFolder}/google-calendar-credentials.json`
         )
     )
-    const { client_secret, client_id, redirect_uris } = credentials.installed
-    const oauth2Client = new OAuth2Client(client_id, client_secret, redirect_uris[0])
-    oauth2Client.setCredentials(await getAccessToken(oauth2Client))
+    const oauth2Client = await authorize(credentials)
     return oauth2Client
 }
-
-async function getAccessToken(oauth2Client: OAuth2Client): Promise<Credentials> {
+async function authorize(credentials: OAuth2ClientOptions): Promise<OAuth2Client> {
+    let oauth2Client: OAuth2Client
     try {
-        const content = await readFile(TOKEN_PATH, { encoding: 'utf8' })
-        return JSON.parse(content)
+        const token = await getAccessCachedToken()
+        oauth2Client = new OAuth2Client({
+            clientId: credentials.installed.client_id,
+            clientSecret: credentials.installed.client_secret,
+            redirectUri: credentials.installed.redirect_uri,
+        })
+        oauth2Client.setCredentials(token)
+        return oauth2Client
     } catch {
-        const token = await getAccessTokenNoCache(oauth2Client)
+        const server = await new Promise<Server>(resolve => {
+            const serv = createServer()
+            serv.listen(0, () => resolve(serv))
+        })
+        const { port } = server.address() as AddressInfo
+        const oauth2Client = new OAuth2Client({
+            clientId: credentials.installed.client_id,
+            clientSecret: credentials.installed.client_id,
+            redirectUri: `http://localhost:${port}`,
+        })
+
+        const token = await getAccessTokenNoCache(server, oauth2Client)
         await writeFile(TOKEN_PATH, JSON.stringify(token))
-        return token
+        oauth2Client.setCredentials(token)
+        server.close()
+        return oauth2Client
     }
 }
 
-async function getAccessTokenNoCache(oauth2Client: OAuth2Client): Promise<Credentials> {
+async function getAccessCachedToken(): Promise<Credentials> {
+    const content = await readFile(TOKEN_PATH, { encoding: 'utf8' })
+    return JSON.parse(content)
+}
+
+async function getAccessTokenNoCache(server: Server, oauth2Client: OAuth2Client): Promise<Credentials> {
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
     })
-    await open(authUrl)
-    const code = await readLine('Log in via the browser page that just opened and enter the code that appears: ')
-    const token = await oauth2Client.getToken(code)
-    return token.tokens
+
+    const authCode = await new Promise<string>((resolve, reject) => {
+        server.on('request', (request: IncomingMessage, response: ServerResponse) => {
+            try {
+                const urlParts = new URL(request.url ?? '', 'http://localhost').searchParams
+                const code = urlParts.get('code')
+                const error = urlParts.get('error')
+                if (error) {
+                    throw new Error(error)
+                }
+                if (code) {
+                    resolve(code)
+                }
+                response.end('Authentication successful! Please return to the console')
+            } catch (error) {
+                reject(error)
+            }
+        })
+        open(authUrl, { wait: false })
+            .then(childProcess => childProcess.unref())
+            .catch(reject)
+    })
+
+    const { tokens } = await oauth2Client.getToken(authCode)
+    return tokens
 }
 
 export interface EventOptions {

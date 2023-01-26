@@ -35,7 +35,7 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
-		repoStore := backend.NewRepos(logger, db, gitserver.NewClient(db))
+		repoStore := backend.NewRepos(logger, db, gitserver.NewClient())
 
 		// Construct base handler, used in internal routes and as internal handler wrapped
 		// in the auth middleware defined on the next few lines

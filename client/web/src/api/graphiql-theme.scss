@@ -11,6 +11,8 @@
  * extensibility.
  **/
 
+@use 'wildcard/src/global-styles/forms';
+
 @import 'graphiql/graphiql.css';
 
 /* stylelint-disable selector-class-pattern */

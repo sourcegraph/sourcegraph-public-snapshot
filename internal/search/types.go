@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -106,8 +106,10 @@ type SymbolsParameters struct {
 	// First indicates that only the first n symbols should be returned.
 	First int
 
-	// Timeout in seconds.
-	Timeout int
+	// Timeout is the maximum amount of time the symbols search should take.
+	//
+	// If Timeout isn't specified, a default timeout of 60 seconds is used.
+	Timeout time.Duration
 }
 
 type SymbolsResponse struct {
