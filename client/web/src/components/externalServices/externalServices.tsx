@@ -1301,10 +1301,7 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
                 </li>
                 <li>
                     In the configuration below, set <Field>token</Field> to the authenticated token for the Azure DevOps
-                    Services/Server instance.
-                </li>
-                <li>
-                    See the{' '}
+                    Services/Server instance. See the{' '}
                     <Link to="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat">
                         Azure DevOps documentation
                     </Link>{' '}

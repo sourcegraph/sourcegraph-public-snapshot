@@ -13,9 +13,17 @@ import (
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	conf := &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
-		Username: "sgtestazure",
+		Username: "testuser",
 		Token:    "testtoken",
-		Projects: []string{"sgtestazure/sgtestazure"},
+		Projects: []string{"sgtestazure/sgtestazure", "sgtestazure/sg test with spaces"},
+		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
+			{
+				Name: "sg test with spaces/sg test with spaces",
+			},
+			{
+				Pattern: "^sgtestazure/sgtestazure[3-9]",
+			},
+		},
 	}
 	cf, save := newClientFactory(t, t.Name())
 	defer save(t)

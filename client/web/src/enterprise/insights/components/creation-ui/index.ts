@@ -1,7 +1,10 @@
 export * from './live-preview'
 export * from './creation-ui-layout/CreationUiLayout'
 
-export { getSanitizedRepositories, getSanitizedSeries } from './sanitizers'
+export { getSanitizedRepositories, getSanitizedSeries, getSanitizedRepositoryScope } from './sanitizers'
+
+export { RepoSettingSection } from './insight-repo-section/InsightRepoSection'
+export { useRepoFields } from './insight-repo-section/use-repo-fields'
 
 export { CodeInsightDashboardsVisibility } from './CodeInsightDashboardsVisibility'
 export { CodeInsightTimeStepPicker } from './code-insight-time-step-picker/CodeInsightTimeStepPicker'

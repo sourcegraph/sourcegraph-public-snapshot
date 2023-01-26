@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -34,4 +35,14 @@ func jsonResponseHandler(v any) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
+}
+
+// LocalCodeIntel is a no-op in the non-cgo variant.
+func (s *grpcService) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
+	return &proto.LocalCodeIntelResponse{}, nil
+}
+
+// SymbolInfo is a no-op in the non-cgo variant.
+func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+	return &proto.SymbolInfoResponse{}, nil
 }

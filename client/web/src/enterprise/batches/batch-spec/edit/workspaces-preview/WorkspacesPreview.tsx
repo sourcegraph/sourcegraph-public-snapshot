@@ -266,20 +266,6 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     {totalCountDisplay}
                 </WorkspacesListHeader>
                 {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
-                {exceedsLicense((totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
-                    <div className="d-flex flex-column align-items-center w-100 mb-3">
-                        <Alert variant="info">
-                            <div className="mb-2">
-                                <strong>
-                                    Your license only allows for {maxUnlicensedChangesets} changesets per batch change
-                                </strong>
-                            </div>
-                            If more than {maxUnlicensedChangesets} changesets are generated, you won't be able to apply
-                            the batch change and actually publish the changesets to the code host.
-                        </Alert>
-                    </div>
-                )}
-                {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
                 {!isReadOnly && (
                     <div className="d-flex flex-column align-items-center w-100 mb-3">
                         {error && <ErrorAlert error={error} className="w-100 mb-0" />}
@@ -299,10 +285,16 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                     </div>
                 )}
                 {totalCount !== null && totalCount >= WORKSPACE_WARNING_MIN_TOTAL_COUNT && (
-                    <div className="d-flex flex-column align-items-center w-100 mb-3">
-                        <CTASizeWarning totalCount={totalCount} />
+                    <div className="d-flex flex-column align-items-center w-100">
+                        <CTASizeWarning />
                     </div>
                 )}
+                {totalCount !== null &&
+                    exceedsLicense(totalCount + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
+                        <div className="d-flex flex-column align-items-center w-100">
+                            <CTALicenseWarning maxCount={maxUnlicensedChangesets} />
+                        </div>
+                    )}
                 {(hasPreviewed || isReadOnly) && (
                     <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
                 )}
@@ -351,16 +343,16 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     )
 }
 
-const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({ totalCount }) => (
-    <Alert variant="warning">
-        <div className="mb-2">
-            <strong>
-                It's over <s>9000</s> {WORKSPACE_WARNING_MIN_TOTAL_COUNT}!
-            </strong>
-        </div>
-        Batch changes with more than {WORKSPACE_WARNING_MIN_TOTAL_COUNT} workspaces may be unwieldy to manage. We're
-        working on providing more filtering options, and you can continue with this batch change if you want, but you
-        may want to break it into {Math.ceil(totalCount / WORKSPACE_WARNING_MIN_TOTAL_COUNT)} or more batch changes if
-        you can.
+const CTASizeWarning: React.FunctionComponent = () => (
+    <Alert variant="note" className="mb-2">
+        The experience is currently optimized for batch changes targeting up to {WORKSPACE_WARNING_MIN_TOTAL_COUNT}{' '}
+        workspaces. Break your batch change down into several smaller batch changes for a better experience.
+    </Alert>
+)
+
+const CTALicenseWarning: React.FunctionComponent<React.PropsWithChildren<{ maxCount: number }>> = ({ maxCount }) => (
+    <Alert variant="note" className="mb-2">
+        Your license only allows for {maxCount} changesets per batch change. If more than {maxCount} changesets are
+        generated, you won't be able to apply the batch change and actually publish the changesets to the code host.
     </Alert>
 )

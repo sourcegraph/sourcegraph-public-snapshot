@@ -111,6 +111,57 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
+const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
+    All: {
+        label: 'All',
+        value: 'all',
+        tooltip: 'Show all repositories',
+        args: {},
+    },
+    Cloned: {
+        label: 'Cloned',
+        value: 'cloned',
+        tooltip: 'Show cloned repositories only',
+        args: { cloneStatus: 'CLONED' },
+    },
+    Cloning: {
+        label: 'Cloning',
+        value: 'cloning',
+        tooltip: 'Show repositories currently being cloned only',
+        args: { cloneStatus: 'CLONING' },
+    },
+    NotCloned: {
+        label: 'Not cloned',
+        value: 'not-cloned',
+        tooltip: 'Show only repositories that have not been cloned yet',
+        args: { cloneStatus: 'NOT_CLONED' },
+    },
+    Indexed: {
+        label: 'Indexed',
+        value: 'indexed',
+        tooltip: 'Show only repositories that have already been indexed',
+        args: { notIndexed: false },
+    },
+    NeedsIndex: {
+        label: 'Needs index',
+        value: 'needs-index',
+        tooltip: 'Show only repositories that need to be indexed',
+        args: { indexed: false },
+    },
+    FailedFetchOrClone: {
+        label: 'Failed fetch/clone',
+        value: 'failed-fetch',
+        tooltip: 'Show only repositories that have failed to fetch or clone',
+        args: { failedFetch: true },
+    },
+    Corrupted: {
+        label: 'Corrupted',
+        value: 'corrupted',
+        tooltip: 'Show only repositories which are corrupt',
+        args: { corrupted: true },
+    },
+}
+
 const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'order',
@@ -159,56 +210,7 @@ const FILTERS: FilteredConnectionFilter[] = [
         id: 'status',
         label: 'Status',
         type: 'select',
-        values: [
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all repositories',
-                args: {},
-            },
-            {
-                label: 'Cloned',
-                value: 'cloned',
-                tooltip: 'Show cloned repositories only',
-                args: { cloneStatus: 'CLONED' },
-            },
-            {
-                label: 'Cloning',
-                value: 'cloning',
-                tooltip: 'Show repositories currently being cloned only',
-                args: { cloneStatus: 'CLONING' },
-            },
-            {
-                label: 'Not cloned',
-                value: 'not-cloned',
-                tooltip: 'Show only repositories that have not been cloned yet',
-                args: { cloneStatus: 'NOT_CLONED' },
-            },
-            {
-                label: 'Indexed',
-                value: 'indexed',
-                tooltip: 'Show only repositories that have already been indexed',
-                args: { notIndexed: false },
-            },
-            {
-                label: 'Needs index',
-                value: 'needs-index',
-                tooltip: 'Show only repositories that need to be indexed',
-                args: { indexed: false },
-            },
-            {
-                label: 'Failed fetch/clone',
-                value: 'failed-fetch',
-                tooltip: 'Show only repositories that have failed to fetch or clone',
-                args: { failedFetch: true },
-            },
-            {
-                label: 'Corrupted',
-                value: 'corrupted',
-                tooltip: 'Show only repositories which are corrupt',
-                args: { corrupted: true },
-            },
-        ],
+        values: Object.values(STATUS_FILTERS),
     },
 ]
 
@@ -251,73 +253,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             stopPolling()
         }
     }, [data, startPolling, stopPolling])
-
-    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
-        if (!data) {
-            return undefined
-        }
-        const items: ValueLegendListProps['items'] = [
-            {
-                value: data.repositoryStats.total,
-                description: 'Repositories',
-                color: 'var(--purple)',
-                tooltip:
-                    'Total number of repositories in the Sourcegraph instance. This number might be higher than the total number of repositories in the list below in case repository permissions do not allow you to view some repositories.',
-            },
-            {
-                value: data.repositoryStats.notCloned,
-                description: 'Not cloned',
-                color: 'var(--body-color)',
-                position: 'right',
-                tooltip: 'The number of repositories that have not been cloned yet.',
-                filter: { name: 'status', value: 'not-cloned' },
-            },
-            {
-                value: data.repositoryStats.cloning,
-                description: 'Cloning',
-                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
-                position: 'right',
-                tooltip: 'The number of repositories that are currently being cloned.',
-                filter: { name: 'status', value: 'cloning' },
-            },
-            {
-                value: data.repositoryStats.cloned,
-                description: 'Cloned',
-                color: 'var(--body-color)',
-                position: 'right',
-                tooltip: 'The number of repositories that have been cloned.',
-                filter: { name: 'status', value: 'cloned' },
-            },
-            {
-                value: data.repositoryStats.indexed,
-                description: 'Indexed',
-                color: 'var(--body-color)',
-                position: 'right',
-                tooltip: 'The number of repositories that have been indexed for search.',
-                filter: { name: 'status', value: 'indexed' },
-            },
-            {
-                value: data.repositoryStats.failedFetch,
-                description: 'Failed',
-                color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
-                position: 'right',
-                tooltip: 'The number of repositories where the last syncing attempt produced an error.',
-                filter: { name: 'status', value: 'failed-fetch' },
-            },
-        ]
-        if (data.repositoryStats.corrupted > 0) {
-            items.push({
-                value: data.repositoryStats.corrupted,
-                description: 'Corrupted',
-                color: 'var(--danger)',
-                position: 'right',
-                tooltip:
-                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
-                filter: { name: 'status', value: 'corrupted' },
-            })
-        }
-        return items
-    }, [data])
 
     const {
         loading: extSvcLoading,
@@ -365,9 +300,102 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         getFilterFromURL(new URLSearchParams(location.search), filters)
     )
 
-    useEffect(() => {
-        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
-    }, [filters, location.search])
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!data) {
+            return undefined
+        }
+        const items: ValueLegendListProps['items'] = [
+            {
+                value: data.repositoryStats.total,
+                description: 'Repositories',
+                color: 'var(--purple)',
+                tooltip:
+                    'Total number of repositories in the Sourcegraph instance. This number might be higher than the total number of repositories in the list below in case repository permissions do not allow you to view some repositories.',
+            },
+            {
+                value: data.repositoryStats.notCloned,
+                description: 'Not cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have not been cloned yet.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.NotCloned)
+                        return newValues
+                    }),
+            },
+            {
+                value: data.repositoryStats.cloning,
+                description: 'Cloning',
+                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that are currently being cloned.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Cloning)
+                        return newValues
+                    }),
+            },
+            {
+                value: data.repositoryStats.cloned,
+                description: 'Cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been cloned.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Cloned)
+                        return newValues
+                    }),
+            },
+            {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Indexed)
+                        return newValues
+                    }),
+            },
+            {
+                value: data.repositoryStats.failedFetch,
+                description: 'Failed',
+                color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.FailedFetchOrClone)
+                        return newValues
+                    }),
+            },
+        ]
+        if (data.repositoryStats.corrupted > 0) {
+            items.push({
+                value: data.repositoryStats.corrupted,
+                description: 'Corrupted',
+                color: 'var(--danger)',
+                position: 'right',
+                tooltip:
+                    'The number of repositories where corruption has been detected. Reclone these repositories to get rid of corruption.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Corrupted)
+                        return newValues
+                    }),
+            })
+        }
+        return items
+    }, [data, setFilterValues])
 
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''

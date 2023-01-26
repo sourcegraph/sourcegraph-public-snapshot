@@ -297,16 +297,3 @@ func extractLanguageFromIndexerName(indexerName string) string {
 
 	return ""
 }
-
-// flattenNonEmptyMap returns an ordered slice of the keys from the given map, excluding the empty string.
-func flattenNonEmptyMap(m map[string]struct{}) []string {
-	s := make([]string, 0, len(m))
-	for k := range m {
-		if k != "" {
-			s = append(s, k)
-		}
-	}
-	sort.Strings(s)
-
-	return s
-}

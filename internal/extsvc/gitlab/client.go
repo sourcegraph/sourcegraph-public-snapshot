@@ -178,8 +178,6 @@ type Client struct {
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
 	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
-
-	tokenRefresher oauthutil.TokenRefresher
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.

@@ -12,8 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
-
 // Repository is a repository in which the steps of a batch spec are executed.
 //
 // It is part of the cache.ExecutionKey, so changes to the names of fields here

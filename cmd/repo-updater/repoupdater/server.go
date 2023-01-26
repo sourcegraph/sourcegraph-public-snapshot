@@ -378,6 +378,7 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 	s.respond(w, http.StatusOK, nil)
 }
 
+// TODO(naman): remove this while removing old perms syncer
 func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
 	if s.DatabaseBackedPermissionSyncerEnabled != nil && s.DatabaseBackedPermissionSyncerEnabled(r.Context()) {
 		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
