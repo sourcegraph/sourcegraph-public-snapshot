@@ -4,18 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ListTeamsOpts struct {
-	LimitOffset
+	*LimitOffset
 
 	// Only return teams past this cursor.
 	Cursor int32
@@ -26,31 +27,25 @@ type ListTeamsOpts struct {
 	RootOnly bool
 	// Filter teams by search term. Currently, name and displayName are searchable.
 	Search string
-	// Include child teams of teams. This is mostly useful in count operations, less
-	// so in list operations.
-	IncludeChildTeams bool
 	// List teams that a specific user is a member of.
 	ForUserMember int32
 }
 
 func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("id > %s", opts.Cursor),
+		sqlf.Sprintf("teams.id >= %s", opts.Cursor),
 	}
 	joins = []*sqlf.Query{}
 
 	if opts.WithParentID != 0 {
-		conds = append(conds, sqlf.Sprintf("parent_team_id = %s", opts.WithParentID))
+		conds = append(conds, sqlf.Sprintf("teams.parent_team_id = %s", opts.WithParentID))
 	}
 	if opts.RootOnly {
-		conds = append(conds, sqlf.Sprintf("parent_team_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("teams.parent_team_id IS NULL"))
 	}
 	if opts.Search != "" {
-		// TODO: Proper encoding.
-		conds = append(conds, sqlf.Sprintf("(team.name ILIKE %s OR team.display_name ILIKE %s)", opts.Search, opts.Search))
-	}
-	if opts.IncludeChildTeams {
-		// TODO
+		term := "%" + opts.Search + "%"
+		conds = append(conds, sqlf.Sprintf("(teams.name ILIKE %s OR teams.display_name ILIKE %s)", term, term))
 	}
 	if opts.ForUserMember != 0 {
 		joins = append(joins, sqlf.Sprintf("JOIN team_members ON team_members.team_id = teams.id"))
@@ -66,7 +61,7 @@ type TeamMemberListCursor struct {
 }
 
 type ListTeamMembersOpts struct {
-	LimitOffset
+	*LimitOffset
 
 	// Only return members past this cursor.
 	Cursor TeamMemberListCursor
@@ -75,14 +70,11 @@ type ListTeamMembersOpts struct {
 	// Filter members by search term. Currently, name and displayName of the users
 	// are searchable.
 	Search string
-	// Include members of child teams of TeamID. This is mostly useful in count
-	// operations, less so in list operations.
-	IncludeChildTeamMembers bool
 }
 
 func (opts ListTeamMembersOpts) SQL() (where, joins []*sqlf.Query) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("team_id > %s AND user_id > %s", opts.Cursor.TeamID, opts.Cursor.UserID),
+		sqlf.Sprintf("team_members.team_id >= %s AND team_members.user_id >= %s", opts.Cursor.TeamID, opts.Cursor.UserID),
 	}
 	joins = []*sqlf.Query{}
 
@@ -90,12 +82,9 @@ func (opts ListTeamMembersOpts) SQL() (where, joins []*sqlf.Query) {
 		conds = append(conds, sqlf.Sprintf("team_members.team_id = %s", opts.TeamID))
 	}
 	if opts.Search != "" {
-		joins = append(joins, sqlf.Sprintf("JOIN users ON users.id = team_members.id"))
-		// TODO: Proper encoding.
-		conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", opts.Search, opts.Search))
-	}
-	if opts.IncludeChildTeamMembers {
-		// TODO
+		joins = append(joins, sqlf.Sprintf("JOIN users ON users.id = team_members.user_id"))
+		term := "%" + opts.Search + "%"
+		conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", term, term))
 	}
 
 	return conds, joins
@@ -114,9 +103,15 @@ func (TeamNotFoundError) NotFound() bool {
 	return true
 }
 
+// ErrTeamNameAlreadyExists is returned when the team name is already in use, either
+// by another team or another user/org.
+var ErrTeamNameAlreadyExists = errors.New("team name is already taken (by a user, organization, or another team)")
+
 // TeamStore provides database methods for interacting with teams and their members.
 type TeamStore interface {
 	basestore.ShareableStore
+	Done(error) error
+
 	// GetTeam returns the given team by ID. If not found, a NotFounder error is returned.
 	GetTeam(ctx context.Context, id int32) (*types.Team, error)
 	// ListTeams lists teams given the options. The matching teams, plus the next cursor are
@@ -187,13 +182,15 @@ func (s *teamStore) GetTeam(ctx context.Context, id int32) (*types.Team, error) 
 const getTeamQueryFmtstr = `
 SELECT %s
 FROM teams
-%s
+WHERE
+	%s
+LIMIT 1
 `
 
 func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*types.Team, next int32, err error) {
 	conds, joins := opts.SQL()
 
-	if opts.Limit > 0 {
+	if opts.LimitOffset != nil && opts.Limit > 0 {
 		opts.Limit++
 	}
 
@@ -210,7 +207,7 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 		return nil, 0, err
 	}
 
-	if opts.Limit > 0 && len(teams) == opts.Limit+1 {
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(teams) == opts.Limit {
 		next = teams[len(teams)-1].ID
 		teams = teams[:len(teams)-1]
 	}
@@ -223,9 +220,9 @@ SELECT %s
 FROM teams
 %s
 WHERE %s
-%s
 ORDER BY
 	teams.id ASC
+%s
 `
 
 func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error) {
@@ -237,7 +234,6 @@ func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, 
 		countTeamsQueryFmtstr,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
-		opts.LimitOffset.SQL(),
 	)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
@@ -254,13 +250,13 @@ WHERE %s
 func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (_ []*types.TeamMember, next *TeamMemberListCursor, err error) {
 	conds, joins := opts.SQL()
 
-	if opts.Limit > 0 {
+	if opts.LimitOffset != nil && opts.Limit > 0 {
 		opts.Limit++
 	}
 
 	q := sqlf.Sprintf(
 		listTeamMembersQueryFmtstr,
-		sqlf.Join(teamColumns, ","),
+		sqlf.Join(teamMemberColumns, ","),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 		opts.LimitOffset.SQL(),
@@ -271,7 +267,7 @@ func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpt
 		return nil, nil, err
 	}
 
-	if opts.Limit > 0 && len(tms) == opts.Limit+1 {
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(tms) == opts.Limit {
 		next = &TeamMemberListCursor{
 			TeamID: tms[len(tms)-1].TeamID,
 			UserID: tms[len(tms)-1].UserID,
@@ -287,9 +283,9 @@ SELECT %s
 FROM team_members
 %s
 WHERE %s
-%s
 ORDER BY
 	team_members.team_id ASC, team_members.user_id ASC
+%s
 `
 
 func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (int32, error) {
@@ -301,7 +297,6 @@ func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOp
 		countTeamMembersQueryFmtstr,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
-		opts.LimitOffset.SQL(),
 	)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
@@ -315,7 +310,15 @@ FROM team_members
 WHERE %s
 `
 
-func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) error {
+func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
 	if team.CreatedAt.IsZero() {
 		team.CreatedAt = timeutil.Now()
 	}
@@ -328,23 +331,69 @@ func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) error {
 		createTeamQueryFmtstr,
 		sqlf.Join(teamInsertColumns, ","),
 		team.Name,
-		&dbutil.NullString{S: team.DisplayName},
+		dbutil.NewNullString(team.DisplayName),
 		team.ReadOnly,
-		&dbutil.NullInt32{N: &team.ParentTeamID},
+		dbutil.NewNullInt32(team.ParentTeamID),
+		dbutil.NewNullInt32(team.CreatorID),
 		team.CreatedAt,
 		team.UpdatedAt,
 		sqlf.Join(teamColumns, ","),
 	)
 
-	row := s.QueryRow(ctx, q)
-	return scanTeam(row, team)
+	row := tx.Handle().QueryRowContext(
+		ctx,
+		q.Query(sqlf.PostgresBindVar),
+		q.Args()...,
+	)
+	if err := row.Err(); err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) {
+			switch e.ConstraintName {
+			case "teams_name":
+				return ErrTeamNameAlreadyExists
+			case "orgs_name_max_length", "orgs_name_valid_chars":
+				return errors.Errorf("team name invalid: %s", e.ConstraintName)
+			case "orgs_display_name_max_length":
+				return errors.Errorf("team display name invalid: %s", e.ConstraintName)
+			}
+		}
+
+		return err
+	}
+
+	if err := scanTeam(row, team); err != nil {
+		return err
+	}
+
+	q = sqlf.Sprintf(createTeamNameReservationQueryFmtstr, team.Name, team.ID)
+
+	// Reserve team name in shared users+orgs+teams namespace.
+	if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) {
+			switch e.ConstraintName {
+			case "names_pkey":
+				return ErrTeamNameAlreadyExists
+			}
+		}
+		return err
+	}
+
+	return nil
 }
 
 const createTeamQueryFmtstr = `
 INSERT INTO teams
 (%s)
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
+`
+
+const createTeamNameReservationQueryFmtstr = `
+INSERT INTO names
+	(name, team_id)
+VALUES
+	(%s, %s)
 `
 
 func (s *teamStore) UpdateTeam(ctx context.Context, team *types.Team) error {
@@ -356,51 +405,76 @@ func (s *teamStore) UpdateTeam(ctx context.Context, team *types.Team) error {
 
 	q := sqlf.Sprintf(
 		updateTeamQueryFmtstr,
-		team.Name,
-		&dbutil.NullString{S: team.DisplayName},
-		&dbutil.NullInt32{N: &team.ParentTeamID},
+		dbutil.NewNullString(team.DisplayName),
+		dbutil.NewNullInt32(team.ParentTeamID),
 		team.UpdatedAt,
 		sqlf.Join(conds, "AND"),
 		sqlf.Join(teamColumns, ","),
-		sqlf.Join(conds, "AND"),
 	)
 
-	row := s.QueryRow(ctx, q)
-	return scanTeam(row, team)
+	return scanTeam(s.QueryRow(ctx, q), team)
 }
 
 const updateTeamQueryFmtstr = `
-WITH update AS (
-	UPDATE
-		teams
-	SET
-		name = %s,
-		display_name = %s,
-		parent_team_id = %s,
-		updated_at = %s
-	WHERE
-		%s
-)
-SELECT
-	%s
-FROM
+UPDATE
 	teams
+SET
+	display_name = %s,
+	parent_team_id = %s,
+	updated_at = %s
 WHERE
+	%s
+RETURNING
 	%s
 `
 
-func (s *teamStore) DeleteTeam(ctx context.Context, team int32) error {
+func (s *teamStore) DeleteTeam(ctx context.Context, team int32) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("teams.id =%s", team),
+		sqlf.Sprintf("teams.id = %s", team),
 	}
 
 	q := sqlf.Sprintf(deleteTeamQueryFmtstr, sqlf.Join(conds, "AND"))
-	return s.Exec(ctx, q)
+
+	res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return TeamNotFoundError{id: team}
+	}
+
+	conds = []*sqlf.Query{
+		sqlf.Sprintf("names.team_id = %s", team),
+	}
+
+	q = sqlf.Sprintf(deleteTeamNameReservationQueryFmtstr, sqlf.Join(conds, "AND"))
+
+	// Release the teams name so it can be used by another user, team or org.
+	_, err = tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 const deleteTeamQueryFmtstr = `
 DELETE FROM
 	teams
+WHERE %s
+`
+
+const deleteTeamNameReservationQueryFmtstr = `
+DELETE FROM
+	names
 WHERE %s
 `
 
@@ -446,12 +520,12 @@ func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.Team
 }
 
 func (s *teamStore) DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error {
-	ms := [][2]int32{}
+	ms := []*sqlf.Query{}
 	for _, m := range members {
-		ms = append(ms, [2]int32{m.TeamID, m.UserID})
+		ms = append(ms, sqlf.Sprintf("(%s, %s)", m.TeamID, m.UserID))
 	}
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("(team_id, user_id) = ANY(%s)", pq.Array(ms)),
+		sqlf.Sprintf("(team_id, user_id) IN (%s)", sqlf.Join(ms, ",")),
 	}
 
 	q := sqlf.Sprintf(deleteTeamMemberQueryFmtstr, sqlf.Join(conds, "AND"))
@@ -468,8 +542,9 @@ var teamColumns = []*sqlf.Query{
 	sqlf.Sprintf("teams.id"),
 	sqlf.Sprintf("teams.name"),
 	sqlf.Sprintf("teams.display_name"),
-	sqlf.Sprintf("teams.read_only"),
+	sqlf.Sprintf("teams.readonly"),
 	sqlf.Sprintf("teams.parent_team_id"),
+	sqlf.Sprintf("teams.creator_id"),
 	sqlf.Sprintf("teams.created_at"),
 	sqlf.Sprintf("teams.updated_at"),
 }
@@ -477,8 +552,9 @@ var teamColumns = []*sqlf.Query{
 var teamInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("display_name"),
-	sqlf.Sprintf("read_only"),
+	sqlf.Sprintf("readonly"),
 	sqlf.Sprintf("parent_team_id"),
+	sqlf.Sprintf("creator_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -504,26 +580,29 @@ var teamMemberInsertColumns = []string{
 	"updated_at",
 }
 
-var scanTeams = basestore.NewSliceScanner(func(s dbutil.Scanner) (t *types.Team, _ error) {
-	err := scanTeam(s, t)
-	return t, err
+var scanTeams = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.Team, error) {
+	var t types.Team
+	err := scanTeam(s, &t)
+	return &t, err
 })
 
 func scanTeam(sc dbutil.Scanner, t *types.Team) error {
 	return sc.Scan(
 		&t.ID,
 		&t.Name,
-		&dbutil.NullString{S: t.DisplayName},
+		&dbutil.NullString{S: &t.DisplayName},
 		&t.ReadOnly,
 		&dbutil.NullInt32{N: &t.ParentTeamID},
+		&dbutil.NullInt32{N: &t.CreatorID},
 		&t.CreatedAt,
 		&t.UpdatedAt,
 	)
 }
 
-var scanTeamMembers = basestore.NewSliceScanner(func(s dbutil.Scanner) (t *types.TeamMember, _ error) {
-	err := scanTeamMember(s, t)
-	return t, err
+var scanTeamMembers = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.TeamMember, error) {
+	var t types.TeamMember
+	err := scanTeamMember(s, &t)
+	return &t, err
 })
 
 func scanTeamMember(sc dbutil.Scanner, tm *types.TeamMember) error {

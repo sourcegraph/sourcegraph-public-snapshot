@@ -1798,9 +1798,10 @@ type SlowRequest struct {
 type Team struct {
 	ID           int32
 	Name         string
-	DisplayName  *string
+	DisplayName  string
 	ReadOnly     bool
 	ParentTeamID int32
+	CreatorID    int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
