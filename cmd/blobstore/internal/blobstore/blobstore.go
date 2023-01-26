@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -85,7 +86,7 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
 			bucketName := path[0]
 			objectName := path[1]
-			if err := s.putObject(ctx, bucketName, objectName, r.Body); err != nil {
+			if _, err := s.putObject(ctx, bucketName, objectName, r.Body); err != nil {
 				if err == ErrNoSuchBucket {
 					return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusNotFound)
 				}
@@ -148,7 +149,11 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 	return nil
 }
 
-func (s *Service) putObject(ctx context.Context, bucketName, objectName string, data io.ReadCloser) error {
+type objectMetadata struct {
+	LastModified time.Time
+}
+
+func (s *Service) putObject(ctx context.Context, bucketName, objectName string, data io.ReadCloser) (*objectMetadata, error) {
 	defer data.Close()
 	_ = ctx
 
@@ -160,24 +165,26 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	// Does the bucket exist?
 	bucketDir := s.bucketDir(bucketName)
 	if _, err := os.Stat(bucketDir); err != nil {
-		return ErrNoSuchBucket
+		return nil, ErrNoSuchBucket
 	}
 
 	// Write the object, relying on an atomic filesystem rename operation to prevent any parallel read/write issues.
 	tmpFile, err := os.CreateTemp(bucketDir, "*-"+strip(objectName))
 	if err != nil {
-		return errors.Wrap(err, "creating tmp file")
+		return nil, errors.Wrap(err, "creating tmp file")
 	}
 	defer os.Remove(tmpFile.Name())
 	if _, err := io.Copy(tmpFile, data); err != nil {
-		return errors.Wrap(err, "copying data into tmp file")
+		return nil, errors.Wrap(err, "copying data into tmp file")
 	}
 	objectFile := s.objectFile(bucketName, objectName)
 	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
-		return errors.Wrap(err, "renaming object file")
+		return nil, errors.Wrap(err, "renaming object file")
 	}
 	s.Log.Debug("put object", sglog.String("key", bucketName+"/"+objectName))
-	return nil
+	return &objectMetadata{
+		LastModified: time.Now().UTC(), // logically right now, no reason to consult filesystem
+	}, nil
 }
 
 func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
