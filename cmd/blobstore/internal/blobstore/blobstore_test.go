@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -102,7 +101,7 @@ func TestGetExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +141,7 @@ func TestCompose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
