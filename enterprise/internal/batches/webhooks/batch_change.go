@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graphql-go/graphql/gqlerrors"
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -37,12 +38,18 @@ const gqlBatchChangeQuery = `query BatchChange($id: ID!) {
 	node(id: $id) {
 		... on BatchChange {
 			id
-			namespace
+			namespace {
+				id
+			}
 			name
 			description
 			state
-			creator
-			lastApplier
+			creator {
+				id
+			}
+			lastApplier {
+				id
+			}
 			url
 			createdAt
 			updatedAt
@@ -54,8 +61,28 @@ const gqlBatchChangeQuery = `query BatchChange($id: ID!) {
 
 type gqlBatchChangeResponse struct {
 	Data struct {
-		Node batchChange
+		Node struct {
+			ID            graphql.ID `json:"id"`
+			Name          string     `json:"name"`
+			Description   string     `json:"description"`
+			State         string     `json:"state"`
+			URL           string     `json:"url"`
+			CreatedAt     time.Time  `json:"createdAt"`
+			UpdatedAt     time.Time  `json:"updatedAt"`
+			LastAppliedAt *time.Time `json:"lastAppliedAt"`
+			ClosedAt      *time.Time `json:"closedAt"`
+			Namespace     struct {
+				ID graphql.ID `json:"id"`
+			} `json:"namespace"`
+			Creator struct {
+				ID graphql.ID `json:"id"`
+			} `json:"creator"`
+			LastApplier struct {
+				ID *graphql.ID `json:"id"`
+			} `json:"lastApplier"`
+		}
 	}
+	Errors []gqlerrors.FormattedError
 }
 
 func MarshalBatchChange(ctx context.Context, bc *types.BatchChange) ([]byte, error) {
@@ -88,9 +115,33 @@ func MarshalBatchChange(ctx context.Context, bc *types.BatchChange) ([]byte, err
 	defer resp.Body.Close()
 
 	var res gqlBatchChangeResponse
+
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "decode response")
 	}
 
-	return json.Marshal(res.Data.Node)
+	if len(res.Errors) > 0 {
+		var combined error
+		for _, err := range res.Errors {
+			combined = errors.Append(combined, err)
+		}
+		return nil, combined
+	}
+
+	node := res.Data.Node
+
+	return json.Marshal(batchChange{
+		ID:            node.ID,
+		Namespace:     node.Namespace.ID,
+		Name:          node.Name,
+		Description:   node.Description,
+		State:         node.State,
+		Creator:       node.Creator.ID,
+		LastApplier:   node.LastApplier.ID,
+		URL:           node.URL,
+		CreatedAt:     node.CreatedAt,
+		UpdatedAt:     node.UpdatedAt,
+		LastAppliedAt: node.LastAppliedAt,
+		ClosedAt:      node.ClosedAt,
+	})
 }

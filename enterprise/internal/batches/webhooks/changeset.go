@@ -9,7 +9,6 @@ import (
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,7 +35,7 @@ type changeset struct {
 	SyncerError         *string      `json:"syncer_error"`
 }
 
-func MarshalChangeset(ctx context.Context, db basestore.ShareableStore, cs *types.Changeset) ([]byte, error) {
+func MarshalChangeset(ctx context.Context, cs *types.Changeset) ([]byte, error) {
 	batchChangeIDs := make([]graphql.ID, 0, len(cs.BatchChanges))
 	for _, assoc := range cs.BatchChanges {
 		batchChangeIDs = append(batchChangeIDs, bgql.MarshalBatchChangeID(assoc.BatchChangeID))
