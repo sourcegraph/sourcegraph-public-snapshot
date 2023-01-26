@@ -37,7 +37,7 @@ type KeyValue interface {
 	HIncrBy(key, field string, value int) Value
 	Exists(key ...string) Value
 
-	LPush(key string, value any) error
+	LPush(key string, value ...any) error
 	LPop(key string, count int) Values
 	LTrim(key string, start, stop int) error
 	LLen(key string) (int, error)
@@ -81,6 +81,10 @@ func (v Value) Int() (int, error) {
 
 func (v Value) String() (string, error) {
 	return redis.String(v.reply, v.err)
+}
+
+func (v Value) Err() error {
+	return v.err
 }
 
 // Values is a response from an operation on KeyValue which returns multiple
@@ -199,8 +203,11 @@ func (r *redisKeyValue) Exists(key ...string) Value {
 	return r.do("EXISTS", args...)
 }
 
-func (r *redisKeyValue) LPush(key string, value any) error {
-	return r.do("LPUSH", r.prefix+key, value).err
+func (r *redisKeyValue) LPush(key string, value ...any) error {
+	args := make([]interface{}, 0, len(value)+1)
+	args = append(args, r.prefix+key)
+	args = append(args, value...)
+	return r.do("LPUSH", args...).err
 }
 
 func (r *redisKeyValue) LPop(key string, count int) Values {

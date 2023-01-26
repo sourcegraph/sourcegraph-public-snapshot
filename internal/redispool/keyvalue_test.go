@@ -120,6 +120,10 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	t.Run("list", func(t *testing.T) {
 		require := require{TB: t}
 
+		// passing a list of interfaces to LPush
+		list := []interface{}{"1", "2", "3"}
+		require.Works(kv.LPush("secondlist", list...))
+
 		// Redis behaviour on unset lists
 		require.ListLen(kv, "list-unset-0", 0)
 		require.AllEqual(kv.LRange("list-unset-1", 0, 10), bytes())
