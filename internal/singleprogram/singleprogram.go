@@ -68,7 +68,7 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
-	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "repos"))
+	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "blobstore"))
 	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
 
 	configDir, err := os.UserConfigDir()
