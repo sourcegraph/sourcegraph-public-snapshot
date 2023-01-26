@@ -66,7 +66,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
 		perPage:   100,
-		private:   c.EnforceRepositoryPermissions,
+		private:   c.Authorization != nil,
 	}, nil
 }
 
