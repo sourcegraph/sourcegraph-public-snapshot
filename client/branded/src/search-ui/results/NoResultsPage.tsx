@@ -9,8 +9,8 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
-import { SmartSearchPreview } from '@sourcegraph/web/src/search/suggestion/SmartSearchPreview'
 
+import { SmartSearchPreview } from '../../../../web/src/search/suggestion/SmartSearchPreview'
 import { QueryExamples } from '../components/QueryExamples'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'

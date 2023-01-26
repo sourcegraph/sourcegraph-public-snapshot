@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useHistory } from 'react-router'
 
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-
+import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { formatSearchParameters } from '@sourcegraph/common'
-import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { Link, Icon, H3, H2, Text, Button, createLinkUrl, useObservable } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 import { useNavbarQueryState, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
 
-import shimmerStyle from './SmartSearchPreview.module.scss'
 import styles from './QuerySuggestion.module.scss'
+import shimmerStyle from './SmartSearchPreview.module.scss'
 
 export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
     const [resultNumber, setResultNumber] = useState<number | string>(0)
@@ -26,15 +25,17 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const results = useObservable(
-        useMemo(() => {
-            return aggregateStreamingSearch(of(query), {
-                version: LATEST_VERSION,
-                patternType: SearchPatternType.standard,
-                caseSensitive,
-                trace: undefined,
-                searchMode: SearchMode.SmartSearch,
-            }).pipe()
-        }, [query])
+        useMemo(
+            () =>
+                aggregateStreamingSearch(of(query), {
+                    version: LATEST_VERSION,
+                    patternType: SearchPatternType.standard,
+                    caseSensitive,
+                    trace: undefined,
+                    searchMode: SearchMode.SmartSearch,
+                }).pipe(),
+            [query, caseSensitive]
+        )
     )
 
     useEffect(() => {
@@ -45,9 +46,12 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                     const proposedQueryResultCountGroup = proposedQuery.annotations?.filter(
                         ({ name }) => name === 'ResultCount'
                     )
-                    proposedQueryResultCountGroup?.forEach(
-                        r => (proposedQueryResultCount += parseInt(r.value.replace(/\D/g, '')))
-                    )
+
+                    if (proposedQueryResultCountGroup) {
+                        for (const result of proposedQueryResultCountGroup) {
+                            proposedQueryResultCount += parseInt(result.value.replace(/\D/g, ''), 10)
+                        }
+                    }
                     acc += proposedQueryResultCount
                     return acc
                 },
@@ -59,7 +63,7 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
         return
     }, [results])
 
-    if (results?.state === 'complete' && !!!results?.alert?.proposedQueries) {
+    if (results?.state === 'complete' && !results?.alert?.proposedQueries) {
         return null
     }
 
@@ -145,7 +149,7 @@ const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableS
             searchMode: SearchMode.SmartSearch,
             source: 'smartSearchDisabled',
         })
-    }, [history])
+    }, [query, history, caseSensitive])
 
     return (
         <Text className="text-muted d-flex align-items-center mt-2">
