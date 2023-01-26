@@ -125,7 +125,13 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 				} else {
 					// PUT /<bucket>/<object>?uploadId=foobar&partNumber=123
 					// https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html
-					data = r.Body
+					_, err := s.uploadPart(ctx, bucketName, objectName, uploadID, partNumber, data)
+					if err != nil {
+						if err == ErrNoSuchUpload {
+							return writeS3Error(w, s3ErrorNoSuchUpload, bucketName, err, http.StatusNotFound)
+						}
+						return errors.Wrap(err, "uploadPart")
+					}
 					w.WriteHeader(http.StatusOK)
 					return nil
 				}
