@@ -69,7 +69,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context, args *resolverstubs.
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
+		r.content, r.contentErr = gitserver.NewClient().ReadFile(
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			api.RepoName(r.commit.Repository().Name()),

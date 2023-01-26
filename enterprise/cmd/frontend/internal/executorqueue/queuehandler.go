@@ -14,10 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
 func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
-	gitserverClient := gitserver.NewClient(db)
+	metricsStore := metricsstore.NewDistributedStore("executors:")
+	executorStore := db.Executors()
+	gitserverClient := gitserver.NewClient()
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.

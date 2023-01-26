@@ -27,6 +27,7 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
+import { dirname } from '../util/path'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -58,9 +59,21 @@ export const RepoRevisionSidebar: React.FunctionComponent<
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
     const [enableAccessibleFileTree] = useFeatureFlag('accessible-file-tree')
+    const [enableAccessibleFileTreeAlwaysLoadAncestors] = useFeatureFlag('accessible-file-tree-always-load-ancestors')
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+
+    const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
+    const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
+    const onExpandParent = useCallback(() => {
+        let parent = initialFilePathIsDir ? dirname(initialFilePath) : dirname(dirname(initialFilePath))
+        if (parent === '.') {
+            parent = ''
+        }
+        setInitialFilePath(parent)
+        setInitialFilePathIsDir(true)
+    }, [initialFilePath, initialFilePathIsDir])
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -142,12 +155,15 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                 <TabPanel>
                                     {enableAccessibleFileTree ? (
                                         <RepoRevisionSidebarFileTree
+                                            key={initialFilePath}
+                                            onExpandParent={onExpandParent}
                                             repoName={props.repoName}
                                             revision={props.revision}
                                             commitID={props.commitID}
-                                            initialFilePath={props.filePath}
-                                            initialFilePathIsDirectory={props.isDir}
+                                            initialFilePath={initialFilePath}
+                                            initialFilePathIsDirectory={initialFilePathIsDir}
                                             telemetryService={props.telemetryService}
+                                            alwaysLoadAncestors={enableAccessibleFileTreeAlwaysLoadAncestors}
                                         />
                                     ) : (
                                         <Tree

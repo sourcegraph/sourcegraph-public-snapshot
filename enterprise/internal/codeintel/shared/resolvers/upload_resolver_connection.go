@@ -28,7 +28,7 @@ func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc Auto
 		policySvc:        policySvc,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient()),
 		traceErrs:        traceErrs,
 	}
 }

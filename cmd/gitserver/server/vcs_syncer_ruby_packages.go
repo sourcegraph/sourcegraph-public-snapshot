@@ -38,8 +38,7 @@ func NewRubyPackagesSyncer(
 }
 
 type rubyDependencySource struct {
-	repositoryURL string
-	client        *rubygems.Client
+	client *rubygems.Client
 }
 
 func (rubyDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {

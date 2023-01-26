@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -96,9 +95,6 @@ type Store struct {
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
-
-	// DB is a connection to frontend database
-	DB database.DB
 }
 
 // FilterFunc filters tar files based on their header.
@@ -280,7 +276,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(s.DB), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -438,7 +434,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient(s.DB).Addrs())
+		limit := 10 * len(gitserver.NewClient().Addrs())
 		if limit == 0 {
 			limit = 15
 		}
