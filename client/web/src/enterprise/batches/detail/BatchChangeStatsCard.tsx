@@ -1,12 +1,13 @@
 import React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon, Heading, H3, H4 } from '@sourcegraph/wildcard'
+import { Badge, Icon, Heading, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -23,6 +24,9 @@ import {
 
 import styles from './BatchChangeStatsCard.module.scss'
 
+const ARCHIVED_TOOLTIP =
+    'Changesets created by an earlier version of the batch change for repos that are not in scope anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
+
 interface BatchChangeStatsCardProps {
     batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
     className?: string
@@ -37,8 +41,12 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
-    const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
-    const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
+    // TODO: We should just compute this and `isCompleted` on the backend batch change resolver.
+    const percentComplete =
+        // We don't count archived or deleted changesets when computing the percentage.
+        stats.total === 0 ? 0 : ((stats.closed + stats.merged) / (stats.total - stats.archived - stats.deleted)) * 100
+    const isCompleted =
+        stats.total !== 0 && stats.closed + stats.merged === stats.total - stats.archived - stats.deleted
     let BatchChangeStatusIcon = ProgressCheckIcon
     if (isCompleted) {
         BatchChangeStatusIcon = CheckCircleOutlineIcon
@@ -121,6 +129,13 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                             <H4 className="font-weight-normal text-muted m-0">
                                 {stats.archived}{' '}
                                 <VisuallyHidden>{pluralize('changeset', stats.archived)}</VisuallyHidden> archived
+                                <Tooltip content={ARCHIVED_TOOLTIP}>
+                                    <Icon
+                                        aria-label={ARCHIVED_TOOLTIP}
+                                        svgPath={mdiInformationOutline}
+                                        className="ml-1"
+                                    />
+                                </Tooltip>
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}

@@ -357,7 +357,7 @@ function mockCommonGraphQLResponses(
                     deleted: 1,
                     merged: 3,
                     open: 8,
-                    total: 19,
+                    total: 37,
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
