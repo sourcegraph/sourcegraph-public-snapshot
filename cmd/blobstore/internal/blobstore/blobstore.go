@@ -135,6 +135,28 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 				return errors.Wrap(err, "writeXML")
 			}
 			return nil
+		} else if len(path) == 2 {
+			// POST /<bucket>/<object>?uploadId=foobar
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html
+			uploadID := r.URL.Query().Get("uploadId")
+			bucketName := path[0]
+			objectName := path[1]
+			if err := s.completeUpload(ctx, bucketName, objectName, uploadID); err != nil {
+				if err == ErrNoSuchUpload {
+					return writeS3Error(w, s3ErrorNoSuchUpload, bucketName, err, http.StatusNotFound)
+				}
+				if err == ErrInvalidPartOrder {
+					return writeS3Error(w, s3ErrorInvalidPartOrder, bucketName, err, http.StatusNotFound)
+				}
+				return errors.Wrap(err, "completeUpload")
+			}
+			if err := writeXML(w, http.StatusOK, s3CompleteMultipartUploadResult{
+				Bucket: bucketName,
+				Key:    objectName,
+			}); err != nil {
+				return errors.Wrap(err, "writeXML")
+			}
+			return nil
 		}
 		return errors.Newf("unsupported method: unexpected POST request: %s", r.URL)
 	case "DELETE":
