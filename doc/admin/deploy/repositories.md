@@ -10,7 +10,7 @@ Sourcegraph provides reference repositories with branches corresponding to the v
 | Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
 | Kubernetes                | https://github.com/deploy-sourcegraph-k8s                |
 
-> WARNING: [deploy-sourcegrap](https://github.com/deploy-sourcegrap) has bee deperacated
+> WARNING: [deploy-sourcegrap](https://github.com/deploy-sourcegrap) has been deperacated
 
 ## Create a private copy
 

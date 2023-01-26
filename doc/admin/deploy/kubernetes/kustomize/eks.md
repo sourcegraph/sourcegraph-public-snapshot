@@ -31,7 +31,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph main app without the monitoring stacks to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k3s/examples/aws/eks?ref=v4.3.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/aws/eks?ref=v4.5.0
 ```
 
 Monitor the deployment status to make sure everything is up and running:
@@ -73,7 +73,7 @@ You should now be able to access your new Sourcegraph instance at http://localho
 
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph-k3s/tree/master/examples/aws/eks) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/aws/eks) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
@@ -90,8 +90,8 @@ components:
 - ../../components/monitoring
 # Use resources for a size-XS instance
 - ../../components/sizes/xs
-# Apply configurations for AWS EKS
-- ../../components/aws/configure-eks
+# Apply configurations for AWS EKS storage class and ALB
+- ../../components/clusters/aws/eks-ebs
 ```
 
 #### Enable TLS
@@ -119,8 +119,8 @@ components:
 # Sourcegraph Monitoring Stack
 - ../../components/monitoring
 - ../../components/sizes/xs
-- ../../components/aws/configure-eks
-- ../../components/aws/mange-cert
+- ../../components/clusters/aws/eks-ebs
+- ../../components/clusters/aws/mange-cert
 ```
 
 Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
