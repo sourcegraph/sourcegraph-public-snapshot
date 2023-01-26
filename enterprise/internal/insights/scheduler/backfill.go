@@ -242,6 +242,7 @@ type BackfillQueueItem struct {
 	BackfillStartedAt   *time.Time
 	BackfillCompletedAt *time.Time
 	QueuePosition       *int
+	Errors              *[]string
 }
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
@@ -277,6 +278,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.BackfillStartedAt,
 			&temp.BackfillCompletedAt,
 			&temp.QueuePosition,
+			&temp.Errors,
 		); err != nil {
 			return []BackfillQueueItem{}, err
 		}
@@ -290,6 +292,11 @@ var backfillQueueSQL = `
 WITH job_queue as (
     select backfill_id, state, row_number() over () queue_position
     from insights_jobs_backfill_in_progress where state = 'queued'  order by cost_bucket
+),
+errors as (
+    select repo_iterator_id, array_agg(error_message) error_messages
+    from repo_iterator_errors
+    group by  repo_iterator_id
 )
 select isb.id,
        title insight_title,
@@ -303,9 +310,11 @@ select isb.id,
        ri.created_at backfill_created_at,
        ri.started_at backfill_started_at,
        ri.completed_at backfill_completed_at,
-       jq.queue_position
+       jq.queue_position,
+       e.error_messages
 from insight_series_backfill isb
     left join repo_iterator ri on isb.repo_iterator_id = ri.id
+    left join errors e on isb.repo_iterator_id = e.repo_iterator_id
     left join job_queue jq on jq.backfill_id = isb.id
     join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id

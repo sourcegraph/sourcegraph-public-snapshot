@@ -402,9 +402,8 @@ func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
 func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
 }
-func (r *backfillStatusResolver) Errors() *[]*string {
-	tmp := []*string{}
-	return &tmp
+func (r *backfillStatusResolver) Errors() *[]string {
+	return r.queueItem.Errors
 }
 
 func (r *backfillStatusResolver) Runtime() *string {

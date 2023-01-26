@@ -1426,7 +1426,7 @@ type BackfillStatus {
     """
     A list of errors that have occurred during backfilling
     """
-    errors: [String]
+    errors: [String!]
     """
     The estimated cost of the backfill process
     """

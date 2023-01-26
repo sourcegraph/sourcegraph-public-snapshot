@@ -560,7 +560,7 @@ func (r *BackfillQueueItemResolver) BackfillQueueStatus() (BackfillQueueStatusRe
 type BackfillQueueStatusResolver interface {
 	State() string // enum
 	QueuePosition() *int32
-	Errors() *[]*string
+	Errors() *[]string
 	Cost() *int32
 	PercentComplete() *int32
 	CreatedAt() *gqlutil.DateTime
