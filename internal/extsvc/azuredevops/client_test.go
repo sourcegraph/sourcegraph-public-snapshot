@@ -20,15 +20,13 @@ var update = flag.Bool("update", false, "update testdata")
 
 func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 	cli, save := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *update)
-	defer save()
-
-	ctx := context.Background()
+	t.Cleanup(save)
 
 	opts := ListRepositoriesByProjectOrOrgArgs{
 		ProjectOrOrgName: "sgtestazure",
 	}
 
-	resp, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
+	resp, err := cli.ListRepositoriesByProjectOrOrg(context.Background(), opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,11 +36,9 @@ func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
 
 func TestClient_AzureServicesProfile(t *testing.T) {
 	cli, save := NewTestClient(t, "AzureServicesProfile", *update)
-	defer save()
+	t.Cleanup(save)
 
-	ctx := context.Background()
-
-	resp, err := cli.AzureServicesProfile(ctx)
+	resp, err := cli.AzureServicesProfile(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

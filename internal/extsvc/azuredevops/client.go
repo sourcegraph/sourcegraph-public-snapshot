@@ -71,10 +71,10 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 }
 
 func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	qs := make(url.Values)
-	qs.Set("api-version", apiVersion)
+	queryParams := make(url.Values)
+	queryParams.Set("api-version", apiVersion)
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: qs.Encode()}
+	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: queryParams.Encode()}
 
 	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
 	if err != nil {
@@ -91,11 +91,11 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 
 // AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
 func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
-	qs := make(url.Values)
+	queryParams := make(url.Values)
 
-	qs.Set("api-version", apiVersion)
+	queryParams.Set("api-version", apiVersion)
 
-	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: qs.Encode()}
+	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: queryParams.Encode()}
 
 	req, err := http.NewRequest("GET", urlProfile.String(), nil)
 	if err != nil {
@@ -103,7 +103,6 @@ func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
 	}
 
 	var p Profile
-	//The endpoint is https://vssps.dev.azure.com
 	if _, err = c.do(ctx, req, "https://app.vssps.visualstudio.com", &p); err != nil {
 		return Profile{}, err
 	}
