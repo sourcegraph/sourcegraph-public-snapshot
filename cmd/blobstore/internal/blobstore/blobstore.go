@@ -117,6 +117,26 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 			return errors.Wrap(err, "Copy")
 		}
 		return errors.Newf("unsupported method: unexpected GET request: %s", r.URL)
+	case "POST":
+		if len(path) == 2 && r.URL.Query().Has("uploads") {
+			// POST /<bucket>/<object>?uploads=
+			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html
+			bucketName := path[0]
+			objectName := path[1]
+			uploadID, err := s.createUpload(ctx, bucketName, objectName)
+			if err != nil {
+				return errors.Wrap(err, "createUpload")
+			}
+			if err := writeXML(w, http.StatusOK, s3InitiateMultipartUploadResult{
+				Bucket:   bucketName,
+				Key:      objectName,
+				UploadId: uploadID,
+			}); err != nil {
+				return errors.Wrap(err, "writeXML")
+			}
+			return nil
+		}
+		return errors.Newf("unsupported method: unexpected POST request: %s", r.URL)
 	case "DELETE":
 		if len(path) == 2 && r.URL.Query().Has("uploadId") {
 			// DELETE /<bucket>/<object>?uploadId=foobar
