@@ -54,7 +54,7 @@ touch DESCRIPTION
 tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
 # Sign index using a key from somewhere
-melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
+melange sign-index --signing-key "$key_path/melange.rsa" APKINDEX.tar.gz
 
 # Upload signed APKINDEX
 gsutil -u "$GCP_PROJECT" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$ARCH/"
