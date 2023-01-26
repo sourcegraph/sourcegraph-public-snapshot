@@ -12,9 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -137,7 +136,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 	var (
 		keyID         string
 		rawPayload    []byte
-		executionLogs []store.ExecutionLogEntry
+		executionLogs []executor.ExecutionLogEntry
 	)
 
 	if err := sc.Scan(
@@ -168,9 +167,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 		job.Payload = encryption.NewUnencrypted(string(rawPayload))
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return nil
 }
