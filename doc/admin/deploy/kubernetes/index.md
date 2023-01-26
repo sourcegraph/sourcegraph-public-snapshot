@@ -51,7 +51,7 @@ Common configurations include:
 - Adjust resources [Kustomize](kustomize/configure.md#resources) / [Helm](helm.md#configuration)
 - Create storage class [Kustomize](kustomize/configure.md#storage-class) / [Helm](helm.md#cloud-providers-guides)
 - Configure network settings [Kustomize](kustomize/configure.md#ingress-controller) / [Helm](helm.md#helm-subcharts)
-- Set up an external PostgreSQL Database [Kustomize](kustomize/configure.md#external-databases) / [Helm](helm.md#using-external-postgresql-databases)
-- Set up SSH connection for cloning repositories [Kustomize](kustomize/configure.md##repository-cloning-via-ssh) / [Helm](helm.md#using-ssh-to-clone-repositories)
+- Set up an external PostgreSQL Database [Kustomize](kustomize/configure.md#external-services) / [Helm](helm.md#using-external-postgresql-databases)
+- Set up SSH connection for cloning repositories [Kustomize](kustomize/configure.md#ssh-for-cloning) / [Helm](helm.md#using-ssh-to-clone-repositories)
 
 For more information, please read the [configuration guide for Kustomize](kustomize/configure.md) or the [configuration guide for Helm](helm.md#configuration) before installing Sourcegraph.

@@ -23,7 +23,7 @@ Follow the steps below to deploy Sourcegraph on a Kubernetes cluster.
 
 **Step 0:** Ensure all the [prerequisites](../index.md#prerequisites) have been met and are properly configured.
 
-**Step 1:** Create an overlay by following the instructions in our [configuration guides](configure.md). As an alternative, you can choose to use one of our [pre-built overlays](#pre-built-overlays) that are already configured for your specific deployment environment.
+**Step 1:** Create an overlay by following the instructions in our [configuration guides](configure.md). As an alternative, you can choose to use one of our [examples overlays](intro.md#examples-overlays) that are already configured for your specific deployment environment.
 
 **Step 2:** Use the overlay created in step 1 to generate a new set of manifests.
 
@@ -45,9 +45,7 @@ Follow the steps below to deploy Sourcegraph on a Kubernetes cluster.
   $ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
   ```
 
-### Examples
-
-See the quick start examples for: [Amazon EKS](eks.md), [Google GKE](gke.md), and [other cloud providers](../index.md#quick-start).
+See examples for [Amazon EKS](eks.md), [Google GKE](gke.md) and OpenShift(coming soon).
 
 ## Upgrade
 

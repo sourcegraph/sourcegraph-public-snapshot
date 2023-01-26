@@ -4,7 +4,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps using our quick-start overlay for GKE to deploy the Sourcegraph without the monitoring services.
+The installation steps below will walk you through the steps using our examples overlay for GKE to deploy the Sourcegraph without the monitoring services.
 
 The overlay will:
 
@@ -73,7 +73,7 @@ You should now be able to access your new Sourcegraph instance at http://localho
 
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [quick-start/gke/base](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/gke/base) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [examples/gke/base](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/gke/base) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
@@ -97,12 +97,12 @@ components:
 You can also build the kustomization file remotely and build on top of it:
 
 ```yaml
-kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.3.1
+kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.5.0
 ```
 
 #### Enable TLS
 
-Once you have created a new overlay using the kustomization file from our quick-start overlay for gke, we strongly recommend you to: 
+Once you have created a new overlay using the kustomization file from our examples overlay for gke, we strongly recommend you to: 
 - create a DNS A record for your Sourcegraph instance domain
 - enable TLS is highly recommended. 
 
@@ -125,8 +125,8 @@ components:
 # Sourcegraph Monitoring Stack
 - ../../components/monitoring
 - ../../components/sizes/xs
-- ../../components/gke/configure
-- ../../components/gke/mange-cert
+- ../../components/clusters/gke/configure
+- ../../components/clusters/gke/mange-cert
 ```
 
 Step 2: Set the `GKE_MANAGED_CERT_NAME` variable with your Google-managed certificate name under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
