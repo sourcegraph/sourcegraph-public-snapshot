@@ -14,7 +14,7 @@
     "captainSlackUsername": "keegan",
     "captainGitHubUsername": "keegancsmith",
     // Release versions
-    "previousRelease": "4.4.0",
+    "previousRelease": "4.4.1",
     "upcomingRelease": "4.5.0",
     "oneWorkingWeekBeforeRelease": "15 February 2023 10:00 PST",
     "threeWorkingDaysBeforeRelease": "17 February 2023 10:00 PST",
