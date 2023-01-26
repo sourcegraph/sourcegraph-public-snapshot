@@ -231,8 +231,8 @@ require (
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/xanzy/go-gitlab v0.76.0
-	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
 
