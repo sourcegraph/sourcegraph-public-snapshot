@@ -98,10 +98,13 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
-func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (graphqlutil.ConnectionResolver[*graphqlbackend.InsightBackfillQueueItemResolver], error) {
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
 	store := &adminBackfillQueueConnectionStore{insightsDB: r.insightsDB, logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
-	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.InsightBackfillQueueItemResolver](store, args, &graphqlutil.ConnectionResolverOptions{})
-
+	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](store, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return resolver, nil
 }
 
 // 🚨 SECURITY
