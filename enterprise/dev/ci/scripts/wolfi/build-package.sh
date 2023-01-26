@@ -1,8 +1,10 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
-
 set -euf -o pipefail
+
+ROOT_DIR=$(dirname "${BASH_SOURCE[0]}")/../../../../..""
+cd "$ROOT_DIR"
+
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 function cleanup() {
   echo "Removing $tmpdir"
@@ -64,4 +66,5 @@ melange build "$name.yaml" --arch x86_64 --generate-index false
 buildkite-agent artifact upload packages/*/*
 
 # Upload package to repo
+cd "$ROOT_DIR"
 ./enterprise/dev/ci/scripts/wolfi/upload-package.sh
