@@ -214,11 +214,13 @@ function renderNode({
     isBranch,
     isExpanded,
     handleSelect,
+    props,
 }: {
     element: TreeNode
     isBranch: boolean
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
+    props: { className: string }
 }): React.ReactNode {
     const { entry, error, dotdot } = element
     const submodule = entry?.submodule
@@ -226,7 +228,7 @@ function renderNode({
     const url = entry?.url
 
     if (error) {
-        return <ErrorAlert className="m-0" variant="note" error={error} />
+        return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
     }
 
     if (dotdot) {
@@ -254,57 +256,59 @@ function renderNode({
     if (submodule) {
         const rev = submodule.commit.slice(0, 7)
         const title = `${name} @ ${rev}`
+        const tooltip = `Submodule: ${submodule.url}`
 
-        let content = <span>{title}</span>
         if (url) {
-            content = (
-                <Link
-                    to={url ?? '#'}
-                    tabIndex={-1}
-                    onClick={event => {
-                        event.preventDefault()
-                        handleSelect(event)
-                    }}
-                >
-                    {title}
-                </Link>
-            )
-        }
-
-        return (
-            <>
-                <Tooltip content={'Submodule: ' + submodule.url}>
-                    <span>
+            return (
+                <Tooltip content={tooltip}>
+                    <Link
+                        {...props}
+                        to={url}
+                        onClick={event => {
+                            event.preventDefault()
+                            handleSelect(event)
+                        }}
+                    >
                         <Icon
                             svgPath={mdiSourceRepository}
                             className={classNames('mr-1', styles.icon)}
-                            aria-label={'Submodule: ' + submodule.url}
+                            aria-label={tooltip}
                         />
-                        {content}
-                    </span>
+                        {title}
+                    </Link>
                 </Tooltip>
-            </>
+            )
+        }
+        return (
+            <Tooltip content={tooltip}>
+                <span {...props}>
+                    <Icon
+                        svgPath={mdiSourceRepository}
+                        className={classNames('mr-1', styles.icon)}
+                        aria-label={tooltip}
+                    />
+                    {title}
+                </span>
+            </Tooltip>
         )
     }
 
     return (
-        <>
+        <Link
+            {...props}
+            to={url ?? '#'}
+            onClick={event => {
+                event.preventDefault()
+                handleSelect(event)
+            }}
+        >
             <Icon
                 svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
                 className={classNames('mr-1', styles.icon)}
                 aria-hidden={true}
             />
-            <Link
-                to={url ?? '#'}
-                tabIndex={-1}
-                onClick={event => {
-                    event.preventDefault()
-                    handleSelect(event)
-                }}
-            >
-                {name}
-            </Link>
-        </>
+            {name}
+        </Link>
     )
 }
 
