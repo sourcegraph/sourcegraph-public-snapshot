@@ -162,7 +162,11 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 }
 
 func (s GitLabSource) CheckConnection(ctx context.Context) error {
-	return checkConnection(s.config.Url)
+	_, err := s.client.GetUser(ctx, "")
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured

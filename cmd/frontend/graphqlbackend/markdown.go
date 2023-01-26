@@ -8,6 +8,6 @@ func (m Markdown) Text() string {
 	return string(m)
 }
 
-func (m Markdown) HTML() string {
+func (m Markdown) HTML() (string, error) {
 	return markdown.Render(string(m))
 }

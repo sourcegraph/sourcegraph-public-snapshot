@@ -1,5 +1,4 @@
-# Melange-based replacement for Coursier
-# Previously packaged in the scip-java repo
+# Foobar package based on Coursier package
 
 package:
   name: coursier

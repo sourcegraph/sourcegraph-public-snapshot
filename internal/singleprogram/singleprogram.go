@@ -112,7 +112,6 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you

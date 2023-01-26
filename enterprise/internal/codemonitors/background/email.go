@@ -213,9 +213,9 @@ func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayR
 
 	var content string
 	if result.DiffPreview != nil {
-		content = truncateString(result.DiffPreview.Content, 10)
+		content = truncateString(result.DiffPreview.Content)
 	} else {
-		content = truncateString(result.MessagePreview.Content, 10)
+		content = truncateString(result.MessagePreview.Content)
 	}
 
 	return &DisplayResult{

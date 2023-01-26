@@ -48,7 +48,7 @@ const batchChangeDefaults: BatchChangeFields = {
         merged: 2,
         draft: 1,
         open: 2,
-        total: 10,
+        total: 29,
         archived: 18,
         unpublished: 4,
     },
