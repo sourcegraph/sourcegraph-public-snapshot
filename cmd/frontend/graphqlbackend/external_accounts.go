@@ -158,16 +158,13 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 		return nil, auth.ErrNotAuthenticated
 	}
 
-	var err error
-	switch args.ServiceType {
-	case "gerrit":
-		err = gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
-	default:
+	if args.ServiceType == "gerrit" {
+		err := gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		if err != nil {
+			return nil, err
+		}
+	} else {
 		return nil, errors.New("unsupported service type")
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
