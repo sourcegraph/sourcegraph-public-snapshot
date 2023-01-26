@@ -20,7 +20,7 @@ func TestStreamPanicCatcher(t *testing.T) {
 		nil,
 		nil,
 		&grpc.StreamServerInfo{FullMethod: "testmethod"},
-		func(srv interface{}, ss grpc.ServerStream) error {
+		func(_ interface{}, _ grpc.ServerStream) error {
 			panic("ouch")
 		},
 	)
