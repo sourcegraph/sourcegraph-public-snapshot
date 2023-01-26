@@ -51,7 +51,8 @@ func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
 		return
 	}
 
-	var symbols []*SymbolsResponse_Symbol
+	symbols := make([]*SymbolsResponse_Symbol, len(r.Symbols))
+
 	for _, s := range r.Symbols {
 		var ps SymbolsResponse_Symbol
 		ps.FromInternal(&s)
@@ -75,7 +76,7 @@ func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
 		return search.SymbolsResponse{}
 	}
 
-	var symbols []result.Symbol
+	symbols := make([]result.Symbol, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
 		symbols = append(symbols, s.ToInternal())
@@ -194,7 +195,7 @@ func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
 		return
 	}
 
-	var symbols []*LocalCodeIntelResponse_Symbol
+	symbols := make([]*LocalCodeIntelResponse_Symbol, len(p.Symbols))
 
 	for _, s := range p.Symbols {
 		var symbol LocalCodeIntelResponse_Symbol
@@ -213,7 +214,7 @@ func (x *LocalCodeIntelResponse) ToInternal() types.LocalCodeIntelPayload {
 		return types.LocalCodeIntelPayload{}
 	}
 
-	var symbols []types.Symbol
+	symbols := make([]types.Symbol, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
 		symbols = append(symbols, s.ToInternal())
@@ -229,7 +230,7 @@ func (x *LocalCodeIntelResponse_Symbol) FromInternal(s *types.Symbol) {
 		return
 	}
 
-	var refs []*Range
+	refs := make([]*Range, len(s.Refs))
 
 	for _, r := range s.Refs {
 		protoRef := &Range{}
@@ -256,7 +257,7 @@ func (x *LocalCodeIntelResponse_Symbol) ToInternal() types.Symbol {
 
 	def := x.GetDef().ToInternal()
 
-	var refs []types.Range
+	refs := make([]types.Range, len(x.GetRefs()))
 
 	for _, ref := range x.GetRefs() {
 		refs = append(refs, ref.ToInternal())
