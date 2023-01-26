@@ -1,10 +1,11 @@
-package servicecatalogue
+package servicecatalog
 
 import (
 	_ "embed"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed service-catalog.yaml

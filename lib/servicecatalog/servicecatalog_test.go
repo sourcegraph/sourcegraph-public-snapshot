@@ -1,4 +1,4 @@
-package servicecatalogue
+package servicecatalog
 
 import (
 	"testing"
