@@ -9021,7 +9021,7 @@ type TeamConnection {
         If true, the total count of teams, including deeply nested child teams will
         be returned. Note that those teams will NOT be part of the nodes.
         """
-        countDeeplyNestedTeamMembers: Boolean = false
+        countDeeplyNestedTeams: Boolean = false
     ): Int!
 
     """
