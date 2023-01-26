@@ -328,7 +328,7 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	//
 	// Note that the bucket lock guarantees the bucket (folder) cannot be created/deleted, but does NOT
 	// guarantee that nobody else is writing/deleting/reading the same object (file) within the bucket.
-	tmpFile, err := os.CreateTemp(bucketDir, "*-"+objectFileName(objectName))
+	tmpFile, err := os.CreateTemp(bucketDir, "*-"+objectFileName(objectName)+".tmp")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating tmp file")
 	}
