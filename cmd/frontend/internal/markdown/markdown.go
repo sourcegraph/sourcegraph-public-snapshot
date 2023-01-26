@@ -35,7 +35,7 @@ func Render(content string) (string, error) {
 		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
 		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-		policy.AllowAttrs("class").Matching(regexp.MustCompile("^(?:chroma-[a-zA-Z0-9\\-]+)|chroma$")).OnElements("pre", "code", "span")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)).OnElements("pre", "code", "span")
 
 		html.LinkAttributeFilter.Add([]byte("aria-hidden"))
 		html.LinkAttributeFilter.Add([]byte("name"))
