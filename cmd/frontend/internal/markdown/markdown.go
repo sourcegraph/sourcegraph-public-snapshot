@@ -59,6 +59,7 @@ func Render(content string) (string, error) {
 				parser.WithAutoHeadingID(),
 			),
 			goldmark.WithRendererOptions(
+				// HTML sanitization is handled by bluemonday
 				html.WithUnsafe(),
 			),
 		)
