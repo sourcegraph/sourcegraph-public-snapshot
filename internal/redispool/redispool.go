@@ -91,7 +91,9 @@ var Cache = RedisKeyValue(&redis.Pool{
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.
-var Store = RedisKeyValue(&redis.Pool{
+var Store = RedisKeyValue(Pool)
+
+var Pool = &redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
@@ -101,4 +103,4 @@ var Store = RedisKeyValue(&redis.Pool{
 	Dial: func() (redis.Conn, error) {
 		return dialRedis(addrStore)
 	},
-})
+}

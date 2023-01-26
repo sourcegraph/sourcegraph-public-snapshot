@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/redis"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -383,7 +384,7 @@ func (b *gcsObjectWriter) Close() error {
 	return errors.Append(b.Flush(), b.c.Close())
 }
 
-var redisStore = redispool.Store
+var redisStore = redis.RedisKeyValue(redispool.Pool)
 
 func (s *Service) populateDefsAndRefs(ctx context.Context, uploadID int, repo, root, path string, document *scip.Document) error {
 	definitions := map[string]interface{}{}
