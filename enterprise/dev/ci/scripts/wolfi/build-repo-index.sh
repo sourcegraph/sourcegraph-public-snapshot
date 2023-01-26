@@ -3,9 +3,8 @@
 set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
-
 # TODO: This must be replaced with a proper K8s managed secret
-key_path="$(dirname "${BASH_SOURCE[0]}")/../../../../../wolfi-packages/temporary-keys/"
+key_path=$(realpath ./wolfi-packages/temporary-keys/)
 
 # Fetch all the index fragments
 # Combine to create the index file
