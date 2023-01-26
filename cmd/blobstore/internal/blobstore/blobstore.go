@@ -332,18 +332,43 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 	if err != nil {
 		return nil, errors.Wrap(err, "creating tmp file")
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
 	if _, err := io.Copy(tmpFile, data); err != nil {
 		return nil, errors.Wrap(err, "copying data into tmp file")
+	}
+	// Ensure file bytes are on disk before renaming
+	// see https://github.com/sourcegraph/sourcegraph/pull/46972#discussion_r1088293666
+	if err := tmpFile.Sync(); err != nil {
+		return nil, errors.Wrap(err, "sync tmp file")
 	}
 	objectFile := s.objectFilePath(bucketName, objectName)
 	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
 		return nil, errors.Wrap(err, "renaming object file")
 	}
+	// fsync the directory to ensure the rename is recorded
+	// see https://github.com/sourcegraph/sourcegraph/pull/46972#discussion_r1088293666
+	if err := fsync(s.bucketDir(bucketName)); err != nil {
+		return nil, errors.Wrap(err, "sync bucket dir")
+	}
 	s.Log.Debug("put object", sglog.String("key", bucketName+"/"+objectName))
 	return &objectMetadata{
 		LastModified: time.Now().UTC(), // logically right now, no reason to consult filesystem
 	}, nil
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }
 
 func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
@@ -423,9 +448,7 @@ func objectFileName(objectName string) string {
 	return url.QueryEscape(objectName)
 }
 
-var (
-	metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "blobstore_service_running",
-		Help: "Number of running blobstore requests.",
-	})
-)
+var metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "blobstore_service_running",
+	Help: "Number of running blobstore requests.",
+})
