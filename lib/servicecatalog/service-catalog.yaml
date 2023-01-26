@@ -1,4 +1,5 @@
-# This is the source of truth for services dependencies of Sourcegraph
+# This is the source of truth for services dependencies of Sourcegraph. All names
+# should correspond to published images.
 #
 # Cloud started this file to ensure we can correctly maintain Network Policies
 # to ensure only necessary services can talk to each other.
@@ -17,6 +18,9 @@ protected_services:
       - worker
       - migrator
       - precise-code-intel-worker
+      # other stuff we just know about
+      - search-indexer
+      - indexed-searcher
 
   # $ go run ./dev/depgraph/ summary internal/redispool
   # $ go run ./dev/depgraph/ summary internal/rcache
@@ -30,9 +34,10 @@ protected_services:
       - migrator
       - repo-updater
       - searcher
-      - sitemap
       - symbols
       - worker
+      # other stuff we just know about
+      - redis-exporter
 
   # $ go run ./dev/depgraph/ summary internal/database
   # the union of all dependent commands
