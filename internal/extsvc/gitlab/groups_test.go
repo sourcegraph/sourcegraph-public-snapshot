@@ -22,7 +22,7 @@ func TestListGroups(t *testing.T) {
 			responseBody: `[{"id": 1,"full_path": "group1"}]`,
 		}
 
-		groupsResponse, _, err := client.ListGroups(ctx, 1)
+		groupsResponse, _, err := client.ListGroups(ctx, nil)
 		if groupsResponse == nil {
 			t.Error("unexpected nil response")
 		}
@@ -42,7 +42,7 @@ func TestListGroups(t *testing.T) {
 			responseBody: `this is not valid JSON`,
 		}
 
-		groupsResponse, _, err := client.ListGroups(ctx, 1)
+		groupsResponse, _, err := client.ListGroups(ctx, nil)
 		if groupsResponse != nil {
 			t.Error("unexpected non-nil response")
 		}

@@ -2,8 +2,9 @@ package gitlab
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+
+	"github.com/peterhellberg/link"
 )
 
 type Group struct {
@@ -11,24 +12,32 @@ type Group struct {
 	FullPath string `json:"full_path"`
 }
 
-var MockListGroups func(ctx context.Context, page int) ([]*Group, bool, error)
+var MockListGroups func(ctx context.Context, pageURL *string) ([]*Group, *string, error)
 
 // ListGroups returns a list of groups for the authenticated user.
-func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, hasNextPage bool, err error) {
+func (c *Client) ListGroups(ctx context.Context, pageURL *string) (groups []*Group, nextPageURL *string, err error) {
 	if MockListGroups != nil {
-		return MockListGroups(ctx, page)
+		return MockListGroups(ctx, pageURL)
 	}
 
-	url := fmt.Sprintf("groups?per_page=100&page=%d&min_access_level=10", page)
+	url := "groups?per_page=100&min_access_level=10"
+	if pageURL != nil {
+		url = *pageURL
+	}
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, false, err
+		return nil, nil, err
 	}
 
-	_, _, err = c.do(ctx, req, &groups)
+	respHeader, _, err := c.do(ctx, req, &groups)
 	if err != nil {
-		return nil, false, err
+		return nil, nil, err
 	}
 
-	return groups, len(groups) > 0, nil
+	if l := link.Parse(respHeader.Get("Link"))["next"]; l != nil {
+		nextPageURL = &l.URI
+	}
+
+	return groups, nextPageURL, nil
 }

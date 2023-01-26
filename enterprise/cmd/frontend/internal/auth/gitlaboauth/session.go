@@ -135,12 +135,12 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		allowed[group] = true
 	}
 
-	var err error
 	var gitlabGroups []*gitlab.Group
-	hasNextPage := true
+	var nextPageURL *string
+	var err error
 
-	for page := 1; hasNextPage; page++ {
-		gitlabGroups, hasNextPage, err = glClient.ListGroups(ctx, page)
+	for {
+		gitlabGroups, nextPageURL, err = glClient.ListGroups(ctx, nextPageURL)
 		if err != nil {
 			return false, err
 		}
@@ -150,6 +150,10 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 			if allowed[glGroup.FullPath] {
 				return true, nil
 			}
+		}
+
+		if nextPageURL == nil {
+			break
 		}
 	}
 
