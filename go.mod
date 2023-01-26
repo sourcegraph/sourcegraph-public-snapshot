@@ -228,6 +228,7 @@ require (
 	github.com/hexops/autogold/v2 v2.0.3
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/sourcegraph/conc v0.1.0
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
