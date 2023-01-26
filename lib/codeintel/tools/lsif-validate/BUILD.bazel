@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "lsif-validate_lib",
+    srcs = [
+        "args.go",
+        "main.go",
+        "validate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-validate",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/codeintel/lsif/validation",
+        "//lib/errors",
+        "//lib/output",
+    ],
+)
+
+go_binary(
+    name = "lsif-validate",
+    embed = [":lsif-validate_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -351,7 +351,7 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		output.EmojiLightbulb,
 		output.StyleItalic,
 		""+
-			"Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema."+
+			"Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema to the expected current state."+
 			" "+
 			"See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions."+
 			"\n",

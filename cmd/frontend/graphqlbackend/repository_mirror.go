@@ -125,7 +125,7 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	progress, err := gitserver.NewClient(r.db).RepoCloneProgress(ctx, r.repository.RepoName())
+	progress, err := gitserver.NewClient().RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +298,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gsClient := gitserver.NewClient(r.db)
+	gsClient := gitserver.NewClient()
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:

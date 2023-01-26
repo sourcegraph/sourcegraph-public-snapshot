@@ -71,5 +71,6 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "cody.codebase": "github.com/sourcegraph/sourcegraph"
 }

@@ -626,6 +626,44 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 	return NewChangesetSpecResolver(ctx, r.store, spec)
 }
 
+func (r *Resolver) CreateChangesetSpecs(ctx context.Context, args *graphqlbackend.CreateChangesetSpecsArgs) ([]graphqlbackend.ChangesetSpecResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetSpecs", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	act := actor.FromContext(ctx)
+	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
+	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
+	// batchChangesCreateAccess, we still enforce it here.
+	if !act.IsAuthenticated() {
+		return nil, auth.ErrNotAuthenticated
+	}
+
+	svc := service.New(r.store)
+	specs, err := svc.CreateChangesetSpecs(ctx, args.ChangesetSpecs, act.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.ChangesetSpecResolver, len(specs))
+	for i, spec := range specs {
+		resolver, err := NewChangesetSpecResolver(ctx, r.store, spec)
+		if err != nil {
+			return nil, err
+		}
+		resolvers[i] = resolver
+	}
+
+	return resolvers, nil
+}
+
 func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.MoveBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("BatchChange %s", args.BatchChange))

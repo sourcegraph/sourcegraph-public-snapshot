@@ -968,15 +968,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "webhook_build_jobs_id_seq",
-      "TypeName": "bigint",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 9223372036854775807,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "webhook_logs_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -7467,6 +7458,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "redacted_contents",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure."
         },
         {
           "Name": "type",
@@ -17016,7 +17020,7 @@
       "Columns": [
         {
           "Name": "cancel",
-          "Index": 13,
+          "Index": 14,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -17028,8 +17032,21 @@
           "Comment": ""
         },
         {
+          "Name": "cancellation_reason",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Specifies why permissions sync job was cancelled."
+        },
+        {
           "Name": "execution_logs",
-          "Index": 11,
+          "Index": 12,
           "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
@@ -17042,7 +17059,7 @@
         },
         {
           "Name": "failure_message",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -17055,23 +17072,10 @@
         },
         {
           "Name": "finished_at",
-          "Index": 6,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "high_priority",
-          "Index": 16,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -17094,7 +17098,7 @@
         },
         {
           "Name": "invalidate_caches",
-          "Index": 17,
+          "Index": 19,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -17107,7 +17111,7 @@
         },
         {
           "Name": "last_heartbeat_at",
-          "Index": 10,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17120,7 +17124,7 @@
         },
         {
           "Name": "num_failures",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17133,7 +17137,7 @@
         },
         {
           "Name": "num_resets",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17145,8 +17149,21 @@
           "Comment": ""
         },
         {
+          "Name": "priority",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Specifies numeric priority for the permissions sync job."
+        },
+        {
           "Name": "process_after",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17159,7 +17176,7 @@
         },
         {
           "Name": "queued_at",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "now()",
@@ -17172,9 +17189,9 @@
         },
         {
           "Name": "reason",
-          "Index": 18,
+          "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -17185,7 +17202,7 @@
         },
         {
           "Name": "repository_id",
-          "Index": 14,
+          "Index": 15,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17198,7 +17215,7 @@
         },
         {
           "Name": "started_at",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17224,7 +17241,7 @@
         },
         {
           "Name": "triggered_by_user_id",
-          "Index": 19,
+          "Index": 17,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17237,7 +17254,7 @@
         },
         {
           "Name": "user_id",
-          "Index": 15,
+          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17250,7 +17267,7 @@
         },
         {
           "Name": "worker_hostname",
-          "Index": 12,
+          "Index": 13,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "''::text",
@@ -17272,6 +17289,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_pkey ON permission_sync_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "permission_sync_jobs_unique",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX permission_sync_jobs_unique ON permission_sync_jobs USING btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "permission_sync_jobs_process_after",
@@ -17316,11 +17343,32 @@
       ],
       "Constraints": [
         {
+          "Name": "permission_sync_jobs_for_repo_or_user",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK ((user_id IS NULL) \u003c\u003e (repository_id IS NULL))"
+        },
+        {
+          "Name": "permission_sync_jobs_repository_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE"
+        },
+        {
           "Name": "permission_sync_jobs_triggered_by_user_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
+          "Name": "permission_sync_jobs_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19179,7 +19227,7 @@
           "Comment": "The uniquely identifying name of the role."
         },
         {
-          "Name": "readonly",
+          "Name": "system",
           "Index": 5,
           "TypeName": "boolean",
           "IsNullable": false,
@@ -21863,270 +21911,6 @@
           "Definition": "CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()"
         }
       ]
-    },
-    {
-      "Name": "webhook_build_jobs",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "cancel",
-          "Index": 18,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "execution_logs",
-          "Index": 13,
-          "TypeName": "json[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "extsvc_id",
-          "Index": 17,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "extsvc_kind",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "failure_message",
-          "Index": 7,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "finished_at",
-          "Index": 9,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('webhook_build_jobs_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "last_heartbeat_at",
-          "Index": 14,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "num_failures",
-          "Index": 12,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "num_resets",
-          "Index": 11,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "org",
-          "Index": 16,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "process_after",
-          "Index": 10,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "queued_at",
-          "Index": 4,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repo_id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repo_name",
-          "Index": 2,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "started_at",
-          "Index": 8,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "state",
-          "Index": 6,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "'queued'::text",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "worker_hostname",
-          "Index": 15,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "''::text",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "webhook_build_jobs_queued_at_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "webhook_build_jobs_state",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": null,
-      "Triggers": []
     },
     {
       "Name": "webhook_logs",

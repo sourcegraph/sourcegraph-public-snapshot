@@ -62,6 +62,9 @@ type Handlers struct {
 
 	// Compute
 	NewComputeStreamHandler enterprise.NewComputeStreamHandler
+
+	// Code Insights
+	CodeInsightsDataExportHandler http.Handler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -137,6 +140,8 @@ func NewHandler(
 	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
+	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
+
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
@@ -148,7 +153,7 @@ func NewHandler(
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
@@ -195,7 +200,7 @@ func NewInternalHandler(
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
 
 	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),

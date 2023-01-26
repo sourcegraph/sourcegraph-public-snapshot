@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "query_lib",
+    srcs = [
+        "graphql.go",
+        "main.go",
+        "queries.go",
+        "query.go",
+        "query_types.go",
+        "state.go",
+        "test_cases.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/query",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/codeintel-qa/internal",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+go_binary(
+    name = "query",
+    embed = [":query_lib"],
+    visibility = ["//visibility:public"],
+)

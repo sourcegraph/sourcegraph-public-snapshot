@@ -18,6 +18,6 @@
 * [`serve-git`](serve-git.md)
 * [`snapshot`](snapshot.md)
 * [`users`](users/index.md)
-* [`validate`](validate.md)
+* [`validate`](validate/index.md)
 * [`version`](version.md)
 	

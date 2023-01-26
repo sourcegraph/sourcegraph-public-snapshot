@@ -185,9 +185,15 @@ type Mutation {
         """
         username: String!
         """
-        The new user's optional email address. If given, it is marked as verified.
+        The new user's optional email address. If given, it must be verified by the user.
         """
         email: String
+        """
+        Whether or not to mark the provided email address as verified. If unset or set to
+        true, then the email address is immediately marked as verified - otherwise, the
+        email may be marked as unverified if SMTP and password resets are enabled.
+        """
+        verifiedEmail: Boolean
     ): CreateUserResult!
     """
     Randomize a user's password so that they need to reset it before they can sign in again.
@@ -1135,6 +1141,9 @@ type CreateUserResult {
     """
     The reset password URL that the new user must visit to sign into their account. If the builtin
     username-password authentication provider is not enabled, this field's value is null.
+
+    If email sending (SMTP) is configured on this instance and an email was provided, an email
+    containing this URL will also be sent to the primary email address associated with the user.
     """
     resetPasswordURL: String
 }
@@ -1287,6 +1296,10 @@ type Query {
         """
         first: Int
         """
+        Returns the last n repositories from the list.
+        """
+        last: Int
+        """
         Return repositories whose names match the query.
         """
         query: String
@@ -1294,6 +1307,10 @@ type Query {
         An opaque cursor that is used for pagination.
         """
         after: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        before: String
         """
         Return repositories whose names are in the list.
         """
@@ -1338,7 +1355,7 @@ type Query {
         Sort direction.
         """
         descending: Boolean = false
-    ): RepositoryConnection!
+    ): NewRepositoryConnection!
 
     """
     Looks up a Phabricator repository by name.
@@ -2761,6 +2778,7 @@ A specific kind of external service.
 """
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    AZUREDEVOPS
     BITBUCKETCLOUD
     BITBUCKETSERVER
     GERRIT
@@ -3077,9 +3095,30 @@ type ExternalServiceSyncJob implements Node {
     """
     reposUnmodified: Int!
 }
-
 """
 A list of repositories.
+
+The old `RepositoryConnection` is deprecated and is replaced by
+this new connection which support proper cursor based pagination.
+The new connection does not include `precise` argument for totalCount.
+"""
+type NewRepositoryConnection {
+    """
+    A list of repositories.
+    """
+    nodes: [Repository!]!
+    """
+    The total count of repositories in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Deprecated! A list of repositories.
 """
 type RepositoryConnection {
     """
@@ -4107,7 +4146,16 @@ type CodeIntelGitBlob {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -4931,7 +4979,16 @@ type CodeIntelGitTree {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
 }
 
 """
@@ -5027,6 +5084,18 @@ type GitTree implements TreeEntry {
         nested in a single child.
         """
         recursiveSingleChild: Boolean = false
+        """
+        Includes all parent directories and their entries. For example, if the path is
+        `/client/web/something`, it will return the following entries in this order:
+
+          - `/*`
+          - `/client/*`
+          - `/client/web/*`
+          - `/client/web/something/*`
+
+        This is useful for rendering a collapsed tree view for the entry.
+        """
+        ancestors: Boolean = false
     ): [TreeEntry!]!
     """
     Symbols defined in this tree.
@@ -5103,11 +5172,24 @@ interface File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5117,7 +5199,16 @@ interface File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The URL to this file (using the input revision specifier, which may not be immutable).
     """
@@ -5148,6 +5239,16 @@ interface File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return blob highlight ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5170,11 +5271,24 @@ type VirtualFile implements File2 {
     """
     The content of this file.
     """
-    content: String!
+    content(
+        """
+        Return file content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return file content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the file. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5184,7 +5298,16 @@ type VirtualFile implements File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     Not implemented.
     """
@@ -5215,6 +5338,16 @@ type VirtualFile implements File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
 }
 
@@ -5263,11 +5396,24 @@ type GitBlob implements TreeEntry & File2 {
     """
     The content of this blob.
     """
-    content: String!
+    content(
+        """
+        Return blob content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return blob content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The file size in bytes.
     """
     byteSize: Int!
+    """
+    Total line count for the Blob. Returns 0 for binary files.
+    """
+    totalLines: Int!
     """
     Whether or not it is binary.
     """
@@ -5277,7 +5423,16 @@ type GitBlob implements TreeEntry & File2 {
     rich file type.
     This HTML string is already escaped and thus is always safe to render.
     """
-    richHTML: String!
+    richHTML(
+        """
+        Return richHTML content starting at line "startLine". A value <= 0 will be the start of the file.
+        """
+        startLine: Int
+        """
+        Return richHTML content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        """
+        endLine: Int
+    ): String!
     """
     The Git commit containing this blob.
     """
@@ -5320,6 +5475,16 @@ type GitBlob implements TreeEntry & File2 {
         Specifies which format/highlighting technique to use.
         """
         format: HighlightResponseFormat = HTML_HIGHLIGHT
+        """
+        Return highlight content starting at line "startLine". A value <= 0 will be the start of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        startLine: Int
+        """
+        Return highlight content ending at line "endLine". A value < 0 or > totalLines will set endLine to the end of the file.
+        Warning: Pagination only works with the HTML_PLAINTEXT format type at the moment.
+        """
+        endLine: Int
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -6573,6 +6738,83 @@ type SiteConfiguration {
     on the configuration (that can't be expressed in the JSON Schema).
     """
     validationMessages: [String!]!
+    """
+    EXPERIMENTAL: A list of diffs to depict what changed since the previous version of this
+    configuration.
+    Only site admins may perform this query.
+    """
+    history(
+        """
+        The number of nodes to return starting from the beginning (oldest).
+        Note: Use either first or last (see below) in the query. Setting both will
+        return an error.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): SiteConfigurationChangeConnection
+}
+
+"""
+A list of site config diffs.
+"""
+type SiteConfigurationChangeConnection implements Connection {
+    """
+    A list of diffs in the site config
+    """
+    nodes: [SiteConfigurationChange!]!
+    """
+    The total number of diffs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+A diff representing the change in the site config compared to the previous version.
+"""
+type SiteConfigurationChange implements Node {
+    """
+    The ID of the site config in the history.
+    """
+    id: ID!
+    """
+    The user who made this change. If empty, it indicates that either the
+    author's information is not available or the change in the site config was applied
+    via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
+    """
+    author: User
+    """
+    The diff string when diffed against the site config at previousID.
+    """
+    diff: String!
+    """
+    The timestamp when this change in the site config was applied.
+    """
+    createdAt: DateTime!
+    """
+    The timestamp when this change in the site config was modified. Usually
+    this should be the same as createdAt as entries in the site config history are
+    considered immutable.
+    """
+    updatedAt: DateTime!
 }
 
 """

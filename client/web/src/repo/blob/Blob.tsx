@@ -67,7 +67,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { BlameHunk } from '../blame/useBlameHunks'
+import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameColumn } from './BlameColumn'
@@ -114,7 +114,7 @@ export interface BlobProps
     supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
-    blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
+    blameHunks?: BlameHunkData
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

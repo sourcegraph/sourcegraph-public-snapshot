@@ -26,7 +26,7 @@ func (j *codeMonitorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *codeMonitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *codeMonitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err

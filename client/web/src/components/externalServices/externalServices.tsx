@@ -18,6 +18,7 @@ import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/component
 import { Link, Code, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
+import azureDevOpsSchemaJSON from '../../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
@@ -1263,13 +1264,48 @@ const GERRIT: AddExternalServiceOptions = {
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
-  "url": "https://gerrit.example.com",
+  "url": "https://gerrit.example.com"
 }`,
     instructions: (
         <div>
             <ol>
                 <li>
                     In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const AZUREDEVOPS: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.AZUREDEVOPS,
+    title: 'Azure DevOps',
+    icon: GitIcon,
+    jsonSchema: azureDevOpsSchemaJSON,
+    defaultDisplayName: 'Azure DevOps',
+    defaultConfig: `{
+  "url": "https://dev.azure.com",
+  "username": "<username>",
+  "token": "<token>"
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Azure DevOps Services/Server.
+                </li>
+                <li>
+                    In the configuration below, set <Field>username</Field> to the authenticated username for the Azure
+                    DevOps Services/Server instance.
+                </li>
+                <li>
+                    In the configuration below, set <Field>token</Field> to the authenticated token for the Azure DevOps
+                    Services/Server instance. See the{' '}
+                    <Link to="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows#create-a-pat">
+                        Azure DevOps documentation
+                    </Link>{' '}
+                    for instructions on how to create a Personal Access Token.
                 </li>
             </ol>
         </div>
@@ -1457,6 +1493,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
     ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
+    ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1470,6 +1507,7 @@ export const allExternalServices = {
 
 export const defaultExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions> = {
     [ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [ExternalServiceKind.AZUREDEVOPS]: AZUREDEVOPS,
     [ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
     [ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
     [ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
