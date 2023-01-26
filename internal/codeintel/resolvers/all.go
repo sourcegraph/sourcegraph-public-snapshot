@@ -1,11 +1,9 @@
 package resolvers
 
 import (
-	"context" //nolint:depguard // regexps are passed to bluemonday, which expects the std ones
-	"sync"
+	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -304,11 +302,6 @@ func (m Markdown) Text() string {
 func (m Markdown) HTML() (string, error) {
 	return markdown.Render(string(m))
 }
-
-var (
-	once   sync.Once
-	policy *bluemonday.Policy
-)
 
 type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
