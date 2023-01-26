@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -532,7 +531,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	opts = append(opts, defaults.DialOptions()...)
+	//opts = append(opts, defaults.DialOptions()...)
 	conn, err := grpc.DialContext(ctx, u.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")

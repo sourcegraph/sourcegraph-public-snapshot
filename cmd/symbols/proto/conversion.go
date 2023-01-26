@@ -9,10 +9,6 @@ import (
 )
 
 func (x *SearchRequest) FromInternal(p *search.SymbolsParameters) {
-	if x == nil || p == nil {
-		return
-	}
-
 	*x = SearchRequest{
 		Repo:     string(p.Repo),
 		CommitId: string(p.CommitID),
@@ -43,11 +39,7 @@ func (x *SearchRequest) ToInternal() search.SymbolsParameters {
 }
 
 func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
-	if x == nil || r == nil {
-		return
-	}
-
-	symbols := make([]*SymbolsResponse_Symbol, len(r.Symbols))
+	symbols := make([]*SymbolsResponse_Symbol, 0, len(r.Symbols))
 
 	for _, s := range r.Symbols {
 		var ps SymbolsResponse_Symbol
@@ -68,7 +60,7 @@ func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
 }
 
 func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
-	symbols := make([]result.Symbol, len(x.GetSymbols()))
+	symbols := make([]result.Symbol, 0, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
 		symbols = append(symbols, s.ToInternal())
@@ -81,10 +73,6 @@ func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
 }
 
 func (x *SymbolsResponse_Symbol) FromInternal(s *result.Symbol) {
-	if x == nil || s == nil {
-		return
-	}
-
 	*x = SymbolsResponse_Symbol{
 		Name: s.Name,
 		Path: s.Path,
@@ -123,10 +111,6 @@ func (x *SymbolsResponse_Symbol) ToInternal() result.Symbol {
 }
 
 func (x *SymbolInfoResponse) FromInternal(s *types.SymbolInfo) {
-	if x == nil {
-		return
-	}
-
 	if s == nil {
 		*x = SymbolInfoResponse{}
 		return
@@ -175,11 +159,7 @@ func (x *SymbolInfoResponse) ToInternal() types.SymbolInfo {
 }
 
 func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
-	if x == nil || p == nil {
-		return
-	}
-
-	symbols := make([]*LocalCodeIntelResponse_Symbol, len(p.Symbols))
+	symbols := make([]*LocalCodeIntelResponse_Symbol, 0, len(p.Symbols))
 
 	for _, s := range p.Symbols {
 		var symbol LocalCodeIntelResponse_Symbol
@@ -194,7 +174,7 @@ func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
 }
 
 func (x *LocalCodeIntelResponse) ToInternal() types.LocalCodeIntelPayload {
-	symbols := make([]types.Symbol, len(x.GetSymbols()))
+	symbols := make([]types.Symbol, 0, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
 		symbols = append(symbols, s.ToInternal())
@@ -206,11 +186,7 @@ func (x *LocalCodeIntelResponse) ToInternal() types.LocalCodeIntelPayload {
 }
 
 func (x *LocalCodeIntelResponse_Symbol) FromInternal(s *types.Symbol) {
-	if x == nil || s == nil {
-		return
-	}
-
-	refs := make([]*Range, len(s.Refs))
+	refs := make([]*Range, 0, len(s.Refs))
 
 	for _, r := range s.Refs {
 		protoRef := &Range{}
@@ -233,7 +209,7 @@ func (x *LocalCodeIntelResponse_Symbol) FromInternal(s *types.Symbol) {
 func (x *LocalCodeIntelResponse_Symbol) ToInternal() types.Symbol {
 	def := x.GetDef().ToInternal()
 
-	refs := make([]types.Range, len(x.GetRefs()))
+	refs := make([]types.Range, 0, len(x.GetRefs()))
 
 	for _, ref := range x.GetRefs() {
 		refs = append(refs, ref.ToInternal())
@@ -248,10 +224,6 @@ func (x *LocalCodeIntelResponse_Symbol) ToInternal() types.Symbol {
 }
 
 func (x *RepoCommitPath) FromInternal(r *types.RepoCommitPath) {
-	if x == nil || r == nil {
-		return
-	}
-
 	*x = RepoCommitPath{
 		Repo:   r.Repo,
 		Commit: r.Commit,
@@ -268,10 +240,6 @@ func (x *RepoCommitPath) ToInternal() types.RepoCommitPath {
 }
 
 func (x *Range) FromInternal(r *types.Range) {
-	if x == nil || r == nil {
-		return
-	}
-
 	*x = Range{
 		Row:    int32(r.Row),
 		Column: int32(r.Column),
@@ -288,10 +256,6 @@ func (x *Range) ToInternal() types.Range {
 }
 
 func (x *Point) FromInternal(p *types.Point) {
-	if x == nil || p == nil {
-		return
-	}
-
 	*x = Point{
 		Row:    int32(p.Row),
 		Column: int32(p.Column),

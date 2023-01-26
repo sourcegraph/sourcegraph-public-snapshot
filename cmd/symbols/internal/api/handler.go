@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -98,7 +96,7 @@ func NewHandler(
 
 	// Initialize the gRPC server
 	grpcServer := grpc.NewServer(
-		defaults.ServerOptions()...,
+	//defaults.ServerOptions()...,
 	)
 	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
