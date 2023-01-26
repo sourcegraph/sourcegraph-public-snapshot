@@ -1,6 +1,7 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
 import {
     catchError,
@@ -35,7 +36,6 @@ import { PlatformContext, PlatformContextProps, URLToFileContext } from '../plat
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
 
 const LOADING = 'loading' as const
 

@@ -121,8 +121,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
 
-    console.log({ routeMatch })
-
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
@@ -181,7 +179,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (location.pathname !== '/' && location.pathname.endsWith('/')) {
-        console.log({ lp: location.pathname })
         return <Redirect to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 

@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react'
 
 import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { parseBrowserRepoURL } from '../util/url'
-import { useLocation } from 'react-router-dom-v5-compat'
 
 export interface UserHistoryEntry {
     repoName: string
