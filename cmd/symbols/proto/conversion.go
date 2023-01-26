@@ -29,10 +29,6 @@ func (x *SearchRequest) FromInternal(p *search.SymbolsParameters) {
 }
 
 func (x *SearchRequest) ToInternal() search.SymbolsParameters {
-	if x == nil {
-		return search.SymbolsParameters{}
-	}
-
 	return search.SymbolsParameters{
 		Repo:            api.RepoName(x.GetRepo()),
 		CommitID:        api.CommitID(x.GetCommitId()),
@@ -72,10 +68,6 @@ func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
 }
 
 func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
-	if x == nil {
-		return search.SymbolsResponse{}
-	}
-
 	symbols := make([]result.Symbol, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
@@ -112,10 +104,6 @@ func (x *SymbolsResponse_Symbol) FromInternal(s *result.Symbol) {
 }
 
 func (x *SymbolsResponse_Symbol) ToInternal() result.Symbol {
-	if x == nil {
-		return result.Symbol{}
-	}
-
 	return result.Symbol{
 		Name: x.GetName(),
 		Path: x.GetPath(),
@@ -165,10 +153,6 @@ func (x *SymbolInfoResponse) FromInternal(s *types.SymbolInfo) {
 }
 
 func (x *SymbolInfoResponse) ToInternal() types.SymbolInfo {
-	if x == nil {
-		return types.SymbolInfo{}
-	}
-
 	maybeResult := x.GetResult()
 	if maybeResult == nil {
 		return types.SymbolInfo{}
@@ -210,10 +194,6 @@ func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
 }
 
 func (x *LocalCodeIntelResponse) ToInternal() types.LocalCodeIntelPayload {
-	if x == nil {
-		return types.LocalCodeIntelPayload{}
-	}
-
 	symbols := make([]types.Symbol, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
@@ -251,10 +231,6 @@ func (x *LocalCodeIntelResponse_Symbol) FromInternal(s *types.Symbol) {
 }
 
 func (x *LocalCodeIntelResponse_Symbol) ToInternal() types.Symbol {
-	if x == nil {
-		return types.Symbol{}
-	}
-
 	def := x.GetDef().ToInternal()
 
 	refs := make([]types.Range, len(x.GetRefs()))
@@ -284,10 +260,6 @@ func (x *RepoCommitPath) FromInternal(r *types.RepoCommitPath) {
 }
 
 func (x *RepoCommitPath) ToInternal() types.RepoCommitPath {
-	if x == nil {
-		return types.RepoCommitPath{}
-	}
-
 	return types.RepoCommitPath{
 		Repo:   x.GetRepo(),
 		Commit: x.GetCommit(),
@@ -308,10 +280,6 @@ func (x *Range) FromInternal(r *types.Range) {
 }
 
 func (x *Range) ToInternal() types.Range {
-	if x == nil {
-		return types.Range{}
-	}
-
 	return types.Range{
 		Row:    int(x.GetRow()),
 		Column: int(x.GetColumn()),
@@ -331,10 +299,6 @@ func (x *Point) FromInternal(p *types.Point) {
 }
 
 func (x *Point) ToInternal() types.Point {
-	if x == nil {
-		return types.Point{}
-	}
-
 	return types.Point{
 		Row:    int(x.GetRow()),
 		Column: int(x.GetColumn()),
