@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -101,6 +102,11 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 }
 
 func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+
 	store := &adminBackfillQueueConnectionStore{insightsDB: r.insightsDB, logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
 	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](store, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{})
 	if err != nil {
