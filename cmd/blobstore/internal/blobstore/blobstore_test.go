@@ -160,8 +160,20 @@ func TestDelete(t *testing.T) {
 	store, server := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Delete(ctx context.Context, key string) error
-	_ = store
+	// Upload our object
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// Delete the object
+	err = store.Delete(ctx, "foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Confirm the object no longer exists
+	_, err = store.Get(ctx, "foobar")
+	// TODO(blobstore): note that these are not deleted, deleting is not implemented!
+	autogold.Expect("<nil>").Equal(t, fmt.Sprint(err))
 }
 
 // Initialize uploadstore, upload objects, expire them
