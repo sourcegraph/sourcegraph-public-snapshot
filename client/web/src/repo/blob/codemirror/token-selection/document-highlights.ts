@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+import { Occurrence, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
@@ -37,6 +37,16 @@ export function showDocumentHighlightsForOccurrence(view: EditorView, occurrence
     getDocumentHighlights(view, occurrence).then(
         result => view.dispatch({ effects: setDocumentHighlights.of(result) }),
         () => {}
+    )
+}
+
+export function findByOccurrence(highlights: DocumentHighlight[], occurrence: Occurrence) {
+    return highlights.find(
+        highlight =>
+            occurrence.range.start.line === highlight.range.start.line &&
+            occurrence.range.start.character === highlight.range.start.character &&
+            occurrence.range.end.line === highlight.range.end.line &&
+            occurrence.range.end.character === highlight.range.end.character
     )
 }
 

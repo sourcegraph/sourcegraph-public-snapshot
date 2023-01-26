@@ -45,7 +45,6 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
                 }
             }
             if (effect.is(setFocusedOccurrenceTooltip)) {
-                // TODO: check if tooltip pos matches selected occurrence
                 return {
                     ...value,
                     focus: value.focus?.occurrence ? { ...value.focus, tooltip: effect.value } : null,
@@ -73,7 +72,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
 export const getCodeIntelTooltipState = (
     view: EditorView,
     key: CodeIntelTooltipTrigger
-): { occurrence: Occurrence; tooltip: Tooltip | null } | null => view.state.field(codeIntelTooltipsState)?.[key]
+): { occurrence: Occurrence; tooltip: Tooltip | null } | null => view.state.field(codeIntelTooltipsState)[key]
 
 const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     const offset = positionToOffset(view.state.doc, occurrence.range.end)

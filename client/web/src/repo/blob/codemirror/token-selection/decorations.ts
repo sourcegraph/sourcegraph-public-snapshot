@@ -1,11 +1,11 @@
-import { Extension } from '@codemirror/state'
+import { Extension, Range } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 
 import { positionToOffset, sortRangeValuesByStart } from '../utils'
 
 import { codeIntelTooltipsState } from './code-intel-tooltips'
 import { definitionUrlField } from './definition'
-import { documentHighlightsField } from './document-highlights'
+import { documentHighlightsField, findByOccurrence } from './document-highlights'
 import { isModifierKeyHeld } from './modifier-click'
 
 export function interactiveOccurrencesExtension(): Extension {
@@ -14,93 +14,68 @@ export function interactiveOccurrencesExtension(): Extension {
             [codeIntelTooltipsState, documentHighlightsField, definitionUrlField, isModifierKeyHeld],
             state => {
                 const { focus, hover, pin } = state.field(codeIntelTooltipsState)
-
-                // TODO: add support for hovered/pinned occurrence highlights
-                const highlights = state.field(documentHighlightsField)
-
-                const ranges = []
+                const decorations = []
 
                 if (focus) {
-                    const valueRangeStart = positionToOffset(state.doc, focus.occurrence.range.start)
-                    const valueRangeEnd = positionToOffset(state.doc, focus.occurrence.range.end)
+                    const classes = ['interactive-occurrence', 'focus-visible', 'sourcegraph-document-highlight']
+                    const attributes: { [key: string]: string } = { tabindex: '0' }
 
-                    if (valueRangeStart !== null && valueRangeEnd !== null) {
-                        const classes = ['interactive-occurrence', 'focus-visible', 'sourcegraph-document-highlight']
-                        const attributes: { [key: string]: string } = { tabindex: '0' }
-
-                        const { value: url, hasOccurrence: hasDefinition } = state
-                            .field(definitionUrlField)
-                            .get(focus.occurrence)
-                        if (state.field(isModifierKeyHeld) && hasDefinition) {
-                            classes.push('cm-token-selection-definition-ready')
-                            if (url) {
-                                attributes['data-link'] = url
-                            }
-                        }
-
-                        ranges.push(
-                            Decoration.mark({
-                                class: classes.join(' '),
-                                attributes,
-                            }).range(valueRangeStart, valueRangeEnd)
-                        )
+                    // If the user is hovering over an occurrence with a definition holding the modifier key,
+                    // add a class to make an occurrence to look like a link.
+                    const { hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(focus.occurrence)
+                    if (state.field(isModifierKeyHeld) && hasDefinition) {
+                        classes.push('cm-token-selection-definition-ready')
                     }
 
-                    const selected = highlights?.find(
-                        ({ range }) =>
-                            focus.occurrence.range.start.line === range.start.line &&
-                            focus.occurrence.range.start.character === range.start.character &&
-                            focus.occurrence.range.end.line === range.end.line &&
-                            focus.occurrence.range.end.character === range.end.character
-                    )
+                    decorations.push({
+                        decoration: Decoration.mark({ class: classes.join(' '), attributes }),
+                        range: focus.occurrence.range,
+                    })
 
-                    if (selected) {
+                    const highlights = state.field(documentHighlightsField)
+                    const focusedOccurrenceHighlight = findByOccurrence(highlights, focus.occurrence)
+
+                    if (focusedOccurrenceHighlight) {
                         for (const highlight of sortRangeValuesByStart(highlights)) {
-                            if (highlight === selected) {
+                            if (highlight === focusedOccurrenceHighlight) {
+                                // Focused occurrence is already highlighted.
                                 continue
                             }
 
-                            const highlightRangeStart = positionToOffset(state.doc, highlight.range.start)
-                            const highlightRangeEnd = positionToOffset(state.doc, highlight.range.end)
-
-                            if (highlightRangeStart === null || highlightRangeEnd === null) {
-                                continue
-                            }
-
-                            ranges.push(
-                                Decoration.mark({
-                                    class: 'interactive-occurrence sourcegraph-document-highlight',
-                                }).range(highlightRangeStart, highlightRangeEnd)
-                            )
+                            decorations.push({
+                                decoration: Decoration.mark({
+                                    class: 'sourcegraph-document-highlight',
+                                }),
+                                range: highlight.range,
+                            })
                         }
                     }
                 }
 
                 if (pin) {
-                    const valueRangeStart = positionToOffset(state.doc, pin.occurrence.range.start)
-                    const valueRangeEnd = positionToOffset(state.doc, pin.occurrence.range.end)
-
-                    if (valueRangeStart !== null && valueRangeEnd !== null) {
-                        ranges.push(
-                            Decoration.mark({
-                                class: 'interactive-occurrence selection-highlight',
-                            }).range(valueRangeStart, valueRangeEnd)
-                        )
-                    }
+                    decorations.push({
+                        decoration: Decoration.mark({ class: 'selection-highlight' }),
+                        range: pin.occurrence.range,
+                    })
                 }
 
-                if (hover && hover.occurrence !== focus?.occurrence && hover.occurrence !== pin?.occurrence) {
-                    const valueRangeStart = positionToOffset(state.doc, hover.occurrence.range.start)
-                    const valueRangeEnd = positionToOffset(state.doc, hover.occurrence.range.end)
-
-                    if (valueRangeStart !== null && valueRangeEnd !== null) {
-                        ranges.push(
-                            Decoration.mark({
-                                class: 'interactive-occurrence selection-highlight',
-                            }).range(valueRangeStart, valueRangeEnd)
-                        )
-                    }
+                if (hover) {
+                    decorations.push({
+                        decoration: Decoration.mark({ class: 'selection-highlight' }),
+                        range: hover.occurrence.range,
+                    })
                 }
+
+                const ranges = decorations.reduce((acc, { decoration, range }) => {
+                    const from = positionToOffset(state.doc, range.start)
+                    const to = positionToOffset(state.doc, range.end)
+
+                    if (from !== null && to !== null) {
+                        acc.push(decoration.range(from, to))
+                    }
+
+                    return acc
+                }, [] as Range<Decoration>[])
 
                 return Decoration.set(ranges.sort((a, b) => a.from - b.from))
             }

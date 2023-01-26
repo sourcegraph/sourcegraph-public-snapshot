@@ -1,11 +1,11 @@
-import { Tooltip } from '@codemirror/view'
+import { Tooltip, TooltipView } from '@codemirror/view'
 
 export class LoadingTooltip implements Tooltip {
     public readonly above = true
 
     constructor(public readonly pos: number) {}
 
-    public create() {
+    public create(): TooltipView {
         const dom = document.createElement('div')
         dom.classList.add('tmp-tooltip')
         dom.textContent = 'Loading...'

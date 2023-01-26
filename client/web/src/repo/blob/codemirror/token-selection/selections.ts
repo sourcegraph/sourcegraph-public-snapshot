@@ -18,7 +18,7 @@ export const fallbackOccurrences = StateField.define<Map<number, Occurrence>>({
 
 // View plugin that listens to history location changes and updates editor
 // selection accordingly.
-export const syncSelectionWithURL: Extension = ViewPlugin.fromClass(
+export const syncOccurrenceWithURL: Extension = ViewPlugin.fromClass(
     class implements PluginValue {
         private onDestroy: H.UnregisterCallback
         constructor(public view: EditorView) {

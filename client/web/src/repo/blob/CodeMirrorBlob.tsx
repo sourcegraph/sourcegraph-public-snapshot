@@ -29,15 +29,15 @@ import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
+import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
-import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
-import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),

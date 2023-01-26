@@ -9,7 +9,7 @@ import { definitionExtension, goToDefinitionOnMouseEvent } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
 import { keyboardShortcutsExtension } from './keybindings'
 import { modifierClickExtension } from './modifier-click'
-import { fallbackOccurrences, syncSelectionWithURL } from './selections'
+import { fallbackOccurrences, syncOccurrenceWithURL } from './selections'
 
 const LONG_CLICK_DURATION = 500
 
@@ -49,7 +49,7 @@ export function tokenSelectionExtension(): Extension {
 
     return [
         fallbackOccurrences,
-        syncSelectionWithURL,
+        syncOccurrenceWithURL,
 
         documentHighlightsExtension(),
         codeIntelTooltipsExtension(),
