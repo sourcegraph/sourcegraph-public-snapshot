@@ -26,6 +26,22 @@ func (p *pendingUpload) reader() io.ReadCloser {
 	return io.NopCloser(bytes.NewReader(data))
 }
 
+// Part numbers must be consecutively ordered, but can start/end at any number.
+// Returns the min/max found in p.Parts.
+func (p *pendingUpload) partNumberRange() (min, max int) {
+	max = -1
+	min = -1
+	for _, partNumber := range p.Parts {
+		if max == -1 || partNumber > max {
+			max = partNumber
+		}
+		if min == -1 || partNumber < min {
+			min = partNumber
+		}
+	}
+	return min, max
+}
+
 func decodePendingUpload(r io.ReadCloser) (*pendingUpload, error) {
 	defer r.Close()
 	var v pendingUpload
@@ -128,18 +144,7 @@ func (s *Service) completeUpload(ctx context.Context, bucketName, objectName, up
 	if err != nil {
 		return err
 	}
-
-	// Part numbers must be consecutively ordered, but can start/end at any number.
-	maxPartNumber := -1
-	minPartNumber := -1
-	for _, partNumber := range upload.Parts {
-		if maxPartNumber == -1 || partNumber > maxPartNumber {
-			maxPartNumber = partNumber
-		}
-		if minPartNumber == -1 || partNumber < minPartNumber {
-			minPartNumber = partNumber
-		}
-	}
+	maxPartNumber, minPartNumber := upload.partNumberRange()
 
 	// Open the parts of the upload.
 	var partReaders []io.Reader
@@ -200,5 +205,26 @@ func (s *Service) deletePendingUpload(ctx context.Context, bucketName, objectNam
 		return deleteErrors
 	}
 	s.Log.Debug("deletePendingUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
+	return nil
+}
+
+func (s *Service) abortUpload(ctx context.Context, bucketName, objectName, uploadID string) error {
+	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
+	if err != nil {
+		return err
+	}
+	maxPartNumber, minPartNumber := upload.partNumberRange()
+
+	// Delete the upload
+	if err := s.deletePendingUpload(ctx, bucketName, objectName, uploadID, minPartNumber, maxPartNumber); err != nil {
+		s.Log.Error(
+			"deleting pending multi-part upload failed",
+			sglog.String("key", bucketName+"/"+objectName),
+			sglog.String("uploadID", uploadID),
+			sglog.Error(err),
+		)
+	}
+
+	s.Log.Debug("abortUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
 	return nil
 }

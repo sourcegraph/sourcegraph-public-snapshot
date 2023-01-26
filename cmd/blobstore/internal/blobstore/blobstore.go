@@ -207,7 +207,15 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
 		if len(path) == 2 && r.URL.Query().Has("uploadId") {
 			// DELETE /<bucket>/<object>?uploadId=foobar
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html
-			// TODO(blobstore): implement me!
+			uploadID := r.URL.Query().Get("uploadId")
+			bucketName := path[0]
+			objectName := path[1]
+			if err := s.abortUpload(ctx, bucketName, objectName, uploadID); err != nil {
+				if err == ErrNoSuchUpload {
+					return writeS3Error(w, s3ErrorNoSuchUpload, bucketName, err, http.StatusNotFound)
+				}
+				return errors.Wrap(err, "abortUpload")
+			}
 			w.WriteHeader(http.StatusOK)
 			return nil
 		} else if len(path) == 2 {
