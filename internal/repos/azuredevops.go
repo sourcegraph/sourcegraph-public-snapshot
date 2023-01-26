@@ -3,6 +3,8 @@ package repos
 import (
 	"context"
 	"fmt"
+	"path"
+
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"path"
 )
 
 // A AzureDevOpsSource yields repositories from a single Azure DevOps connection configured
