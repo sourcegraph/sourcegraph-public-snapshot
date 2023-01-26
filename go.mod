@@ -201,7 +201,6 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hexops/autogold/v2 v2.0.3 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
@@ -225,6 +224,7 @@ require (
 	github.com/frankban/quicktest v1.14.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
+	github.com/hexops/autogold/v2 v2.0.3
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/sourcegraph/conc v0.1.0
@@ -405,7 +405,6 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
