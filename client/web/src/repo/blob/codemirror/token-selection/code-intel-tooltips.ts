@@ -13,6 +13,7 @@ import { computeMouseDirection, HOVER_DEBOUNCE_TIME, MOUSE_NO_BUTTON, pin } from
 import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
+    occurrenceAtMouseEvent,
     occurrenceAtPosition,
     positionAtCmPosition,
     rangeToCmSelection,
@@ -487,5 +488,22 @@ const tooltipStyles = EditorView.theme({
 })
 
 export function codeIntelTooltipsExtension(): Extension {
-    return [codeIntelTooltipsState, hoverCache, hoverManager, pinManager, tooltipStyles]
+    return [
+        codeIntelTooltipsState,
+        hoverCache,
+        hoverManager,
+        pinManager,
+        tooltipStyles,
+
+        EditorView.domEventHandlers({
+            click(event, view) {
+                // Close selected (focused) code-intel tooltip on click outside.
+                const atEvent = occurrenceAtMouseEvent(view, event)
+                const current = getCodeIntelTooltipState(view, 'focus')
+                if (atEvent?.occurrence !== current?.occurrence && current?.tooltip instanceof CodeIntelTooltip) {
+                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                }
+            },
+        }),
+    ]
 }
