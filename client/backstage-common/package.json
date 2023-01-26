@@ -16,6 +16,8 @@
     "role": "common-library"
   },
   "scripts": {
+    "es": "ts-node --transpile-only ./scripts/build.ts && cp dist-bak/package.json dist/",
+    "compile": "tsc --project tsconfig.json",
     "build": "backstage-cli package build",
     "lint": "backstage-cli package lint",
     "test": "backstage-cli package test",
@@ -26,10 +28,10 @@
   "devDependencies": {
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
-    "@types/highlight.js": "9.12.4",
+    "@sourcegraph/tsconfig": "^4.0.1",
     "@types/jest": "^29.4.0",
-    "highlight.js": "^10.5.0",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "webpack": "^5.75.0"
   },
   "dependencies": {
     "@backstage/catalog-model": "^1.1.5",
