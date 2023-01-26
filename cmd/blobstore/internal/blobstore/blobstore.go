@@ -35,6 +35,7 @@ type Service struct {
 	bucketLocksMu     sync.Mutex
 	bucketLocks       map[string]*sync.RWMutex
 	multipartUploadMu sync.Mutex
+	MockObjectAge     map[string]time.Time
 }
 
 func (s *Service) init() {
