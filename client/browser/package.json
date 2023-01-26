@@ -69,10 +69,10 @@
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/extension-api-classes": "^1.1.0",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/extension-api-classes": "^1.1.0",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
     "delay": "^4.4.1",
@@ -93,6 +93,7 @@
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",
     "webext-domain-permission-toggle": "^1.0.1",
-    "webextension-polyfill": "^0.6.0"
+    "webextension-polyfill": "^0.6.0",
+    "react-router-dom-v5-compat": "^6.7.0"
   }
 }

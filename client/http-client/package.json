@@ -18,8 +18,8 @@
     "sinon": "^9.0.2"
   },
   "dependencies": {
-    "@apollo/client": "^3.5.0",
     "@sourcegraph/common": "workspace:*",
+    "@apollo/client": "^3.5.0",
     "apollo3-cache-persist": "^0.12.1",
     "delay": "^4.4.1",
     "lodash": "^4.17.20",

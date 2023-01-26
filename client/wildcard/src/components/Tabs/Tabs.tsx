@@ -79,7 +79,6 @@ export interface TabPanelProps extends ReachTabPanelProps {}
  *
  * See: https://reach.tech/tabs/
  */
-// eslint-disable-next-line react/display-name
 export const Tabs = React.forwardRef((props, reference) => {
     const {
         lazy = false,

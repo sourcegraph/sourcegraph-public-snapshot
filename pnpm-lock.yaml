@@ -524,6 +524,7 @@ importers:
       puppeteer: ^13.5.1
       react: 18.1.0
       react-dom: 18.1.0
+      react-router-dom-v5-compat: ^6.7.0
       rxjs: ^6.6.3
       semver: ^7.3.2
       shelljs: ^0.8.4
@@ -565,6 +566,7 @@ importers:
       path-browserify: 1.0.1
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
+      react-router-dom-v5-compat: 6.7.0_xjeikfjhclro5pp2abrahotxli
       rxjs: 6.6.7
       semver: 7.3.8
       sourcegraph: link:../extension-api
@@ -1021,6 +1023,7 @@ importers:
       use-deep-compare-effect: ^1.6.1
       use-resize-observer: ^9.0.2
       util: ^0.12.5
+      utility-types: ^3.10.0
       uuid: ^8.3.0
       webpack-dev-server: ^4.11.1
       zustand: ^3.6.9
@@ -1074,6 +1077,7 @@ importers:
       use-deep-compare-effect: 1.6.1_react@18.1.0
       use-resize-observer: 9.0.2_ef5jwxihqo6n7gxfmzogljlgcm
       util: 0.12.5
+      utility-types: 3.10.0
       uuid: 8.3.2
       zustand: 3.7.2_react@18.1.0
     devDependencies:
@@ -1235,12 +1239,16 @@ importers:
   client/vscode:
     specifiers:
       '@mdi/js': ^6.7.96
+      '@reach/visually-hidden': ^0.16.0
       '@sourcegraph/branded': workspace:*
       '@sourcegraph/build-config': workspace:*
       '@sourcegraph/client-api': workspace:*
       '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
       '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
       '@types/react': 18.0.8
       '@types/react-dom': 18.0.2
       '@vscode/codicons': ^0.0.29
@@ -1285,10 +1293,14 @@ importers:
       zustand: ^3.6.9
     dependencies:
       '@mdi/js': 6.9.96
+      '@reach/visually-hidden': 0.16.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@sourcegraph/branded': link:../branded
       '@sourcegraph/client-api': link:../client-api
       '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
       '@vscode/codicons': 0.0.29
       '@vscode/webview-ui-toolkit': 0.9.0_react@18.1.0
       agent-base: 6.0.2

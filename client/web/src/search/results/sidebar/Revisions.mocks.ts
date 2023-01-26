@@ -109,12 +109,20 @@ export const FILTERED_MOCKS = [...filteredBranchesMocks, ...filteredTagsMocks]
 
 export const EMPTY_FILTERED_MOCKS = [...emptyFilteredBranchesMocks, ...emptyFilteredTagsMocks]
 
-export const GRAPHQL_ERROR_MOCKS = [
+interface GraphQlErrorMocks {
+    request: MockedResponse<SearchSidebarGitRefsResult>['request']
+    result?: {
+        errors: GraphQLError[]
+    }
+    error?: Error
+}
+
+export const GRAPHQL_ERROR_MOCKS: GraphQlErrorMocks[] = [
     { request: generateMockedRequest(GitRefType.GIT_BRANCH), result: { errors: [new GraphQLError('GraphQL error')] } },
     { request: generateMockedRequest(GitRefType.GIT_TAG), result: { errors: [new GraphQLError('GraphQL error')] } },
 ]
 
-export const NETWORK_ERROR_MOCKS = [
+export const NETWORK_ERROR_MOCKS: GraphQlErrorMocks[] = [
     { request: generateMockedRequest(GitRefType.GIT_BRANCH), error: new Error('Network error') },
     { request: generateMockedRequest(GitRefType.GIT_TAG), error: new Error('Network error') },
 ]
