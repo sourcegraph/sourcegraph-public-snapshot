@@ -39,33 +39,6 @@ var watchConfOnce = sync.Once{}
 
 func loadCleanupIntervalFromConf() {
 	seconds := conf.Get().PermissionsSyncJobCleanupInterval
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
-	fmt.Printf("seconds: %d\n", seconds)
 	if seconds <= 0 {
 		cleanupInterval = defaultCleanupInterval
 	} else {
@@ -90,7 +63,6 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 	})
 
 	watchConfOnce.Do(func() {
-		loadCleanupIntervalFromConf()
 		conf.Watch(loadCleanupIntervalFromConf)
 	})
 
