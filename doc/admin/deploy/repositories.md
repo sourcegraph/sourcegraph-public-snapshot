@@ -22,7 +22,7 @@ Follow the [official GitHub docs](https://docs.github.com/en/repositories/creati
 
 Export the following environment variables for the next steps.
 
-- `DEPLOY_REPO_NAME`: name of the deployment repository
+- `SG_DEPLOY_REPO_NAME`: name of the deployment repository
   - `deploy-sourcegraph-k8s` for Kubernetes with Kustomize deployment
   - `deploy-sourcegraph-docker` for Docker and Docker Compose deployment
 - `DEPLOY_GITHUB_USERNAME`: the account name that is hosting the empty repository created in step 1 
