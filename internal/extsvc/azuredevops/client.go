@@ -16,6 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	azureDevOpsServicesURL = "https://dev.azure.com/"
+	// TODO: @varsanojidan look into which API version/s we want to support.
+	apiVersion = "7.0"
+)
+
 // Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
@@ -66,9 +72,7 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 
 func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
 	qs := make(url.Values)
-
-	// TODO: @varsanojidan look into which API version/s we want to support.
-	qs.Set("api-version", "7.0")
+	qs.Set("api-version", apiVersion)
 
 	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: qs.Encode()}
 
@@ -89,7 +93,7 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
 	qs := make(url.Values)
 
-	qs.Set("api-version", "7.0")
+	qs.Set("api-version", apiVersion)
 
 	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: qs.Encode()}
 
@@ -167,6 +171,12 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 		auth:       a,
 		rateLimit:  c.rateLimit,
 	}, nil
+}
+
+// IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
+// Services (https://dev.azure.com
+func (c *Client) IsAzureDevOpsServices() bool {
+	return c.URL.String() == azureDevOpsServicesURL
 }
 
 type ListRepositoriesResponse struct {
