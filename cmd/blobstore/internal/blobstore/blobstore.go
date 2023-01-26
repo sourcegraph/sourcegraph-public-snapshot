@@ -209,6 +209,26 @@ func (s *Service) getObject(ctx context.Context, bucketName, objectName string) 
 	return f, nil
 }
 
+func (s *Service) deleteObject(ctx context.Context, bucketName, objectName string) error {
+	_ = ctx
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	// Delete the object
+	objectFile := s.objectFile(bucketName, objectName)
+	if err := os.Remove(objectFile); err != nil {
+		if os.IsNotExist(err) {
+			return ErrNoSuchKey
+		}
+		return errors.Wrap(err, "Remove")
+	}
+	s.Log.Debug("delete object", sglog.String("key", bucketName+"/"+objectName))
+	return nil
+}
+
 // Returns a bucket-level lock
 //
 // When locked for reading, you have shared access to the bucket, for reading/writing objects to it.
