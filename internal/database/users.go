@@ -690,25 +690,54 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) ([]int32,
 	}
 	idsCond := sqlf.Join(userIDs, ",")
 
-	affectedUserID, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
-	if err != nil {
-		return nil, err
-	}
-
 	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
 		return nil, err
 	}
+	const updateUserExtAccQuery = `
+	UPDATE user_external_accounts
+	SET deleted_at = NULL
+	FROM user_external_accounts a
+	INNER JOIN users u
+	on a.user_id = u.id
+	WHERE a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND a.user_id IN (%s)
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateUserExtAccQuery, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateOrgInvQuery = `
+	UPDATE org_invitations
+	SET deleted_at = NULL
+	FROM org_invitations o
+	INNER JOIN users u
+	on o.recipient_user_id = u.id
+	or o.sender_user_id = u.id
+	WHERE o.deleted_at >= u.deleted_at
+	AND o.deleted_at <= u.deleted_at + interval '10 second'
+	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
+	`
 
-	//todo: @mucles - need add where condition to query to only update if deleted_at is within 10 secs of users.deleted_at
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=NULL, updated_at=now() WHERE user_id IN (%s) AND deleted_at IS NOT NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateOrgInvQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateRegistryExtQuery = `
+	update registry_extensions
+	set deleted_at = NULL
+	from registry_extensions r
+	inner join users b
+	on r.publisher_user_id = b.id
+	WHERE r.deleted_at >= b.deleted_at
+	AND r.deleted_at <= b.deleted_at + interval '10 second'
+	AND r.publisher_user_id IN (%s)
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateRegistryExtQuery, idsCond)); err != nil {
 		return nil, err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=NULL WHERE deleted_at IS NOT NULL and revoked_at IS NULL and expires_at >= now() AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
-		return nil, err
-	}
-
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=NULL WHERE deleted_at IS NOT NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
+	affectedUserID, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	if err != nil {
 		return nil, err
 	}
 
