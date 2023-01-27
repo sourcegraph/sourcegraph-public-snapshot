@@ -12,11 +12,6 @@ fi
 
 name=${1%/}
 
-if [ ! -d "$name" ]; then
-  echo "Directory '$name' does not exist"
-  exit 1
-fi
-
 if [ ! -f "$name.yaml" ]; then
   echo "File '$name.yaml' does not exist"
   exit 1
@@ -27,7 +22,7 @@ echo " * Building base image '$name' using apko"
 docker run \
   -v "$PWD":/work \
   cgr.dev/chainguard/apko \
-  build --debug apko.yaml \
+  build --debug "${name}.yaml" \
   "sourcegraph-wolfi/$name-base:latest" \
   "sourcegraph-wolfi-$name-base.tar" ||
   (echo "*** Build failed ***" && exit 1)
