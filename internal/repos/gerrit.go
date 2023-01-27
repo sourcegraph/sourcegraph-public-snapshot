@@ -21,13 +21,12 @@ import (
 // A GerritSource yields repositories from a single Gerrit connection configured
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
-	svc             *types.ExternalService
-	config          *schema.GerritConnection
-	cli             *gerrit.Client
-	serviceID       string
-	perPage         int
-	private         bool
-	allowedProjects map[string]struct{}
+	svc       *types.ExternalService
+	config    *schema.GerritConnection
+	cli       *gerrit.Client
+	serviceID string
+	perPage   int
+	private   bool
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -83,7 +82,7 @@ func (s *GerritSource) CheckConnection(ctx context.Context) error {
 // ListRepos returns all Gerrit repositories configured with this GerritSource's config.
 func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	allowedProjects := make(map[string]struct{})
-	for _, project := range s.config.Repos {
+	for _, project := range s.config.Projects {
 		allowedProjects[project] = struct{}{}
 	}
 	args := gerrit.ListProjectsArgs{

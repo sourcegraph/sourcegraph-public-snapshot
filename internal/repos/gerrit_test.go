@@ -45,7 +45,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	t.Run("with filtering", func(t *testing.T) {
 		conf := &schema.GerritConnection{
 			Url: "https://gerrit-review.googlesource.com",
-			Repos: []string{
+			Projects: []string{
 				"apps/reviewit",
 				"buck",
 			},

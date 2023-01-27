@@ -29,8 +29,8 @@
       "type": "string",
       "minLength": 1
     },
-    "repos": {
-      "description": "An array of repository strings specifying which Gerrit repositories to mirror on Sourcegraph. If empty, all repositories will be mirrored.",
+    "projects": {
+      "description": "An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.",
       "type": "array",
       "items": { "type": "string" },
       "examples": [
