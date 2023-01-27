@@ -132,7 +132,7 @@ The two important edits are changing the values for the properties `main`, `type
 
 Since we copied the plugin to a different directory Backstage we need to tell Backstage where to find the plugin.
 
-1. Make sure the plugin is build. Note we use pnpm here and not yarn, that is because Sourcegraph uses pnpm. Both yarn and pnpm work with the command defined in the `package.json` which just executes `backstage-cli` with some args.
+1. Make sure the plugin is built. Note that we use pnpm here and not yarn, which is because Sourcegraph uses pnpm. Both yarn and pnpm work with the command defined in the `package.json` which just executes `backstage-cli` with some args.
 
 ```bash
 $ cd sourcegraph/client/backstage/plugin
