@@ -1,3 +1,10 @@
+:global(.theme-dark) {
+    --shimmer-gradient: linear-gradient(90deg, #14171f 100%, #1b1f29 100%);
+}
+:global(.theme-light) {
+    --shimmer-gradient: linear-gradient(90deg, var(--gray-04) 20%, var(--gray-03) 30%);
+}
+
 .shimmer-container {
     position: relative;
     overflow: hidden;
@@ -12,7 +19,7 @@
     bottom: 0;
     left: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, var(--hl-gray-4) 100%, var(--hl-gray-5) 100%);
+    background: var(--shimmer-gradient);
     animation: shimmer 2s ease-out infinite;
     content: '';
 }
@@ -24,7 +31,7 @@
     bottom: 0;
     left: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, var(--hl-gray-4) 100%, var(--hl-gray-5) 100%);
+    background: var(--shimmer-gradient);
     animation: shimmer 2.5s ease-out infinite;
     content: '';
 }
