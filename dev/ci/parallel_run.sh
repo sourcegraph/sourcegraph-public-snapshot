@@ -19,11 +19,11 @@ trap "rm -rf $log_file" EXIT
 echo 'will cite' | parallel --citation &>/dev/null
 
 parallel --jobs 4 --memfree 500M --keep-order --line-buffer --joblog "$log_file" -v "$@"
-code=$?
+#code=$?
 
 echo "--- done - displaying job log:"
 cat "$log_file"
 
 create_annotation "$code" "$log_file"
 
-exit $code
+#exit $code
