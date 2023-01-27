@@ -9,6 +9,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
@@ -310,6 +311,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 	var results []BackfillQueueItem
 	for rows.Next() {
 		var temp BackfillQueueItem
+		var iteratorErrors []string
 		if err := rows.Scan(
 			&temp.ID,
 			&temp.InsightTitle,
@@ -324,9 +326,12 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.BackfillStartedAt,
 			&temp.BackfillCompletedAt,
 			&temp.QueuePosition,
-			&temp.Errors,
+			pq.Array(&iteratorErrors),
 		); err != nil {
 			return []BackfillQueueItem{}, err
+		}
+		if iteratorErrors != nil {
+			temp.Errors = &iteratorErrors
 		}
 
 		results = append(results, temp)
@@ -369,8 +374,8 @@ WITH job_queue as (
     from insights_jobs_backfill_in_progress where state = 'queued'  order by cost_bucket
 ),
 errors as (
-    select repo_iterator_id, array_agg(error_message) error_messages
-    from repo_iterator_errors
+    select repo_iterator_id, array_agg(err_msg) error_messages
+    from repo_iterator_errors, unnest(error_message) err_msg
     group by  repo_iterator_id
 ),
 state as (
