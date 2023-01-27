@@ -116,32 +116,30 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             },
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.SignIn,
-            render: (props: LayoutRouteComponentProps<{}>) => <SignInPage {...props} context={window.context} />,
-            exact: true,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SignInPage {...props} context={window.context} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.SignUp,
-            render: (props: LayoutRouteComponentProps<{}>) => <SignUpPage {...props} context={window.context} />,
-            exact: true,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SignUpPage {...props} context={window.context} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.UnlockAccount,
-            render: (props: LayoutRouteComponentProps<{}>) => <UnlockAccountPage {...props} context={window.context} />,
-            exact: true,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => (
+                <UnlockAccountPage {...props} context={window.context} />
+            ),
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Welcome,
             // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-            render: (props: LayoutRouteComponentProps<{}>) => <Redirect to={PageRoutes.Search} />,
-            exact: true,
+            render: () => <Redirect to={PageRoutes.Search} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.InstallGitHubAppSuccess,
             render: () => <InstallGitHubAppSuccessPage />,
         },
