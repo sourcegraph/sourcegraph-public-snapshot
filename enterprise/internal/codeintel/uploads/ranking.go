@@ -65,19 +65,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 		return nil
 	}
 
-	// TODO: Add mechanism to control last time it was indexed and how many left in consumable queue
-
-	// if there are consumable references in the queue, then we need to process them
 	fmt.Println("=================== WE ARE IN ==========================")
-	// countMap := make(map[string]int)
-
-	/*
-		TODO:
-		//1. Implement LPOP in keyvalue.go and add tests
-		2. add HMSET to keyvalue.go and add tests
-		3. add countMap to redis
-		4. store countMap (in its struct form) in postgres
-	*/
 
 	referencesByUploadID, err := redisStore.LRange("ranking:references:gold", 0, -1).Strings()
 	if err != nil {
@@ -188,12 +176,13 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 		fmt.Printf("OHBOY OHBOY OHBOY %s: %s \n", k, v)
 	}
 
-	// err = s.store.SetGlobalRanks(ctx, countMap)
-	// if err != nil {
-	// 	return err
-	// }
-
 	redisStore.Incr("ranking:graph:processed")
+
+	err = s.store.SetGlobalRanks(ctx, countMap)
+	if err != nil {
+		return err
+	}
+
 	// dirty goes up by 1
 	// set ranking:graph:processed to the one above
 
