@@ -8,11 +8,11 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
