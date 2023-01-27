@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "gerrit": {
-          "description": "Allow adding Gerrit code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "azureDevOps": {
           "description": "Allow adding Azure DevOps code host connections",
           "type": "string",
@@ -1594,7 +1588,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"]
           }
         },
         "oneOf": [
@@ -1604,7 +1598,8 @@
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" },
-          { "$ref": "#/definitions/BitbucketCloudAuthProvider" }
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
+          { "$ref": "#/definitions/GerritAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2176,6 +2171,23 @@
           "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
           "default": true,
           "type": "boolean"
+        }
+      }
+    },
+    "GerritAuthProvider": {
+      "description": "Gerrit auth provider",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gerrit"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+          "default": "https://gerrit-review.googlesource.com/"
         }
       }
     },

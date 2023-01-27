@@ -897,38 +897,6 @@
   },
   {
    "ID": 0,
-   "Name": "gerrit-review.googlesource.com/gwtjsonrpc",
-   "URI": "gerrit-review.googlesource.com/gwtjsonrpc",
-   "Description": "",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "gwtjsonrpc",
-    "ServiceType": "gerrit",
-    "ServiceID": "https://gerrit-review.googlesource.com/"
-   },
-   "Sources": {
-    "extsvc:gerrit:0": {
-     "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/gwtjsonrpc"
-    }
-   },
-   "Metadata": {
-    "description": "",
-    "id": "gwtjsonrpc",
-    "name": "",
-    "parent": "",
-    "state": "ACTIVE",
-    "branches": null,
-    "labels": null
-   }
-  },
-  {
-   "ID": 0,
    "Name": "gerrit-review.googlesource.com/gwtorm",
    "URI": "gerrit-review.googlesource.com/gwtorm",
    "Description": "",
@@ -1112,6 +1080,70 @@
    "Metadata": {
     "description": "",
     "id": "libs%2Fmodules%2Frepomanager%2Fcassandra",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/luci-config",
+   "URI": "gerrit-review.googlesource.com/luci-config",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "luci-config",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/luci-config"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "luci-config",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/luci-test",
+   "URI": "gerrit-review.googlesource.com/luci-test",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "luci-test",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/luci-test"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "luci-test",
     "name": "",
     "parent": "",
     "state": "ACTIVE",
@@ -2113,6 +2145,38 @@
   },
   {
    "ID": 0,
+   "Name": "gerrit-review.googlesource.com/plugins/checks-jenkins",
+   "URI": "gerrit-review.googlesource.com/plugins/checks-jenkins",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "plugins%2Fchecks-jenkins",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/plugins/checks-jenkins"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "plugins%2Fchecks-jenkins",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
    "Name": "gerrit-review.googlesource.com/plugins/cloud-notifications",
    "URI": "gerrit-review.googlesource.com/plugins/cloud-notifications",
    "Description": "",
@@ -2721,6 +2785,38 @@
   },
   {
    "ID": 0,
+   "Name": "gerrit-review.googlesource.com/plugins/events-nats",
+   "URI": "gerrit-review.googlesource.com/plugins/events-nats",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "plugins%2Fevents-nats",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/plugins/events-nats"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "plugins%2Fevents-nats",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
    "Name": "gerrit-review.googlesource.com/plugins/events-rabbitmq",
    "URI": "gerrit-review.googlesource.com/plugins/events-rabbitmq",
    "Description": "",
@@ -2842,7 +2938,7 @@
     "id": "plugins%2Ffind-owners",
     "name": "",
     "parent": "",
-    "state": "ACTIVE",
+    "state": "READ_ONLY",
     "branches": null,
     "labels": null
    }
@@ -2936,6 +3032,38 @@
    "Metadata": {
     "description": "",
     "id": "plugins%2Fgerrit-support",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/plugins/git-repo-metrics",
+   "URI": "gerrit-review.googlesource.com/plugins/git-repo-metrics",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "plugins%2Fgit-repo-metrics",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/plugins/git-repo-metrics"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "plugins%2Fgit-repo-metrics",
     "name": "",
     "parent": "",
     "state": "ACTIVE",
@@ -4280,38 +4408,6 @@
    "Metadata": {
     "description": "",
     "id": "plugins%2Fmaintainer",
-    "name": "",
-    "parent": "",
-    "state": "ACTIVE",
-    "branches": null,
-    "labels": null
-   }
-  },
-  {
-   "ID": 0,
-   "Name": "gerrit-review.googlesource.com/plugins/manifest",
-   "URI": "gerrit-review.googlesource.com/plugins/manifest",
-   "Description": "",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "plugins%2Fmanifest",
-    "ServiceType": "gerrit",
-    "ServiceID": "https://gerrit-review.googlesource.com/"
-   },
-   "Sources": {
-    "extsvc:gerrit:0": {
-     "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/plugins/manifest"
-    }
-   },
-   "Metadata": {
-    "description": "",
-    "id": "plugins%2Fmanifest",
     "name": "",
     "parent": "",
     "state": "ACTIVE",
@@ -5953,38 +6049,6 @@
   },
   {
    "ID": 0,
-   "Name": "gerrit-review.googlesource.com/plugins/startblock",
-   "URI": "gerrit-review.googlesource.com/plugins/startblock",
-   "Description": "",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "plugins%2Fstartblock",
-    "ServiceType": "gerrit",
-    "ServiceID": "https://gerrit-review.googlesource.com/"
-   },
-   "Sources": {
-    "extsvc:gerrit:0": {
-     "ID": "extsvc:gerrit:0",
-     "CloneURL": "https://gerrit-review.googlesource.com/plugins/startblock"
-    }
-   },
-   "Metadata": {
-    "description": "",
-    "id": "plugins%2Fstartblock",
-    "name": "",
-    "parent": "",
-    "state": "ACTIVE",
-    "branches": null,
-    "labels": null
-   }
-  },
-  {
-   "ID": 0,
    "Name": "gerrit-review.googlesource.com/plugins/supermanifest",
    "URI": "gerrit-review.googlesource.com/plugins/supermanifest",
    "Description": "",
@@ -6744,6 +6808,38 @@
    "Metadata": {
     "description": "",
     "id": "summit%2F2021",
+    "name": "",
+    "parent": "",
+    "state": "ACTIVE",
+    "branches": null,
+    "labels": null
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gerrit-review.googlesource.com/summit/2022",
+   "URI": "gerrit-review.googlesource.com/summit/2022",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "summit%2F2022",
+    "ServiceType": "gerrit",
+    "ServiceID": "https://gerrit-review.googlesource.com/"
+   },
+   "Sources": {
+    "extsvc:gerrit:0": {
+     "ID": "extsvc:gerrit:0",
+     "CloneURL": "https://gerrit-review.googlesource.com/summit/2022"
+    }
+   },
+   "Metadata": {
+    "description": "",
+    "id": "summit%2F2022",
     "name": "",
     "parent": "",
     "state": "ACTIVE",
