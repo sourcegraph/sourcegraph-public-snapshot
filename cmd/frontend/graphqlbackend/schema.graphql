@@ -302,6 +302,12 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Adds an external account to the authenticated user's account. The service type and service ID
+    must correspond to a valid auth provider on the site. The account details must be a stringified
+    JSON object that contains valid credentials for the provided service type.
+    """
+    addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
+    """
     Sends an invitation to join Sourcegraph to the given email address.
 
     Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email

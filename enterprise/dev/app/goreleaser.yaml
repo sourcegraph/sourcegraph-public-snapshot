@@ -122,6 +122,7 @@ brews:
     dependencies:
       - name: git
       - name: redis
+      - name: sourcegraph/src-cli/src-cli
 
 announce:
   slack:

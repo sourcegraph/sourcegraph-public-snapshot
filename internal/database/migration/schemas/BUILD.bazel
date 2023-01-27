@@ -16,6 +16,7 @@ go_library(
     deps = [
         "//internal/database/migration/definition",
         "//internal/database/migration/shared",
+        "//internal/lazyregexp",
         "//lib/errors",
         "//migrations",
     ],

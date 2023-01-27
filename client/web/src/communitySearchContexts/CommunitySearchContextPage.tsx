@@ -85,7 +85,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
-            submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+            const { history, selectedSearchContextSpec } = props
+            submitSearch({
+                historyOrNavigate: history,
+                location: history.location,
+                query,
+                caseSensitive,
+                patternType,
+                selectedSearchContextSpec,
+                source: 'communitySearchContextPage',
+            })
         }
 
     return (

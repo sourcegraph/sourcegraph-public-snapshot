@@ -1,7 +1,6 @@
 package rcache
 
 import (
-	"context"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,15 +18,6 @@ func poolGet() redis.Conn {
 	}
 
 	return pool.Get()
-}
-
-func poolGetContext(ctx context.Context) (redis.Conn, error) {
-	pool, ok := pool.Pool()
-	if !ok {
-		return errorConn{err: errRedisDisable}, nil
-	}
-
-	return pool.GetContext(ctx)
 }
 
 var errRedisDisable = errors.New("redis is disabled")

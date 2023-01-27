@@ -312,14 +312,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(parts...)), nil
 }
 
-func zoektIgnorePaths(paths []string) zoektquery.Q {
-	if len(paths) == 0 {
-		return &zoektquery.Const{Value: true}
-	}
-
-	return &zoektquery.Not{Child: zoektquery.NewFileNameSet(paths...)}
-}
-
 // zoektIndexedCommit returns the default indexed commit for a repository.
 func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.RepoName) (api.CommitID, bool, error) {
 	// TODO check we are using the most efficient way to List. I tested with

@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -55,7 +56,10 @@ func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commi
 		)
 		if content != nil && err == nil {
 			return codeowners.Parse(bytes.NewReader(content))
+		} else if os.IsNotExist(err) {
+			continue
 		}
+		return nil, err
 	}
 	return nil, nil
 }

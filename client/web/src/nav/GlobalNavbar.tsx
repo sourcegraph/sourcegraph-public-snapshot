@@ -1,10 +1,10 @@
 import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -59,8 +59,6 @@ export interface GlobalNavbarProps
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps {
-    history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
@@ -129,8 +127,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     isLightTheme,
     branding,
-    location,
-    history,
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
@@ -144,6 +140,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
+
+    const location = useLocation()
 
     const routeMatch = useRoutesMatch(props.routes)
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
@@ -321,11 +319,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(
-                                                history.location.pathname +
-                                                    history.location.search +
-                                                    history.location.hash
-                                            )
+                                            encodeURI(location.pathname + location.search + location.hash)
                                         }
                                         variant="secondary"
                                         outline={true}
@@ -367,8 +361,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 <div className="w-100 px-3 py-2 border-bottom">
                     <SearchNavbarItem
                         {...props}
-                        location={location}
-                        history={history}
                         isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}

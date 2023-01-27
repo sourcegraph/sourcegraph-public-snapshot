@@ -40,6 +40,7 @@ go_library(
         "@com_github_sourcegraph_zoekt//rpc",
         "@com_github_sourcegraph_zoekt//stream",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_exp//slices",
     ],
 )
 

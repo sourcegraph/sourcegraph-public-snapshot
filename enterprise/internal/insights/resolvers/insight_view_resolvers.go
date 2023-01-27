@@ -395,11 +395,6 @@ func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphql
 
 }
 
-type allReposScope struct {
-}
-
-func (a *allReposScope) AllRepos() bool { return true }
-
 type reposSearchScope struct {
 	search   string
 	allRepos bool

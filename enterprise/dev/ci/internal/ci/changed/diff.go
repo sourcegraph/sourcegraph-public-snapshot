@@ -27,6 +27,7 @@ const (
 	DockerImages
 	WolfiPackages
 	WolfiBaseImages
+	Protobuf
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -191,7 +192,28 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 			diff |= WolfiBaseImages
 			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
 		}
+
+		// Affects Protobuf files and configuration
+		if strings.HasSuffix(p, ".proto") {
+			diff |= Protobuf
+		}
+
+		// Affects generated Protobuf files
+		if strings.HasSuffix(p, "buf.gen.yaml") {
+			diff |= Protobuf
+		}
+
+		// Affects configuration for Buf and associated linters
+		if strings.HasSuffix(p, "buf.yaml") {
+			diff |= Protobuf
+		}
+
+		// Generated Go code from Protobuf definitions
+		if strings.HasSuffix(p, ".pb.go") {
+			diff |= Protobuf
+		}
 	}
+
 	return
 }
 
@@ -230,6 +252,8 @@ func (d Diff) String() string {
 		return "WolfiPackages"
 	case WolfiBaseImages:
 		return "WolfiBaseImages"
+	case Protobuf:
+		return "Protobuf"
 
 	case All:
 		return "All"
