@@ -20,7 +20,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//internal/workerutil",
+        "//internal/executor",
         "//lib/errors",
         "@com_github_sourcegraph_scip//bindings/go/scip",
     ],

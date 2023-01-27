@@ -47,5 +47,3 @@ func (r *extensionDBResolver) release(ctx context.Context) (*stores.Release, err
 	r.r, err = getLatestRelease(ctx, stores.Releases(r.db), r.v.NonCanonicalExtensionID, r.v.ID, "release")
 	return r.r, err
 }
-
-func strptr(s string) *string { return &s }

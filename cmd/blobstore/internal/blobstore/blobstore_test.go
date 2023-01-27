@@ -2,12 +2,14 @@ package blobstore_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
@@ -15,22 +17,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-// Tests that initializing an uploadstore with blobstore as the backend works (performing no operations.)
+// Initialize uploadstore, shutdown.
 func TestInit(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
-	defer server.Close()
+	_, server, _ := initTestStore(ctx, t, t.TempDir())
 
-	_ = store
+	defer server.Close()
 }
 
-// Tests that getting an object that does not exist works.
+// Initialize uploadstore twice (the bucket already exists.)
+func TestInit_BucketAlreadyExists(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+
+	_, server1, _ := initTestStore(ctx, t, dir)
+	_, server2, _ := initTestStore(ctx, t, dir)
+	server1.Close()
+	server2.Close()
+}
+
+// Initialize uploadstore, get an object that doesn't exist
 func TestGetNotExists(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	reader, err := store.Get(ctx, "does-not-exist-key")
+	assertObjectDoesNotExist(ctx, store, t, "does-not-exist-key")
+}
+
+func assertObjectDoesNotExist(ctx context.Context, store uploadstore.Store, t *testing.T, key string) {
+	reader, err := store.Get(ctx, key)
 	if err != nil {
 		t.Fatal("expected a reader, got an error", err)
 	}
@@ -39,75 +55,171 @@ func TestGetNotExists(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "NotFound") {
-		t.Fatalf("expected NotFound error, got %+v", err)
+	if !strings.Contains(err.Error(), "NoSuchKey") {
+		t.Fatalf("expected NoSuchKey error, got %+v", err)
 	}
 	if len(data) != 0 {
 		t.Fatal("expected no data")
 	}
 }
 
-// Tests uploading an object works.
+// Initialize uploadstore, upload an object
 func TestUpload(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Upload(ctx context.Context, key string, r io.Reader) (int64, error)
-	_ = store
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 }
 
-// Tests uploading an object and getting it back works.
+// Initialize uploadstore, upload an object twice and confirm there is no conflict
+func TestUploadTwice(t *testing.T) {
+	ctx := context.Background()
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar", strings.NewReader("Hello world 2!"))
+	autogold.Expect([]interface{}{14, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+}
+
+// Initialize uploadstore, upload an object, get it back
 func TestGetExists(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Get(ctx context.Context, key string) (io.ReadCloser, error)
-	_ = store
+	// Upload our object
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// Get the object back out
+	reader, err := store.Get(ctx, "foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Expect([]any{12, 12, "Hello world!"}).Equal(t, []any{
+		uploaded,
+		len(data),
+		string(data),
+	})
 }
 
-// Tests uploading two objects and then composing them together works.
+// Initialize uploadstore, upload two objects, compose them together
+//
+// Compose will concatenate the given source objects together and write to the given
+// destination object. The source objects will be removed if the composed write is
+// successful.
 func TestCompose(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Compose(ctx context.Context, destination string, sources ...string) (int64, error)
-	//
-	// Compose will concatenate the given source objects together and write to the given
-	// destination object. The source objects will be removed if the composed write is
-	// successful.
-	_ = store
+	// Upload three objects
+	uploaded, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar3", strings.NewReader("Hello 3!"))
+	autogold.Expect([]interface{}{8, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 2! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// Compose the objects together.
+	resultLength, err := store.Compose(ctx, "foobar-result", "foobar1", "foobar2", "foobar3")
+	autogold.Expect([]interface{}{0, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
+
+	// Check the resulting object
+	reader, err := store.Get(ctx, "foobar-result")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Expect("").Equal(t, string(data))
+
+	// Ensure the three objects we uploaded have been deleted.
+	assertObjectDoesNotExist(ctx, store, t, "foobar1")
+	assertObjectDoesNotExist(ctx, store, t, "foobar2")
+	assertObjectDoesNotExist(ctx, store, t, "foobar3")
 }
 
-// Tests deleting an object works.
+// Initialize uploadstore, upload an object, delete it
 func TestDelete(t *testing.T) {
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.Delete(ctx context.Context, key string) error
-	_ = store
+	// Upload our object
+	uploaded, err := store.Upload(ctx, "foobar", strings.NewReader("Hello world!"))
+	autogold.Expect([]interface{}{12, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// Delete the object
+	err = store.Delete(ctx, "foobar")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Confirm the object no longer exists
+	assertObjectDoesNotExist(ctx, store, t, "foobar")
 }
 
-// Tests expiring objects works.
+// Initialize uploadstore, upload objects, expire them
 func TestExpireObjects(t *testing.T) {
+	// TODO(blobstore): Disabled because listing objects is not yet implemented.
+	t.SkipNow()
+
 	ctx := context.Background()
-	store, server := initTestStore(ctx, t)
+	store, server, svc := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	// TODO(blobstore): call store.ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
-	_ = store
+	// Upload some objects
+	_, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.Upload(ctx, "foobar3", strings.NewReader("Hello 3!"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 2! "))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	svc.MockObjectAge = make(map[string]time.Time)
+	svc.MockObjectAge["foobar1"] = time.Now().Add(-1 * time.Hour)
+	svc.MockObjectAge["foobar2"] = time.Now().Add(-10 * time.Minute)
+
+	maxAge := 10 * time.Minute
+	if err := store.ExpireObjects(ctx, "foobar", maxAge); err != nil {
+		t.Fatal(err)
+	}
+
+	assertObjectDoesNotExist(ctx, store, t, "foobar1")
+	assertObjectDoesNotExist(ctx, store, t, "foobar2")
 }
 
-func initTestStore(ctx context.Context, t *testing.T) (uploadstore.Store, *httptest.Server) {
+func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadstore.Store, *httptest.Server, *blobstore.Service) {
 	observationCtx := observation.TestContextTB(t)
-	ts := httptest.NewServer(&blobstore.Service{
-		DataDir:        t.TempDir(),
+	svc := &blobstore.Service{
+		DataDir:        dataDir,
 		Log:            logtest.Scoped(t),
 		ObservationCtx: observationCtx,
-	})
+		MockObjectAge:  nil,
+	}
+	ts := httptest.NewServer(svc)
 
 	config := uploadstore.Config{
 		Backend:      "blobstore",
@@ -127,5 +239,5 @@ func initTestStore(ctx context.Context, t *testing.T) (uploadstore.Store, *httpt
 	if err := store.Init(ctx); err != nil {
 		t.Fatal("Init", err)
 	}
-	return store, ts
+	return store, ts, svc
 }

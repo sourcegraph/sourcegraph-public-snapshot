@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type getIntervalFunc func() time.Duration
+
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
 //
 // See
@@ -19,11 +21,10 @@ import (
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	name        string
-	routineType recorder.RoutineType
 	description string
 	jobName     string
 	recorder    *recorder.Recorder
-	interval    time.Duration
+	getInterval getIntervalFunc
 	handler     unifiedHandler
 	operation   *observation.Operation
 	clock       glock.Clock
@@ -100,10 +101,14 @@ func NewPeriodicGoroutine(ctx context.Context, name, description string, interva
 // NewPeriodicGoroutineWithMetrics creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
 func NewPeriodicGoroutineWithMetrics(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, name, description, interval, handler, operation, glock.NewRealClock())
+	return newPeriodicGoroutine(ctx, name, description, func() time.Duration { return interval }, handler, operation, glock.NewRealClock())
 }
 
-func newPeriodicGoroutine(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
+func NewPeriodicGoroutineWithMetricsAndDynamicInterval(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
+	return newPeriodicGoroutine(ctx, name, description, getInterval, handler, operation, glock.NewRealClock())
+}
+
+func newPeriodicGoroutine(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
 	ctx, cancel := context.WithCancel(ctx)
 
 	var h unifiedHandler
@@ -121,7 +126,7 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, interva
 		name:        name,
 		description: description,
 		handler:     h,
-		interval:    interval,
+		getInterval: getInterval,
 		operation:   operation,
 		clock:       clock,
 		ctx:         ctx,
@@ -145,6 +150,7 @@ loop:
 		duration := time.Since(start)
 		if r.recorder != nil {
 			go r.recorder.LogRun(r, duration, err)
+			r.recorder.SaveKnownRoutine(r)
 		}
 
 		if shutdown {
@@ -154,7 +160,7 @@ loop:
 		}
 
 		select {
-		case <-r.clock.After(r.interval):
+		case <-r.clock.After(r.getInterval()):
 		case <-r.ctx.Done():
 			break loop
 		}
@@ -193,7 +199,7 @@ func (r *PeriodicGoroutine) Description() string {
 }
 
 func (r *PeriodicGoroutine) Interval() time.Duration {
-	return r.interval
+	return r.getInterval()
 }
 
 func (r *PeriodicGoroutine) JobName() string {

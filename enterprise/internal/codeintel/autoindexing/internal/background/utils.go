@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -62,7 +62,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 }
 
 func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
-	var executionLogs []workerutil.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,

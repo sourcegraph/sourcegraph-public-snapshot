@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "auth",
-    srcs = ["sourcegraph_operator_cleaner.go"],
+    srcs = [
+        "perms_syncer_cleaner.go",
+        "sourcegraph_operator_cleaner.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/worker/auth",
     visibility = ["//visibility:public"],
     deps = [
@@ -12,11 +15,13 @@ go_library(
         "//enterprise/internal/cloud",
         "//internal/actor",
         "//internal/auth",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/env",
         "//internal/errcode",
         "//internal/goroutine",
+        "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
@@ -25,14 +30,20 @@ go_library(
 
 go_test(
     name = "auth_test",
-    srcs = ["sourcegraph_operator_cleaner_test.go"],
+    srcs = [
+        "perms_syncer_cleaner_test.go",
+        "sourcegraph_operator_cleaner_test.go",
+    ],
     embed = [":auth"],
     deps = [
         "//enterprise/internal/cloud",
         "//internal/auth",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/extsvc",
+        "//internal/types",
+        "//schema",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

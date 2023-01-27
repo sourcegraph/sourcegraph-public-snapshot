@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
@@ -175,7 +175,7 @@ type batchSpecWorkspaceStepV2Resolver struct {
 	step    batcheslib.Step
 	skipped bool
 
-	logEntry      workerutil.ExecutionLogEntry
+	logEntry      executor.ExecutionLogEntry
 	logEntryFound bool
 
 	cachedResult      *execution.AfterStepResult

@@ -37,7 +37,6 @@
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
-- [Code host connections on local dev environment](code-host.md)
 - [Building p4-fusion](./build_p4_fusion.md)
 
 ## [Languages](languages/index.md)

@@ -29,6 +29,7 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/executor",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/search/query",

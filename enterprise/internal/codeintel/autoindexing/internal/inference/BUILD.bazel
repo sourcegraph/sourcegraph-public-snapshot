@@ -21,7 +21,6 @@ go_library(
         "//internal/authz",
         "//internal/codeintel/dependencies",
         "//internal/conf/reposource",
-        "//internal/database",
         "//internal/env",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added out-of-band migration that will migrate all existing data from LSIF to SCIP (see additional [migration documentation](https://docs.sourcegraph.com/admin/how-to/lsif_scip_migration)). [#45106](https://github.com/sourcegraph/sourcegraph/pull/45106)
 - Code Insights has a new search-powered repositories field that allows you to select repositories with Sourcegraph search syntax. [#45687](https://github.com/sourcegraph/sourcegraph/pull/45687)
 - You can now export all data for a Code Insight from the card menu or the standalone page. [#46795](https://github.com/sourcegraph/sourcegraph/pull/46795), [#46694](https://github.com/sourcegraph/sourcegraph/pull/46694)
+- Added Gerrit as an officially supported code host with permissions syncing. [#46763](https://github.com/sourcegraph/sourcegraph/pull/46763)
 
 ### Changed
 
