@@ -15,11 +15,12 @@ import (
 )
 
 func TestGerritSource_ListRepos(t *testing.T) {
+	cfName := t.Name()
 	t.Run("no filtering", func(t *testing.T) {
 		conf := &schema.GerritConnection{
 			Url: "https://gerrit-review.googlesource.com",
 		}
-		cf, save := newClientFactory(t, t.Name(), httpcli.GerritUnauthenticateMiddleware)
+		cf, save := newClientFactory(t, cfName, httpcli.GerritUnauthenticateMiddleware)
 		defer save(t)
 
 		svc := &types.ExternalService{
@@ -47,7 +48,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 				"buck",
 			},
 		}
-		cf, save := newClientFactory(t, t.Name(), httpcli.GerritUnauthenticateMiddleware)
+		cf, save := newClientFactory(t, cfName, httpcli.GerritUnauthenticateMiddleware)
 		defer save(t)
 
 		svc := &types.ExternalService{
