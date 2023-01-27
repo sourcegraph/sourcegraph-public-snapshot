@@ -62,3 +62,10 @@
         }
     }
 }
+
+.publishable-result {
+    @media (--sm-breakpoint-down) {
+        // Make it full width in the current row.
+        grid-column: 1 / -1;
+    }
+}

@@ -108,6 +108,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 </div>
             </div>
             <div className="d-flex justify-content-center align-content-center align-self-stretch">
+                {/* <div className="d-block d-md-flex justify-content-center align-content-center align-self-stretch"> */}
                 {node.delta.commitMessageChanged && (
                     <div
                         className={classNames(
@@ -237,7 +238,7 @@ const SelectBox: React.FunctionComponent<
     )
 
     return (
-        <div className="d-flex p-2 align-items-center">
+        <div className={classNames(styles.publishableResult, 'd-flex p-2 align-items-center')}>
             {input}
             {isPublishableResult.publishable ? (
                 <span className="pl-2 d-block d-md-none text-nowrap">Modify publication state</span>
