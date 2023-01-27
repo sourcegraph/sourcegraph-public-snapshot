@@ -195,9 +195,9 @@ func copyPtr[T any](n *T) *T {
 // Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
 func (p *PaginationArgs) Clone() *PaginationArgs {
 	return &PaginationArgs{
-		First:  copyPtr[int](p.First),
-		Last:   copyPtr[int](p.Last),
-		After:  copyPtr[string](p.After),
-		Before: copyPtr[string](p.Before),
+		First:  copyPtr(p.First),
+		Last:   copyPtr(p.Last),
+		After:  copyPtr(p.After),
+		Before: copyPtr(p.Before),
 	}
 }

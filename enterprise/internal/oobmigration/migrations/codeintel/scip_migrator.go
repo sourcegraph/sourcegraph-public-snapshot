@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"fmt"
 	"os"
 	"sort"
@@ -608,8 +607,10 @@ func (s *scipWriter) InsertDocument(
 	return nil
 }
 
-const DocumentsBatchSize = 256
-const MaxBatchPayloadSum = 1024 * 1024 * 32
+const (
+	DocumentsBatchSize = 256
+	MaxBatchPayloadSum = 1024 * 1024 * 32
+)
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
 	documents := s.batch
@@ -852,7 +853,7 @@ const deleteLSIFDataQuery = `
 DELETE FROM %s WHERE dump_id = %s
 `
 
-func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr error) (map[string]DocumentData, error) {
+func makeDocumentScanner(serializer *serializer) func(rows basestore.Rows, queryErr error) (map[string]DocumentData, error) {
 	return basestore.NewMapScanner(func(s dbutil.Scanner) (string, DocumentData, error) {
 		var path string
 		var data MarshalledDocumentData
@@ -869,7 +870,7 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 	})
 }
 
-func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
+func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows basestore.Rows, queryErr error) error {
 	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte
