@@ -140,7 +140,7 @@ $ pnpm tsc # this generates required files in dist-types
 $ pnpm build
 ```
 
-2. There should be a dist directory now in `sourcegraphh/client/backstage/plugin`.
+2. There should now be a dist directory in `sourcegraph/client/backstage/plugin`.
 3. We're now ready to show Backstage where the plugin is. Move the Backstage app directory and from the route execute
    For a plugin that integrates with the backend:
 
