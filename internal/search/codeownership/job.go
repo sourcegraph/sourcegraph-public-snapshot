@@ -112,6 +112,7 @@ matchesLoop:
 		file, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
+			continue matchesLoop
 		}
 		owners := file.FindOwners(mm.File.Path)
 		for _, owner := range includeOwners {

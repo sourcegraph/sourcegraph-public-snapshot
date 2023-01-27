@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -198,7 +197,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			basicJob = NewSelectJob(sp, basicJob)
 			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
 			if sp.Root() == filter.File && strings.Contains(sp.String(), "owners") {
-				fmt.Println("typefileowners")
 				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob, filter.File)
 			}
 		}
