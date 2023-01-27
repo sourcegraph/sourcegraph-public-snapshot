@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useEffect } from 'react'
 
 import { Redirect, RouteComponentProps } from 'react-router'
 
@@ -89,8 +89,10 @@ interface LayoutRoutePropsV6 {
 export type LayoutRouteProps<T extends { [K in keyof T]?: string }> = LayoutRoutePropsV5<T> | LayoutRoutePropsV6
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
-function passThroughToServer(): React.ReactNode {
-    window.location.reload()
+const PassThroughToServer: React.FC = () => {
+    useEffect(() => {
+        window.location.reload()
+    })
     return null
 }
 
@@ -206,14 +208,14 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SurveyPage {...props} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Help,
-            render: passThroughToServer,
+            render: () => <PassThroughToServer />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Debug,
-            render: passThroughToServer,
+            render: () => <PassThroughToServer />,
         },
         ...communitySearchContextsRoutes,
         {

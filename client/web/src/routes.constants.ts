@@ -16,7 +16,7 @@ export enum PageRoutes {
     UserArea = '/users/:username/*',
     Survey = '/survey/:score?',
     Extensions = '/extensions',
-    Help = '/help',
+    Help = '/help/*',
     Debug = '/-/debug/*',
     RepoContainer = '/:repoRevAndRest+',
     InstallGitHubAppSuccess = '/install-github-app-success',
