@@ -1,4 +1,4 @@
-import { countColumn, Extension, StateEffect, StateField } from '@codemirror/state'
+import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
@@ -68,6 +68,18 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
     provide(field) {
         return [
             showTooltip.computeN([field], state => Object.values(state.field(field)).map(val => val?.tooltip ?? null)),
+
+            /**
+             * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
+             * outside the editor instead of focusing the editor itself.
+             *
+             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&subtree=true).
+             */
+            Prec.high(
+                EditorView.contentAttributes.compute([field], state => ({
+                    tabindex: state.field(field).focus?.occurrence ? '-1' : '0',
+                }))
+            ),
         ]
     },
 })
