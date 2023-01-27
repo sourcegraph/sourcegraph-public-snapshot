@@ -34,6 +34,7 @@ const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
 const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
 const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
 const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
+const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -200,9 +201,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: (props: LayoutRouteComponentPropsRRV6<{}>) => <UserArea {...props} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Survey,
-            render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SurveyPage {...props} />,
         },
         {
             isV6: false,
