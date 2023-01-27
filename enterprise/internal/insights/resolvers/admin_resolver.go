@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -255,6 +256,40 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 	return viewDebug, nil
 }
 
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
+	// 🚨 SECURITY
+	// only admin users can access this resolver
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	store := &adminBackfillQueueConnectionStore{
+		args:          args,
+		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
+		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
+	}
+
+	// `STATE` is the default enum value in the graphql schema.
+	orderBy := "STATE"
+	if args.OrderBy != "" {
+		orderBy = args.OrderBy
+	}
+
+	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](
+		store,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			OrderBy: database.OrderBy{
+				{Field: string(toDBBackfillListColumn(orderBy))},
+				{Field: string(scheduler.BackfillID)},
+			},
+			Ascending: !args.Descending})
+	if err != nil {
+		return nil, err
+	}
+	return resolver, nil
+}
+
 type adminBackfillQueueConnectionStore struct {
 	backfillStore *scheduler.BackfillStore
 	logger        log.Logger
@@ -277,14 +312,6 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*
 	return i32Ptr(&count), nil
 }
 
-// ComputeNodes returns a list of backfill queue item resolvers for a given pagination query.
-//
-// Parameters:
-//   - ctx (context.Context): The request context
-//   - args (*database.PaginationArgs): The pagination arguments.
-//
-// Returns:
-//   - ([]*graphqlbackend.BackfillQueueItemResolver, error): A list of backfill queue item resolvers and any errors encountered.
 func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
 	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
 	if a.args != nil {
@@ -321,19 +348,11 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 
 	switch scheduler.BackfillQueueColumn(column) {
 	case scheduler.State:
-		if node.BackfillStatus != nil {
-			value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
-		} else {
-			value = "'queued'" // a default if needed
-		}
+		value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
 	case scheduler.QueuePosition:
-		if node.BackfillStatus != nil {
-			pos := node.BackfillStatus.QueuePosition()
-			if pos != nil {
-				value = fmt.Sprintf("%d", pos)
-			} else {
-				value = "NULL"
-			}
+		pos := node.BackfillStatus.QueuePosition
+		if pos != nil {
+			value = fmt.Sprintf("%d", pos)
 		} else {
 			value = "NULL"
 		}
@@ -371,7 +390,7 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, errors.New("Invalid cursor. Expected Value: <column>@<id>")
 	}
 	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.InsightTitle, scheduler.SeriesLabel, scheduler.State:
+	case scheduler.State:
 		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
 	case scheduler.BackfillID, scheduler.QueuePosition:
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])

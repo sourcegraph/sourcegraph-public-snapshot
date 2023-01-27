@@ -5,15 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
@@ -21,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -99,38 +95,6 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 		orgStore:            r.postgresDB.Orgs(),
 		args:                args,
 	}, nil
-}
-
-func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
-		return nil, err
-	}
-	store := &adminBackfillQueueConnectionStore{
-		args:          args,
-		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
-		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
-	}
-
-	// `STATE` is the default enum value in the graphql schema.
-	orderBy := "STATE"
-	if args.OrderBy != "" {
-		orderBy = args.OrderBy
-	}
-
-	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](
-		store,
-		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
-			OrderBy: database.OrderBy{
-				{Field: string(toDBBackfillListColumn(orderBy))},
-				{Field: string(scheduler.BackfillID)},
-			},
-			Ascending: !args.Descending})
-	if err != nil {
-		return nil, err
-	}
-	return resolver, nil
 }
 
 // 🚨 SECURITY
