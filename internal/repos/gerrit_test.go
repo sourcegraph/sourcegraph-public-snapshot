@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGerritSource_ListRepos(t *testing.T) {
@@ -28,16 +29,12 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		ctx := context.Background()
 		src, err := NewGerritSource(ctx, svc, cf)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
 		src.perPage = 25
 
-		repos, err := listAll(context.Background(), src)
-		if err != nil {
-			t.Fatal(err)
-		}
+		repos, err := listAll(ctx, src)
+		require.NoError(t, err)
 
 		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), update(t.Name()), repos)
 	})
@@ -60,16 +57,12 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		ctx := context.Background()
 		src, err := NewGerritSource(ctx, svc, cf)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
 		src.perPage = 25
 
-		repos, err := listAll(context.Background(), src)
-		if err != nil {
-			t.Fatal(err)
-		}
+		repos, err := listAll(ctx, src)
+		require.NoError(t, err)
 
 		assert.Len(t, repos, 2)
 		repoNames := make([]string, 0, len(repos))
