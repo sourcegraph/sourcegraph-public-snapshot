@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([^\/]+)\/\w+[.]yaml`)
-var packageRegex = lazyregexp.New(`wolfi-packages\/(\w+)[.]yaml`)
+var baseImageRegex = lazyregexp.New(`wolfi-images\/([^\/]+)\/[\w-]+[.]yaml`)
+var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
 func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
