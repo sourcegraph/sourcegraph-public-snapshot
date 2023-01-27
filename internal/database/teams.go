@@ -32,27 +32,27 @@ type ListTeamsOpts struct {
 }
 
 func (opts ListTeamsOpts) SQL() (where, joins []*sqlf.Query) {
-	conds := []*sqlf.Query{
+	where = []*sqlf.Query{
 		sqlf.Sprintf("teams.id >= %s", opts.Cursor),
 	}
 	joins = []*sqlf.Query{}
 
 	if opts.WithParentID != 0 {
-		conds = append(conds, sqlf.Sprintf("teams.parent_team_id = %s", opts.WithParentID))
+		where = append(where, sqlf.Sprintf("teams.parent_team_id = %s", opts.WithParentID))
 	}
 	if opts.RootOnly {
-		conds = append(conds, sqlf.Sprintf("teams.parent_team_id IS NULL"))
+		where = append(where, sqlf.Sprintf("teams.parent_team_id IS NULL"))
 	}
 	if opts.Search != "" {
 		term := "%" + opts.Search + "%"
-		conds = append(conds, sqlf.Sprintf("(teams.name ILIKE %s OR teams.display_name ILIKE %s)", term, term))
+		where = append(where, sqlf.Sprintf("(teams.name ILIKE %s OR teams.display_name ILIKE %s)", term, term))
 	}
 	if opts.ForUserMember != 0 {
 		joins = append(joins, sqlf.Sprintf("JOIN team_members ON team_members.team_id = teams.id"))
-		conds = append(conds, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
+		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
 	}
 
-	return conds, joins
+	return where, joins
 }
 
 type TeamMemberListCursor struct {
@@ -73,30 +73,30 @@ type ListTeamMembersOpts struct {
 }
 
 func (opts ListTeamMembersOpts) SQL() (where, joins []*sqlf.Query) {
-	conds := []*sqlf.Query{
+	where = []*sqlf.Query{
 		sqlf.Sprintf("team_members.team_id >= %s AND team_members.user_id >= %s", opts.Cursor.TeamID, opts.Cursor.UserID),
 	}
 	joins = []*sqlf.Query{}
 
 	if opts.TeamID != 0 {
-		conds = append(conds, sqlf.Sprintf("team_members.team_id = %s", opts.TeamID))
+		where = append(where, sqlf.Sprintf("team_members.team_id = %s", opts.TeamID))
 	}
 	if opts.Search != "" {
 		joins = append(joins, sqlf.Sprintf("JOIN users ON users.id = team_members.user_id"))
 		term := "%" + opts.Search + "%"
-		conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", term, term))
+		where = append(where, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", term, term))
 	}
 
-	return conds, joins
+	return where, joins
 }
 
 // TeamNotFoundError is returned when a team cannot be found.
 type TeamNotFoundError struct {
-	id int32
+	args any
 }
 
 func (err TeamNotFoundError) Error() string {
-	return fmt.Sprintf("team not found: id=%d", err.id)
+	return fmt.Sprintf("team not found: %v", err.args)
 }
 
 func (TeamNotFoundError) NotFound() bool {
@@ -112,8 +112,10 @@ type TeamStore interface {
 	basestore.ShareableStore
 	Done(error) error
 
-	// GetTeam returns the given team by ID. If not found, a NotFounder error is returned.
-	GetTeam(ctx context.Context, id int32) (*types.Team, error)
+	// GetTeamByID returns the given team by ID. If not found, a NotFounder error is returned.
+	GetTeamByID(ctx context.Context, id int32) (*types.Team, error)
+	// GetTeamByName returns the given team by name. If not found, a NotFounder error is returned.
+	GetTeamByName(ctx context.Context, name string) (*types.Team, error)
 	// ListTeams lists teams given the options. The matching teams, plus the next cursor are
 	// returned.
 	ListTeams(ctx context.Context, opts ListTeamsOpts) ([]*types.Team, int32, error)
@@ -161,10 +163,21 @@ func (s *teamStore) Transact(ctx context.Context) (TeamStore, error) {
 	}, err
 }
 
-func (s *teamStore) GetTeam(ctx context.Context, id int32) (*types.Team, error) {
+func (s *teamStore) GetTeamByID(ctx context.Context, id int32) (*types.Team, error) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("id = %s", id),
+		sqlf.Sprintf("teams.id = %s", id),
 	}
+	return s.getTeam(ctx, conds)
+}
+
+func (s *teamStore) GetTeamByName(ctx context.Context, name string) (*types.Team, error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("teams.name = %s", name),
+	}
+	return s.getTeam(ctx, conds)
+}
+
+func (s *teamStore) getTeam(ctx context.Context, conds []*sqlf.Query) (*types.Team, error) {
 	q := sqlf.Sprintf(getTeamQueryFmtstr, sqlf.Join(teamColumns, ","), sqlf.Join(conds, "AND"))
 
 	teams, err := scanTeams(s.Query(ctx, q))
@@ -173,7 +186,7 @@ func (s *teamStore) GetTeam(ctx context.Context, id int32) (*types.Team, error) 
 	}
 
 	if len(teams) != 1 {
-		return nil, TeamNotFoundError{id: id}
+		return nil, TeamNotFoundError{args: conds}
 	}
 
 	return teams[0], nil
@@ -452,7 +465,7 @@ func (s *teamStore) DeleteTeam(ctx context.Context, team int32) (err error) {
 		return err
 	}
 	if rows == 0 {
-		return TeamNotFoundError{id: team}
+		return TeamNotFoundError{args: conds}
 	}
 
 	conds = []*sqlf.Query{

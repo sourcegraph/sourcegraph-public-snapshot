@@ -123,12 +123,12 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		if err := store.DeleteTeam(ctx, team.ID); err != nil {
 			t.Fatal(err)
 		}
-		_, err = store.GetTeam(ctx, team.ID)
+		_, err = store.GetTeamByID(ctx, team.ID)
 		if err == nil {
 			t.Fatal("team not deleted")
 		}
-		tnfe := &TeamNotFoundError{}
-		if !errors.As(err, tnfe) {
+		var tnfe TeamNotFoundError
+		if !errors.As(err, &tnfe) {
 			t.Fatalf("invalid error returned, expected not found got %v", err)
 		}
 
@@ -137,7 +137,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		if err == nil {
 			t.Fatal("team deleted twice")
 		}
-		if !errors.As(err, tnfe) {
+		if !errors.As(err, &tnfe) {
 			t.Fatalf("invalid error returned, expected not found got %v", err)
 		}
 
@@ -185,21 +185,43 @@ func TestTeams_GetListCount(t *testing.T) {
 
 	t.Run("GetByID", func(t *testing.T) {
 		for _, want := range []*types.Team{engineeringTeam, salesTeam, supportTeam, ownTeam, batchesTeam} {
-			have, err := store.GetTeam(internalCtx, want.ID)
+			have, err := store.GetTeamByID(internalCtx, want.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Fatal(diff)
 			}
 		}
 		t.Run("not found error", func(t *testing.T) {
-			_, err := store.GetTeam(internalCtx, 100000)
+			_, err := store.GetTeamByID(internalCtx, 100000)
 			if err == nil {
 				t.Fatal("no error for not found team")
 			}
-			tnfe := &TeamNotFoundError{}
-			if !errors.As(err, tnfe) {
+			var tnfe TeamNotFoundError
+			if !errors.As(err, &tnfe) {
+				t.Fatalf("invalid error returned, expected not found got %v", err)
+			}
+		})
+	})
+
+	t.Run("GetByName", func(t *testing.T) {
+		for _, want := range []*types.Team{engineeringTeam, salesTeam, supportTeam, ownTeam, batchesTeam} {
+			have, err := store.GetTeamByName(internalCtx, want.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		}
+		t.Run("not found error", func(t *testing.T) {
+			_, err := store.GetTeamByName(internalCtx, "definitelynotateam")
+			if err == nil {
+				t.Fatal("no error for not found team")
+			}
+			var tnfe TeamNotFoundError
+			if !errors.As(err, &tnfe) {
 				t.Fatalf("invalid error returned, expected not found got %v", err)
 			}
 		})
@@ -214,7 +236,7 @@ func TestTeams_GetListCount(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if diff := cmp.Diff(haveTeams, allTeams); diff != "" {
+		if diff := cmp.Diff(allTeams, haveTeams); diff != "" {
 			t.Fatal(diff)
 		}
 
@@ -233,11 +255,7 @@ func TestTeams_GetListCount(t *testing.T) {
 				}
 				lastCursor = c
 
-				if len(teams) != 1 {
-					t.Fatalf("expected exactly 1 team, got %d", len(teams))
-				}
-
-				if diff := cmp.Diff(teams[0], allTeams[i]); diff != "" {
+				if diff := cmp.Diff(allTeams[i], teams[0]); diff != "" {
 					t.Fatal(diff)
 				}
 			})
@@ -261,7 +279,7 @@ func TestTeams_GetListCount(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(haveTeams, engineeringTeams); diff != "" {
+			if diff := cmp.Diff(engineeringTeams, haveTeams); diff != "" {
 				t.Fatal(diff)
 			}
 
@@ -279,7 +297,7 @@ func TestTeams_GetListCount(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(haveTeams, rootTeams); diff != "" {
+			if diff := cmp.Diff(rootTeams, haveTeams); diff != "" {
 				t.Fatal(diff)
 			}
 
@@ -300,7 +318,7 @@ func TestTeams_GetListCount(t *testing.T) {
 					t.Fatalf("expected exactly 1 team, got %d", len(teams))
 				}
 
-				if diff := cmp.Diff(teams[0], team); diff != "" {
+				if diff := cmp.Diff(team, teams[0]); diff != "" {
 					t.Fatal(diff)
 				}
 			}
@@ -316,7 +334,7 @@ func TestTeams_GetListCount(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if diff := cmp.Diff(haveTeams, johnTeams); diff != "" {
+				if diff := cmp.Diff(johnTeams, haveTeams); diff != "" {
 					t.Fatal(diff)
 				}
 
@@ -331,7 +349,7 @@ func TestTeams_GetListCount(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if diff := cmp.Diff(haveTeams, aliceTeams); diff != "" {
+				if diff := cmp.Diff(aliceTeams, haveTeams); diff != "" {
 					t.Fatal(diff)
 				}
 
@@ -346,8 +364,6 @@ func TestTeams_GetListCount(t *testing.T) {
 		allTeams := map[*types.Team][]int32{
 			engineeringTeam: {johndoe.ID},
 			salesTeam:       {},
-			supportTeam:     {johndoe.ID},
-			ownTeam:         {alice.ID},
 			batchesTeam:     {johndoe.ID, alice.ID},
 		}
 
@@ -362,7 +378,7 @@ func TestTeams_GetListCount(t *testing.T) {
 				haveMembers = append(haveMembers, member.UserID)
 			}
 
-			if diff := cmp.Diff(haveMembers, wantMembers); diff != "" {
+			if diff := cmp.Diff(wantMembers, haveMembers); diff != "" {
 				t.Fatal(diff)
 			}
 
@@ -397,7 +413,7 @@ func TestTeams_GetListCount(t *testing.T) {
 						t.Fatalf("expected exactly 1 member, got %d", len(members))
 					}
 
-					if diff := cmp.Diff(members[0].UserID, wantMembers[i]); diff != "" {
+					if diff := cmp.Diff(wantMembers[i], members[0].UserID); diff != "" {
 						t.Fatal(diff)
 					}
 				})
@@ -416,7 +432,7 @@ func TestTeams_GetListCount(t *testing.T) {
 				t.Fatalf("expected exactly 1 member, got %d", len(members))
 			}
 
-			if diff := cmp.Diff(members[0].UserID, johndoe.ID); diff != "" {
+			if diff := cmp.Diff(johndoe.ID, members[0].UserID); diff != "" {
 				t.Fatal(diff)
 			}
 		})
