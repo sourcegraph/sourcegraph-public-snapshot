@@ -19,12 +19,12 @@ jobs:
       packages: write
     steps:
       - name: Install musl-tools
-        run: sudo apt update && sudo apt install -y musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 6.0.2
+          version: 7.24.2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Login to GitHub Container Registry
