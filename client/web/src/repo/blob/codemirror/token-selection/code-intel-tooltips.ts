@@ -19,7 +19,6 @@ import {
     rangeToCmSelection,
 } from '../occurrence-utils'
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
-import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
@@ -319,28 +318,8 @@ const hoverManager = ViewPlugin.fromClass(
                                         return of(null)
                                     }
 
-                                    // show loading tooltip
-                                    view.dispatch({
-                                        effects: setHoveredCodeIntelTooltipState.of({
-                                            occurrence,
-                                            tooltip: new LoadingTooltip(offset),
-                                        }),
-                                    })
-
                                     return from(getHoverTooltip(view, offset)).pipe(
                                         catchError(() => of(null)),
-
-                                        // close loading tooltip
-                                        tap(() => {
-                                            const current = getCodeIntelTooltipState(view, 'hover')
-                                            if (
-                                                current?.tooltip instanceof LoadingTooltip &&
-                                                current?.occurrence === occurrence
-                                            ) {
-                                                view.dispatch({ effects: setHoveredCodeIntelTooltipState.of(null) })
-                                            }
-                                        }),
-
                                         map(tooltip => (tooltip ? { tooltip, occurrence } : null))
                                     )
                                 }),
