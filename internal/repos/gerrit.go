@@ -84,7 +84,7 @@ func (s *GerritSource) CheckConnection(ctx context.Context) error {
 func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	allowedProjects := make(map[string]struct{})
 	for _, project := range s.config.Repos {
-		allowedProjects[url.PathEscape(project)] = struct{}{}
+		allowedProjects[project] = struct{}{}
 	}
 	args := gerrit.ListProjectsArgs{
 		Cursor:           &gerrit.Pagination{PerPage: s.perPage, Page: 1},
