@@ -51,6 +51,7 @@ fi
 
 cd "wolfi-images/${name}"
 
+# Build base image with apko
 echo " * Building apko base image '$name'"
 image_name="sourcegraph-wolfi/${name}-base"
 tarball="sourcegraph-wolfi-${name}-base.tar"
@@ -59,6 +60,7 @@ apko build --debug apko.yaml \
   "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
 
+# Tag image and upload to GCP Artifact Registry
 docker load <"$tarball"
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"

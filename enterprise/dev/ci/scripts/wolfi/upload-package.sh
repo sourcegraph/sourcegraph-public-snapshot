@@ -3,8 +3,8 @@
 set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
-# cd /root # TODO: Dev only
 
+# TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 ARCH="x86_64"
@@ -44,7 +44,7 @@ for apk in "${apks[@]}"; do
     echo "   * File does not exist, uploading..."
   fi
 
-  # TODO: Pass -n when on main to avoid accidental overwriting?
+  # TODO: Pass -n when on main to avoid accidental overwriting
   echo "   * Uploading package and index fragment to repo"
   gsutil -u "$GCP_PROJECT" cp "$apk" "$index_fragment" "$dest_path"
 done
