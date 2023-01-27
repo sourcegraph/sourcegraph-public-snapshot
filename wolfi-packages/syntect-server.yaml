@@ -1,0 +1,47 @@
+#
+# TODO: Get this working
+#
+
+# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/syntax-highlighter/Dockerfile?L2
+
+package:
+  name: syntect-server
+  version: 1.0.1
+  epoch: 0
+  description: "HTTP server stabilizer for unruly servers"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'TODO'
+      license: 'TODO'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+      - rust
+
+pipeline:
+  # No clear relationship between syntect_server version and git branch, so a point-in-time branch was chosen
+  - uses: git-checkout
+    with:
+      repository: https://github.com/sourcegraph/sourcegraph/
+      branch: 4.3
+
+  - runs: |
+      cd sourcegraph/docker-images/syntax-highlighter
+      cargo test --release --workspace
+      cargo rustc --release
+
+  - runs: |
+      cd sourcegraph/docker-images/syntax-highlighter
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      cp target/release/syntect_server ${{targets.destdir}}/usr/local/bin/syntax_highlighter
