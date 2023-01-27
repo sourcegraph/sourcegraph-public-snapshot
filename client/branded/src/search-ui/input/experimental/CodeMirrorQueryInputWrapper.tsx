@@ -7,7 +7,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { History } from 'history'
 import inRange from 'lodash/inRange'
-import { useHistory } from 'react-router'
+import { useNavigate, type NavigateFunction } from 'react-router-dom-v5-compat'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 
@@ -35,7 +35,7 @@ interface ExtensionConfig {
     onSubmit?: () => void
     suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
-    history: History
+    historyOrNavigate: History | NavigateFunction
 }
 
 // We want to show a placeholder also if the query only contains a context
@@ -86,7 +86,7 @@ function configureExtensions({
     onSubmit,
     suggestionsContainer,
     suggestionSource,
-    history,
+    historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
         singleLine,
@@ -131,7 +131,7 @@ function configureExtensions({
     }
 
     if (suggestionSource && suggestionsContainer) {
-        extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, history))
+        extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, historyOrNavigate))
     }
 
     return extensions
@@ -207,7 +207,6 @@ export interface CodeMirrorQueryInputWrapperProps {
     patternType: SearchPatternType
     placeholder: string
     suggestionSource: Source
-    history: History
 }
 
 export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = ({
@@ -220,7 +219,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
     placeholder,
     suggestionSource,
 }) => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     const focusContainerRef = useRef<HTMLDivElement | null>(null)
     const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
@@ -245,7 +244,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
                 onSubmit: hasSubmitHandler ? (): void => onSubmitRef.current?.() : undefined,
                 suggestionsContainer,
                 suggestionSource,
-                history,
+                historyOrNavigate: navigate,
             }),
         [
             popoverID,
@@ -258,7 +257,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
             onSubmitRef,
             suggestionsContainer,
             suggestionSource,
-            history,
+            navigate,
         ]
     )
 

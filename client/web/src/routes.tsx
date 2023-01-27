@@ -45,9 +45,8 @@ export type LayoutRouteComponentPropsRRV6<T extends { [K in keyof T]?: string }>
     'location' | 'history' | 'match' | 'staticContext'
 >
 
-export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
-    v6Element?: JSX.Element
-
+interface LayoutRoutePropsV5<Parameters_ extends { [K in keyof Parameters_]?: string }> {
+    isV6: false
     path: string
     exact?: boolean
     render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
@@ -61,6 +60,23 @@ export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]
         props: Omit<LayoutRouteComponentProps<Parameters_>, 'location' | 'history' | 'match' | 'staticContext'>
     ) => boolean
 }
+
+interface LayoutRoutePropsV6 {
+    isV6: true
+    path: string
+    render: (props: LayoutRouteComponentPropsRRV6<{}>) => React.ReactNode
+
+    /**
+     * A condition function that needs to return true if the route should be rendered
+     *
+     * @default () => true
+     */
+    condition?: (
+        props: Omit<LayoutRouteComponentProps<{}>, 'location' | 'history' | 'match' | 'staticContext'>
+    ) => boolean
+}
+
+export type LayoutRouteProps<T extends { [K in keyof T]?: string }> = LayoutRoutePropsV5<T> | LayoutRoutePropsV6
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 function passThroughToServer(): React.ReactNode {
@@ -77,18 +93,19 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = (
     [
         {
+            isV6: true,
             path: PageRoutes.Index,
-            v6Element: <Redirect to={PageRoutes.Search} />,
-            render: () => null,
+            render: () => <Redirect to={PageRoutes.Search} />,
         },
         {
+            isV6: true,
             path: PageRoutes.Search,
-            render: props => <SearchPageWrapper {...props} />,
-            exact: true,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SearchPageWrapper {...props} />,
         },
         {
+            isV6: false,
             path: PageRoutes.SearchConsole,
-            render: props => {
+            render: (props: LayoutRouteComponentProps<{}>) => {
                 const { showMultilineSearchConsole } = getExperimentalFeatures()
 
                 return showMultilineSearchConsole ? (
@@ -100,50 +117,60 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.SignIn,
-            render: props => <SignInPage {...props} context={window.context} />,
+            render: (props: LayoutRouteComponentProps<{}>) => <SignInPage {...props} context={window.context} />,
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.SignUp,
-            render: props => <SignUpPage {...props} context={window.context} />,
+            render: (props: LayoutRouteComponentProps<{}>) => <SignUpPage {...props} context={window.context} />,
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.UnlockAccount,
-            render: props => <UnlockAccountPage {...props} context={window.context} />,
+            render: (props: LayoutRouteComponentProps<{}>) => <UnlockAccountPage {...props} context={window.context} />,
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.Welcome,
             // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-            render: props => <Redirect to={PageRoutes.Search} />,
+            render: (props: LayoutRouteComponentProps<{}>) => <Redirect to={PageRoutes.Search} />,
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.InstallGitHubAppSuccess,
             render: () => <InstallGitHubAppSuccessPage />,
         },
         {
+            isV6: false,
             path: PageRoutes.Settings,
             render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
         },
         {
+            isV6: false,
             path: PageRoutes.User,
             render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
         },
         {
+            isV6: false,
             path: PageRoutes.Organizations,
             render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
         },
         {
+            isV6: false,
             path: PageRoutes.SiteAdminInit,
             exact: true,
-            render: props => <SiteInitPage {...props} context={window.context} />,
+            render: (props: LayoutRouteComponentProps<{}>) => <SiteInitPage {...props} context={window.context} />,
         },
         {
+            isV6: false,
             path: PageRoutes.SiteAdmin,
-            render: props => (
+            render: (props: LayoutRouteComponentProps<{}>) => (
                 <SiteAdminArea
                     {...props}
                     routes={props.siteAdminAreaRoutes}
@@ -153,28 +180,34 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             ),
         },
         {
+            isV6: false,
             path: PageRoutes.PasswordReset,
             render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.ApiConsole,
             render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
             exact: true,
         },
         {
+            isV6: false,
             path: PageRoutes.UserArea,
             render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
         },
         {
+            isV6: false,
             path: PageRoutes.Survey,
             render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
         },
         {
+            isV6: false,
             path: PageRoutes.Help,
             render: passThroughToServer,
         },
         {
+            isV6: false,
             path: PageRoutes.Debug,
             render: passThroughToServer,
         },

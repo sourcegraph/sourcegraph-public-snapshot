@@ -118,7 +118,12 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const location = useLocation()
 
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
+    // TODO: Replace with useMatches once top-level <Router/> is V6
+    const routeMatch = props.routes.find(route =>
+        !route.isV6
+            ? matchPath(location.pathname, { path: route.path, exact: route.exact })
+            : matchPath(location.pathname, { path: route.path, exact: true })
+    )?.path
 
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
@@ -255,27 +260,38 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     <AppRouterContainer>
                         <Routes>
                             {props.routes.map(
-                                ({ v6Element, render, condition = () => true, ...route }) =>
+                                ({ condition = () => true, ...route }) =>
                                     condition(context) &&
-                                    v6Element && <Route key={route.path} path={route.path} element={v6Element} />
-                            )}
-                        </Routes>
-                        <Switch>
-                            {props.routes.map(
-                                ({ v6Element, render, condition = () => true, ...route }) =>
-                                    condition(context) &&
-                                    !v6Element && (
-                                        <RouteV5
-                                            {...route}
+                                    route.isV6 && (
+                                        <Route
                                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            component={undefined}
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
+                                            path={route.path}
+                                            element={route.render(context)}
                                         />
                                     )
                             )}
-                        </Switch>
+                            <Route
+                                path="*"
+                                element={
+                                    <Switch>
+                                        {props.routes.map(
+                                            ({ render, condition = () => true, ...route }) =>
+                                                condition(context) &&
+                                                !route.isV6 && (
+                                                    <RouteV5
+                                                        {...route}
+                                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                        component={undefined}
+                                                        render={routeComponentProps =>
+                                                            render({ ...context, ...routeComponentProps })
+                                                        }
+                                                    />
+                                                )
+                                        )}
+                                    </Switch>
+                                }
+                            />
+                        </Routes>
                     </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>

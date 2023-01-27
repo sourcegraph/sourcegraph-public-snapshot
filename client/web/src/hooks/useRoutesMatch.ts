@@ -11,5 +11,11 @@ import { LayoutRouteProps } from '../routes'
  */
 export const useRoutesMatch = (routes: readonly LayoutRouteProps<{}>[]): string | undefined => {
     const location = useLocation()
-    return routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
+
+    // TODO: Replace with useMatches once top-level <Router/> is V6
+    return routes.find(route =>
+        !route.isV6
+            ? matchPath(location.pathname, { path: route.path, exact: route.exact })
+            : matchPath(location.pathname, { path: route.path, exact: true })
+    )?.path
 }
