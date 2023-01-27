@@ -306,10 +306,6 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 	var value string
 
 	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.InsightTitle:
-		value = fmt.Sprintf("'%s'", node.InsightTitle)
-	case scheduler.SeriesLabel:
-		value = node.Label
 	case scheduler.State:
 		if node.BackfillStatus != nil {
 			value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
@@ -328,7 +324,7 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 			value = "NULL"
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (title, label, state.backfill_state, jq.queue_position). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (state.backfill_state, jq.queue_position). Actual: %s", column))
 	}
 
 	// format of the "Value" is the value for the sorted by column followed by the ID of the current node
@@ -407,24 +403,7 @@ type backfillStatusResolver struct {
 }
 
 func (r *backfillStatusResolver) State() string {
-
 	return strings.ToUpper(r.queueItem.BackfillState)
-	// switch r.queueItem.BackfillState {
-	// case string(scheduler.BackfillStateCompleted):
-	// 	return "COMPLETED"
-	// case string(scheduler.BackfillStateNew):
-	// 	return "NEW"
-	// case string(scheduler.BackfillStateProcessing):
-	// 	if r.queueItem.QueuePosition != nil {
-	// 		return "QUEUED"
-	// 	}
-	// 	return "PROCESSING"
-	// case string(scheduler.BackfillStateFailed):
-	// 	return "FAILED"
-	// default:
-	// 	return "UNKNOWN"
-	// }
-
 }
 
 func (r *backfillStatusResolver) QueuePosition() *int32 {
@@ -462,7 +441,13 @@ func (r *backfillStatusResolver) Runtime() *string {
 	return nil
 }
 
-func unmarshalBackfillID(id graphql.ID) (backfillID int, err error) {
-	err = relay.UnmarshalSpec(id, &backfillID)
-	return
+func toDBBackfillListColumn(ob string) scheduler.BackfillQueueColumn {
+	switch ob {
+	case "STATE":
+		return scheduler.State
+	case "QUEUE_POSITION":
+		return scheduler.QueuePosition
+	default:
+		return ""
+	}
 }

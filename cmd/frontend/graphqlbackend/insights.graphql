@@ -1361,7 +1361,23 @@ extend type Query {
         An opaque cursor that is used for pagination.
         """
         before: String
+        """
+        How to order the list.
+        """
+        orderBy: BackfillQueueOrderBy = STATE
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
     ): InsightBackfillQueueItemConnection!
+}
+
+"""
+BackfillQueueOrderBy enumerates the ways a backfill queue list can be ordered.
+"""
+enum BackfillQueueOrderBy {
+    STATE
+    QUEUE_POSITION
 }
 
 type InsightBackfillQueueItemConnection implements Connection {

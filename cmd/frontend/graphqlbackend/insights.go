@@ -576,4 +576,6 @@ type BackfillArgs struct {
 type AdminBackfillQueueArgs struct {
 	//TODO add filters
 	graphqlutil.ConnectionResolverArgs
+	OrderBy    string
+	Descending bool
 }

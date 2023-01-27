@@ -108,17 +108,21 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 	}
 	store := &adminBackfillQueueConnectionStore{backfillStore: scheduler.NewBackfillStore(r.insightsDB), logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
 
-	// this is a default 1st order by
-	firstOrderBy := scheduler.State
+	// `STATE` is the default enum value in the graphql schema.
+	orderBy := "STATE"
+	if args.OrderBy != "" {
+		orderBy = args.OrderBy
+	}
 
 	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](
 		store,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: string(firstOrderBy)},
+				{Field: string(toDBBackfillListColumn(orderBy))},
 				{Field: string(scheduler.BackfillID)},
-			}})
+			},
+			Ascending: !args.Descending})
 	if err != nil {
 		return nil, err
 	}
