@@ -6,7 +6,7 @@
 
 package:
   name: syntect-server
-  version: 1.0.1
+  version: 4.3
   epoch: 0
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
@@ -30,18 +30,19 @@ environment:
       - rust
 
 pipeline:
-  # No clear relationship between syntect_server version and git branch, so a point-in-time branch was chosen
+  # Tie version of syntect-server to Sourcegraph release
   - uses: git-checkout
     with:
       repository: https://github.com/sourcegraph/sourcegraph/
-      branch: 4.3
+      branch: ${{package.version}}
+      destination: /sourcegraph
 
   - runs: |
-      cd sourcegraph/docker-images/syntax-highlighter
+      cd /sourcegraph/docker-images/syntax-highlighter
       cargo test --release --workspace
       cargo rustc --release
 
   - runs: |
-      cd sourcegraph/docker-images/syntax-highlighter
+      cd /sourcegraph/docker-images/syntax-highlighter
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp target/release/syntect_server ${{targets.destdir}}/usr/local/bin/syntax_highlighter
