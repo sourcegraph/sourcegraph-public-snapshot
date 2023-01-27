@@ -62,7 +62,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                             {productSubscription.license && licenseExpiresAt ? (
                                 <>
                                     <AnchorLink
-                                        to="https://about.sourcegraph.com/pricing"
+                                        to="/help/admin/updates"
                                         target="_blank"
                                         rel="noopener"
                                         className="ml-1"

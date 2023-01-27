@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -38,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -194,7 +194,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions()...)
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
 		Service: service,
