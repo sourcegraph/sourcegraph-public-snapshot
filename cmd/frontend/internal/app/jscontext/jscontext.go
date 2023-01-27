@@ -4,6 +4,7 @@ package jscontext
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -19,12 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -47,6 +52,30 @@ type authPasswordPolicy struct {
 	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
 	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
+type UserLatestSettings struct {
+	ID       int32  // the unique ID of this settings value
+	Contents string // the raw JSON (with comments and trailing commas allowed)
+}
+
+type CurrentUser struct {
+	ID                  int32
+	DatabaseID          int32
+	Username            string
+	AvatarURL           string
+	DisplayName         string
+	SiteAdmin           bool
+	URL                 string
+	SettingsURL         string
+	ViewerCanAdminister bool
+	Tags                []string
+	TosAccepted         bool
+	Searchable          bool
+
+	Organizations  []*types.Org
+	CanSignOut     *bool
+	Emails         []*database.UserEmail
+	LatestSettings *UserLatestSettings
+}
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -64,7 +93,8 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
+	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser `json:"CurrentUser"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -127,7 +157,8 @@ type JSContext struct {
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
-	actor := sgactor.FromContext(req.Context())
+	ctx := req.Context()
+	a := actor.FromContext(ctx)
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
@@ -143,7 +174,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState().Get(req.Context())
+	globalState, err := db.GlobalState().Get(ctx)
 	needsSiteInit := err == nil && !globalState.Initialized
 
 	// Auth providers
@@ -185,11 +216,12 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var licenseInfo *hooks.LicenseInfo
-	if !actor.IsAuthenticated() {
+	var user *types.User
+	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
-		user, _ := actor.User(req.Context(), db.Users())
+		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
@@ -199,12 +231,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:                globals.ExternalURL().String(),
-		XHRHeaders:                 headers,
-		UserAgentIsBot:             isBot(req.UserAgent()),
-		AssetsRoot:                 assetsutil.URL("").String(),
-		Version:                    version.Version(),
-		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		ExternalURL:         globals.ExternalURL().String(),
+		XHRHeaders:          headers,
+		UserAgentIsBot:      isBot(req.UserAgent()),
+		AssetsRoot:          assetsutil.URL("").String(),
+		Version:             version.Version(),
+		IsAuthenticatedUser: a.IsAuthenticated(),
+		CurrentUser:         createCurrentUser(ctx, user, db),
+
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
@@ -224,7 +258,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		BillingPublishableKey: BillingPublishableKey,
 
-		// Experiments. We pass these through explicitly so we can
+		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
@@ -241,7 +275,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		Branding: globals.Branding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), db) == nil,
+		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
@@ -263,6 +297,137 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
 	}
+}
+
+// createCurrentUser creates CurrentUser object which contains of types.User
+// properties along with some extra data such as user emails, organisations,
+// session information, etc.
+func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
+	if user == nil {
+		return nil
+	}
+	url := fmt.Sprintf("/users/%s", user.Username)
+	settingsURL := fmt.Sprintf("%s/settings", url)
+
+	return &CurrentUser{
+		ID: user.ID,
+		// DatabaseID is just a user ID
+		DatabaseID:          user.ID,
+		Username:            user.Username,
+		AvatarURL:           user.AvatarURL,
+		DisplayName:         user.DisplayName,
+		SiteAdmin:           user.SiteAdmin,
+		URL:                 url,
+		SettingsURL:         settingsURL,
+		ViewerCanAdminister: resolveViewerCanAdminister(ctx, user, db),
+		Tags:                user.Tags,
+		TosAccepted:         user.TosAccepted,
+		Searchable:          user.Searchable,
+		Organizations:       resolveUserOrgs(ctx, user, db),
+		CanSignOut:          resolveUserCanSignOut(ctx, user),
+		Emails:              resolveUserEmails(ctx, user, db),
+		LatestSettings:      resolveLatestSettings(ctx, user, db),
+	}
+}
+
+func resolveViewerCanAdminister(ctx context.Context, user *types.User, db database.DB) bool {
+	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
+	// Sourcegraph.com.
+	var err error
+	if envvar.SourcegraphDotComMode() {
+		err = auth.CheckSameUser(ctx, user.ID)
+	} else {
+		err = auth.CheckSiteAdminOrSameUser(ctx, db, user.ID)
+	}
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckSameUser(ctx, user.ID); err != nil {
+			return false
+		}
+	} else {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
+			return false
+		}
+	}
+	if errcode.IsUnauthorized(err) {
+		return false
+	} else if err != nil {
+		return false
+	}
+	return true
+}
+
+func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*types.Org {
+	// 🚨 SECURITY: Only the user and admins are allowed to access user
+	// organisations.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
+		return nil
+	}
+	orgs, err := db.Orgs().GetByUserID(ctx, user.ID)
+	if err != nil {
+		return nil
+	}
+	return orgs
+}
+
+func resolveUserCanSignOut(ctx context.Context, user *types.User) *bool {
+	// 🚨 SECURITY: Only the user can view their session information, because it is
+	// retrieved from the context of this request (and not persisted in a way that is
+	// queryable).
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() || a.UID != user.ID {
+		return nil
+	}
+
+	canSignOut := false
+	if a.FromSessionCookie {
+		// The http-header auth provider is the only auth provider that a user cannot
+		// sign out from.
+		for _, p := range conf.Get().AuthProviders {
+			if p.HttpHeader == nil {
+				canSignOut = true
+				break
+			}
+		}
+	}
+	return &canSignOut
+}
+
+func resolveUserEmails(ctx context.Context, user *types.User, db database.DB) []*database.UserEmail {
+	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
+	// emails.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
+		return nil
+	}
+
+	userEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: user.ID,
+	})
+	if err != nil {
+		return nil
+	}
+	return userEmails
+}
+
+func resolveLatestSettings(ctx context.Context, user *types.User, db database.DB) *UserLatestSettings {
+	// 🚨 SECURITY: Only the authenticated user can view their settings on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := auth.CheckSameUser(ctx, user.ID); err != nil {
+			return nil
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and admins are allowed to access other user
+		// settings, because they may contain secrets or other sensitive data.
+		if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
+			return nil
+		}
+	}
+
+	settings, err := db.Settings().GetLatest(ctx, api.SettingsSubject{User: &user.ID})
+	if err != nil {
+		return nil
+	}
+	return &UserLatestSettings{ID: settings.ID, Contents: settings.Contents}
 }
 
 // publicSiteConfiguration is the subset of the site.schema.json site
