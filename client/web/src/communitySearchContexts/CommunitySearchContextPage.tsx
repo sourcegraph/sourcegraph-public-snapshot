@@ -2,9 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
-import { catchError, startWith } from 'rxjs/operators'
-
 import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { catchError, startWith } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
