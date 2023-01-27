@@ -6,11 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func TestPermsSyncerWorker_Handle(t *testing.T) {
@@ -18,7 +19,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 
 	dummySyncer := &dummyPermsSyncer{}
 
-	worker := MakePermsSyncerWorker(ctx, &observation.TestContext, dummySyncer)
+	worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer)
 
 	t.Run("user sync request", func(t *testing.T) {
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
@@ -28,16 +29,14 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			Priority:         database.HighPriorityPermissionSync,
 		})
 
-		wantMeta := &requestMeta{
-			ID:       1234,
-			Priority: priorityHigh,
-			Type:     requestTypeUser,
+		wantRequest := combinedRequest{
+			UserID:  1234,
+			NoPerms: false,
 			Options: authz.FetchPermsOptions{
 				InvalidateCaches: true,
 			},
 		}
-
-		if diff := cmp.Diff(dummySyncer.request.requestMeta, wantMeta); diff != "" {
+		if diff := cmp.Diff(dummySyncer.request, wantRequest); diff != "" {
 			t.Fatalf("wrong sync request: %s", diff)
 		}
 	})
@@ -50,16 +49,14 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			Priority:         database.LowPriorityPermissionSync,
 		})
 
-		wantMeta := &requestMeta{
-			ID:       4567,
-			Priority: priorityLow,
-			Type:     requestTypeRepo,
+		wantRequest := combinedRequest{
+			RepoID:  4567,
+			NoPerms: false,
 			Options: authz.FetchPermsOptions{
 				InvalidateCaches: false,
 			},
 		}
-
-		if diff := cmp.Diff(dummySyncer.request.requestMeta, wantMeta); diff != "" {
+		if diff := cmp.Diff(dummySyncer.request, wantRequest); diff != "" {
 			t.Fatalf("wrong sync request: %s", diff)
 		}
 	})
@@ -137,10 +134,32 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 }
 
-type dummyPermsSyncer struct {
-	request *syncRequest
+// combinedRequest is a test entity which contains properties of both user and
+// repo perms sync requests.
+type combinedRequest struct {
+	RepoID  api.RepoID
+	UserID  int32
+	NoPerms bool
+	Options authz.FetchPermsOptions
 }
 
-func (d *dummyPermsSyncer) syncPerms(_ context.Context, _ map[requestType]group.ContextGroup, request *syncRequest) {
-	d.request = request
+type dummyPermsSyncer struct {
+	request combinedRequest
+}
+
+func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+	d.request = combinedRequest{
+		RepoID:  repoID,
+		NoPerms: noPerms,
+		Options: options,
+	}
+	return []syncjobs.ProviderStatus{}, nil
+}
+func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+	d.request = combinedRequest{
+		UserID:  userID,
+		NoPerms: noPerms,
+		Options: options,
+	}
+	return []syncjobs.ProviderStatus{}, nil
 }
