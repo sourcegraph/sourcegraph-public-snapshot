@@ -12,26 +12,56 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 
 func BazelOperations() *operations.Set {
 	ops := operations.NewSet()
-	ops.Append(build("//dev/sg"))
-	ops.Append(build("//lib/..."))
+	ops.Append(bazelBuild("//dev/sg", "//lib/..."))
+	ops.Append(bazelTest("//monitoring/..."))
 	return ops
 }
 
-func build(target string) func(*bk.Pipeline) {
-	bazelCmd := []string{
-		"bazel",
-		"--bazelrc=.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		fmt.Sprintf("build %s", target),
-		"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
-		"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+func bazelTest(targets ...string) func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+	}
+
+	for _, target := range targets {
+		bazelCmd := []string{
+			"bazel",
+			"--bazelrc=.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			fmt.Sprintf("test %s", target),
+			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		}
+		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Build %s", target),
-			bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
-			bk.Cmd(strings.Join(bazelCmd, " ")),
-			bk.Agent("queue", "bazel"),
+		pipeline.AddStep(fmt.Sprintf(":bazel: Test %s", strings.Join(targets, " ")),
+			cmds...,
+		)
+	}
+}
+func bazelBuild(targets ...string) func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.Agent("queue", "bazel"),
+	}
+
+	for _, target := range targets {
+		bazelCmd := []string{
+			"bazel",
+			"--bazelrc=.bazelrc",
+			"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+			fmt.Sprintf("build %s", target),
+			"--remote_cache=$$CI_BAZEL_REMOTE_CACHE",
+			"--google_credentials=/mnt/gcloud-service-account/gcloud-service-account.json",
+		}
+		cmds = append(cmds, bk.Cmd(strings.Join(bazelCmd, " ")))
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(fmt.Sprintf(":bazel: Build %s", strings.Join(targets, " ")),
+			cmds...,
 		)
 	}
 }

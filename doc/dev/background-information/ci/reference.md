@@ -103,8 +103,8 @@ sg ci build bzl
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build //dev/sg
-- Build //lib/...
+- Build //dev/sg //lib/...
+- Build //monitoring/...
 - Upload build trace
 
 ### Wolfi Exp Branch
