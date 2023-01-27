@@ -84,12 +84,19 @@ func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
 
 func FindGeneratedFiles(dir string) ([]string, error) {
 	var paths []string
-	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if strings.HasSuffix(path, ".pb.go") {
+
+	err := filepath.WalkDir(dir, root.SkipGitIgnoreWalkFunc(func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !entry.IsDir() && strings.HasSuffix(path, ".pb.go") {
 			paths = append(paths, path)
 		}
+
 		return nil
-	})
+	}))
+
 	return paths, err
 }
 
