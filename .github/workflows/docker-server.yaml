@@ -62,7 +62,7 @@ jobs:
       - name: Tag and push Docker images
         run: |
           while IFS= read -r tag; do
-            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:build $tag
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $tag
             docker push $tag
           done <<< $TAGS
         env:
