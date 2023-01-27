@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers/httpauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -20,7 +22,10 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	shared.Main(func(_ database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
+	shared.Main(func(db database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
+		if envvar.OAuth2ProxyMode() {
+			httpauth.Init(db)
+		}
 		return enterprise.DefaultServices()
 	})
 }

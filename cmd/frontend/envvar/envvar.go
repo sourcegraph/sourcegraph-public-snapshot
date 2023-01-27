@@ -20,6 +20,7 @@ var HTTPAddrInternal = env.Get(
 
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
 var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
+var oauth2ProxyMode, _ = strconv.ParseBool(env.Get("OAUTH2_PROXY_MODE", "false", "run as OAuth2 proxy, with added authz checks"))
 
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com
 // (solely by checking the SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows
@@ -35,4 +36,8 @@ func MockSourcegraphDotComMode(value bool) {
 
 func OpenGraphPreviewServiceURL() string {
 	return openGraphPreviewServiceURL
+}
+
+func OAuth2ProxyMode() bool {
+	return oauth2ProxyMode
 }
