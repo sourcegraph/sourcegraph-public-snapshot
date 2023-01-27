@@ -1,5 +1,6 @@
 import { Extension, Range } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
+import classNames from 'classnames'
 
 import { positionToOffset, sortRangeValuesByStart } from '../utils'
 
@@ -7,7 +8,6 @@ import { codeIntelTooltipsState } from './code-intel-tooltips'
 import { definitionUrlField } from './definition'
 import { documentHighlightsField, findByOccurrence } from './document-highlights'
 import { isModifierKeyHeld } from './modifier-click'
-import classNames from 'classnames'
 
 function sortByFromPosition(ranges: Range<Decoration>[]): Range<Decoration>[] {
     return ranges.sort((a, b) => a.from - b.from)
