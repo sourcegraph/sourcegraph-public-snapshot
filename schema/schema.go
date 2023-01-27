@@ -701,8 +701,6 @@ type ExperimentalFeatures struct {
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
-	// Gerrit description: Allow adding Gerrit code host connections
-	Gerrit string `json:"gerrit,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
@@ -788,7 +786,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enablePostSignupFlow")
 	delete(m, "eventLogging")
-	delete(m, "gerrit")
 	delete(m, "gitServerPinnedRepos")
 	delete(m, "goPackages")
 	delete(m, "insightsAlternateLoadingStrategy")
@@ -885,8 +882,16 @@ type GerritAuthProvider struct {
 	Url string `json:"url"`
 }
 
+// GerritAuthorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+type GerritAuthorization struct {
+	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
+	IdentityProvider string `json:"identityProvider,omitempty"`
+}
+
 // GerritConnection description: Configuration for a connection to Gerrit.
 type GerritConnection struct {
+	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+	Authorization *GerritAuthorization `json:"authorization,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.

@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "gerrit": {
-          "description": "Allow adding Gerrit code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "azureDevOps": {
           "description": "Allow adding Azure DevOps code host connections",
           "type": "string",

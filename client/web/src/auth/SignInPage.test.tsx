@@ -52,8 +52,8 @@ describe('SignInPage', () => {
         ).toMatchSnapshot()
     })
 
-    function render(route: string, authProviders: SourcegraphContext['authProviders']) {
-        return renderWithBrandedContext(
+    const render = (route: string, authProviders: SourcegraphContext['authProviders']) =>
+        renderWithBrandedContext(
             <Routes>
                 <Route
                     path="/sign-in"
@@ -74,7 +74,6 @@ describe('SignInPage', () => {
             </Routes>,
             { route }
         )
-    }
 
     describe('with Sourcegraph operator auth provider', () => {
         const withSourcegraphOperator: SourcegraphContext['authProviders'] = [

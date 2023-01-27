@@ -23,26 +23,17 @@ type AccountCredentials struct {
 }
 
 // GetExternalAccountData extracts account data for the external account.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *AccountData, creds *AccountCredentials, err error) {
-	if data.Data != nil {
-		usr, err = encryption.DecryptJSON[AccountData](ctx, data.Data)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *AccountData, err error) {
+	return encryption.DecryptJSON[AccountData](ctx, data.Data)
+}
 
-	if data.AuthData != nil {
-		creds, err = encryption.DecryptJSON[AccountCredentials](ctx, data.AuthData)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return usr, creds, nil
+// GetExternalAccountCredentials extracts the account credentials for the external account.
+func GetExternalAccountCredentials(ctx context.Context, data *extsvc.AccountData) (*AccountCredentials, error) {
+	return encryption.DecryptJSON[AccountCredentials](ctx, data.AuthData)
 }
 
 func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
-	usr, _, err := GetExternalAccountData(ctx, data)
+	usr, err := GetExternalAccountData(ctx, data)
 	if err != nil {
 		return nil, err
 	}
