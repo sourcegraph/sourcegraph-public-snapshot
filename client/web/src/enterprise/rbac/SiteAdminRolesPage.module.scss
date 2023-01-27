@@ -4,18 +4,30 @@
 }
 
 .role-node {
-    padding: 12px;
+    padding: 16px;
     display: grid;
-    grid-template-rows: 1fr 1fr;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     gap: 0.5rem;
+    border: 1px solid var(--secondary);
 
-    &:not(:first-child)::after {
-        border: 1px solid green;
+    &:not(:first-child) {
+        margin-top: 1rem;
     }
 
     &__permissions {
-        background-color: darkslategrey;
+        background-color: var(--body-bg);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
         grid-column: 1 / -1;
+    }
+
+    &__system-text {
+        background-color: var(--secondary);
+        color: var(--body-color);
+        padding: 0 9px;
+        margin: 0 8px;
+        border-radius: 10%;
+        font-size: 12px;
+        text-align: center;
     }
 }
