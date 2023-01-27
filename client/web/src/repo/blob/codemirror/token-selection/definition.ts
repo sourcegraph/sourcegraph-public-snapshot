@@ -62,6 +62,9 @@ export function goToDefinitionOnMouseEvent(
     }
     if (isInteractiveOccurrence(atEvent.occurrence)) {
         selectOccurrence(view, atEvent.occurrence)
+
+        // Ensure editor remains focused for the keyboard navigation to work
+        view.contentDOM.focus()
     }
     if (!isModifierKey(event) && !options?.isLongClick) {
         return
