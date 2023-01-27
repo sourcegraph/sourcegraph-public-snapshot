@@ -8,6 +8,8 @@ export interface CaptureGroupInsight extends BaseInsight {
     /** Capture group regexp query string */
     query: string
 
+    repoQuery: string
+
     /**
      * List of repositories that are used to collect data by query regexp field
      */

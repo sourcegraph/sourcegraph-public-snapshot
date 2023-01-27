@@ -171,6 +171,21 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"})
 }
 
+// AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
+type AzureDevOpsConnection struct {
+	// Exclude description: A list of repositories to never mirror from this Azure DevOps Services/Server instance.
+	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
+	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
+	Orgs []string `json:"orgs,omitempty"`
+	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps whose repositories should be mirrored on Sourcegraph.
+	Projects []string `json:"projects,omitempty"`
+	// Token description: The Personal Access Token associated with the Azure DevOps username used for authentication.
+	Token string `json:"token"`
+	// Url description: URL of a Azure DevOps Services/Server instance, such as https://dev.azure.com.
+	Url string `json:"url"`
+	// Username description: A username for authentication withe the Gerrit code host.
+	Username string `json:"username"`
+}
 type BackendInsight struct {
 	// Description description: The description of this insight
 	Description string          `json:"description,omitempty"`
@@ -597,6 +612,12 @@ type ExcludedAWSCodeCommitRepo struct {
 	// Name description: The name of an AWS CodeCommit repository ("repo-name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
 }
+type ExcludedAzureDevOpsServerRepo struct {
+	// Name description: The name of an Azure DevOps Services/Server project and repository ("projectName/repositoryName") to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of an Azure DevOps Services/Server repo.
+	Pattern string `json:"pattern,omitempty"`
+}
 type ExcludedBitbucketCloudRepo struct {
 	// Name description: The name of a Bitbucket Cloud repo ("myorg/myrepo") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
@@ -656,6 +677,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
+	// AzureDevOps description: Allow adding Azure DevOps code host connections
+	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -750,6 +773,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
+	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -1099,6 +1123,14 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
+}
+
+// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+type GitRecorder struct {
+	// Repos description: List of repositories whose git operations should be recorded.
+	Repos []string `json:"repos,omitempty"`
+	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
+	Size int `json:"size,omitempty"`
 }
 
 // Github description: GitHub configuration, both for queries and receiving release webhooks.
@@ -2375,6 +2407,8 @@ type SiteConfiguration struct {
 	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
+	// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
@@ -2431,6 +2465,10 @@ type SiteConfiguration struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsSyncJobCleanupInterval description: Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.
+	PermissionsSyncJobCleanupInterval int `json:"permissions.syncJobCleanupInterval,omitempty"`
+	// PermissionsSyncJobsHistorySize description: The number of last repo/user permission jobs to keep for history.
+	PermissionsSyncJobsHistorySize *int `json:"permissions.syncJobsHistorySize,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
 	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration.
@@ -2558,6 +2596,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitLongCommandTimeout")
 	delete(m, "gitMaxCodehostRequestsPerSecond")
 	delete(m, "gitMaxConcurrentClones")
+	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
@@ -2586,6 +2625,8 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
 	delete(m, "parentSourcegraph")
+	delete(m, "permissions.syncJobCleanupInterval")
+	delete(m, "permissions.syncJobsHistorySize")
 	delete(m, "permissions.syncOldestRepos")
 	delete(m, "permissions.syncOldestUsers")
 	delete(m, "permissions.syncReposBackoffSeconds")

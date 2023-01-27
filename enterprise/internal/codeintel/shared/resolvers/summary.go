@@ -41,7 +41,7 @@ func NewRepositorySummaryResolver(
 		summary:           summary,
 		availableIndexers: availableIndexers,
 		prefetcher:        prefetcher,
-		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient()),
 		errTracer:         errTracer,
 	}
 }

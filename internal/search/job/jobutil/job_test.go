@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
-	"sort"
 	"testing"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -1284,7 +1284,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	for i, match := range matches {
 		matchKeys[i] = match.Key()
 	}
-	sort.Slice(matchKeys, func(i, j int) bool { return matchKeys[i].Less(matchKeys[j]) })
+	slices.SortFunc(matchKeys, result.Key.Less)
 
 	wantResultKeys := []result.Key{
 		{Repo: "foo", Commit: "branch3", Path: "main.go"},

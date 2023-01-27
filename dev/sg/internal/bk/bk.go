@@ -17,12 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// https://buildkite.com/sourcegraph
+// BuildkiteOrg is a Sourcegraph org in Buildkite. See: is https://buildkite.com/sourcegraph
 const BuildkiteOrg = "sourcegraph"
-
-type buildkiteSecrets struct {
-	Token string `json:"token"`
-}
 
 type Build struct {
 	buildkite.Build

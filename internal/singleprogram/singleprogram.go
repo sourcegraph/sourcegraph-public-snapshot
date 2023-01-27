@@ -34,6 +34,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
 	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
+	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
@@ -67,6 +68,7 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
+	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "repos"))
 	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
 
 	configDir, err := os.UserConfigDir()
@@ -112,7 +114,6 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
-	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you

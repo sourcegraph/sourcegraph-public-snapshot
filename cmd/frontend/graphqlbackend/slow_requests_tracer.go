@@ -20,9 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// slowRequestRedisFIFOListDefaultSize sets a default value for the FIFO list.
-const slowRequestRedisFIFOListDefaultSize = 5000
-
 // slowRequestRedisFIFOListPerPage sets the default count of returned request.
 const slowRequestRedisFIFOListPerPage = 50
 

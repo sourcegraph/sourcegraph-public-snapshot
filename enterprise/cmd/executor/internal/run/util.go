@@ -170,6 +170,7 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
+		QueueName:         c.QueueName,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{

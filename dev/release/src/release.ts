@@ -586,7 +586,7 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
-                        repo: 'https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1',
+                        repo: 'deploy-sourcegraph-docker-customer-replica-1',
                         base: `${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,

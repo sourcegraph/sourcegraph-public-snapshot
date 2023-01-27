@@ -28,7 +28,7 @@ func (j *uploadExpirerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadExpirerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *uploadExpirerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

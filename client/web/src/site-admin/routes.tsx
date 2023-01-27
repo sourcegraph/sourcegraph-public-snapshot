@@ -131,6 +131,21 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         ),
     },
     {
+        path: '/outbound-webhooks',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/OutboundWebhooksPage'), 'OutboundWebhooksPage'),
+    },
+    {
+        path: '/outbound-webhooks/create',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage'),
+    },
+    {
+        path: '/outbound-webhooks/:id',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage'),
+    },
+    {
         path: '/webhooks',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),

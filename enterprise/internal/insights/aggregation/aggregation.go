@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -50,23 +49,6 @@ func countRepo(r result.Match) (map[MatchKey]int, error) {
 		}: r.ResultCount()}, nil
 	}
 	return nil, nil
-}
-
-func countLang(r result.Match) map[MatchKey]int {
-	var lang string
-	switch match := r.(type) {
-	case *result.FileMatch:
-		lang, _ = enry.GetLanguageByExtension(match.Path)
-	default:
-	}
-	if lang != "" {
-		return map[MatchKey]int{{
-			RepoID: int32(r.RepoName().ID),
-			Repo:   string(r.RepoName().Name),
-			Group:  lang,
-		}: r.ResultCount()}
-	}
-	return nil
 }
 
 func countPath(r result.Match) (map[MatchKey]int, error) {
