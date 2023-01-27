@@ -1369,6 +1369,18 @@ extend type Query {
         Sort direction.
         """
         descending: Boolean = false
+        """
+        List of states to filter list by.
+        """
+        states: [InsightQueueItemState!]
+        """
+        Insight title to filter list by
+        """
+        insightTitle: String
+        """
+        Series label to filter list by
+        """
+        seriesLabel: String
     ): InsightBackfillQueueItemConnection!
 }
 

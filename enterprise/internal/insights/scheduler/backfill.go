@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -229,6 +231,9 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 
 type BackfillQueueArgs struct {
 	PaginationArgs *database.PaginationArgs
+	States         *[]string
+	InsightTitle   *string
+	SeriesLabel    *string
 }
 type BackfillQueueItem struct {
 	ID                  int
@@ -247,16 +252,33 @@ type BackfillQueueItem struct {
 	Errors              *[]string
 }
 
-func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context) (int, error) {
-	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
+func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args BackfillQueueArgs) (int, error) {
+	where := backfillWhere(args)
 	query := sqlf.Sprintf(backfillCountSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return count, err
 }
 
-func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
+func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
+	if args.InsightTitle != nil {
+		where = append(where, sqlf.Sprintf("title LIKE %s", "%"+*args.InsightTitle+"%"))
+	}
+	if args.SeriesLabel != nil {
+		where = append(where, sqlf.Sprintf("label LIKE %s", "%"+*args.SeriesLabel+"%"))
+	}
+	if args.States != nil {
+		states := make([]string, 0, len(*args.States))
+		for _, s := range *args.States {
+			states = append(states, fmt.Sprintf("'%s'", strings.ToLower(s)))
+		}
+		where = append(where, sqlf.Sprintf(fmt.Sprintf("state.backfill_state in (%s)", strings.Join(states, ","))))
+	}
+	return where
+}
 
+func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
+	where := backfillWhere(args)
 	pagination := database.PaginationArgs{}
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
@@ -272,6 +294,7 @@ func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQ
 	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
 	query = p.AppendLimitToQuery(query)
+	fmt.Println(query.Query(sqlf.PostgresBindVar))
 	results, err = scanAllBackfillQueueItems(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
@@ -313,11 +336,21 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 }
 
 var backfillCountSQL = `
-SELECT count(*)
-FROM insight_series_backfill isb
-join insight_view_series ivs on ivs.insight_series_id = isb.series_id
+WITH state as (
+select isb.id, CASE
+  WHEN ijbip.state IS NULL THEN isb.state
+  ELSE ijbip.state
+END backfill_state
+    from insight_series_backfill isb
+    left join insights_jobs_backfill_in_progress ijbip on isb.id = ijbip.backfill_id and ijbip.state = 'queued'
+    )
+select count(*)
+from insight_series_backfill isb
+    left join repo_iterator ri on isb.repo_iterator_id = ri.id
+    join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id
     join insight_view iv on ivs.insight_view_id = iv.id
+    join state  on isb.id = state.id
 %s
 `
 

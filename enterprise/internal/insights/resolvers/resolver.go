@@ -106,7 +106,11 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	store := &adminBackfillQueueConnectionStore{backfillStore: scheduler.NewBackfillStore(r.insightsDB), logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
+	store := &adminBackfillQueueConnectionStore{
+		args:          args,
+		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
+		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
+	}
 
 	// `STATE` is the default enum value in the graphql schema.
 	orderBy := "STATE"

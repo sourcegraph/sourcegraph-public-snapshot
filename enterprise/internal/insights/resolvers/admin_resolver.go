@@ -258,11 +258,19 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 type adminBackfillQueueConnectionStore struct {
 	backfillStore *scheduler.BackfillStore
 	logger        log.Logger
+	args          *graphqlbackend.AdminBackfillQueueArgs
 }
 
 // ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx)
+	filterArgs := scheduler.BackfillQueueArgs{}
+	if a.args != nil {
+		filterArgs.States = a.args.States
+		filterArgs.InsightTitle = a.args.InsightTitle
+		filterArgs.SeriesLabel = a.args.SeriesLabel
+	}
+
+	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx, filterArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +286,13 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*
 // Returns:
 //   - ([]*graphqlbackend.BackfillQueueItemResolver, error): A list of backfill queue item resolvers and any errors encountered.
 func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
-	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{PaginationArgs: args})
+	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
+	if a.args != nil {
+		filterArgs.States = a.args.States
+		filterArgs.InsightTitle = a.args.InsightTitle
+		filterArgs.SeriesLabel = a.args.SeriesLabel
+	}
+	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, filterArgs)
 	if err != nil {
 		return nil, err
 	}

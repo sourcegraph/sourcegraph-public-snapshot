@@ -578,4 +578,9 @@ type AdminBackfillQueueArgs struct {
 	graphqlutil.ConnectionResolverArgs
 	OrderBy    string
 	Descending bool
+
+	//filters
+	States       *[]string
+	InsightTitle *string
+	SeriesLabel  *string
 }
