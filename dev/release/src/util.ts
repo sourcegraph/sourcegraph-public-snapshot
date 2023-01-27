@@ -215,8 +215,6 @@ export const getAllUpgradeGuides = (previous: string, next: string): string[] =>
 
 export const updateUpgradeGuides = (previous: string, next: string): EditFunc => {
     let updateDirectory = '/doc/admin/updates'
-    // const notPatchRelease = release.patch === 0
-    // const previousNotPatchRelease = previous.patch === 0
     const notPatchRelease = next.endsWith('.0')
 
     return (directory: string): void => {
