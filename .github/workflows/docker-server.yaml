@@ -18,6 +18,12 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Install musl-tools
+        run: apt update && apt install -y musl-tools
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6.0.2
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Login to GitHub Container Registry
@@ -37,6 +43,17 @@ jobs:
             type=ref,event=tag
             type=ref,event=pr
             type=sha
+      - name: Run pre-build script
+        run: ./pre-build.sh
+        working-directory: ./cmd/server
+
+      - name: Run build script
+        run: ./build.sh
+        working-directory: ./cmd/server
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          VERSION: ${{ steps.meta-main.outputs.tags[0] }}
+
       - name: Build and push Docker main image
         uses: docker/build-push-action@v3
         with:
@@ -44,9 +61,3 @@ jobs:
           push: true
           tags: ${{ steps.meta-main.outputs.tags }}
           labels: ${{ steps.meta-main.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.meta-main.outputs.tags }}
-            DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-            VCS_REF=$(git rev-parse --short HEAD)
-            VCS_URL=$(git config --get remote.origin.url)
-            BUILDKIT_INLINE_CACHE=1
