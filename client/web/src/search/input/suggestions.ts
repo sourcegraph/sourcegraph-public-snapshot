@@ -417,7 +417,7 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
         from: token.value?.range.start ?? token.range.end,
         to: token.value?.range.end,
         value: value.label,
-        insertValue: (value.insertText ?? value.label).concat(' '),
+        insertValue: value.insertText ?? value.label + ' ',
     }))
 
     if (value && value.value !== '') {

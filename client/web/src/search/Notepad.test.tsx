@@ -29,16 +29,17 @@ describe('Notepad', () => {
     // screen size, so this needs to be explicitly overriden to ensure that the
     // component renders.
     window.matchMedia = spy((media: string) => {
-        const et: any = new EventTarget()
-        et.matches = true
-        et.media = media
-        et.addListener = () => {}
-        et.removeListener = () => {}
-        et.addEventListener = () => {}
-        et.dispatchEvent = () => false
-        et.onchange = null
+        const eventTarget: any = new EventTarget()
+        eventTarget.matches = true
+        eventTarget.media = media
+        eventTarget.addListener = () => {}
+        eventTarget.removeListener = () => {}
+        eventTarget.addEventListener = () => {}
+        eventTarget.dispatchEvent = () => false
+        // eslint-disable-next-line unicorn/prefer-add-event-listener
+        eventTarget.onchange = null
 
-        return et as MediaQueryList
+        return eventTarget as MediaQueryList
     })
 
     afterEach(cleanup)
