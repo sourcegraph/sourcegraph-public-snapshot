@@ -9122,7 +9122,7 @@ extend type User implements TeamMember {
 
 extend type Query {
     """
-    Get the global list of all teams.
+    Get the global list of all root teams. (Those without a parent team).
     """
     teams(
         """

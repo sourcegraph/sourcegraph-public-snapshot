@@ -11,7 +11,7 @@ engineering
 │  ├─ Batch Changes
 │  ├─ Code Insights
 ├─ source
-│  ├─ repo-management
+│  ├─ Repo Management
 │  ├─ IAM
 product
 ```
