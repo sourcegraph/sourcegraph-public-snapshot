@@ -41,6 +41,7 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
+  --platform linux/amd64 \
   --build-arg VERSION
 
 # cd out of $BUILDDIR for cleanup

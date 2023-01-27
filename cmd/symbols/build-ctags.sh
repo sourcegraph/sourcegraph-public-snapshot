@@ -17,4 +17,5 @@ echo "Building ctags docker image"
 docker build -f cmd/symbols/Dockerfile -t ctags . \
   --target=ctags \
   --progress=plain \
+  --platform linux/amd64 \
   --quiet >/dev/null

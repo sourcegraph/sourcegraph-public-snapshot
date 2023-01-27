@@ -21,6 +21,7 @@ docker build -f cmd/symbols/Dockerfile -t symbols-build "$(pwd)" \
   --target=symbols-build \
   --progress=plain \
   --build-arg VERSION \
+  --platform linux/amd64 \
   --build-arg PKG="${PKG:-github.com/sourcegraph/sourcegraph/cmd/symbols}"
 
 docker cp "$(docker create --rm symbols-build)":/symbols "$OUTPUT/symbols"

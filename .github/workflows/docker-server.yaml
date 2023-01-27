@@ -1,0 +1,52 @@
+name: Build the server Docker image
+on:
+  push:
+    branches:
+      - libre
+  pull_request:
+    branches:
+      - libre
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: sintef/sourcegraph-server-libre
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for main image
+        id: meta-main
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha
+      - name: Build and push Docker main image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./cmd/server
+          push: true
+          tags: ${{ steps.meta-main.outputs.tags }}
+          labels: ${{ steps.meta-main.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta-main.outputs.tags }}
+            DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=$(git rev-parse --short HEAD)
+            VCS_URL=$(git config --get remote.origin.url)
+            BUILDKIT_INLINE_CACHE=1
