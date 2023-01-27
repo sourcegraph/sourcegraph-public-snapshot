@@ -85,7 +85,7 @@ const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
         const lineEl = element?.matches('.cm-line') ? element : element?.closest('.cm-line')
         const interactiveOccurrenceEl = lineEl?.querySelector<HTMLElement>('.interactive-occurrence')
         if (interactiveOccurrenceEl) {
-            interactiveOccurrenceEl?.focus()
+            interactiveOccurrenceEl.focus()
         }
     }
 }

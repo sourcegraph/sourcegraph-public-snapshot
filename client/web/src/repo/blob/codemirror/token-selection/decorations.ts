@@ -9,6 +9,10 @@ import { documentHighlightsField, findByOccurrence } from './document-highlights
 import { isModifierKeyHeld } from './modifier-click'
 import classNames from 'classnames'
 
+function sortByFromPosition(ranges: Range<Decoration>[]): Range<Decoration>[] {
+    return ranges.sort((a, b) => a.from - b.from)
+}
+
 /**
  * Extension providing decorations for focused, hovered, pinned occurrences, and document highlights.
  * We combine all of these into a single extension to avoid the focused element blur caused by its removal from the DOM.
@@ -91,7 +95,7 @@ export function interactiveOccurrencesExtension(): Extension {
                     return acc
                 }, [] as Range<Decoration>[])
 
-                return Decoration.set(ranges.sort((a, b) => a.from - b.from))
+                return Decoration.set(sortByFromPosition(ranges))
             }
         ),
         EditorView.theme({
