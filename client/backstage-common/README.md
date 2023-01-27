@@ -134,7 +134,7 @@ Since we copied the plugin to a different directory Backstage we need to tell Ba
 
 1. Make sure the plugin is built. Note that we use pnpm here and not yarn, which is because Sourcegraph uses pnpm. Both yarn and pnpm work with the command defined in the `package.json` which just executes `backstage-cli` with some args.
 
-```bash
+```console
 $ cd sourcegraph/client/backstage/plugin
 $ pnpm tsc # this generates required files in dist-types
 $ pnpm build
