@@ -5,7 +5,7 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
-import { LayoutRouteProps, routes } from '../routes'
+import { LayoutRouteComponentPropsRRV6, LayoutRouteProps, routes } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 
@@ -15,15 +15,19 @@ const CreateNotebookPage = lazyComponent(
     'CreateNotebookPage'
 )
 const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const GlobalBatchChangesArea = lazyComponent(
+    () => import('./batches/global/GlobalBatchChangesArea'),
+    'GlobalBatchChangesArea'
+)
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
 
 export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.BatchChanges,
-        render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <GlobalBatchChangesArea {...props} />,
         // We also render this route on sourcegraph.com as a precaution in case anyone
         // follows an in-app link to /batch-changes from sourcegraph.com; the component
         // will just redirect the visitor to the marketing page

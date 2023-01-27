@@ -23,7 +23,7 @@ export enum PageRoutes {
 }
 
 export enum EnterprisePageRoutes {
-    BatchChanges = '/batch-changes',
+    BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring',
     Insights = '/insights',
     Contexts = '/contexts',

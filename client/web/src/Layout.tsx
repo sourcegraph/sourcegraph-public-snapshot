@@ -122,7 +122,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const routeMatch = props.routes.find(route =>
         !route.isV6
             ? matchPath(location.pathname, { path: route.path, exact: route.exact })
-            : matchPath(location.pathname, { path: route.path, exact: true })
+            : matchPath(location.pathname, { path: route.path, exact: true }) ||
+              matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
     )?.path
 
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
