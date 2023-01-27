@@ -3,12 +3,13 @@ import { Redirect } from 'react-router'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
+import { UserProfile } from '../profile/UserProfile'
 
 import { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
-const redirectToUserProfile: UserAreaRoute['render'] = props => <Redirect to={`${props.url}/settings/profile`} />
+const redirectToUserProfile: UserAreaRoute['render'] = props => <Redirect to={`${props.url}/profile`} />
 
 export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
@@ -21,15 +22,19 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
             />
         ),
     },
+    {
+        path: '/profile',
+        render: props => <UserProfile user={props.user} isSourcegraphDotCom={props.isSourcegraphDotCom} />,
+    },
     ...namespaceAreaRoutes,
 
-    // Redirect from /users/:username -> /users/:username/settings/profile.
+    // Redirect from /users/:username -> /users/:username/profile.
     {
         path: '/',
         exact: true,
         render: redirectToUserProfile,
     },
-    // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
+    // Redirect from previous /users/:username/account -> /users/:username/profile.
     {
         path: '/account',
         render: redirectToUserProfile,

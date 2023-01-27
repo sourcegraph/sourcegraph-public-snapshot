@@ -52,12 +52,17 @@ func Generate(ctx context.Context) *generate.Report {
 
 	// Run buf generate in every directory with buf.gen.yaml
 	var bufGenFilePaths []string
-	err = filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
-		if filepath.Base(path) == "buf.gen.yaml" {
+
+	err = filepath.WalkDir(rootDir, root.SkipGitIgnoreWalkFunc(func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.Name() == "buf.gen.yaml" {
 			bufGenFilePaths = append(bufGenFilePaths, path)
 		}
 		return nil
-	})
+	}))
+
 	if err != nil {
 		return &generate.Report{Err: err}
 	}

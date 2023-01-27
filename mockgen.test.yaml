@@ -15,21 +15,20 @@
   interfaces:
     - GitServerClient
 - filename: enterprise/cmd/executor/internal/command/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
-  interfaces:
-    - ExecutionLogEntryStore
-    - Logger
-    - LogEntry
-    - commandRunner
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
+      interfaces:
+        - ExecutionLogEntryStore
+        - Logger
+        - LogEntry
+        - commandRunner
 - filename: enterprise/cmd/executor/internal/worker/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
       interfaces:
+        - ExecutionLogEntryStore
         - Runner
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil
-      interfaces:
-        - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
       interfaces:
         - FilesStore
 - filename: enterprise/cmd/frontend/internal/app/mocks_test.go

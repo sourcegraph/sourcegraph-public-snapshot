@@ -13,6 +13,7 @@ import (
 
 	sqlf "github.com/keegancsmith/sqlf"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
 	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -68,7 +69,7 @@ type MockStore[T workerutil.Record] struct {
 func NewMockStore[T workerutil.Record]() *MockStore[T] {
 	return &MockStore[T]{
 		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -123,7 +124,7 @@ func NewMockStore[T workerutil.Record]() *MockStore[T] {
 			},
 		},
 		UpdateExecutionLogEntryFunc: &StoreUpdateExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (r0 error) {
+			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (r0 error) {
 				return
 			},
 		},
@@ -140,7 +141,7 @@ func NewMockStore[T workerutil.Record]() *MockStore[T] {
 func NewStrictMockStore[T workerutil.Record]() *MockStore[T] {
 	return &MockStore[T]{
 		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+			defaultHook: func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
 				panic("unexpected invocation of MockStore.AddExecutionLogEntry")
 			},
 		},
@@ -195,7 +196,7 @@ func NewStrictMockStore[T workerutil.Record]() *MockStore[T] {
 			},
 		},
 		UpdateExecutionLogEntryFunc: &StoreUpdateExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
 				panic("unexpected invocation of MockStore.UpdateExecutionLogEntry")
 			},
 		},
@@ -256,15 +257,15 @@ func NewMockStoreFrom[T workerutil.Record](i store.Store[T]) *MockStore[T] {
 // StoreAddExecutionLogEntryFunc describes the behavior when the
 // AddExecutionLogEntry method of the parent MockStore instance is invoked.
 type StoreAddExecutionLogEntryFunc[T workerutil.Record] struct {
-	defaultHook func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)
-	hooks       []func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)
+	defaultHook func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)
+	hooks       []func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)
 	history     []StoreAddExecutionLogEntryFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // AddExecutionLogEntry delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2 workerutil.ExecutionLogEntry, v3 store.ExecutionLogEntryOptions) (int, error) {
+func (m *MockStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2 executor.ExecutionLogEntry, v3 store.ExecutionLogEntryOptions) (int, error) {
 	r0, r1 := m.AddExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3)
 	m.AddExecutionLogEntryFunc.appendCall(StoreAddExecutionLogEntryFuncCall[T]{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -273,7 +274,7 @@ func (m *MockStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2 worke
 // SetDefaultHook sets function that is called when the AddExecutionLogEntry
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)) {
+func (f *StoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -281,7 +282,7 @@ func (f *StoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Cont
 // AddExecutionLogEntry method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)) {
+func (f *StoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -290,19 +291,19 @@ func (f *StoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, i
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreAddExecutionLogEntryFunc[T]) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+	f.SetDefaultHook(func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreAddExecutionLogEntryFunc[T]) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+	f.PushHook(func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreAddExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+func (f *StoreAddExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -343,7 +344,7 @@ type StoreAddExecutionLogEntryFuncCall[T workerutil.Record] struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 workerutil.ExecutionLogEntry
+	Arg2 executor.ExecutionLogEntry
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 store.ExecutionLogEntryOptions
@@ -1457,15 +1458,15 @@ func (c StoreResetStalledFuncCall[T]) Results() []interface{} {
 // UpdateExecutionLogEntry method of the parent MockStore instance is
 // invoked.
 type StoreUpdateExecutionLogEntryFunc[T workerutil.Record] struct {
-	defaultHook func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error
-	hooks       []func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error
+	defaultHook func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error
+	hooks       []func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error
 	history     []StoreUpdateExecutionLogEntryFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // UpdateExecutionLogEntry delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 int, v3 workerutil.ExecutionLogEntry, v4 store.ExecutionLogEntryOptions) error {
+func (m *MockStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 int, v3 executor.ExecutionLogEntry, v4 store.ExecutionLogEntryOptions) error {
 	r0 := m.UpdateExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.UpdateExecutionLogEntryFunc.appendCall(StoreUpdateExecutionLogEntryFuncCall[T]{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -1474,7 +1475,7 @@ func (m *MockStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 in
 // SetDefaultHook sets function that is called when the
 // UpdateExecutionLogEntry method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error) {
+func (f *StoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -1482,7 +1483,7 @@ func (f *StoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.C
 // UpdateExecutionLogEntry method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error) {
+func (f *StoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1491,19 +1492,19 @@ func (f *StoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreUpdateExecutionLogEntryFunc[T]) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+	f.SetDefaultHook(func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreUpdateExecutionLogEntryFunc[T]) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+	f.PushHook(func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdateExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+func (f *StoreUpdateExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, int, executor.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1547,7 +1548,7 @@ type StoreUpdateExecutionLogEntryFuncCall[T workerutil.Record] struct {
 	Arg2 int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 workerutil.ExecutionLogEntry
+	Arg3 executor.ExecutionLogEntry
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 store.ExecutionLogEntryOptions

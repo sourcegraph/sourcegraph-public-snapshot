@@ -24,9 +24,14 @@ interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSe
         handleSelect: (event: React.MouseEvent) => {}
         props: { className: string; tabIndex: number }
     }) => React.ReactNode
+
+    // A set of node IDs that had their children loaded. This is necessary
+    // because we can not rely on the .length property to know if we're still
+    // loading children.
+    loadedIds?: Set<number>
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onLoadData, renderNode, ...rest } = props
+    const { onSelect, onLoadData, renderNode, loadedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -84,7 +89,9 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                         // We already handle accessibility events for expansion in the <TreeView />
                         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
                         <div className={classNames(styles.icon, styles.collapseIcon)} onClick={onClick}>
-                            {isExpanded && element.children.length === 0 ? (
+                            {isExpanded &&
+                            element.children.length === 0 &&
+                            (loadedIds ? !loadedIds.has(element.id) : true) ? (
                                 <LoadingSpinner />
                             ) : (
                                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
@@ -98,7 +105,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                               isExpanded,
                               handleSelect,
                               props: {
-                                  className: classNames(styles.content, isBranch ? styles.contentInBranch : null),
+                                  className: classNames(styles.content, { [styles.contentInBranch]: isBranch }),
                                   // We don't want links or any other item inside the Tree to be focusable, as focus
                                   // should be managed by the TreeView only.
                                   tabIndex: -1,
@@ -108,7 +115,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                 </div>
             )
         },
-        [renderNode]
+        [loadedIds, renderNode]
     )
 
     return (

@@ -6,8 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
-
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
@@ -187,24 +185,4 @@ func (u *user) executeDelete(ctx context.Context) {
 	}
 
 	writeSuccess(out, "Deleted user %s", u.Login)
-}
-
-// executeDeleteMemberships deletes the memberships for a given team.
-func (t *team) executeDeleteMemberships(ctx context.Context) {
-	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, t.Org, t.Name, &github.TeamListTeamMembersOptions{
-		Role:        "member",
-		ListOptions: github.ListOptions{PerPage: 100},
-	})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	writeInfo(out, "Deleting %d memberships for team %s", len(teamMembers), t.Name)
-	for _, member := range teamMembers {
-		_, err = gh.Teams.RemoveTeamMembershipBySlug(ctx, t.Org, t.Name, *member.Login)
-		if err != nil {
-			log.Printf("Failed to remove membership from team %s for user %s: %s", t.Name, *member.Login, err)
-		}
-	}
 }

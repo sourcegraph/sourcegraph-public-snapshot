@@ -86,7 +86,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 submitSearch({
                     source: 'home',
                     query,
-                    history: props.history,
+                    historyOrNavigate: props.history,
+                    location: props.history.location,
                     patternType,
                     caseSensitive,
                     searchMode,

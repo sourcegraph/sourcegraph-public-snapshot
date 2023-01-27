@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -164,14 +165,14 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 
 // runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
-func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
+		if cmd.Unwrap().Env == nil {
+			cmd.Unwrap().Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal())
+		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
 	}
 
 	var b interface {
@@ -185,8 +186,8 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		r, w := io.Pipe()
 		defer w.Close()
 		mr := io.MultiWriter(&pw, w)
-		cmd.Stdout = mr
-		cmd.Stderr = mr
+		cmd.Unwrap().Stdout = mr
+		cmd.Unwrap().Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
 				logger.Error("error while copying progress", log.Error(err))
@@ -195,12 +196,12 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		b = &pw
 	} else {
 		var buf bytes.Buffer
-		cmd.Stdout = &buf
-		cmd.Stderr = &buf
+		cmd.Unwrap().Stdout = &buf
+		cmd.Unwrap().Stderr = &buf
 		b = &buf
 	}
 
-	_, err := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, cmd) // TODO
 	return b.Bytes(), err
 }
 
@@ -360,7 +361,7 @@ var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, cmd)
+	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

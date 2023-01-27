@@ -959,6 +959,12 @@
       "minimum": 5,
       "!go": { "pointer": true }
     },
+    "permissions.syncJobCleanupInterval": {
+      "description": "Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.",
+      "type": "integer",
+      "default": 60,
+      "minimum": 1
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
@@ -1493,6 +1499,24 @@
         "clientSecret": {
           "type": "string",
           "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      }
+    },
+    "gitRecorder": {
+      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
+          "type": "integer",
+          "default": 100000
+        },
+        "repos": {
+          "description": "List of repositories whose git operations should be recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
