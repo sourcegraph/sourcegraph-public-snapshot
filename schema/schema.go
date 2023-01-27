@@ -894,6 +894,8 @@ type GerritConnection struct {
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
+	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
+	Projects []string `json:"projects,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication withe the Gerrit code host.
