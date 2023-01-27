@@ -346,7 +346,7 @@ func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
 
 // RepoContainsPredicate represents the `repo:contains(file:a content:b)` predicate.
-// DEPRECATED: this syntax is deprecated in favor of `repo.contains.file`.
+// DEPRECATED: this syntax is deprecated in favor of `repo:contains.file`.
 type RepoContainsPredicate struct {
 	File    string
 	Content string
@@ -375,7 +375,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 	switch v := n.(type) {
 	case Parameter:
 		if v.Negated {
-			return errors.New("predicates do not currently support negated values")
+			return errors.New("the repo:contains() predicate does not currently support negated values")
 		}
 		switch strings.ToLower(v.Field) {
 		case "file":
@@ -383,7 +383,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 				return errors.New("cannot specify file multiple times")
 			}
 			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("`contains` predicate has invalid `file` argument: %w", err)
+				return errors.Errorf("the repo:contains() predicate has invalid `file` argument: %w", err)
 			}
 			f.File = v.Value
 		case "content":
@@ -391,7 +391,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 				return errors.New("cannot specify content multiple times")
 			}
 			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("`contains` predicate has invalid `content` argument: %w", err)
+				return errors.Errorf("the repo:contains() predicate has invalid `content` argument: %w", err)
 			}
 			f.Content = v.Value
 		default:
