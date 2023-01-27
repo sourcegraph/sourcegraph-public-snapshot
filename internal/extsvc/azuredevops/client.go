@@ -145,13 +145,22 @@ type ListRepositoriesResponse struct {
 }
 
 type Repository struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	CloneURL   string  `json:"remoteURL"`
+	APIURL     string  `json:"url"`
+	SSHURL     string  `json:"sshUrl"`
+	WebURL     string  `json:"webUrl"`
+	IsDisabled bool    `json:"isDisabled"`
+	Project    Project `json:"project"`
+}
+
+type Project struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
-	CloneURL   string `json:"remoteURL"`
-	APIURL     string `json:"url"`
-	SSHURL     string `json:"sshUrl"`
-	WebURL     string `json:"webUrl"`
-	IsDisabled bool   `json:"isDisabled"`
+	State      string `json:"state"`
+	Revision   int    `json:"revision"`
+	Visibility string `json:"visibility"`
 }
 
 type httpError struct {

@@ -1129,9 +1129,6 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// Hard coded both to 10 for now.
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
-	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
-	// just uses the value of LastUpdatedAt get from the perms tables.
-
 	usersWithOldestPerms, err := s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
@@ -1194,13 +1191,17 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger)
 		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("database-backed perm syncer", workerEnabled))
 
+		// TODO(naman): when `runSchedule` is removed `s.schedule` should return reason
+		// and priority along with each user id separately, rather than having to figure it our here.`
 		if workerEnabled {
 			for _, u := range schedule.Users {
+				priority := database.LowPriorityPermissionSync
 				reason := permssync.ReasonUserOutdatedPermissions
 				if u.noPerms {
+					priority = database.MediumPriorityPermissionSync
 					reason = permssync.ReasonUserNoPermissions
 				}
-				opts := database.PermissionSyncJobOpts{ProcessAfter: u.processAfter, Reason: reason}
+				opts := database.PermissionSyncJobOpts{Reason: reason, Priority: priority}
 				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
 					logger.Error("failed to create user sync job", log.Error(err))
 					continue
@@ -1208,11 +1209,13 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			}
 
 			for _, r := range schedule.Repos {
+				priority := database.LowPriorityPermissionSync
 				reason := permssync.ReasonRepoOutdatedPermissions
 				if r.noPerms {
+					priority = database.MediumPriorityPermissionSync
 					reason = permssync.ReasonRepoNoPermissions
 				}
-				opts := database.PermissionSyncJobOpts{ProcessAfter: r.processAfter, Reason: reason}
+				opts := database.PermissionSyncJobOpts{Reason: reason, Priority: priority}
 				if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
 					logger.Error("failed to create repo sync job", log.Error(err))
 					continue

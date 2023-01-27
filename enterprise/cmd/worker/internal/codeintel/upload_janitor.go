@@ -29,7 +29,7 @@ func (j *uploadJanitorJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadJanitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *uploadJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

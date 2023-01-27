@@ -20,9 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// slowRequestRedisFIFOListDefaultSize sets a default value for the FIFO list.
-const slowRequestRedisFIFOListDefaultSize = 5000
-
 // slowRequestRedisFIFOListPerPage sets the default count of returned request.
 const slowRequestRedisFIFOListPerPage = 50
 
@@ -180,16 +177,6 @@ func (r *slowRequestResolver) Start() gqlutil.DateTime {
 // Duration returns the recorded duration of the slow request.
 func (r *slowRequestResolver) Duration() float64 {
 	return r.req.Duration.Seconds()
-}
-
-// UserId returns the user identifier if there is one associated with the
-// slow request. Blank if none.
-func (r *slowRequestResolver) userId() *string {
-	if r.req.UserID != 0 {
-		n := strconv.Itoa(int(r.req.UserID))
-		return &n
-	}
-	return nil
 }
 
 func (r *slowRequestResolver) User(ctx context.Context) (*UserResolver, error) {

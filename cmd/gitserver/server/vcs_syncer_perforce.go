@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -104,18 +106,18 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		return errors.Wrap(err, "ping with trust")
 	}
 
-	var cmd *exec.Cmd
+	var cmd *wrexec.Cmd
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		cmd = s.buildP4FusionCmd(ctx, depot, username, root+".git", host)
+		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, username, root+".git", host))
 	} else {
 		// Example: git p4 sync --max-changes 1000
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
-		cmd = exec.CommandContext(ctx, "git", args...)
+		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
 	cmd.Env = s.p4CommandEnv(host, username, password)
-	dir.Set(cmd)
+	dir.Set(cmd.Cmd)
 
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
@@ -123,13 +125,13 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 
 	if !s.FusionConfig.Enabled {
 		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-		cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
-		cmd.Env = append(os.Environ(),
+		cmd = wrexec.CommandContext(ctx, nil, "git", "branch", "-f", "master", "refs/remotes/p4/master")
+		cmd.Cmd.Env = append(os.Environ(),
 			"P4PORT="+host,
 			"P4USER="+username,
 			"P4PASSWD="+password,
 		)
-		dir.Set(cmd)
+		dir.Set(cmd.Cmd)
 		if output, err := runWith(ctx, cmd, false, nil); err != nil {
 			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
@@ -195,7 +197,7 @@ func p4trust(ctx context.Context, host string) error {
 		"P4PORT="+host,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -220,7 +222,7 @@ func p4ping(ctx context.Context, host, username, password string) error {
 		"P4PASSWD="+password,
 	)
 
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr

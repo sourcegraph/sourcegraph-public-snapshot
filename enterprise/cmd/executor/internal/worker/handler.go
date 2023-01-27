@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -21,8 +21,8 @@ import (
 
 type handler struct {
 	nameSet       *janitor.NameSet
-	store         workerutil.Store[executor.Job]
-	filesStore    store.FilesStore
+	logStore      command.ExecutionLogEntryStore
+	filesStore    workspace.FilesStore
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
@@ -80,7 +80,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(h.store, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(h.logStore, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)

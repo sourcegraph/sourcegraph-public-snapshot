@@ -28,8 +28,8 @@ type PartialSymbol struct {
 	Refs map[types.Range]struct{}
 }
 
-// Computes the local code intel payload, which is a list of symbols.
-func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
+// LocalCodeIntel computes the local code intel payload, which is a list of symbols.
+func (squirrel *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
 	// Parse the file.
 	root, err := squirrel.parse(ctx, repoCommitPath)
 	if err != nil {

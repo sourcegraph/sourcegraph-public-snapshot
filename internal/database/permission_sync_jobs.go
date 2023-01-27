@@ -7,7 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -16,14 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
+type PermissionSyncJobPriority int
+
+const (
+	LowPriorityPermissionSync    PermissionSyncJobPriority = 0
+	MediumPriorityPermissionSync PermissionSyncJobPriority = 5
+	HighPriorityPermissionSync   PermissionSyncJobPriority = 10
+)
+
 type PermissionSyncJobOpts struct {
-	HighPriority      bool
+	Priority          PermissionSyncJobPriority
 	InvalidateCaches  bool
 	ProcessAfter      time.Time
 	Reason            string
@@ -75,7 +83,7 @@ func (s *permissionSyncJobStore) Done(err error) error {
 func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		UserID:            int(user),
-		HighPriority:      opts.HighPriority,
+		Priority:          opts.Priority,
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
@@ -89,7 +97,7 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		RepositoryID:      int(repo),
-		HighPriority:      opts.HighPriority,
+		Priority:          opts.Priority,
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
@@ -107,7 +115,7 @@ INSERT INTO permission_sync_jobs (
 	process_after,
 	repository_id,
 	user_id,
-	high_priority,
+	priority,
 	invalidate_caches
 )
 VALUES (
@@ -141,7 +149,7 @@ func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSync
 		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(job.RepositoryID),
 		dbutil.NewNullInt(job.UserID),
-		job.HighPriority,
+		job.Priority,
 		job.InvalidateCaches,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 	)
@@ -182,9 +190,9 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	// `process_after` value.
 	existingJob := syncJobs[0]
 
-	// Existing job with high priority should not be overridden. Existing low
-	// priority job shouldn't be overridden by another low priority job.
-	if existingJob.HighPriority || !job.HighPriority {
+	// Existing job with higher priority should not be overridden. Existing
+	// priority job shouldn't be overridden by another same priority job.
+	if existingJob.Priority >= job.Priority {
 		logField := "repositoryID"
 		id := strconv.Itoa(job.RepositoryID)
 		if job.RepositoryID == 0 {
@@ -327,14 +335,14 @@ type PermissionSyncJob struct {
 	NumResets          int
 	NumFailures        int
 	LastHeartbeatAt    time.Time
-	ExecutionLogs      []workerutil.ExecutionLogEntry
+	ExecutionLogs      []executor.ExecutionLogEntry
 	WorkerHostname     string
 	Cancel             bool
 
 	RepositoryID int
 	UserID       int
 
-	HighPriority     bool
+	Priority         PermissionSyncJobPriority
 	InvalidateCaches bool
 }
 
@@ -361,7 +369,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.repository_id"),
 	sqlf.Sprintf("permission_sync_jobs.user_id"),
 
-	sqlf.Sprintf("permission_sync_jobs.high_priority"),
+	sqlf.Sprintf("permission_sync_jobs.priority"),
 	sqlf.Sprintf("permission_sync_jobs.invalidate_caches"),
 }
 
@@ -374,7 +382,7 @@ func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
 }
 
 func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,
@@ -397,14 +405,13 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&dbutil.NullInt{N: &job.RepositoryID},
 		&dbutil.NullInt{N: &job.UserID},
 
-		&job.HighPriority,
+		&job.Priority,
 		&job.InvalidateCaches,
 	); err != nil {
 		return err
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+
 	return nil
 }
