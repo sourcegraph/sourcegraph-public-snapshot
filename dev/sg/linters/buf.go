@@ -33,7 +33,10 @@ var bufFormat = &linter{
 			return errors.Wrap(err, "getting repository root")
 		}
 
-		os.Chdir(rootDir)
+		err = os.Chdir(rootDir)
+		if err != nil {
+			return errors.Wrap(err, "changing directory to repository root")
+		}
 
 		err = buf.InstallDependencies(ctx, out)
 		if err != nil {
@@ -73,7 +76,10 @@ var bufFormat = &linter{
 			return errors.Wrap(err, "getting repository root")
 		}
 
-		os.Chdir(rootDir)
+		err = os.Chdir(rootDir)
+		if err != nil {
+			return errors.Wrap(err, "changing directory to repository root")
+		}
 
 		err = buf.InstallDependencies(ctx, cio.Output)
 		if err != nil {
@@ -136,12 +142,11 @@ func runBuf(ctx context.Context, gobin string, out *std.Output, parameters ...st
 	arguments := []string{bufPath}
 	arguments = append(arguments, parameters...)
 
-	err := run.Cmd(ctx, arguments...).
+	err := root.Run(run.Cmd(ctx, arguments...).
 		Environ(os.Environ()).
 		Env(map[string]string{
 			"GOBIN": gobin,
-		}).
-		Run().
+		})).
 		StreamLines(out.Write)
 	if err != nil {
 		commandStr := fmt.Sprintf("buf %s", strings.Join(parameters, " "))

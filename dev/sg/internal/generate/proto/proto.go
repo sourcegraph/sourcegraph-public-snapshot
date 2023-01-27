@@ -64,9 +64,13 @@ func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
 	gobin := filepath.Join(rootDir, ".bin")
 	for _, p := range bufGenFilePaths {
 		dir := filepath.Dir(p)
-		os.Chdir(dir)
+		err := os.Chdir(dir)
+		if err != nil {
+			err = errors.Wrapf(err, "changing directory to %q", dir)
+			return &generate.Report{Err: err}
+		}
 
-		err := runBufGenerate(ctx, gobin, &sb)
+		err = runBufGenerate(ctx, gobin, &sb)
 		if err != nil {
 			return &generate.Report{Output: sb.String(), Err: err}
 		}
