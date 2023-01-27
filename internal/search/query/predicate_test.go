@@ -170,3 +170,34 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		}
 	})
 }
+
+func TestFileHasOwnerPredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *FileHasOwnerPredicate
+		}
+
+		valid := []test{
+			{`just text`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
+			{`handle starting with @`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
+			{`email`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+			{`empty`, ``, &FileHasOwnerPredicate{Owner: ""}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasOwnerPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+	})
+}
