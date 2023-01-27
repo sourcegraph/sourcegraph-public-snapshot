@@ -9,7 +9,7 @@ export enum PageRoutes {
     Settings = '/settings',
     User = '/user/*',
     Organizations = '/organizations/*',
-    SiteAdmin = '/site-admin',
+    SiteAdmin = '/site-admin/*',
     SiteAdminInit = '/site-admin/init',
     PasswordReset = '/password-reset',
     ApiConsole = '/api/console',
