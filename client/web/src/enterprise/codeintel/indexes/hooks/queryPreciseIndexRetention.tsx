@@ -7,10 +7,12 @@ import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { Connection } from '../../../../components/FilteredConnection'
 import {
     GitObjectType,
-    LsifUploadRetentionMatchesResult,
-    LsifUploadRetentionMatchesVariables,
+    PreciseIndexRetentionResult,
+    PreciseIndexRetentionVariables,
 } from '../../../../graphql-operations'
-import { retentionByBranchTipTitle, retentionByUploadTitle } from '../components/UploadRetentionStatusNode'
+
+export const retentionByUploadTitle = 'Retention by reference'
+export const retentionByBranchTipTitle = 'Retention by tip of default branch'
 
 export type NormalizedUploadRetentionMatch = RetentionPolicyMatch | UploadReferenceMatch
 
@@ -40,10 +42,10 @@ export interface UploadReferenceMatch {
 }
 
 const UPLOAD_RETENTIONS_QUERY = gql`
-    query LsifUploadRetentionMatches($id: ID!, $matchesOnly: Boolean!, $after: String, $first: Int, $query: String) {
+    query PreciseIndexRetention($id: ID!, $matchesOnly: Boolean!, $after: String, $first: Int, $query: String) {
         node(id: $id) {
             __typename
-            ... on LSIFUpload {
+            ... on PreciseIndex {
                 retentionPolicyOverview(matchesOnly: $matchesOnly, query: $query, after: $after, first: $first) {
                     __typename
                     nodes {
@@ -67,7 +69,7 @@ const UPLOAD_RETENTIONS_QUERY = gql`
             }
         }
 
-        lsifUploads(dependentOf: $id) {
+        preciseIndexes(dependentOf: $id) {
             __typename
             totalCount
             nodes {
@@ -84,7 +86,7 @@ const UPLOAD_RETENTIONS_QUERY = gql`
         }
     }
 `
-export const queryUploadRetentionMatches = (
+export const queryPreciseIndexRetention = (
     client: ApolloClient<object>,
     id: string,
     {
@@ -92,9 +94,9 @@ export const queryUploadRetentionMatches = (
         after,
         first,
         query,
-    }: Partial<LsifUploadRetentionMatchesVariables> & Pick<LsifUploadRetentionMatchesVariables, 'matchesOnly'>
+    }: Partial<PreciseIndexRetentionVariables> & Pick<PreciseIndexRetentionVariables, 'matchesOnly'>
 ): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-    const variables: LsifUploadRetentionMatchesVariables = {
+    const variables: PreciseIndexRetentionVariables = {
         id,
         matchesOnly,
         query: query ?? null,
@@ -103,31 +105,30 @@ export const queryUploadRetentionMatches = (
     }
 
     return from(
-        client.query<LsifUploadRetentionMatchesResult, LsifUploadRetentionMatchesVariables>({
+        client.query<PreciseIndexRetentionResult, PreciseIndexRetentionVariables>({
             query: getDocumentNode(UPLOAD_RETENTIONS_QUERY),
             variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => {
             const { node, ...rest } = data
-            if (!node || node.__typename !== 'LSIFUpload') {
-                throw new Error('No such LSIFUpload')
+            if (!node || node.__typename !== 'PreciseIndex') {
+                throw new Error('No such precise index')
             }
 
             return { node, ...rest }
         }),
-        map(({ node, lsifUploads }) => {
+        map(({ node, preciseIndexes: indexes }) => {
             const conn: Connection<NormalizedUploadRetentionMatch> = {
-                totalCount:
-                    (node.retentionPolicyOverview.totalCount ?? 0) + ((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
+                totalCount: (node.retentionPolicyOverview.totalCount ?? 0) + ((indexes.totalCount ?? 0) > 0 ? 1 : 0),
                 nodes: [],
             }
 
-            if ((lsifUploads.totalCount ?? 0) > 0 && retentionByUploadTitle.toLowerCase().includes(query ?? '')) {
+            if ((indexes.totalCount ?? 0) > 0 && retentionByUploadTitle.toLowerCase().includes(query ?? '')) {
                 conn.nodes.push({
                     matchType: 'UploadReference',
-                    uploadSlice: lsifUploads.nodes,
-                    total: lsifUploads.totalCount ?? 0,
+                    uploadSlice: indexes.nodes,
+                    total: indexes.totalCount ?? 0,
                 })
             }
 
@@ -153,7 +154,6 @@ export const queryUploadRetentionMatches = (
             )
 
             conn.pageInfo = node.retentionPolicyOverview.pageInfo
-
             return conn
         })
     )

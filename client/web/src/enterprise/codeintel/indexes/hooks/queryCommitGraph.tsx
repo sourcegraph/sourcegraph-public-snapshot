@@ -24,7 +24,7 @@ const GRAPH_METADATA = gql`
     }
 `
 
-export const queryCommitGraphMetadata = (
+export const queryCommitGraph = (
     repository: string,
     client: ApolloClient<object>
 ): Observable<{ stale: boolean; updatedAt: Date | null }> =>

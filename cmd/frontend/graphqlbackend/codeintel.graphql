@@ -207,6 +207,16 @@ extend type Query {
         after: String
     ): CodeIntelligenceConfigurationPolicyConnection!
 
+    preciseIndexes(
+        repo: ID
+        query: String
+        states: [PreciseIndexState!]
+        dependencyOf: ID
+        dependentOf: ID
+        first: Int
+        after: String
+    ): PreciseIndexConnection!
+
     """
     The repository's LSIF uploads.
     """
@@ -1068,6 +1078,55 @@ enum LSIFUploadState {
     audit log entries.
     """
     DELETED
+}
+
+type PreciseIndexConnection {
+    nodes: [PreciseIndex!]!
+    totalCount: Int
+    pageInfo: PageInfo!
+}
+
+enum PreciseIndexState {
+    UPLOADING_INDEX
+    QUEUED_FOR_PROCESSING
+    PROCESSING
+    PROCESSING_ERRORED
+    COMPLETED
+    DELETING
+    DELETED
+    QUEUED_FOR_INDEXING
+    INDEXING
+    INDEXING_ERRORED
+    INDEXING_COMPLETED
+}
+
+type PreciseIndex implements Node {
+    id: ID!
+    projectRoot: CodeIntelGitTree
+    inputCommit: String!
+    tags: [String!]!
+    inputRoot: String!
+    inputIndexer: String!
+    indexer: CodeIntelIndexer
+    state: PreciseIndexState!
+    queuedAt: DateTime
+    uploadedAt: DateTime
+    indexingStartedAt: DateTime
+    indexingFinishedAt: DateTime
+    processingStartedAt: DateTime
+    processingFinishedAt: DateTime
+    steps: IndexSteps
+    failure: String
+    placeInQueue: Int
+    shouldReindex: Boolean!
+    isLatestForRepo: Boolean!
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+        query: String
+        after: String
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection! # TODO
+    auditLogs: [LSIFUploadAuditLog!] # TODO
 }
 
 """

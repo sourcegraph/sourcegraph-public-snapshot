@@ -19,6 +19,7 @@ type UploadService interface {
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) (_ []string, _ int, err error)
 	GetUploads(ctx context.Context, opts uploadsshared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
+	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteUploads(ctx context.Context, opts uploadsshared.DeleteUploadsOptions) (err error)
 }

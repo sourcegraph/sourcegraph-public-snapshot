@@ -892,6 +892,9 @@ type MockUploadService struct {
 	// GetListTagsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetListTags.
 	GetListTagsFunc *UploadServiceGetListTagsFunc
+	// GetUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetUploadByID.
+	GetUploadByIDFunc *UploadServiceGetUploadByIDFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -930,6 +933,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetListTagsFunc: &UploadServiceGetListTagsFunc{
 			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
+				return
+			},
+		},
+		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 types.Upload, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -980,6 +988,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetListTags")
 			},
 		},
+		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (types.Upload, bool, error) {
+				panic("unexpected invocation of MockUploadService.GetUploadByID")
+			},
+		},
 		GetUploadDocumentsForPathFunc: &UploadServiceGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockUploadService.GetUploadDocumentsForPath")
@@ -1017,6 +1030,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		GetListTagsFunc: &UploadServiceGetListTagsFunc{
 			defaultHook: i.GetListTags,
+		},
+		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
+			defaultHook: i.GetUploadByID,
 		},
 		GetUploadDocumentsForPathFunc: &UploadServiceGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -1586,6 +1602,117 @@ func (c UploadServiceGetListTagsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetListTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceGetUploadByIDFunc describes the behavior when the
+// GetUploadByID method of the parent MockUploadService instance is invoked.
+type UploadServiceGetUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (types.Upload, bool, error)
+	hooks       []func(context.Context, int) (types.Upload, bool, error)
+	history     []UploadServiceGetUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadByID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadService) GetUploadByID(v0 context.Context, v1 int) (types.Upload, bool, error) {
+	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
+	m.GetUploadByIDFunc.appendCall(UploadServiceGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetUploadByID method
+// of the parent MockUploadService instance is invoked and the hook queue is
+// empty.
+func (f *UploadServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadByID method of the parent MockUploadService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types.Upload, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceGetUploadByIDFunc) SetDefaultReturn(r0 types.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceGetUploadByIDFunc) PushReturn(r0 types.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadServiceGetUploadByIDFunc) nextHook() func(context.Context, int) (types.Upload, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceGetUploadByIDFunc) appendCall(r0 UploadServiceGetUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceGetUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *UploadServiceGetUploadByIDFunc) History() []UploadServiceGetUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceGetUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceGetUploadByIDFuncCall is an object that describes an
+// invocation of method GetUploadByID on an instance of MockUploadService.
+type UploadServiceGetUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceGetUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceGetUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // UploadServiceGetUploadDocumentsForPathFunc describes the behavior when

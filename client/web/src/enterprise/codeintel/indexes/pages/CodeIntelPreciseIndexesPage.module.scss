@@ -1,9 +1,10 @@
 .grid {
     display: grid;
-    grid-template-columns: [info] minmax(auto, 1fr) [state] min-content [caret] min-content [end];
+    grid-template-columns: min-content [info] minmax(auto, 1fr) [state] min-content [end];
     row-gap: 1rem;
     column-gap: 1rem;
     align-items: center;
+    margin-bottom: 1rem;
     @media (--sm-breakpoint-down) {
         row-gap: 0.5rem;
         column-gap: 0.5rem;
@@ -25,4 +26,12 @@
     @media (--xs-breakpoint-down) {
         grid-column: 1 / -1;
     }
+}
+
+.label {
+    text-align: center;
+}
+
+.block {
+    display: block;
 }
