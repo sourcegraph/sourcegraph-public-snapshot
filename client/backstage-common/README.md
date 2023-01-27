@@ -122,7 +122,11 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
 }
 ```
 
-The two important edits are changing the values for the properties `main`, `type` to point to the `dist` directory. 4. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`. 5. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json  or `packages/backend/packages.json`. Now the that plugin has been 'moved' we don't want Backstage to still refer to these locations so remove the plugin with `yarn workspace backend remove <name>`or`yarn workspace app remove <name>`.
+The two important edits are changing the values for the properties `main`, `type` to point to the `dist` directory.
+
+4. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`. 
+
+5. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json or `packages/backend/packages.json`. Now that the plugin has been 'moved' we don't want Backstage to still refer to these locations, so remove the plugin with `yarn workspace backend remove <name>`or`yarn workspace app remove <name>`.
 
 ### Run the plugin with Backstage / Local Development
 
