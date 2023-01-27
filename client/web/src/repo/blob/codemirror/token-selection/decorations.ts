@@ -7,6 +7,7 @@ import { codeIntelTooltipsState } from './code-intel-tooltips'
 import { definitionUrlField } from './definition'
 import { documentHighlightsField, findByOccurrence } from './document-highlights'
 import { isModifierKeyHeld } from './modifier-click'
+import classNames from 'classnames'
 
 /**
  * Extension providing decorations for focused, hovered, pinned occurrences, and document highlights.
@@ -21,22 +22,13 @@ export function interactiveOccurrencesExtension(): Extension {
                 const decorations = []
 
                 if (focus) {
-                    const classes = [
-                        'interactive-occurrence', // used as interactive occurrence selector
-                        'focus-visible', // prevents code editor from blur when focused element inside it changes
-                        'sourcegraph-document-highlight', // highlights the selected (focused) occurrence
-                    ]
-
-                    // If the user is hovering over a selected (focused) occurrence with a definition holding the modifier key,
-                    // add a class to make an occurrence to look like a link.
-                    const { hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(focus.occurrence)
-                    if (state.field(isModifierKeyHeld) && hasDefinition && focus.occurrence === hover?.occurrence) {
-                        classes.push('cm-token-selection-definition-ready')
-                    }
-
                     decorations.push({
                         decoration: Decoration.mark({
-                            class: classes.join(' '),
+                            class: classNames(
+                                'interactive-occurrence', // used as interactive occurrence selector
+                                'focus-visible', // prevents code editor from blur when focused element inside it changes
+                                'sourcegraph-document-highlight' // highlights the selected (focused) occurrence
+                            ),
                             attributes: {
                                 // Selected (focused) occurrence is the only focusable element in the editor.
                                 // This helps to maintain the focus position when editor is blurred and then focused again.
@@ -75,7 +67,15 @@ export function interactiveOccurrencesExtension(): Extension {
 
                 if (hover) {
                     decorations.push({
-                        decoration: Decoration.mark({ class: 'selection-highlight' }),
+                        decoration: Decoration.mark({
+                            class: classNames('selection-highlight', {
+                                // If the user is hovering over a selected (focused) occurrence with a definition holding the modifier key,
+                                // add a class to make an occurrence to look like a link.
+                                ['cm-token-selection-definition-ready']:
+                                    state.field(isModifierKeyHeld) &&
+                                    state.field(definitionUrlField).get(hover.occurrence).hasOccurrence,
+                            }),
+                        }),
                         range: hover.occurrence.range,
                     })
                 }

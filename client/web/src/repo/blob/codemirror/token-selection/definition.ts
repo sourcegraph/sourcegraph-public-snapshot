@@ -51,6 +51,15 @@ export function definitionExtension(): Extension {
     return [definitionCache, definitionUrlField]
 }
 
+export function preloadDefinition(view: EditorView, occurrence: Occurrence): void {
+    if (!view.state.field(definitionCache).has(occurrence)) {
+        goToDefinitionAtOccurrence(view, occurrence).then(
+            () => {},
+            () => {}
+        )
+    }
+}
+
 export function goToDefinitionOnMouseEvent(
     view: EditorView,
     event: MouseEvent,

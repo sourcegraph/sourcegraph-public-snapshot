@@ -21,7 +21,7 @@ import {
 import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
-import { definitionCache, goToDefinitionAtOccurrence } from './definition'
+import { preloadDefinition } from './definition'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
 
 type CodeIntelTooltipTrigger = 'focus' | 'hover' | 'pin'
@@ -90,19 +90,18 @@ const focusOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     }
 }
 
-const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+const preloadHoverData = (view: EditorView, occurrence: Occurrence): void => {
     if (!view.state.field(hoverCache).has(occurrence)) {
         hoverAtOccurrence(view, occurrence).then(
             () => {},
             () => {}
         )
     }
-    if (!view.state.field(definitionCache).has(occurrence)) {
-        goToDefinitionAtOccurrence(view, occurrence).then(
-            () => {},
-            () => {}
-        )
-    }
+}
+
+const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+    preloadHoverData(view, occurrence)
+    preloadDefinition(view, occurrence)
 }
 
 /**
@@ -306,6 +305,11 @@ const hoverManager = ViewPlugin.fromClass(
                                         view.dispatch({
                                             effects: setHoveredCodeIntelTooltipState.of(null),
                                         })
+                                    }
+                                }),
+                                tap(occurrence => {
+                                    if (occurrence) {
+                                        preloadDefinition(view, occurrence)
                                     }
                                 }),
                                 switchMap(occurrence => {
