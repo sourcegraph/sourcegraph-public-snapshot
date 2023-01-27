@@ -1,4 +1,4 @@
-import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
@@ -21,11 +21,10 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
-    createLatestRelease, EditFunc,
+    createLatestRelease,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import * as update from './update'
 import {
     cacheFolder,
     formatDate,
@@ -430,7 +429,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
-            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -515,31 +513,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-
-                            // Cut udpate guides with entries from unreleased.
-                            (directory: string, updateDirectory = '/doc/admin/updates') => {
-                                updateDirectory = directory + updateDirectory
-                                for (const file of readdirSync(updateDirectory)) {
-                                    const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath).toString()
-                                    if (notPatchRelease) {
-                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    } else if (previousNotPatchRelease) {
-                                        updateContents = updateContents.replace(previousVersion, release.version)
-                                    } else {
-                                        updateContents = updateContents.replace(previous.version, release.version)
-                                    }
-                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    writeFileSync(fullPath, updateContents)
-                                }
-                            },
-                            // updateUpgradeGuides
+                            updateUpgradeGuides(previousVersion, nextVersion)
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
