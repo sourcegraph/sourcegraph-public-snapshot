@@ -43,6 +43,9 @@ type AutoindexingServiceResolver interface {
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	CodeIntelligenceInferenceScript(ctx context.Context) (string, error)
 	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
+
+	PreciseIndexByID(ctx context.Context, id graphql.ID) (PreciseIndexResolver, error)
+	PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (PreciseIndexConnectionResolver, error)
 }
 
 type UploadsServiceResolver interface {
@@ -53,6 +56,7 @@ type UploadsServiceResolver interface {
 	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (*EmptyResponse, error)
 }
+
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (CodeIntelligenceConfigurationPolicyResolver, error)
@@ -71,6 +75,16 @@ type CodeIntelRepositorySummaryResolver interface {
 	AvailableIndexers() []InferredAvailableIndexersResolver
 }
 
+type PreciseIndexesQueryArgs struct {
+	graphqlutil.ConnectionArgs
+	After        *string
+	Repo         *graphql.ID
+	Query        *string
+	States       *[]string
+	DependencyOf *string
+	DependentOf  *string
+}
+
 type LSIFIndexConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
@@ -81,6 +95,36 @@ type LSIFUploadConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (PageInfo, error)
+}
+
+type PreciseIndexConnectionResolver interface {
+	Nodes(ctx context.Context) ([]PreciseIndexResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
+}
+
+type PreciseIndexResolver interface {
+	ID() graphql.ID
+	ProjectRoot(ctx context.Context) (GitTreeEntryResolver, error)
+	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
+	InputRoot() string
+	InputIndexer() string
+	Indexer() CodeIntelIndexerResolver
+	State() string
+	QueuedAt() *gqlutil.DateTime
+	UploadedAt() *gqlutil.DateTime
+	IndexingStartedAt() *gqlutil.DateTime
+	ProcessingStartedAt() *gqlutil.DateTime
+	IndexingFinishedAt() *gqlutil.DateTime
+	ProcessingFinishedAt() *gqlutil.DateTime
+	Steps() IndexStepsResolver
+	Failure() *string
+	PlaceInQueue() *int32
+	ShouldReindex(ctx context.Context) bool
+	IsLatestForRepo() bool
+	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
 type PageInfo interface {
