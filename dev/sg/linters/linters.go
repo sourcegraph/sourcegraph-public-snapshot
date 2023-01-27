@@ -91,7 +91,7 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "proto",
+		Name:        "buf",
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
 			bufFormat,
