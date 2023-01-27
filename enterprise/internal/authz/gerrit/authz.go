@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"net/url"
 
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewAuthzProviders returns the set of Gerrit authz providers derived from the connections.
-func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.AuthProviders) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResults {
+	initResults := &atypes.ProviderInitResults{}
 	gerritAuthProviders := make(map[string]*schema.GerritAuthProvider)
 	for _, p := range authProviders {
 		if p.Gerrit == nil {
@@ -34,20 +35,20 @@ func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.A
 			continue
 		}
 		if err := licensing.Check(licensing.FeatureACLs); err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGerrit)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGerrit)
+			initResults.Problems = append(initResults.Problems, err.Error())
 			continue
 		}
 		p, err := NewProvider(c)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGerrit)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGerrit)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		}
 		if p != nil {
-			ps = append(ps, p)
+			initResults.Providers = append(initResults.Providers, p)
 
 			if _, exists := gerritAuthProviders[p.ServiceID()]; !exists {
-				warnings = append(warnings,
+				initResults.Warnings = append(initResults.Warnings,
 					fmt.Sprintf("Gerrit config for %[1]s has `authorization` enabled, "+
 						"but no authentication provider matching %[1]q was found. "+
 						"Check the [**site configuration**](/site-admin/configuration) to "+
@@ -56,5 +57,5 @@ func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.A
 			}
 		}
 	}
-	return
+	return initResults
 }

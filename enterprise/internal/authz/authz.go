@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -148,6 +149,7 @@ func ProvidersFromConfig(
 		}
 	}
 
+	initResults := []*atypes.ProviderInitResults{}
 	if len(gitHubConns) > 0 {
 		enableGithubInternalRepoVisibility := false
 		ef := cfg.SiteConfig().ExperimentalFeatures
@@ -155,51 +157,40 @@ func ProvidersFromConfig(
 			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 		}
 
-		ghProviders, ghProblems, ghWarnings, ghInvalidConnections := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
-		providers = append(providers, ghProviders...)
-		seriousProblems = append(seriousProblems, ghProblems...)
-		warnings = append(warnings, ghWarnings...)
-		invalidConnections = append(invalidConnections, ghInvalidConnections...)
+		initResults = append(initResults,
+			github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility))
 	}
 
 	if len(gitLabConns) > 0 {
-		glProviders, glProblems, glWarnings, glInvalidConnections := gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns)
-		providers = append(providers, glProviders...)
-		seriousProblems = append(seriousProblems, glProblems...)
-		warnings = append(warnings, glWarnings...)
-		invalidConnections = append(invalidConnections, glInvalidConnections...)
+		initResults = append(initResults,
+			gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
 	}
 
 	if len(bitbucketServerConns) > 0 {
-		bbsProviders, bbsProblems, bbsWarnings, bbsInvalidConnections := bitbucketserver.NewAuthzProviders(bitbucketServerConns)
-		providers = append(providers, bbsProviders...)
-		seriousProblems = append(seriousProblems, bbsProblems...)
-		warnings = append(warnings, bbsWarnings...)
-		invalidConnections = append(invalidConnections, bbsInvalidConnections...)
+		initResults = append(initResults,
+			bitbucketserver.NewAuthzProviders(bitbucketServerConns))
 	}
 
 	if len(perforceConns) > 0 {
-		pfProviders, pfProblems, pfWarnings, pfInvalidConnections := perforce.NewAuthzProviders(perforceConns)
-		providers = append(providers, pfProviders...)
-		seriousProblems = append(seriousProblems, pfProblems...)
-		warnings = append(warnings, pfWarnings...)
-		invalidConnections = append(invalidConnections, pfInvalidConnections...)
+		initResults = append(initResults,
+			perforce.NewAuthzProviders(perforceConns))
 	}
 
 	if len(bitbucketCloudConns) > 0 {
-		bbcloudProviders, bbcloudProblems, bbcloudWarnings, bbcloudInvalidConnections := bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders)
-		providers = append(providers, bbcloudProviders...)
-		seriousProblems = append(seriousProblems, bbcloudProblems...)
-		warnings = append(warnings, bbcloudWarnings...)
-		invalidConnections = append(invalidConnections, bbcloudInvalidConnections...)
+		initResults = append(initResults,
+			bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	}
 
 	if len(gerritConns) > 0 {
-		gerritProviders, gerritProblems, gerritWarnings, gerritInvalidConnections := gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders)
-		providers = append(providers, gerritProviders...)
-		seriousProblems = append(seriousProblems, gerritProblems...)
-		warnings = append(warnings, gerritWarnings...)
-		invalidConnections = append(invalidConnections, gerritInvalidConnections...)
+		initResults = append(initResults,
+			gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
+	}
+
+	for _, r := range initResults {
+		providers = append(providers, r.Providers...)
+		seriousProblems = append(seriousProblems, r.Problems...)
+		warnings = append(warnings, r.Warnings...)
+		invalidConnections = append(invalidConnections, r.InvalidConnections...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
