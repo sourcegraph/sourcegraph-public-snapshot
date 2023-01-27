@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -122,20 +122,28 @@ func TestPermsSyncerWorker(t *testing.T) {
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.
-	err = gqltestutil.Retry(60*time.Second, func() error {
+	timeout := time.After(60 * time.Second)
+loop:
+	for {
 		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
 		for _, job := range jobs {
+			fmt.Println(job.State)
 			if job.State == "queued" || job.State == "processing" {
-				return gqltestutil.ErrContinueRetry
+				// wait and retry
+				time.Sleep(500 * time.Millisecond)
+				continue
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
+
+		select {
+		case <-timeout:
+			t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
+		default:
+			break loop
+		}
 	}
 
 	jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
