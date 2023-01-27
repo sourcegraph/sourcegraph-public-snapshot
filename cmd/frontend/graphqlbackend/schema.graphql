@@ -9074,7 +9074,7 @@ type TeamMemberConnection {
 """
 A team member is an entity that can be associated to a team.
 
-For, this will be User, and will be expanded to User | Person later.
+For now, this will be User, and will be expanded to User | Person later.
 """
 interface TeamMember {
     """
