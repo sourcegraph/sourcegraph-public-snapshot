@@ -34,6 +34,7 @@ var (
 	_ Match = (*RepoMatch)(nil)
 	_ Match = (*CommitMatch)(nil)
 	_ Match = (*CommitDiffMatch)(nil)
+	_ Match = (*OwnerMatch)(nil)
 )
 
 // Match ranks are used for sorting the different match types.
@@ -44,6 +45,7 @@ const (
 	rankCommitMatch = 1
 	rankDiffMatch   = 2
 	rankRepoMatch   = 3
+	rankOwnerMatch  = 4
 )
 
 // Key is a sorting or deduplicating key for a Match. It contains all the
@@ -76,6 +78,9 @@ type Key struct {
 
 	// TypeRank is the sorting rank of the type this key belongs to.
 	TypeRank int
+
+	// Adding metadata to be able to add distinctive information for an owner match
+	Metadata string
 }
 
 // Less compares one key to another for sorting

@@ -294,6 +294,15 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo,
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
 		return fromCommit(v, repoCache)
+	case *result.OwnerMatch:
+		fmt.Println("waaaaaaaa")
+		return &streamhttp.EventPathMatch{
+			Type:         streamhttp.PathMatchType,
+			Path:         "leo's an owner 8)",
+			Repository:   string(v.Repo.Name),
+			RepositoryID: int32(v.Repo.ID),
+			Commit:       string(v.CommitID),
+		}
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}

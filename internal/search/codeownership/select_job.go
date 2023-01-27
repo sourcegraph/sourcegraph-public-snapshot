@@ -8,7 +8,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -106,19 +105,16 @@ matchesLoop:
 			continue matchesLoop
 		}
 		owners := file.FindOwners(mm.File.Path)
-		ownerMatches := fromProtoOwners(owners)
-		fmt.Println(ownerMatches)
+		for _, o := range owners {
+			ownerMatches = append(ownerMatches, &result.OwnerMatch{
+				Owner:    o,
+				InputRev: mm.InputRev,
+				Repo:     mm.Repo,
+				CommitID: mm.CommitID,
+				Path:     mm.Path,
+			})
+		}
 	}
+	fmt.Println(ownerMatches)
 	return ownerMatches, errs
-}
-
-func fromProtoOwners(owners []*codeownerspb.Owner) []result.OwnerMatch {
-	matches := make([]result.OwnerMatch, 0, len(owners))
-	for _, o := range owners {
-		matches = append(matches, result.OwnerMatch{
-			Email:  o.Email,
-			Handle: o.Handle,
-		})
-	}
-	return matches
 }
