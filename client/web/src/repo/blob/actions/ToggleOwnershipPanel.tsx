@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiAccountOutline } from '@mdi/js'
 import { useHistory, useLocation } from 'react-router'
@@ -13,12 +13,13 @@ import {
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
+import { RepoHeaderContext } from '../../RepoHeader'
+import { BlobPanelTabID } from '../panel/BlobPanel'
 
-import { BlobPanelTabID } from './panel/BlobPanel'
-
-export const ShowOwnersAction: FunctionComponent<Pick<RepoHeaderContext, 'actionType'>> = ({ actionType }) => {
+export const ToggleOwnershipPanel: React.FunctionComponent<Pick<RepoHeaderContext, 'actionType'>> = ({
+    actionType,
+}) => {
     const location = useLocation()
     const history = useHistory()
 
@@ -61,7 +62,6 @@ export const ShowOwnersAction: FunctionComponent<Pick<RepoHeaderContext, 'action
                 aria-controls="references-panel"
                 aria-expanded={visible}
                 onSelect={toggle}
-                file={true}
             >
                 <Icon aria-hidden={true} svgPath={mdiAccountOutline} />
             </RepoHeaderActionButtonLink>
