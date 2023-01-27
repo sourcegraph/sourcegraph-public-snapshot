@@ -375,7 +375,7 @@ WITH job_queue as (
 ),
 errors as (
     select repo_iterator_id, array_agg(err_msg) error_messages
-    from repo_iterator_errors, unnest(error_message) err_msg
+    from repo_iterator_errors, unnest(error_message[:25]) err_msg
     group by  repo_iterator_id
 ),
 state as (
