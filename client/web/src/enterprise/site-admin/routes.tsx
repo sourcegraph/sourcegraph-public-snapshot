@@ -74,6 +74,11 @@ const ExecutorsSiteAdminArea = lazyComponent(
     'ExecutorsSiteAdminArea'
 )
 
+const CodeInsightsJobsPage = lazyComponent(
+        () => import('../insights/admin-ui/CodeInsightsJobs'),
+        'CodeInsightsJobs'
+    )
+
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...siteAdminAreaRoutes,
@@ -130,6 +135,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: () => <WebhookLogPage />,
             condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
                 batchChangesEnabled && batchChangesWebhookLogsEnabled,
+        },
+
+        // Enterprise maintenance area
+
+        {
+            exact: true,
+            path: '/code-insights-jobs',
+            render: () => <CodeInsightsJobsPage />
         },
 
         // Code intelligence redirect
