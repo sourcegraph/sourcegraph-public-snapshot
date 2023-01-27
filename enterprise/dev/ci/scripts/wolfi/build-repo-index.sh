@@ -37,7 +37,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -u "$GCP_PROJECT" cp "gs://$GCS_BUCKET/packages/$branch/$ARCH/*.APKINDEX.fragment" ./
+gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/packages/$branch/$ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
