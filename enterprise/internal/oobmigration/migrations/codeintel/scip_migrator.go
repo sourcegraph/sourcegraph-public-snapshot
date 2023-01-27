@@ -80,14 +80,16 @@ func getEnv(name string, defaultValue int) int {
 var (
 	// NOTE: modified in tests
 	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
-	scipMigratorUploadBatchSize             = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
-	scipMigratorDocumentBatchSize           = 64
-	scipMigratorResultChunkDefaultCacheSize = 8192
+	scipMigratorUploadReaderBatchSize       = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigratorResultChunkReaderCacheSize  = 8192
+	scipMigratorDocumentReaderBatchSize     = 64
+	scipMigratorDocumentWriterBatchSize     = 256
+	scipMigratorDocumentWriterMaxPayloadSum = 1024 * 1024 * 32
 )
 
 func (m *scipMigrator) Up(ctx context.Context) error {
-	ch := make(chan struct{}, scipMigratorUploadBatchSize)
-	for i := 0; i < scipMigratorUploadBatchSize; i++ {
+	ch := make(chan struct{}, scipMigratorUploadReaderBatchSize)
+	for i := 0; i < scipMigratorUploadReaderBatchSize; i++ {
 		ch <- struct{}{}
 	}
 	close(ch)
@@ -204,7 +206,7 @@ func migrateUpload(
 		return nil
 	}
 
-	resultChunkCacheSize := scipMigratorResultChunkDefaultCacheSize
+	resultChunkCacheSize := scipMigratorResultChunkReaderCacheSize
 	if numResultChunks < resultChunkCacheSize {
 		resultChunkCacheSize = numResultChunks
 	}
@@ -236,8 +238,8 @@ func migrateUpload(
 		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
 			scipMigratorScanDocumentsQuery,
 			uploadID,
-			scipMigratorDocumentBatchSize,
-			page*scipMigratorDocumentBatchSize,
+			scipMigratorDocumentReaderBatchSize,
+			page*scipMigratorDocumentReaderBatchSize,
 		)))
 		if err != nil {
 			return err
@@ -568,7 +570,7 @@ func (s *scipWriter) InsertDocument(
 	path string,
 	scipDocument *ogscip.Document,
 ) error {
-	if s.batchPayloadSum >= MaxBatchPayloadSum {
+	if s.batchPayloadSum >= scipMigratorDocumentWriterMaxPayloadSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -598,7 +600,7 @@ func (s *scipWriter) InsertDocument(
 	})
 	s.batchPayloadSum += len(compressedPayload)
 
-	if len(s.batch) >= DocumentsBatchSize {
+	if len(s.batch) >= scipMigratorDocumentWriterBatchSize {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -606,11 +608,6 @@ func (s *scipWriter) InsertDocument(
 
 	return nil
 }
-
-const (
-	DocumentsBatchSize = 256
-	MaxBatchPayloadSum = 1024 * 1024 * 32
-)
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
 	documents := s.batch
