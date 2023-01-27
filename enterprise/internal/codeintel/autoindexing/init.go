@@ -39,15 +39,6 @@ func NewService(
 	return svc
 }
 
-type serviceDependencies struct {
-	db             database.DB
-	uploadSvc      UploadService
-	depsSvc        DependenciesService
-	policiesSvc    PoliciesService
-	gitserver      GitserverClient
-	observationCtx *observation.Context
-}
-
 func scopedContext(component string, observationCtx *observation.Context) *observation.Context {
 	return observation.ScopedContext("codeintel", "autoindexing", component, observationCtx)
 }
