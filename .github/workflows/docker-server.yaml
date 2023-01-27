@@ -53,7 +53,7 @@ jobs:
         working-directory: ./cmd/server
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          VERSION: ${{ steps.meta-main.outputs.tags[0] }}
+          VERSION: test
 
       - name: Build and push Docker main image
         uses: docker/build-push-action@v3
