@@ -376,7 +376,7 @@ function initCodeIntelligence({
             extensionsController,
             platformContext,
             historyOrNavigate: history,
-            location: history.location,
+            getLocation: () => history.location,
             locationAssign: location.assign.bind(location),
         })
     )
@@ -1219,7 +1219,7 @@ export async function handleCodeHost({
                                             )
                                     })
                                 )
-                                 
+
                                 .subscribe()
                         )
                     }
@@ -1337,7 +1337,6 @@ export async function handleCodeHost({
                 const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
                 let hoverSubscription = new Subscription()
                 codeViewEvent.subscriptions.add(
-                     
                     nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                         hoverSubscription.unsubscribe()
                         if (!useNativeTooltips) {

@@ -2,7 +2,7 @@ import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, Redirect, Route, Switch } from 'react-router'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -117,7 +117,6 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const location = useLocation()
-    const navigate = useNavigate()
 
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
 
@@ -293,8 +292,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 key={3}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
-                historyOrNavigate={navigate}
-                location={location}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />

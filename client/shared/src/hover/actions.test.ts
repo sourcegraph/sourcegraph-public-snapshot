@@ -551,7 +551,7 @@ describe('registerHoverContributions()', () => {
             },
             platformContext: { urlToFile, requestGraphQL },
             historyOrNavigate: history,
-            location: history.location,
+            getLocation: () => history.location,
             locationAssign,
         })
         subscription.add(contributionsSubscription)

@@ -317,7 +317,7 @@ export function registerHoverContributions({
     extensionsController,
     platformContext: { urlToFile, requestGraphQL },
     historyOrNavigate,
-    location,
+    getLocation,
     locationAssign,
 }: {
     extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
@@ -325,7 +325,7 @@ export function registerHoverContributions({
 } & {
     historyOrNavigate: H.History | NavigateFunction
     locationAssign: typeof globalThis.location.assign
-    location: H.Location
+    getLocation: () => H.Location
     /** Implementation of `window.location.assign()` used to navigate to external URLs. */
 }): { contributionsPromise: Promise<void> } & Unsubscribable {
     const subscriptions = new Subscription()
@@ -423,7 +423,7 @@ export function registerHoverContributions({
                         if (!result) {
                             throw new Error('No definition found.')
                         }
-                        if (result.url === H.createPath(location)) {
+                        if (result.url === H.createPath(getLocation())) {
                             // The user might be confused if they click "Go to definition" and don't go anywhere, which
                             // occurs if they are *already* on the definition. Give a helpful tip if they do this.
                             //
