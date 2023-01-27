@@ -21,13 +21,13 @@ import (
 // A GerritSource yields repositories from a single Gerrit connection configured
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
-	svc       *types.ExternalService
-	config    *schema.GerritConnection
-	cli       *gerrit.Client
-	serviceID string
-	perPage   int
-	private   bool
-	syncRepos map[string]struct{}
+	svc             *types.ExternalService
+	config          *schema.GerritConnection
+	cli             *gerrit.Client
+	serviceID       string
+	perPage         int
+	private         bool
+	allowedProjects map[string]struct{}
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
