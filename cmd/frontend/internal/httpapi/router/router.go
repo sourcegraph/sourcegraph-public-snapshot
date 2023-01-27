@@ -33,6 +33,8 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
+	SCIM = "scim"
+
 	BatchesFileGet    = "batches.file.get"
 	BatchesFileExists = "batches.file.exists"
 	BatchesFileUpload = "batches.file.upload"
@@ -63,6 +65,7 @@ func New(base *mux.Router) *mux.Router {
 	base.StrictSlash(true)
 
 	addRegistryRoute(base)
+	addSCIMRoute(base)
 	addGraphQLRoute(base)
 	base.Path("/webhooks/{webhook_uuid}").Methods("POST").Name(Webhooks)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
@@ -127,6 +130,10 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 func addRegistryRoute(m *mux.Router) {
 	m.PathPrefix("/registry").Methods("GET").Name(Registry)
+}
+
+func addSCIMRoute(m *mux.Router) {
+	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Name(SCIM)
 }
 
 func addGraphQLRoute(m *mux.Router) {
