@@ -50,10 +50,12 @@ jobs:
 
       - name: Tag image for each tag
         run: |
-          for tag in ${{ steps.meta-main.outputs.tags }}; do
-            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test $tag
-          done
+          while IFS= read -r tag; do
+            echo docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test $tag
+          done <<< $TAGS
           exit 1
+        env:
+          TAGS: ${{ steps.meta-main.outputs.tags }}
 
       - name: Run pre-build script
         run: ./pre-build.sh
