@@ -350,7 +350,7 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 	case scheduler.State:
 		value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
 	case scheduler.QueuePosition:
-		pos := node.BackfillStatus.QueuePosition
+		pos := node.BackfillStatus.QueuePosition()
 		if pos != nil {
 			value = fmt.Sprintf("%d", pos)
 		} else {
