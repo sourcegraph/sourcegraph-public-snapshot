@@ -13,7 +13,7 @@ import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../.
 import { useNavbarQueryState, setSearchMode } from '../../stores'
 import { submitSearch } from '../helpers'
 
-import { SmartSearchListItem } from './SmartSearch'
+import { SmartSearchListItem } from './SmartSearchListItem'
 
 import iconStyles from './QuerySuggestion.module.scss'
 import styles from './SmartSearchPreview.module.scss'

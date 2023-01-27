@@ -1,38 +1,20 @@
 import { MouseEvent, useCallback } from 'react'
 
-import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
-import classNames from 'classnames'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
-import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { formatSearchParameters, pluralize } from '@sourcegraph/common'
-import { AggregateStreamingSearchResults, AlertKind, ProposedQuery } from '@sourcegraph/shared/src/search/stream'
+import { smartSearchIconSvgPath } from '@sourcegraph/branded'
+import { pluralize } from '@sourcegraph/common'
+import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import {
-    Link,
-    createLinkUrl,
-    Icon,
-    Collapse,
-    CollapseHeader,
-    CollapsePanel,
-    H2,
-    Text,
-    Button,
-} from '@sourcegraph/wildcard'
+import { Icon, Collapse, CollapseHeader, CollapsePanel, H2, Text, Button } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../graphql-operations'
+import { SmartSearchListItem } from './SmartSearchListItem'
 
 import styles from './QuerySuggestion.module.scss'
 
 interface SmartSearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
     onDisableSmartSearch: () => void
-}
-
-const processDescription = (description: string): string => {
-    const split = description.split(' ⚬ ')
-
-    split[0] = split[0][0].toUpperCase() + split[0].slice(1)
-    return split.join(', ')
 }
 
 const alertContent: { [key in AlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element } } = {
@@ -136,49 +118,6 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
         </div>
     )
 }
-
-interface SmartSearchListItemProps {
-    proposedQuery: ProposedQuery
-    key: string
-    previewStyle?: boolean
-}
-
-export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemProps> = ({
-    proposedQuery,
-    previewStyle = false,
-    key,
-}) => (
-    <li key={proposedQuery.query} className={classNames(previewStyle ? 'py-2' : styles.listItem)}>
-        <Link
-            to={createLinkUrl({
-                pathname: '/search',
-                search: formatSearchParameters(new URLSearchParams({ q: proposedQuery.query })),
-            })}
-            className={classNames(previewStyle ? 'text-decoration-none' : styles.link)}
-        >
-            <Text className="mb-0">
-                <span
-                    className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}
-                >{`${processDescription(proposedQuery.description || '')}`}</span>
-                <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
-                <span className={classNames(previewStyle ? 'p-1 bg-code' : styles.suggestion)}>
-                    <SyntaxHighlightedSearchQuery
-                        query={proposedQuery.query}
-                        searchPatternType={SearchPatternType.standard}
-                    />
-                </span>
-                {proposedQuery.annotations
-                    ?.filter(({ name }) => name === 'ResultCount')
-                    ?.map(({ name, value }) => (
-                        <span key={name} className="text-muted ml-2">
-                            {' '}
-                            ({value})
-                        </span>
-                    ))}
-            </Text>
-        </Link>
-    </li>
-)
 
 export const smartSearchEvent = (alertKind: AlertKind, alertTitle: string, descriptions: string[]): string[] => {
     const rules = descriptions.map(entry => {
