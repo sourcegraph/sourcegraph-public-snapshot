@@ -39,7 +39,7 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	for _, c := range changedFiles {
 		match := packageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
-			buildFunc, key := buildPackages(match[1])
+			buildFunc, key := buildPackage(match[1])
 			stepKeys = append(stepKeys, key)
 			ops.Append(buildFunc)
 		} else {
@@ -52,7 +52,10 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	return ops
 }
 
-func buildPackages(target string) (func(*bk.Pipeline), string) {
+// Dependency tree between steps:
+// (buildPackage[1], buildPackage[2], ...) <-- buildRepoIndex <-- (buildWolfi[1], buildWolfi[2], ...)
+
+func buildPackage(target string) (func(*bk.Pipeline), string) {
 	// TODO: Can this be sanitised?
 	stepKey := fmt.Sprintf("package-dependency-%s", target)
 
@@ -74,6 +77,7 @@ func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
 			bk.Agent("queue", "bazel"),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
+			bk.Key("buildRepoIndex"),
 		)
 	}
 }
@@ -84,6 +88,8 @@ func buildWolfi(target string) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
+			// Wait for repo to be re-indexed as images may depend on new packages
+			bk.DependsOn("buildRepoIndex"),
 		)
 	}
 }
