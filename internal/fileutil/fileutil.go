@@ -46,6 +46,14 @@ func UpdateFileIfDifferent(path string, content []byte) (bool, error) {
 	if err := f.Close(); err != nil {
 		return false, err
 	}
+	// preserve permissions
+	fileInfo, err := os.Stat(f.Name())
+	if err != nil {
+		return false, err
+	}
+	if err = os.Chmod(f.Name(), fileInfo.Mode()); err != nil {
+		return false, err
+	}
 	return true, RenameAndSync(f.Name(), path)
 }
 
