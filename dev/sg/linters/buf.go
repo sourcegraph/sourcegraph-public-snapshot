@@ -105,6 +105,50 @@ var bufFormat = &linter{
 	},
 }
 
+var bufLint = &linter{
+	Name: "Buf Lint",
+	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return errors.Wrap(err, "getting current working directory")
+		}
+		defer func() {
+			os.Chdir(cwd)
+		}()
+
+		rootDir, err := root.RepositoryRoot()
+		if err != nil {
+			return errors.Wrap(err, "getting repository root")
+		}
+
+		err = os.Chdir(rootDir)
+		if err != nil {
+			return errors.Wrap(err, "changing directory to repository root")
+		}
+
+		err = buf.InstallDependencies(ctx, out)
+		if err != nil {
+			return errors.Wrap(err, "installing buf dependencies")
+		}
+
+		protoFiles, err := findProtoFiles(rootDir)
+		if err != nil {
+			return errors.Wrapf(err, "finding .proto files")
+		}
+
+		bufArgs := []string{
+			"lint",
+		}
+
+		for _, file := range protoFiles {
+			bufArgs = append(bufArgs, "--path", file)
+		}
+
+		gobin := filepath.Join(rootDir, ".bin")
+		return runBuf(ctx, gobin, out, bufArgs...)
+	},
+}
+
 func findProtoFiles(dir string) ([]string, error) {
 	var files []string
 
