@@ -19,7 +19,8 @@ jobs:
       packages: write
     steps:
       - name: Install musl-tools
-        run: apt update && apt install -y musl-tools
+        run: sudo apt update && sudo apt install -y musl-tools
+
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
