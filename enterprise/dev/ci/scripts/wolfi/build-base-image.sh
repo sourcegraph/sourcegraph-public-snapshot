@@ -39,23 +39,18 @@ fi
 
 name=${1%/}
 
-if [ ! -d "wolfi-images/${name}" ]; then
-  echo "Directory '$name' does not exist"
+if [ ! -f "wolfi-images/${name}.yaml" ]; then
+  echo "File '$name.yaml' does not exist"
   exit 1
 fi
 
-if [ ! -f "wolfi-images/${name}/apko.yaml" ]; then
-  echo "File '$name/apko.yaml' does not exist"
-  exit 1
-fi
-
-cd "wolfi-images/${name}"
+cd "wolfi-images/"
 
 # Build base image with apko
-echo " * Building apko base image '$name'"
+echo " * Building base image '$name' with apko..."
 image_name="sourcegraph-wolfi/${name}-base"
 tarball="sourcegraph-wolfi-${name}-base.tar"
-apko build --debug apko.yaml \
+apko build --debug "${name}.yaml" \
   "$image_name:latest" \
   "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
