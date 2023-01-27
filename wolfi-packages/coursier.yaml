@@ -1,4 +1,5 @@
-# Foobar package based on Coursier package
+# Melange-based replacement for Coursier
+# Previously packaged in the scip-java repo
 
 package:
   name: coursier
@@ -10,8 +11,7 @@ package:
   copyright:
     - paths:
       - "*"
-      attestation: 'TODO'
-      license: 'TODO'
+      license: 'Apache License 2.0'
   dependencies:
     runtime:
 
