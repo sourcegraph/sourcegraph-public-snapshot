@@ -25,6 +25,7 @@ type GerritSource struct {
 	cli       *gerrit.Client
 	serviceID string
 	perPage   int
+	private   bool
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -65,6 +66,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
 		perPage:   100,
+		private:   c.Authorization != nil,
 	}, nil
 }
 
@@ -78,7 +80,8 @@ func (s *GerritSource) CheckConnection(ctx context.Context) error {
 // ListRepos returns all Gerrit repositories configured with this GerritSource's config.
 func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	args := gerrit.ListProjectsArgs{
-		Cursor: &gerrit.Pagination{PerPage: s.perPage, Page: 1},
+		Cursor:           &gerrit.Pagination{PerPage: s.perPage, Page: 1},
+		OnlyCodeProjects: true,
 	}
 
 	for {
@@ -89,17 +92,16 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 		}
 
 		// Unfortunately, because Gerrit API responds with a map, we have to sort it to maintain proper ordering
-		pageAsMap := map[string]*gerrit.Project(*page)
-		pageKeySlice := make([]string, 0, len(pageAsMap))
+		pageKeySlice := make([]string, 0, len(page))
 
-		for p := range pageAsMap {
+		for p := range page {
 			pageKeySlice = append(pageKeySlice, p)
 		}
 
 		sort.Strings(pageKeySlice)
 
 		for _, p := range pageKeySlice {
-			repo, err := s.makeRepo(p, pageAsMap[p])
+			repo, err := s.makeRepo(p, page[p])
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				return
@@ -123,7 +125,7 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + projectName)
+	fullURL, err := urlx.Parse(s.cli.URL.JoinPath(projectName).String())
 	if err != nil {
 		return nil, err
 	}
@@ -146,5 +148,6 @@ func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.R
 			},
 		},
 		Metadata: p,
+		Private:  s.private,
 	}, nil
 }
