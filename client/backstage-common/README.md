@@ -37,7 +37,7 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
 
 2. Take note of the plugin directory structure.
 
-```bash
+```console
 
 .
 ├── README.md
