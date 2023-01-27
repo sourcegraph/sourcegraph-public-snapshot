@@ -19,6 +19,10 @@ const GlobalBatchChangesArea = lazyComponent(
     () => import('./batches/global/GlobalBatchChangesArea'),
     'GlobalBatchChangesArea'
 )
+const GlobalCodeMonitoringArea = lazyComponent(
+    () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
+    'GlobalCodeMonitoringArea'
+)
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -34,12 +38,9 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.CodeMonitoring,
-        render: lazyComponent(
-            () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
-            'GlobalCodeMonitoringArea'
-        ),
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <GlobalCodeMonitoringArea {...props} />,
     },
     {
         isV6: false,
