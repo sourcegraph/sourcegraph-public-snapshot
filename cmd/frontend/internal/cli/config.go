@@ -577,8 +577,6 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 }
 
 var (
-	searcherURL string
-
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
@@ -629,7 +627,6 @@ func symbolsAddr(environ []string) (string, error) {
 }
 
 func LoadConfig() {
-	searcherURL, _ = searcherAddr(os.Environ())
 	highlight.LoadConfig()
 	symbols.LoadConfig()
 }

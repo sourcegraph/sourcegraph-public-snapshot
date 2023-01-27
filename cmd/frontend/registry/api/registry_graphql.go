@@ -4,7 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -27,8 +26,6 @@ var ExtensionRegistry extensionRegistryResolver
 type extensionRegistryResolver struct {
 	db database.DB
 }
-
-var errNoLocalExtensionRegistry = errors.New("no local extension registry exists")
 
 // ImplementsLocalExtensionRegistry reports whether there is an implementation of a local extension
 // registry (which is a Sourcegraph Enterprise feature).

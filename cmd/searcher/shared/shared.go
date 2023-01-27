@@ -25,9 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -51,18 +48,6 @@ var (
 )
 
 const port = "3181"
-
-func frontendDB(observationCtx *observation.Context) (database.DB, error) {
-	logger := log.Scoped("frontendDB", "")
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
-	if err != nil {
-		return nil, err
-	}
-	return database.NewDB(logger, sqlDB), nil
-}
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
