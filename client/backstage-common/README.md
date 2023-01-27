@@ -150,7 +150,7 @@ $ yarn workspace backend add link:~/sourcegraph/client/backstage/plugin
 
 For a plugin that integrates with the frontend:
 
-```json
+```console
 $ yarn workspace app add link:~/sourcegraph/client/backstage/plugin
 ```
 
