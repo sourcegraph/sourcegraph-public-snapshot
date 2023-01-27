@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -257,20 +256,29 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 }
 
 type adminBackfillQueueConnectionStore struct {
-	insightsDB edb.InsightsDB
-	logger     log.Logger
+	backfillStore *scheduler.BackfillStore
+	logger        log.Logger
 }
 
 // ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
-func (a *adminBackfillQueueConnectionStore) ComputeTotal(context.Context) (*int32, error) {
-	return nil, nil
+func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return i32Ptr(&count), nil
 }
 
-// ComputeNodes returns the list of nodes based on the pagination args.
+// ComputeNodes returns a list of backfill queue item resolvers for a given pagination query.
+//
+// Parameters:
+//   - ctx (context.Context): The request context
+//   - args (*database.PaginationArgs): The pagination arguments.
+//
+// Returns:
+//   - ([]*graphqlbackend.BackfillQueueItemResolver, error): A list of backfill queue item resolvers and any errors encountered.
 func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
-
-	backfillStore := scheduler.NewBackfillStore(a.insightsDB)
-	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{})
+	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
@@ -293,16 +301,47 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 }
 
 // MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, _ database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
+	column := orderBy[0].Field
+	var value string
+
+	switch scheduler.BackfillQueueColumn(column) {
+	case scheduler.BackfillID:
+		value = string(node.ID())
+	case scheduler.InsightTitle:
+		value = node.InsightTitle
+	case scheduler.SeriesLabel:
+		value = node.Label
+	case scheduler.State:
+		if node.BackfillStatus != nil {
+			value = node.BackfillStatus.State()
+		} else {
+			value = "null"
+		}
+	case scheduler.QueuePosition:
+		if node.BackfillStatus != nil {
+			pos := node.BackfillStatus.QueuePosition()
+			if pos != nil {
+				value = fmt.Sprintf("%d", pos)
+			} else {
+				value = "null"
+			}
+		} else {
+			value = "null"
+		}
+	default:
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (isb.id, title, label, state.backfill_state, jq.queue_position). Actual: %s", column))
+	}
 
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
-			Column: "id",
-			Value:  fmt.Sprintf("%d@%d", node.IDInt32(), node.IDInt32()),
+			Column: column,
+			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
 		},
 	)
 
 	return &cursor, nil
+
 }
 
 // UnmarshalCursor returns node id from after/before cursor string.
@@ -342,10 +381,6 @@ func unmarshalBackfillItemCursor(cursor *string) (*itypes.Cursor, error) {
 	}
 	return spec, nil
 }
-
-// func newBackfillQueueItemResolver(item scheduler.BackfillQueueItem) *BackfillQueueItemResolver {
-// 	return &BackfillQueueItemResolver{queueItem: item}
-// }
 
 func i32Ptr(n *int) *int32 {
 	if n != nil {

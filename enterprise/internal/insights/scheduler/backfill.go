@@ -11,6 +11,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -227,6 +228,7 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 }
 
 type BackfillQueueArgs struct {
+	PaginationArgs *database.PaginationArgs
 }
 type BackfillQueueItem struct {
 	ID                  int
@@ -245,10 +247,32 @@ type BackfillQueueItem struct {
 	Errors              *[]string
 }
 
-func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
+func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context) (int, error) {
+	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
+	query := sqlf.Sprintf(backfillCountSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return count, err
+}
 
-	query := backfillQueueSQL
-	results, err = scanAllBackfillQueueItems(s.Query(ctx, sqlf.Sprintf(query)))
+func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
+	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
+
+	pagination := database.PaginationArgs{}
+	if args.PaginationArgs != nil {
+		pagination = *args.PaginationArgs
+	}
+	p, err := pagination.SQL()
+	if err != nil {
+		return nil, err
+	}
+	// Add in pagination where clause
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
+	query = p.AppendOrderToQuery(query)
+	query = p.AppendLimitToQuery(query)
+	results, err = scanAllBackfillQueueItems(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -288,6 +312,25 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 	return results, nil
 }
 
+var backfillCountSQL = `
+SELECT count(*)
+FROM insight_series_backfill isb
+join insight_view_series ivs on ivs.insight_series_id = isb.series_id
+    join insight_series s on isb.series_id = s.id
+    join insight_view iv on ivs.insight_view_id = iv.id
+%s
+`
+
+type BackfillQueueColumn string
+
+const (
+	InsightTitle  BackfillQueueColumn = "title"
+	SeriesLabel   BackfillQueueColumn = "label"
+	State         BackfillQueueColumn = "state.backfill_state"
+	BackfillID    BackfillQueueColumn = "isb.id"
+	QueuePosition BackfillQueueColumn = "jq.queue_position"
+)
+
 var backfillQueueSQL = `
 WITH job_queue as (
     select backfill_id, state, row_number() over () queue_position
@@ -297,13 +340,21 @@ errors as (
     select repo_iterator_id, array_agg(error_message) error_messages
     from repo_iterator_errors
     group by  repo_iterator_id
-)
+),
+state as (
+select isb.id, CASE
+  WHEN ijbip.state IS NULL THEN isb.state
+  ELSE ijbip.state
+END backfill_state
+    from insight_series_backfill isb
+    left join insights_jobs_backfill_in_progress ijbip on isb.id = ijbip.backfill_id and ijbip.state = 'queued'
+    )
 select isb.id,
-       title insight_title,
-       s.id series_id,
-       label  series_label,
+       title,
+       s.id,
+       label,
        query,
-       isb.state,
+       state.backfill_state,
        round(ri.percent_complete *100) percent_complete,
        isb.estimated_cost,
        ri.runtime_duration runtime_duration,
@@ -319,5 +370,6 @@ from insight_series_backfill isb
     join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id
     join insight_view iv on ivs.insight_view_id = iv.id
-where s.deleted_at is null
+    join state  on isb.id = state.id
+	%s
 `

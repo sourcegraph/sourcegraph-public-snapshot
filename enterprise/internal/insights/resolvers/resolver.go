@@ -106,8 +106,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-
-	store := &adminBackfillQueueConnectionStore{insightsDB: r.insightsDB, logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
+	store := &adminBackfillQueueConnectionStore{backfillStore: scheduler.NewBackfillStore(r.insightsDB), logger: r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver")}
 	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](store, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{})
 	if err != nil {
 		return nil, err
