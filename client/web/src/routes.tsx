@@ -30,7 +30,7 @@ const RedirectToUserSettings = lazyComponent(
     'RedirectToUserSettings'
 )
 const RedirectToUserPage = lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
-
+const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
@@ -159,9 +159,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RedirectToUserPage {...props} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Organizations,
-            render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <OrgsArea {...props} />,
         },
         {
             isV6: false,

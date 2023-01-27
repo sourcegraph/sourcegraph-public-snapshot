@@ -8,7 +8,7 @@ export enum PageRoutes {
     Welcome = '/welcome',
     Settings = '/settings',
     User = '/user/*',
-    Organizations = '/organizations',
+    Organizations = '/organizations/*',
     SiteAdmin = '/site-admin',
     SiteAdminInit = '/site-admin/init',
     PasswordReset = '/password-reset',
