@@ -101,7 +101,7 @@ func TestPermsSyncerWorker(t *testing.T) {
 
 	workerStore := MakeStore(observationCtx, db.Handle())
 	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer)
-	go func() { worker.Start() }()
+	go worker.Start()
 	t.Cleanup(func() { worker.Stop() })
 
 	// Adding user perms sync jobs.
