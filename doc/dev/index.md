@@ -101,7 +101,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
-- [Code host connections on local dev environment](background-information/code-host.md)
 - [Testing](#testing)
   - [Testing principles and guidelines](background-information/testing_principles.md)
   - [Continuous integration](background-information/ci/index.md)
