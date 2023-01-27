@@ -207,6 +207,9 @@ extend type Query {
         after: String
     ): CodeIntelligenceConfigurationPolicyConnection!
 
+    """
+    Query precise code intelligence indexes.
+    """
     preciseIndexes(
         """
         If supplied, only precise indexes for the given repository will be returned.
@@ -1234,10 +1237,13 @@ type PreciseIndex implements Node {
     placeInQueue: Int
 
     """
-    Whether or not this index has been marked for reindexing.
+    The configuration and execution summary (if completed or errored) of this index job.
     """
     steps: IndexSteps
 
+    """
+    If set, this index has been marked as replaceable by a new auto-indexing job.
+    """
     shouldReindex: Boolean!
 
     """
