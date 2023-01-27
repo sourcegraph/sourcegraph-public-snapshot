@@ -13,12 +13,12 @@ import styles from './SiteAdminRolesPage.module.scss'
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
 
 type Role = {
-    id: number,
-    name: string,
+    id: number
+    name: string
     system: boolean
 }
 
-type Permission = { displayName: string, action: string, namespace: string }
+type Permission = { displayName: string; action: string; namespace: string }
 type PermissionMap = Record<string, Record<string, Permission>>
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
@@ -28,12 +28,13 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
-
     const allPermsMap = useMemo(() => {
         const allPermissions = getAllPermissions()
         return allPermissions.reduce<PermissionMap>((acc, curr) => {
             const { displayName, namespace } = curr
-            const namespaceDetails = acc[namespace] ? { ...acc[namespace], [displayName]: curr } : { [displayName]: curr }
+            const namespaceDetails = acc[namespace]
+                ? { ...acc[namespace], [displayName]: curr }
+                : { [displayName]: curr }
 
             return { ...acc, [namespace]: namespaceDetails }
         }, {})
@@ -43,27 +44,27 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         {
             id: 1,
             name: 'USER',
-            system: true
+            system: true,
         },
         {
             id: 2,
             name: 'SITE_ADMINISTRATOR',
-            system: true
+            system: true,
         },
         {
             id: 3,
             name: 'TEST-ROLE-3',
-            system: false
+            system: false,
         },
         {
             id: 4,
             name: 'TEST-ROLE-4',
-            system: false
+            system: false,
         },
         {
             id: 5,
             name: 'TEST-ROLE-5',
-            system: false
+            system: false,
         },
     ]
 
@@ -73,11 +74,7 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 path={[{ text: 'Roles' }]}
                 headingElement="h2"
-                description={
-                    <>
-                        A role is a set of permissions assigned to a user.
-                    </>
-                }
+                description={<>A role is a set of permissions assigned to a user.</>}
                 className="mb-3"
                 actions={
                     <Button variant="primary">
@@ -88,7 +85,9 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
 
             <Container>
                 <ul className={styles.rolesList}>
-                    {sampleRoles.map(role => <RoleNode node={role} key={role.id} permissions={allPermsMap} />)}
+                    {sampleRoles.map(role => (
+                        <RoleNode node={role} key={role.id} permissions={allPermsMap} />
+                    ))}
                 </ul>
             </Container>
         </div>
@@ -110,7 +109,7 @@ const RoleNode: FC<{
 
     return (
         <li className={styles.roleNode}>
-             <Button
+            <Button
                 variant="icon"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
@@ -119,12 +118,13 @@ const RoleNode: FC<{
             </Button>
 
             <div className="d-flex">
-                <Text className="font-weight-bold m-0">
-                    {node.name}
-                </Text>
+                <Text className="font-weight-bold m-0">{node.name}</Text>
 
                 {node.system && (
-                    <Tooltip content="System roles are sourcegraph-seeded roles available on every instance." placement="topStart">
+                    <Tooltip
+                        content="System roles are sourcegraph-seeded roles available on every instance."
+                        placement="topStart"
+                    >
                         <Text className={styles.roleNodeSystemText}>System</Text>
                     </Tooltip>
                 )}
@@ -134,12 +134,14 @@ const RoleNode: FC<{
                 <div className={styles.roleNodePermissions}>
                     <PermissionList roleId={node.id} permissions={permissions} />
                 </div>
-            ) : <span />}
+            ) : (
+                <span />
+            )}
         </li>
     )
 }
 
-const getRolePermissions = (roleId: number): Array<{ namespace: string, displayName: string, action: string}> => {
+const getRolePermissions = (roleId: number): Array<{ namespace: string; displayName: string; action: string }> => {
     if (roleId === 2) {
         return []
     }
@@ -148,61 +150,60 @@ const getRolePermissions = (roleId: number): Array<{ namespace: string, displayN
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:READ',
-            action: 'READ'
+            action: 'READ',
         },
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:APPLY',
-            action: 'APPLY'
+            action: 'APPLY',
         },
         {
             namespace: 'NOTEBOOKS',
             displayName: 'NOTEBOOKS:READ',
-            action: 'READ'
+            action: 'READ',
         },
     ]
 }
 
-const getAllPermissions = (): Array<{ namespace: string, displayName: string, action: string}> => {
+const getAllPermissions = (): Array<{ namespace: string; displayName: string; action: string }> => {
     return [
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:READ',
-            action: 'READ'
+            action: 'READ',
         },
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:WRITE',
-            action: 'WRITE'
+            action: 'WRITE',
         },
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:EXECUTE',
-            action: 'EXECUTE'
+            action: 'EXECUTE',
         },
         {
             namespace: 'BATCHCHANGES',
             displayName: 'BATCHCHANGES:APPLY',
-            action: 'APPLY'
+            action: 'APPLY',
         },
         {
             namespace: 'NOTEBOOKS',
             displayName: 'NOTEBOOKS:READ',
-            action: 'READ'
+            action: 'READ',
         },
         {
             namespace: 'NOTEBOOKS',
             displayName: 'NOTEBOOKS:WRITE',
-            action: 'WRITE'
+            action: 'WRITE',
         },
         {
             namespace: 'CODEINSIGHTS',
             displayName: 'CODEINSIGHTS:READ',
-            action: 'READ'
+            action: 'READ',
         },
     ]
 }
-
 
 const EmptyPermissionList: FC<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center m-3 w-100">
@@ -211,7 +212,10 @@ const EmptyPermissionList: FC<React.PropsWithChildren<{}>> = () => (
     </div>
 )
 
-const PermissionList: FC<React.PropsWithChildren<{ roleId: number, permissions: PermissionMap }>> = ({ roleId, permissions }) => {
+const PermissionList: FC<React.PropsWithChildren<{ roleId: number; permissions: PermissionMap }>> = ({
+    roleId,
+    permissions,
+}) => {
     const rolePermissions = getRolePermissions(roleId)
 
     if (rolePermissions.length === 0) {
@@ -229,7 +233,7 @@ const PermissionList: FC<React.PropsWithChildren<{ roleId: number, permissions: 
 
     return (
         <>
-            {namespaces.map((namespace) => {
+            {namespaces.map(namespace => {
                 const namespacePerms = permissions[namespace]
                 const allNamespacePerms = Object.values(namespacePerms)
                 return (
@@ -239,10 +243,14 @@ const PermissionList: FC<React.PropsWithChildren<{ roleId: number, permissions: 
                             {allNamespacePerms.map((ap, index) => {
                                 const isChecked = Boolean(permissionsDisplayMap[ap.displayName])
                                 return (
-                                    <Checkbox label={ap.action} id={ap.displayName} key={ap.displayName} defaultChecked={isChecked} />
+                                    <Checkbox
+                                        label={ap.action}
+                                        id={ap.displayName}
+                                        key={ap.displayName}
+                                        defaultChecked={isChecked}
+                                    />
                                 )
                             })}
-
                         </Grid>
                     </div>
                 )
