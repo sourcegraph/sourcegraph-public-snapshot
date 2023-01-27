@@ -306,17 +306,15 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 	var value string
 
 	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.BackfillID:
-		value = string(node.ID())
 	case scheduler.InsightTitle:
-		value = node.InsightTitle
+		value = fmt.Sprintf("'%s'", node.InsightTitle)
 	case scheduler.SeriesLabel:
 		value = node.Label
 	case scheduler.State:
 		if node.BackfillStatus != nil {
-			value = node.BackfillStatus.State()
+			value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
 		} else {
-			value = "null"
+			value = "'queued'" // a default if needed
 		}
 	case scheduler.QueuePosition:
 		if node.BackfillStatus != nil {
@@ -324,15 +322,16 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 			if pos != nil {
 				value = fmt.Sprintf("%d", pos)
 			} else {
-				value = "null"
+				value = "NULL"
 			}
 		} else {
-			value = "null"
+			value = "NULL"
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (isb.id, title, label, state.backfill_state, jq.queue_position). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (title, label, state.backfill_state, jq.queue_position). Actual: %s", column))
 	}
 
+	// format of the "Value" is the value for the sorted by column followed by the ID of the current node
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
 			Column: column,
@@ -345,16 +344,29 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 }
 
 // UnmarshalCursor returns node id from after/before cursor string.
-func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
 	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
 	if err != nil {
 		return nil, err
+	}
+
+	column := orderBy[0].Field
+	if backfillCursor.Column != column {
+		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, backfillCursor.Column))
 	}
 
 	csv := ""
 	values := strings.Split(backfillCursor.Value, "@")
 	if len(values) != 2 {
 		return nil, errors.New("Invalid cursor. Expected Value: <column>@<id>")
+	}
+	switch scheduler.BackfillQueueColumn(column) {
+	case scheduler.InsightTitle, scheduler.SeriesLabel, scheduler.State:
+		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
+	case scheduler.BackfillID, scheduler.QueuePosition:
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	default:
+		return nil, errors.New("Invalid OrderBy Field.")
 	}
 
 	csv = fmt.Sprintf("%v, %v", values[0], values[1])
@@ -396,21 +408,22 @@ type backfillStatusResolver struct {
 
 func (r *backfillStatusResolver) State() string {
 
-	switch r.queueItem.BackfillState {
-	case string(scheduler.BackfillStateCompleted):
-		return "COMPLETED"
-	case string(scheduler.BackfillStateNew):
-		return "NEW"
-	case string(scheduler.BackfillStateProcessing):
-		if r.queueItem.QueuePosition != nil {
-			return "QUEUED"
-		}
-		return "PROCESSING"
-	case string(scheduler.BackfillStateFailed):
-		return "FAILED"
-	default:
-		return "UNKNOWN"
-	}
+	return strings.ToUpper(r.queueItem.BackfillState)
+	// switch r.queueItem.BackfillState {
+	// case string(scheduler.BackfillStateCompleted):
+	// 	return "COMPLETED"
+	// case string(scheduler.BackfillStateNew):
+	// 	return "NEW"
+	// case string(scheduler.BackfillStateProcessing):
+	// 	if r.queueItem.QueuePosition != nil {
+	// 		return "QUEUED"
+	// 	}
+	// 	return "PROCESSING"
+	// case string(scheduler.BackfillStateFailed):
+	// 	return "FAILED"
+	// default:
+	// 	return "UNKNOWN"
+	// }
 
 }
 
