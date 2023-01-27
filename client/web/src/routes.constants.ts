@@ -19,7 +19,7 @@ export enum PageRoutes {
     Help = '/help',
     Debug = '/-/debug/*',
     RepoContainer = '/:repoRevAndRest+',
-    InstallGitHubAppSuccess = '/install-github-app-success/*',
+    InstallGitHubAppSuccess = '/install-github-app-success',
 }
 
 export enum EnterprisePageRoutes {
