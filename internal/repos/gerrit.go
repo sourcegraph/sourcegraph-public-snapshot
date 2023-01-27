@@ -21,12 +21,12 @@ import (
 // A GerritSource yields repositories from a single Gerrit connection configured
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
-	svc       *types.ExternalService
-	config    *schema.GerritConnection
-	cli       *gerrit.Client
-	serviceID string
-	perPage   int
-	private   bool
+	svc             *types.ExternalService
+	cli             *gerrit.Client
+	serviceID       string
+	perPage         int
+	private         bool
+	allowedProjects map[string]struct{}
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -62,13 +62,18 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		return nil, err
 	}
 
+	allowedProjects := make(map[string]struct{})
+	for _, project := range c.Projects {
+		allowedProjects[project] = struct{}{}
+	}
+
 	return &GerritSource{
-		svc:       svc,
-		cli:       cli,
-		config:    &c,
-		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
-		perPage:   100,
-		private:   c.Authorization != nil,
+		svc:             svc,
+		cli:             cli,
+		allowedProjects: allowedProjects,
+		serviceID:       extsvc.NormalizeBaseURL(cli.URL).String(),
+		perPage:         100,
+		private:         c.Authorization != nil,
 	}, nil
 }
 
@@ -81,10 +86,6 @@ func (s *GerritSource) CheckConnection(ctx context.Context) error {
 
 // ListRepos returns all Gerrit repositories configured with this GerritSource's config.
 func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	allowedProjects := make(map[string]struct{})
-	for _, project := range s.config.Projects {
-		allowedProjects[project] = struct{}{}
-	}
 	args := gerrit.ListProjectsArgs{
 		Cursor:           &gerrit.Pagination{PerPage: s.perPage, Page: 1},
 		OnlyCodeProjects: true,
@@ -108,8 +109,8 @@ func (s *GerritSource) ListRepos(ctx context.Context, results chan SourceResult)
 
 		for _, p := range pageKeySlice {
 			// Only check if the project is allowed if we have a list of allowed projects
-			if len(allowedProjects) != 0 {
-				if _, ok := allowedProjects[p]; !ok {
+			if len(s.allowedProjects) != 0 {
+				if _, ok := s.allowedProjects[p]; !ok {
 					continue
 				}
 			}
