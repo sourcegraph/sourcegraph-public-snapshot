@@ -1,6 +1,6 @@
 package:
   name: p4cli
-  version: 2021.2
+  version: 21.2
   epoch: 0
   description: "TODO"
   target-architecture:
@@ -25,8 +25,8 @@ environment:
 pipeline:
   - uses: fetch
     with:
-      uri: http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4
-      expected-sha256: e07613dd4ead019c3119a419083e85ec93f6d0ba5524ac498bcd767cbe278377
+      uri: http://cdist2.perforce.com/perforce/r${{package.version}}/bin.linux26x86_64/p4
+      expected-sha256: 3462491b61ba9cf0c5d70511b7a3280cd7c154b49bfd8c669d5761953968c159
       extract: false
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
