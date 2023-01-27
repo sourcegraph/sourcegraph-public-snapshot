@@ -42,6 +42,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
+		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
 
@@ -341,3 +342,19 @@ func (f *FileContainsContentPredicate) Unmarshal(params string, negated bool) er
 
 func (f FileContainsContentPredicate) Field() string { return FieldFile }
 func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
+
+/* file:has.owner(pattern) */
+
+type FileHasOwnerPredicate struct {
+	Owner   string
+	Negated bool
+}
+
+func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
+	f.Owner = params
+	f.Negated = negated
+	return nil
+}
+
+func (f FileHasOwnerPredicate) Field() string { return FieldFile }
+func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
