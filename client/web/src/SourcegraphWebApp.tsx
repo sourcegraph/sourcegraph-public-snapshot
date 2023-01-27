@@ -361,45 +361,36 @@ export class SourcegraphWebApp extends React.Component<
             >
                 <Router history={history} key={0}>
                     <CompatRouter>
-                        <Routes>
-                            <Route
-                                path="/*"
-                                element={
-                                    <Layout
-                                        {...props}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        batchChangesEnabled={this.props.batchChangesEnabled}
-                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                            this.state.settingsCascade
-                                        )}
-                                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                        // Search query
-                                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                                        // Extensions
-                                        platformContext={this.platformContext}
-                                        extensionsController={this.extensionsController}
-                                        telemetryService={eventLogger}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        searchContextsEnabled={this.props.searchContextsEnabled}
-                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                        fetchSearchContexts={fetchSearchContexts}
-                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                        fetchSearchContext={fetchSearchContext}
-                                        createSearchContext={createSearchContext}
-                                        updateSearchContext={updateSearchContext}
-                                        deleteSearchContext={deleteSearchContext}
-                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                        globbing={this.state.globbing}
-                                        streamSearch={aggregateStreamingSearch}
-                                        onCreateNotebookFromNotepad={this.onCreateNotebook}
-                                    />
-                                }
-                            />
-                        </Routes>
+                        <Layout
+                            {...props}
+                            authenticatedUser={authenticatedUser}
+                            viewerSubject={this.state.viewerSubject}
+                            settingsCascade={this.state.settingsCascade}
+                            batchChangesEnabled={this.props.batchChangesEnabled}
+                            batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
+                            batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                            // Search query
+                            fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                            // Extensions
+                            platformContext={this.platformContext}
+                            extensionsController={this.extensionsController}
+                            telemetryService={eventLogger}
+                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                            searchContextsEnabled={this.props.searchContextsEnabled}
+                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                            fetchSearchContexts={fetchSearchContexts}
+                            fetchSearchContextBySpec={fetchSearchContextBySpec}
+                            fetchSearchContext={fetchSearchContext}
+                            createSearchContext={createSearchContext}
+                            updateSearchContext={updateSearchContext}
+                            deleteSearchContext={deleteSearchContext}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                            globbing={this.state.globbing}
+                            streamSearch={aggregateStreamingSearch}
+                            onCreateNotebookFromNotepad={this.onCreateNotebook}
+                        />
                     </CompatRouter>
                 </Router>
                 {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
