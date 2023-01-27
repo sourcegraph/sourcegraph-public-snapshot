@@ -144,7 +144,7 @@ $ pnpm build
 3. We're now ready to show Backstage where the plugin is. Move the Backstage app directory and from the route execute
    For a plugin that integrates with the backend:
 
-```json
+```console
 $ yarn workspace backend add link:~/sourcegraph/client/backstage/plugin
 ```
 
