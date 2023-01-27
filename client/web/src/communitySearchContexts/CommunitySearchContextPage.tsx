@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
+
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -39,8 +40,6 @@ export interface CommunitySearchContextPageProps
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
 
     // CommunitySearchContext page metadata
@@ -53,6 +52,8 @@ export interface CommunitySearchContextPageProps
 export const CommunitySearchContextPage: React.FunctionComponent<
     React.PropsWithChildren<CommunitySearchContextPageProps>
 > = (props: CommunitySearchContextPageProps) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const LOADING = 'loading' as const
 
     const [queryState, setQueryState] = useState<QueryState>({
@@ -85,10 +86,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
-            const { history, selectedSearchContextSpec } = props
+            const { selectedSearchContextSpec } = props
             submitSearch({
-                historyOrNavigate: history,
-                location: history.location,
+                historyOrNavigate: navigate,
+                location,
                 query,
                 caseSensitive,
                 patternType,
