@@ -1367,6 +1367,22 @@ type Query {
     ): NewRepositoryConnection!
 
     """
+    EXPERIMENTAL AND SUBJECT TO CHANGE
+    """
+    packageRepoReferences(
+        scheme: String
+        name: String
+        """
+        Returns the first n external services from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoReferenceConnection!
+
+    """
     Looks up a Phabricator repository by name.
     """
     phabricatorRepo(
@@ -3419,6 +3435,49 @@ type KeyValuePair {
     The nullable value. A null value indicates this key-value pair should be treated as a tag.
     """
     value: String
+}
+
+"""
+EXPERIMENTAL AND SUBJECT TO CHANGE
+"""
+type PackageRepoReferenceConnection {
+    """
+    A list of package repo references.
+    """
+    nodes: [PackageRepoReference!]!
+
+    """
+    The total number of saved searches in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+EXPERIMENTAL AND SUBJECT TO CHANGE
+"""
+type PackageRepoReference {
+    id: ID!
+
+    scheme: String!
+
+    name: String!
+
+    versions: [PackageRepoReferenceVersion!]!
+
+    repository: Repository
+}
+
+type PackageRepoReferenceVersion {
+    id: ID!
+
+    packageRepoReferenceID: ID!
+
+    version: String!
 }
 
 """

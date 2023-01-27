@@ -2459,7 +2459,7 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    version text NOT NULL,
+    version text,
     scheme text NOT NULL
 );
 
@@ -3283,6 +3283,21 @@ CREATE VIEW outbound_webhooks_with_event_types AS
            FROM outbound_webhook_event_types
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
+
+CREATE TABLE package_repo_versions (
+    id bigint NOT NULL,
+    package_id bigint NOT NULL,
+    version text
+);
+
+CREATE SEQUENCE package_repo_versions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE package_repo_versions_id_seq OWNED BY package_repo_versions.id;
 
 CREATE TABLE permission_sync_jobs (
     id integer NOT NULL,
@@ -4151,6 +4166,8 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY package_repo_versions ALTER COLUMN id SET DEFAULT nextval('package_repo_versions_id_seq'::regclass);
+
 ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
@@ -4475,6 +4492,9 @@ ALTER TABLE ONLY outbound_webhook_logs
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY package_repo_versions
+    ADD CONSTRAINT package_repo_versions_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_pkey PRIMARY KEY (id);
@@ -4899,6 +4919,10 @@ CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_l
 CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
+
+CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
+
+CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 
 CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
 
@@ -5381,6 +5405,9 @@ ALTER TABLE ONLY outbound_webhooks
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY package_repo_versions
+    ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;

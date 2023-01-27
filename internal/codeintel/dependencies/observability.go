@@ -9,6 +9,7 @@ import (
 
 type operations struct {
 	listDependencyRepos       *observation.Operation
+	dependencyVersions        *observation.Operation
 	upsertDependencyRepos     *observation.Operation
 	deleteDependencyReposByID *observation.Operation
 }
@@ -35,7 +36,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		listDependencyRepos:       op("ListDependencyRepos"),
-		upsertDependencyRepos:     op("UpsertDependencyRepos"),
+		dependencyVersions:        op("DependencyVersions"),
+		upsertDependencyRepos:     op("InsertDependencyRepos"),
 		deleteDependencyReposByID: op("DeleteDependencyReposByID"),
 	}
 }
