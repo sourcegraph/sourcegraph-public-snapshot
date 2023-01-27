@@ -171,7 +171,7 @@ $ pnpm es
 ```
 
 2. There should now be a dist directory in `sourcegraph/client/backstage/plugin`.
-3. We're now ready to show Backstage where the plugin is. Move the Backstage app directory and from the route execute
+3. We're now ready to show Backstage where the plugin is. Move to the Backstage root directory and execute:
    For a plugin that integrates with the backend:
 
 ```console
