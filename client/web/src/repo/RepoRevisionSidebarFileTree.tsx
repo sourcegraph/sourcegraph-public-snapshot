@@ -83,9 +83,13 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
 
     // Ensure that the initial file path does not update when the props change
-    const [initialFilePath] = useState(
-        props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
-    )
+    const [initialFilePath] = useState(() => {
+        let path = props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
+        if (path === '.') {
+            path = ''
+        }
+        return path
+    })
     const [treeData, setTreeData] = useState<TreeData | null>(null)
 
     const navigate = useNavigate()

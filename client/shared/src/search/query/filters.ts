@@ -236,6 +236,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
+        discreteValues: () => [...predicateCompletion('file')],
         placeholder: 'regex',
         suggestions: 'path',
     },
@@ -410,6 +411,12 @@ export const validateFilter = (
     }
     if (typeAndDefinition.type === FilterType.repo) {
         // Repo filter is made exempt from checking discrete valid values, since a valid `contain` predicate
+        // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
+        // account for finite discrete values and exemption of checks.
+        return { valid: true }
+    }
+    if (typeAndDefinition.type === FilterType.file) {
+        // File filter is made exempt from checking discrete valid values, since a valid `contain` predicate
         // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
         // account for finite discrete values and exemption of checks.
         return { valid: true }

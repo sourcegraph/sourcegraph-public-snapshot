@@ -8937,3 +8937,290 @@ type ConnectionPageInfo {
     """
     hasPreviousPage: Boolean!
 }
+
+"""
+A team is a grouping of users/persons into a common handle. Teams are commonly used to define
+codeowners.
+"""
+type Team implements Node {
+    """
+    The unique ID of the team.
+    """
+    id: ID!
+
+    """
+    The name of the team. Needs to be globally unique across usernames, organization
+    names, and team names. Team names can use alphanumeric characters, - dash
+    and / forward slash.
+    """
+    name: String!
+
+    """
+    URL to link to the teams profile page.
+    """
+    url: String!
+
+    """
+    A human readable name substitute for the name. Null, if not defined.
+    """
+    displayName: String
+
+    """
+    A team can be made read-only from the CLI instructing the UI to show a warning
+    banner that this is managed externally, and management features will only be
+    available to site-admins. It can also still be manipulated from the CLI.
+    """
+    readonly: Boolean!
+
+    """
+    The teams direct members. That is members that are strictly part of this team,
+    but not members of child teams. Team membership is NOT inherited.
+    """
+    members(
+        """
+        Returns the first n team members from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamMemberConnection!
+
+    """
+    Parent team can be null, if this is a root team.
+    """
+    parentTeam: Team
+
+    """
+    The list of direct child teams.
+    """
+    childTeams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+
+    """
+    True, if the current user can modify this team.
+    """
+    viewerCanAdminister: Boolean!
+}
+
+"""
+A list of teams.
+"""
+type TeamConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount(
+        """
+        If true, the total count of teams, including deeply nested child teams will
+        be returned. Note that those teams will NOT be part of the nodes.
+        """
+        countDeeplyNestedTeams: Boolean = false
+    ): Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of teams in this connection.
+    """
+    nodes: [Team!]!
+}
+
+"""
+A list of team members.
+"""
+type TeamMemberConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount(
+        """
+        If true, the total count of members of this team, including deeply nested
+        child teams members will be returned. Note that child team members will NOT
+        be part of the nodes.
+        """
+        countDeeplyNestedTeamMembers: Boolean = false
+    ): Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of team members in this connection.
+    """
+    nodes: [TeamMember!]!
+}
+
+"""
+A team member is an entity that can be associated to a team.
+
+For now, this will be User, and will be expanded to User | Person later.
+"""
+interface TeamMember {
+    """
+    All the teams this TeamMember is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type User implements TeamMember {
+    """
+    All the teams this user is a direct member of.
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Optionally apply a text search filter over the results.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type Query {
+    """
+    Get the global list of all root teams. (Those without a parent team).
+    """
+    teams(
+        """
+        Returns the first n teams from the list.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search can be used to do a text-search over the team names.
+        """
+        search: String
+    ): TeamConnection!
+}
+
+extend type Mutation {
+    """
+    Creates a team. The name must be unique, display name can be used to set a custom
+    display value for the team inside Sourcegraph.
+
+    If readonly is true, the Sourcegraph UI will show a warning banner that this team
+    is managed externally, and it can only be modified by site-admins.
+    This is to prevent state drift from external systems that ingest team information into Sourcegraph.
+    Readonly can only be set by site-admins.
+
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent. Only members of the parent team or site-admis can create
+    a child team.
+    """
+    createTeam(
+        name: String!
+        displayName: String
+        readonly: Boolean = false
+        parentTeam: ID
+        parentTeamName: String
+    ): Team!
+
+    """
+    Update an existing team. ID or Name must be specified, but not both.
+
+    To unset the display name, pass an empty string. Null will make it ignore updates.
+
+    Either parentTeam XOR parentTeamName can be specified to make the team a child
+    team of the given parent.
+    The user has to be a team-member of both the child and parent team for that, and
+    neither can be read-only. Site-admin can modify all teams without constraints.
+    """
+    updateTeam(id: ID, name: String, displayName: String, parentTeam: ID, parentTeamName: String): Team!
+
+    """
+    Delete team deletes a team. ID or Name must be specified, but not both.
+    Must be team-member to delete. If the team is marked as read-only, must be site-admin.
+    """
+    deleteTeam(id: ID, name: String): EmptyResponse
+
+    """
+    Add a list of team members to an existing team.
+    People that already are part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to add new team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+
+    """
+    This is a convenience method to forcefully overwrite the full set of members
+    of a team. This is handy to sync external state without diffing the current
+    members vs the desired set of members.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to modify team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+
+    """
+    This mutation removes team membership for the given team and set of members.
+    Members that weren't part of the team are ignored.
+
+    Either team XOR teamName can be specified to specify the team.
+    Must be team member to remove team members, or site-admin.
+
+    For now, members can only be the IDs of User entities in Sourcegraph.
+    Later, we will expand this to allow Persons as well.
+    """
+    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+}
