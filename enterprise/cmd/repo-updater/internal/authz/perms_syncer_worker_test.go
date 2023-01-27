@@ -3,16 +3,27 @@ package authz
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/stretchr/testify/require"
 )
+
+const errorMsg = "Sorry, wrong number."
 
 func TestPermsSyncerWorker_Handle(t *testing.T) {
 	ctx := context.Background()
@@ -60,6 +71,92 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			t.Fatalf("wrong sync request: %s", diff)
 		}
 	})
+}
+
+func TestPermsSyncerWorker(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating users and repos.
+	userStore := db.Users()
+	user1, err := userStore.Create(ctx, database.NewUser{Username: "user1"})
+	require.NoError(t, err)
+	user2, err := userStore.Create(ctx, database.NewUser{Username: "user2"})
+	require.NoError(t, err)
+	repoStore := db.Repos()
+	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"})
+	require.NoError(t, err)
+
+	// Creating a worker.
+	observationCtx := &observation.TestContext
+	dummySyncer := &dummySyncerWithErrors{
+		repoIDErrors: map[api.RepoID]struct{}{2: {}},
+		userIDErrors: map[int32]struct{}{2: {}},
+	}
+
+	workerStore := MakeStore(observationCtx, db.Handle())
+	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer)
+	go func() { worker.Start() }()
+	t.Cleanup(func() { worker.Stop() })
+
+	// Adding user perms sync jobs.
+	syncJobsStore := db.PermissionSyncJobs()
+	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
+		database.PermissionSyncJobOpts{Reason: permssync.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
+	require.NoError(t, err)
+
+	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
+		database.PermissionSyncJobOpts{Reason: permssync.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	// Adding repo perms sync jobs.
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	// Wait for all jobs to be processed.
+	err = gqltestutil.Retry(60*time.Second, func() error {
+		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+		if err != nil {
+			return err
+		}
+		for _, job := range jobs {
+			if job.State == "queued" || job.State == "processing" {
+				return gqltestutil.ErrContinueRetry
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
+	}
+
+	jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+	require.NoError(t, err)
+
+	for _, job := range jobs {
+		if job.ID%2 == 1 {
+			continue
+		}
+		switch job.ID {
+		case 2:
+			// User sync job.
+			require.Equal(t, 2, job.UserID)
+		case 4:
+			// Repo sync job.
+			require.Equal(t, 2, job.RepositoryID)
+		}
+		require.NotNil(t, job.FailureMessage)
+		require.Equal(t, errorMsg, *job.FailureMessage)
+		require.Equal(t, 1, job.NumFailures)
+	}
 }
 
 func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
@@ -134,6 +231,17 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 }
 
+func MakeTestWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer permsSyncer) *workerutil.Worker[*database.PermissionSyncJob] {
+	handler := MakePermsSyncerWorker(observationCtx, permsSyncer)
+	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+		Name:              "permission_sync_job_worker",
+		Interval:          time.Second,
+		HeartbeatInterval: 10 * time.Second,
+		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
+		NumHandlers:       4,
+	})
+}
+
 // combinedRequest is a test entity which contains properties of both user and
 // repo perms sync requests.
 type combinedRequest struct {
@@ -156,6 +264,35 @@ func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, n
 	return []syncjobs.ProviderStatus{}, nil
 }
 func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+	d.request = combinedRequest{
+		UserID:  userID,
+		NoPerms: noPerms,
+		Options: options,
+	}
+	return []syncjobs.ProviderStatus{}, nil
+}
+
+type dummySyncerWithErrors struct {
+	request      combinedRequest
+	userIDErrors map[int32]struct{}
+	repoIDErrors map[api.RepoID]struct{}
+}
+
+func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+	if _, ok := d.repoIDErrors[repoID]; ok {
+		return nil, errors.New(errorMsg)
+	}
+	d.request = combinedRequest{
+		RepoID:  repoID,
+		NoPerms: noPerms,
+		Options: options,
+	}
+	return []syncjobs.ProviderStatus{}, nil
+}
+func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+	if _, ok := d.userIDErrors[userID]; ok {
+		return nil, errors.New(errorMsg)
+	}
 	d.request = combinedRequest{
 		UserID:  userID,
 		NoPerms: noPerms,
