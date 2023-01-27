@@ -294,7 +294,6 @@ func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQ
 	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
 	query = p.AppendLimitToQuery(query)
-	fmt.Println(query.Query(sqlf.PostgresBindVar))
 	results, err = scanAllBackfillQueueItems(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
