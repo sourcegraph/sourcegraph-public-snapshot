@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
@@ -67,10 +68,6 @@ func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, 
 }
 
 const changesetIDKind = "Changeset"
-
-func marshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID(changesetIDKind, id)
-}
 
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
@@ -132,7 +129,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 }
 
 func (r *changesetResolver) ID() graphql.ID {
-	return marshalChangesetID(r.changeset.ID)
+	return bgql.MarshalChangesetID(r.changeset.ID)
 }
 
 func (r *changesetResolver) ExternalID() *string {

@@ -17,8 +17,8 @@ import { ActionItemAction } from '../actions/ActionItem'
 import { ExposedToClient } from '../api/client/mainthread-api'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { PlatformContext, URLToFileContext } from '../platform/context'
+import { integrationTestContext } from '../testing/testHelpers'
 import {
     FileSpec,
     UIPositionSpec,
@@ -550,7 +550,8 @@ describe('registerHoverContributions()', () => {
                 registerCommand: exposedToClient.registerCommand,
             },
             platformContext: { urlToFile, requestGraphQL },
-            history,
+            historyOrNavigate: history,
+            getLocation: () => history.location,
             locationAssign,
         })
         subscription.add(contributionsSubscription)

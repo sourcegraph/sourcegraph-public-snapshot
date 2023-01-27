@@ -9,7 +9,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -156,6 +158,22 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(string(contents))
 }
 
+func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[SiteConfigurationChangeResolver], error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view the history.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
+
+	return graphqlutil.NewConnectionResolver[SiteConfigurationChangeResolver](
+		&connectionStore,
+		args,
+		nil,
+	)
+}
+
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
@@ -178,10 +196,12 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 	prev.Site = unredacted
-	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev, args.LastID); err != nil {
+
+	server := globals.ConfigurationServerFrontendOnly
+	if err := server.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
 		return false, err
 	}
-	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+	return server.NeedServerRestart(), nil
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

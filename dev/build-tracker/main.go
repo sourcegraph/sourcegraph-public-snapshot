@@ -20,6 +20,13 @@ var ErrUnwantedEvent = errors.New("Unwanted event received")
 
 var nowFunc func() time.Time = time.Now
 
+// CleanUpInterval determines how often the old build cleaner should run
+var CleanUpInterval = 5 * time.Minute
+
+// BuildExpiryWindow defines the window for a build to be consider 'valid'. A build older than this window
+// will be eligible for clean up.
+var BuildExpiryWindow = 4 * time.Hour
+
 const DefaultChannel = "#william-buildchecker-webhook-test"
 
 // Server is the http server that listens for events from Buildkite. The server tracks builds and their associated jobs
@@ -201,11 +208,21 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
+// notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
-		return s.notifyClient.sendFailedBuild(build)
+		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
+		// we're about to send.
+		build.Lock()
+		defer build.Unlock()
+		var err error
+		if build.hasNotification() {
+			build.Notification, err = s.notifyClient.sendUpdatedMessage(build, build.Notification)
+		} else {
+			build.Notification, err = s.notifyClient.sendNewMessage(build)
+		}
+		return err
 	}
 
 	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number)))
@@ -251,12 +268,22 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 func (s *Server) processEvent(event *Event) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
 	s.store.Add(event)
-	if event.isBuildFinished() {
-		build := s.store.GetByBuildNumber(event.buildNumber())
+	build := s.store.GetByBuildNumber(event.buildNumber())
+	if s.shouldNotify(build, event) {
 		if err := s.notifyIfFailed(build); err != nil {
 			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.buildNumber()), log.Error(err))
 		}
 	}
+}
+
+func (s *Server) shouldNotify(build *Build, event *Event) bool {
+	// If this is a build.finished event = notify!
+	//
+	// OR
+	//
+	// This might not be a build finished event, but it could be a failed job event
+	// for a Build that has failed!
+	return event.isBuildFinished() || (build.hasFailed() && event.isJobFinished())
 }
 
 // Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
@@ -276,7 +303,7 @@ func main() {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
 	server := NewServer(logger, *serverConf)
 
-	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
+	stopFn := server.startOldBuildCleaner(CleanUpInterval, BuildExpiryWindow)
 	defer stopFn()
 
 	if server.config.Production {

@@ -32,20 +32,11 @@ func NewService(
 	store := store.New(scopedContext("store", observationCtx), db)
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService(db)
+	inferenceSvc := inference.NewService()
 
 	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 
 	return svc
-}
-
-type serviceDependencies struct {
-	db             database.DB
-	uploadSvc      UploadService
-	depsSvc        DependenciesService
-	policiesSvc    PoliciesService
-	gitserver      GitserverClient
-	observationCtx *observation.Context
 }
 
 func scopedContext(component string, observationCtx *observation.Context) *observation.Context {

@@ -5,8 +5,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -85,7 +85,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
         (event?: React.MouseEvent<HTMLButtonElement>): void => {
             eventLogger.log('CommunitySearchContextSuggestionClicked')
             event?.preventDefault()
-            submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+            const { history, selectedSearchContextSpec } = props
+            submitSearch({
+                historyOrNavigate: history,
+                location: history.location,
+                query,
+                caseSensitive,
+                patternType,
+                selectedSearchContextSpec,
+                source: 'communitySearchContextPage',
+            })
         }
 
     return (

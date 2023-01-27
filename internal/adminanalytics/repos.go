@@ -37,7 +37,7 @@ func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 
 	summary := &ReposSummary{data}
 
-	if _, err := setItemToCache(cacheKey, summary); err != nil {
+	if err := setItemToCache(cacheKey, summary); err != nil {
 		return nil, err
 	}
 

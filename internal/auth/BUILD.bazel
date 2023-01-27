@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "const.go",
+        "orgs.go",
+        "site_admin.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/auth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)

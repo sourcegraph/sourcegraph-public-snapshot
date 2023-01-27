@@ -29,6 +29,11 @@ func TestExtractToken(t *testing.T) {
 		},
 		{
 			config: `{"token": "deadbeef"}`,
+			kind:   KindAzureDevOps,
+			want:   "deadbeef",
+		},
+		{
+			config: `{"token": "deadbeef"}`,
 			kind:   KindBitbucketServer,
 			want:   "deadbeef",
 		},

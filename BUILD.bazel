@@ -1,3 +1,4 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -31,4 +32,29 @@ ts_config(
         "//:node_modules/@sourcegraph/tsconfig",
         "//:tsconfig.json",
     ],
+)
+
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/sourcegraph/sourcegraph
+gazelle(name = "gazelle")
+
+go_library(
+    name = "sourcegraph",
+    srcs = [
+        "doc.go",
+        "gen.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph",
+)
+
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+        "-build_file_proto_mode=disable_global",
+    ],
+    command = "update-repos",
 )

@@ -22,7 +22,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) error {
 		return func(feature licensing.Feature) error {
 			for _, allowed := range allow {
-				if feature == allowed {
+				if feature.FeatureName() == allowed.FeatureName() {
 					return nil
 				}
 			}
@@ -39,26 +39,26 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		wantErr bool
 	}{
 		"real feature, enabled": {
-			feature: string(licensing.FeatureBatchChanges),
-			mock:    buildMock(licensing.FeatureBatchChanges),
+			feature: (&licensing.FeatureBatchChanges{}).FeatureName(),
+			mock:    buildMock(&licensing.FeatureBatchChanges{}),
 			want:    true,
 			wantErr: false,
 		},
 		"real feature, disabled": {
 			feature: string(licensing.FeatureMonitoring),
-			mock:    buildMock(licensing.FeatureBatchChanges),
+			mock:    buildMock(&licensing.FeatureBatchChanges{}),
 			want:    false,
 			wantErr: false,
 		},
 		"fake feature, enabled": {
 			feature: "foo",
-			mock:    buildMock("foo"),
+			mock:    buildMock(licensing.BasicFeature("foo")),
 			want:    true,
 			wantErr: false,
 		},
 		"fake feature, disabled": {
 			feature: "foo",
-			mock:    buildMock("bar"),
+			mock:    buildMock(licensing.BasicFeature("bar")),
 			want:    false,
 			wantErr: false,
 		},

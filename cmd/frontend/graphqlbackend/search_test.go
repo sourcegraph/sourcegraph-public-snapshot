@@ -290,7 +290,16 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("exactly one repo", func(t *testing.T) {
-			if got := searchrepos.ExactlyOneRepo(c.repoFilters); got != c.want {
+			parsedFilters := make([]query.ParsedRepoFilter, len(c.repoFilters))
+			for i, repoFilter := range c.repoFilters {
+				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+				if err != nil {
+					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+				}
+				parsedFilters[i] = parsedFilter
+			}
+
+			if got := searchrepos.ExactlyOneRepo(parsedFilters); got != c.want {
 				t.Errorf("got %t, want %t", got, c.want)
 			}
 		})

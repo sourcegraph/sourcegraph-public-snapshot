@@ -5,8 +5,8 @@ import * as H from 'history'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
-import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -271,7 +271,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             submitQuerySearch(
                 {
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    history,
+                    historyOrNavigate: history,
+                    location: history.location,
                     source: 'filter',
                 },
                 updates
@@ -282,8 +283,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+
+            const { history, selectedSearchContextSpec } = props
             submitSearch({
-                ...props,
+                historyOrNavigate: history,
+                location: history.location,
+                selectedSearchContextSpec,
                 caseSensitive,
                 patternType,
                 query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
@@ -294,8 +299,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
 
     const handleSearchAggregationBarClick = (query: string): void => {
+        const { history, selectedSearchContextSpec } = props
         submitSearch({
-            ...props,
+            historyOrNavigate: history,
+            location: history.location,
+            selectedSearchContextSpec,
             caseSensitive,
             patternType,
             query,
@@ -309,17 +317,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // when search doesn't have any matches
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    const onDisableSmartSearch = useCallback(
-        () =>
-            submitSearch({
-                ...props,
-                caseSensitive,
-                patternType: SearchPatternType.standard,
-                query: submittedURLQuery,
-                source: 'smartSearchDisabled',
-            }),
-        [caseSensitive, props, submittedURLQuery]
-    )
+    const onDisableSmartSearch = useCallback(() => {
+        const { history, selectedSearchContextSpec } = props
+        submitSearch({
+            historyOrNavigate: history,
+            location: history.location,
+            selectedSearchContextSpec,
+            caseSensitive,
+            patternType: SearchPatternType.standard,
+            query: submittedURLQuery,
+            source: 'smartSearchDisabled',
+        })
+    }, [caseSensitive, props, submittedURLQuery])
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>
@@ -443,6 +452,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setQueryState}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     </div>
                 </>

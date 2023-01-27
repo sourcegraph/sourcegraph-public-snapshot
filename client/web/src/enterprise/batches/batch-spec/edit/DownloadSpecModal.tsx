@@ -69,7 +69,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                         <span className="text-monospace">batch</span> command allows to run batch specification files
                         using Docker.
                     </Text>
-                    <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
+                    <Link to="/help/cli">Download src-cli</Link>
                 </div>
             </div>
         </div>

@@ -1,4 +1,6 @@
 node_modules
+schema/node_modules
+
 client/branded/node_modules
 client/browser/node_modules
 client/build-config/node_modules
@@ -12,7 +14,6 @@ client/http-client/node_modules
 client/jetbrains/node_modules
 client/observability-client/node_modules
 client/observability-server/node_modules
-client/search-ui/node_modules
 client/shared/node_modules
 client/storybook/node_modules
 client/template-parser/node_modules
@@ -21,5 +22,9 @@ client/web/node_modules
 client/wildcard/node_modules
 client/vscode/node_modules
 dev/release/node_modules
+client/plugin-backstage/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
+docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/
+
+lib/codeintel/precise/diff/testdata/

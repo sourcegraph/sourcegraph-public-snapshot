@@ -31,6 +31,8 @@ export interface InsightCreateEvent {
 }
 
 export interface LangStatsInsightCreationPageProps extends TelemetryProps {
+    backUrl: string
+
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -51,7 +53,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
 }
 
 export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -99,11 +101,15 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
 
     return (
         <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
-            <PageTitle title="Create insight - Code Insights" />
+            <PageTitle title="Create language usage insight - Code Insights" />
 
             <PageHeader
                 className="mb-5"
-                path={[{ icon: CodeInsightsIcon }, { text: 'Set up new language usage insight' }]}
+                path={[
+                    { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                    { text: 'Create', to: backUrl },
+                    { text: 'Language usage insight' },
+                ]}
                 description={
                     <span className="text-muted">
                         Shows language usage in your repository based on number of lines of code.{' '}

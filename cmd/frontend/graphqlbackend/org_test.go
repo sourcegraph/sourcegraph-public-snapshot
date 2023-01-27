@@ -1,24 +1,23 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/gofrs/uuid"
-	"github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -82,7 +81,7 @@ func TestOrganization(t *testing.T) {
 					"organization": null
 				}
 				`,
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "org not found: name acme",
 						Path:    []any{"organization"},
@@ -383,20 +382,9 @@ func TestAddOrganizationMember(t *testing.T) {
 	// tests below depend on config being there
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
-	// mock repo updater http client
-	oldClient := repoupdater.DefaultClient.HTTPClient
-	repoupdater.DefaultClient.HTTPClient = &http.Client{
-		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte{'{', '}'})),
-			}, nil
-		}),
-	}
-
-	defer func() {
-		repoupdater.DefaultClient.HTTPClient = oldClient
-	}()
+	// mock permission sync scheduling
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	defer func() { permssync.MockSchedulePermsSync = nil }()
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
@@ -510,9 +498,9 @@ func TestOrganizationRepositories_OSS(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedErrors: []*errors.QueryError{{
+			ExpectedErrors: []*gqlerrors.QueryError{{
 				Message:   `Cannot query field "repositories" on type "Org".`,
-				Locations: []errors.Location{{Line: 5, Column: 7}},
+				Locations: []gqlerrors.Location{{Line: 5, Column: 7}},
 				Rule:      "FieldsOnCorrectType",
 			}},
 			Context: ctx,

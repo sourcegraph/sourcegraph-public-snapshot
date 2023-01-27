@@ -55,6 +55,9 @@
     - OrgInvitationStore
     - OrgMemberStore
     - OrgStore
+    - OutboundWebhookStore
+    - OutboundWebhookJobStore
+    - OutboundWebhookLogStore
     - PhabricatorStore
     - RepoStore
     - SavedSearchStore
@@ -72,6 +75,7 @@
     - ExecutorSecretStore
     - ExecutorSecretAccessLogStore
     - ZoektReposStore
+    - PermissionSyncJobStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:

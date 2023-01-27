@@ -628,17 +628,19 @@ export class FilteredConnection<
         this.showMoreClicks.next()
     }
 
-    private buildArgs = (filterValues: Map<string, FilteredConnectionFilterValue>): FilteredConnectionArgs => {
-        let args: FilteredConnectionArgs = {}
-        for (const key of filterValues.keys()) {
-            const value = filterValues.get(key)
-            if (value === undefined) {
-                continue
-            }
-            args = { ...args, ...value.args }
+    private buildArgs = buildFilterArgs
+}
+
+export const buildFilterArgs = (filterValues: Map<string, FilteredConnectionFilterValue>): FilteredConnectionArgs => {
+    let args: FilteredConnectionArgs = {}
+    for (const key of filterValues.keys()) {
+        const value = filterValues.get(key)
+        if (value === undefined) {
+            continue
         }
-        return args
+        args = { ...args, ...value.args }
     }
+    return args
 }
 
 /**

@@ -20,9 +20,11 @@
 
     &__live-preview {
         position: sticky;
+        display: flex;
+        flex-direction: column;
         top: 1rem;
         align-self: start;
-        min-height: 22rem;
+        min-height: 24rem;
         grid-column: 2/3;
     }
 
@@ -33,7 +35,7 @@
 
         &__live-preview {
             position: static;
-            min-height: 20rem;
+            min-height: 24rem;
 
             grid-column: 1/3;
             grid-row: 1/2;

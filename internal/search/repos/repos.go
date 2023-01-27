@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -43,8 +44,6 @@ import (
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
-	MissingRepoRevs []RepoRevSpecs
-
 	// BackendsMissing is the number of search backends that failed to be
 	// searched. This is due to it being unreachable. The most common reason
 	// for this is during zoekt rollout.
@@ -68,7 +67,7 @@ func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), len(r.MissingRepoRevs), r.BackendsMissing)
+	return fmt.Sprintf("Resolved{RepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), r.BackendsMissing)
 }
 
 func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
@@ -124,10 +123,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs, errs := findPatternRevs(op.RepoFilters)
-	if errs != nil {
-		return Resolved{}, errs
-	}
+	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -231,9 +227,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 		searchContextRepositoryRevisions = make(map[api.RepoID]RepoRevSpecs, len(scRepoRevs))
 		for _, repoRev := range scRepoRevs {
-			revSpecs := make([]search.RevisionSpecifier, 0, len(repoRev.Revs))
+			revSpecs := make([]query.RevisionSpecifier, 0, len(repoRev.Revs))
 			for _, rev := range repoRev.Revs {
-				revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: rev})
+				revSpecs = append(revSpecs, query.RevisionSpecifier{RevSpec: rev})
 			}
 			searchContextRepositoryRevisions[repoRev.Repo.ID] = RepoRevSpecs{
 				Repo: repoRev.Repo,
@@ -275,7 +271,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
-		MissingRepoRevs: missingRepoRevs,
 		BackendsMissing: backendsMissing,
 		Next:            next,
 	}, err
@@ -299,7 +294,7 @@ func (r *Resolver) associateReposWithRevs(
 		i, repo := i, repo
 		g.Go(func() {
 			var (
-				revs      []search.RevisionSpecifier
+				revs      []query.RevisionSpecifier
 				isMissing bool
 			)
 
@@ -310,7 +305,7 @@ func (r *Resolver) associateReposWithRevs(
 			}
 
 			if len(revs) == 0 {
-				var clashingRevs []search.RevisionSpecifier
+				var clashingRevs []query.RevisionSpecifier
 				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
 				// if multiple specified revisions clash, report this usefully:
@@ -393,7 +388,7 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 func (r *Resolver) normalizeRepoRefs(
 	ctx context.Context,
 	repo types.MinimalRepo,
-	revSpecs []search.RevisionSpecifier,
+	revSpecs []query.RevisionSpecifier,
 	reportMissing func(RepoRevSpecs),
 ) ([]string, error) {
 	revs := make([]string, 0, len(revSpecs))
@@ -417,7 +412,7 @@ func (r *Resolver) normalizeRepoRefs(
 				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err
 				}
-				reportMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{rev}})
+				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
 				continue
 			}
 			revs = append(revs, rev.RevSpec)
@@ -661,7 +656,7 @@ func (r *Resolver) filterRepoHasFileContent(
 							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 								return err
 							}
-							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})
+							addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
 							return nil
 						}
 
@@ -749,10 +744,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, _, err := findPatternRevs(op.RepoFilters)
-	if err != nil {
-		return ExcludedRepos{}, err
-	}
+	includePatterns, _ := findPatternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
@@ -787,7 +779,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		ExcludedRepos
 	}
 
-	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
@@ -807,7 +799,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		})
 	}
 
-	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
@@ -834,11 +826,11 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 // delineated by regex anchors ^ and $. This function helps determine whether we
 // should return results for a single repo regardless of whether it is a fork or
 // archive.
-func ExactlyOneRepo(repoFilters []string) bool {
+func ExactlyOneRepo(repoFilters []query.ParsedRepoFilter) bool {
 	if len(repoFilters) == 1 {
-		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
-		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
-			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
+		repo := repoFilters[0].Repo
+		if strings.HasPrefix(repo, "^") && strings.HasSuffix(repo, "$") {
+			filter := strings.TrimSuffix(strings.TrimPrefix(repo, "^"), "$")
 			r, err := regexpsyntax.Parse(filter, regexpFlags)
 			if err != nil {
 				return false
@@ -864,13 +856,13 @@ type ExcludedRepos struct {
 // an actual map, because we want regexp matches, not identity matches.
 type patternRevspec struct {
 	includePattern *regexp.Regexp
-	revs           []search.RevisionSpecifier
+	revs           []query.RevisionSpecifier
 }
 
 // given a repo name, determine whether it matched any patterns for which we have
 // revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
-	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
+func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []query.RevisionSpecifier, clashing []query.RevisionSpecifier) {
+	revLists := make([][]query.RevisionSpecifier, 0, len(pats))
 	for _, rev := range pats {
 		if rev.includePattern.MatchString(string(repo)) {
 			revLists = append(revLists, rev.revs)
@@ -883,14 +875,14 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	}
 	// no matches: we generate a dummy list containing only master
 	if len(revLists) == 0 {
-		matched = []search.RevisionSpecifier{{RevSpec: ""}}
+		matched = []query.RevisionSpecifier{{RevSpec: ""}}
 		return
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
 	// we want their intersection, so we count the number of times we
 	// see a revision in the rev lists, and make sure it matches the number
 	// of rev lists
-	revCounts := make(map[search.RevisionSpecifier]int, len(revLists[0]))
+	revCounts := make(map[query.RevisionSpecifier]int, len(revLists[0]))
 
 	var aliveCount int
 	for i, revList := range revLists {
@@ -904,48 +896,39 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	}
 
 	if aliveCount > 0 {
-		matched = make([]search.RevisionSpecifier, 0, len(revCounts))
+		matched = make([]query.RevisionSpecifier, 0, len(revCounts))
 		for rev, seenCount := range revCounts {
 			if seenCount == len(revLists) {
 				matched = append(matched, rev)
 			}
 		}
-		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
+		slices.SortFunc(matched, query.RevisionSpecifier.Less)
 		return
 	}
 
-	clashing = make([]search.RevisionSpecifier, 0, len(revCounts))
+	clashing = make([]query.RevisionSpecifier, 0, len(revCounts))
 	for rev := range revCounts {
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	sort.Slice(clashing, func(i, j int) bool { return clashing[i].Less(clashing[j]) })
+	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
 	return
 }
 
-// findPatternRevs mutates the given list of include patterns to
-// be a raw list of the repository name patterns we want, separating
-// out their revision specs, if any.
-func findPatternRevs(includePatterns []string) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+// findPatternRevs separates out each repo filter into its repository name
+// pattern and its revision specs (if any). It also applies small optimizations
+// to the repository name.
+func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec) {
 	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 
-	for _, includePattern := range includePatterns {
-		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
-		}
-		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+	for _, pattern := range includePatterns {
+		repo, repoRegex, revs := pattern.Repo, pattern.RepoRegex, pattern.Revs
+		repo = optimizeRepoPatternWithHeuristics(repo)
+		outputPatterns = append(outputPatterns, repo)
 
-		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + repoPattern + ")")
-			if err != nil {
-				return nil, nil, &badRequestError{err}
-			}
-			patternRev := patternRevspec{includePattern: p, revs: revs}
+			patternRev := patternRevspec{includePattern: repoRegex, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
 		}
 	}
@@ -962,22 +945,6 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	return repoPattern
 }
 
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
-}
-
 var ErrNoResolvedRepos = errors.New("no resolved repositories")
 
 type MissingRepoRevsError struct {
@@ -988,7 +955,7 @@ func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 
 type RepoRevSpecs struct {
 	Repo types.MinimalRepo
-	Revs []search.RevisionSpecifier
+	Revs []query.RevisionSpecifier
 }
 
 func (r *RepoRevSpecs) RevSpecs() []string {

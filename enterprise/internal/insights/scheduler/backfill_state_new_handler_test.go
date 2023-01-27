@@ -91,7 +91,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	}
 	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
 
-	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
+	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, store.SeriesPointsOpts{})
 	require.NoError(t, err)
 	if len(recordingTimes.RecordingTimes) == 0 {
 		t.Fatal(errors.New("recording times should have been saved after success"))
@@ -168,7 +168,7 @@ func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 	}
 	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
 
-	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
+	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, store.SeriesPointsOpts{})
 	require.NoError(t, err)
 	if len(recordingTimes.RecordingTimes) == 0 {
 		t.Fatal(errors.New("recording times should have been saved after success"))

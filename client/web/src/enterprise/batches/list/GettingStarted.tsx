@@ -13,7 +13,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
-    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'email'> | null
+    authenticatedUser?: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null
     className?: string
 }
 
@@ -84,7 +84,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     to={buildCloudTrialURL(authenticatedUser, 'batch')}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'BatchChangesGettingStarted' })}
                 >
                     try Sourcegraph Cloud
                 </Link>

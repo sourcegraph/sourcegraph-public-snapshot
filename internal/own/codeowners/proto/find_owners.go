@@ -1,9 +1,10 @@
 package proto
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -57,6 +58,29 @@ type anyMatch struct{}
 func (p anyMatch) String() string      { return "*" }
 func (p anyMatch) Match(_ string) bool { return true }
 
+// asteriskPattern is a pattern that may contain * glob wildcard.
+type asteriskPattern struct {
+	glob     string
+	compiled *regexp.Regexp
+}
+
+func makeAsteriskPattern(pattern string) (asteriskPattern, error) {
+	quoted := regexp.QuoteMeta(pattern)
+	regular := strings.ReplaceAll(quoted, `\*`, `.*`)
+	compiled, err := regexp.Compile("^" + regular + "$")
+	if err != nil {
+		return asteriskPattern{}, err
+	}
+	return asteriskPattern{glob: pattern, compiled: compiled}, nil
+}
+func (p asteriskPattern) String() string { return p.glob }
+func (p asteriskPattern) Match(part string) bool {
+	if p.compiled == nil {
+		return false
+	}
+	return p.compiled.FindString(part) != ""
+}
+
 // compile translates a text representation of a glob pattern
 // to an executable one that can `match` file paths.
 func compile(pattern string) (globPattern, error) {
@@ -70,22 +94,35 @@ func compile(pattern string) (globPattern, error) {
 		switch part {
 		case "":
 			return nil, errors.New("two consecutive forward slashes")
-		case "*":
-			glob = append(glob, anyMatch{})
 		case "**":
 			glob = append(glob, anySubPath{})
+		case "*":
+			glob = append(glob, anyMatch{})
 		default:
-			glob = append(glob, exactMatch(part))
+			if strings.Contains(part, "*") {
+				p, err := makeAsteriskPattern(part)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to interpret %q within %q", part, pattern)
+				}
+				glob = append(glob, p)
+			} else {
+				glob = append(glob, exactMatch(part))
+			}
 		}
 	}
-	// Trailing `/` is equivalent with trailing `/**/*`.
-	// Such pattern matches any files within the directory sub-tree
-	// anchored at the directory that the pattern describes.
-	// However, this pattern does not match if the path finishes
-	// with the part that matches token preceeding `/`. This is why
-	// the extra `*` is needed, and `/**` will not suffice.
+	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
 	if strings.HasSuffix(pattern, separator) {
-		glob = append(glob, anySubPath{}, anyMatch{})
+		glob = append(glob, anySubPath{})
+	}
+	// Trailing `/**` (explicitly or implicitly like above) is necessarily
+	// translated to `/**/*.
+	// This is because, trailing `/**` should not match if the path finishes
+	// with the part that matches up to and excluding final `**` wildcard.
+	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
+	if len(glob) > 0 {
+		if _, ok := glob[len(glob)-1].(anySubPath); ok {
+			glob = append(glob, anyMatch{})
+		}
 	}
 	return glob, nil
 }
@@ -187,26 +224,4 @@ func (glob globPattern) consume(part string, current, next *big.Int) {
 			next.SetBit(next, i, 1)
 		}
 	}
-}
-
-// debugString prints out given state for this glob pattern
-// where glob is printed, but instead of `/` separators,
-// there is either X or _ which indicate bit set or unset
-// in state. Very helpful for debugging.
-func (glob globPattern) debugString(state *big.Int) string {
-	var s strings.Builder
-	for i, globPart := range glob {
-		if state.Bit(i) != 0 {
-			s.WriteByte('X')
-		} else {
-			s.WriteByte('_')
-		}
-		fmt.Fprint(&s, globPart.String())
-	}
-	if state.Bit(len(glob)) != 0 {
-		s.WriteByte('X')
-	} else {
-		s.WriteByte('_')
-	}
-	return s.String()
 }

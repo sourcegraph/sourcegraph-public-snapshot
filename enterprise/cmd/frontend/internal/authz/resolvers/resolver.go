@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -18,12 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,13 +32,10 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
-	logger            log.Logger
-	db                edb.EnterpriseDB
-	repoupdaterClient interface {
-		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
-	}
+	logger          log.Logger
+	db              edb.EnterpriseDB
 	syncJobsRecords interface {
-		Get(timestamp time.Time) (*syncjobs.Status, error)
+		Get(ctx context.Context, timestamp time.Time) (*syncjobs.Status, error)
 		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
 	}
 }
@@ -58,12 +55,14 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 	return nil
 }
 
+// syncJobRecordsReadLimit caps syncJobsRecords retrieval to 500 items
+const syncJobRecordsReadLimit = 500
+
 func NewResolver(observationCtx *observation.Context, db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger:            observationCtx.Logger.Scoped("authz.Resolver", ""),
-		db:                edb.NewEnterpriseDB(db),
-		repoupdaterClient: repoupdater.DefaultClient,
-		syncJobsRecords:   syncjobs.NewRecordsReader(),
+		logger:          observationCtx.Logger.Scoped("authz.Resolver", ""),
+		db:              edb.NewEnterpriseDB(db),
+		syncJobsRecords: syncjobs.NewRecordsReader(syncJobRecordsReadLimit),
 	}
 }
 
@@ -173,8 +172,9 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site admins can trigger repository permissions syncs.
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	if err != nil {
 		return nil, err
 	}
 
@@ -183,12 +183,9 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{repoID},
-	})
-	if err != nil {
-		return nil, err
-	}
+	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -197,7 +194,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can query repository permissions.
+	// 🚨 SECURITY: Only site admins can trigger user permissions syncs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -207,16 +204,13 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{
-		UserIDs: []int32{userID},
-	}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
 
-	if err := r.repoupdaterClient.SchedulePermsSync(ctx, req); err != nil {
-		return nil, err
-	}
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -640,6 +634,9 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 
 	if args.First == 0 {
 		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
+	}
+	if args.First > syncJobRecordsReadLimit {
+		return nil, errors.Newf("cannot retrieve more than %d records", syncJobRecordsReadLimit)
 	}
 
 	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))

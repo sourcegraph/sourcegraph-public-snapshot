@@ -1,14 +1,14 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/branded'
 // The experimental search input should be shown on the search home page
-// eslint-disable-next-line  no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
+// eslint-disable-next-line no-restricted-imports
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -37,7 +37,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { suggestions } from '../input/suggestions'
+import { createSuggestionsSource } from '../input/suggestions'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
@@ -73,7 +73,6 @@ const queryStateSelector = (
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -87,16 +86,27 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 submitSearch({
                     source: 'home',
                     query,
-                    history: props.history,
+                    historyOrNavigate: props.history,
+                    location: props.history.location,
                     patternType,
                     caseSensitive,
                     searchMode,
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    // In the new query input, context is either omitted (-> global)
+                    // or explicitly specified.
+                    selectedSearchContextSpec: experimentalQueryInput ? undefined : props.selectedSearchContextSpec,
                     ...parameters,
                 })
             }
         },
-        [props.queryState.query, props.selectedSearchContextSpec, props.history, patternType, caseSensitive, searchMode]
+        [
+            props.queryState.query,
+            props.selectedSearchContextSpec,
+            props.history,
+            patternType,
+            caseSensitive,
+            searchMode,
+            experimentalQueryInput,
+        ]
     )
 
     const onSubmit = useCallback(
@@ -114,6 +124,24 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const isTouchOnlyDevice =
         !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
+    const suggestionSource = useMemo(
+        () =>
+            createSuggestionsSource({
+                platformContext: props.platformContext,
+                authenticatedUser: props.authenticatedUser,
+                fetchSearchContexts: props.fetchSearchContexts,
+                getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
+            }),
+        [
+            props.platformContext,
+            props.authenticatedUser,
+            props.fetchSearchContexts,
+            props.getUserSearchContextNamespaces,
+            props.isSourcegraphDotCom,
+        ]
+    )
+
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}
@@ -123,13 +151,12 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             onSubmit={onSubmit}
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
-            suggestionSource={suggestions}
+            suggestionSource={suggestionSource}
             history={props.history}
         />
     ) : (
         <SearchBox
             {...props}
-            editorComponent={editorComponent}
             showSearchContext={props.searchContextsEnabled}
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
@@ -154,7 +181,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
                     <TraceSpanProvider name="SearchBox">
-                        <div className="d-flex flex-grow-1">{input}</div>
+                        <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
                 <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />

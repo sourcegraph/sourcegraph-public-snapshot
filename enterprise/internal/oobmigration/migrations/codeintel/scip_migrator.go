@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"fmt"
 	"os"
 	"sort"
@@ -42,7 +41,7 @@ func NewSCIPMigrator(store, codeintelStore *basestore.Store) *scipMigrator {
 	}
 }
 
-func (m *scipMigrator) ID() int                 { return 18 }
+func (m *scipMigrator) ID() int                 { return 20 }
 func (m *scipMigrator) Interval() time.Duration { return time.Second }
 
 // Progress returns the ratio between the number of SCIP upload records to SCIP+LSIF upload.
@@ -253,9 +252,9 @@ func migrateUpload(
 		}
 		sort.Strings(paths)
 
-		definitionResultIDs := make([][]ID, 0, len(paths))
+		resultIDs := make([][]ID, 0, len(paths))
 		for _, path := range paths {
-			definitionResultIDs = append(definitionResultIDs, extractDefinitionResultIDs(documentsByPath[path].Ranges))
+			resultIDs = append(resultIDs, extractResultIDs(documentsByPath[path].Ranges))
 		}
 		for i, path := range paths {
 			scipDocument, err := processDocument(
@@ -270,9 +269,9 @@ func migrateUpload(
 				path,
 				documentsByPath[path],
 				// Load all of the definitions for this document
-				definitionResultIDs[i],
+				resultIDs[i],
 				// Load as many definitions from the next document as possible
-				definitionResultIDs[i+1:],
+				resultIDs[i+1:],
 			)
 			if err != nil {
 				return err
@@ -339,8 +338,8 @@ func processDocument(
 	indexerName,
 	path string,
 	document DocumentData,
-	definitionResultIDs []ID,
-	preloadDefinitionResultIDs [][]ID,
+	resultIDs []ID,
+	preloadResultIDs [][]ID,
 ) (*ogscip.Document, error) {
 	// We first read the relevant result chunks for this document into memory, writing them through to the
 	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
@@ -354,35 +353,33 @@ func processDocument(
 		resultChunkCacheSize,
 		uploadID,
 		numResultChunks,
-		definitionResultIDs,
-		preloadDefinitionResultIDs,
+		resultIDs,
+		preloadResultIDs,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	definitionMatcher := func(
-		targetPath string,
-		targetRangeID precise.ID,
-		definitionResultID precise.ID,
-	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, numResultChunks)]
+	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+		if resultID == "" {
+			return nil
+		}
+
+		resultChunk, ok := resultChunks[precise.HashKey(resultID, numResultChunks)]
 		if !ok {
-			return false
+			return nil
 		}
 
-		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[ID(definitionResultID)] {
-			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == ID(targetRangeID) {
-				return true
-			}
+		for _, pair := range resultChunk.DocumentIDRangeIDs[ID(resultID)] {
+			rangeIDs = append(rangeIDs, precise.ID(pair.RangeID))
 		}
 
-		return false
+		return rangeIDs
 	}
 
 	scipDocument := types.CanonicalizeDocument(scip.ConvertLSIFDocument(
 		uploadID,
-		definitionMatcher,
+		targetRangeFetcher,
 		indexerName,
 		path,
 		toPreciseTypes(document),
@@ -402,7 +399,7 @@ func fetchResultChunks(
 	uploadID int,
 	numResultChunks int,
 	ids []ID,
-	preloadDefinitionResultIDs [][]ID,
+	preloadIDs [][]ID,
 ) (map[int]ResultChunkData, error) {
 	// Stores a set of indexes that need to be loaded from the database. The value associated
 	// with an index is true if the result chunk should be returned to the caller and false if
@@ -415,7 +412,7 @@ func fetchResultChunks(
 	resultChunks := map[int]ResultChunkData{}
 
 outer:
-	for i, ids := range append([][]ID{ids}, preloadDefinitionResultIDs...) {
+	for i, ids := range append([][]ID{ids}, preloadIDs...) {
 		for _, id := range ids {
 			if len(indexMap) >= resultChunkCacheSize && i != 0 {
 				// Only add fetch preload IDs if we have more room in our request
@@ -610,8 +607,10 @@ func (s *scipWriter) InsertDocument(
 	return nil
 }
 
-const DocumentsBatchSize = 256
-const MaxBatchPayloadSum = 1024 * 1024 * 32
+const (
+	DocumentsBatchSize = 256
+	MaxBatchPayloadSum = 1024 * 1024 * 32
+)
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
 	documents := s.batch
@@ -854,7 +853,7 @@ const deleteLSIFDataQuery = `
 DELETE FROM %s WHERE dump_id = %s
 `
 
-func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr error) (map[string]DocumentData, error) {
+func makeDocumentScanner(serializer *serializer) func(rows basestore.Rows, queryErr error) (map[string]DocumentData, error) {
 	return basestore.NewMapScanner(func(s dbutil.Scanner) (string, DocumentData, error) {
 		var path string
 		var data MarshalledDocumentData
@@ -871,7 +870,7 @@ func makeDocumentScanner(serializer *serializer) func(rows *sql.Rows, queryErr e
 	})
 }
 
-func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows *sql.Rows, queryErr error) error {
+func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows basestore.Rows, queryErr error) error {
 	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
 		var idx int
 		var rawData []byte
@@ -892,13 +891,16 @@ func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk
 	})
 }
 
-// extractDefinitionResultIDs extracts the non-empty identifiers of the LSIF definition results attached to
-// any of the given ranges. The returned identifiers are unique and ordered.
-func extractDefinitionResultIDs(ranges map[ID]RangeData) []ID {
+// extractResultIDs extracts the non-empty identifiers of the LSIF definition and implementation
+// results attached to any of the given ranges. The returned identifiers are unique and ordered.
+func extractResultIDs(ranges map[ID]RangeData) []ID {
 	resultIDMap := map[ID]struct{}{}
 	for _, r := range ranges {
 		if r.DefinitionResultID != "" {
 			resultIDMap[r.DefinitionResultID] = struct{}{}
+		}
+		if r.ImplementationResultID != "" {
+			resultIDMap[r.ImplementationResultID] = struct{}{}
 		}
 	}
 

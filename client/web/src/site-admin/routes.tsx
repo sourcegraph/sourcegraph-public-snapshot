@@ -113,6 +113,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminOutboundRequestsPage'), 'SiteAdminOutboundRequestsPage'),
     },
     {
+        path: '/background-jobs',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminBackgroundJobsPage'), 'SiteAdminBackgroundJobsPage'),
+    },
+    {
         path: '/feature-flags',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminFeatureFlagsPage'), 'SiteAdminFeatureFlagsPage'),
@@ -124,6 +129,21 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./SiteAdminFeatureFlagConfigurationPage'),
             'SiteAdminFeatureFlagConfigurationPage'
         ),
+    },
+    {
+        path: '/outbound-webhooks',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/OutboundWebhooksPage'), 'OutboundWebhooksPage'),
+    },
+    {
+        path: '/outbound-webhooks/create',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage'),
+    },
+    {
+        path: '/outbound-webhooks/:id',
+        exact: true,
+        render: lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage'),
     },
     {
         path: '/webhooks',

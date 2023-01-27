@@ -201,6 +201,7 @@ func (e *externalServiceStore) Done(err error) error {
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
 	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
 	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
 	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
@@ -299,9 +300,9 @@ type ValidateExternalServiceConfigOptions struct {
 type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
 
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
-var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil)
+var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil, nil)
 
-func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error) ValidateExternalServiceConfigFunc {
+func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error, azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error) ValidateExternalServiceConfigFunc {
 	return func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 		ext, ok := ExternalServiceKinds[opt.Kind]
 		if !ok {
@@ -386,7 +387,12 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 				return nil, err
 			}
 			err = validatePerforceConnection(perforceValidators, opt.ExternalServiceID, &c)
-
+		case extsvc.KindAzureDevOps:
+			var c schema.AzureDevOpsConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return nil, err
+			}
+			err = validateAzureDevOpsConnection(azureDevOpsValidators, opt.ExternalServiceID, &c)
 		case extsvc.KindOther:
 			var c schema.OtherExternalServiceConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
@@ -452,6 +458,17 @@ func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, 
 	var err error
 	for _, validate := range gitLabValidators {
 		err = errors.Append(err, validate(c, ps))
+	}
+	return err
+}
+
+func validateAzureDevOpsConnection(azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error, _ int64, c *schema.AzureDevOpsConnection) error {
+	var err error
+	for _, validate := range azureDevOpsValidators {
+		err = errors.Append(err, validate(c))
+	}
+	if c.Projects == nil && c.Orgs == nil {
+		err = errors.Append(err, errors.New("either 'projects' or 'orgs' must be set"))
 	}
 	return err
 }

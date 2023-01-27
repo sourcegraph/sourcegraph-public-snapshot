@@ -85,7 +85,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                 )}
             </div>
             {service.supportsRepoExclusion && !(data && !error) && (
-                <div className={classNames(styles.button, 'mt-3')}>
+                <div className={classNames(styles.gridButton, 'mt-3')}>
                     <Tooltip
                         content={
                             excludingDisabled
@@ -95,6 +95,7 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                     >
                         <Button
                             variant="primary"
+                            className={styles.button}
                             onClick={event => {
                                 event.preventDefault()
                                 updateExclusionLoading(true)
@@ -114,7 +115,8 @@ export const ExternalServiceEntry: FC<ExternalServiceEntryProps> = ({
                             }}
                             disabled={excludingDisabled || (excludingLoading && !isExcluding)}
                         >
-                            {isExcluding ? <LoadingSpinner className="mr-5 ml-5" /> : 'Exclude repository'}
+                            <span className={isExcluding ? styles.invisibleText : ''}>Exclude repository</span>
+                            {isExcluding && <LoadingSpinner className={styles.loader} />}
                         </Button>
                     </Tooltip>
                 </div>

@@ -19,6 +19,7 @@ import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
@@ -36,10 +37,6 @@ type NotebooksTab = 'notebooks' | 'getting-started'
 type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName: string }[]
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
-    if (!authenticatedUser) {
-        return 'getting-started'
-    }
-
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
         case 'notebooks':
@@ -47,7 +44,7 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
         case 'getting-started':
             return 'getting-started'
     }
-    return 'notebooks'
+    return authenticatedUser ? 'notebooks' : 'getting-started'
 }
 
 function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: NotebooksTab): void {
@@ -297,7 +294,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Notebooks' })}
                                 >
                                     try Sourcegraph Cloud
                                 </Link>

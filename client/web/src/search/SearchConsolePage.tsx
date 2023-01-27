@@ -13,7 +13,7 @@ import {
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'

@@ -88,7 +88,7 @@ const Template: Story<{
     isClosed?: boolean
 }> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
     const batchChange: BatchChangeFields = useMemo(() => {
-        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec!
+        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
 
         return {
             ...MOCK_BATCH_CHANGE,
@@ -216,7 +216,7 @@ export const UnpublishableBatchSpec = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
     currentBatchSpec: {
-        ...MOCK_BATCH_CHANGE.currentSpec!,
+        ...MOCK_BATCH_CHANGE.currentSpec,
         viewerBatchChangesCodeHosts: {
             __typename: 'BatchChangesCodeHostConnection',
             totalCount: 1,

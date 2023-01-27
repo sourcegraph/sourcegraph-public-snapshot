@@ -276,7 +276,6 @@ Policies.args = {
         databaseID: 1,
         username: 'string',
         avatarURL: 'string',
-        email: 'string',
         displayName: 'string',
         siteAdmin: true,
         tags: [],

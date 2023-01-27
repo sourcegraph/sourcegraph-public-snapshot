@@ -37,10 +37,12 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* enterprise-single-program
 * iam
 * monitoring
 * monitoring-alerts
 * oss
+* oss-single-program
 * oss-web-standalone
 * oss-web-standalone-prod
 * otel
@@ -122,6 +124,8 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
+* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
+* sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols
 * syntax-highlighter
@@ -220,8 +224,8 @@ Flags:
 * `--commit, -c="<value>"`: Override branch detection with the latest build for `commit`
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
-* `--view, -v`: Open build page in browser
-* `--wait, -w`: Wait by blocking until the build is finished
+* `--wait`: Wait by blocking until the build is finished
+* `--web, --view, -w`: Open build page in web browser (--view is DEPRECATED and will be removed in the future)
 
 ### sg ci build
 
@@ -236,6 +240,8 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
+* bzl
+* wolfi
 * main-dry-run
 * docker-images-patch
 * docker-images-patch-notest
@@ -455,6 +461,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint protobuf
+
+Check protobuf code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ### sg lint format
 
 Check client code and docs for formatting errors.
@@ -490,7 +505,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:
@@ -793,6 +808,7 @@ Flags:
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--skip-version-check`: Skip validation of the instance's current version.
 * `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log

@@ -42,7 +42,7 @@ const defaultProps: StreamingSearchResultsProps = {
         url: '/users/alice',
         displayName: 'Alice',
         username: 'alice',
-        email: 'alice@email.test',
+        emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
     } as AuthenticatedUser,
     isLightTheme: true,
 

@@ -88,7 +88,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChild
                     {!viewerCanAdminister && (
                         <Alert variant="warning">
                             You don't have permission to close this batch change. See{' '}
-                            <AlertLink to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
+                            <AlertLink to="/help/batch_changes/explanations/permissions_in_batch_changes">
                                 Permissions in batch changes
                             </AlertLink>{' '}
                             for more information about the batch changes permission model.

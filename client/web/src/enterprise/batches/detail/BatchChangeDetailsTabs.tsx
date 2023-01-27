@@ -7,7 +7,7 @@ import { useHistory, useLocation } from 'react-router'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon, Link, Tab, TabPanel, TabPanels, Text } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
@@ -93,7 +93,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
-    const isBatchSpecLocallyCreated = batchChange.currentSpec?.source === BatchSpecSource.LOCAL
+    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
     const shouldDisplayExecutionsTab =
         isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
@@ -246,11 +246,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 history={history}
                                 location={location}
                                 batchChangeID={batchChange.id}
-                                currentSpecID={batchChange.currentSpec?.id}
+                                currentSpecID={batchChange.currentSpec.id}
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
-                    ) : batchChange.currentSpec ? (
+                    ) : (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -265,11 +265,19 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </div>
                             <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
-                    ) : (
-                        <>No spec yet</>
                     )}
                 </TabPanel>
                 <TabPanel>
+                    <Text className="my-3">
+                        Archived changesets are changesets created and published by an earlier version of the batch
+                        change to workspaces that are no longer in scope of the current version. They are still
+                        associated with the batch change, but they will be closed on the code host. They do not count
+                        towards the batch change completion percentage. See our{' '}
+                        <Link to="/help/batch_changes/how-tos/updating_a_batch_change#removing-changesets">
+                            how-to guide
+                        </Link>{' '}
+                        for more information.
+                    </Text>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
                         batchChangeState={batchChange.state}

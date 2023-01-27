@@ -6,9 +6,12 @@ import (
 
 	"github.com/grafana/regexp"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -24,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
@@ -42,7 +44,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
 		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
@@ -180,6 +182,12 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
 			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+		}
+	}
+
+	{ // Apply code ownership post-search filter
+		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -402,23 +410,18 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					return opts, true
 				}
 
-				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.RepoFilters = append(make([]query.ParsedRepoFilter, 0, len(opts.RepoFilters)), opts.RepoFilters...)
 				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
-				if len(patternPrefix) == 1 {
-					// No "@" in pattern? We're good.
-					opts.RepoFilters = append(opts.RepoFilters, pattern)
-					return opts, true
-				}
-
-				if patternPrefix[0] != "" {
+				if len(patternPrefix) == 1 || patternPrefix[0] != "" {
 					// Extend the repo search using the pattern value, but
-					// since the pattern contains @, only search the part
+					// if the pattern contains @, only search the part
 					// prefixed by the first @. This because downstream
 					// logic will get confused by the presence of @ and try
 					// to resolve repo revisions. See #27816.
-					if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+					repoFilter, err := query.ParseRepositoryRevisions(patternPrefix[0])
+					if err != nil {
 						// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
 						// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
 						// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
@@ -426,7 +429,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
 						return search.RepoOptions{}, false
 					}
-					opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+					opts.RepoFilters = append(opts.RepoFilters, repoFilter)
 					return opts, true
 				}
 
@@ -447,15 +450,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 					repoNamePatterns := make([]*regexp.Regexp, 0, len(repoOptions.RepoFilters))
 					for _, repoFilter := range repoOptions.RepoFilters {
-						repoFilterPrefix, _ := search.ParseRepositoryRevisions(repoFilter)
-						// Because we pass the result of f.ToBasic().PatternString() to addPatternAsRepoFilter()
-						// above, regexp meta characters in literal patterns are already escaped before the
-						// pattern is added to repoOptions, so no need to check that before compiling to regex
-						if repoOptions.CaseSensitiveRepoFilters {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(repoFilterPrefix))
-						} else {
-							repoNamePatterns = append(repoNamePatterns, regexp.MustCompile(`(?i)`+repoFilterPrefix))
-						}
+						repoNamePatterns = append(repoNamePatterns, repoFilter.RepoRegex)
 					}
 
 					addJob(&RepoSearchJob{

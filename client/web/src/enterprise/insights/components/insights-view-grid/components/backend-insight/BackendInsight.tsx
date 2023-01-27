@@ -6,19 +6,16 @@ import { useMergeRefs } from 'use-callback-ref'
 import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import {
-    SeriesDisplayOptionsInput,
-    GetInsightViewResult,
-    GetInsightViewVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import {
     BackendInsight,
     BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
+    isComputeInsight,
     useSaveInsightAsNewView,
 } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
@@ -36,7 +33,6 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
     InsightIncompleteAlert,
-    parseSeriesLimit,
 } from './components'
 
 import styles from './BackendInsight.module.scss'
@@ -84,7 +80,8 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     searchContexts: [debouncedFilters.context],
                 },
                 seriesDisplayOptions: {
-                    limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+                    numSamples: debouncedFilters.seriesDisplayOptions.numSamples,
+                    limit: debouncedFilters.seriesDisplayOptions.limit,
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
             },
@@ -114,11 +111,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     }
 
     async function handleFilterSave(filters: InsightFilters): Promise<void> {
-        const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-            limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-            sortOptions: filters.seriesDisplayOptions.sortOptions,
-        }
-        const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
+        const insightWithNewFilters = { ...insight, filters }
 
         await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -161,12 +154,27 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             <InsightCardHeader
                 title={
                     <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        to={`${window.location.origin}/insights/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         {insight.title}
                     </Link>
+                }
+                subtitle={
+                    isFetchingHistoricalData && (
+                        <Text size="small" className="text-muted">
+                            Datapoints shown may be undercounted.{' '}
+                            <Link
+                                to="/help/code_insights/explanations/current_limitations_of_code_insights#performance-speed-considerations-for-a-data-series-running-over-all-repositories"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Processing
+                            </Link>{' '}
+                            time may vary depending on the insight’s scope.
+                        </Text>
+                    )
                 }
             >
                 {isVisible && (
@@ -177,6 +185,9 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             anchor={cardElementRef}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
+                            // It doesn't make sense to have max series per point for compute insights
+                            // because there is always only one point per series
+                            isNumSamplesFilterAvailable={!isComputeInsight(insight)}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}

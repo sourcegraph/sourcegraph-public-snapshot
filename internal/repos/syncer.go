@@ -15,12 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -109,7 +107,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, sj *SyncJob) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, _ log.Logger, sj *SyncJob) (err error) {
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
@@ -546,7 +544,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	if err := src.CheckConnection(ctx); err != nil {
-		return err
+		logger.Warn("connection check failed. syncing repositories might still succeed.", log.Error(err))
 	}
 
 	results := make(chan SourceResult)
@@ -626,23 +624,6 @@ func (s *Syncer) SyncExternalService(
 		syncProgress.Synced = int32(len(seen))
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
-
-		if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.EnableWebhookRepoSync {
-			job := &webhookworker.Job{
-				RepoID:     int32(sourced.ID),
-				RepoName:   string(sourced.Name),
-				Org:        getOrgFromRepoName(sourced.Name),
-				ExtSvcID:   svc.ID,
-				ExtSvcKind: svc.Kind,
-			}
-
-			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
-			if err != nil {
-				logger.Error("enqueueing webhook build job", log.Error(err))
-			} else {
-				logger.Info("enqueued webhook build job", log.Int("ID", id))
-			}
-		}
 	}
 
 	// We don't delete any repos of site-level external services if there were any
@@ -912,12 +893,4 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
-}
-
-func getOrgFromRepoName(repoName api.RepoName) string {
-	parts := strings.Split(string(repoName), "/")
-	if len(parts) == 1 {
-		return string(repoName)
-	}
-	return parts[1]
 }

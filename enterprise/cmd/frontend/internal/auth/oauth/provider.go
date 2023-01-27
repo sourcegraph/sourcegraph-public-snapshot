@@ -16,6 +16,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -57,6 +61,8 @@ func (p *Provider) CachedInfo() *providers.Info {
 		displayName = p.SourceConfig.Github.DisplayName
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
 		displayName = p.SourceConfig.Gitlab.DisplayName
+	case p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplayName != "":
+		displayName = p.SourceConfig.Bitbucketcloud.DisplayName
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,
@@ -71,6 +77,20 @@ func (p *Provider) CachedInfo() *providers.Info {
 
 func (p *Provider) Refresh(ctx context.Context) error {
 	return nil
+}
+
+func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
+	switch account.ServiceType {
+	case extsvc.TypeGitHub:
+		return github.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeGitLab:
+		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeBitbucketCloud:
+		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
+	}
+
+	// TODO: add bitbucket cloud when the bitbucket oauth provider is merged
+	return nil, errors.Errorf("Sourcegraph currently only supports GitHub and GitLab as OAuth providers")
 }
 
 type ProviderOp struct {
