@@ -91,6 +91,11 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - Upload build trace
 
+- Pipeline for `Protobuf` changes:
+  - **Metadata**: Pipeline metadata
+  - **Linters and static analysis**: Run sg lint
+  - Upload build trace
+
 ### Bazel Exp Branch
 
 The run type for branches matching `bzl/`.
