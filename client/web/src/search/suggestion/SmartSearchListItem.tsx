@@ -11,7 +11,6 @@ import styles from './QuerySuggestion.module.scss'
 
 interface SmartSearchListItemProps {
     proposedQuery: ProposedQuery
-    key: string
     previewStyle?: boolean
 }
 
@@ -25,7 +24,6 @@ const processDescription = (description: string): string => {
 export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemProps> = ({
     proposedQuery,
     previewStyle = false,
-    key,
 }) => (
     <li key={proposedQuery.query} className={classNames(previewStyle ? 'py-2' : styles.listItem)}>
         <Link
