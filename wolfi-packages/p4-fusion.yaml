@@ -63,7 +63,6 @@ pipeline:
       tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api.tgz --strip 1
 
   # Build OpenSSL
-  # TODO: Would a pre-built OpenSSL package help avoid some of this build pain?
   - runs: |
       cd openssl-src
       ./config
