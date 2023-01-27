@@ -2,7 +2,6 @@ package codeownership
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -42,7 +41,6 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		event.Results, err = getCodeOwnersFromMatches(ctx, clients.Gitserver, &rules, event.Results)
-		fmt.Println("event is sent")
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -115,6 +113,5 @@ matchesLoop:
 			})
 		}
 	}
-	fmt.Println(ownerMatches)
 	return ownerMatches, errs
 }

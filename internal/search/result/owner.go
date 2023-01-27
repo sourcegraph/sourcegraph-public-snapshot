@@ -8,7 +8,7 @@ import (
 )
 
 type OwnerMatch struct {
-	Owner *codeownerspb.Owner
+	*codeownerspb.Owner
 
 	// The following contain information about what search the owner was matched from.
 	InputRev *string           `json:"-"`
