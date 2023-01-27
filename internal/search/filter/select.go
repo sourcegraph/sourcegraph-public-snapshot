@@ -43,6 +43,7 @@ var validSelectors = object{
 	File: {
 		"directory": nil,
 		"path":      nil,
+		"owners":    nil,
 	},
 	Repository: nil,
 	Symbol: object{

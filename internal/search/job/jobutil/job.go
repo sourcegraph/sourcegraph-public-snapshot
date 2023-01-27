@@ -1,6 +1,7 @@
 package jobutil
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -188,6 +189,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
+			if sp.Root() == filter.File && strings.Contains(sp.String(), "owners") {
+				fmt.Println("typefileowners")
+			}
 		}
 	}
 
