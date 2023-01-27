@@ -27,6 +27,7 @@ environment:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
       - wolfi-base
+      - build-base
       - rust
 
 pipeline:
