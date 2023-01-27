@@ -84,7 +84,7 @@ func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
 
 func buildWolfi(target string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":wolf: Build Wolfi base image '%s'", target),
+		pipeline.AddStep(fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
