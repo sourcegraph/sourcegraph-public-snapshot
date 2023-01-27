@@ -1,8 +1,8 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, Redirect, Route, Switch } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { matchPath, Redirect, Route as RouteV5, Switch } from 'react-router'
+import { useLocation, Route, Routes } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -252,23 +252,31 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         </div>
                     }
                 >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
+                    <AppRouterContainer>
+                        <Routes>
+                            {props.routes.map(
+                                ({ v6Element, render, condition = () => true, ...route }) =>
+                                    condition(context) &&
+                                    v6Element && <Route key={route.path} path={route.path} element={v6Element} />
+                            )}
+                        </Routes>
+                        <Switch>
+                            {props.routes.map(
+                                ({ v6Element, render, condition = () => true, ...route }) =>
+                                    condition(context) &&
+                                    !v6Element && (
+                                        <RouteV5
+                                            {...route}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            component={undefined}
+                                            render={routeComponentProps =>
+                                                render({ ...context, ...routeComponentProps })
+                                            }
+                                        />
+                                    )
+                            )}
+                        </Switch>
+                    </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>
             {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (

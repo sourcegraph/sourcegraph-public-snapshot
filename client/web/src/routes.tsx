@@ -39,7 +39,15 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
     isMacPlatform: boolean
 }
 
+// A version of LayoutRouteComponentProps that is compatible with react router v6
+export type LayoutRouteComponentPropsRRV6<T extends { [K in keyof T]?: string }> = Omit<
+    LayoutRouteComponentProps<T>,
+    'location' | 'history' | 'match' | 'staticContext'
+>
+
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
+    v6Element?: JSX.Element
+
     path: string
     exact?: boolean
     render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
@@ -70,8 +78,8 @@ export const routes: readonly LayoutRouteProps<any>[] = (
     [
         {
             path: PageRoutes.Index,
-            render: () => <Redirect to={PageRoutes.Search} />,
-            exact: true,
+            v6Element: <Redirect to={PageRoutes.Search} />,
+            render: () => null,
         },
         {
             path: PageRoutes.Search,
