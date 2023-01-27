@@ -20,7 +20,7 @@ environment:
     keyring:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
-      - alpine-baselayout-data
+      - wolfi-base
       - busybox
       - ca-certificates-bundle
       - tar
