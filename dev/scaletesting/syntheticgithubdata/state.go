@@ -102,14 +102,6 @@ type org struct {
 	Created bool
 }
 
-func (o *org) setFailedAndSave(e error) error {
-	o.Failed = e.Error()
-	if err := store.saveOrg(o); err != nil {
-		return err
-	}
-	return nil
-}
-
 type repo struct {
 	Owner         string
 	Name          string
