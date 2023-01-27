@@ -7,10 +7,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 # TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
-ARCH="x86_64"
+TARGET_ARCH="x86_64"
 branch="main"
 
-cd wolfi-packages/packages/$ARCH
+cd wolfi-packages/packages/$TARGET_ARCH
 
 # Use GCP tooling to upload new package to repo, ensuring it's on the right branch.
 # Check that this exact package does not already exist in the repo - fail if so
@@ -20,11 +20,11 @@ cd wolfi-packages/packages/$ARCH
 
 echo " * Uploading package to repository"
 
-# List all .apk files under wolfi-packages/packages/$ARCH/
+# List all .apk files under wolfi-packages/packages/$TARGET_ARCH/
 apks=(*.apk)
 for apk in "${apks[@]}"; do
   echo " * Processing $apk"
-  dest_path="gs://$GCS_BUCKET/packages/$branch/$ARCH/"
+  dest_path="gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/"
   echo "   -> File path: $dest_path / $apk"
 
   # Generate index fragment for this package

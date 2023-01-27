@@ -9,7 +9,7 @@ key_path=$(realpath ./wolfi-packages/temporary-keys/)
 # TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
-ARCH="x86_64"
+TARGET_ARCH="x86_64"
 branch="main"
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
@@ -37,7 +37,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/packages/$branch/$ARCH/*.APKINDEX.fragment" ./
+gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
@@ -49,4 +49,4 @@ tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 melange sign-index --signing-key "$key_path/melange.rsa" APKINDEX.tar.gz
 
 # Upload signed APKINDEX archive
-gsutil -u "$GCP_PROJECT" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$ARCH/"
+gsutil -u "$GCP_PROJECT" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/"
