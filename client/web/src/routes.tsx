@@ -31,6 +31,7 @@ const RedirectToUserSettings = lazyComponent(
 )
 const RedirectToUserPage = lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
 const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
+const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
@@ -181,10 +182,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             ),
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.PasswordReset,
-            render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
-            exact: true,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <ResetPasswordPage {...props} />,
         },
         {
             isV6: false,
