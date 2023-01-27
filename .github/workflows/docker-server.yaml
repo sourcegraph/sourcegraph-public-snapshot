@@ -48,15 +48,6 @@ jobs:
             type=ref,event=pr
             type=sha
 
-      - name: Tag image for each tag
-        run: |
-          while IFS= read -r tag; do
-            echo docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test $tag
-          done <<< $TAGS
-          exit 1
-        env:
-          TAGS: ${{ steps.meta-main.outputs.tags }}
-
       - name: Run pre-build script
         run: ./pre-build.sh
         working-directory: ./cmd/server
@@ -66,12 +57,13 @@ jobs:
         working-directory: ./cmd/server
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          VERSION: test
+          VERSION: build
 
-      - name: Build and push Docker main image
-        uses: docker/build-push-action@v3
-        with:
-          context: ./cmd/server
-          push: true
-          tags: ${{ steps.meta-main.outputs.tags }}
-          labels: ${{ steps.meta-main.outputs.labels }}
+      - name: Tag and push Docker images
+        run: |
+          while IFS= read -r tag; do
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:build $tag
+            docker push $tag
+          done <<< $TAGS
+        env:
+          TAGS: ${{ steps.meta-main.outputs.tags }}
