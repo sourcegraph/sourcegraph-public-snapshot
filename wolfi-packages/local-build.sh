@@ -10,7 +10,10 @@ if [ $# -eq 0 ]; then
   exit 0
 fi
 
+name=${1%/}
+echo "Building package '$name'"
+
+# Mounting /tmp can be useful for debugging: -v "$HOME/tmp":/tmp \
 docker run --privileged \
-  -v "$PWD":/work
-# -v "$HOME/tmp":/tmp \ # Useful for debugging
-cgr.dev/chainguard/melange build "$1" --arch x86_64
+  -v "$PWD":/work \
+  cgr.dev/chainguard/melange build "$name" --arch x86_64
