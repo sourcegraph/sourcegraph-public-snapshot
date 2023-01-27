@@ -6479,6 +6479,9 @@ def go_dependencies():
         importpath = "github.com/sourcegraph/conc",
         sum = "h1:9GeYVmWWa1jeOq3zGq17m10d9pjYZpiGTj/N4hQFl58=",
         version = "v0.1.0",
+        build_directives = [
+            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+        ]
     )
     go_repository(
         name = "com_github_sourcegraph_go_ctags",
