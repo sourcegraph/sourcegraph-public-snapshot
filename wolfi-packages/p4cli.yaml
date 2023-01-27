@@ -29,5 +29,6 @@ pipeline:
       expected-sha256: 3462491b61ba9cf0c5d70511b7a3280cd7c154b49bfd8c669d5761953968c159
       extract: false
   - runs: |
+      chmod +x p4
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp p4 ${{targets.destdir}}/usr/local/bin/p4
