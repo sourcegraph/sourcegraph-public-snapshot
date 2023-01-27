@@ -164,10 +164,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: (props: LayoutRouteComponentPropsRRV6<{}>) => <OrgsArea {...props} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.SiteAdminInit,
-            exact: true,
-            render: (props: LayoutRouteComponentProps<{}>) => <SiteInitPage {...props} context={window.context} />,
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SiteInitPage {...props} context={window.context} />,
         },
         {
             isV6: false,
