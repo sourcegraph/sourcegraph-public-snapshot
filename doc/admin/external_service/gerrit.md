@@ -28,12 +28,6 @@ Sourcegraph to use Gerrit's access management, see "[Repository permissions](../
 If repository permissions is configured, Gerrit has to be added as an authentication provider.
 See the [authentication documentation](../auth/index.md#gerrit).
 
-## Internal rate limits
-
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Gerrit.
-
-If enabled, the default rate is set at ??.
-
 ## Configuration
 
 Gerrit connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
