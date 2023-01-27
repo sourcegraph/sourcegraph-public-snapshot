@@ -1484,6 +1484,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    gerrit: GERRIT,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1492,7 +1493,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
     ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 

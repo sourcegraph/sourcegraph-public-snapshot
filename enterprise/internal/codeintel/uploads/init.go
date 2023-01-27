@@ -75,13 +75,6 @@ func NewService(
 	return svc
 }
 
-type serviceDependencies struct {
-	db             database.DB
-	codeIntelDB    codeintelshared.CodeIntelDB
-	gsc            GitserverClient
-	observationCtx *observation.Context
-}
-
 var (
 	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
 	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")

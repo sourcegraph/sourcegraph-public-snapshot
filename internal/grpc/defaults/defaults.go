@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -37,17 +38,19 @@ func DialOptions() []grpc.DialOption {
 // ServerOptions is a set of default server options that should be used for all
 // gRPC servers in Sourcegrah. The options can be extended with
 // service-specific options.
-func ServerOptions() []grpc.ServerOption {
+func ServerOptions(logger log.Logger) []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
 	return []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
+			internalgrpc.NewStreamPanicCatcher(logger),
 			internalgrpc.StreamServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
 		),
 		grpc.ChainUnaryInterceptor(
+			internalgrpc.NewUnaryPanicCatcher(logger),
 			internalgrpc.UnaryServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),

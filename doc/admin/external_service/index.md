@@ -96,6 +96,17 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
+        <td>Gerrit</td>
+        <td>Tier 2 (Working on Tier 1)</td>
+        <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
+        <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
+        <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
+        <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
+        <td class="indexer-implemented-y">✗</td> <!-- Code Monitors -->
+        <td class="indexer-implemented-y">✗</td> <!-- Code Insights -->
+        <td class="indexer-implemented-y">✗</td> <!-- Batch Changes -->
+      </tr>
+      <tr>
         <td>Perforce</td>
         <td>Tier 2 (Working on Tier 1)</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
@@ -122,7 +133,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
 
 #### Status definitions
 
-An code host status is:
+A code host status is:
 
 - 🟢 _Generally Available:_ Available as a normal product feature up to 100k repositories.
 - 🟡 _Partially available:_ Available, but may be limited in some significant ways (either missing or buggy functionality). If you plan to leverage this, please contact your Customer Engineer. 
@@ -142,6 +153,7 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
+- [Gerrit](gerrit.md)
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)

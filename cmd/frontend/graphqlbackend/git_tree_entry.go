@@ -41,7 +41,6 @@ type GitTreeEntryResolver struct {
 	contentOnce      sync.Once
 	fullContentBytes []byte
 	contentErr       error
-	cacheHighlighted bool
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat          fs.FileInfo

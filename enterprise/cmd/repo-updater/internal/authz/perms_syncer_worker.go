@@ -6,7 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -14,33 +15,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/group"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakePermsSyncerWorker(ctx context.Context, observationCtx *observation.Context, syncer permsSyncer) *permsSyncerWorker {
-	syncGroups := map[requestType]group.ContextGroup{
-		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(syncUsersMaxConcurrency()),
-		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
-	}
-
+func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer) *permsSyncerWorker {
 	return &permsSyncerWorker{
-		logger:     observationCtx.Logger.Scoped("PermsSyncerWorker", "Permission sync worker"),
-		syncer:     syncer,
-		syncGroups: syncGroups,
+		logger: observationCtx.Logger.Scoped("PermsSyncerWorker", "Permission sync worker"),
+		syncer: syncer,
 	}
 }
 
 type permsSyncer interface {
-	syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest)
+	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error)
+	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error)
 }
 
 type permsSyncerWorker struct {
-	logger     log.Logger
-	syncer     permsSyncer
-	syncGroups map[requestType]group.ContextGroup
+	logger log.Logger
+	syncer permsSyncer
 }
 
-func (h *permsSyncerWorker) Handle(_ context.Context, _ log.Logger, record *database.PermissionSyncJob) error {
+func (h *permsSyncerWorker) Handle(ctx context.Context, _ log.Logger, record *database.PermissionSyncJob) error {
 	reqType := requestTypeUser
 	reqID := int32(record.UserID)
 	if record.RepositoryID != 0 {
@@ -60,28 +55,39 @@ func (h *permsSyncerWorker) Handle(_ context.Context, _ log.Logger, record *data
 	// is not used anywhere in `syncer.syncPerms()`, therefore it is okay for now
 	// to pass old priority enum values.
 	// `requestQueue` can also be removed as it is only used by the old perms syncer.
-	prio := priorityLow
-	if record.Priority == database.HighPriorityPermissionSync {
-		prio = priorityHigh
+	return h.handlePermsSync(ctx, reqType, reqID, record.InvalidateCaches)
+}
+
+// handlePermsSync is effectively a sync version of `perms_syncer.syncPerms`
+// which calls `perms_syncer.syncUserPerms` or `perms_syncer.syncRepoPerms`
+// depending on a request type and logs/adds metrics of sync statistics
+// afterwards.
+func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType requestType, reqID int32, invalidateCaches bool) error {
+	switch reqType {
+	case requestTypeUser:
+		providerStatuses, err := h.syncer.syncUserPerms(ctx, reqID, false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
+		return h.handleSyncResults(reqType, providerStatuses, err)
+	case requestTypeRepo:
+		providerStatuses, err := h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
+		return h.handleSyncResults(reqType, providerStatuses, err)
+	default:
+		return errors.Newf("unexpected request type: %q", reqType)
 	}
+}
 
-	// We use a background context here because right now syncPerms is an async operation.
-	//
-	// Later we can change the max concurrency on the worker though instead of using
-	// the concurrency groups
-	syncCtx := actor.WithInternalActor(context.Background())
-	h.syncer.syncPerms(syncCtx, h.syncGroups, &syncRequest{requestMeta: &requestMeta{
-		Priority: prio,
-		Type:     reqType,
-		ID:       reqID,
-		Options: authz.FetchPermsOptions{
-			InvalidateCaches: record.InvalidateCaches,
-		},
-		// TODO(sashaostrikov): Fill this out
-		NoPerms: false,
-	}})
+func (h *permsSyncerWorker) handleSyncResults(reqType requestType, providerStates providerStatesSet, err error) error {
+	if err != nil {
+		h.logger.Error("failed to sync permissions", providerStates.SummaryField(), log.Error(err))
 
-	return nil
+		if reqType == requestTypeUser {
+			metricsFailedPermsSyncs.WithLabelValues("user").Inc()
+		} else {
+			metricsFailedPermsSyncs.WithLabelValues("repo").Inc()
+		}
+	} else {
+		h.logger.Debug("succeeded in syncing permissions", providerStates.SummaryField())
+	}
+	return err
 }
 
 func MakeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*database.PermissionSyncJob] {
@@ -101,17 +107,17 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 }
 
 func MakeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(ctx, observationCtx, permsSyncer)
+	handler := MakePermsSyncerWorker(observationCtx, permsSyncer)
+	// Number of handlers consists of user sync handlers and repo sync handlers
+	// (latter is always 1).
+	numHandlers := syncUsersMaxConcurrency() + 1
 
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
-
-		// Process only one job at a time (per instance).
-		// TODO(sashaostrikov): This should be changed once the handler above is not async anymore.
-		NumHandlers: 1,
+		NumHandlers:       numHandlers,
 	})
 }
 

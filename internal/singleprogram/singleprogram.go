@@ -34,6 +34,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
 	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
+	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
@@ -67,6 +68,7 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
+	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "repos"))
 	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
 
 	configDir, err := os.UserConfigDir()

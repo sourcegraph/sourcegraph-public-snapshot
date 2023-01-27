@@ -2,6 +2,7 @@ package backend_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
@@ -28,7 +28,7 @@ type repoFiles map[repoPath]string
 func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
-		return nil, errors.New("file does not exist")
+		return nil, os.ErrNotExist
 	}
 	return []byte(content), nil
 }

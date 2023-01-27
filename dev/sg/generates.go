@@ -51,5 +51,5 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-	return proto.Generate(ctx)
+	return proto.Generate(ctx, verbose)
 }

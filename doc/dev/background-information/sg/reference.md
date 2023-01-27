@@ -461,6 +461,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint protobuf
+
+Check protobuf code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ### sg lint format
 
 Check client code and docs for formatting errors.

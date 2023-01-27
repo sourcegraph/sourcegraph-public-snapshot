@@ -83,9 +83,13 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
 
     // Ensure that the initial file path does not update when the props change
-    const [initialFilePath] = useState(
-        props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
-    )
+    const [initialFilePath] = useState(() => {
+        let path = props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
+        if (path === '.') {
+            path = ''
+        }
+        return path
+    })
     const [treeData, setTreeData] = useState<TreeData | null>(null)
 
     const navigate = useNavigate()
@@ -140,7 +144,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
             const fullPath = element.path
-            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedPaths.has(fullPath)
+            const alreadyLoaded = element.children?.length > 0 || treeData?.loadedIds.has(element.id)
             if (alreadyLoaded || !element.isBranch) {
                 return
             }
@@ -154,7 +158,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             setTreeData(treeData => setLoadedPath(treeData!, fullPath))
         },
-        [defaultVariables, refetch, treeData?.loadedPaths, telemetryService]
+        [defaultVariables, refetch, treeData?.loadedIds, telemetryService]
     )
 
     const defaultSelectFiredRef = useRef<boolean>(false)
@@ -233,23 +237,21 @@ function renderNode({
 
     if (dotdot) {
         return (
-            <>
+            <Link
+                {...props}
+                to={dotdot}
+                onClick={event => {
+                    event.preventDefault()
+                    handleSelect(event)
+                }}
+            >
                 <Icon
                     svgPath={mdiFolderOutline}
                     className={classNames('mr-1', styles.icon)}
                     aria-label="Load parent directory"
                 />
-                <Link
-                    to={dotdot}
-                    tabIndex={-1}
-                    onClick={event => {
-                        event.preventDefault()
-                        handleSelect(event)
-                    }}
-                >
-                    ..
-                </Link>
-            </>
+                ..
+            </Link>
         )
     }
 
@@ -325,9 +327,9 @@ interface TreeData {
     // A map to quickly find the number ID for a node by its path
     pathToId: Map<string, number>
 
-    // A set for paths that have been loaded. We can not rely on children.length
-    // because a directory can have no children.
-    loadedPaths: Set<string>
+    // A set for node IDs that have been loaded. We can not rely on
+    // children.length because a directory can have no children.
+    loadedIds: Set<number>
 
     // The current path of the root node. An empty string for the root of the
     // tree.
@@ -338,7 +340,7 @@ function createTreeData(root: string): TreeData {
     return {
         nodes: [],
         pathToId: new Map(),
-        loadedPaths: new Set(),
+        loadedIds: new Set(),
         rootPath: root,
     }
 }
@@ -469,8 +471,12 @@ function appendNode(tree: TreeData, node: TreeNode): void {
 }
 
 function setLoadedPath(tree: TreeData, path: string): TreeData {
-    tree = { ...tree, loadedPaths: new Set(tree.loadedPaths) }
-    tree.loadedPaths.add(path)
+    tree = { ...tree, loadedIds: new Set(tree.loadedIds) }
+    const id = tree.pathToId.get(path)
+    if (!id) {
+        throw new Error(`Node ${id} is not in the tree`)
+    }
+    tree.loadedIds.add(id)
     return tree
 }
 

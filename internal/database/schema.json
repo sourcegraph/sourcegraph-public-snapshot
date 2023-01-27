@@ -923,6 +923,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "teams_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "temporary_settings_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -14867,6 +14876,19 @@
           "Comment": ""
         },
         {
+          "Name": "team_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "user_id",
           "Index": 2,
           "TypeName": "integer",
@@ -14898,7 +14920,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (user_id IS NOT NULL OR org_id IS NOT NULL)"
+          "ConstraintDefinition": "CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL)"
         },
         {
           "Name": "names_org_id_fkey",
@@ -14906,6 +14928,13 @@
           "RefTableName": "orgs",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        },
+        {
+          "Name": "names_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE"
         },
         {
           "Name": "names_user_id_fkey",
@@ -20483,6 +20512,263 @@
           "RefTableName": "users",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "team_members",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "team_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "team_members_team_id_user_id_key",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX team_members_team_id_user_id_key ON team_members USING btree (team_id, user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (team_id, user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "team_members_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "team_members_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "teams",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "creator_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "display_name",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('teams_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "citext",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "parent_team_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "readonly",
+          "Index": 4,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "teams_name",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX teams_name ON teams USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "teams_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX teams_pkey ON teams USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "teams_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "teams_display_name_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(display_name) \u003c= 255)"
+        },
+        {
+          "Name": "teams_name_max_length",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (char_length(name::text) \u003c= 255)"
+        },
+        {
+          "Name": "teams_name_valid_chars",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+        },
+        {
+          "Name": "teams_parent_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
