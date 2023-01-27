@@ -23,7 +23,6 @@ environment:
       - wolfi-base
       - busybox
       - ca-certificates-bundle
-      - tar
 
 pipeline:
   - uses: fetch
