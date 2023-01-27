@@ -2,14 +2,9 @@ package:
   name: p4cli
   version: 21.2
   epoch: 0
-  description: "TODO"
+  description: "Command line interface for Perforce"
   target-architecture:
     - x86_64
-  copyright:
-    - paths:
-      - "*"
-      attestation: 'TODO'
-      license: 'TODO'
   dependencies:
     runtime:
 
