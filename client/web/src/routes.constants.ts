@@ -13,7 +13,7 @@ export enum PageRoutes {
     SiteAdminInit = '/site-admin/init',
     PasswordReset = '/password-reset',
     ApiConsole = '/api/console',
-    UserArea = '/users/:username',
+    UserArea = '/users/:username/*',
     Survey = '/survey/:score?',
     Extensions = '/extensions',
     Help = '/help',
