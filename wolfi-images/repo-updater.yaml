@@ -1,9 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@local /work/packages'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -18,7 +19,7 @@ contents:
     # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
     ## repo-updater packages
-    - coursier@local
+    - coursier@sourcegraph
 
 accounts:
   groups:

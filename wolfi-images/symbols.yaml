@@ -1,9 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@local /work/packages'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
     ## Base set of packages
     - wolfi-baselayout # replaces alpine-baselayout-data
@@ -22,7 +23,7 @@ contents:
     - ca-certificates
     - jansson                    # TODO: Need to add in ctags build environment
     - libstdc++                  # TODO: For tree-sitter. Not an apk dependency
-    - ctags@local
+    - ctags@sourcegraph
 
 accounts:
   groups:

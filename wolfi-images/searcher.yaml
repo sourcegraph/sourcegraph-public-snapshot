@@ -1,9 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@local /work/packages'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -21,7 +22,7 @@ contents:
     - pcre                       # TODO: Can we upgrade to pcre2, which is maintained?
     - sqlite-libs
     - libev
-    - comby@local
+    - comby@sourcegraph
 
 accounts:
   groups:

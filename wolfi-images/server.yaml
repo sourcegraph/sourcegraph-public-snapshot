@@ -1,9 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@local /work/packages'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -38,11 +39,11 @@ contents:
     #- nginx
     #- python2
 
-    - comby@local
-    - ctags@local
-    - coursier@local
-    - p4cli@local
-    - p4-fusion@local
+    - comby@sourcegraph
+    - ctags@sourcegraph
+    - coursier@sourcegraph
+    - p4cli@sourcegraph
+    - p4-fusion@sourcegraph
 
 accounts:
   groups:
