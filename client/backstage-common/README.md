@@ -24,16 +24,33 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
 
 ```json
 {
-  "extends": "@backstage/cli/config/tsconfig.json",
-  "include": ["src"],
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist-types",
-    "rootDir": ".",
+    "module": "commonjs",
+    "target": "es2020",
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "sourceMap": true,
+    "sourceRoot": "src",
+    "baseUrl": "./src",
+    "paths": {
+      "@sourcegraph/*": ["../*"],
+      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
     "jsx": "react-jsx",
-    "useUnknownInCatchVariables": false
-  }
+  },
+  "references": [
+    {
+      "path": "../shared",
+    },
+  ],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
+  "exclude": ["node_modules", "../../node_modules", "dist"],
 }
 ```
+The above `tsconfig` was copied from `client/jetbrains` and adapted to fit our usecase.
 
 2. Take note of the plugin directory structure.
 
@@ -82,20 +99,24 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
 17 directories, 27 files
 ```
 
-3. We need to edit the `package.json` to make it compatible to be imported from outside. Edit the `package.json` to look like the following.
+3. The plugin will use libraries and components from the Sourcegraph repo which are all private and not available on the npm registry. Which means, when this plugin is installed into Backstage will try to look for any dependencies defined in the `package.json` on the npm registry. It will find some, but any Sourcegraph referenced projects, it won't be able to find anything. We thus need make some changes to the `package.json` and also look into using a buncler like `esbuild`.
+
+4. The notable changes we make in the `package.json` are that:
+* change the `main` attribute to have the `dist/index.js` - note no `cjs`. This is due to use using a bundler, which bundles everything into a `js` file.
+* add a script `es` which invokes `esbuild` with a particular config and we copy `package.dist.json` to `dist/package.json`.  `package.dist.json` is a slimmed down version of our root package.json and defines how one should install the bundled artefact of our plugin, namely `index.js`.
 
 ```json
 {
   "name": "backstage-plugin-sourcegraph-common",
   "description": "Common functionalities for the Sourcegraph plugin",
   "version": "0.1.0",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "Apache-2.0",
   "private": true,
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.cjs.js",
+    "main": "dist/index.js",
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts"
   },
@@ -103,6 +124,7 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
     "role": "common-library"
   },
   "scripts": {
+    "es": "ts-node --transpile-only ./scripts/esbuild.ts && cp package.dist.json dist/",
     "build": "backstage-cli package build",
     "lint": "backstage-cli package lint",
     "test": "backstage-cli package test",
@@ -111,33 +133,41 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
     "postpack": "backstage-cli package postpack"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.22.1"
+    "@backstage/cli": "^0.22.1",
+    "@jest/globals": "^29.4.0",
+    "@sourcegraph/tsconfig": "^4.0.1",
+    "@types/jest": "^29.4.0",
+    "ts-jest": "^29.0.5"
   },
   "dependencies": {
     "@backstage/catalog-model": "^1.1.5",
     "@backstage/config": "^1.0.6",
-    "@backstage/plugin-catalog-backend": "^1.7.1"
+    "@backstage/plugin-catalog-backend": "^1.7.1",
+    "@sourcegraph/shared": "workspace:^1.0.0"
   },
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }
+
 ```
 
-The two important edits are changing the values for the properties `main`, `type` to point to the `dist` directory.
+5. If we take a look at the `esbuild` config defined in `scripts/esbuild.ts` there are a few options to take note of:
+* we use `external` and define most of our dependencies except the Sourcegraph related ones. External tells `esbuild` that it shouldn't bundle these dependencies into the final artefact. We set it to the values we defined in our `package.json` because they can be found on the npm registry. This also explains why we don't have `@sourcegraph/*` defined there, since we **do** want them bundled. Unfortunately, some transitive dependencies will also be bundled as they're imported, which why `lodash` and `apollo` are defined. It is a bit of a cat and mouse game, to get the right dependencies excluded.
 
-4. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`. 
+6. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`.
 
-5. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json or `packages/backend/packages.json`. Now that the plugin has been 'moved' we don't want Backstage to still refer to these locations, so remove the plugin with `yarn workspace backend remove <name>`or`yarn workspace app remove <name>`.
+7. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json or `packages/backend/packages.json`. Now that the plugin has been 'moved' we don't want Backstage to still refer to these locations, so remove the plugin with `yarn workspace backend remove <name>`or`yarn workspace app remove <name>`.
 
 ### Run the plugin with Backstage / Local Development
 
-Since we copied the plugin to a different directory Backstage we need to tell Backstage where to find the plugin.
+Since we copied the plugin to a different directory we need to tell Backstage where to find the plugin.
 
 1. Make sure the plugin is built. Note that we use pnpm here and not yarn, which is because Sourcegraph uses pnpm. Both yarn and pnpm work with the command defined in the `package.json` which just executes `backstage-cli` with some args.
 
 ```console
 $ cd sourcegraph/client/backstage/plugin
-$ pnpm tsc # this generates required files in dist-types
-$ pnpm build
+$ pnpm es
 ```
 
 2. There should now be a dist directory in `sourcegraph/client/backstage/plugin`.
@@ -145,13 +175,13 @@ $ pnpm build
    For a plugin that integrates with the backend:
 
 ```console
-$ yarn workspace backend add link:~/sourcegraph/client/backstage/plugin
+$ yarn workspace backend add link:~/sourcegraph/client/backstage/plugin/dist
 ```
 
 For a plugin that integrates with the frontend:
 
 ```console
-$ yarn workspace app add link:~/sourcegraph/client/backstage/plugin
+$ yarn workspace app add link:~/sourcegraph/client/backstage/plugin/dist
 ```
 
 4. You should be able to start the Backstage app now with `yarn dev`
