@@ -25,6 +25,10 @@ const InstallGitHubAppSuccessPage = lazyComponent(
     () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
     'InstallGitHubAppSuccessPage'
 )
+const RedirectToUserSettings = lazyComponent(
+    () => import('./user/settings/RedirectToUserSettings'),
+    'RedirectToUserSettings'
+)
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -144,9 +148,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: () => <InstallGitHubAppSuccessPage />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.Settings,
-            render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RedirectToUserSettings {...props} />,
         },
         {
             isV6: false,
