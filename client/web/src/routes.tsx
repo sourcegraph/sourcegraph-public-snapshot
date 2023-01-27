@@ -103,9 +103,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SearchPageWrapper {...props} />,
         },
         {
-            isV6: false,
+            isV6: true,
             path: PageRoutes.SearchConsole,
-            render: (props: LayoutRouteComponentProps<{}>) => {
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => {
                 const { showMultilineSearchConsole } = getExperimentalFeatures()
 
                 return showMultilineSearchConsole ? (
@@ -114,7 +114,6 @@ export const routes: readonly LayoutRouteProps<any>[] = (
                     <Redirect to={PageRoutes.Search} />
                 )
             },
-            exact: true,
         },
         {
             isV6: false,
