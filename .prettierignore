@@ -16,6 +16,7 @@ vendor/
 .nyc_output/
 out/
 dist/
+dist-types/
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
@@ -41,5 +42,4 @@ client/jetbrains/.gradle
 code-intel-extensions.json
 .direnv
 pnpm-lock.yaml
-client/backstage/
 node_modules/
