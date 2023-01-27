@@ -68,7 +68,7 @@ func buildPackages(target string) (func(*bk.Pipeline), string) {
 
 func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":card_index_dividers: Building and signing repository index for branch '%s'", branch),
+		pipeline.AddStep(fmt.Sprintf(":card_index_dividers: Build and sign repository index for branch '%s'", branch),
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-repo-index.sh %s", branch)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
