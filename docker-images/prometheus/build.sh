@@ -56,7 +56,8 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --build-arg BASE_IMAGE \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION
+  --build-arg VERSION \
+  --platform linux/amd64
 
 # cd out of $BUILDDIR for cleanup
 popd
