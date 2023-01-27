@@ -14,7 +14,11 @@ To connect Gerrit to Sourcegraph:
 {
   "url": "https://gerrit.example.com",
   "username": "<admin username>",
-  "password": "<admin password>"
+  "password": "<admin password>",
+  "projects": [ // If not set, all projects on the Gerrit instance will be mirrored
+    "docs",
+    "kubernetes/kubernetes"
+  ]
 }
 ```
 
