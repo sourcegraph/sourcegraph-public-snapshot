@@ -1,1 +1,1 @@
-export { SourcegraphEntityProvider } from './SourcegraphEntityProvider';
+export { SourcegraphEntityProvider } from './SourcegraphEntityProvider'

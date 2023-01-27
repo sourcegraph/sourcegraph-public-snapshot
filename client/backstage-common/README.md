@@ -21,12 +21,11 @@ There are a few plugin types but we're only interested in the following types fo
 The plugin scaffolding now has been generated but the scaffolding assumes the plugin will stay in the Backstage repo which it won't. To make the plugin 'workable' outside of the Backstage repository we have make some additional changes.
 
 1. Add the following `tsconfig.json` to the plugin directory.
+
 ```json
 {
   "extends": "@backstage/cli/config/tsconfig.json",
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "compilerOptions": {
     "outDir": "dist-types",
     "rootDir": ".",
@@ -35,7 +34,9 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
   }
 }
 ```
+
 2. Take note of the plugin directory structure.
+
 ```bash
 
 .
@@ -80,7 +81,9 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
 
 17 directories, 27 files
 ```
+
 3. We need to edit the `package.json` to make it compatible to be imported from outside. Edit the `package.json` to look like the following.
+
 ```json
 {
   "name": "backstage-plugin-sourcegraph-common",
@@ -115,33 +118,36 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
     "@backstage/config": "^1.0.6",
     "@backstage/plugin-catalog-backend": "^1.7.1"
   },
-  "files": [
-    "dist"
-  ]
+  "files": ["dist"]
 }
-
 ```
-The two important edits are changing the values for the properties `main`, `type` to point to the `dist` directory.
-4. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`.
-5. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json  or `packages/backend/packages.json`. Now the that plugin has been 'moved' we don't want Backstage to still refer to these locations so remove the plugin with `yarn workspace backend remove <name>` or `yarn workspace app remove <name>`.
+
+The two important edits are changing the values for the properties `main`, `type` to point to the `dist` directory. 4. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`. 5. Depending on the type of plugin that was generated, a dependency entry was added to either the `packages/app/package.json  or `packages/backend/packages.json`. Now the that plugin has been 'moved' we don't want Backstage to still refer to these locations so remove the plugin with `yarn workspace backend remove <name>`or`yarn workspace app remove <name>`.
 
 ### Run the plugin with Backstage / Local Development
+
 Since we copied the plugin to a different directory Backstage we need to tell Backstage where to find the plugin.
 
 1. Make sure the plugin is build. Note we use pnpm here and not yarn, that is because Sourcegraph uses pnpm. Both yarn and pnpm work with the command defined in the `package.json` which just executes `backstage-cli` with some args.
+
 ```bash
 $ cd sourcegraph/client/backstage/plugin
 $ pnpm tsc # this generates required files in dist-types
 $ pnpm build
 ```
+
 2. There should be a dist directory now in `sourcegraphh/client/backstage/plugin`.
 3. We're now ready to show Backstage where the plugin is. Move the Backstage app directory and from the route execute
-For a plugin that integrates with the backend:
+   For a plugin that integrates with the backend:
+
 ```json
 $ yarn workspace backend add link:~/sourcegraph/client/backstage/plugin
 ```
+
 For a plugin that integrates with the frontend:
+
 ```json
 $ yarn workspace app add link:~/sourcegraph/client/backstage/plugin
 ```
+
 4. You should be able to start the Backstage app now with `yarn dev`

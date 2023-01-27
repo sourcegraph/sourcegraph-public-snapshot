@@ -1,2 +1,2 @@
-export * from './SourcegraphClient';
-export * from './Query';
+export * from './SourcegraphClient'
+export * from './Query'
