@@ -12,7 +12,7 @@ branch="main"
 
 cd wolfi-packages/packages/$ARCH
 
-# Use GCP tooling to upload new package to repo, ensuring it's on the right branch
+# Use GCP tooling to upload new package to repo, ensuring it's on the right branch.
 # Check that this exact package does not already exist in the repo - fail if so
 
 # TODO: Support branches for uploading
