@@ -7,7 +7,7 @@ export enum PageRoutes {
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
-    User = '/user',
+    User = '/user/*',
     Organizations = '/organizations',
     SiteAdmin = '/site-admin',
     SiteAdminInit = '/site-admin/init',
