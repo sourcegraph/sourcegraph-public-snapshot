@@ -1,4 +1,4 @@
-# Kustomize - deprecated version
+# [Deprecated Version] Kustomize
 
 > WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations.
 > If you have yet to deploy Sourcegraph, it is highly recommended to use Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
@@ -72,8 +72,8 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 
 We recommend that you:
 
-- [Update the `./overlay-generate-cluster` script](./operations.md#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
-- Commit your overlays changes separately—see our [customization guide](#customizations) for more details.
+- [Update the `./overlay-generate-cluster` script](../operations.md#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
+- Commit your overlays changes separately --see our [customization guide](#customizations) for more details.
 
 You can now get started with using overlays:
 
@@ -231,7 +231,7 @@ minikube stop
 
 To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](./configure.md#getting-started).
 
-Then, within the `overlays` directory of the [reference repository](./index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
+Then, within the `overlays` directory of the [reference repository](../index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
 
 ```text
 deploy-sourcegraph

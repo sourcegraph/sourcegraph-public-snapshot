@@ -40,6 +40,8 @@ However, deploying with these default settings may not be suitable for all envir
 
 ## Overlays
 
+The **overlays directory** is used to store customizations specific to your deployment environment. It allows you to create different overlays for different purposes, such as one for production and another for staging. It is best practice to avoid making changes to files outside of the overlays directory in order to prevent merge conflicts during future updates.
+
 An [overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) acts as a **customization layer** that contains a [kustomization file](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/), where components are defined as the **configuration layer** to include a set of instructions for Kustomize to generate and apply configurations to the **base layer**.
 
 Here is an example of a `kustomization` file from one of our [examples](#examples-overlays) that is configured for deploying a size XS instance to a k3s cluster:
@@ -112,6 +114,9 @@ This will ensure the files are in the correct location for the configuration pro
 > NOTE: Creating the patches directory is not mandatory unless instructed by the components defined in your overlay.
 
 ### Create a Sourcegraph overlay
+
+The [kustomization.template.yaml](#template) file found in the overlays/template directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. overlays/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
+
 
 **Step 1**: Create a new directory within the `overlays` subdirectory. 
 
@@ -247,12 +252,12 @@ With the new Kustomize we have introduced in this documentation, these issues ca
 
 > NOTE: The latest version of our Kustomize overlays does not work on instances that are v4.5.0 or older.
 
-❌ See the [docs for the deprecated version of Kustomize for Sourcegraph](deprecated.md).
+❌ See the [docs for the deprecated version of Kustomize for Sourcegraph](../deprecated/index.md).
 
 
 ## Migrating from deploy scripts
 
-Prior to version 4.5.0, custom scripts were used for deploying Sourcegraph with Kubernetes. However, as of version 4.5.0, this method is now [deprecated](deprecated.md). It is important to note that the transition from the older deployment scripts to the new Sourcegraph Kustomize setup is relatively straightforward, as the older scripts utilize Kustomize internally.
+Prior to version 4.5.0, custom scripts were used for deploying Sourcegraph with Kubernetes. However, as of version 4.5.0, this method is now [deprecated](../deprecated/index.md). It is important to note that the transition from the older deployment scripts to the new Sourcegraph Kustomize setup is relatively straightforward, as the older scripts utilize Kustomize internally.
 
 It's crucial to note that both tools are used for generating manifests for deployment and will not alter existing resources in an active cluster. The objective is to produce a new overlay that generates a similar set of resources as the ones currently used in the running cluster. This will ensure that the deployment process is smooth and does not disrupt the existing cluster resources. This change will provide an improved and more maintainable way of deploying Sourcegraph on Kubernetes clusters.
 
