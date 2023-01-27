@@ -1,7 +1,3 @@
-#
-# TODO: Get this working
-#
-
 # Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/syntax-highlighter/Dockerfile?L2
 
 package:
