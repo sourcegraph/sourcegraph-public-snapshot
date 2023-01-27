@@ -36,7 +36,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Build %s", strings.Join(targets, " ")),
+		pipeline.AddStep(fmt.Sprintf(":bazel: Test %s", strings.Join(targets, " ")),
 			cmds...,
 		)
 	}
