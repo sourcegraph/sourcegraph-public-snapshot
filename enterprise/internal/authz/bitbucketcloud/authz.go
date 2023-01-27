@@ -24,8 +24,8 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	bbcloudAuthProviders := make(map[string]*schema.BitbucketCloudAuthProvider)
 	for _, p := range authProviders {
 		if p.Bitbucketcloud != nil {

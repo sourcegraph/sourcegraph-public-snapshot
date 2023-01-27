@@ -12,8 +12,8 @@ import (
 )
 
 // NewAuthzProviders returns the set of Gerrit authz providers derived from the connections.
-func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	gerritAuthProviders := make(map[string]*schema.GerritAuthProvider)
 	for _, p := range authProviders {
 		if p.Gerrit == nil {

@@ -23,8 +23,8 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	for _, c := range conns {
 		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
 		if err != nil {

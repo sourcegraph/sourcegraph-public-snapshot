@@ -37,8 +37,8 @@ func NewAuthzProviders(
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
-) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {

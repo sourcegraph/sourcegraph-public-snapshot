@@ -23,8 +23,8 @@ import (
 // to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
-) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")

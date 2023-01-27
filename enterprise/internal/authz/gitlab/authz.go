@@ -28,8 +28,8 @@ func NewAuthzProviders(
 	db database.DB,
 	cfg schema.SiteConfiguration,
 	conns []*types.GitLabConnection,
-) *atypes.ProviderInitResults {
-	initResults := &atypes.ProviderInitResults{}
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
 		p, err := newAuthzProvider(db, c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
