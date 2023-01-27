@@ -89,7 +89,8 @@ func buildWolfi(target string) func(*bk.Pipeline) {
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			// Wait for repo to be re-indexed as images may depend on new packages
-			bk.DependsOn("buildRepoIndex"),
+			// TODO: Only add dependency when buildRepoIndex runs
+			// bk.DependsOn("buildRepoIndex"),
 		)
 	}
 }
