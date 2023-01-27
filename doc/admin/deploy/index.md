@@ -4,42 +4,15 @@ title: Deployment Overview
 
 # Deployment Overview
 
-Sourcegraph supports different deployment methods for different purposes. Each deployment type requires different levels of investment and technical understanding. What works best for you and your team depends on the needs and desired outcomes for your business.
-
-If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose.
-
-In general:
-
-- For most customers, we recommend Sourcegraph Cloud, managed entirely by Sourcegraph.
-- For customers who want to self-host, we recommend one of the single-node deployment options.
-- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by emails (sales@sourcegraph.com) if you pursue this option.
-- If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
-
-## Recommended
-
-<div>
-  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
-    <div class="cloud-cta-copy">
-      <h2>Get Sourcegraph on your code.</h2>
-      <h3>A single-tenant instance managed by Sourcegraph.</h3>
-      <p>Sign up for a 30 day trial for your team.</p>
-    </div>
-    <div class="cloud-cta-btn-container">
-      <div class="visual-btn">Get free trial now</div>
-    </div>
-  </a>
-</div>
+Sourcegraph provides a variety of deployment options to meet the diverse needs of our users. Each method requires varying levels of technical expertise and investment. The appropriate choice for your organization will depend on your specific goals and requirements. The following section provides an overview of the available deployment options and the associated level of investment and technical understanding required.
 
 ## Deployment types
 
-To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable. In short, you **cannot** change your deployment type of a running instance.
+When planning to deploy Sourcegraph, it is important to first determine the appropriate deployment method for your organization. For example, if you choose to deploy using Kubernetes, you will need to make a decision on whether to use Helm or not, as they are mutually exclusive. Once a deployment type is selected and implemented, it cannot be changed for a running instance.
 
-Each of the deployment types listed below provides a different level of capability. As mentioned previously, you shall pick a deployment type based on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
+The deployment types available for Sourcegraph have varying levels of capabilities. When selecting a deployment type, it is important to consider both the needs of your business as well as the technical expertise available within your organization. As previously mentioned, it is not possible to change the deployment type of a running instance, so it's important to make an informed decision. The following sections provide more detailed recommendations for each deployment type to assist you in making your decision.
 
-Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
-
-
-### [Single-machine install-script](single-node/script.md) 
+### [Install-script for single-machine](single-node/script.md) 
 
 Quickly install Sourcegraph onto a single Linux machine using our install script.
 
@@ -55,13 +28,13 @@ Currently available in the following hosts:
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
+Please note that machine images are recommended for organizations who have the necessary technical expertise and resources to maintain and manage their own infrastructure.
+
 ### [Kubernetes](kubernetes/index.md)
 
-Kubernetes is recommended for non-standard deployments where our Machine Images or install-script is not a viable option.
+Kubernetes is recommended for non-standard deployments where setting up a Sourcegraph instance with our Machine Images or install-script is not a viable option.
 
-We do not recommend this method if you do not have an established infrastructure that is built on Kubernetes.
-
-There are two ways to deploy Sourcegraph to a Kubernetes cluster:
+Below are the supported methods to deploy Sourcegraph on Kubernetes:
 
 - **Kustomize** utilize the built-in feature of the `kubectl` command tool and provides the flexibility to configure your deployment
 - **Helm** provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience
@@ -73,6 +46,58 @@ Both paths require extensive Kubernetes knowledge to set up and maintain. For te
   <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
 </div>
 
+ We strongly recommended you to contact us at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to learn more about the technical complexities involved to make sure Kubernetes is the best option for you and your teams. We do not recommend this method if you do not have an established infrastructure that is built on Kubernetes.
+
+### ARM / ARM64 support
+
+Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+
+
+## Recommendations
+
+Some of the options below are recommended for individuals/teams who have the necessary technical expertise and resources to maintain and manage their own infrastructure, while Sourcegraph Cloud and Sourcegraph App are more suitable for users who don't want to manage the infrastructure themselves.
+
+### Cloud solution
+
+For Enterprises looking for a cloud solution:
+
+  - [Sourcegraph Cloud](https://signup.sourcegraph.com/) - A cloud instance hosted and maintained by Sourcegraph
+
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
+  </a>
+</div>
+  
+### Self-hosted solution - single-node
+
+For Enterprises looking for a self-hosted solution:
+  
+  - [Machine images](machine-images/index.md) - An option to run Sourcegraph on your own infrastructure using pre-configured machine images
+  - Linux Virtual Machines with our [install-script](single-node/script.md) - An option to set up a single-node Sourcegraph deployment using a script provided by Sourcegraph
+  
+### Self-hosted solution - multi-node
+
+For large Enterprises that require a multi-node, self-hosted solution
+
+  - [Kubernetes with Kustomize](kubernetes/kustomize/index.md) - A multi-node deployment option using Kubernetes and Kustomize
+  - [Kubernetes with Helm](kubernetes/helm.md) - A multi-node deployment option using Kubernetes and Helm
+
+We strongly recommended you to contact us at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to learn more about the technical complexities involved to make sure Kubernetes is the best option for you and your teams.
+
+### Non-production environments on local machines
+
+  - Sourcegraph App (Coming soon) - A standalone application for local development and experimentation
+  - [Docker Compose](docker-compose/index.md) - A deployment option using Docker Compose
+  - [Docker Single Container](docker-single-container/index.md) - A deployment option using a single Docker container
+  
 ---
 
 ## Reference repositories
@@ -85,7 +110,9 @@ For more information, please read [our docs on setting up your own copy of the r
 
 Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. You can find your instance size using the size chart in our [Instance Size docs](instance-size.md). Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
 
-In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
+Sourcegraph also provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+
+In addition you can review our [configuration docs](../config/index.md) for overall Sourcegraph configuration.
 
 ## Operation
 
@@ -131,7 +158,3 @@ See the following guides to use an external or managed version of each service t
 - Amazon Web Services: [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/), and [S3](https://aws.amazon.com/s3/) for storing user uploads.
 - Google Cloud: [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 - Digital Ocean: [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/), [Redis](https://www.digitalocean.com/products/managed-databases-redis/), and [Spaces](https://www.digitalocean.com/products/spaces/) for storing user uploads.
-
-### ARM / ARM64 support
-
-> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.

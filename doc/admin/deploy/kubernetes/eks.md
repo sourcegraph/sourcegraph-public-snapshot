@@ -34,10 +34,10 @@ Through this guide, we will be using a number of parameters starting with `$` th
 
 Before getting started, we need to identify the size for our initial cluster. You can use the following chart as reference:
 
-| Users    | `$NODE_TYPE` | `$NODE_MIN` | `$NODE_MAX` | Cost est.    |
-| -------- | ------------ | ----------- | ----------- | ------------ |
-| 10-500   | m5.4xlarge   | 3           | 6           | $59-118/day  |
-| 500-2000 | m5.4xlarge   | 6           | 10          | $118-195/day |
+| Users    | `$NODE_TYPE`  | `$NODE_MIN` | `$NODE_MAX` | Cost est.    |
+| -------- | ------------- | ----------- | ----------- | ------------ |
+| 10-500   | m6a.4xlarge   | 3           | 6           | $59-118/day  |
+| 500-2000 | m6a.4xlarge   | 6           | 10          | $118-195/day |
 
 > **Note:** You can modify these values later on to scale up/down the number of worker nodes using the `eksctl` command line. For more information please the [eksctl documentation](https://eksctl.io/)
 
