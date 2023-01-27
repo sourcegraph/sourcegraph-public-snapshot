@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -42,7 +41,7 @@ func NewService(
 	locker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		if rankingBucketCredentialsFile == "" {
 			return nil
 		}
 
@@ -74,13 +73,6 @@ func NewService(
 	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
 
 	return svc
-}
-
-type serviceDependencies struct {
-	db             database.DB
-	codeIntelDB    codeintelshared.CodeIntelDB
-	gsc            GitserverClient
-	observationCtx *observation.Context
 }
 
 var (

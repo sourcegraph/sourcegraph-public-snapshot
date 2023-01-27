@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
@@ -338,7 +338,7 @@ func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batches
 	return cacheEntries, nil
 }
 
-func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.LogEvent {
+func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.LogEvent {
 	if len(logs) < 1 {
 		return nil
 	}

@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/markdown"
+import "github.com/sourcegraph/sourcegraph/internal/markdown"
 
 type Markdown string
 

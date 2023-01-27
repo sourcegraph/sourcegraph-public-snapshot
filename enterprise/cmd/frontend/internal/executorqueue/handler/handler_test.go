@@ -8,9 +8,9 @@ import (
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
@@ -95,7 +95,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -126,7 +126,7 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -155,7 +155,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -186,7 +186,7 @@ func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}

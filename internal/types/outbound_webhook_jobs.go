@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 type OutboundWebhookJob struct {
@@ -23,7 +23,7 @@ type OutboundWebhookJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 }

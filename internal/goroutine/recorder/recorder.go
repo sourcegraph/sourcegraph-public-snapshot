@@ -60,7 +60,7 @@ func (m *Recorder) RegistrationDone() {
 
 	// Save/update all known recordables
 	for _, r := range m.recordables {
-		m.saveKnownRoutine(r)
+		m.SaveKnownRoutine(r)
 	}
 }
 
@@ -93,8 +93,8 @@ func (m *Recorder) saveKnownHostName() {
 	}
 }
 
-// saveKnownRoutine updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
-func (m *Recorder) saveKnownRoutine(recordable Recordable) {
+// SaveKnownRoutine updates the routine in Redis. Also adds it to the list of known recordables if it doesn’t exist.
+func (m *Recorder) SaveKnownRoutine(recordable Recordable) {
 	r := serializableRoutineInfo{
 		Name:        recordable.Name(),
 		Type:        recordable.Type(),

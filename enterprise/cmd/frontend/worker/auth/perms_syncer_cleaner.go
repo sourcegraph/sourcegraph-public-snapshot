@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -30,6 +31,21 @@ func (p *permissionSyncJobCleaner) Config() []env.Config {
 	return nil
 }
 
+const defaultCleanupInterval = time.Minute
+
+var cleanupInterval = defaultCleanupInterval
+
+var watchConfOnce = sync.Once{}
+
+func loadCleanupIntervalFromConf() {
+	seconds := conf.Get().PermissionsSyncJobCleanupInterval
+	if seconds <= 0 {
+		cleanupInterval = defaultCleanupInterval
+	} else {
+		cleanupInterval = time.Duration(seconds) * time.Second
+	}
+}
+
 func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
@@ -46,19 +62,25 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 		Metrics: m,
 	})
 
+	watchConfOnce.Do(func() {
+		conf.Watch(loadCleanupIntervalFromConf)
+	})
+
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutineWithMetrics(
+		goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
 			context.Background(),
 			"auth.permission_sync_job_cleaner",
 			p.Description(),
-			1*time.Minute, goroutine.HandlerFunc(
+			func() time.Duration { return cleanupInterval },
+			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					start := time.Now()
 					cleanedJobs, err := cleanJobs(ctx, db)
 					m.Observe(time.Since(start).Seconds(), float64(cleanedJobs), &err)
 					return err
 				},
-			), operation,
+			),
+			operation,
 		)}, nil
 }
 

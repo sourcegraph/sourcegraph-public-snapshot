@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
