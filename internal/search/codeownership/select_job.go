@@ -11,14 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwnersSearch(child job.Job, owning string) job.Job {
+func NewSelectOwnersSearch(child job.Job) job.Job {
 	return &selectOwnersJob{
-		child:  child,
-		owning: owning,
+		child: child,
 	}
 }
 
@@ -61,14 +59,6 @@ func (s *selectOwnersJob) Name() string {
 }
 
 func (s *selectOwnersJob) Fields(v job.Verbosity) (res []otlog.Field) {
-	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			trace.Strings("owning", []string{s.owning}),
-		)
-	}
 	return res
 }
 
