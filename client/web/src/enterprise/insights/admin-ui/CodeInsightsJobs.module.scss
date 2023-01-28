@@ -1,0 +1,45 @@
+
+.header {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: minmax(15rem, 30%) auto;
+    grid-template-areas:
+        'actions actions'
+        'filters filters'
+        'orderBy search';
+
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.status-filter {
+    min-width: 50%;
+    grid-area: filters;
+    justify-self: start;
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    // reset wildcard Label font weight styles
+    font-weight: normal;
+    margin: 0;
+}
+
+.order-by {
+    grid-area: orderBy;
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.search {
+    grid-area: search;
+}
