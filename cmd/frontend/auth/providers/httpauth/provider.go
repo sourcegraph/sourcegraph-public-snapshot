@@ -16,7 +16,7 @@ import (
 const userHeader = "X-Forwarded-User"
 const usernameHeader = "X-Forwarded-Preferred-Username"
 const emailHeader = "X-Forwarded-Email"
-const secretToken = "X-Secret-Token"
+const secretTokenHeader = "X-Secret-Token"
 
 func Init(db database.DB, preferEmailToUsername bool, secretToken string) {
 	f := middleware(db, preferEmailToUsername, secretToken)
@@ -31,7 +31,7 @@ func Init(db database.DB, preferEmailToUsername bool, secretToken string) {
 func middleware(db database.DB, preferEmailToUsername bool, secretToken string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			secretTokenInHeader := r.Header.Get(secretToken)
+			secretTokenInHeader := r.Header.Get(secretTokenHeader)
 			if secretToken != "" && secretTokenInHeader == "" {
 				next.ServeHTTP(w, r)
 				return
