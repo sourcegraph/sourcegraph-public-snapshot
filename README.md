@@ -17,7 +17,7 @@ This is a fork of SourceGraph with a few modifications:
 
 In this mode, disabled by default, the user information is fetched from the HTTP headers. This means that the user information is not verified by SourceGraph. You must only use this mode if you are sure that no direct access to SourceGraph is possible.
 
-The headers are `X-Forwarded-User`, `X-Forwarded-Email`, and `X-Forwarded-Preferred-Username`. Make sure that no one can contact sourcegraph with these headers set, only your reverse proxy must be allowed to do so. In a kubernetes cluster, a network policy can be used to prevent other pods from accessing SourceGraph directly.
+The headers are `X-Forwarded-User`, `X-Forwarded-Email`, and `X-Forwarded-Preferred-Username`. Make sure that no one can contact sourcegraph with these headers set, only your reverse proxy must be allowed to do so.
 
 ### Configuration
 
@@ -49,8 +49,7 @@ SourceGraph also provide authorisation tokens to access the API. If you want to 
 
 Infortunately it means that you cannot use these editor extensions if source graph is behind an oauth2 proxy.
 
-You may want then to expose sourcegraph without the oauth2 proxy, on another endpoint for example. If you do so, make sure that it is not in Oauth2 Proxy mode, or that the `X-Forwarded-*` headers are not set and cannot be sent by the users directly. You may want to use a reverse proxy such as Traefik, Caddy, or Nginx to prevent this. If you use Kubernetes, this can usually be configured within the Ingress.
-
+However, you could expose sourcegraph directly without the oauth2 proxy on the `/.api/*` paths when an `Authorization` header is present for example. If you do so, make sure that the `X-Forwarded-*` headers are not set and cannot be sent by the users directly. You may want to use a reverse proxy such as Traefik or Nginx to achieve this.
 
 ## No warranty included
 
