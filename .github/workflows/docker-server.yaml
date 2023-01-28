@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - libre
+    tags:
+      - "*"
   pull_request:
     branches:
       - libre

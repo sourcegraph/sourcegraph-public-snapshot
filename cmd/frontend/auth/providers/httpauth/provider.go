@@ -16,9 +16,10 @@ import (
 const userHeader = "X-Forwarded-User"
 const usernameHeader = "X-Forwarded-Preferred-Username"
 const emailHeader = "X-Forwarded-Email"
+const secretToken = "X-Secret-Token"
 
-func Init(db database.DB) {
-	f := middleware(db)
+func Init(db database.DB, preferEmailToUsername bool, secretToken string) {
+	f := middleware(db, preferEmailToUsername, secretToken)
 	auth.RegisterMiddlewares(
 		&auth.Middleware{
 			API: f,
@@ -27,9 +28,21 @@ func Init(db database.DB) {
 	)
 }
 
-func middleware(db database.DB) func(next http.Handler) http.Handler {
+func middleware(db database.DB, preferEmailToUsername bool, secretToken string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			secretTokenInHeader := r.Header.Get(secretToken)
+			if secretToken != "" && secretTokenInHeader == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if secretTokenInHeader != secretToken {
+				log15.Error("invalid secret token", "secretTokenInHeader", secretTokenInHeader)
+				http.Error(w, "invalid secret token", http.StatusUnauthorized)
+				return
+			}
+
 			rawUser := r.Header.Get(userHeader)
 			rawUsername := r.Header.Get(usernameHeader)
 			rawEmail := r.Header.Get(emailHeader)
@@ -40,9 +53,16 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				return
 			}
 
-			username, err := auth.NormalizeUsername(rawUsername)
+			var rawUsernameOrEmail string
+			if preferEmailToUsername {
+				rawUsernameOrEmail = rawEmail
+			} else {
+				rawUsernameOrEmail = rawUsername
+			}
+
+			username, err := auth.NormalizeUsername(rawUsernameOrEmail)
 			if err != nil {
-				log15.Error("unable to normalize username", "usernameHeader", rawUsername, "err", err)
+				log15.Error("unable to normalize username", "rawUsernameOrEmail", rawUsernameOrEmail, "err", err)
 				http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 				return
 			}

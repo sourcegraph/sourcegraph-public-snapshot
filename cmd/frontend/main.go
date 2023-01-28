@@ -24,7 +24,7 @@ func main() {
 
 	shared.Main(func(db database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
 		if envvar.OAuth2ProxyMode() {
-			httpauth.Init(db)
+			httpauth.Init(db, envvar.OAuth2ProxyPreferEmailToUsername(), envvar.OAuth2ProxySecretToken())
 		}
 		return enterprise.DefaultServices()
 	})
