@@ -26,6 +26,7 @@ const GET_CONTEXT_BY_NAME = gql`
         searchContexts(query: $query) {
             nodes {
                 spec
+                query
             }
         }
     }
@@ -49,9 +50,7 @@ export const createSearchContextValidator =
                 return error.message
             }
 
-            const {
-                searchContexts: { nodes },
-            } = data
+            const nodes = data.searchContexts.nodes.filter(node => node.query !== '')
 
             if (!nodes.some(context => context.spec === sanitizedValue)) {
                 return `We couldn't find the context ${sanitizedValue}. Please ensure the context exists.`
