@@ -625,8 +625,7 @@ type ExternalServiceSyncJob struct {
 
 // TODO Descr
 type ExternalServiceSourceRepo struct {
-	ID                api.RepoID `json:"id"`
-	ExternalServiceID int64      `json:"externalServiceID"` //TODO Remove?
+	ID api.RepoID `json:"id"`
 	// RepoID            api.RepoID `json:"repoID"`
 
 	CloneURLs []string `json:"cloneURLs"`

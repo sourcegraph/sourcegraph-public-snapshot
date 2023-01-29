@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -116,7 +117,41 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
+	repoQuery := []string{"affiliated"}
+
+	config := struct {
+		Url             string   `json:"url"`
+		Token           string   `json:"token"`
+		RepositoryQuery []string `json:"repositoryQuery"`
+	}{
+		Url:             req.Url,
+		Token:           req.Token,
+		RepositoryQuery: repoQuery,
+	}
+
+	configMarshalled, err := json.Marshal(config)
+	if err != nil {
+		// TODO Error Handling
+	}
+
+	confMarshString := string(configMarshalled)
+	config1 := extsvc.NewUnencryptedConfig(confMarshString)
+	config2 := extsvc.NewUnencryptedConfig(req.Config)
+
+	externalService1 := &types.ExternalService{
+		Kind:   req.Kind,
+		Config: config1,
+	}
+
+	externalService2 := &types.ExternalService{
+		Kind:   req.Kind,
+		Config: config2,
+	}
+
+	es := externalService1
+
+	es = externalService2
+	logger := s.Logger.With(log.String("ExternalServiceKind", es.Kind))
 
 	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
 	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
@@ -126,18 +161,6 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
 	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
-
-	externalServiceID := req.ExternalServiceID
-
-	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			s.respond(w, http.StatusNotFound, err)
-		} else {
-			s.respond(w, http.StatusInternalServerError, err)
-		}
-		return
-	}
 
 	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
@@ -178,7 +201,6 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		repositories []*types.Repo
 	)
 
-	repositories = make([]*types.Repo, len(results))
 	for res := range results {
 		if res.Err != nil {
 			//for _, extSvc := range res.Source.ExternalServices() {
@@ -188,6 +210,10 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 			continue
 		}
 		repositories = append(repositories, res.Repo)
+	}
+
+	if repositories == nil {
+		repositories = make([]*types.Repo, 0)
 	}
 
 	var result *protocol.ExternalServiceRepositoriesResult

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"strconv"
 	"strings"
 	"sync"
@@ -447,73 +448,52 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	return &EmptyResponse{}, nil
 }
 
-//
-//type externalServiceRepositoriesArgs struct {
-//	Input externalServiceRepositoriesInput
-//}
-//
-//type externalServiceRepositoriesInput struct {
-//	Kind        string
-//	DisplayName string
-//	Config      string
-//}
-//
-//func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceResolver, error) {
-//	start := time.Now()
-//	var err error
-//	defer reportExternalServiceDuration(start, Add, &err)
-//
-//	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-//		err = auth.ErrMustBeSiteAdmin
-//		return nil, err
-//	}
-//
-//	externalService := &types.ExternalService{
-//		Kind:        args.Input.Kind,
-//		DisplayName: args.Input.DisplayName,
-//		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
-//	}
-//
-//	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-//
-//	// if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExternalServiceRepositories(ctx, externalService); err != nil {
-//	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExternalServiceRepositories(ctx, args.Input.DisplayName, args.Input.Kind, extsvc.NewUnencryptedConfig(args.Input.Config)); err != nil {
-//		//TODO err handling
-//		// res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
-//	}
-//
-//	return res, err
-//}
+type externalServiceRepositoriesArgs struct {
+	Input externalServiceRepositoriesInput
+}
 
-//func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *getExternalServiceRepositoriesArgs) (*externalServiceResolver, error) {
-//	start := time.Now()
-//	// 🚨 SECURITY: Only site admins may add external services. User's external services are not supported anymore.
-//	var err error
-//	defer reportExternalServiceDuration(start, Add, &err)
-//
-//	if err := externalServicesWritable(); err != nil {
-//		return nil, err
-//	}
-//
-//	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-//		err = auth.ErrMustBeSiteAdmin
-//		return nil, err
-//	}
-//
-//	externalService := &types.ExternalService{
-//		Kind:        args.Input.Kind,
-//		DisplayName: args.Input.DisplayName,
-//		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
-//	}
-//
-//	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
-//		return nil, err
-//	}
-//
-//	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-//	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
-//		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
-//	}
-//
-//	return res, nil
-//}
+type externalServiceRepositoriesInput struct {
+	Kind   string
+	Token  string
+	Url    string
+	Config string
+
+	// TODO Add namespace?
+
+	// TODO
+	// First *int32
+}
+
+// TODO Comment Desc,
+// Error Handling,
+// Logging,
+// Metrics
+func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceSourceRepositoryConnectionResolver, error) {
+	start := time.Now()
+	var err error
+	defer reportExternalServiceDuration(start, Add, &err)
+
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = auth.ErrMustBeSiteAdmin
+		return nil, err
+	}
+
+	_, err = r.repoupdaterClient.ExternalServiceRepositories(ctx, args.Input.Kind, args.Input.Token, args.Input.Url, args.Input.Config)
+	res := externalServiceSourceRepositoryConnectionResolver{
+		db:                r.db,
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}
+	return &res, err
+}
+
+type externalServiceSourceRepositoryConnectionResolver struct {
+	args              *externalServiceRepositoriesArgs
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceSourceRepo
+	totalCount int32
+	err        error
+}

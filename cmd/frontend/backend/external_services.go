@@ -29,7 +29,6 @@ const syncExternalServiceTimeout = 15 * time.Second
 type ExternalServicesService interface {
 	SyncExternalService(context.Context, *types.ExternalService, time.Duration) error
 	ExcludeRepoFromExternalServices(context.Context, []int64, api.RepoID) error
-	// ExternalServiceRepositories(ctx context.Context, displayName string, kind string, config *extsvc.EncryptableConfig) error
 }
 
 type externalServices struct {
@@ -75,8 +74,8 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 
 //
 //// TODO Comments
-//// func (e *externalServices) ExternalServiceRepositories(ctx context.Context, svc *types.ExternalService) (err error) {
-//func (e *externalServices) ExternalServiceRepositories(ctx context.Context, displayName string, kind string, config *extsvc.EncryptableConfig) (err error) {
+//// func (e *externalServices) ExternalServiceRepositories(ctx context.Context, displayName string, kind string, config *extsvc.EncryptableConfig) (err error) {
+//func (e *externalServices) ExternalServiceRepositories(ctx context.Context, svc *types.ExternalService) (err error) {
 //	//TODO desc
 //	logger := e.logger.Scoped("ExternalServiceRepositories", "")
 //
@@ -101,7 +100,7 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 //		}
 //	}()
 //
-//	_, err = e.repoupdaterClient.ExternalServiceRepositories(ctx, )
+//	_, err = e.repoupdaterClient.ExternalServiceRepositories(ctx, svc)
 //	return err
 //}
 

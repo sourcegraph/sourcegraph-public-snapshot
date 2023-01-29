@@ -220,7 +220,7 @@ func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*
 // TODO Mock sourceRepos() for tests
 
 func (r *externalServiceResolver) SourceRepos(ctx context.Context, args *externalServiceSourceReposArgs) (*externalServiceSourceRepositoryConnectionResolver, error) {
-	es := r.externalService
+	//es := r.externalService
 	//parsed, err := extsvc.ParseEncryptableConfig(ctx, es.Kind, es.Config)
 	//if err != nil {
 	// TODO
@@ -249,10 +249,10 @@ func (r *externalServiceResolver) SourceRepos(ctx context.Context, args *externa
 	//}
 
 	return &externalServiceSourceRepositoryConnectionResolver{
-		db:                r.db,
-		args:              args,
-		externalService:   es,
-		externalServiceID: es.ID,
+		db: r.db,
+		//args: args,
+		//externalService:   es,
+		//externalServiceID: es.ID,
 		repoupdaterClient: repoupdaterClient,
 	}, nil
 }
@@ -480,19 +480,6 @@ func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.Re
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
 
-type externalServiceSourceRepositoryConnectionResolver struct {
-	args              *externalServiceSourceReposArgs
-	externalServiceID int64
-	externalService   *types.ExternalService
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
-
-	once       sync.Once
-	nodes      []*types.ExternalServiceSourceRepo
-	totalCount int32
-	err        error
-}
-
 type externalServiceSourceReposArgs struct {
 	First *int32
 }
@@ -515,7 +502,7 @@ func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.
 		//}
 		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
 
-		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.externalService.ID)
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url, r.args.Input.Config)
 		if err != nil {
 			r.err = err
 			return
@@ -524,7 +511,7 @@ func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.
 		for _, repo := range res.Repos {
 			//r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ExternalServiceID: r.externalServiceID, CloneURLs: repo.CloneURLs(), Name: repo.Name})
 
-			r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ID: repo.ID, ExternalServiceID: r.externalServiceID, CloneURLs: make([]string, 0, 1), Name: repo.Name})
+			r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ID: repo.ID, CloneURLs: repo.CloneURLs(), Name: repo.Name})
 		}
 		r.totalCount = int32(len(r.nodes))
 	})

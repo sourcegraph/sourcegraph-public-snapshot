@@ -914,6 +914,28 @@ input Event {
 }
 
 """
+TODO
+"""
+input ExternalServiceRepositoriesInput {
+    """
+    The kind of the external service.
+    """
+    kind: ExternalServiceKind!
+    """
+    TODO
+    """
+    token: String!
+    """
+    TODO
+    """
+    url: String!
+    """
+    TODO
+    """
+    config: String!
+}
+
+"""
 A new external service.
 """
 input AddExternalServiceInput {
@@ -1282,6 +1304,10 @@ type Query {
         """
         after: String
     ): ExternalServiceConnection!
+    """
+    TODO
+    """
+    externalServiceRepositories(input: ExternalServiceRepositoriesInput!): ExternalServiceSourceRepositoryConnection!
     """
     List all repositories.
     """
