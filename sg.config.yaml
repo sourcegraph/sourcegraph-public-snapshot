@@ -1120,10 +1120,14 @@ commandsets:
       - otel-collector
       - jaeger
 
-  enterprise-single-program:
+  app:
     requiresDevPrivate: true
+    env:
+      # TODO(slimsag): remove the need for this
+      BLOBSTORE_DATA_DIR: /tmp/blobstore-data
     checks:
       - docker
+      # TODO: App's dependency on Redis will be removed.
       - redis
       - postgres
       - git
@@ -1131,19 +1135,7 @@ commandsets:
       - sourcegraph
       - docsite
       - web
-      - syntax-highlighter
-      - caddy
-
-  oss-single-program:
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - sourcegraph-oss
-      - docsite
-      - oss-web
+      # TODO: App's dependency on syntax-highlighter will be removed.
       - syntax-highlighter
       - caddy
 
