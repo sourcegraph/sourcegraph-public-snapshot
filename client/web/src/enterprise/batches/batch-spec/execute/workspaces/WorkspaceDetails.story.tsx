@@ -159,6 +159,3 @@ VisibleWorkspaceCanceling.storyName = 'Visible workspace: canceling'
 
 export const VisibleWorkspaceCanceled: Story = () => <BaseStory node={CANCELED_WORKSPACE} />
 VisibleWorkspaceCanceled.storyName = 'Visible workspace: canceled'
-
-export const VisibleWorkspaceLargeLogOutput: Story = () => <BaseStory node={CANCELED_WORKSPACE} />
-VisibleWorkspaceLargeLogOutput.storyName = 'Visible workspace: Large Log Output'

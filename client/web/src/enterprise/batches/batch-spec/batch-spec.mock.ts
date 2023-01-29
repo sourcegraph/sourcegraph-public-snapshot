@@ -616,19 +616,23 @@ export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
     },
 ]
 
+const generateMockOutputLines = (start: number, end: number): string[] => {
+    const result: string[] = []
+
+    for (let i = start; i <= end; i++) {
+        result.push(`stdout: Hello world ${i}`)
+    }
+
+    return result
+}
+
 export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE = {
     node: {
         __typename: 'VisibleBatchSpecWorkspace',
         step: {
             outputLines: {
                 __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
-                nodes: [
-                    'stdout: Hello world 1',
-                    'stdout: Hello world 2',
-                    'stdout: Hello world 3',
-                    'stdout: Hello world 4',
-                    'stdout: Hello world 5',
-                ],
+                nodes: generateMockOutputLines(1, 500),
                 totalCount: 10,
                 pageInfo: {
                     endCursor: "5",
@@ -645,13 +649,7 @@ export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO = {
         step: {
             outputLines: {
                 __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
-                nodes: [
-                    'stdout: Hello world 6',
-                    'stdout: Hello world 7',
-                    'stdout: Hello world 8',
-                    'stdout: Hello world 9',
-                    'stdout: Hello world 10',
-                ],
+                nodes: generateMockOutputLines(501, 1000),
                 totalCount: 10,
                 pageInfo: {
                     endCursor: null,
