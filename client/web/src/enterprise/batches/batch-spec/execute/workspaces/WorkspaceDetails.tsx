@@ -555,12 +555,12 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
     }
 
     return (
-        <>
+        <div className={styles.stepOutputContainer}>
             {connection.nodes.length > 0 && <LogOutput text={connection.nodes.join('\n')} />}
             {hasNextPage && (
                 <>
                     {loading ? (
-                        <LoadingSpinner />
+                        <LoadingSpinner className="bg-transparent ml-3" />
                     ) : (
                         <Button size="sm" className={styles.stepOutputShowMoreBtn} onClick={fetchMore}>
                             Load more ...
@@ -569,7 +569,7 @@ export const WorkspaceStepOutputLines: React.FunctionComponent<
                 </>
             )}
             <LogOutput text={additionalOutputLines.join('\n')} />
-        </>
+        </div>
     )
 }
 
