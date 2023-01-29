@@ -290,7 +290,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 		Client: opts.client,
 	})
 
-	ffs, err := svc.DetermineFeatureFlags(ctx)
+	lr, ffs, err := svc.DetermineLicenseAndFeatureFlags(ctx)
 	if err != nil {
 		return err
 	}
@@ -521,7 +521,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	execUI.CreatingBatchSpec()
 	id, url, err := svc.CreateBatchSpec(ctx, namespace.ID, rawSpec, ids)
 	if err != nil {
-		return execUI.CreatingBatchSpecError(err)
+		return execUI.CreatingBatchSpecError(lr.MaxUnlicensedChangesets, err)
 	}
 	previewURL := cfg.Endpoint + url
 	execUI.CreatingBatchSpecSuccess(previewURL)

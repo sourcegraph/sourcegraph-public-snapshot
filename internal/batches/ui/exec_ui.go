@@ -40,7 +40,7 @@ type ExecUI interface {
 
 	CreatingBatchSpec()
 	CreatingBatchSpecSuccess(previewURL string)
-	CreatingBatchSpecError(err error) error
+	CreatingBatchSpecError(maxUnlicensedCS int, err error) error
 
 	PreviewBatchSpec(previewURL string)
 

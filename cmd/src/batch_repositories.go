@@ -69,7 +69,7 @@ Examples:
 			Client: client,
 		})
 
-		ffs, err := svc.DetermineFeatureFlags(ctx)
+		_, ffs, err := svc.DetermineLicenseAndFeatureFlags(ctx)
 		if err != nil {
 			return err
 		}

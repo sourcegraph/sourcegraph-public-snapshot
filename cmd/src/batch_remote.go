@@ -52,7 +52,7 @@ Examples:
 			Client: cfg.apiClient(flags.api, flagSet.Output()),
 		})
 
-		ffs, err := svc.DetermineFeatureFlags(ctx)
+		_, ffs, err := svc.DetermineLicenseAndFeatureFlags(ctx)
 		if err != nil {
 			return err
 		}
