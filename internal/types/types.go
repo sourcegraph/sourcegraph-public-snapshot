@@ -852,6 +852,15 @@ type UserRole struct {
 	CreatedAt time.Time
 }
 
+type NamespacePermission struct {
+	ID         int64
+	Namespace  string
+	ResourceID int64
+	Action     string
+	UserID     int32
+	CreatedAt  time.Time
+}
+
 type OrgMemberAutocompleteSearchItem struct {
 	ID          int32
 	Username    string
