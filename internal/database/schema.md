@@ -2269,7 +2269,7 @@ Foreign-key constraints:
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
  action      | text                     |           | not null | 
- user_id     | integer                  |           |          | 
+ user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)

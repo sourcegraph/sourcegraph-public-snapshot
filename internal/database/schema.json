@@ -15019,7 +15019,7 @@
           "Name": "user_id",
           "Index": 5,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,

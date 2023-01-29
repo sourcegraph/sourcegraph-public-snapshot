@@ -2961,7 +2961,7 @@ CREATE TABLE namespace_permissions (
     namespace text NOT NULL,
     resource_id integer NOT NULL,
     action text NOT NULL,
-    user_id integer,
+    user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
