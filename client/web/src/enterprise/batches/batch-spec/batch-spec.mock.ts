@@ -616,7 +616,7 @@ export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
     },
 ]
 
-export const WORKSPACE_STEP_OUTPUT_LINES = {
+export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE = {
     node: {
         __typename: 'VisibleBatchSpecWorkspace',
         step: {
@@ -629,7 +629,30 @@ export const WORKSPACE_STEP_OUTPUT_LINES = {
                     'stdout: Hello world 4',
                     'stdout: Hello world 5',
                 ],
-                totalCount: 5,
+                totalCount: 10,
+                pageInfo: {
+                    endCursor: "5",
+                    hasNextPage: true,
+                },
+            },
+        },
+    },
+}
+
+export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO = {
+    node: {
+        __typename: 'VisibleBatchSpecWorkspace',
+        step: {
+            outputLines: {
+                __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
+                nodes: [
+                    'stdout: Hello world 6',
+                    'stdout: Hello world 7',
+                    'stdout: Hello world 8',
+                    'stdout: Hello world 9',
+                    'stdout: Hello world 10',
+                ],
+                totalCount: 10,
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,

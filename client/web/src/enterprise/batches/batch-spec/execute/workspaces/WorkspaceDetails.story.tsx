@@ -21,7 +21,8 @@ import {
     FAILED_WORKSPACE,
     CANCELING_WORKSPACE,
     CANCELED_WORKSPACE,
-    WORKSPACE_STEP_OUTPUT_LINES,
+    WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
+    WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,
 } from '../../batch-spec.mock'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
@@ -29,7 +30,7 @@ import {
     BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 
-import { WorkspaceDetails } from './WorkspaceDetails'
+import { WorkspaceDetails, OUTPUT_LINES_PER_PAGE } from './WorkspaceDetails'
 
 const queryChangesetSpecFileDiffs = () =>
     of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
@@ -80,10 +81,30 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
         {
             request: {
                 query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
-                variables: MATCH_ANY_PARAMETERS,
+                variables: {
+                    workspaceID: 'test-1234',
+                    stepIndex: 1,
+                    first: 500,
+                    after: null
+                }
             },
             result: {
-                data: WORKSPACE_STEP_OUTPUT_LINES,
+                data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
+                variables: {
+                    workspaceID: 'test-1234',
+                    stepIndex: 1,
+                    first: 500,
+                    after: "5"
+                }
+            },
+            result: {
+                data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
@@ -138,3 +159,6 @@ VisibleWorkspaceCanceling.storyName = 'Visible workspace: canceling'
 
 export const VisibleWorkspaceCanceled: Story = () => <BaseStory node={CANCELED_WORKSPACE} />
 VisibleWorkspaceCanceled.storyName = 'Visible workspace: canceled'
+
+export const VisibleWorkspaceLargeLogOutput: Story = () => <BaseStory node={CANCELED_WORKSPACE} />
+VisibleWorkspaceLargeLogOutput.storyName = 'Visible workspace: Large Log Output'

@@ -487,7 +487,7 @@ interface WorkspaceStepProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
-const OUTPUT_LINES_PER_PAGE = 500
+export const OUTPUT_LINES_PER_PAGE = 500
 
 export const WorkspaceStepOutputLines: React.FunctionComponent<
     React.PropsWithChildren<Pick<WorkspaceStepProps, 'step' | 'workspaceID'>>
