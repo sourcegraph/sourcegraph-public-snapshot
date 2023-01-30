@@ -75,7 +75,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 	for _, uid := range referencesByUploadID { //"graph:references:consumable": [006, 007] - 100 for now
 		symbolNames := make([]string, 0)
 		start := 0
-		stop := 1000
+		stop := 10000
 		for {
 			key := fmt.Sprintf("graph:references:%s", uid)
 			references, err := redisStore.LRange(key, start, stop).Strings()
@@ -110,7 +110,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 				}
 			}
 
-			fields := make([]string, 0, 1000)
+			fields := make([]string, 0, 10000)
 			for k := range countMap {
 				fields = append(fields, k)
 			}
@@ -141,7 +141,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 			}
 
 			start = stop + 1
-			stop = stop + 1000
+			stop = stop + 10000
 		}
 	}
 

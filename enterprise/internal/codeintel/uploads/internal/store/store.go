@@ -187,7 +187,7 @@ func (s *store) SetGlobalRanks(ctx context.Context, ranks map[string]string) (er
 				}
 
 				batchMap[repoRootPath] = count
-				if len(batchMap) == 1000 {
+				if len(batchMap) == 10000 {
 					fmt.Println("inserting batch")
 					if err := insertRanks(ctx, batchMap, inserter); err != nil {
 						return err
@@ -258,6 +258,8 @@ SELECT
 	'dev'::text
 FROM t_global_ranks AS gr
 GROUP BY gr.repository_name
+ON CONFLICT (repository_id, precision) DO UPDATE SET
+	payload = pr.payload || EXCLUDED.payload
 `
 
 // const setGlobalRanksQuery = `
