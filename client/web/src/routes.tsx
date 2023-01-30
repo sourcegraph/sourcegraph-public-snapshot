@@ -36,7 +36,7 @@ const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage')
 const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
 const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
-
+const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
@@ -220,8 +220,9 @@ export const routes: readonly LayoutRouteProps<any>[] = (
         },
         ...communitySearchContextsRoutes,
         {
+            isV6: true,
             path: PageRoutes.RepoContainer,
-            render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RepoContainer {...props} />,
         },
     ] as readonly (LayoutRouteProps<any> | undefined)[]
 ).filter(Boolean) as readonly LayoutRouteProps<any>[]

@@ -200,7 +200,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavDropdown
                             toggleItem={{
                                 path: PageRoutes.Search,
-                                altPath: PageRoutes.RepoContainer,
+                                altPath: '/:repoRevAndRest+',
                                 icon: MagnifyIcon,
                                 content: 'Code Search',
                                 variant: navLinkVariant,
@@ -238,7 +238,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={'/insights'}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
