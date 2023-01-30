@@ -34,7 +34,9 @@ import {
     ensureReleaseBranchUpToDate,
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
-    getLatestTag, getAllUpgradeGuides, updateUpgradeGuides,
+    getLatestTag,
+    getAllUpgradeGuides,
+    updateUpgradeGuides,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -513,7 +515,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-                            updateUpgradeGuides(previousVersion, nextVersion)
+                            updateUpgradeGuides(previousVersion, nextVersion),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
