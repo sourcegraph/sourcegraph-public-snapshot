@@ -20561,9 +20561,6 @@ type MockFeatureFlagStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *FeatureFlagStoreHandleFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *FeatureFlagStoreTransactFunc
 	// UpdateFeatureFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateFeatureFlag.
 	UpdateFeatureFlagFunc *FeatureFlagStoreUpdateFeatureFlagFunc
@@ -20573,6 +20570,9 @@ type MockFeatureFlagStore struct {
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *FeatureFlagStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *FeatureFlagStoreWithTransactFunc
 }
 
 // NewMockFeatureFlagStore creates a new mock of the FeatureFlagStore
@@ -20665,11 +20665,6 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 				return
 			},
 		},
-		TransactFunc: &FeatureFlagStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 FeatureFlagStore, r1 error) {
-				return
-			},
-		},
 		UpdateFeatureFlagFunc: &FeatureFlagStoreUpdateFeatureFlagFunc{
 			defaultHook: func(context.Context, *featureflag.FeatureFlag) (r0 *featureflag.FeatureFlag, r1 error) {
 				return
@@ -20682,6 +20677,11 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 		},
 		WithFunc: &FeatureFlagStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 FeatureFlagStore) {
+				return
+			},
+		},
+		WithTransactFunc: &FeatureFlagStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(FeatureFlagStore) error) (r0 error) {
 				return
 			},
 		},
@@ -20777,11 +20777,6 @@ func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
 				panic("unexpected invocation of MockFeatureFlagStore.Handle")
 			},
 		},
-		TransactFunc: &FeatureFlagStoreTransactFunc{
-			defaultHook: func(context.Context) (FeatureFlagStore, error) {
-				panic("unexpected invocation of MockFeatureFlagStore.Transact")
-			},
-		},
 		UpdateFeatureFlagFunc: &FeatureFlagStoreUpdateFeatureFlagFunc{
 			defaultHook: func(context.Context, *featureflag.FeatureFlag) (*featureflag.FeatureFlag, error) {
 				panic("unexpected invocation of MockFeatureFlagStore.UpdateFeatureFlag")
@@ -20795,6 +20790,11 @@ func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
 		WithFunc: &FeatureFlagStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) FeatureFlagStore {
 				panic("unexpected invocation of MockFeatureFlagStore.With")
+			},
+		},
+		WithTransactFunc: &FeatureFlagStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(FeatureFlagStore) error) error {
+				panic("unexpected invocation of MockFeatureFlagStore.WithTransact")
 			},
 		},
 	}
@@ -20856,9 +20856,6 @@ func NewMockFeatureFlagStoreFrom(i FeatureFlagStore) *MockFeatureFlagStore {
 		HandleFunc: &FeatureFlagStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		TransactFunc: &FeatureFlagStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateFeatureFlagFunc: &FeatureFlagStoreUpdateFeatureFlagFunc{
 			defaultHook: i.UpdateFeatureFlag,
 		},
@@ -20867,6 +20864,9 @@ func NewMockFeatureFlagStoreFrom(i FeatureFlagStore) *MockFeatureFlagStore {
 		},
 		WithFunc: &FeatureFlagStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &FeatureFlagStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -22747,111 +22747,6 @@ func (c FeatureFlagStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// FeatureFlagStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockFeatureFlagStore instance is invoked.
-type FeatureFlagStoreTransactFunc struct {
-	defaultHook func(context.Context) (FeatureFlagStore, error)
-	hooks       []func(context.Context) (FeatureFlagStore, error)
-	history     []FeatureFlagStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockFeatureFlagStore) Transact(v0 context.Context) (FeatureFlagStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(FeatureFlagStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockFeatureFlagStore instance is invoked and the hook queue is
-// empty.
-func (f *FeatureFlagStoreTransactFunc) SetDefaultHook(hook func(context.Context) (FeatureFlagStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockFeatureFlagStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *FeatureFlagStoreTransactFunc) PushHook(hook func(context.Context) (FeatureFlagStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *FeatureFlagStoreTransactFunc) SetDefaultReturn(r0 FeatureFlagStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (FeatureFlagStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *FeatureFlagStoreTransactFunc) PushReturn(r0 FeatureFlagStore, r1 error) {
-	f.PushHook(func(context.Context) (FeatureFlagStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *FeatureFlagStoreTransactFunc) nextHook() func(context.Context) (FeatureFlagStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *FeatureFlagStoreTransactFunc) appendCall(r0 FeatureFlagStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of FeatureFlagStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *FeatureFlagStoreTransactFunc) History() []FeatureFlagStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]FeatureFlagStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// FeatureFlagStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockFeatureFlagStore.
-type FeatureFlagStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 FeatureFlagStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c FeatureFlagStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c FeatureFlagStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // FeatureFlagStoreUpdateFeatureFlagFunc describes the behavior when the
 // UpdateFeatureFlag method of the parent MockFeatureFlagStore instance is
 // invoked.
@@ -23181,6 +23076,112 @@ func (c FeatureFlagStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c FeatureFlagStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// FeatureFlagStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockFeatureFlagStore instance is
+// invoked.
+type FeatureFlagStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(FeatureFlagStore) error) error
+	hooks       []func(context.Context, func(FeatureFlagStore) error) error
+	history     []FeatureFlagStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockFeatureFlagStore) WithTransact(v0 context.Context, v1 func(FeatureFlagStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(FeatureFlagStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockFeatureFlagStore instance is invoked and the hook queue
+// is empty.
+func (f *FeatureFlagStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(FeatureFlagStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockFeatureFlagStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *FeatureFlagStoreWithTransactFunc) PushHook(hook func(context.Context, func(FeatureFlagStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FeatureFlagStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(FeatureFlagStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FeatureFlagStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(FeatureFlagStore) error) error {
+		return r0
+	})
+}
+
+func (f *FeatureFlagStoreWithTransactFunc) nextHook() func(context.Context, func(FeatureFlagStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FeatureFlagStoreWithTransactFunc) appendCall(r0 FeatureFlagStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FeatureFlagStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *FeatureFlagStoreWithTransactFunc) History() []FeatureFlagStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]FeatureFlagStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FeatureFlagStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockFeatureFlagStore.
+type FeatureFlagStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(FeatureFlagStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FeatureFlagStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FeatureFlagStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
