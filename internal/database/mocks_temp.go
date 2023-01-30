@@ -65,12 +65,12 @@ type MockAccessTokenStore struct {
 	// LookupFunc is an instance of a mock function object controlling the
 	// behavior of the method Lookup.
 	LookupFunc *AccessTokenStoreLookupFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *AccessTokenStoreTransactFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *AccessTokenStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *AccessTokenStoreWithTransactFunc
 }
 
 // NewMockAccessTokenStore creates a new mock of the AccessTokenStore
@@ -133,13 +133,13 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 				return
 			},
 		},
-		TransactFunc: &AccessTokenStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 AccessTokenStore, r1 error) {
+		WithFunc: &AccessTokenStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 AccessTokenStore) {
 				return
 			},
 		},
-		WithFunc: &AccessTokenStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 AccessTokenStore) {
+		WithTransactFunc: &AccessTokenStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(AccessTokenStore) error) (r0 error) {
 				return
 			},
 		},
@@ -205,14 +205,14 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 				panic("unexpected invocation of MockAccessTokenStore.Lookup")
 			},
 		},
-		TransactFunc: &AccessTokenStoreTransactFunc{
-			defaultHook: func(context.Context) (AccessTokenStore, error) {
-				panic("unexpected invocation of MockAccessTokenStore.Transact")
-			},
-		},
 		WithFunc: &AccessTokenStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) AccessTokenStore {
 				panic("unexpected invocation of MockAccessTokenStore.With")
+			},
+		},
+		WithTransactFunc: &AccessTokenStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(AccessTokenStore) error) error {
+				panic("unexpected invocation of MockAccessTokenStore.WithTransact")
 			},
 		},
 	}
@@ -256,11 +256,11 @@ func NewMockAccessTokenStoreFrom(i AccessTokenStore) *MockAccessTokenStore {
 		LookupFunc: &AccessTokenStoreLookupFunc{
 			defaultHook: i.Lookup,
 		},
-		TransactFunc: &AccessTokenStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		WithFunc: &AccessTokenStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &AccessTokenStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -1468,111 +1468,6 @@ func (c AccessTokenStoreLookupFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// AccessTokenStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockAccessTokenStore instance is invoked.
-type AccessTokenStoreTransactFunc struct {
-	defaultHook func(context.Context) (AccessTokenStore, error)
-	hooks       []func(context.Context) (AccessTokenStore, error)
-	history     []AccessTokenStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockAccessTokenStore) Transact(v0 context.Context) (AccessTokenStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(AccessTokenStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockAccessTokenStore instance is invoked and the hook queue is
-// empty.
-func (f *AccessTokenStoreTransactFunc) SetDefaultHook(hook func(context.Context) (AccessTokenStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockAccessTokenStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *AccessTokenStoreTransactFunc) PushHook(hook func(context.Context) (AccessTokenStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AccessTokenStoreTransactFunc) SetDefaultReturn(r0 AccessTokenStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (AccessTokenStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AccessTokenStoreTransactFunc) PushReturn(r0 AccessTokenStore, r1 error) {
-	f.PushHook(func(context.Context) (AccessTokenStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *AccessTokenStoreTransactFunc) nextHook() func(context.Context) (AccessTokenStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AccessTokenStoreTransactFunc) appendCall(r0 AccessTokenStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AccessTokenStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *AccessTokenStoreTransactFunc) History() []AccessTokenStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]AccessTokenStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AccessTokenStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockAccessTokenStore.
-type AccessTokenStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 AccessTokenStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AccessTokenStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AccessTokenStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // AccessTokenStoreWithFunc describes the behavior when the With method of
 // the parent MockAccessTokenStore instance is invoked.
 type AccessTokenStoreWithFunc struct {
@@ -1672,6 +1567,112 @@ func (c AccessTokenStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AccessTokenStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AccessTokenStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockAccessTokenStore instance is
+// invoked.
+type AccessTokenStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(AccessTokenStore) error) error
+	hooks       []func(context.Context, func(AccessTokenStore) error) error
+	history     []AccessTokenStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAccessTokenStore) WithTransact(v0 context.Context, v1 func(AccessTokenStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(AccessTokenStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockAccessTokenStore instance is invoked and the hook queue
+// is empty.
+func (f *AccessTokenStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(AccessTokenStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockAccessTokenStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AccessTokenStoreWithTransactFunc) PushHook(hook func(context.Context, func(AccessTokenStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AccessTokenStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(AccessTokenStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AccessTokenStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(AccessTokenStore) error) error {
+		return r0
+	})
+}
+
+func (f *AccessTokenStoreWithTransactFunc) nextHook() func(context.Context, func(AccessTokenStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AccessTokenStoreWithTransactFunc) appendCall(r0 AccessTokenStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AccessTokenStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *AccessTokenStoreWithTransactFunc) History() []AccessTokenStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]AccessTokenStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AccessTokenStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockAccessTokenStore.
+type AccessTokenStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(AccessTokenStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AccessTokenStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AccessTokenStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
