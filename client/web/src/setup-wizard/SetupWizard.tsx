@@ -23,9 +23,8 @@ export const SetupWizard: FC = props => {
 
             <SetupTabs activeTabIndex={step} defaultActiveIndex={0} onTabChange={setStep}>
                 <SetupList wrapperClassName="border-bottom-0">
-                    <SetupTab index={0}>Connect your code</SetupTab>
-                    <SetupTab index={1}>Add Repositories</SetupTab>
-                    <SetupTab index={2}>Start searching</SetupTab>
+                    <SetupTab index={0}>Add code hosts</SetupTab>
+                    <SetupTab index={1}>Sync repositories</SetupTab>
                 </SetupList>
             </SetupTabs>
         </div>

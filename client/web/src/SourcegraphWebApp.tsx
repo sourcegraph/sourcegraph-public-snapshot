@@ -81,7 +81,6 @@ import {
     setQueryStateFromSettings,
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
-    useExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
@@ -205,11 +204,6 @@ export class SourcegraphWebApp extends React.Component<
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
 
-        if (process.env.NODE_ENV === 'development') {
-            useExperimentalFeatures.setState({ enableSetupWizard: true })
-            this.setState({ isSetupWizardEnabled: !!getExperimentalFeatures().enableSetupWizard })
-        }
-
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
@@ -240,6 +234,7 @@ export class SourcegraphWebApp extends React.Component<
                         authenticatedUser,
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
+                        isSetupWizardEnabled: !!getExperimentalFeatures().setupWizard,
                     })
                 },
                 () => this.setState({ authenticatedUser: null })
