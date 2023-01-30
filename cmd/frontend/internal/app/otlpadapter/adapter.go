@@ -22,9 +22,9 @@ import (
 type signalAdapter struct {
 	// Exporter should send signals using the configured protocol to the configured
 	// backend.
-	component.Exporter
+	Exporter component.Component
 	// Receiver should receive http/json signals and pass it to the Exporter
-	component.Receiver
+	Receiver component.Component
 }
 
 // Start initializes the exporter and receiver of this adapter.

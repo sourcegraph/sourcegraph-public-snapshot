@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -36,13 +38,13 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 	// Set up shared configuration for creating signal exporters and receivers - telemetry
 	// fields are required.
 	var (
-		signalExporterCreateSettings = component.ExporterCreateSettings{
+		signalExporterCreateSettings = exporter.CreateSettings{
 			TelemetrySettings: component.TelemetrySettings{
 				Logger:         zap.NewNop(),
 				TracerProvider: otel.GetTracerProvider(),
 			},
 		}
-		signalReceiverCreateSettings = component.ReceiverCreateSettings{
+		signalReceiverCreateSettings = receiver.CreateSettings{
 			TelemetrySettings: component.TelemetrySettings{
 				Logger:         zap.NewNop(),
 				TracerProvider: otel.GetTracerProvider(),
