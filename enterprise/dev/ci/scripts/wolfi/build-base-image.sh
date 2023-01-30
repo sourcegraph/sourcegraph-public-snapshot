@@ -59,5 +59,5 @@ apko build --debug "${name}.yaml" \
 # Tag image and upload to GCP Artifact Registry
 docker load <"$tarball"
 
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-base/${name}:$tag"
-docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:$tag"
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
