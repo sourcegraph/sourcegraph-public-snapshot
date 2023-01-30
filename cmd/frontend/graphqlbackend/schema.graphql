@@ -254,6 +254,10 @@ type Mutation {
     """
     deleteUsers(users: [ID!]!, hard: Boolean): EmptyResponse
     """
+    Bulk "recoverUser" action.
+    """
+    recoverUsers(userIDs: [ID!]!): EmptyResponse
+    """
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
@@ -1135,7 +1139,6 @@ type CheckMirrorRepositoryConnectionResult {
     """
     error: String
 }
-
 """
 The result for Mutation.createUser.
 """

@@ -80,6 +80,7 @@ type UserStore interface {
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
+	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
@@ -119,6 +120,10 @@ func (u *userStore) With(other basestore.ShareableStore) UserStore {
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
+	return u.transact(ctx)
+}
+
+func (u *userStore) transact(ctx context.Context) (*userStore, error) {
 	txBase, err := u.Store.Transact(ctx)
 	return &userStore{logger: u.logger, Store: txBase}, err
 }
@@ -673,6 +678,73 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 	db.SecurityEventLogs().LogEventList(ctx, events)
+}
+
+// RecoverList recovers a list of users by their IDs.
+func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+	idsCond := sqlf.Join(userIDs, ",")
+
+	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
+		return nil, err
+	}
+	const updateUserExtAccQuery = `
+	UPDATE user_external_accounts
+	SET deleted_at = NULL
+	FROM user_external_accounts a
+	INNER JOIN users u
+	on a.user_id = u.id
+	WHERE a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND a.user_id IN (%s)
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateUserExtAccQuery, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateOrgInvQuery = `
+	UPDATE org_invitations
+	SET deleted_at = NULL
+	FROM org_invitations o
+	INNER JOIN users u
+	on o.recipient_user_id = u.id
+	or o.sender_user_id = u.id
+	WHERE o.deleted_at >= u.deleted_at
+	AND o.deleted_at <= u.deleted_at + interval '10 second'
+	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateOrgInvQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+	const updateRegistryExtQuery = `
+	update registry_extensions
+	set deleted_at = NULL
+	from registry_extensions r
+	inner join users b
+	on r.publisher_user_id = b.id
+	WHERE r.deleted_at >= b.deleted_at
+	AND r.deleted_at <= b.deleted_at + interval '10 second'
+	AND r.publisher_user_id IN (%s)
+	`
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateRegistryExtQuery, idsCond)); err != nil {
+		return nil, err
+	}
+
+	updateIds, err := basestore.ScanInt32s(u.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	if err != nil {
+		return nil, err
+	}
+
+	return updateIds, nil
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -1368,4 +1440,19 @@ func useFastPasswordMocks() {
 		_, _ = io.WriteString(h, password)
 		return hash == strconv.FormatUint(h.Sum64(), 16)
 	}
+}
+
+func missingUserIds(id, affectedIds []int32) []string {
+	maffectedIds := make(map[int32]struct{}, len(affectedIds))
+	for _, x := range affectedIds {
+		maffectedIds[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range id {
+		if _, found := maffectedIds[x]; !found {
+			strId := strconv.Itoa(int(x))
+			diff = append(diff, strId)
+		}
+	}
+	return diff
 }
