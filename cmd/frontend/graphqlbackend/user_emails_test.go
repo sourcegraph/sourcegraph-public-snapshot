@@ -94,9 +94,8 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		db.TransactFunc.SetDefaultReturn(db, nil)
-		db.DoneFunc.SetDefaultHook(func(err error) error {
-			return err
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
 		})
 
 		ffs := database.NewMockFeatureFlagStore()
@@ -243,9 +242,8 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			db := database.NewMockDB()
-			db.TransactFunc.SetDefaultReturn(db, nil)
-			db.DoneFunc.SetDefaultHook(func(err error) error {
-				return err
+			db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+				return f(db)
 			})
 
 			db.UsersFunc.SetDefaultReturn(users)
