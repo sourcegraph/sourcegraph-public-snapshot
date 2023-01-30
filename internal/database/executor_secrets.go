@@ -84,7 +84,6 @@ func (ExecutorSecretNotFoundErr) NotFound() bool {
 type ExecutorSecretStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) ExecutorSecretStore
-	Transact(context.Context) (ExecutorSecretStore, error)
 	WithTransact(context.Context, func(ExecutorSecretStore) error) error
 	Done(err error) error
 	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
