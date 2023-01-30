@@ -96,7 +96,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
 		}
 		if c.Diff.Has(changed.WolfiBaseImages) {
-			ops.Merge(WolfiBaseImagesOperations(c.ChangedFiles[changed.WolfiBaseImages], c.Diff.Has(changed.WolfiPackages)))
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
 		}
 
 	case runtype.PullRequest:
