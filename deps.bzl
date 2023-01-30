@@ -1170,6 +1170,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_cloudflare_circl:math_fp25519_BUILD_bazel.patch",
             "//third_party/com_github_cloudflare_circl:math_fp448_BUILD_bazel.patch",
+            "//third_party/com_github_cloudflare_circl:dh_x25519_BUILD_bazel.patch",
+            "//third_party/com_github_cloudflare_circl:dh_x448_BUILD_bazel.patch",
             # "//third_party/com_github_cloudflare_circl:source/dh_x25519_BUILD_bazel.new",
         ],
         version = "v1.3.0",
