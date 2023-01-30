@@ -24,6 +24,19 @@ const GlobalCodeMonitoringArea = lazyComponent(
     'GlobalCodeMonitoringArea'
 )
 const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const SearchContextsListPage = lazyComponent(
+    () => import('./searchContexts/SearchContextsListPage'),
+    'SearchContextsListPage'
+)
+const CreateSearchContextPage = lazyComponent(
+    () => import('./searchContexts/CreateSearchContextPage'),
+    'CreateSearchContextPage'
+)
+const EditSearchContextPage = lazyComponent(
+    () => import('./searchContexts/EditSearchContextPage'),
+    'EditSearchContextPage'
+)
+const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -50,29 +63,27 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.Contexts,
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SearchContextsListPage {...props} />,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.CreateContext,
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <CreateSearchContextPage {...props} />,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.EditContext,
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <EditSearchContextPage {...props} />,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.Context,
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SearchContextPage {...props} />,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
