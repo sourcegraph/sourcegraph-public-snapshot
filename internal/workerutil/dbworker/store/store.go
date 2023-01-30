@@ -376,7 +376,7 @@ WHERE
 // a duration of zero if there are no jobs ready for processing.
 //
 // If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
-// records outside this package, manual care should be taken to set the queued_at column to the proper time.
+// records outside of this package, manual care should be taken to set the queued_at column to the proper time.
 // This method makes no guarantees otherwise.
 //
 // See https://github.com/sourcegraph/sourcegraph/issues/32624.
