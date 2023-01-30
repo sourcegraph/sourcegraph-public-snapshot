@@ -19,7 +19,7 @@ func TestEnterpriseCreateRepoHook(t *testing.T) {
 	mockStore := repos.NewMockStore()
 	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 
-	tests := map[string]*struct {
+	tests := map[string]struct {
 		maxPrivateRepos int
 		unrestricted    bool
 		numPrivateRepos int
@@ -85,7 +85,7 @@ func TestEnterpriseUpdateRepoHook(t *testing.T) {
 	mockStore := repos.NewMockStore()
 	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 
-	tests := map[string]*struct {
+	tests := map[string]struct {
 		maxPrivateRepos int
 		unrestricted    bool
 		numPrivateRepos int

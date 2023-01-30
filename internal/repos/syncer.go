@@ -42,6 +42,7 @@ type Syncer struct {
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
 
+	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
 }

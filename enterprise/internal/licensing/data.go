@@ -20,9 +20,10 @@ const (
 	// PlanEnterpriseExtension is for customers who require an extended trial on a new Sourcegraph 4.4.2 instance.
 	PlanEnterpriseExtension Plan = "enterprise-extension"
 
-	// PlanFree0 is the default plan if no license key is set.
+	// PlanFree0 is the default plan if no license key is set before 4.5.
 	PlanFree0 Plan = "free-0"
 
+	// PlanFree1 is the default plan if no license key is set from 4.5 onwards.
 	PlanFree1 Plan = "free-1"
 )
 
