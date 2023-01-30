@@ -1,4 +1,4 @@
-# Configure Sourcegraph with Kubernetes
+# [Deprecated] Configure Sourcegraph with Kubernetes
 
 > WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration).
 > If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our [Helm guide](helm.md) for more information.

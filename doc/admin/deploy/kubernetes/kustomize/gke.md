@@ -4,23 +4,22 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps using our examples overlay for GKE to deploy the Sourcegraph without the monitoring services.
+The installation steps below will walk you through the steps using our examples overlay for GKE to deploy the Sourcegraph.
 
-The overlay will:
+The GKE overlay will:
 
 - Deploy a Sourcegraph instance without RBAC resources 
-- A [BackendConfig](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig) CRD. This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
-- Ingress to use [Container-native load balancing](https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing) to expose Sourcegraph publicly on a domain of your choosing and
-- Storage Class to use [Compute Engine persistent disk](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
+- Create [BackendConfig](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig) CRD. This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
+- Configure ingress to use [Container-native load balancing](https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing) to expose Sourcegraph publicly on a domain of your choosing and
+- Create Storage Class to use [Compute Engine persistent disk](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
 
 ## Prerequisites
 
-- Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
-- [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
-- Support for Persistent Volumes (SSDs recommended)
-- A running cluster with the following configurations:
+- A running GKE cluster with the following configurations:
   - **Enable HTTP load balancing** in Networking
   - **SSD persistent disk** as book disk type 
+- Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
+- [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
 
 ## Quick Start
 
@@ -31,7 +30,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.3.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.4.1
 ```
 
 Monitor the deployment status to make sure everything is up and running:
