@@ -79,7 +79,6 @@ type UserStore interface {
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
-	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
@@ -121,6 +120,10 @@ func (u *userStore) With(other basestore.ShareableStore) UserStore {
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
+	return u.transact(ctx)
+}
+
+func (u *userStore) transact(ctx context.Context) (*userStore, error) {
 	txBase, err := u.Store.Transact(ctx)
 	return &userStore{logger: u.logger, Store: txBase}, err
 }
@@ -736,7 +739,7 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 
-	updateIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	updateIds, err := basestore.ScanInt32s(u.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
 	if err != nil {
 		return nil, err
 	}

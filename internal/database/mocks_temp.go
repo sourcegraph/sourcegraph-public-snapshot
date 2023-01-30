@@ -51796,9 +51796,6 @@ type MockUserStore struct {
 	// ListDatesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListDates.
 	ListDatesFunc *UserStoreListDatesFunc
-	// QueryFunc is an instance of a mock function object controlling the
-	// behavior of the method Query.
-	QueryFunc *UserStoreQueryFunc
 	// RandomizePasswordAndClearPasswordResetRateLimitFunc is an instance of
 	// a mock function object controlling the behavior of the method
 	// RandomizePasswordAndClearPasswordResetRateLimit.
@@ -51966,11 +51963,6 @@ func NewMockUserStore() *MockUserStore {
 		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: func(context.Context) (r0 []types.UserDates, r1 error) {
-				return
-			},
-		},
-		QueryFunc: &UserStoreQueryFunc{
-			defaultHook: func(context.Context, *sqlf.Query) (r0 *sql.Rows, r1 error) {
 				return
 			},
 		},
@@ -52166,11 +52158,6 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.ListDates")
 			},
 		},
-		QueryFunc: &UserStoreQueryFunc{
-			defaultHook: func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-				panic("unexpected invocation of MockUserStore.Query")
-			},
-		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.RandomizePasswordAndClearPasswordResetRateLimit")
@@ -52310,9 +52297,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: i.ListDates,
-		},
-		QueryFunc: &UserStoreQueryFunc{
-			defaultHook: i.Query,
 		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: i.RandomizePasswordAndClearPasswordResetRateLimit,
@@ -55134,113 +55118,6 @@ func (c UserStoreListDatesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreListDatesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserStoreQueryFunc describes the behavior when the Query method of the
-// parent MockUserStore instance is invoked.
-type UserStoreQueryFunc struct {
-	defaultHook func(context.Context, *sqlf.Query) (*sql.Rows, error)
-	hooks       []func(context.Context, *sqlf.Query) (*sql.Rows, error)
-	history     []UserStoreQueryFuncCall
-	mutex       sync.Mutex
-}
-
-// Query delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserStore) Query(v0 context.Context, v1 *sqlf.Query) (*sql.Rows, error) {
-	r0, r1 := m.QueryFunc.nextHook()(v0, v1)
-	m.QueryFunc.appendCall(UserStoreQueryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Query method of the
-// parent MockUserStore instance is invoked and the hook queue is empty.
-func (f *UserStoreQueryFunc) SetDefaultHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Query method of the parent MockUserStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *UserStoreQueryFunc) PushHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreQueryFunc) SetDefaultReturn(r0 *sql.Rows, r1 error) {
-	f.SetDefaultHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreQueryFunc) PushReturn(r0 *sql.Rows, r1 error) {
-	f.PushHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreQueryFunc) nextHook() func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreQueryFunc) appendCall(r0 UserStoreQueryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreQueryFuncCall objects describing
-// the invocations of this function.
-func (f *UserStoreQueryFunc) History() []UserStoreQueryFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreQueryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreQueryFuncCall is an object that describes an invocation of
-// method Query on an instance of MockUserStore.
-type UserStoreQueryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *sqlf.Query
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *sql.Rows
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreQueryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreQueryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
