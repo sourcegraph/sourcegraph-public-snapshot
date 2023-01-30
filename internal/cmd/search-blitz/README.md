@@ -38,3 +38,4 @@ kubectl port-forward search-blitz-0 3000:3000 -n monitoring
 ```
 
 open http://localhost:3000
+Hello World
