@@ -1,12 +1,9 @@
 package background
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -38,34 +35,13 @@ func newWorkerOperations(observationCtx *observation.Context) *workerOperations 
 }
 
 type operations struct {
-	updateUploadsVisibleToCommits *observation.Operation
-
 	numReconcileScansFromFrontend      prometheus.Counter
 	numReconcileDeletesFromFrontend    prometheus.Counter
 	numReconcileScansFromCodeIntelDB   prometheus.Counter
 	numReconcileDeletesFromCodeIntelDB prometheus.Counter
 }
 
-var m = new(metrics.SingletonREDMetrics)
-
 func newOperations(observationCtx *observation.Context) *operations {
-	m := m.Get(func() *metrics.REDMetrics {
-		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_uploads_background",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
-		)
-	})
-
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.uploads.background.%s", name),
-			MetricLabelValues: []string{name},
-			Metrics:           m,
-		})
-	}
-
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -94,8 +70,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 	)
 
 	return &operations{
-		updateUploadsVisibleToCommits: op("UpdateUploadsVisibleToCommits"),
-
 		numReconcileScansFromFrontend:      numReconcileScansFromFrontend,
 		numReconcileDeletesFromFrontend:    numReconcileDeletesFromFrontend,
 		numReconcileScansFromCodeIntelDB:   numReconcileScansFromCodeIntelDB,

@@ -35,11 +35,15 @@ const (
 	EmitForHoney
 	EmitForSentry
 
-	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
+	EmitForAll = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney | EmitForSentry
 )
 
 func (b ErrorFilterBehaviour) Without(e ErrorFilterBehaviour) ErrorFilterBehaviour {
 	return b ^ e
+}
+
+func (b ErrorFilterBehaviour) And(e ErrorFilterBehaviour) ErrorFilterBehaviour {
+	return b | e
 }
 
 // Op configures an Operation instance.

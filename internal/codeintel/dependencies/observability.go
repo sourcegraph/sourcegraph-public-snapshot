@@ -30,6 +30,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Name:              fmt.Sprintf("codeintel.dependencies.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForMetrics | observation.EmitForHoney | observation.EmitForTraces
+			},
 		})
 	}
 

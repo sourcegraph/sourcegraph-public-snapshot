@@ -49,10 +49,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 				}
 
 				if gitdomain.IsCloneInProgress(err) {
-					return observation.EmitForDefault ^ observation.EmitForLogs
+					return observation.EmitForHoney | observation.EmitForTraces
 				}
 
-				return observation.EmitForDefault
+				return observation.EmitForMetrics | observation.EmitForHoney | observation.EmitForTraces
 			},
 		})
 	}

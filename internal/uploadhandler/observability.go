@@ -33,9 +33,9 @@ func NewOperations(observationCtx *observation.Context, prefix string) *Operatio
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				var errno syscall.Errno
 				if errors.As(err, &errno) && errno == syscall.ECONNREFUSED {
-					return observation.EmitForDefault ^ observation.EmitForSentry
+					return observation.EmitForAll.Without(observation.EmitForSentry)
 				}
-				return observation.EmitForDefault
+				return observation.EmitForAll
 			},
 		})
 	}

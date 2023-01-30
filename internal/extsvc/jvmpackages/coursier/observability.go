@@ -37,7 +37,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 				if err != nil && strings.Contains(err.Error(), "not found") {
 					return observation.EmitForMetrics | observation.EmitForTraces
 				}
-				return observation.EmitForDefault
+				return observation.EmitForAll
 			},
 		})
 	}
