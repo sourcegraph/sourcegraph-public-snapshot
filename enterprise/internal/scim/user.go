@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// UserResourceHandler implements the scim.ResourceHandler interface for users.
 type UserResourceHandler struct {
 	ctx            context.Context
 	db             database.DB
@@ -92,21 +93,33 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	}, nil
 }
 
+// convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
 func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, user *types.User) (*scim.Resource, error) {
-	// Get accounts
-	var accounts []*extsvc.Accounts
+	// Get names
+	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
+
+	// Get SCIM external account ID if available
+	var scimAccount *extsvc.Account
 	extAccounts, err := h.db.UserExternalAccounts().List(h.ctx, database.ExternalAccountsListOptions{UserID: user.ID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
 	for _, acct := range extAccounts {
-		accounts = append(accounts, &extsvc.Accounts{
-			ServiceType: acct.ServiceType,
-			ServiceID:   acct.ServiceID,
-			AccountIDs:  []string{acct.AccountID},
-		})
+		if acct.ServiceType == "scim" { // TODO: Also filter by service ID that we should be getting from the request
+			scimAccount = acct
+			break
+		}
+	}
+	var externalID string
+	if scimAccount != nil {
+		externalID = scimAccount.AccountID
+	}
+	externalIDOptional := optional.String{}
+	if scimAccount != nil {
+		externalIDOptional = optional.NewString(scimAccount.AccountID)
 	}
 
+	// Get verified email addresses
 	verifiedEmails, err := h.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID:       user.ID,
 		OnlyVerified: true,
@@ -121,14 +134,12 @@ func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, use
 		}
 	}
 
-	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
-
 	return &scim.Resource{
-		ID:         "123",
-		ExternalID: optional.NewString("111"),
+		ID:         string(user.ID),
+		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{
 			"userName":   user.Username,
-			"externalId": "TODO",
+			"externalId": externalID,
 			"name": map[string]interface{}{
 				"givenName":  firstName,
 				"middleName": middleName,
@@ -142,6 +153,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, use
 	}, nil
 }
 
+// displayNameToPieces splits a display name into first, middle, and last name.
 func displayNameToPieces(displayName string) (first, middle, last string) {
 	pieces := strings.Fields(displayName)
 	switch len(pieces) {
@@ -196,6 +208,7 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 	}, nil
 }
 
+// createUserResourceType creates a SCIM resource type for users.
 func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
 	coreUserSchema := schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
