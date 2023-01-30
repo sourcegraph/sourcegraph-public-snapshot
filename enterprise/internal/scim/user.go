@@ -67,7 +67,6 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
 	users, err := h.db.Users().List(r.Context(), &database.UsersListOptions{
-		OnlySCIM: true,
 		LimitOffset: &database.LimitOffset{
 			Limit:  params.Count,
 			Offset: offset,
