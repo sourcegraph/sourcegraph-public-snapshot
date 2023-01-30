@@ -3,6 +3,7 @@ package scim
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/elimity-com/scim"
@@ -136,7 +137,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, use
 	}
 
 	return &scim.Resource{
-		ID:         string(user.ID),
+		ID:         strconv.FormatInt(int64(user.ID), 10),
 		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{
 			"userName":   user.Username,
