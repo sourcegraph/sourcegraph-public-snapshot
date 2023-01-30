@@ -1730,7 +1730,7 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
-	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. For internal testing purposes only.
+	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
 	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
