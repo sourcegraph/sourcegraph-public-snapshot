@@ -71,7 +71,7 @@ describe('Backend insight drill down filters', () => {
                 GetSearchContextByName: () => ({
                     searchContexts: {
                         __typename: 'SearchContextConnection',
-                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph', "query": "" }],
+                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph', query: '' }],
                     },
                 }),
 
