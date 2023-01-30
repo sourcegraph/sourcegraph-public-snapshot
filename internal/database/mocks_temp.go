@@ -9437,9 +9437,6 @@ type MockEventLogStore struct {
 	// CountUsersWithSettingFunc is an instance of a mock function object
 	// controlling the behavior of the method CountUsersWithSetting.
 	CountUsersWithSettingFunc *EventLogStoreCountUsersWithSettingFunc
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *EventLogStoreDoneFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EventLogStoreHandleFunc
@@ -9474,15 +9471,15 @@ type MockEventLogStore struct {
 	// SiteUsageMultiplePeriodsFunc is an instance of a mock function object
 	// controlling the behavior of the method SiteUsageMultiplePeriods.
 	SiteUsageMultiplePeriodsFunc *EventLogStoreSiteUsageMultiplePeriodsFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *EventLogStoreTransactFunc
 	// UsersUsageCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UsersUsageCounts.
 	UsersUsageCountsFunc *EventLogStoreUsersUsageCountsFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *EventLogStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *EventLogStoreWithTransactFunc
 }
 
 // NewMockEventLogStore creates a new mock of the EventLogStore interface.
@@ -9599,11 +9596,6 @@ func NewMockEventLogStore() *MockEventLogStore {
 				return
 			},
 		},
-		DoneFunc: &EventLogStoreDoneFunc{
-			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
 		HandleFunc: &EventLogStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
@@ -9659,11 +9651,6 @@ func NewMockEventLogStore() *MockEventLogStore {
 				return
 			},
 		},
-		TransactFunc: &EventLogStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 EventLogStore, r1 error) {
-				return
-			},
-		},
 		UsersUsageCountsFunc: &EventLogStoreUsersUsageCountsFunc{
 			defaultHook: func(context.Context) (r0 []types.UserUsageCounts, r1 error) {
 				return
@@ -9671,6 +9658,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		WithFunc: &EventLogStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 EventLogStore) {
+				return
+			},
+		},
+		WithTransactFunc: &EventLogStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(EventLogStore) error) (r0 error) {
 				return
 			},
 		},
@@ -9791,11 +9783,6 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.CountUsersWithSetting")
 			},
 		},
-		DoneFunc: &EventLogStoreDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockEventLogStore.Done")
-			},
-		},
 		HandleFunc: &EventLogStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockEventLogStore.Handle")
@@ -9851,11 +9838,6 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.SiteUsageMultiplePeriods")
 			},
 		},
-		TransactFunc: &EventLogStoreTransactFunc{
-			defaultHook: func(context.Context) (EventLogStore, error) {
-				panic("unexpected invocation of MockEventLogStore.Transact")
-			},
-		},
 		UsersUsageCountsFunc: &EventLogStoreUsersUsageCountsFunc{
 			defaultHook: func(context.Context) ([]types.UserUsageCounts, error) {
 				panic("unexpected invocation of MockEventLogStore.UsersUsageCounts")
@@ -9864,6 +9846,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 		WithFunc: &EventLogStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) EventLogStore {
 				panic("unexpected invocation of MockEventLogStore.With")
+			},
+		},
+		WithTransactFunc: &EventLogStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(EventLogStore) error) error {
+				panic("unexpected invocation of MockEventLogStore.WithTransact")
 			},
 		},
 	}
@@ -9940,9 +9927,6 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
 			defaultHook: i.CountUsersWithSetting,
 		},
-		DoneFunc: &EventLogStoreDoneFunc{
-			defaultHook: i.Done,
-		},
 		HandleFunc: &EventLogStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
@@ -9976,14 +9960,14 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		SiteUsageMultiplePeriodsFunc: &EventLogStoreSiteUsageMultiplePeriodsFunc{
 			defaultHook: i.SiteUsageMultiplePeriods,
 		},
-		TransactFunc: &EventLogStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UsersUsageCountsFunc: &EventLogStoreUsersUsageCountsFunc{
 			defaultHook: i.UsersUsageCounts,
 		},
 		WithFunc: &EventLogStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &EventLogStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -12451,107 +12435,6 @@ func (c EventLogStoreCountUsersWithSettingFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EventLogStoreDoneFunc describes the behavior when the Done method of the
-// parent MockEventLogStore instance is invoked.
-type EventLogStoreDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []EventLogStoreDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEventLogStore) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(EventLogStoreDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockEventLogStore instance is invoked and the hook queue is empty.
-func (f *EventLogStoreDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockEventLogStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EventLogStoreDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EventLogStoreDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *EventLogStoreDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EventLogStoreDoneFunc) appendCall(r0 EventLogStoreDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EventLogStoreDoneFuncCall objects
-// describing the invocations of this function.
-func (f *EventLogStoreDoneFunc) History() []EventLogStoreDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]EventLogStoreDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EventLogStoreDoneFuncCall is an object that describes an invocation of
-// method Done on an instance of MockEventLogStore.
-type EventLogStoreDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EventLogStoreDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EventLogStoreDoneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // EventLogStoreHandleFunc describes the behavior when the Handle method of
 // the parent MockEventLogStore instance is invoked.
 type EventLogStoreHandleFunc struct {
@@ -13762,111 +13645,6 @@ func (c EventLogStoreSiteUsageMultiplePeriodsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EventLogStoreTransactFunc describes the behavior when the Transact method
-// of the parent MockEventLogStore instance is invoked.
-type EventLogStoreTransactFunc struct {
-	defaultHook func(context.Context) (EventLogStore, error)
-	hooks       []func(context.Context) (EventLogStore, error)
-	history     []EventLogStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEventLogStore) Transact(v0 context.Context) (EventLogStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(EventLogStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockEventLogStore instance is invoked and the hook queue is
-// empty.
-func (f *EventLogStoreTransactFunc) SetDefaultHook(hook func(context.Context) (EventLogStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockEventLogStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EventLogStoreTransactFunc) PushHook(hook func(context.Context) (EventLogStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EventLogStoreTransactFunc) SetDefaultReturn(r0 EventLogStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (EventLogStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreTransactFunc) PushReturn(r0 EventLogStore, r1 error) {
-	f.PushHook(func(context.Context) (EventLogStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *EventLogStoreTransactFunc) nextHook() func(context.Context) (EventLogStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EventLogStoreTransactFunc) appendCall(r0 EventLogStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EventLogStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *EventLogStoreTransactFunc) History() []EventLogStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]EventLogStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EventLogStoreTransactFuncCall is an object that describes an invocation
-// of method Transact on an instance of MockEventLogStore.
-type EventLogStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 EventLogStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EventLogStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EventLogStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // EventLogStoreUsersUsageCountsFunc describes the behavior when the
 // UsersUsageCounts method of the parent MockEventLogStore instance is
 // invoked.
@@ -14072,6 +13850,111 @@ func (c EventLogStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EventLogStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockEventLogStore instance is invoked.
+type EventLogStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(EventLogStore) error) error
+	hooks       []func(context.Context, func(EventLogStore) error) error
+	history     []EventLogStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEventLogStore) WithTransact(v0 context.Context, v1 func(EventLogStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(EventLogStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockEventLogStore instance is invoked and the hook queue is
+// empty.
+func (f *EventLogStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(EventLogStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockEventLogStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EventLogStoreWithTransactFunc) PushHook(hook func(context.Context, func(EventLogStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(EventLogStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(EventLogStore) error) error {
+		return r0
+	})
+}
+
+func (f *EventLogStoreWithTransactFunc) nextHook() func(context.Context, func(EventLogStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreWithTransactFunc) appendCall(r0 EventLogStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *EventLogStoreWithTransactFunc) History() []EventLogStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockEventLogStore.
+type EventLogStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(EventLogStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
