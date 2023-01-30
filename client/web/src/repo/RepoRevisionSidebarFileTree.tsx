@@ -1,6 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
+import {
+    mdiFileDocumentOutline,
+    mdiSourceRepository,
+    mdiFolderOutline,
+    mdiFolderOpenOutline,
+    mdiMenuRight,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
@@ -239,12 +245,18 @@ function renderNode({
         return (
             <Link
                 {...props}
+                className={classNames(props.className, 'pl-0')}
                 to={dotdot}
                 onClick={event => {
                     event.preventDefault()
                     handleSelect(event)
                 }}
             >
+                <Icon
+                    aria-hidden={true}
+                    svgPath={mdiMenuRight}
+                    className={classNames(styles.icon, styles.collapseIcon)}
+                />
                 <Icon
                     svgPath={mdiFolderOutline}
                     className={classNames('mr-1', styles.icon)}

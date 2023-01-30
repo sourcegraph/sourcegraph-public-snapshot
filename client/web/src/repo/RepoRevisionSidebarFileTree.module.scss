@@ -3,3 +3,11 @@
     width: 1rem;
     height: 1rem;
 }
+
+.collapse-icon {
+    min-width: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
