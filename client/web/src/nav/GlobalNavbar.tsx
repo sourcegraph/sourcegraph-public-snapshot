@@ -200,7 +200,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavDropdown
                             toggleItem={{
                                 path: PageRoutes.Search,
-                                altPath: '/:repoRevAndRest+',
+                                altPath: PageRoutes.RepoContainer,
                                 icon: MagnifyIcon,
                                 content: 'Code Search',
                                 variant: navLinkVariant,
