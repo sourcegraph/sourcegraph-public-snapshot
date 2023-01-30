@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -130,8 +130,8 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 		return nil
 	}
 
-	stats := diff.Stat{}
-	reader := diff.NewMultiFileDiffReader(bytes.NewReader(cs.Diff))
+	stats := godiff.Stat{}
+	reader := godiff.NewMultiFileDiffReader(bytes.NewReader(cs.Diff))
 	for {
 		fileDiff, err := reader.ReadFile()
 		if err == io.EOF {
@@ -164,8 +164,8 @@ func (cs *ChangesetSpec) computeForkNamespace() {
 }
 
 // DiffStat returns a *diff.Stat.
-func (cs *ChangesetSpec) DiffStat() diff.Stat {
-	return diff.Stat{
+func (cs *ChangesetSpec) DiffStat() godiff.Stat {
+	return godiff.Stat{
 		Added:   cs.DiffStatAdded,
 		Deleted: cs.DiffStatDeleted,
 	}

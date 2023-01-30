@@ -13,11 +13,11 @@ import (
 )
 
 func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	keyring := keyring.Default()
+	defaultKeyring := keyring.Default()
 
 	return registerOSSMigrators(runner, false, migratorDependencies{
 		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: &keyring,
+		keyring: &defaultKeyring,
 	})
 }
 

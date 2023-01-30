@@ -120,7 +120,7 @@ func (s *extensionStore) Create(ctx context.Context, publisherUserID, publisherO
 		return 0, errors.New("at most 1 of the publisher user/org may be set")
 	}
 
-	uuid, err := uuid.NewRandom()
+	randomUUID, err := uuid.NewRandom()
 	if err != nil {
 		return 0, err
 	}
@@ -137,7 +137,7 @@ VALUES(
 	%s
 )
 RETURNING id`,
-		uuid,
+		randomUUID,
 		publisherUserID,
 		publisherOrgID,
 		name,

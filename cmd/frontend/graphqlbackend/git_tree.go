@@ -14,8 +14,8 @@ import (
 )
 
 func (r *GitTreeEntryResolver) IsRoot() bool {
-	path := path.Clean(r.Path())
-	return path == "/" || path == "." || path == ""
+	cleanPath := path.Clean(r.Path())
+	return cleanPath == "/" || cleanPath == "." || cleanPath == ""
 }
 
 type gitTreeEntryConnectionArgs struct {

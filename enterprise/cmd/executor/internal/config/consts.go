@@ -89,9 +89,9 @@ func mustParseConstraint(constraint string) *semver.Constraints {
 }
 
 func mustParseCIDR(val string) *net.IPNet {
-	_, net, err := net.ParseCIDR(val)
+	_, ipNetwork, err := net.ParseCIDR(val)
 	if err != nil {
 		panic(err)
 	}
-	return net
+	return ipNetwork
 }

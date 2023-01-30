@@ -90,9 +90,9 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getCasedPattern")
 	}
-	regexp, err := regexp.Compile(pattern.String())
+	regex, err := regexp.Compile(pattern.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not compile regexp")
+		return nil, errors.Wrap(err, "Could not compile regex")
 	}
 
 	return func(r result.Match) (map[MatchKey]int, error) {
@@ -100,7 +100,7 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 		if len(content) != 0 {
 			matches := map[MatchKey]int{}
 			for _, contentPiece := range content {
-				for _, submatches := range regexp.FindAllStringSubmatchIndex(contentPiece, -1) {
+				for _, submatches := range regex.FindAllStringSubmatchIndex(contentPiece, -1) {
 					contentMatches := fromRegexpMatches(submatches, contentPiece)
 					for value, count := range contentMatches {
 						key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}

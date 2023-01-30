@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -104,13 +104,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		label               string
 		extraGitCommands    []string
 		expectedDiffFiles   []string
-		expectedFileStat    *diff.Stat
+		expectedFileStat    *godiff.Stat
 		rangeOverAllCommits bool
 	}{
 		{
 			label:               "adding files",
 			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &diff.Stat{Added: 3},
+			expectedFileStat:    &godiff.Stat{Added: 3},
 			rangeOverAllCommits: true,
 		},
 		{
@@ -121,7 +121,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("rename", 7),
 			},
 			expectedDiffFiles: []string{"file_can_access"},
-			expectedFileStat:  &diff.Stat{Added: 1},
+			expectedFileStat:  &godiff.Stat{Added: 1},
 		},
 		{
 			label: "file modified",
@@ -133,7 +133,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("edit_files", 7),
 			},
 			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
-			expectedFileStat:  &diff.Stat{Changed: 1},
+			expectedFileStat:  &godiff.Stat{Changed: 1},
 		},
 		{
 			label: "diff for commit w/ no access returns empty result",
@@ -143,7 +143,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("no_access", 7),
 			},
 			expectedDiffFiles: []string{},
-			expectedFileStat:  &diff.Stat{},
+			expectedFileStat:  &godiff.Stat{},
 		},
 	}
 	for _, tc := range testCases {
@@ -166,7 +166,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 			}
 			defer iter.Close()
 
-			stat := &diff.Stat{}
+			stat := &godiff.Stat{}
 			fileNames := make([]string, 0, 3)
 			for {
 				file, err := iter.Next()
@@ -178,10 +178,10 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 				fileNames = append(fileNames, file.NewName)
 
-				fs := file.Stat()
-				stat.Added += fs.Added
-				stat.Changed += fs.Changed
-				stat.Deleted += fs.Deleted
+				fileStat := file.Stat()
+				stat.Added += fileStat.Added
+				stat.Changed += fileStat.Changed
+				stat.Deleted += fileStat.Deleted
 			}
 			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
 				t.Fatal(diff)

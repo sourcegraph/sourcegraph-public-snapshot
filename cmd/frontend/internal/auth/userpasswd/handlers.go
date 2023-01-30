@@ -328,10 +328,10 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		}
 
 		// Write the session cookie
-		actor := actor.Actor{
+		a := actor.Actor{
 			UID: user.ID,
 		}
-		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
+		if err := session.SetActor(w, r, &a, 0, user.CreatedAt); err != nil {
 			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 			return
 		}

@@ -219,7 +219,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return *in
 	}
 
-	actor := actor.FromContext(ctx)
+	currentActor := actor.FromContext(ctx)
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
@@ -229,7 +229,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 
 		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
 		publicArgument := coalesce(event.PublicArgument)
-		if actor.SourcegraphOperator {
+		if currentActor.SourcegraphOperator {
 			result, err := jsonc.Edit(
 				string(publicArgument),
 				true,

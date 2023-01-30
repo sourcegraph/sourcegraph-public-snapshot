@@ -83,9 +83,9 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add request context tags.
-	if actor := actor.FromContext(r.Context()); actor.IsAuthenticated() {
+	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
 		addTag("Authed", "yes")
-		addTag("Authed UID", actor.UIDString())
+		addTag("Authed UID", a.UIDString())
 	} else {
 		addTag("Authed", "no")
 	}

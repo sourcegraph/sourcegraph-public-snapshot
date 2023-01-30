@@ -40,22 +40,22 @@ func summary(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	depGraph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}
-	if _, ok := graph.PackageNames[pkg]; !ok {
+	if _, ok := depGraph.PackageNames[pkg]; !ok {
 		return errors.Newf("pkg %q not found", pkg)
 	}
 
-	dependencyMap := summaryTraverse(pkg, graph.Dependencies)
+	dependencyMap := summaryTraverse(pkg, depGraph.Dependencies)
 	dependencies := make([]string, 0, len(dependencyMap))
 	for dependency := range dependencyMap {
 		dependencies = append(dependencies, dependency)
 	}
 	sort.Strings(dependencies)
 
-	dependentMap := summaryTraverse(pkg, graph.Dependents)
+	dependentMap := summaryTraverse(pkg, depGraph.Dependents)
 	dependents := make([]string, 0, len(dependentMap))
 	for dependent := range dependentMap {
 		dependents = append(dependents, dependent)
@@ -91,7 +91,7 @@ func summary(ctx context.Context, args []string) error {
 	fmt.Printf("Dependent commands:\n")
 
 	for _, dependent := range dependents {
-		if isMain(graph, dependent) {
+		if isMain(depGraph, dependent) {
 			fmt.Printf("\t> %s\n", dependent)
 		}
 	}
@@ -100,7 +100,7 @@ func summary(ctx context.Context, args []string) error {
 	fmt.Printf("Direct dependents:\n")
 
 	for _, dependent := range dependents {
-		if !isMain(graph, dependent) && dependentMap[dependent] {
+		if !isMain(depGraph, dependent) && dependentMap[dependent] {
 			fmt.Printf("\t> %s\n", dependent)
 		}
 	}
@@ -109,7 +109,7 @@ func summary(ctx context.Context, args []string) error {
 	fmt.Printf("Transitive dependents:\n")
 
 	for _, dependent := range dependents {
-		if !isMain(graph, dependent) && !dependentMap[dependent] {
+		if !isMain(depGraph, dependent) && !dependentMap[dependent] {
 			fmt.Printf("\t> %s\n", dependent)
 		}
 	}

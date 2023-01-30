@@ -566,8 +566,8 @@ func GuessSource(r *http.Request) trace.SourceType {
 
 func repoIDs(results []result.Match) []api.RepoID {
 	ids := make(map[api.RepoID]struct{}, 5)
-	for _, result := range results {
-		ids[result.RepoName().ID] = struct{}{}
+	for _, r := range results {
+		ids[r.RepoName().ID] = struct{}{}
 	}
 
 	res := make([]api.RepoID, 0, len(ids))

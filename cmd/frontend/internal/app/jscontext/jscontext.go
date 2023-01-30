@@ -127,7 +127,7 @@ type JSContext struct {
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
-	actor := actor.FromContext(req.Context())
+	currentActor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
@@ -185,11 +185,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var licenseInfo *hooks.LicenseInfo
-	if !actor.IsAuthenticated() {
+	if !currentActor.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
-		user, _ := actor.User(req.Context(), db.Users())
+		user, _ := currentActor.User(req.Context(), db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
@@ -204,7 +204,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		UserAgentIsBot:             isBot(req.UserAgent()),
 		AssetsRoot:                 assetsutil.URL("").String(),
 		Version:                    version.Version(),
-		IsAuthenticatedUser:        actor.IsAuthenticated(),
+		IsAuthenticatedUser:        currentActor.IsAuthenticated(),
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,

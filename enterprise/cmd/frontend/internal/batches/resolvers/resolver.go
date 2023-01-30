@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,7 +52,7 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	act := actor.FromContext(ctx)
+	act := sgactor.FromContext(ctx)
 	if !act.IsAuthenticated() {
 		return auth.ErrNotAuthenticated
 	}
@@ -80,7 +80,7 @@ type batchChangeEventArg struct {
 }
 
 func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}
 
 	// Verify the user is authenticated.
-	act := actor.FromContext(ctx)
+	act := sgactor.FromContext(ctx)
 	if !act.IsAuthenticated() {
 		return nil, auth.ErrNotAuthenticated
 	}
@@ -609,7 +609,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	act := actor.FromContext(ctx)
+	act := sgactor.FromContext(ctx)
 	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
 	// batchChangesCreateAccess, we still enforce it here.
@@ -638,7 +638,7 @@ func (r *Resolver) CreateChangesetSpecs(ctx context.Context, args *graphqlbacken
 		return nil, err
 	}
 
-	act := actor.FromContext(ctx)
+	act := sgactor.FromContext(ctx)
 	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
 	// batchChangesCreateAccess, we still enforce it here.
@@ -786,7 +786,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
-		actor := actor.FromContext(ctx)
+		actor := sgactor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			opts.OnlyAdministeredByUserID = actor.UID
 		}
@@ -1543,7 +1543,7 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
 	// by the user
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+		opts.ExcludeCreatedFromRawNotOwnedByUser = sgactor.FromContext(ctx).UID
 	}
 
 	if args.After != nil {

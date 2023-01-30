@@ -25,7 +25,7 @@ func Test_NewBackfill(t *testing.T) {
 	insightStore := store.NewInsightStore(insightsDB)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	store := newBackfillStoreWithClock(insightsDB, clock)
+	backfillStore := newBackfillStoreWithClock(insightsDB, clock)
 
 	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:            "asdf",
@@ -38,14 +38,14 @@ func Test_NewBackfill(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	backfill, err := store.NewBackfill(ctx, series)
+	backfill, err := backfillStore.NewBackfill(ctx, series)
 	require.NoError(t, err)
 
 	autogold.Want("backfill loaded successfully", SeriesBackfill{Id: 1, SeriesId: 1, State: "new"}).Equal(t, *backfill)
 
 	var updated *SeriesBackfill
 	t.Run("set scope on newly created backfill", func(t *testing.T) {
-		updated, err = backfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+		updated, err = backfill.SetScope(ctx, backfillStore, []int32{1, 3, 6, 8}, 100)
 		require.NoError(t, err)
 
 		autogold.Want("set scope on newly created backfill", &SeriesBackfill{
@@ -56,21 +56,21 @@ func Test_NewBackfill(t *testing.T) {
 	})
 
 	t.Run("set state to failed", func(t *testing.T) {
-		err := backfill.SetFailed(ctx, store)
+		err := backfill.SetFailed(ctx, backfillStore)
 		require.NoError(t, err)
 
 		autogold.Want("set state to failed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "failed"}).Equal(t, backfill)
 	})
 
 	t.Run("set state to completed", func(t *testing.T) {
-		err := backfill.SetCompleted(ctx, store)
+		err := backfill.SetCompleted(ctx, backfillStore)
 		require.NoError(t, err)
 
 		autogold.Want("set state to completed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "completed"}).Equal(t, backfill)
 	})
 
 	t.Run("load repo iterator", func(t *testing.T) {
-		iterator, err := updated.repoIterator(ctx, store)
+		iterator, err := updated.repoIterator(ctx, backfillStore)
 		require.NoError(t, err)
 		jsonified, err := json.Marshal(iterator)
 		require.NoError(t, err)

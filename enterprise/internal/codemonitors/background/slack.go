@@ -37,23 +37,23 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 	}
 
 	if args.IncludeResults {
-		for _, result := range truncatedResults {
+		for _, r := range truncatedResults {
 			resultType := "Message"
-			if result.DiffPreview != nil {
+			if r.DiffPreview != nil {
 				resultType = "Diff"
 			}
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
 				"%s match: <%s|%s@%s>",
 				resultType,
-				getCommitURL(args.ExternalURL, string(result.Repo.Name), string(result.Commit.ID), args.UTMSource),
-				result.Repo.Name,
-				result.Commit.ID.Short(),
+				getCommitURL(args.ExternalURL, string(r.Repo.Name), string(r.Commit.ID), args.UTMSource),
+				r.Repo.Name,
+				r.Commit.ID.Short(),
 			)))
 			var contentRaw string
-			if result.DiffPreview != nil {
-				contentRaw = truncateString(result.DiffPreview.Content)
+			if r.DiffPreview != nil {
+				contentRaw = truncateString(r.DiffPreview.Content)
 			} else {
-				contentRaw = truncateString(result.MessagePreview.Content)
+				contentRaw = truncateString(r.MessagePreview.Content)
 			}
 			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
 		}

@@ -34,15 +34,15 @@ func traceInternal(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	depGraph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}
-	if _, ok := graph.PackageNames[pkg]; !ok {
+	if _, ok := depGraph.PackageNames[pkg]; !ok {
 		return errors.Newf("pkg %q not found", pkg)
 	}
 
-	packages, dependencyEdges := filterExternalReferences(graph, pkg)
+	packages, dependencyEdges := filterExternalReferences(depGraph, pkg)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))
 	return nil
 }

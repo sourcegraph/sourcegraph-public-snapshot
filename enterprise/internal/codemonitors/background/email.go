@@ -81,8 +81,8 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
 
 	displayResults := make([]*DisplayResult, len(truncatedResults))
-	for i, result := range truncatedResults {
-		displayResults[i] = toDisplayResult(result, args.ExternalURL)
+	for i, truncatedResult := range truncatedResults {
+		displayResults[i] = toDisplayResult(truncatedResult, args.ExternalURL)
 	}
 
 	return &TemplateDataNewSearchResults{

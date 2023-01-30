@@ -25,9 +25,9 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			db,
 			logtest.NoOp(t),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				actor := actor.FromContext(r.Context())
-				if actor.IsAuthenticated() {
-					_, _ = fmt.Fprintf(w, "user %v", actor.UID)
+				a := actor.FromContext(r.Context())
+				if a.IsAuthenticated() {
+					_, _ = fmt.Fprintf(w, "user %v", a.UID)
 				} else {
 					_, _ = fmt.Fprint(w, "no user")
 				}

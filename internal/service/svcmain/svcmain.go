@@ -130,17 +130,17 @@ func run(
 
 	// Start the services.
 	for i := range services {
-		service := services[i]
+		s := services[i]
 		serviceConfig := serviceConfigs[i]
 		allReadyWG.Add(1)
 		go func() {
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
-			obctx := observation.ScopedContext("", service.Name(), "", obctx)
-			err := service.Start(ctx, obctx, allReadyWG.Done, serviceConfig)
+			obctx := observation.ScopedContext("", s.Name(), "", obctx)
+			err := s.Start(ctx, obctx, allReadyWG.Done, serviceConfig)
 			if err != nil {
-				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
+				logger.Fatal("failed to start service", log.String("service", s.Name()), log.Error(err))
 			}
 		}()
 	}

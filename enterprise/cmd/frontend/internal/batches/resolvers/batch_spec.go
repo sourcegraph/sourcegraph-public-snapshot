@@ -282,8 +282,8 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 }
 
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, auth.ErrNotAuthenticated
 	}
 
@@ -307,7 +307,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 	}
 
 	return &batchChangesCodeHostConnectionResolver{
-		userID:                &actor.UID,
+		userID:                &a.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{

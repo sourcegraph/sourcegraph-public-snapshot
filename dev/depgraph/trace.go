@@ -36,15 +36,15 @@ func trace(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	depGraph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}
-	if _, ok := graph.PackageNames[pkg]; !ok {
+	if _, ok := depGraph.PackageNames[pkg]; !ok {
 		return errors.Newf("pkg %q not found", pkg)
 	}
 
-	packages, dependencyEdges, dependentEdges := traceWalkGraph(graph, pkg, *dependencyMaxDepthFlag, *dependentMaxDepthFlag)
+	packages, dependencyEdges, dependentEdges := traceWalkGraph(depGraph, pkg, *dependencyMaxDepthFlag, *dependentMaxDepthFlag)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, dependentEdges))
 	return nil
 }

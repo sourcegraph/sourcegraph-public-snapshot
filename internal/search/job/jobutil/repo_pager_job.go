@@ -103,8 +103,8 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			return maxAlerter.Alert, err
 		}
 
-		job := p.child.Resolve(resolvedRepos{indexed, unindexed})
-		alert, err := job.Run(ctx, clients, stream)
+		j := p.child.Resolve(resolvedRepos{indexed, unindexed})
+		alert, err := j.Run(ctx, clients, stream)
 		maxAlerter.Add(alert)
 
 		if err != nil {

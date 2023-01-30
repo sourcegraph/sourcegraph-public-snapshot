@@ -19,13 +19,13 @@ func TestLatestDockerVersionPushed(t *testing.T) {
 		t.Skip("Skipping due to network request against dockerhub")
 	}
 
-	url := fmt.Sprintf("https://index.docker.io/v1/repositories/sourcegraph/server/tags/%s", latestReleaseDockerServerImageBuild.Version)
-	resp, err := http.Get(url)
+	urlStr := fmt.Sprintf("https://index.docker.io/v1/repositories/sourcegraph/server/tags/%s", latestReleaseDockerServerImageBuild.Version)
+	resp, err := http.Get(urlStr)
 	if err != nil {
 		t.Skip("Failed to contact dockerhub", err)
 	}
 	if resp.StatusCode == 404 {
-		t.Fatalf("sourcegraph/server:%s does not exist on dockerhub. %s", latestReleaseDockerServerImageBuild.Version, url)
+		t.Fatalf("sourcegraph/server:%s does not exist on dockerhub. %s", latestReleaseDockerServerImageBuild.Version, urlStr)
 	}
 	if resp.StatusCode != 200 {
 		t.Skip("unexpected response from dockerhub", resp.StatusCode)
@@ -37,14 +37,14 @@ func TestLatestKubernetesVersionPushed(t *testing.T) {
 		t.Skip("Skipping due to network request")
 	}
 
-	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseKubernetesBuild.Version)
-	resp, err := http.Head(url)
+	urlStr := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseKubernetesBuild.Version)
+	resp, err := http.Head(urlStr)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if resp.StatusCode != 200 {
-		t.Errorf("Could not find Kubernetes release %s on GitHub. Response code %s from %s, err: %v", latestReleaseKubernetesBuild.Version, resp.Status, url, err)
+		t.Errorf("Could not find Kubernetes release %s on GitHub. Response code %s from %s, err: %v", latestReleaseKubernetesBuild.Version, resp.Status, urlStr, err)
 	}
 }
 
@@ -53,14 +53,14 @@ func TestLatestDockerComposeOrPureDockerVersionPushed(t *testing.T) {
 		t.Skip("Skipping due to network request")
 	}
 
-	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph-docker/releases/tag/v%v", latestReleaseDockerComposeOrPureDocker.Version)
-	resp, err := http.Head(url)
+	urlStr := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph-docker/releases/tag/v%v", latestReleaseDockerComposeOrPureDocker.Version)
+	resp, err := http.Head(urlStr)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if resp.StatusCode != 200 {
-		t.Errorf("Could not find Docker Compose or Pure Docker release %s on GitHub. Response code %s from %s, err: %v", latestReleaseDockerComposeOrPureDocker.Version, resp.Status, url, err)
+		t.Errorf("Could not find Docker Compose or Pure Docker release %s on GitHub. Response code %s from %s, err: %v", latestReleaseDockerComposeOrPureDocker.Version, resp.Status, urlStr, err)
 	}
 }
 

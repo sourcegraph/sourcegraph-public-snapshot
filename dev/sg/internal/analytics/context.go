@@ -68,9 +68,9 @@ func newResource(r log.Resource) *resource.Resource {
 }
 
 func isValidVersion(spans *tracepb.ResourceSpans) bool {
-	for _, attribute := range spans.GetResource().GetAttributes() {
-		if attribute.GetKey() == sgAnalyticsVersionResourceKey {
-			return attribute.Value.GetStringValue() == sgAnalyticsVersion
+	for _, attrib := range spans.GetResource().GetAttributes() {
+		if attrib.GetKey() == sgAnalyticsVersionResourceKey {
+			return attrib.Value.GetStringValue() == sgAnalyticsVersion
 		}
 	}
 	return false

@@ -170,13 +170,13 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 }
 
 func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	actor := actor.FromContext(ctx)
+	act := actor.FromContext(ctx)
 
-	if !actor.IsAuthenticated() {
+	if !act.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
 
-	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, actor.UID)
+	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, act.UID)
 	if err != nil {
 		return nil, err
 	}

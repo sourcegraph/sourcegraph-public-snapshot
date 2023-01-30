@@ -189,9 +189,9 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := bt.CreateTestOrg(t, db, "org").ID
 
-	store := store.New(db, &observation.TestContext, nil)
+	batchStore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: store}
+	r := &Resolver{store: batchStore}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -202,7 +202,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		spec.UserID = userID
 		spec.NamespaceUserID = userID
-		if err := store.CreateBatchSpec(ctx, spec); err != nil {
+		if err := batchStore.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -210,7 +210,7 @@ func TestBatchChangesListing(t *testing.T) {
 	createBatchChange := func(t *testing.T, c *btypes.BatchChange) {
 		t.Helper()
 
-		if err := store.CreateBatchChange(ctx, c); err != nil {
+		if err := batchStore.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 	}
