@@ -47791,15 +47791,15 @@ type MockUserCredentialsStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *UserCredentialsStoreListFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *UserCredentialsStoreTransactFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *UserCredentialsStoreUpdateFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserCredentialsStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *UserCredentialsStoreWithTransactFunc
 }
 
 // NewMockUserCredentialsStore creates a new mock of the
@@ -47837,11 +47837,6 @@ func NewMockUserCredentialsStore() *MockUserCredentialsStore {
 				return
 			},
 		},
-		TransactFunc: &UserCredentialsStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 UserCredentialsStore, r1 error) {
-				return
-			},
-		},
 		UpdateFunc: &UserCredentialsStoreUpdateFunc{
 			defaultHook: func(context.Context, *UserCredential) (r0 error) {
 				return
@@ -47849,6 +47844,11 @@ func NewMockUserCredentialsStore() *MockUserCredentialsStore {
 		},
 		WithFunc: &UserCredentialsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 UserCredentialsStore) {
+				return
+			},
+		},
+		WithTransactFunc: &UserCredentialsStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(UserCredentialsStore) error) (r0 error) {
 				return
 			},
 		},
@@ -47890,11 +47890,6 @@ func NewStrictMockUserCredentialsStore() *MockUserCredentialsStore {
 				panic("unexpected invocation of MockUserCredentialsStore.List")
 			},
 		},
-		TransactFunc: &UserCredentialsStoreTransactFunc{
-			defaultHook: func(context.Context) (UserCredentialsStore, error) {
-				panic("unexpected invocation of MockUserCredentialsStore.Transact")
-			},
-		},
 		UpdateFunc: &UserCredentialsStoreUpdateFunc{
 			defaultHook: func(context.Context, *UserCredential) error {
 				panic("unexpected invocation of MockUserCredentialsStore.Update")
@@ -47903,6 +47898,11 @@ func NewStrictMockUserCredentialsStore() *MockUserCredentialsStore {
 		WithFunc: &UserCredentialsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) UserCredentialsStore {
 				panic("unexpected invocation of MockUserCredentialsStore.With")
+			},
+		},
+		WithTransactFunc: &UserCredentialsStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(UserCredentialsStore) error) error {
+				panic("unexpected invocation of MockUserCredentialsStore.WithTransact")
 			},
 		},
 	}
@@ -47931,14 +47931,14 @@ func NewMockUserCredentialsStoreFrom(i UserCredentialsStore) *MockUserCredential
 		ListFunc: &UserCredentialsStoreListFunc{
 			defaultHook: i.List,
 		},
-		TransactFunc: &UserCredentialsStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateFunc: &UserCredentialsStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
 		WithFunc: &UserCredentialsStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &UserCredentialsStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -48587,111 +48587,6 @@ func (c UserCredentialsStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// UserCredentialsStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockUserCredentialsStore instance is invoked.
-type UserCredentialsStoreTransactFunc struct {
-	defaultHook func(context.Context) (UserCredentialsStore, error)
-	hooks       []func(context.Context) (UserCredentialsStore, error)
-	history     []UserCredentialsStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserCredentialsStore) Transact(v0 context.Context) (UserCredentialsStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(UserCredentialsStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockUserCredentialsStore instance is invoked and the hook
-// queue is empty.
-func (f *UserCredentialsStoreTransactFunc) SetDefaultHook(hook func(context.Context) (UserCredentialsStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockUserCredentialsStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UserCredentialsStoreTransactFunc) PushHook(hook func(context.Context) (UserCredentialsStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserCredentialsStoreTransactFunc) SetDefaultReturn(r0 UserCredentialsStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (UserCredentialsStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserCredentialsStoreTransactFunc) PushReturn(r0 UserCredentialsStore, r1 error) {
-	f.PushHook(func(context.Context) (UserCredentialsStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserCredentialsStoreTransactFunc) nextHook() func(context.Context) (UserCredentialsStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserCredentialsStoreTransactFunc) appendCall(r0 UserCredentialsStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserCredentialsStoreTransactFuncCall
-// objects describing the invocations of this function.
-func (f *UserCredentialsStoreTransactFunc) History() []UserCredentialsStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]UserCredentialsStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserCredentialsStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockUserCredentialsStore.
-type UserCredentialsStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 UserCredentialsStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserCredentialsStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserCredentialsStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // UserCredentialsStoreUpdateFunc describes the behavior when the Update
 // method of the parent MockUserCredentialsStore instance is invoked.
 type UserCredentialsStoreUpdateFunc struct {
@@ -48896,6 +48791,114 @@ func (c UserCredentialsStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserCredentialsStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserCredentialsStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockUserCredentialsStore instance is
+// invoked.
+type UserCredentialsStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(UserCredentialsStore) error) error
+	hooks       []func(context.Context, func(UserCredentialsStore) error) error
+	history     []UserCredentialsStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserCredentialsStore) WithTransact(v0 context.Context, v1 func(UserCredentialsStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(UserCredentialsStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockUserCredentialsStore instance is invoked and the hook
+// queue is empty.
+func (f *UserCredentialsStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(UserCredentialsStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockUserCredentialsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserCredentialsStoreWithTransactFunc) PushHook(hook func(context.Context, func(UserCredentialsStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserCredentialsStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(UserCredentialsStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserCredentialsStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(UserCredentialsStore) error) error {
+		return r0
+	})
+}
+
+func (f *UserCredentialsStoreWithTransactFunc) nextHook() func(context.Context, func(UserCredentialsStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserCredentialsStoreWithTransactFunc) appendCall(r0 UserCredentialsStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserCredentialsStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *UserCredentialsStoreWithTransactFunc) History() []UserCredentialsStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]UserCredentialsStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserCredentialsStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of
+// MockUserCredentialsStore.
+type UserCredentialsStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(UserCredentialsStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserCredentialsStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserCredentialsStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
