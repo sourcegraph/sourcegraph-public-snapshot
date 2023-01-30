@@ -99,7 +99,7 @@ func (g *generator) generate(ctx context.Context) error {
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		if time.Since(lastUpdate) >= g.progressUpdates {
 			lastUpdate = time.Now()
-			g.logger.Info("progress: discovered LSIF indexes", log.Int("n", queried), log.Uint64("of", (total)))
+			g.logger.Info("progress: discovered LSIF indexes", log.Int("n", queried), log.Uint64("of", total))
 		}
 		queried++
 		if strings.Contains(each.InputIndexer, "lsif-go") {
