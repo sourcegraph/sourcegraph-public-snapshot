@@ -44,12 +44,7 @@ export const UserAreaGQLFragment = gql`
         avatarURL
         viewerCanAdminister
         builtinAuth
-        siteAdmin
         createdAt
-        emails {
-            email
-            isPrimary
-        }
     }
 `
 
