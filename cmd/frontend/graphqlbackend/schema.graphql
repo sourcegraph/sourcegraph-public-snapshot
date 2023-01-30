@@ -3214,6 +3214,7 @@ type Repository implements Node & GenericSearchResultInterface {
     Phabricator, etc.).
     """
     externalRepository: ExternalRepository!
+
     """
     Whether the repository is a fork.
     """
@@ -4185,6 +4186,28 @@ type CodeIntelRepository {
     The URL to this repository.
     """
     url: String!
+    """
+    Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    Phabricator, etc.). Only populated when used as part of repository list previews for configuration policies.
+    """
+    externalRepository: CodeIntelExternalRepository
+}
+
+"""
+A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+"""
+type CodeIntelExternalRepository {
+    """
+    The type of external service where this repository resides.
+    Example: "github", "gitlab", etc.
+    """
+    serviceType: String!
+    """
+    The particular instance of the external service where this repository resides. Its value is
+    opaque but typically consists of the canonical base URL to the service.
+    Example: For GitHub.com, this is "https://github.com/".
+    """
+    serviceID: String!
 }
 
 """

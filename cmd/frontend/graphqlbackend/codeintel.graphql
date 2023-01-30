@@ -348,19 +348,9 @@ extend type Query {
         patterns: [String!]!
 
         """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
+        When specified, indicates that this request should return the first N items.
         """
         first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'RepositoryFilterPreview.pageInfo.endCursor' that is returned.
-        """
-        after: String
     ): RepositoryFilterPreview!
 
     """
@@ -389,11 +379,6 @@ type RepositoryFilterPreview {
     The total number of repositories in this result set.
     """
     totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 
     """
     The maximum number of repository matches a single policy can make.
@@ -655,7 +640,19 @@ extend type Repository {
         A pattern matching the name of the matching Git object.
         """
         pattern: String!
-    ): [GitObjectFilterPreview!]!
+
+        """
+        When specified, indicates that this request should return the first N items.
+        """
+        first: Int
+
+        """
+        When specified, the total number of matching Git objects younger than this value
+        will be returned along with the total number of matching objects. This does not
+        affect the set of objects returned as items.
+        """
+        countObjectsYoungerThanHours: Int
+    ): GitObjectFilterPreview!
 }
 
 extend interface TreeEntry {
@@ -887,10 +884,32 @@ type LSIFIndexesWithRepositoryNamespace {
 }
 
 """
+A decorated connection of Git objects resulting from 'previewGitObjectFilter'.
+"""
+type GitObjectFilterPreview {
+    """
+    A list of Git objects composing the current page.
+    """
+    nodes: [CodeIntelGitObject!]!
+
+    """
+    The total number of Git objects in this result set.
+    """
+    totalCount: Int!
+
+    """
+    When countObjectsYoungerThanHours is supplied, this holds the total number of Git
+    objects in the result set that have an associated commit date younger than the
+    supplied threshold.
+    """
+    totalCountYoungerThanThreshold: Int
+}
+
+"""
 A git object that matches a git object type and glob pattern. This type is used by
 the UI to preview what names match a code intelligence policy in a given repository.
 """
-type GitObjectFilterPreview {
+type CodeIntelGitObject {
     """
     The relevant branch or tag name.
     """
@@ -900,6 +919,11 @@ type GitObjectFilterPreview {
     The full 40-char revhash.
     """
     rev: String!
+
+    """
+    The time that the underlying commit was created.
+    """
+    committedAt: DateTime!
 }
 
 """
