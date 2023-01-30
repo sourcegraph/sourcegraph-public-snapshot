@@ -59,6 +59,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -102,14 +103,14 @@ var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
+func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
 	if runCommandMock != nil {
-		return runCommandMock(ctx, cmd)
+		return runCommandMock(ctx, cmd.Unwrap())
 	}
 	span, _ := ot.StartSpanFromContext(ctx, "runCommand") //nolint:staticcheck // OT is deprecated
-	span.SetTag("path", cmd.Path)
-	span.SetTag("args", cmd.Args)
-	span.SetTag("dir", cmd.Dir)
+	span.SetTag("path", cmd.Unwrap().Path)
+	span.SetTag("args", cmd.Unwrap().Args)
+	span.SetTag("dir", cmd.Unwrap().Dir)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -120,9 +121,9 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	}()
 
 	err = cmd.Run()
-	exitStatus := -10810         // sentinel value to indicate not set
-	if cmd.ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	exitStatus := -10810                  // sentinel value to indicate not set
+	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
+		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
 }
@@ -131,11 +132,12 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 // supplied context is cancelled we attempt to send SIGINT to the command to
 // allow it to gracefully shutdown. All clients of this function should pass in a
 // command *without* a context.
-func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (exitCode int, err error) {
+func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful") //nolint:staticcheck // OT is deprecated
-	span.SetTag("path", cmd.Path)
-	span.SetTag("args", cmd.Args)
-	span.SetTag("dir", cmd.Dir)
+	c := cmd.Unwrap()
+	span.SetTag("path", c.Path)
+	span.SetTag("args", c.Args)
+	span.SetTag("dir", c.Dir)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -165,9 +167,9 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 	case <-ctx.Done():
 		logger.Debug("context cancelled, sending SIGINT")
 		// Attempt to send SIGINT
-		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+		if err := cmd.Unwrap().Process.Signal(syscall.SIGINT); err != nil {
 			logger.Warn("Sending SIGINT to command", log.Error(err))
-			if err := cmd.Process.Kill(); err != nil {
+			if err := cmd.Unwrap().Process.Kill(); err != nil {
 				logger.Warn("killing process", log.Error(err))
 			}
 			return exitCode, err
@@ -183,7 +185,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 			}
 		case <-timer.C:
 			logger.Debug("timed out, killing process")
-			if err := cmd.Process.Kill(); err != nil {
+			if err := cmd.Unwrap().Process.Kill(); err != nil {
 				logger.Warn("killing process", log.Error(err))
 			}
 			logger.Debug("process killed, waiting for done")
@@ -353,6 +355,11 @@ type Server struct {
 	// method ensureOperations should be used in all references to avoid a nil pointer
 	// dereferencs.
 	operations *operations
+
+	// recordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
+	// The factory creates recordable commands with a set predicate, which is used to determine whether a
+	// particular command should be recorded or not.
+	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
 type locks struct {
@@ -433,11 +440,70 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	})
 }
 
+// recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
+// for a particular repository.
+func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
+	// empty repos, means we should never record since there is nothing to match on
+	if len(repos) == 0 {
+		return func(ctx context.Context, c *exec.Cmd) bool {
+			return false
+		}
+	}
+
+	// we won't record any git commands with these commands since they are considered to be not destructive
+	ignoredGitCommands := map[string]struct{}{
+		"show":      {},
+		"rev-parse": {},
+		"log":       {},
+		"diff":      {},
+		"ls-tree":   {},
+	}
+	return func(ctx context.Context, cmd *exec.Cmd) bool {
+		base := filepath.Base(cmd.Path)
+		if base != "git" {
+			return false
+		}
+
+		repoMatch := false
+		for _, repo := range repos {
+			if strings.Contains(cmd.Dir, repo) {
+				repoMatch = true
+				break
+			}
+		}
+
+		// If the repo doesn't match, no use in checking if it is a command we should record.
+		if !repoMatch {
+			return false
+		}
+		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
+		// git -c "protocol.version=2" remote show
+		for _, arg := range cmd.Args {
+			if _, ok := ignoredGitCommands[arg]; ok {
+				return false
+			}
+		}
+		return true
+	}
+
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
+
+	s.recordingCommandFactory = wrexec.NewRecordingCommandFactory(nil, 0)
+	conf.Watch(func() {
+		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
+		// to determine whether a command should be recorded or not.
+		recordingConf := conf.Get().SiteConfig().GitRecorder
+		if recordingConf == nil {
+			return
+		}
+		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
+	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once on a single gitserver.
@@ -449,6 +515,7 @@ func (s *Server) Handler() http.Handler {
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
 	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
+
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
@@ -1433,9 +1500,9 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 			return "", true, errors.New("commit ID starting with - is not allowed")
 		}
 
-		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, commitId)
-		dir.Set(cmd)
-		cmd.Stdout = &buf
+		cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+		dir.Set(cmd.Unwrap())
+		cmd.Unwrap().Stdout = &buf
 
 		if _, err := runCommand(ctx, cmd); err != nil {
 			return "", true, err
@@ -1760,11 +1827,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
-	cmd := exec.CommandContext(ctx, "git", req.Args...)
-	dir.Set(cmd)
-	cmd.Stdout = stdoutW
-	cmd.Stderr = stderrW
-	cmd.Stdin = bytes.NewReader(req.Stdin)
+	cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
+	dir.Set(cmd.Unwrap())
+	cmd.Unwrap().Stdout = stdoutW
+	cmd.Unwrap().Stderr = stderrW
+	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
 
 	exitStatus, execErr = runCommand(ctx, cmd)
 
@@ -1937,7 +2004,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	exitStatus, execErr = runCommand(ctx, cmd)
+	exitStatus, execErr = runCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -2226,7 +2293,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	go readCloneProgress(logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWith(ctx, cmd, true, pw); err != nil {
+	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2236,7 +2303,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, tmp, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, s.recordingCommandFactory, tmp, syncer, remoteURL); err != nil {
 		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2609,7 +2676,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, dir, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, s.recordingCommandFactory, dir, syncer, remoteURL); err != nil {
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
@@ -2685,7 +2752,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2699,7 +2766,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWith(ctx, cmd, true, nil)
+	output, err := runWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

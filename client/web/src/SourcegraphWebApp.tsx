@@ -352,7 +352,6 @@ export class SourcegraphWebApp extends React.Component<
                 render={routeComponentProps => (
                     <Layout
                         {...props}
-                        {...routeComponentProps}
                         authenticatedUser={authenticatedUser}
                         viewerSubject={this.state.viewerSubject}
                         settingsCascade={this.state.settingsCascade}

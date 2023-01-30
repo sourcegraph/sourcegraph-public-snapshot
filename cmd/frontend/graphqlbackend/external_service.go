@@ -62,6 +62,7 @@ var availabilityCheck = map[string]bool{
 	extsvc.KindGitLab:          true,
 	extsvc.KindBitbucketServer: true,
 	extsvc.KindBitbucketCloud:  true,
+	extsvc.KindAzureDevOps:     true,
 }
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {

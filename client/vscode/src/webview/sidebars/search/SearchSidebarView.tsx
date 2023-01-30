@@ -2,8 +2,6 @@ import React, { ReactElement, ReactNode, useCallback, useMemo } from 'react'
 
 import { useHistory } from 'react-router'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
-// Disable so we can create a separate store for the VS Code extension.
-// eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
 
 import {
@@ -134,7 +132,8 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
             (updates: QueryUpdate[]) =>
                 submitSearch(
                     {
-                        history,
+                        historyOrNavigate: history,
+                        location: history.location,
                         source: 'filter',
                     },
                     updates

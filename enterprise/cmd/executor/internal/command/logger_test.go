@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -13,7 +13,7 @@ func TestLogger(t *testing.T) {
 	s := NewMockExecutionLogEntryStore()
 
 	doneAdding := make(chan struct{})
-	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ int, _ workerutil.ExecutionLogEntry) (int, error) {
+	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ int, _ internalexecutor.ExecutionLogEntry) (int, error) {
 		doneAdding <- struct{}{}
 		return 1, nil
 	})
@@ -55,7 +55,7 @@ func TestLogger(t *testing.T) {
 func TestLogger_Failure(t *testing.T) {
 	s := NewMockExecutionLogEntryStore()
 	doneAdding := make(chan struct{})
-	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ int, _ workerutil.ExecutionLogEntry) (int, error) {
+	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ int, _ internalexecutor.ExecutionLogEntry) (int, error) {
 		doneAdding <- struct{}{}
 		return 1, nil
 	})

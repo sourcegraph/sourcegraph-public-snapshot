@@ -251,11 +251,9 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	logger     log.Logger
-	db         database.DB
-	opt        database.ReposListOptions
-	indexed    bool
-	notIndexed bool
+	logger log.Logger
+	db     database.DB
+	opt    database.ReposListOptions
 
 	// cache results because they are used by multiple fields
 	once  sync.Once

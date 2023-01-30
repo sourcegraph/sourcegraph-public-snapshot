@@ -116,7 +116,12 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		c.Set(key, []byte(strconv.Itoa(i)))
 	}
 
-	conn := poolGet()
+	pool, ok := kv().Pool()
+	if !ok {
+		t.Fatal("need redis connection")
+	}
+
+	conn := pool.Get()
 	defer conn.Close()
 
 	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")

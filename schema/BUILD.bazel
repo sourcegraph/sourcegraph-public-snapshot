@@ -65,6 +65,7 @@ go_library(
         "rust-packages.schema.json",
         "settings.schema.json",
         "site.schema.json",
+        "azuredevops.schema.json",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/schema",
     visibility = ["//visibility:public"],

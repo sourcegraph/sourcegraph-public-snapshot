@@ -52,7 +52,7 @@ func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.
 
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
-	b, err := pool.Get(r.rkeyPrefix() + key).Bytes()
+	b, err := kv().Get(r.rkeyPrefix() + key).Bytes()
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
@@ -67,7 +67,7 @@ func (r *Cache) Set(key string, b []byte) {
 	}
 
 	if r.ttlSeconds == 0 {
-		err := pool.Set(r.rkeyPrefix()+key, b)
+		err := kv().Set(r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
@@ -81,14 +81,14 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
-	err := pool.SetEx(r.rkeyPrefix()+key, ttl, b)
+	err := kv().SetEx(r.rkeyPrefix()+key, ttl, b)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 	}
 }
 
 func (r *Cache) Increase(key string) {
-	err := pool.Incr(r.rkeyPrefix() + key)
+	err := kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return
@@ -98,7 +98,7 @@ func (r *Cache) Increase(key string) {
 		return
 	}
 
-	err = pool.Expire(r.rkeyPrefix()+key, r.ttlSeconds)
+	err = kv().Expire(r.rkeyPrefix()+key, r.ttlSeconds)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "EXPIRE", "error", err)
 		return
@@ -106,7 +106,7 @@ func (r *Cache) Increase(key string) {
 }
 
 func (r *Cache) KeyTTL(key string) (int, bool) {
-	ttl, err := pool.TTL(r.rkeyPrefix() + key)
+	ttl, err := kv().TTL(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "TTL", "error", err)
 		return -1, false
@@ -124,22 +124,22 @@ func (r *Cache) FIFOList(key string, maxSize int) *FIFOList {
 // If the key already exists and is a different type, an error is returned.
 // If the hash key does not exist, it is created. If it exists, the value is overwritten.
 func (r *Cache) SetHashItem(key string, hashKey string, hashValue string) error {
-	return pool.HSet(r.rkeyPrefix()+key, hashKey, hashValue)
+	return kv().HSet(r.rkeyPrefix()+key, hashKey, hashValue)
 }
 
 // GetHashItem gets a key in a HASH.
 func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
-	return pool.HGet(r.rkeyPrefix()+key, hashKey).String()
+	return kv().HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
-	return pool.HGetAll(r.rkeyPrefix() + key).StringMap()
+	return kv().HGetAll(r.rkeyPrefix() + key).StringMap()
 }
 
 // Delete implements httpcache.Cache.Delete
 func (r *Cache) Delete(key string) {
-	err := pool.Del(r.rkeyPrefix() + key)
+	err := kv().Del(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
@@ -162,7 +162,7 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	pool = redispool.RedisKeyValue(&redis.Pool{
+	pool := &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -172,10 +172,11 @@ func SetupForTest(t TB) {
 			_, err := c.Do("PING")
 			return err
 		},
-	})
+	}
+	kvMock = redispool.RedisKeyValue(pool)
 
 	globalPrefix = "__test__" + t.Name()
-	c := poolGet()
+	c := pool.Get()
 	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
@@ -222,7 +223,15 @@ return result
 	return err
 }
 
+var kvMock redispool.KeyValue
+
+func kv() redispool.KeyValue {
+	if kvMock != nil {
+		return kvMock
+	}
+	return redispool.Cache
+}
+
 var (
-	pool         = redispool.Cache
 	globalPrefix = dataVersion
 )

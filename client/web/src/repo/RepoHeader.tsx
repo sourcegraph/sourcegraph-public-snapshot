@@ -201,7 +201,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     )
 
     return (
-        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
@@ -231,7 +231,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
             >
                 {isLarge ? (
-                    <ul className="navbar-nav">
+                    <ul className={classNames('navbar-nav', styles.actionList)}>
                         {rightActions.map((a, index) => (
                             <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}

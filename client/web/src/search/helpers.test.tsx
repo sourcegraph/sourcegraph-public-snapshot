@@ -9,7 +9,8 @@ describe('search/helpers', () => {
         test('should update history', () => {
             const history = H.createMemoryHistory({})
             submitSearch({
-                history,
+                historyOrNavigate: history,
+                location: history.location,
                 query: 'querystring',
                 patternType: SearchPatternType.standard,
                 caseSensitive: false,
@@ -23,7 +24,8 @@ describe('search/helpers', () => {
         test('should keep trace param when updating history', () => {
             const history = H.createMemoryHistory({ initialEntries: ['/?trace=1'] })
             submitSearch({
-                history,
+                historyOrNavigate: history,
+                location: history.location,
                 query: 'querystring',
                 patternType: SearchPatternType.standard,
                 caseSensitive: false,

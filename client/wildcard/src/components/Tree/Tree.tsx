@@ -22,10 +22,16 @@ interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSe
         isBranch: boolean
         isExpanded: boolean
         handleSelect: (event: React.MouseEvent) => {}
+        props: { className: string; tabIndex: number }
     }) => React.ReactNode
+
+    // A set of node IDs that had their children loaded. This is necessary
+    // because we can not rely on the .length property to know if we're still
+    // loading children.
+    loadedIds?: Set<number>
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onLoadData, renderNode, ...rest } = props
+    const { onSelect, onLoadData, renderNode, loadedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -60,34 +66,56 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             isBranch: boolean
             isExpanded: boolean
             isSelected: boolean
-            getNodeProps: (props: { onClick: (event: Event) => {} }) => {}
+            getNodeProps: (props: { onClick: (event: Event) => {} }) => {
+                onClick: (event: React.MouseEvent) => {}
+            }
             level: number
             handleSelect: (event: React.MouseEvent) => {}
             handleExpand: (event: Event) => {}
-        }): React.ReactNode => (
-            <div
-                {...getNodeProps({ onClick: handleExpand })}
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{
-                    marginLeft: getMarginLeft(level),
-                    minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
-                }}
-                data-tree-node-id={element.id}
-                className={classNames(styles.node, isSelected && styles.selected, isBranch && styles.branch)}
-            >
-                {isBranch ? (
-                    <div className={classNames('mr-1', styles.icon)}>
-                        {isExpanded && element.children.length === 0 ? (
-                            <LoadingSpinner />
-                        ) : (
-                            <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
-                        )}
-                    </div>
-                ) : null}
-                {renderNode ? renderNode({ element, isBranch, isExpanded, handleSelect }) : null}
-            </div>
-        ),
-        [renderNode]
+        }): React.ReactNode => {
+            const { onClick, ...props } = getNodeProps({ onClick: handleExpand })
+            return (
+                <div
+                    {...props}
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{
+                        marginLeft: getMarginLeft(level),
+                        minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
+                    }}
+                    data-tree-node-id={element.id}
+                    className={classNames(styles.node, isSelected && styles.selected)}
+                >
+                    {isBranch ? (
+                        // We already handle accessibility events for expansion in the <TreeView />
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                        <div className={classNames(styles.icon, styles.collapseIcon)} onClick={onClick}>
+                            {isExpanded &&
+                            element.children.length === 0 &&
+                            (loadedIds ? !loadedIds.has(element.id) : true) ? (
+                                <LoadingSpinner />
+                            ) : (
+                                <Icon aria-hidden={true} svgPath={isExpanded ? mdiMenuDown : mdiMenuRight} />
+                            )}
+                        </div>
+                    ) : null}
+                    {renderNode
+                        ? renderNode({
+                              element,
+                              isBranch,
+                              isExpanded,
+                              handleSelect,
+                              props: {
+                                  className: classNames(styles.content, { [styles.contentInBranch]: isBranch }),
+                                  // We don't want links or any other item inside the Tree to be focusable, as focus
+                                  // should be managed by the TreeView only.
+                                  tabIndex: -1,
+                              },
+                          })
+                        : null}
+                </div>
+            )
+        },
+        [loadedIds, renderNode]
     )
 
     return (

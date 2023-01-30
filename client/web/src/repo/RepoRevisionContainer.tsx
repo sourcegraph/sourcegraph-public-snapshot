@@ -215,7 +215,7 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
 
     return (
         <>
-            <RepoRevisionWrapper className="pl-3">
+            <RepoRevisionWrapper className="px-3">
                 <Switch>
                     {props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>

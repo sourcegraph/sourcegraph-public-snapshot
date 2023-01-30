@@ -1,5 +1,7 @@
 import * as H from 'history'
 
+import { HistoryOrNavigate } from '@sourcegraph/common'
+
 import { SearchPatternType } from '../graphql-operations'
 
 import { SearchContextProps } from './helpers/searchContext'
@@ -71,7 +73,8 @@ export interface SubmitSearchParameters
     extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    history: H.History
+    historyOrNavigate: HistoryOrNavigate
+    location: H.Location
     query: string
     source:
         | 'home'

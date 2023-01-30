@@ -489,7 +489,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
@@ -522,6 +522,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		githubConnections          []*schema.GitHubConnection
 		perforceConnections        []*schema.PerforceConnection
 		bitbucketCloudConnections  []*schema.BitbucketCloudConnection
+		gerritConnections          []*schema.GerritConnection
 
 		expInvalidConnections []string
 		expSeriousProblems    []string
@@ -616,6 +617,20 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			expInvalidConnections: []string{"bitbucketCloud"},
 		},
 		{
+			description: "Gerrit connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			gerritConnections: []*schema.GerritConnection{
+				{
+					Authorization: &schema.GerritAuthorization{},
+					Url:           "https://gerrit.sgdev.org",
+					Username:      "admin",
+					Password:      "secret-password",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"gerrit"},
+		},
+		{
 			description: "Perforce connection with authz enabled but missing license for ACLs",
 			cfg:         conf.Unified{},
 			perforceConnections: []*schema.PerforceConnection{
@@ -674,6 +689,13 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 							svcs = append(svcs, &types.ExternalService{
 								Kind:   kind,
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbcloud)),
+							})
+						}
+					case extsvc.KindGerrit:
+						for _, g := range test.gerritConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(g)),
 							})
 						}
 					case extsvc.KindPerforce:
