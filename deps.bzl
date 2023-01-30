@@ -1169,6 +1169,7 @@ def go_dependencies():
         sum = "h1:Anq00jxDtoyX3+aCaYUZ0vXC5r4k4epberfWGDXV1zE=",
         patches = [
             "//third_party/com_github_cloudflare_circl:math_fp25519_BUILD_bazel.patch",
+            "//third_party/com_github_cloudflare_circl:math_fp448_BUILD_bazel.patch",
             # "//third_party/com_github_cloudflare_circl:source/dh_x25519_BUILD_bazel.new",
         ],
         version = "v1.3.0",
