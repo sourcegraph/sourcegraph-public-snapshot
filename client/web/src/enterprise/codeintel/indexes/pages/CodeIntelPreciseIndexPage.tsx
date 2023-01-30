@@ -4,38 +4,30 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { useApolloClient } from '@apollo/client'
 import {
-    mdiAlertCircle,
-    mdiCheck,
-    mdiCheckCircle,
     mdiDatabaseEdit,
     mdiDatabasePlus,
     mdiDelete,
-    mdiFileUpload,
     mdiGraph,
     mdiHistory,
     mdiInformationOutline,
     mdiMapSearch,
-    mdiProgressClock,
     mdiRecycle,
     mdiRedo,
     mdiTimerSand,
 } from '@mdi/js'
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { ErrorLike, isDefined, isErrorLike, pluralize } from '@sourcegraph/common'
+import * as H from 'history'
+import { ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
     AlertProps,
-    Badge,
     Button,
     Card,
     CardBody,
-    CardSubtitle,
     CardText,
     CardTitle,
-    Code,
     Container,
     ErrorAlert,
     ErrorMessage,
@@ -56,13 +48,11 @@ import {
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
-import { Collapsible } from '../../../../components/Collapsible'
 import {
     Connection,
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
-import { LogOutput } from '../../../../components/LogOutput'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import {
     AuditLogOperation,
@@ -70,12 +60,14 @@ import {
     PreciseIndexFields,
     PreciseIndexState,
 } from '../../../../graphql-operations'
-import { formatDurationLong } from '../../../../util/time'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexRoot } from '../../shared/components/CodeIntelUploadOrIndexRoot'
+import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
+import { IndexTimeline } from '../components/IndexTimeline'
+import { ProjectDescription } from '../components/ProjectDescriptionProps'
 import { queryDependencyGraph } from '../hooks/queryDependencyGraph'
 import { queryPreciseIndex } from '../hooks/queryPreciseIndex'
 import {
@@ -111,8 +103,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     match: {
         params: { id },
     },
-    now,
     authenticatedUser,
+    now,
     history,
     location,
     telemetryService,
@@ -120,11 +112,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
 
     const apolloClient = useApolloClient()
-
     const [reindexOrError, setReindexOrError] = useState<'loading' | 'reindexed' | ErrorLike>()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
     const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
     const { handleReindexLsifIndex, reindexError } = useReindexLsifIndex()
+    const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
 
     const indexOrError = useObservable(
         useMemo(
@@ -144,8 +136,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             setReindexOrError(reindexError)
         }
     }, [reindexError])
-
-    const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -216,16 +206,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         }
     }, [id, indexOrError, handleDeleteLsifUpload, history])
 
-    const queryDependencies = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (indexOrError && !isErrorLike(indexOrError)) {
-                return queryDependencyGraph({ ...args, dependencyOf: indexOrError.id }, apolloClient)
-            }
-            throw new Error('unreachable: queryDependencies referenced with invalid upload')
-        },
-        [indexOrError, queryDependencyGraph, apolloClient]
-    )
-
     const queryDependents = useCallback(
         (args: FilteredConnectionQueryArguments) => {
             if (indexOrError && !isErrorLike(indexOrError)) {
@@ -279,126 +259,56 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             />
 
             <Container>
-                <Card>
-                    <CardBody>
-                        <CardTitle>
-                            {indexOrError.projectRoot ? (
-                                <Link to={indexOrError.projectRoot.repository.url}>
-                                    {indexOrError.projectRoot.repository.name}
-                                </Link>
-                            ) : (
-                                <span>Unknown repository</span>
-                            )}
-                        </CardTitle>
+                <IndexDescription index={indexOrError} />
 
-                        <CardSubtitle className="mb-2 text-muted">
-                            {/* TODO - share this */}
-
-                            {indexOrError.uploadedAt ? (
+                <div className="mt-2">
+                    <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
+                        <span>
+                            {indexOrError.state === PreciseIndexState.UPLOADING_INDEX ? (
+                                <span>Still uploading...</span>
+                            ) : indexOrError.state === PreciseIndexState.DELETING ? (
+                                <span>Upload is queued for deletion.</span>
+                            ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
+                                <>
+                                    Index is queued for indexing.{' '}
+                                    <LousyDescription placeInQueue={indexOrError.placeInQueue} />
+                                </>
+                            ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
+                                <>
+                                    <span>
+                                        Index is queued for processing.{' '}
+                                        <LousyDescription placeInQueue={indexOrError.placeInQueue} />
+                                    </span>
+                                </>
+                            ) : indexOrError.state === PreciseIndexState.INDEXING ? (
+                                <span>Index is currently being indexed...</span>
+                            ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
+                                <span>Index is currently being processed...</span>
+                            ) : indexOrError.state === PreciseIndexState.COMPLETED ? (
+                                <span>Index processed successfully.</span>
+                            ) : indexOrError.state === PreciseIndexState.INDEXING_ERRORED ? (
                                 <span>
-                                    Uploaded <Timestamp date={indexOrError.uploadedAt} now={now} noAbout={true} />
+                                    Index failed to index: <ErrorMessage error={indexOrError.failure} />
                                 </span>
-                            ) : indexOrError.queuedAt ? (
+                            ) : indexOrError.state === PreciseIndexState.PROCESSING_ERRORED ? (
                                 <span>
-                                    Queued <Timestamp date={indexOrError.queuedAt} now={now} noAbout={true} />
+                                    Index failed to process: <ErrorMessage error={indexOrError.failure} />
                                 </span>
                             ) : (
                                 <></>
                             )}
-                        </CardSubtitle>
-
-                        <CardText>
-                            Directory{' '}
-                            {indexOrError.projectRoot ? (
-                                <Link to={indexOrError.projectRoot.url}>
-                                    <strong>{indexOrError.projectRoot.path || '/'}</strong>
-                                </Link>
-                            ) : (
-                                <span>{indexOrError.inputRoot || '/'}</span>
-                            )}{' '}
-                            indexed at commit{' '}
-                            <Code>
-                                {indexOrError.projectRoot ? (
-                                    <Link to={indexOrError.projectRoot.commit.url}>
-                                        <Code>{indexOrError.projectRoot.commit.abbreviatedOID}</Code>
-                                    </Link>
-                                ) : (
-                                    <span>{indexOrError.inputCommit.slice(0, 7)}</span>
-                                )}
-                            </Code>{' '}
-                            by{' '}
-                            <span>
-                                {indexOrError.indexer &&
-                                    (indexOrError.indexer.url === '' ? (
-                                        <>{indexOrError.indexer.name}</>
-                                    ) : (
-                                        <Link to={indexOrError.indexer.url}>{indexOrError.indexer.name}</Link>
-                                    ))}
-                            </span>
-                            {', '}
-                            {/* TODO - share this */}
-                            {indexOrError.tags.length > 0 && (
-                                <>
-                                    tagged as{' '}
-                                    {indexOrError.tags
-                                        .slice(0, 3)
-                                        .map<React.ReactNode>(tag => (
-                                            <Badge key={tag} variant="outlineSecondary">
-                                                {tag}
-                                            </Badge>
-                                        ))
-                                        .reduce((previous, current) => [previous, ', ', current])}
-                                    {indexOrError.tags.length > 3 && <> and {indexOrError.tags.length - 3} more</>}
-                                </>
-                            )}
-                        </CardText>
-                    </CardBody>
-                </Card>
-
-                <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
-                    <span>
-                        {indexOrError.state === PreciseIndexState.UPLOADING_INDEX ? (
-                            <span>Still uploading...</span>
-                        ) : indexOrError.state === PreciseIndexState.DELETING ? (
-                            <span>Upload is queued for deletion.</span>
-                        ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
-                            <>
-                                Index is queued for indexing.{' '}
-                                <LousyDescription placeInQueue={indexOrError.placeInQueue} />
-                            </>
-                        ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
-                            <>
-                                <span>
-                                    Index is queued for processing.{' '}
-                                    <LousyDescription placeInQueue={indexOrError.placeInQueue} />
-                                </span>
-                            </>
-                        ) : indexOrError.state === PreciseIndexState.INDEXING ? (
-                            <span>Index is currently being indexed...</span>
-                        ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
-                            <span>Index is currently being processed...</span>
-                        ) : indexOrError.state === PreciseIndexState.COMPLETED ? (
-                            <span>Index processed successfully.</span>
-                        ) : indexOrError.state === PreciseIndexState.INDEXING_ERRORED ? (
-                            <span>
-                                Index failed to index: <ErrorMessage error={indexOrError.failure} />
-                            </span>
-                        ) : indexOrError.state === PreciseIndexState.PROCESSING_ERRORED ? (
-                            <span>
-                                Index failed to process: <ErrorMessage error={indexOrError.failure} />
-                            </span>
-                        ) : (
-                            <></>
-                        )}
-                    </span>
-                </Alert>
-
-                {indexOrError.isLatestForRepo && (
-                    <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
-                        This upload can answer queries for the tip of the default branch and are targets of
-                        cross-repository find reference operations.
+                        </span>
                     </Alert>
-                )}
+
+                    {indexOrError.isLatestForRepo && (
+                        <Alert variant={'secondary'}>
+                            <span>
+                                This upload can answer queries for the tip of the default branch and are targets of
+                                cross-repository find reference operations.
+                            </span>
+                        </Alert>
+                    )}
+                </div>
 
                 <Tabs size="medium" className={classNames('mt-2', styles.tabs)}>
                     <TabList>
@@ -461,20 +371,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             <>
                                 <TabPanel>
                                     <Container className="mt-2">
-                                        <FilteredConnection
-                                            listComponent="div"
-                                            listClassName={classNames(styles.grid, 'mb-3')}
-                                            inputClassName="w-auto"
-                                            noun="dependency"
-                                            pluralNoun="dependencies"
-                                            nodeComponent={DependencyOrDependentNode}
-                                            queryConnection={queryDependencies}
-                                            history={history}
-                                            location={location}
-                                            cursorPaging={true}
-                                            useURLQuery={false}
-                                            // emptyElement={<EmptyDependencies />}
-                                        />
+                                        <DependencyList index={indexOrError} history={history} location={location} />
                                     </Container>
                                 </TabPanel>
                                 <TabPanel>
@@ -602,315 +499,6 @@ const LousyDescription: FunctionComponent<React.PropsWithChildren<CodeIntelState
 
     return <>{placeInQueue ? `There are ${placeInQueue - 1} indexes ahead of this one.` : ''}</>
 }
-
-interface IndexTimelineProps {
-    index: PreciseIndexFields
-    now?: () => Date
-    className?: string
-}
-
-const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimelineProps>> = ({ index, now, className }) => {
-    const stages = useMemo(() => {
-        const stages: TimelineStage[] = []
-
-        // TODO - document
-        if (index.queuedAt) {
-            stages.push({
-                icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
-                text: 'Queued for indexing',
-                date: index.queuedAt,
-                className: 'bg-success',
-            })
-        }
-
-        // TODO - document
-        if (index.indexingStartedAt) {
-            stages.push({
-                icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
-                text: 'Began indexing',
-                date: index.indexingStartedAt,
-                className: 'bg-success',
-            })
-        }
-
-        // TODO - document
-        var v = indexSetupStage(index, now)
-        if (v) {
-            stages.push(v)
-        }
-        v = indexPreIndexStage(index, now)
-        if (v) {
-            stages.push(v)
-        }
-        v = indexIndexStage(index, now)
-        if (v) {
-            stages.push(v)
-        }
-        v = indexUploadStage(index, now)
-        if (v) {
-            stages.push(v)
-        }
-        // TODO - hide a bit more
-        v = indexTeardownStage(index, now)
-        if (v) {
-            stages.push(v)
-        }
-
-        // Do not distinctly show the end of indexing unless it was a failure that produced
-        // to submit an upload record. If we did submit a record, then the end result of this
-        // job is successful to the user (if processing succeeds).
-        if (index.indexingFinishedAt && index.state === PreciseIndexState.INDEXING_ERRORED) {
-            stages.push({
-                icon: <Icon aria-label="" svgPath={mdiAlertCircle} />,
-                text: 'Failed indexing',
-                date: index.indexingFinishedAt,
-                className: 'bg-danger',
-            })
-        }
-
-        // TODO - document
-        if (index.uploadedAt) {
-            if (index.state === PreciseIndexState.UPLOADING_INDEX) {
-                stages.push({
-                    icon: <Icon aria-label="Success" svgPath={mdiFileUpload} />,
-                    text: 'Began uploading',
-                    date: index.uploadedAt,
-                    className: 'bg-success',
-                })
-            } else if (index.state === PreciseIndexState.PROCESSING_ERRORED) {
-                if (!index.processingStartedAt) {
-                    stages.push({
-                        icon: <Icon aria-label="" svgPath={mdiAlertCircle} />,
-                        text: 'Uploading failed',
-                        date: index.uploadedAt,
-                        className: 'bg-danger',
-                    })
-                }
-            } else {
-                stages.push({
-                    icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
-                    text: 'Queued for processing',
-                    date: index.uploadedAt,
-                    className: 'bg-success',
-                })
-            }
-        }
-
-        // TODO - document
-        if (index.processingStartedAt) {
-            stages.push({
-                icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
-                text: 'Began processing',
-                date: index.processingStartedAt,
-                className: 'bg-success',
-            })
-        }
-
-        // TODO - document
-        if (index.processingFinishedAt) {
-            if (index.state === PreciseIndexState.PROCESSING_ERRORED) {
-                if (index.processingStartedAt) {
-                    stages.push({
-                        icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
-                        text: 'Failed',
-                        date: index.processingFinishedAt,
-                        className: 'bg-danger',
-                    })
-                }
-            } else {
-                stages.push({
-                    icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
-                    text: 'Finished',
-                    date: index.processingFinishedAt,
-                    className: 'bg-success',
-                })
-            }
-        }
-
-        return stages
-    }, [index, now])
-
-    return <Timeline stages={stages} now={now} className={className} />
-}
-
-const indexSetupStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || index.steps.setup.length === 0
-        ? undefined
-        : {
-              text: 'Setup',
-              details: index.steps.setup.map(logEntry => (
-                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-              )),
-              ...genericStage(index.steps.setup),
-          }
-
-const indexPreIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined => {
-    if (!index.steps) {
-        return undefined
-    }
-
-    const logEntries = index.steps.preIndex.map(step => step.logEntry).filter(isDefined)
-
-    return logEntries.length === 0
-        ? undefined
-        : {
-              text: 'Pre Index',
-              details: index.steps.preIndex.map(
-                  step =>
-                      step.logEntry && (
-                          <div key={`${step.image}${step.root}${step.commands.join(' ')}}`}>
-                              <ExecutionLogEntry logEntry={step.logEntry} now={now}>
-                                  <ExecutionMetaInformation
-                                      {...{
-                                          image: step.image,
-                                          commands: step.commands,
-                                          root: step.root,
-                                      }}
-                                  />
-                              </ExecutionLogEntry>
-                          </div>
-                      )
-              ),
-              ...genericStage(logEntries),
-          }
-}
-
-const indexIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || !index.steps.index.logEntry
-        ? undefined
-        : {
-              text: 'Index',
-              details: (
-                  <>
-                      <ExecutionLogEntry logEntry={index.steps.index.logEntry} now={now}>
-                          <ExecutionMetaInformation
-                              {...{
-                                  image: index.inputIndexer,
-                                  commands: index.steps.index.indexerArgs,
-                                  root: index.inputRoot,
-                              }}
-                          />
-                      </ExecutionLogEntry>
-                  </>
-              ),
-              ...genericStage(index.steps.index.logEntry),
-          }
-
-const indexUploadStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || !index.steps.upload
-        ? undefined
-        : {
-              text: 'Upload',
-              details: <ExecutionLogEntry logEntry={index.steps.upload} now={now} />,
-              ...genericStage(index.steps.upload),
-          }
-
-const indexTeardownStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || index.steps.teardown.length === 0
-        ? undefined
-        : {
-              text: 'Teardown',
-              details: index.steps.teardown.map(logEntry => (
-                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-              )),
-              ...genericStage(index.steps.teardown),
-          }
-
-const genericStage = <E extends { startTime: string; exitCode: number | null }>(
-    value: E | E[]
-): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expandedByDefault'> => {
-    const finished = Array.isArray(value)
-        ? value.every(logEntry => logEntry.exitCode !== null)
-        : value.exitCode !== null
-    const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
-
-    return {
-        icon: !finished ? (
-            <Icon aria-label="Success" svgPath={mdiProgressClock} />
-        ) : success ? (
-            <Icon aria-label="Success" svgPath={mdiCheck} />
-        ) : (
-            <Icon aria-label="Failed" svgPath={mdiAlertCircle} />
-        ),
-        date: Array.isArray(value) ? value[0].startTime : value.startTime,
-        className: success || !finished ? 'bg-success' : 'bg-danger',
-        expandedByDefault: !(success || !finished),
-    }
-}
-
-interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
-    logEntry: {
-        key: string
-        command: string[]
-        startTime: string
-        exitCode: number | null
-        out: string
-        durationMilliseconds: number | null
-    }
-    now?: () => Date
-}
-
-const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<ExecutionLogEntryProps>> = ({
-    logEntry,
-    children,
-    now,
-}) => (
-    <Card className="mb-3">
-        <CardBody>
-            {logEntry.command.length > 0 ? (
-                <LogOutput text={logEntry.command.join(' ')} className="mb-3" logDescription="Executed command:" />
-            ) : (
-                <div className="mb-3">
-                    <span className="text-muted">Internal step {logEntry.key}.</span>
-                </div>
-            )}
-
-            <div>
-                {logEntry.exitCode === null && <LoadingSpinner className="mr-1" />}
-                {logEntry.exitCode !== null && (
-                    <>
-                        {logEntry.exitCode === 0 ? (
-                            <Icon
-                                className="text-success mr-1"
-                                svgPath={mdiCheckCircle}
-                                inline={false}
-                                aria-label="Success"
-                            />
-                        ) : (
-                            <Icon
-                                className="text-danger mr-1"
-                                svgPath={mdiAlertCircle}
-                                inline={false}
-                                aria-label="Failed"
-                            />
-                        )}
-                    </>
-                )}
-                <span className="text-muted">Started</span>{' '}
-                <Timestamp date={logEntry.startTime} now={now} noAbout={true} />
-                {logEntry.exitCode !== null && logEntry.durationMilliseconds !== null && (
-                    <>
-                        <span className="text-muted">, ran for</span>{' '}
-                        {formatDurationLong(logEntry.durationMilliseconds)}
-                    </>
-                )}
-            </div>
-            {children}
-        </CardBody>
-
-        <div className="p-2">
-            {logEntry.out ? (
-                <Collapsible title="Log output" titleAtStart={true} buttonClassName="p-2">
-                    <LogOutput text={logEntry.out} logDescription="Log output:" />
-                </Collapsible>
-            ) : (
-                <div className="p-2">
-                    <span className="text-muted">No log output available.</span>
-                </div>
-            )}
-        </div>
-    </Card>
-)
 
 interface RetentionMatchNodeProps {
     node: NormalizedUploadRetentionMatch
@@ -1141,35 +729,6 @@ const EmptyUploadRetentionMatchStatus: React.FunctionComponent<React.PropsWithCh
     </Text>
 )
 
-interface ExecutionMetaInformationProps {
-    image: string
-    commands: string[]
-    root: string
-}
-
-const ExecutionMetaInformation: React.FunctionComponent<React.PropsWithChildren<ExecutionMetaInformationProps>> = ({
-    image,
-    commands,
-    root,
-}) => (
-    <div className="pt-3">
-        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
-            <strong className={styles.header}>Image</strong>
-            <div>{image}</div>
-        </div>
-        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
-            <strong className={styles.header}>Commands</strong>
-            <div>
-                <Code>{commands.join(' ')}</Code>
-            </div>
-        </div>
-        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
-            <strong className={styles.header}>Root</strong>
-            <div>/{root}</div>
-        </div>
-    </div>
-)
-
 interface CodeIntelDeleteUploadProps {
     state: PreciseIndexState
     deleteUpload: () => Promise<void>
@@ -1218,3 +777,71 @@ const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeInte
         </Button>
     </Tooltip>
 )
+
+//
+//
+//
+
+interface IndexDescriptionProps {
+    index: PreciseIndexFields
+}
+
+const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index }) => (
+    <Card>
+        <CardBody>
+            <CardTitle>
+                {index.projectRoot ? (
+                    <Link to={index.projectRoot.repository.url}>{index.projectRoot.repository.name}</Link>
+                ) : (
+                    <span>Unknown repository</span>
+                )}
+            </CardTitle>
+
+            <CardText>
+                <span className="d-block">
+                    <ProjectDescription index={index} />
+                </span>
+
+                <small className="text-mute">
+                    <PreciseIndexLastUpdated index={index} />
+                </small>
+            </CardText>
+        </CardBody>
+    </Card>
+)
+
+export interface DependencyListProps {
+    index: PreciseIndexFields
+    history: H.History
+    location: H.Location
+}
+
+export const DependencyList: FunctionComponent<DependencyListProps> = ({ index, history, location }) => {
+    const apolloClient = useApolloClient()
+    const queryDependencies = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (index && !isErrorLike(index)) {
+                return queryDependencyGraph({ ...args, dependencyOf: index.id }, apolloClient)
+            }
+            throw new Error('unreachable: queryDependencies referenced with invalid upload')
+        },
+        [index, queryDependencyGraph, apolloClient]
+    )
+
+    return (
+        <FilteredConnection
+            listComponent="div"
+            listClassName={classNames(styles.grid, 'mb-3')}
+            inputClassName="w-auto"
+            noun="dependency"
+            pluralNoun="dependencies"
+            nodeComponent={DependencyOrDependentNode}
+            queryConnection={queryDependencies}
+            history={history}
+            location={location}
+            cursorPaging={true}
+            useURLQuery={false}
+            // emptyElement={<EmptyDependencies />}
+        />
+    )
+}

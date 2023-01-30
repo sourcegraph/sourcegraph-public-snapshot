@@ -1,19 +1,9 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
-
-import { RouteComponentProps, useLocation } from 'react-router'
-
 import { useApolloClient } from '@apollo/client'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { isErrorLike } from '@sourcegraph/common'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-} from '../../../../components/FilteredConnection'
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
-import { queryPreciseIndexes } from '../hooks/queryPreciseIndexes'
-import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Alert,
     Badge,
@@ -23,32 +13,39 @@ import {
     Container,
     ErrorAlert,
     H3,
-    Icon,
     Input,
     Label,
     Link,
-    LoadingSpinner,
     PageHeader,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
-import * as H from 'history'
-
-import { mdiAlertCircle, mdiCheckCircle, mdiDatabase, mdiFileUpload, mdiSourceRepository, mdiTimerSand } from '@mdi/js'
-import styles from './CodeIntelPreciseIndexesPage.module.scss'
-
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import classNames from 'classnames'
+import * as H from 'history'
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { of, Subject } from 'rxjs'
+import { tap } from 'rxjs/operators'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArguments,
+} from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { queryCommitGraph } from '../hooks/queryCommitGraph'
+import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
+import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
+import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
+import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
+import { ProjectDescription } from '../components/ProjectDescriptionProps'
+import { queryCommitGraph } from '../hooks/queryCommitGraph'
+import { queryPreciseIndexes } from '../hooks/queryPreciseIndexes'
 import { useDeleteLsifIndex } from '../hooks/useDeleteLsifIndex'
 import { useDeleteLsifIndexes } from '../hooks/useDeleteLsifIndexes'
+import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 import { useReindexLsifIndex } from '../hooks/useReindexLsifIndex'
 import { useReindexLsifIndexes } from '../hooks/useReindexLsifIndexes'
-import { isErrorLike } from '@sourcegraph/common'
-import { tap } from 'rxjs/operators'
+import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -188,35 +185,28 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
-            {repo && (
-                <>
-                    {commitGraphMetadata && (
+            {repo && commitGraphMetadata && (
+                <Alert variant={commitGraphMetadata.stale ? 'primary' : 'success'} aria-live="off">
+                    {commitGraphMetadata.stale ? (
                         <>
-                            <Alert variant={commitGraphMetadata.stale ? 'primary' : 'success'} aria-live="off">
-                                {commitGraphMetadata.stale ? (
-                                    <>
-                                        Repository commit graph is currently stale and is queued to be refreshed.
-                                        Refreshing the commit graph updates which uploads are visible from which
-                                        commits.
-                                    </>
-                                ) : (
-                                    <>Repository commit graph is currently up to date.</>
-                                )}{' '}
-                                {commitGraphMetadata.updatedAt && (
-                                    <>
-                                        Last refreshed <Timestamp date={commitGraphMetadata.updatedAt} now={now} />.
-                                    </>
-                                )}
-                            </Alert>
+                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
+                            commit graph updates which uploads are visible from which commits.
+                        </>
+                    ) : (
+                        <>Repository commit graph is currently up to date.</>
+                    )}{' '}
+                    {commitGraphMetadata.updatedAt && (
+                        <>
+                            Last refreshed <Timestamp date={commitGraphMetadata.updatedAt} now={now} />.
                         </>
                     )}
+                </Alert>
+            )}
 
-                    {authenticatedUser?.siteAdmin && (
-                        <Container className="mb-2">
-                            <EnqueueForm repoId={repo.id} querySubject={querySubject} />
-                        </Container>
-                    )}
-                </>
+            {repo && authenticatedUser?.siteAdmin && (
+                <Container className="mb-2">
+                    <EnqueueForm repoId={repo.id} querySubject={querySubject} />
+                </Container>
             )}
 
             <div className="mb-3">
@@ -263,6 +253,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 >
                     Delete {selection === 'all' ? totalCount ?? 'all' : selection.size === 0 ? '' : selection.size}
                 </Button>
+
                 <Button
                     className="mr-2"
                     variant="primary"
@@ -304,11 +295,16 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 </Button>
             </div>
 
-            {isErrorLike(deleteError) && <ErrorAlert prefix="Error deleting LSIF upload" error={deleteError} />}
-            {isErrorLike(deletesError) && <ErrorAlert prefix="Error deleting LSIF uploads" error={deletesError} />}
-            {isErrorLike(reindexError) && <ErrorAlert prefix="Error reindexing LSIF upload" error={reindexError} />}
+            {isErrorLike(deleteError) && <ErrorAlert prefix="Error deleting precise index" error={deleteError} />}
+            {isErrorLike(deletesError) && <ErrorAlert prefix="Error deleting precise indexes" error={deletesError} />}
+            {isErrorLike(reindexError) && (
+                <ErrorAlert prefix="Error marking precise index as replaceable by auto-indexing" error={reindexError} />
+            )}
             {isErrorLike(reindexesError) && (
-                <ErrorAlert prefix="Error reindexing LSIF uploads" error={reindexesError} />
+                <ErrorAlert
+                    prefix="Error marking precise indexes as replaceable by auto-indexing"
+                    error={reindexesError}
+                />
             )}
 
             <Container>
@@ -346,17 +342,17 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
 interface IndexNodeProps {
     node: PreciseIndexFields
-    now?: () => Date
     selection: Set<string> | 'all'
     onCheckboxToggle: (id: string, checked: boolean) => void
+    now?: () => Date
     history: H.History
 }
 
 const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
     node,
-    now,
     selection,
     onCheckboxToggle,
+    now,
     history,
 }) => (
     <>
@@ -372,6 +368,7 @@ const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
 
         <div
             className={classNames(styles.information, 'd-flex flex-column')}
+            // TODO - captures child link interactions
             onClick={() => history.push({ pathname: `./indexes/${node.id}` })}
         >
             <div className="m-0">
@@ -391,71 +388,11 @@ const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
-                    Directory{' '}
-                    {node.projectRoot ? (
-                        <Link to={node.projectRoot.url}>
-                            <strong>{node.projectRoot.path || '/'}</strong>
-                        </Link>
-                    ) : (
-                        <span>{node.inputRoot || '/'}</span>
-                    )}{' '}
-                    indexed at commit{' '}
-                    {
-                        <Code>
-                            {node.projectRoot?.commit ? (
-                                <Link to={node.projectRoot.commit.url}>
-                                    <Code>{node.projectRoot.commit.abbreviatedOID}</Code>
-                                </Link>
-                            ) : (
-                                <span>{true ? node.inputCommit.slice(0, 7) : node.inputCommit}</span>
-                            )}
-                        </Code>
-                    }
-                    {node.tags.length > 0 && (
-                        <>
-                            ,{' '}
-                            <>
-                                {node.tags.length > 0 && (
-                                    <>
-                                        tagged as{' '}
-                                        {node.tags
-                                            .slice(0, 3)
-                                            .map<React.ReactNode>(tag => (
-                                                <Badge key={tag} variant="outlineSecondary">
-                                                    {tag}
-                                                </Badge>
-                                            ))
-                                            .reduce((previous, current) => [previous, ', ', current])}
-                                        {node.tags.length > 3 && <> and {node.tags.length - 3} more</>}
-                                    </>
-                                )}
-                            </>
-                            ,
-                        </>
-                    )}{' '}
-                    by{' '}
-                    <span>
-                        {node.indexer &&
-                            (node.indexer.url === '' ? (
-                                <>{node.indexer.name}</>
-                            ) : (
-                                <Link to={node.indexer.url}>{node.indexer.name}</Link>
-                            ))}
-                    </span>
+                    <ProjectDescription index={node} />
                 </span>
 
                 <small className="text-mute">
-                    {node.uploadedAt ? (
-                        <span>
-                            Uploaded <Timestamp date={node.uploadedAt} now={now} noAbout={true} />
-                        </span>
-                    ) : node.queuedAt ? (
-                        <span>
-                            Queued <Timestamp date={node.queuedAt} now={now} noAbout={true} />
-                        </span>
-                    ) : (
-                        <></>
-                    )}
+                    <PreciseIndexLastUpdated index={node} />
                 </small>
             </div>
         </div>
@@ -474,136 +411,34 @@ const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
     </>
 )
 
-interface CodeIntelStateIconProps {
-    state: PreciseIndexState
-    autoIndexed: boolean
-    className?: string
-}
-
-const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeIntelStateIconProps>> = ({
-    state,
-    autoIndexed,
-    className,
-}) =>
-    state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
-        <div className="text-center">
-            <Icon className={className} svgPath={mdiTimerSand} inline={false} aria-label="Queued" />
-            <Icon className={className} svgPath={mdiDatabase} inline={false} aria-label="Queued for processing" />
-        </div>
-    ) : state === PreciseIndexState.PROCESSING ? (
-        <LoadingSpinner inline={false} className={className} />
-    ) : state === PreciseIndexState.PROCESSING_ERRORED ? (
-        <Icon
-            className={classNames('text-danger', className)}
-            svgPath={mdiAlertCircle}
-            inline={false}
-            aria-label="Errored"
-        />
-    ) : state === PreciseIndexState.COMPLETED ? (
-        <Icon
-            className={classNames('text-success', className)}
-            svgPath={mdiCheckCircle}
-            inline={false}
-            aria-label="Completed"
-        />
-    ) : state === PreciseIndexState.UPLOADING_INDEX ? (
-        <Icon className={className} svgPath={mdiFileUpload} inline={false} aria-label="Uploading" />
-    ) : state === PreciseIndexState.DELETING ? (
-        <Icon
-            className={classNames('text-muted', className)}
-            svgPath={mdiCheckCircle}
-            inline={false}
-            aria-label="Deleting"
-        />
-    ) : state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
-        <div className="text-center">
-            <Icon className={className} svgPath={mdiTimerSand} inline={false} aria-label="Queued" />
-            <Icon className={className} svgPath={mdiSourceRepository} inline={false} aria-label="Queued for indexing" />
-        </div>
-    ) : state === PreciseIndexState.INDEXING ? (
-        <LoadingSpinner inline={false} className={className} />
-    ) : state === PreciseIndexState.INDEXING_ERRORED ? (
-        <Icon
-            className={classNames('text-danger', className)}
-            svgPath={mdiAlertCircle}
-            inline={false}
-            aria-label="Errored"
-        />
-    ) : autoIndexed ? (
-        <Icon
-            className={classNames('text-success', className)}
-            svgPath={mdiCheckCircle}
-            inline={false}
-            aria-label="Completed"
-        />
-    ) : (
-        <></>
-    )
-
-interface CodeIntelStateLabelProps {
-    state: PreciseIndexState
-    autoIndexed: boolean
-    placeInQueue?: number | null
-    className?: string
-}
-
-const labelClassNames = classNames(styles.label, 'text-muted')
-
-const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<CodeIntelStateLabelProps>> = ({
-    state,
-    autoIndexed,
-    placeInQueue,
-    className,
-}) =>
-    state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
-        <span className={classNames(labelClassNames, className)}>
-            Queued <CodeIntelStateLabelPlaceInQueue placeInQueue={placeInQueue} />
-        </span>
-    ) : state === PreciseIndexState.PROCESSING ? (
-        <span className={classNames(labelClassNames, className)}>Processing...</span>
-    ) : state === PreciseIndexState.PROCESSING_ERRORED ? (
-        <span className={classNames(labelClassNames, className)}>Errored</span>
-    ) : state === PreciseIndexState.COMPLETED ? (
-        <span className={classNames(labelClassNames, className)}>Completed</span>
-    ) : state === PreciseIndexState.DELETED ? (
-        <span className={classNames(labelClassNames, className)}>Deleted</span>
-    ) : state === PreciseIndexState.DELETING ? (
-        <span className={classNames(labelClassNames, className)}>Deleting</span>
-    ) : state === PreciseIndexState.UPLOADING_INDEX ? (
-        <span className={classNames(labelClassNames, className)}>Uploading...</span>
-    ) : state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
-        <span className={classNames(labelClassNames, className)}>
-            Queued <CodeIntelStateLabelPlaceInQueue placeInQueue={placeInQueue} />
-        </span>
-    ) : state === PreciseIndexState.INDEXING ? (
-        <span className={classNames(labelClassNames, className)}>Indexing...</span>
-    ) : state === PreciseIndexState.INDEXING_ERRORED ? (
-        <span className={classNames(labelClassNames, className)}>Errored</span>
-    ) : state === PreciseIndexState.INDEXING_COMPLETED ? (
-        <span className={classNames(labelClassNames, className)}>completed</span>
-    ) : autoIndexed ? (
-        <span className={classNames(labelClassNames, className)}>Completed</span>
-    ) : (
-        <></>
-    )
-
-interface CodeIntelStateLabelPlaceInQueueProps {
-    placeInQueue?: number | null
-}
-
-const CodeIntelStateLabelPlaceInQueue: FunctionComponent<
-    React.PropsWithChildren<CodeIntelStateLabelPlaceInQueueProps>
-> = ({ placeInQueue }) => (placeInQueue ? <span className={styles.block}>(#{placeInQueue})</span> : <></>)
-
-interface EnqueueFormProps {
-    repoId: string
-    querySubject: Subject<string>
-}
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 enum State {
     Idle,
     Queueing,
     Queued,
+}
+
+interface EnqueueFormProps {
+    repoId: string
+    querySubject: Subject<string>
 }
 
 const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
