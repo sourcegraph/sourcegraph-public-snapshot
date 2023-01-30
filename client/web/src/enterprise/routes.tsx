@@ -23,6 +23,7 @@ const GlobalCodeMonitoringArea = lazyComponent(
     () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
     'GlobalCodeMonitoringArea'
 )
+const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -43,9 +44,9 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         render: (props: LayoutRouteComponentPropsRRV6<{}>) => <GlobalCodeMonitoringArea {...props} />,
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.Insights,
-        render: lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter'),
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => <CodeInsightsRouter {...props} />,
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {
