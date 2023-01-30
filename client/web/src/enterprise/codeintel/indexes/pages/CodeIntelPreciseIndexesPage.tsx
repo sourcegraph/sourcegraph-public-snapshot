@@ -40,11 +40,11 @@ import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { ProjectDescription } from '../components/ProjectDescriptionProps'
 import { queryCommitGraph } from '../hooks/queryCommitGraph'
 import { queryPreciseIndexes } from '../hooks/queryPreciseIndexes'
-import { useDeleteLsifIndex } from '../hooks/useDeleteLsifIndex'
-import { useDeleteLsifIndexes } from '../hooks/useDeleteLsifIndexes'
+import { useDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
+import { useDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
-import { useReindexLsifIndex } from '../hooks/useReindexLsifIndex'
-import { useReindexLsifIndexes } from '../hooks/useReindexLsifIndexes'
+import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
+import { useReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
@@ -126,10 +126,10 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         })
     }, [])
 
-    const { handleDeleteLsifIndex, deleteError } = useDeleteLsifIndex()
-    const { handleDeleteLsifIndexes, deletesError } = useDeleteLsifIndexes()
-    const { handleReindexLsifIndex, reindexError } = useReindexLsifIndex()
-    const { handleReindexLsifIndexes, reindexesError } = useReindexLsifIndexes()
+    const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
+    const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
+    const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
+    const { handleReindexPreciseIndexes, reindexesError } = useReindexPreciseIndexes()
 
     const deletes = useMemo(() => new Subject<undefined>(), [])
 
@@ -231,7 +231,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                 return
                             }
 
-                            await handleDeleteLsifIndexes({
+                            await handleDeletePreciseIndexes({
                                 variables: args,
                                 update: cache => cache.modify({ fields: { node: () => {} } }),
                             })
@@ -242,7 +242,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         }
 
                         for (const id of selection) {
-                            await handleDeleteLsifIndex({
+                            await handleDeletePreciseIndex({
                                 variables: { id },
                                 update: cache => cache.modify({ fields: { node: () => {} } }),
                             })
@@ -275,7 +275,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                 return
                             }
 
-                            await handleReindexLsifIndexes({
+                            await handleReindexPreciseIndexes({
                                 variables: args,
                                 update: cache => cache.modify({ fields: { node: () => {} } }),
                             })
@@ -284,7 +284,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         }
 
                         for (const id of selection) {
-                            await handleReindexLsifIndex({
+                            await handleReindexPreciseIndex({
                                 variables: { id },
                                 update: cache => cache.modify({ fields: { node: () => {} } }),
                             })

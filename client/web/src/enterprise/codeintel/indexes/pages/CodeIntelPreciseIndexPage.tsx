@@ -1,6 +1,6 @@
 import { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps, useLocation } from 'react-router'
 
 import { useApolloClient } from '@apollo/client'
 import {
@@ -15,7 +15,6 @@ import {
     mdiRedo,
     mdiTimerSand,
 } from '@mdi/js'
-import * as H from 'history'
 import { ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,6 +45,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 import classNames from 'classnames'
+import * as H from 'history'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
 import {
@@ -76,9 +76,10 @@ import {
     RetentionPolicyMatch,
     UploadReferenceMatch,
 } from '../hooks/queryPreciseIndexRetention'
-import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
-import { useReindexLsifIndex } from '../hooks/useReindexLsifIndex'
 import styles from './CodeIntelPreciseIndexPage.module.scss'
+import { useDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
+import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
+import { FlashMessage } from '../../configuration/components/FlashMessage'
 
 export interface CodeIntelPreciseIndexPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -106,16 +107,16 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     authenticatedUser,
     now,
     history,
-    location,
     telemetryService,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const [reindexOrError, setReindexOrError] = useState<'loading' | 'reindexed' | ErrorLike>()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
-    const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
-    const { handleReindexLsifIndex, reindexError } = useReindexLsifIndex()
+    const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
+    const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
 
     const indexOrError = useObservable(
@@ -145,7 +146,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         setReindexOrError('loading')
 
         try {
-            await handleReindexLsifIndex({
+            await handleReindexPreciseIndex({
                 variables: { id },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
@@ -165,7 +166,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 },
             })
         }
-    }, [id, indexOrError, handleReindexLsifIndex, history])
+    }, [id, indexOrError, handleReindexPreciseIndex, history])
 
     const deleteUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -184,7 +185,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         setDeletionOrError('loading')
 
         try {
-            await handleDeleteLsifUpload({
+            await handleDeletePreciseIndex({
                 variables: { id },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
@@ -204,7 +205,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 },
             })
         }
-    }, [id, indexOrError, handleDeleteLsifUpload, history])
+    }, [id, indexOrError, handleDeletePreciseIndex, history])
 
     const queryDependents = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -257,6 +258,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 ]}
                 className="mb-3"
             />
+
+            {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
                 <IndexDescription index={indexOrError} />

@@ -76,6 +76,9 @@ type operations struct {
 
 	// Dependencies
 	insertDependencySyncingJob *observation.Operation
+
+	reindexUploads    *observation.Operation
+	reindexUploadByID *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -168,5 +171,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
+
+		reindexUploads:    op("ReindexUploads"),
+		reindexUploadByID: op("ReindexUploadByID"),
 	}
 }

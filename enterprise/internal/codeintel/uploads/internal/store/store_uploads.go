@@ -2098,8 +2098,8 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	if opts.Term != "" {
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition([]string{opts.State}))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
@@ -2188,7 +2188,7 @@ func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 
 func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 	return []log.Field{
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}
