@@ -16,16 +16,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-"true")
-  clean=y
-  ;;
-"false")
-  clean=n
-  ;;
-*)
-  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-  read -r clean
-  ;;
+  "true")
+    clean=y
+    ;;
+  "false")
+    clean=n
+    ;;
+  *)
+    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+    read -r clean
+    ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
