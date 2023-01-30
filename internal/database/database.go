@@ -35,7 +35,6 @@ type DB interface {
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
-	OrgStats() OrgStatsStore
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
@@ -177,10 +176,6 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
-}
-
-func (d *db) OrgStats() OrgStatsStore {
-	return OrgStatsWith(d.Store)
 }
 
 func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
