@@ -36485,12 +36485,12 @@ type MockPhabricatorStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *PhabricatorStoreHandleFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *PhabricatorStoreTransactFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *PhabricatorStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *PhabricatorStoreWithTransactFunc
 }
 
 // NewMockPhabricatorStore creates a new mock of the PhabricatorStore
@@ -36523,13 +36523,13 @@ func NewMockPhabricatorStore() *MockPhabricatorStore {
 				return
 			},
 		},
-		TransactFunc: &PhabricatorStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 PhabricatorStore, r1 error) {
+		WithFunc: &PhabricatorStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 PhabricatorStore) {
 				return
 			},
 		},
-		WithFunc: &PhabricatorStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 PhabricatorStore) {
+		WithTransactFunc: &PhabricatorStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(PhabricatorStore) error) (r0 error) {
 				return
 			},
 		},
@@ -36565,14 +36565,14 @@ func NewStrictMockPhabricatorStore() *MockPhabricatorStore {
 				panic("unexpected invocation of MockPhabricatorStore.Handle")
 			},
 		},
-		TransactFunc: &PhabricatorStoreTransactFunc{
-			defaultHook: func(context.Context) (PhabricatorStore, error) {
-				panic("unexpected invocation of MockPhabricatorStore.Transact")
-			},
-		},
 		WithFunc: &PhabricatorStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) PhabricatorStore {
 				panic("unexpected invocation of MockPhabricatorStore.With")
+			},
+		},
+		WithTransactFunc: &PhabricatorStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(PhabricatorStore) error) error {
+				panic("unexpected invocation of MockPhabricatorStore.WithTransact")
 			},
 		},
 	}
@@ -36598,11 +36598,11 @@ func NewMockPhabricatorStoreFrom(i PhabricatorStore) *MockPhabricatorStore {
 		HandleFunc: &PhabricatorStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		TransactFunc: &PhabricatorStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		WithFunc: &PhabricatorStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &PhabricatorStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -37161,111 +37161,6 @@ func (c PhabricatorStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// PhabricatorStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockPhabricatorStore instance is invoked.
-type PhabricatorStoreTransactFunc struct {
-	defaultHook func(context.Context) (PhabricatorStore, error)
-	hooks       []func(context.Context) (PhabricatorStore, error)
-	history     []PhabricatorStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockPhabricatorStore) Transact(v0 context.Context) (PhabricatorStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(PhabricatorStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockPhabricatorStore instance is invoked and the hook queue is
-// empty.
-func (f *PhabricatorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (PhabricatorStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockPhabricatorStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *PhabricatorStoreTransactFunc) PushHook(hook func(context.Context) (PhabricatorStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PhabricatorStoreTransactFunc) SetDefaultReturn(r0 PhabricatorStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (PhabricatorStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PhabricatorStoreTransactFunc) PushReturn(r0 PhabricatorStore, r1 error) {
-	f.PushHook(func(context.Context) (PhabricatorStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *PhabricatorStoreTransactFunc) nextHook() func(context.Context) (PhabricatorStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PhabricatorStoreTransactFunc) appendCall(r0 PhabricatorStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PhabricatorStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *PhabricatorStoreTransactFunc) History() []PhabricatorStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]PhabricatorStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PhabricatorStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockPhabricatorStore.
-type PhabricatorStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 PhabricatorStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PhabricatorStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PhabricatorStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // PhabricatorStoreWithFunc describes the behavior when the With method of
 // the parent MockPhabricatorStore instance is invoked.
 type PhabricatorStoreWithFunc struct {
@@ -37365,6 +37260,112 @@ func (c PhabricatorStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PhabricatorStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PhabricatorStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockPhabricatorStore instance is
+// invoked.
+type PhabricatorStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(PhabricatorStore) error) error
+	hooks       []func(context.Context, func(PhabricatorStore) error) error
+	history     []PhabricatorStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPhabricatorStore) WithTransact(v0 context.Context, v1 func(PhabricatorStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(PhabricatorStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockPhabricatorStore instance is invoked and the hook queue
+// is empty.
+func (f *PhabricatorStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(PhabricatorStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockPhabricatorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PhabricatorStoreWithTransactFunc) PushHook(hook func(context.Context, func(PhabricatorStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PhabricatorStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(PhabricatorStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PhabricatorStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(PhabricatorStore) error) error {
+		return r0
+	})
+}
+
+func (f *PhabricatorStoreWithTransactFunc) nextHook() func(context.Context, func(PhabricatorStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PhabricatorStoreWithTransactFunc) appendCall(r0 PhabricatorStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PhabricatorStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *PhabricatorStoreWithTransactFunc) History() []PhabricatorStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]PhabricatorStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PhabricatorStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockPhabricatorStore.
+type PhabricatorStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(PhabricatorStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PhabricatorStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PhabricatorStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
