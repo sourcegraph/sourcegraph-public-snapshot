@@ -144,6 +144,9 @@ func (m *Recorder) LogRun(r Recordable, duration time.Duration, runErr error) {
 		m.logger.Error("failed to save run stats", log.Error(err))
 	}
 
+	// Update routine, just in case its interval changed
+	m.SaveKnownRoutine(r)
+
 	// Update host's and job's “last seen” dates
 	m.saveKnownHostName()
 	m.saveKnownJobName(r.JobName())
