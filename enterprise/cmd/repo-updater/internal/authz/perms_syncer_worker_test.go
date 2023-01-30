@@ -99,7 +99,7 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeRepo)
 	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeRepo)
 	go worker.Start()
-	t.Cleanup(func() { worker.Stop() })
+	t.Cleanup(worker.Stop)
 
 	// Adding repo perms sync jobs.
 	syncJobsStore := db.PermissionSyncJobs()
@@ -208,7 +208,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeUser)
 	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeUser)
 	go worker.Start()
-	t.Cleanup(func() { worker.Stop() })
+	t.Cleanup(worker.Stop)
 
 	// Adding user perms sync jobs.
 	syncJobsStore := db.PermissionSyncJobs()
