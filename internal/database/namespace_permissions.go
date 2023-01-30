@@ -39,6 +39,10 @@ type namespacePermissionStore struct {
 	*basestore.Store
 }
 
+func NamespacePermissionsWith(other basestore.ShareableStore) NamespacePermissionStore {
+	return &namespacePermissionStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 var _ NamespacePermissionStore = &namespacePermissionStore{}
 
 const namespacePermissionCreateQueryFmtStr = `
