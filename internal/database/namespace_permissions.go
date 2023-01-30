@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -22,17 +23,21 @@ var namespacePermissionColumns = []*sqlf.Query{
 }
 
 var namespacePermissionInsertColums = []*sqlf.Query{
-	sqlf.Sprintf("namespace_permissions.namespace"),
-	sqlf.Sprintf("namespace_permissions.resource_id"),
-	sqlf.Sprintf("namespace_permissions.action"),
-	sqlf.Sprintf("namespace_permissions.user_id"),
+	sqlf.Sprintf("namespace"),
+	sqlf.Sprintf("resource_id"),
+	sqlf.Sprintf("action"),
+	sqlf.Sprintf("user_id"),
 }
 
 type NamespacePermissionStore interface {
 	basestore.ShareableStore
 
+	// Create inserts the given namespace permission into the database.
 	Create(context.Context, CreateNamespacePermissionOpts) (*types.NamespacePermission, error)
+	// Deletes removes an existing namespace permission from the database.
 	Delete(context.Context, DeleteNamespacePermissionOpts) error
+	// Get returns the NamespacePermission matching the ID provided in the options.
+	Get(context.Context, GetNamespacePermissionOpts) (*types.NamespacePermission, error)
 }
 
 type namespacePermissionStore struct {
@@ -70,7 +75,7 @@ func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamesp
 
 	np, err := scanNamespacePermission(n.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning role")
+		return nil, errors.Wrap(err, "scanning namespace permission")
 	}
 
 	return np, nil
@@ -78,7 +83,7 @@ func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamesp
 
 const namespacePermissionDeleteQueryFmtStr = `
 DELETE FROM namespace_permissions
-WHERE %s
+WHERE id = %s
 `
 
 func (n *namespacePermissionStore) Delete(ctx context.Context, opts DeleteNamespacePermissionOpts) error {
@@ -108,6 +113,32 @@ func (n *namespacePermissionStore) Delete(ctx context.Context, opts DeleteNamesp
 	return nil
 }
 
+const namespacePermissionGetQueryFmtStr = `
+SELECT %s FROM namespace_permissions WHERE id = %s
+`
+
+func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePermissionOpts) (*types.NamespacePermission, error) {
+	if opts.ID == 0 {
+		return nil, errors.New("missing namespace permission id")
+	}
+
+	q := sqlf.Sprintf(
+		namespacePermissionGetQueryFmtStr,
+		sqlf.Join(namespacePermissionColumns, ", "),
+		opts.ID,
+	)
+
+	np, err := scanNamespacePermission(n.QueryRow(ctx, q))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &NamespacePermissionNotFoundErr{ID: opts.ID}
+		}
+		return nil, errors.Wrap(err, "scanning role")
+	}
+
+	return np, nil
+}
+
 func scanNamespacePermission(sc dbutil.Scanner) (*types.NamespacePermission, error) {
 	var np types.NamespacePermission
 	if err := sc.Scan(
@@ -122,6 +153,10 @@ func scanNamespacePermission(sc dbutil.Scanner) (*types.NamespacePermission, err
 	}
 
 	return &np, nil
+}
+
+type GetNamespacePermissionOpts struct {
+	ID int64
 }
 
 type DeleteNamespacePermissionOpts struct {
