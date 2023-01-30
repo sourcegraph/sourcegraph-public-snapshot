@@ -93,6 +93,7 @@
   "devDependencies": {
     "@atlassian/aui": "^7.10.3",
     "@axe-core/puppeteer": "^4.4.2",
+    "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.5",
     "@babel/plugin-transform-typescript": "^7.20.2",
     "@babel/preset-env": "^7.20.2",
@@ -110,7 +111,6 @@
     "@lhci/cli": "0.8.1",
     "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",
-    "@peculiar/webcrypto": "^1.1.7",
     "@percy/cli": "^1.16.0",
     "@percy/puppeteer": "^2.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
@@ -125,11 +125,11 @@
     "@sourcegraph/eslint-plugin-wildcard": "workspace:*",
     "@sourcegraph/extension-api-stubs": "^1.6.1",
     "@sourcegraph/prettierrc": "^3.0.3",
+    "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/stylelint-config": "^1.4.0",
     "@sourcegraph/stylelint-plugin-sourcegraph": "^1.0.1",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@statoscope/cli": "^5.24.0",
-    "@statoscope/webpack-plugin": "^5.24.0",
     "@storybook/addon-a11y": "^6.5.14",
     "@storybook/addon-actions": "^6.5.14",
     "@storybook/addon-console": "^1.2.3",
@@ -153,7 +153,6 @@
     "@terminus-term/to-string-loader": "^1.1.7-beta.1",
     "@testing-library/dom": "^8.13.0",
     "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.4.0",
     "@testing-library/react-hooks": "^8.0.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/babel__core": "7.1.20",
@@ -266,7 +265,6 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^28.1.0",
     "jest-canvas-mock": "^2.3.0",
-    "jest-environment-jsdom": "^28.1.0",
     "jest-fetch-mock": "^3.0.3",
     "jest-junit": "^13.0.0",
     "jest-mock-extended": "^2.0.2-beta2",
@@ -281,8 +279,6 @@
     "mini-css-extract-plugin": "^2.7.2",
     "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
-    "mockdate": "^3.0.2",
-    "monaco-editor-webpack-plugin": "^3.1.0",
     "mz": "^2.7.0",
     "node-fetch": "^2.6.7",
     "nyc": "^15.1.0",
@@ -367,6 +363,7 @@
     "@opentelemetry/sdk-trace-base": "1.5.0",
     "@opentelemetry/sdk-trace-web": "^1.5.0",
     "@opentelemetry/semantic-conventions": "^1.5.0",
+    "@peculiar/webcrypto": "^1.1.7",
     "@reach/accordion": "^0.16.1",
     "@reach/auto-id": "^0.16.0",
     "@reach/combobox": "^0.16.5",
@@ -378,6 +375,7 @@
     "@sentry/browser": "^7.8.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.14",
+    "@testing-library/react": "^13.4.0",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
     "@visx/event": "2.6.0",
@@ -425,6 +423,7 @@
     "https-proxy-agent": "^5.0.1",
     "is-absolute-url": "^3.0.3",
     "iterare": "^1.2.1",
+    "jest-environment-jsdom": "^28.1.0",
     "js-base64": "^3.7.2",
     "js-cookie": "^2.2.1",
     "js-yaml": "^4.1.0",
@@ -435,6 +434,7 @@
     "marked": "4.0.16",
     "mdi-react": "^8.1.0",
     "minimatch": "^3.0.4",
+    "mockdate": "^3.0.2",
     "monaco-editor": "^0.24.0",
     "monaco-yaml": "^3.2.1",
     "nice-ticks": "^1.0.1",
@@ -483,6 +483,15 @@
     "zustand": "^3.6.9"
   },
   "packageManager": "pnpm@7.24.2",
+  "pnpm": {
+    "packageExtensions": {
+      "cpu-features": {
+        "dependencies": {
+          "node-gyp": "*"
+        }
+      }
+    }
+  },
   "resolutions": {
     "@types/webpack": "5",
     "history": "4.5.1",

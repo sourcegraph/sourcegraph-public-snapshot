@@ -1,7 +1,17 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-package(default_visibility = ["//client/shared:__pkg__"])
+package(default_visibility = ["//visibility:public"])
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
 
 js_library(
     name = "json-schema-draft-07",
@@ -70,4 +80,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/schema",
     visibility = ["//visibility:public"],
     deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
+)
+
+js_library(
+    name = "schema-json",
+    srcs = glob(["*.schema.json"]),
+    visibility = ["//visibility:public"],
 )

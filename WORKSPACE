@@ -15,9 +15,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "dce068f085e9eabfec6d795caaabdbbe4a73550810f3cae3035aff7162e42b3c",
-    strip_prefix = "bazel-lib-1.26.2",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.26.2/bazel-lib-v1.26.2.tar.gz",
+    sha256 = "f8fa3193009232ca989de21964ea860c8b3279ec73ba6eff456d8bf61fb3ab1f",
+    strip_prefix = "bazel-lib-1.27.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.27.0/bazel-lib-v1.27.0.tar.gz",
 )
 
 http_archive(
@@ -130,6 +130,27 @@ jest_repositories(
 load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
 
 jest_npm_repositories()
+
+# rules_webpack setup ===========================
+http_archive(
+    name = "aspect_rules_webpack",
+    sha256 = "0e1e7566a3ef8e7fc0a4fa2ef6bc2265e5d11d1400d94dc4d1399dbca8c5d38a",
+    strip_prefix = "rules_webpack-f08bb1930d9f287f7795ce391bd315d7c491296e",
+    # Include https://github.com/aspect-build/rules_webpack/commit/f08bb1930d9f287f7795ce391bd315d7c491296e
+    url = "https://github.com/aspect-build/rules_webpack/archive/f08bb1930d9f287f7795ce391bd315d7c491296e.tar.gz",
+)
+
+load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
+
+rules_webpack_dependencies()
+
+load("@aspect_rules_webpack//webpack:repositories.bzl", "webpack_repositories")
+
+webpack_repositories(name = "webpack")
+
+load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_repositories")
+
+webpack_npm_repositories()
 
 # Go toolchain setup
 
