@@ -138,10 +138,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		return searchOpts
 	}
 
-	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
-
 	if o.Selector.Root() == filter.Repository {
 		searchOpts.ShardRepoMaxMatchCount = 1
 	} else {
