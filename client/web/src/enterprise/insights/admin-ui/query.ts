@@ -39,6 +39,8 @@ export const GET_CODE_INSIGHTS_JOBS = gql`
             pageInfo {
                 hasNextPage
                 hasPreviousPage
+                startCursor
+                endCursor
             }
             totalCount
         }

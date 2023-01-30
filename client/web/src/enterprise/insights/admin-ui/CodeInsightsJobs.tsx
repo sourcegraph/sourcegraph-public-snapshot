@@ -40,77 +40,6 @@ import { GET_CODE_INSIGHTS_JOBS } from './query'
 
 import styles from './CodeInsightsJobs.module.scss'
 
-const JOBS: InsightJob[] = [
-    {
-        id: '001',
-        insightViewTitle: 'Global css to Css modules migration',
-        seriesLabel: 'Global css',
-        seriesSearchQuery: 'file:*.scss -file:*.module.scss',
-        backfillQueueStatus: {
-            state: InsightQueueItemState.COMPLETED,
-            queuePosition: 1,
-            cost: 20,
-            errors: [],
-            percentComplete: 100,
-            createdAt: '2023-01-10',
-            startedAt: '2023-01-10',
-            completedAt: '2023-01-10',
-            runtime: '',
-        },
-    },
-    {
-        id: '002',
-        insightViewTitle: 'Global css to Css modules migration',
-        seriesLabel: 'Global css',
-        seriesSearchQuery: 'file:*.scss -file:*.module.scss',
-        backfillQueueStatus: {
-            state: InsightQueueItemState.PROCESSING,
-            queuePosition: 1,
-            cost: 20,
-            errors: [],
-            percentComplete: 100,
-            createdAt: '2023-01-10',
-            startedAt: '2023-01-10',
-            completedAt: '2023-01-10',
-            runtime: '',
-        },
-    },
-    {
-        id: '003',
-        insightViewTitle: 'Global css to Css modules migration',
-        seriesLabel: 'Global css',
-        seriesSearchQuery: 'file:*.scss -file:*.module.scss',
-        backfillQueueStatus: {
-            state: InsightQueueItemState.FAILED,
-            queuePosition: 1,
-            cost: 20,
-            errors: ['Hello this is test message', 'Hello again test message 2'],
-            percentComplete: 100,
-            createdAt: '2023-01-10',
-            startedAt: '2023-01-10',
-            completedAt: '2023-01-10',
-            runtime: '',
-        },
-    },
-    {
-        id: '004',
-        insightViewTitle: 'Global css to Css modules migration',
-        seriesLabel: 'Global css',
-        seriesSearchQuery: 'file:*.scss -file:*.module.scss',
-        backfillQueueStatus: {
-            state: InsightQueueItemState.QUEUED,
-            queuePosition: 1,
-            cost: 20,
-            errors: [],
-            percentComplete: 100,
-            createdAt: '2023-01-10',
-            startedAt: '2023-01-10',
-            completedAt: '2023-01-10',
-            runtime: '',
-        },
-    },
-]
-
 export const CodeInsightsJobs: FC = props => {
     const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.STATE)
     const [selectedFilters, setFilters] = useState<InsightQueueItemState[]>([])
@@ -124,7 +53,7 @@ export const CodeInsightsJobs: FC = props => {
         query: GET_CODE_INSIGHTS_JOBS,
         variables: { orderBy, states: selectedFilters, search },
         getConnection: ({ data }) => data?.insightAdminBackfillQueue,
-        options: { pollInterval: 5000, fetchPolicy: 'cache-and-network' },
+        options: { pollInterval: 5000 },
     })
 
     return (
@@ -163,7 +92,7 @@ export const CodeInsightsJobs: FC = props => {
                     </small>
                 )}
 
-                {/* { error && <ErrorAlert error={error}/> }*/}
+                 { error && <ErrorAlert error={error}/> }
 
                 {connection && connection.nodes.length === 0 && (
                     <span className={styles.insightJobsMessage}>
@@ -173,15 +102,19 @@ export const CodeInsightsJobs: FC = props => {
                     </span>
                 )}
 
-                {JOBS && (
+                {connection && connection.nodes.length > 0 && (
                     <ul className={styles.insightJobs}>
-                        {JOBS.map(job => (
+                        {connection.nodes.map(job => (
                             <CodeInsightJobCard key={job.id} job={job} />
                         ))}
                     </ul>
                 )}
 
-                <PageSwitcher {...paginationProps} hasPreviousPage={true} className="mt-5" />
+                <PageSwitcher
+                    totalCount={connection?.totalCount ?? null}
+                    {...paginationProps}
+                    className="mt-5"
+                />
             </Container>
         </div>
     )
