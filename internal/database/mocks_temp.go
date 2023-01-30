@@ -15244,15 +15244,15 @@ type MockExecutorSecretStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExecutorSecretStoreListFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *ExecutorSecretStoreTransactFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *ExecutorSecretStoreUpdateFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *ExecutorSecretStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *ExecutorSecretStoreWithTransactFunc
 }
 
 // NewMockExecutorSecretStore creates a new mock of the ExecutorSecretStore
@@ -15300,11 +15300,6 @@ func NewMockExecutorSecretStore() *MockExecutorSecretStore {
 				return
 			},
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 ExecutorSecretStore, r1 error) {
-				return
-			},
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: func(context.Context, ExecutorSecretScope, *ExecutorSecret, string) (r0 error) {
 				return
@@ -15312,6 +15307,11 @@ func NewMockExecutorSecretStore() *MockExecutorSecretStore {
 		},
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 ExecutorSecretStore) {
+				return
+			},
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(ExecutorSecretStore) error) (r0 error) {
 				return
 			},
 		},
@@ -15363,11 +15363,6 @@ func NewStrictMockExecutorSecretStore() *MockExecutorSecretStore {
 				panic("unexpected invocation of MockExecutorSecretStore.List")
 			},
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: func(context.Context) (ExecutorSecretStore, error) {
-				panic("unexpected invocation of MockExecutorSecretStore.Transact")
-			},
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: func(context.Context, ExecutorSecretScope, *ExecutorSecret, string) error {
 				panic("unexpected invocation of MockExecutorSecretStore.Update")
@@ -15376,6 +15371,11 @@ func NewStrictMockExecutorSecretStore() *MockExecutorSecretStore {
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) ExecutorSecretStore {
 				panic("unexpected invocation of MockExecutorSecretStore.With")
+			},
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(ExecutorSecretStore) error) error {
+				panic("unexpected invocation of MockExecutorSecretStore.WithTransact")
 			},
 		},
 	}
@@ -15410,14 +15410,14 @@ func NewMockExecutorSecretStoreFrom(i ExecutorSecretStore) *MockExecutorSecretSt
 		ListFunc: &ExecutorSecretStoreListFunc{
 			defaultHook: i.List,
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -16288,111 +16288,6 @@ func (c ExecutorSecretStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// ExecutorSecretStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockExecutorSecretStore instance is invoked.
-type ExecutorSecretStoreTransactFunc struct {
-	defaultHook func(context.Context) (ExecutorSecretStore, error)
-	hooks       []func(context.Context) (ExecutorSecretStore, error)
-	history     []ExecutorSecretStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockExecutorSecretStore) Transact(v0 context.Context) (ExecutorSecretStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(ExecutorSecretStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockExecutorSecretStore instance is invoked and the hook queue
-// is empty.
-func (f *ExecutorSecretStoreTransactFunc) SetDefaultHook(hook func(context.Context) (ExecutorSecretStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockExecutorSecretStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ExecutorSecretStoreTransactFunc) PushHook(hook func(context.Context) (ExecutorSecretStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ExecutorSecretStoreTransactFunc) SetDefaultReturn(r0 ExecutorSecretStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (ExecutorSecretStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ExecutorSecretStoreTransactFunc) PushReturn(r0 ExecutorSecretStore, r1 error) {
-	f.PushHook(func(context.Context) (ExecutorSecretStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *ExecutorSecretStoreTransactFunc) nextHook() func(context.Context) (ExecutorSecretStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ExecutorSecretStoreTransactFunc) appendCall(r0 ExecutorSecretStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ExecutorSecretStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *ExecutorSecretStoreTransactFunc) History() []ExecutorSecretStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]ExecutorSecretStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ExecutorSecretStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockExecutorSecretStore.
-type ExecutorSecretStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 ExecutorSecretStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ExecutorSecretStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ExecutorSecretStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ExecutorSecretStoreUpdateFunc describes the behavior when the Update
 // method of the parent MockExecutorSecretStore instance is invoked.
 type ExecutorSecretStoreUpdateFunc struct {
@@ -16603,6 +16498,114 @@ func (c ExecutorSecretStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExecutorSecretStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorSecretStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockExecutorSecretStore instance is
+// invoked.
+type ExecutorSecretStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(ExecutorSecretStore) error) error
+	hooks       []func(context.Context, func(ExecutorSecretStore) error) error
+	history     []ExecutorSecretStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExecutorSecretStore) WithTransact(v0 context.Context, v1 func(ExecutorSecretStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(ExecutorSecretStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockExecutorSecretStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(ExecutorSecretStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockExecutorSecretStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretStoreWithTransactFunc) PushHook(hook func(context.Context, func(ExecutorSecretStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(ExecutorSecretStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(ExecutorSecretStore) error) error {
+		return r0
+	})
+}
+
+func (f *ExecutorSecretStoreWithTransactFunc) nextHook() func(context.Context, func(ExecutorSecretStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretStoreWithTransactFunc) appendCall(r0 ExecutorSecretStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretStoreWithTransactFunc) History() []ExecutorSecretStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of
+// MockExecutorSecretStore.
+type ExecutorSecretStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(ExecutorSecretStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
