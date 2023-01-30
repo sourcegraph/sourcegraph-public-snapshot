@@ -209,7 +209,6 @@ require (
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
-	github.com/scim2/filter-parser/v2 v2.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
@@ -237,6 +236,7 @@ require (
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
+	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.1.0
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6

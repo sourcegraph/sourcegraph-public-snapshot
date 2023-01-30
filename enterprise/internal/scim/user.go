@@ -60,6 +60,9 @@ func (h *UserResourceHandler) Get(r *http.Request, id string) (scim.Resource, er
 func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
 	// Get total count
 	totalCount, err := h.db.Users().Count(r.Context(), &database.UsersListOptions{})
+	if err != nil {
+		return scim.Page{}, err
+	}
 
 	// Calculate offset
 	var offset int
