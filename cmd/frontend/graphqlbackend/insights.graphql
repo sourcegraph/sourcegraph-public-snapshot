@@ -1374,13 +1374,9 @@ extend type Query {
         """
         states: [InsightQueueItemState!]
         """
-        Insight title to filter list by
+        Text to filter the list, checking the Insight Title and Series Label
         """
-        insightTitle: String
-        """
-        Series label to filter list by
-        """
-        seriesLabel: String
+        textSearch: String
     ): InsightBackfillQueueItemConnection!
 }
 

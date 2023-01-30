@@ -301,8 +301,7 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*
 	filterArgs := scheduler.BackfillQueueArgs{}
 	if a.args != nil {
 		filterArgs.States = a.args.States
-		filterArgs.InsightTitle = a.args.InsightTitle
-		filterArgs.SeriesLabel = a.args.SeriesLabel
+		filterArgs.TextSearch = a.args.TextSearch
 	}
 
 	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx, filterArgs)
@@ -316,8 +315,7 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
 	if a.args != nil {
 		filterArgs.States = a.args.States
-		filterArgs.InsightTitle = a.args.InsightTitle
-		filterArgs.SeriesLabel = a.args.SeriesLabel
+		filterArgs.TextSearch = a.args.TextSearch
 	}
 	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, filterArgs)
 	if err != nil {

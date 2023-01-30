@@ -579,7 +579,6 @@ type AdminBackfillQueueArgs struct {
 	Descending bool
 
 	//filters
-	States       *[]string
-	InsightTitle *string
-	SeriesLabel  *string
+	States     *[]string
+	TextSearch *string
 }

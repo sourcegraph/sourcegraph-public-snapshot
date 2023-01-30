@@ -233,8 +233,7 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 type BackfillQueueArgs struct {
 	PaginationArgs *database.PaginationArgs
 	States         *[]string
-	InsightTitle   *string
-	SeriesLabel    *string
+	TextSearch     *string
 }
 type BackfillQueueItem struct {
 	ID                  int
@@ -262,12 +261,11 @@ func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args Bac
 
 func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
-	if args.InsightTitle != nil {
-		where = append(where, sqlf.Sprintf("title LIKE %s", "%"+*args.InsightTitle+"%"))
+	if args.TextSearch != nil {
+		likeStr := "%" + *args.TextSearch + "%"
+		where = append(where, sqlf.Sprintf("(title LIKE %s OR label LIKE %s)", likeStr, likeStr))
 	}
-	if args.SeriesLabel != nil {
-		where = append(where, sqlf.Sprintf("label LIKE %s", "%"+*args.SeriesLabel+"%"))
-	}
+
 	if args.States != nil {
 		states := make([]string, 0, len(*args.States))
 		for _, s := range *args.States {
