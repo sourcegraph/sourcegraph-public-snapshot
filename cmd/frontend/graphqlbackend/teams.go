@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -109,11 +110,14 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 		if id != int(t.ParentTeamID) {
 			return nil, errors.Wrapf(err, "ParentTeam ID does not conform to int32: %q", *args.ParentTeam)
 		}
+		if _, err := teams.GetTeamByID(ctx, t.ParentTeamID); errcode.IsNotFound(err) {
+			return nil, errors.Wrapf(err, "ParentTeam ID=%d not found", t.ParentTeamID)
+		}
 	}
 	if args.ParentTeamName != nil {
 		parentTeam, err := teams.GetTeamByName(ctx, *args.ParentTeamName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot locate parent team %q", *args.ParentTeamName)
+		if errcode.IsNotFound(err) {
+			return nil, errors.Wrapf(err, "ParentTeam name=%q not found", *args.ParentTeamName)
 		}
 		t.ParentTeamID = parentTeam.ID
 	}
