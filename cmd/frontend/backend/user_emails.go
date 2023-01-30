@@ -119,7 +119,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 
 // Remove removes the e-mail from the specified user. Perforce external accounts
 // using the e-mail will also be removed.
-func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (err error) {
+func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
 	logger := e.logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
@@ -128,42 +128,38 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 		return err
 	}
 
-	tx, err := e.db.Transact(ctx)
+	err := e.db.WithTransact(ctx, func(tx database.DB) error {
+		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
+			return errors.Wrap(err, "removing user e-mail")
+		}
+
+		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
+		// tokens that may have been sent to that email.
+		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
+			return errors.Wrap(err, "deleting reset codes")
+		}
+
+		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+			return errors.Wrap(err, "removing stale perforce external account")
+		}
+
+		if conf.CanSendEmail() {
+			svc := NewUserEmailsService(tx, logger)
+			if err := svc.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
+				logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		return errors.Wrap(err, "starting transaction")
-	}
-	defer func() {
-		err = tx.Done(err)
-		if err != nil {
-			return
-		}
-
-		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-		// transaction has committed so that it takes into account any changes triggered
-		// by the removal of the e-mail.
-		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailRemoved)
-	}()
-
-	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
-		return errors.Wrap(err, "removing user e-mail")
+		return err
 	}
 
-	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
-	// tokens that may have been sent to that email.
-	if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
-		return errors.Wrap(err, "deleting reset codes")
-	}
-
-	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-		return errors.Wrap(err, "removing stale perforce external account")
-	}
-
-	if conf.CanSendEmail() {
-		svc := NewUserEmailsService(tx, logger)
-		if err := svc.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
-			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
-		}
-	}
+	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+	// transaction has committed so that it takes into account any changes triggered
+	// by the removal of the e-mail.
+	triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailRemoved)
 
 	return nil
 }
