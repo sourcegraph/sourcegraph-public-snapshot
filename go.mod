@@ -152,14 +152,25 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
 	go.opentelemetry.io/collector v0.70.0
+	go.opentelemetry.io/collector/component v0.70.0
+	go.opentelemetry.io/collector/exporter/otlpexporter v0.70.0
+	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.70.0
+	go.opentelemetry.io/collector/receiver/otlpreceiver v0.70.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.38.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.13.0
 	go.opentelemetry.io/contrib/propagators/ot v1.13.0
 	go.opentelemetry.io/otel v1.12.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.12.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.12.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.12.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.12.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.12.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.35.0
+	go.opentelemetry.io/otel/metric v0.35.0
 	go.opentelemetry.io/otel/sdk v1.12.0
 	go.opentelemetry.io/otel/trace v1.12.0
+	go.opentelemetry.io/proto/otlp v0.19.0
 	go.uber.org/atomic v1.10.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
@@ -215,7 +226,7 @@ require (
 	go.opentelemetry.io/collector/confmap v0.70.0 // indirect
 	go.opentelemetry.io/collector/consumer v0.70.0 // indirect
 	go.opentelemetry.io/collector/featuregate v0.70.0 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v0.35.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
 
@@ -242,11 +253,6 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.76.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
-	go.opentelemetry.io/collector/component v0.70.0
-	go.opentelemetry.io/collector/exporter/otlpexporter v0.70.0
-	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.70.0
-	go.opentelemetry.io/collector/receiver/otlpreceiver v0.70.0
-	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
 
@@ -434,11 +440,7 @@ require (
 	go.mongodb.org/mongo-driver v1.10.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.0.0-rc4 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.37.0
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.12.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.12.0
-	go.opentelemetry.io/proto/otlp v0.19.0
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/mod v0.7.0
 	golang.org/x/term v0.4.0 // indirect
