@@ -6,11 +6,11 @@ Sourcegraph provides reference repositories with branches corresponding to the v
 
 | **Deployment type**       | **Link to reference repository**                         |
 |:--------------------------|:---------------------------------------------------------|
-| Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
-| Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
 | Kubernetes                | https://github.com/deploy-sourcegraph-k8s                |
+| Helm                      | https://github.com/sourcegraph/deploy-sourcegraph-helm   |
+| Docker and Docker Compose | https://github.com/sourcegraph/deploy-sourcegraph-docker |
 
-> WARNING: [deploy-sourcegrap](https://github.com/deploy-sourcegrap) has been deperacated
+> WARNING: [deploy-sourcegrap](https://github.com/deploy-sourcegrap) has been deprecated
 
 ## Create a private copy
 

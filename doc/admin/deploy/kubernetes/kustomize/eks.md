@@ -14,13 +14,11 @@ The overlay will:
 
 ## Prerequisites
 
+-  A EKS cluster (>=1.19) with the following addons enabled:
+   - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+   - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
 - [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
-- Support for Persistent Volumes (SSDs recommended)
--  a EKS cluster (>=1.19) with the following addons enabled:
-   - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
-     - You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller
-   - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 
 ## Quick Start
 
@@ -31,7 +29,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph main app without the monitoring stacks to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/aws/eks?ref=v4.5.0
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/aws/eks?ref=v4.4.1
 ```
 
 Monitor the deployment status to make sure everything is up and running:
