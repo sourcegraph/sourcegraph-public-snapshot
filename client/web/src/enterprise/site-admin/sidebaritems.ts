@@ -31,9 +31,9 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         ...ossMaintenanceGroup.items,
         {
             label: 'Code Insights jobs',
-            to: '/site-admin/code-insights-jobs'
-        }
-    ]
+            to: '/site-admin/code-insights-jobs',
+        },
+    ],
 }
 
 const executorsGroup: SiteAdminSideBarGroup = {
