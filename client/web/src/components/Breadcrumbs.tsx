@@ -155,7 +155,7 @@ export const Breadcrumbs: React.FunctionComponent<
     React.PropsWithChildren<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location; className?: string }>
 > = ({ breadcrumbs, location, className }) => (
     <nav
-        className={classNames('d-flex container-fluid flex-shrink-past-contents pl-3 pr-0', className)}
+        className={classNames('d-flex container-fluid flex-shrink-past-contents px-0', className)}
         aria-label="Breadcrumbs"
     >
         {sortBy(breadcrumbs, 'depth')
