@@ -95,12 +95,12 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var dependencyOf int
 	if args.DependencyOf != nil {
-		v, _, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
+		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
 		if err != nil {
 			return nil, err
 		}
 		if v == 0 {
-			return nil, errors.Newf("requested dependency of precise index record without data")
+			return nil, errors.Newf("requested dependency of precise index record without data (indexid=%d)", v2)
 		}
 
 		dependencyOf = int(v)
@@ -108,12 +108,12 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 	var dependentOf int
 	if args.DependentOf != nil {
-		v, _, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
+		v, v2, err := unmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
 		if err != nil {
 			return nil, err
 		}
 		if v == 0 {
-			return nil, errors.Newf("requested dependent of precise index record without data")
+			return nil, errors.Newf("requested dependent of precise index record without data (indexid=%d)", v2)
 		}
 
 		dependentOf = int(v)
