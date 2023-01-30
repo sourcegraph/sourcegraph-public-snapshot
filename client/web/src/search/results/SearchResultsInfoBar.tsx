@@ -41,9 +41,6 @@ export interface SearchResultsInfoBarProps
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
 
-    /**
-     * Whether the code insights feature flag is enabled.
-     */
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
@@ -98,9 +95,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [globalTypeFilter]
     )
 
-    const isSourcegraphDotComOrLocalInstall =
-        window.context.sourcegraphDotComMode || window.context.deployType === 'docker-container'
-
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
     const createActions = useMemo(
@@ -117,22 +111,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
-                getInsightsCreateAction(
-                    props.query,
-                    props.patternType,
-                    isSourcegraphDotComOrLocalInstall,
-                    props.enableCodeInsights
-                ),
+                getInsightsCreateAction(props.query, props.patternType, window.context.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
         [
             props.authenticatedUser,
-            props.enableCodeInsights,
             props.patternType,
             props.query,
             props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
             canCreateBatchChangeFromQuery,
-            isSourcegraphDotComOrLocalInstall,
         ]
     )
 
