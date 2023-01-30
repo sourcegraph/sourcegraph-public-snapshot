@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
-import { Redirect, RouteComponentProps } from 'react-router'
+import { RouteComponentProps } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -107,7 +108,7 @@ export const routes: readonly LayoutRouteProps<any>[] = (
         {
             isV6: true,
             path: PageRoutes.Index,
-            render: () => <Redirect to={PageRoutes.Search} />,
+            render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
             isV6: true,
@@ -123,7 +124,7 @@ export const routes: readonly LayoutRouteProps<any>[] = (
                 return showMultilineSearchConsole ? (
                     <SearchConsolePage {...props} />
                 ) : (
-                    <Redirect to={PageRoutes.Search} />
+                    <Navigate replace={true} to={PageRoutes.Search} />
                 )
             },
         },
@@ -148,7 +149,7 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             isV6: true,
             path: PageRoutes.Welcome,
             // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-            render: () => <Redirect to={PageRoutes.Search} />,
+            render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
             isV6: true,

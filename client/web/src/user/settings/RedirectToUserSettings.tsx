@@ -1,5 +1,4 @@
-import { Redirect } from 'react-router-dom'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { userURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -15,12 +14,13 @@ export const RedirectToUserSettings = withAuthenticatedUser<{
     const location = useLocation()
 
     return (
-        <Redirect
+        <Navigate
             to={{
                 pathname: `${userURL(authenticatedUser.username)}/settings`,
                 search: location.search,
                 hash: location.hash,
             }}
+            replace={true}
         />
     )
 })

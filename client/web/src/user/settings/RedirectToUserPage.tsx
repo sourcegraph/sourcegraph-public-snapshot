@@ -1,5 +1,4 @@
-import { Redirect } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { userURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -15,7 +14,8 @@ export const RedirectToUserPage = withAuthenticatedUser<{ authenticatedUser: Aut
         const path = location.pathname.replace(/^\/user\/?/, '') // trim leading '/user/?'
 
         return (
-            <Redirect
+            <Navigate
+                replace={true}
                 to={{
                     pathname: `${userURL(authenticatedUser.username)}/${path}`,
                     search: location.search,
