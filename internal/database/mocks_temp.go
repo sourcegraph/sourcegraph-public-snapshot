@@ -26182,12 +26182,12 @@ type MockNamespaceStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *NamespaceStoreHandleFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *NamespaceStoreTransactFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *NamespaceStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *NamespaceStoreWithTransactFunc
 }
 
 // NewMockNamespaceStore creates a new mock of the NamespaceStore interface.
@@ -26209,13 +26209,13 @@ func NewMockNamespaceStore() *MockNamespaceStore {
 				return
 			},
 		},
-		TransactFunc: &NamespaceStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 NamespaceStore, r1 error) {
+		WithFunc: &NamespaceStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 NamespaceStore) {
 				return
 			},
 		},
-		WithFunc: &NamespaceStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 NamespaceStore) {
+		WithTransactFunc: &NamespaceStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(NamespaceStore) error) (r0 error) {
 				return
 			},
 		},
@@ -26241,14 +26241,14 @@ func NewStrictMockNamespaceStore() *MockNamespaceStore {
 				panic("unexpected invocation of MockNamespaceStore.Handle")
 			},
 		},
-		TransactFunc: &NamespaceStoreTransactFunc{
-			defaultHook: func(context.Context) (NamespaceStore, error) {
-				panic("unexpected invocation of MockNamespaceStore.Transact")
-			},
-		},
 		WithFunc: &NamespaceStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) NamespaceStore {
 				panic("unexpected invocation of MockNamespaceStore.With")
+			},
+		},
+		WithTransactFunc: &NamespaceStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(NamespaceStore) error) error {
+				panic("unexpected invocation of MockNamespaceStore.WithTransact")
 			},
 		},
 	}
@@ -26268,11 +26268,11 @@ func NewMockNamespaceStoreFrom(i NamespaceStore) *MockNamespaceStore {
 		HandleFunc: &NamespaceStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		TransactFunc: &NamespaceStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		WithFunc: &NamespaceStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &NamespaceStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -26595,111 +26595,6 @@ func (c NamespaceStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// NamespaceStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockNamespaceStore instance is invoked.
-type NamespaceStoreTransactFunc struct {
-	defaultHook func(context.Context) (NamespaceStore, error)
-	hooks       []func(context.Context) (NamespaceStore, error)
-	history     []NamespaceStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockNamespaceStore) Transact(v0 context.Context) (NamespaceStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(NamespaceStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockNamespaceStore instance is invoked and the hook queue is
-// empty.
-func (f *NamespaceStoreTransactFunc) SetDefaultHook(hook func(context.Context) (NamespaceStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockNamespaceStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *NamespaceStoreTransactFunc) PushHook(hook func(context.Context) (NamespaceStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *NamespaceStoreTransactFunc) SetDefaultReturn(r0 NamespaceStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (NamespaceStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *NamespaceStoreTransactFunc) PushReturn(r0 NamespaceStore, r1 error) {
-	f.PushHook(func(context.Context) (NamespaceStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *NamespaceStoreTransactFunc) nextHook() func(context.Context) (NamespaceStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *NamespaceStoreTransactFunc) appendCall(r0 NamespaceStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of NamespaceStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *NamespaceStoreTransactFunc) History() []NamespaceStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]NamespaceStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// NamespaceStoreTransactFuncCall is an object that describes an invocation
-// of method Transact on an instance of MockNamespaceStore.
-type NamespaceStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 NamespaceStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c NamespaceStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c NamespaceStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // NamespaceStoreWithFunc describes the behavior when the With method of the
 // parent MockNamespaceStore instance is invoked.
 type NamespaceStoreWithFunc struct {
@@ -26799,6 +26694,111 @@ func (c NamespaceStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c NamespaceStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// NamespaceStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockNamespaceStore instance is invoked.
+type NamespaceStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(NamespaceStore) error) error
+	hooks       []func(context.Context, func(NamespaceStore) error) error
+	history     []NamespaceStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockNamespaceStore) WithTransact(v0 context.Context, v1 func(NamespaceStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(NamespaceStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockNamespaceStore instance is invoked and the hook queue
+// is empty.
+func (f *NamespaceStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(NamespaceStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockNamespaceStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *NamespaceStoreWithTransactFunc) PushHook(hook func(context.Context, func(NamespaceStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *NamespaceStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(NamespaceStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *NamespaceStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(NamespaceStore) error) error {
+		return r0
+	})
+}
+
+func (f *NamespaceStoreWithTransactFunc) nextHook() func(context.Context, func(NamespaceStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *NamespaceStoreWithTransactFunc) appendCall(r0 NamespaceStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of NamespaceStoreWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *NamespaceStoreWithTransactFunc) History() []NamespaceStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]NamespaceStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// NamespaceStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockNamespaceStore.
+type NamespaceStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(NamespaceStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c NamespaceStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c NamespaceStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
