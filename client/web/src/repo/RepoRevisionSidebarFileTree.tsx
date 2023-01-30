@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -74,7 +74,9 @@ interface Props {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
-    onExpandParent: () => void
+    filePath: string
+    filePathIsDirectory: boolean
+    onExpandParent: (parent: string) => void
     repoName: string
     revision: string
     telemetryService: TelemetryService
@@ -91,6 +93,21 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         return path
     })
     const [treeData, setTreeData] = useState<TreeData | null>(null)
+
+    const defaultNodeId = treeData?.pathToId.get(props.initialFilePath)
+    const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
+    const allParentsOfDefaultNode = treeData
+        ? getAllParentsOfPath(treeData, defaultNode?.path ?? '').map(node => node.id)
+        : []
+    const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
+    const defaultExpandedIds =
+        treeData && defaultNode && defaultNodeId
+            ? defaultNode?.isBranch
+                ? [defaultNodeId, ...allParentsOfDefaultNode]
+                : allParentsOfDefaultNode
+            : []
+
+    const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds)
 
     const navigate = useNavigate()
 
@@ -127,19 +144,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
         },
     })
-
-    const defaultNodeId = treeData?.pathToId.get(props.initialFilePath)
-    const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
-    const allParentsOfDefaultNode = treeData
-        ? getAllParentsOfPath(treeData, defaultNode?.path ?? '').map(node => node.id)
-        : []
-    const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
-    const defaultExpandedIds =
-        treeData && defaultNode && defaultNodeId
-            ? defaultNode?.isBranch
-                ? [defaultNodeId, ...allParentsOfDefaultNode]
-                : allParentsOfDefaultNode
-            : []
 
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
@@ -178,16 +182,48 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
                 navigate(element.dotdot)
-                onExpandParent()
+
+                let parent = props.initialFilePathIsDirectory
+                    ? dirname(initialFilePath)
+                    : dirname(dirname(initialFilePath))
+                if (parent === '.') {
+                    parent = ''
+                }
+                onExpandParent(parent)
+                return
             }
 
             if (element.entry) {
                 telemetryService.log('FileTreeClick')
                 navigate(element.entry.url)
             }
+            setSelectedIds([element.id])
         },
-        [defaultNodeId, navigate, telemetryService, onExpandParent]
+        [defaultNodeId, telemetryService, navigate, props.initialFilePathIsDirectory, initialFilePath, onExpandParent]
     )
+
+    // We need a mutable reference to the tree data since we don't want the
+    // below hook to run when the tree data changes.
+    const treeDataRef = useRef<TreeData | null>(treeData)
+    useEffect(() => {
+        treeDataRef.current = treeData
+    }, [treeData])
+    useEffect(() => {
+        const id = treeDataRef.current?.pathToId.get(props.filePath)
+        if (id) {
+            setSelectedIds([id])
+        } else {
+            // When a file is opened that is not inside the tree, we want the tree
+            // to expand to the parent directory of the file.
+            let path = props.filePathIsDirectory ? props.filePath : dirname(props.filePath)
+            if (path === '.') {
+                path = ''
+            }
+            if (props.initialFilePath.length > path.length && props.initialFilePath.startsWith(path)) {
+                onExpandParent(path)
+            }
+        }
+    }, [onExpandParent, props.filePath, props.filePathIsDirectory, props.initialFilePath])
 
     if (error) {
         return (
@@ -204,7 +240,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         <Tree<TreeNode>
             data={treeData.nodes}
             aria-label="file tree"
-            defaultSelectedIds={defaultSelectedIds}
+            selectedIds={selectedIds}
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             onLoadData={onLoadData}
