@@ -38,11 +38,12 @@ if [ $# -eq 0 ]; then
 fi
 
 name=${1%/}
-
 if [ ! -f "wolfi-images/${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
   exit 1
 fi
+
+tag=${2-latest}
 
 cd "wolfi-images/"
 
@@ -57,5 +58,6 @@ apko build --debug "${name}.yaml" \
 
 # Tag image and upload to GCP Artifact Registry
 docker load <"$tarball"
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
-docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
+
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-base/${name}:$tag"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:$tag"
