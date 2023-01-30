@@ -83,7 +83,7 @@ func isAlwaysCloningTest(name api.RepoName) bool {
 
 func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
 	return strings.EqualFold(remoteURL.Host, "github.com") &&
-			strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
