@@ -26837,9 +26837,6 @@ type MockOrgInvitationStore struct {
 	// RevokeFunc is an instance of a mock function object controlling the
 	// behavior of the method Revoke.
 	RevokeFunc *OrgInvitationStoreRevokeFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *OrgInvitationStoreTransactFunc
 	// UpdateEmailSentTimestampFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateEmailSentTimestamp.
 	UpdateEmailSentTimestampFunc *OrgInvitationStoreUpdateEmailSentTimestampFunc
@@ -26849,6 +26846,9 @@ type MockOrgInvitationStore struct {
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *OrgInvitationStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *OrgInvitationStoreWithTransactFunc
 }
 
 // NewMockOrgInvitationStore creates a new mock of the OrgInvitationStore
@@ -26906,11 +26906,6 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 				return
 			},
 		},
-		TransactFunc: &OrgInvitationStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 OrgInvitationStore, r1 error) {
-				return
-			},
-		},
 		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
 			defaultHook: func(context.Context, int64) (r0 error) {
 				return
@@ -26923,6 +26918,11 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 		},
 		WithFunc: &OrgInvitationStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 OrgInvitationStore) {
+				return
+			},
+		},
+		WithTransactFunc: &OrgInvitationStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(OrgInvitationStore) error) (r0 error) {
 				return
 			},
 		},
@@ -26984,11 +26984,6 @@ func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
 				panic("unexpected invocation of MockOrgInvitationStore.Revoke")
 			},
 		},
-		TransactFunc: &OrgInvitationStoreTransactFunc{
-			defaultHook: func(context.Context) (OrgInvitationStore, error) {
-				panic("unexpected invocation of MockOrgInvitationStore.Transact")
-			},
-		},
 		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
 			defaultHook: func(context.Context, int64) error {
 				panic("unexpected invocation of MockOrgInvitationStore.UpdateEmailSentTimestamp")
@@ -27002,6 +26997,11 @@ func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
 		WithFunc: &OrgInvitationStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) OrgInvitationStore {
 				panic("unexpected invocation of MockOrgInvitationStore.With")
+			},
+		},
+		WithTransactFunc: &OrgInvitationStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(OrgInvitationStore) error) error {
+				panic("unexpected invocation of MockOrgInvitationStore.WithTransact")
 			},
 		},
 	}
@@ -27042,9 +27042,6 @@ func NewMockOrgInvitationStoreFrom(i OrgInvitationStore) *MockOrgInvitationStore
 		RevokeFunc: &OrgInvitationStoreRevokeFunc{
 			defaultHook: i.Revoke,
 		},
-		TransactFunc: &OrgInvitationStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
 			defaultHook: i.UpdateEmailSentTimestamp,
 		},
@@ -27053,6 +27050,9 @@ func NewMockOrgInvitationStoreFrom(i OrgInvitationStore) *MockOrgInvitationStore
 		},
 		WithFunc: &OrgInvitationStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &OrgInvitationStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -28153,111 +28153,6 @@ func (c OrgInvitationStoreRevokeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// OrgInvitationStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockOrgInvitationStore instance is invoked.
-type OrgInvitationStoreTransactFunc struct {
-	defaultHook func(context.Context) (OrgInvitationStore, error)
-	hooks       []func(context.Context) (OrgInvitationStore, error)
-	history     []OrgInvitationStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockOrgInvitationStore) Transact(v0 context.Context) (OrgInvitationStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(OrgInvitationStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockOrgInvitationStore instance is invoked and the hook queue
-// is empty.
-func (f *OrgInvitationStoreTransactFunc) SetDefaultHook(hook func(context.Context) (OrgInvitationStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockOrgInvitationStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *OrgInvitationStoreTransactFunc) PushHook(hook func(context.Context) (OrgInvitationStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *OrgInvitationStoreTransactFunc) SetDefaultReturn(r0 OrgInvitationStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (OrgInvitationStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *OrgInvitationStoreTransactFunc) PushReturn(r0 OrgInvitationStore, r1 error) {
-	f.PushHook(func(context.Context) (OrgInvitationStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *OrgInvitationStoreTransactFunc) nextHook() func(context.Context) (OrgInvitationStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *OrgInvitationStoreTransactFunc) appendCall(r0 OrgInvitationStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of OrgInvitationStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *OrgInvitationStoreTransactFunc) History() []OrgInvitationStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]OrgInvitationStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// OrgInvitationStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockOrgInvitationStore.
-type OrgInvitationStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 OrgInvitationStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c OrgInvitationStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c OrgInvitationStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // OrgInvitationStoreUpdateEmailSentTimestampFunc describes the behavior
 // when the UpdateEmailSentTimestamp method of the parent
 // MockOrgInvitationStore instance is invoked.
@@ -28577,6 +28472,113 @@ func (c OrgInvitationStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgInvitationStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// OrgInvitationStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockOrgInvitationStore instance is
+// invoked.
+type OrgInvitationStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(OrgInvitationStore) error) error
+	hooks       []func(context.Context, func(OrgInvitationStore) error) error
+	history     []OrgInvitationStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockOrgInvitationStore) WithTransact(v0 context.Context, v1 func(OrgInvitationStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(OrgInvitationStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockOrgInvitationStore instance is invoked and the hook
+// queue is empty.
+func (f *OrgInvitationStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(OrgInvitationStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockOrgInvitationStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *OrgInvitationStoreWithTransactFunc) PushHook(hook func(context.Context, func(OrgInvitationStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgInvitationStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(OrgInvitationStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgInvitationStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(OrgInvitationStore) error) error {
+		return r0
+	})
+}
+
+func (f *OrgInvitationStoreWithTransactFunc) nextHook() func(context.Context, func(OrgInvitationStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgInvitationStoreWithTransactFunc) appendCall(r0 OrgInvitationStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgInvitationStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *OrgInvitationStoreWithTransactFunc) History() []OrgInvitationStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgInvitationStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgInvitationStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of
+// MockOrgInvitationStore.
+type OrgInvitationStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(OrgInvitationStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgInvitationStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgInvitationStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
