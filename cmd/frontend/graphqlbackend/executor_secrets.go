@@ -118,7 +118,7 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 
 	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
-	var secret *database.ExecutorSecret
+	var oldSecret *database.ExecutorSecret
 	err = store.WithTransact(ctx, func(tx database.ExecutorSecretStore) error {
 		secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
 		if err != nil {
@@ -138,13 +138,14 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 			return err
 		}
 
+		oldSecret = secret
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &executorSecretResolver{db: r.db, secret: secret}, nil
+	return &executorSecretResolver{db: r.db, secret: oldSecret}, nil
 }
 
 type DeleteExecutorSecretArgs struct {
