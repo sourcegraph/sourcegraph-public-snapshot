@@ -42,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -1646,17 +1647,41 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
 })
 
+var ErrBadRequest = &errcode.HTTPErr{
+	Status: http.StatusBadRequest,
+	Err:    errors.New("invalid command"),
+}
+
+type NotFoundError struct {
+	Payload *protocol.NotFoundPayload
+}
+
+func (e *NotFoundError) Error() string { return "not found" }
+
+func (e *NotFoundError) As(target interface{}) bool {
+	if v, ok := target.(*errcode.HTTPErr); ok {
+		v.Err = e
+		v.Status = http.StatusNotFound
+		return true
+	}
+
+	return false
+}
+
+type CmdError struct {
+	ExitStatus int
+	Stderr     string
+	Err        error
+}
+
+func (e *CmdError) Error() string { return fmt.Sprintf("command exited with non-zero status") }
+
 func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, w io.Writer) error {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		// logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
-
-		// TODO create sentinel error
-		return errors.New("bad request")
-		// w.WriteHeader(http.StatusBadRequest)
-		// _, _ = w.Write([]byte("invalid command"))
+		return ErrBadRequest
 	}
 
 	if !req.NoTimeout {
@@ -1770,10 +1795,7 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 			status = "repo-not-found"
 		}
 
-		// TODO return not found error
-		// w.WriteHeader(http.StatusNotFound)
-		// _ = json.NewEncoder(w).Encode(notFoundPayload)
-		return errors.New("not found")
+		return &NotFoundError{notFoundPayload}
 	}
 
 	dir := s.dir(req.Repo)
@@ -1787,26 +1809,17 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
 		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
-			// w.Header().Set("X-Exec-Error", "")
-			// w.Header().Set("X-Exec-Exit-Status", "0")
-			// w.Header().Set("X-Exec-Stderr", "")
-			// return
-			// TODO well-typed error
-			return errors.New("exec error")
+			return nil
 		}
 	}
+
 	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
 		if resolved, err := quickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
-			// w.Header().Set("X-Exec-Error", "")
-			// w.Header().Set("X-Exec-Exit-Status", "0")
-			// w.Header().Set("X-Exec-Stderr", "")
-			// return
-			// TODO well-typed error
-			return errors.New("exec error")
+			return nil
 		}
 	}
 
@@ -1831,9 +1844,13 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
 	if exitStatus != 0 {
-		// TODO well-typed error
-		return errors.New("nonzero exit")
+		return &CmdError{
+			Err:        execErr,
+			Stderr:     stderr,
+			ExitStatus: exitStatus,
+		}
 	}
+
 	return nil
 }
 
@@ -1855,16 +1872,33 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	w.Header().Set("Trailer", "X-Exec-Error")
 	w.Header().Add("Trailer", "X-Exec-Exit-Status")
 	w.Header().Add("Trailer", "X-Exec-Stderr")
-	w.WriteHeader(http.StatusOK)
 
-	err := s.execShared(ctx, logger, req)
+	sentTrailers := false
+	defer func() {
+		if !sentTrailers {
+			w.Header().Set("X-Exec-Error", "")
+			w.Header().Set("X-Exec-Exit-Status", "0")
+			w.Header().Set("X-Exec-Stderr", "")
+		}
+	}()
 
-	// TODO: Switch on error type
+	err := s.execShared(ctx, logger, req, w)
+	if err != nil {
+		if v := (&errcode.HTTPErr{}); errors.As(err, &v) {
+			w.WriteHeader(v.HTTPStatusCode())
+		}
 
-	// write trailer
-	w.Header().Set("X-Exec-Error", errorString(execErr))
-	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", stderr)
+		if v := (&NotFoundError{}); errors.As(err, &v) {
+			_ = json.NewEncoder(w).Encode(v.Payload)
+		}
+
+		if v := (&CmdError{}); errors.As(err, &v) {
+			w.Header().Set("X-Exec-Error", errorString(v.Err))
+			w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(v.ExitStatus))
+			w.Header().Set("X-Exec-Stderr", v.Stderr)
+			sentTrailers = true
+		}
+	}
 }
 
 func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
