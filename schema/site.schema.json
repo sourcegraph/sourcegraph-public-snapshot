@@ -407,6 +407,13 @@
               "type": "integer",
               "default": 0,
               "group": "Search"
+            },
+            "documentRanksWeight": {
+              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "type": "number",
+              "default": 4500,
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
