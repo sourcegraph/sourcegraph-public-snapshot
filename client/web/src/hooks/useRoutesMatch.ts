@@ -16,6 +16,6 @@ export const useRoutesMatch = (routes: readonly LayoutRouteProps[]): string | un
     return routes.find(
         route =>
             matchPath(location.pathname, { path: route.path, exact: true }) ||
-            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: false })
+            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
     )?.path
 }
