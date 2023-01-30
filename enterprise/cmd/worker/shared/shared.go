@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -76,10 +75,10 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
 
-	for range time.NewTicker(eiauthz.RefreshInterval()).C {
+	go conf.Watch(func() {
 		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
-	}
+	})
 }
 
 func getEnterpriseInit(logger log.Logger) func(database.DB) {

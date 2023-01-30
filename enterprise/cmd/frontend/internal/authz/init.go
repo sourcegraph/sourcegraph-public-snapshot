@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -198,13 +197,10 @@ func Init(
 		})
 	}
 
-	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
+	go conf.Watch(func() {
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+		authz.SetProviders(allowAccessByDefault, authzProviders)
+	})
 
 	enterpriseServices.AuthzResolver = resolvers.NewResolver(observationCtx, db, timeutil.Now)
 	return nil

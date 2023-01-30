@@ -22,27 +22,25 @@ func Init(logger log.Logger, db database.DB) {
 		return problems
 	})
 
-	go func() {
-		conf.Watch(func() {
-			newProviders, _ := parseConfig(logger, conf.Get(), db)
-			if len(newProviders) == 0 {
-				providers.Update(pkgName, nil)
-				return
-			}
+	go conf.Watch(func() {
+		newProviders, _ := parseConfig(logger, conf.Get(), db)
+		if len(newProviders) == 0 {
+			providers.Update(pkgName, nil)
+			return
+		}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Error("Check license for SSO (GitHub OAuth)", log.Error(err))
-				providers.Update(pkgName, nil)
-				return
-			}
+		if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			logger.Error("Check license for SSO (GitHub OAuth)", log.Error(err))
+			providers.Update(pkgName, nil)
+			return
+		}
 
-			newProvidersList := make([]providers.Provider, 0, len(newProviders))
-			for _, p := range newProviders {
-				newProvidersList = append(newProvidersList, p.Provider)
-			}
-			providers.Update(pkgName, newProvidersList)
-		})
-	}()
+		newProvidersList := make([]providers.Provider, 0, len(newProviders))
+		for _, p := range newProviders {
+			newProvidersList = append(newProvidersList, p.Provider)
+		}
+		providers.Update(pkgName, newProvidersList)
+	})
 }
 
 type Provider struct {

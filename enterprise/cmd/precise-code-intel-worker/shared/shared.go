@@ -113,20 +113,12 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
-	//
-	// START FLAILING
-
 	ctx := context.Background()
 	db := database.NewDB(observationCtx.Logger, sqlDB)
-	go func() {
-		for range time.NewTicker(eiauthz.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
-
-	// END FLAILING
-	//
+	go conf.Watch(func() {
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		authz.SetProviders(allowAccessByDefault, authzProviders)
+	})
 
 	return sqlDB
 }

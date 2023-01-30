@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -91,18 +90,15 @@ func EnterpriseInit(
 // startBackgroundPermsSync sets up background permissions syncing.
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
-	go func() {
-		t := time.NewTicker(frontendAuthz.RefreshInterval())
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := frontendAuthz.ProvidersFromConfig(
-				ctx,
-				conf.Get(),
-				db.ExternalServices(),
-				db,
-			)
-			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
+	go conf.Watch(func() {
+		allowAccessByDefault, authzProviders, _, _, _ := frontendAuthz.ProvidersFromConfig(
+			ctx,
+			conf.Get(),
+			db.ExternalServices(),
+			db,
+		)
+		ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+	})
 
 	go syncer.Run(ctx)
 }
