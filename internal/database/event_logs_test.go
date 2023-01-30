@@ -1503,13 +1503,13 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 
 func TestEventLogs_IllegalPeriodType(t *testing.T) {
 	t.Run("calcStartDate", func(t *testing.T) {
-		_, err := calcStartDate(time.Now(), PeriodType("hackerman"), 3)
+		_, err := calcStartDate(time.Now(), "hackerman", 3)
 		if err == nil {
 			t.Error("want err to not be nil")
 		}
 	})
 	t.Run("calcEndDate", func(t *testing.T) {
-		_, err := calcEndDate(time.Now(), PeriodType("hackerman"), 3)
+		_, err := calcEndDate(time.Now(), "hackerman", 3)
 		if err == nil {
 			t.Error("want err to not be nil")
 		}

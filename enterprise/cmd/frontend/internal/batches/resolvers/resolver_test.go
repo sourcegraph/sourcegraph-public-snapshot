@@ -1608,7 +1608,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("User credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                graphqlbackend.MarshalUserID(userID),
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}
@@ -1654,7 +1654,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("Site credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                nil,
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}

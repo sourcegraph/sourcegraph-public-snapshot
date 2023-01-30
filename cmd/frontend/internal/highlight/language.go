@@ -166,7 +166,7 @@ func init() {
 	}()
 }
 
-var engineToDisplay map[EngineType]string = map[EngineType]string{
+var engineToDisplay = map[EngineType]string{
 	EngineInvalid:    "invalid",
 	EngineSyntect:    "syntect",
 	EngineTreeSitter: "tree-sitter",

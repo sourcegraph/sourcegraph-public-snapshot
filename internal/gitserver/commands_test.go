@@ -3215,7 +3215,7 @@ func TestStreamBlameFile(t *testing.T) {
 		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 			return authz.None, nil
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
 		if hr != nil {
 			t.Fatalf("expected nil HunkReader")
 		}

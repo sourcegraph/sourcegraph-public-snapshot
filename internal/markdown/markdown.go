@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	chroma "github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"

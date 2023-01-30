@@ -153,7 +153,7 @@ func MapPlan(plan Plan, pass BasicPass) Plan {
 	for _, query := range plan {
 		updated = append(updated, pass(query))
 	}
-	return Plan(updated)
+	return updated
 }
 
 // Pipeline processes zero or more steps to produce a query. The first step must

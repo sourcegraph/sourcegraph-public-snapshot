@@ -203,7 +203,7 @@ func (p Plan) ToQ() Q {
 		operands := basic.ToParseTree()
 		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(NewOperator(nodes, Or))
+	return NewOperator(nodes, Or)
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
