@@ -130,9 +130,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// This enables the use of PageRank scores if they are available.
 		searchOpts.UseDocumentRanks = true
 
-		// This damps the impact of document ranks on the final ranking.
-		searchOpts.RanksDampingFactor = 0.5
-
 		return searchOpts
 	}
 
