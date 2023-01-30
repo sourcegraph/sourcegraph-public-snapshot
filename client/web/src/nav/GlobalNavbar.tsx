@@ -62,7 +62,7 @@ export interface GlobalNavbarProps
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: readonly LayoutRouteProps[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean

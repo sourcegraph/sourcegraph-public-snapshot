@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Navigate } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -37,9 +36,9 @@ const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
 const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
-export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
-    extends RouteComponentProps<RouteParameters>,
-        Omit<LayoutProps, 'match'>,
+
+export interface LayoutRouteComponentProps
+    extends Omit<LayoutProps, 'match'>,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -50,44 +49,17 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
     isMacPlatform: boolean
 }
 
-// A version of LayoutRouteComponentProps that is compatible with react router v6
-export type LayoutRouteComponentPropsRRV6<T extends { [K in keyof T]?: string }> = Omit<
-    LayoutRouteComponentProps<T>,
-    'location' | 'history' | 'match' | 'staticContext'
->
-
-interface LayoutRoutePropsV5<Parameters_ extends { [K in keyof Parameters_]?: string }> {
-    isV6: false
+export interface LayoutRouteProps {
     path: string
-    exact?: boolean
-    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
+    render: (props: LayoutRouteComponentProps) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (
-        props: Omit<LayoutRouteComponentProps<Parameters_>, 'location' | 'history' | 'match' | 'staticContext'>
-    ) => boolean
+    condition?: (props: LayoutRouteComponentProps) => boolean
 }
-
-interface LayoutRoutePropsV6 {
-    isV6: true
-    path: string
-    render: (props: LayoutRouteComponentPropsRRV6<{}>) => React.ReactNode
-
-    /**
-     * A condition function that needs to return true if the route should be rendered
-     *
-     * @default () => true
-     */
-    condition?: (
-        props: Omit<LayoutRouteComponentProps<{}>, 'location' | 'history' | 'match' | 'staticContext'>
-    ) => boolean
-}
-
-export type LayoutRouteProps<T extends { [K in keyof T]?: string }> = LayoutRoutePropsV5<T> | LayoutRoutePropsV6
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -103,22 +75,19 @@ const PassThroughToServer: React.FC = () => {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = (
+export const routes: readonly LayoutRouteProps[] = (
     [
         {
-            isV6: true,
             path: PageRoutes.Index,
             render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
-            isV6: true,
             path: PageRoutes.Search,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SearchPageWrapper {...props} />,
+            render: props => <SearchPageWrapper {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.SearchConsole,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => {
+            render: props => {
                 const { showMultilineSearchConsole } = getExperimentalFeatures()
 
                 return showMultilineSearchConsole ? (
@@ -129,57 +98,45 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             },
         },
         {
-            isV6: true,
             path: PageRoutes.SignIn,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SignInPage {...props} context={window.context} />,
+            render: props => <SignInPage {...props} context={window.context} />,
         },
         {
-            isV6: true,
             path: PageRoutes.SignUp,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SignUpPage {...props} context={window.context} />,
+            render: props => <SignUpPage {...props} context={window.context} />,
         },
         {
-            isV6: true,
             path: PageRoutes.UnlockAccount,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => (
-                <UnlockAccountPage {...props} context={window.context} />
-            ),
+            render: props => <UnlockAccountPage {...props} context={window.context} />,
         },
         {
-            isV6: true,
             path: PageRoutes.Welcome,
             // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
             render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
-            isV6: true,
             path: PageRoutes.InstallGitHubAppSuccess,
             render: () => <InstallGitHubAppSuccessPage />,
         },
         {
-            isV6: true,
             path: PageRoutes.Settings,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RedirectToUserSettings {...props} />,
+            render: props => <RedirectToUserSettings {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.User,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RedirectToUserPage {...props} />,
+            render: props => <RedirectToUserPage {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.Organizations,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <OrgsArea {...props} />,
+            render: props => <OrgsArea {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.SiteAdminInit,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SiteInitPage {...props} context={window.context} />,
+            render: props => <SiteInitPage {...props} context={window.context} />,
         },
         {
-            isV6: true,
             path: PageRoutes.SiteAdmin,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => (
+            render: props => (
                 <SiteAdminArea
                     {...props}
                     routes={props.siteAdminAreaRoutes}
@@ -189,40 +146,33 @@ export const routes: readonly LayoutRouteProps<any>[] = (
             ),
         },
         {
-            isV6: true,
             path: PageRoutes.PasswordReset,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <ResetPasswordPage {...props} />,
+            render: props => <ResetPasswordPage {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.ApiConsole,
             render: () => <ApiConsole />,
         },
         {
-            isV6: true,
             path: PageRoutes.UserArea,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <UserArea {...props} />,
+            render: props => <UserArea {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.Survey,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <SurveyPage {...props} />,
+            render: props => <SurveyPage {...props} />,
         },
         {
-            isV6: true,
             path: PageRoutes.Help,
             render: () => <PassThroughToServer />,
         },
         {
-            isV6: true,
             path: PageRoutes.Debug,
             render: () => <PassThroughToServer />,
         },
         ...communitySearchContextsRoutes,
         {
-            isV6: true,
             path: PageRoutes.RepoContainer,
-            render: (props: LayoutRouteComponentPropsRRV6<{}>) => <RepoContainer {...props} />,
+            render: props => <RepoContainer {...props} />,
         },
-    ] as readonly (LayoutRouteProps<any> | undefined)[]
-).filter(Boolean) as readonly LayoutRouteProps<any>[]
+    ] as readonly (LayoutRouteProps | undefined)[]
+).filter(Boolean) as readonly LayoutRouteProps[]

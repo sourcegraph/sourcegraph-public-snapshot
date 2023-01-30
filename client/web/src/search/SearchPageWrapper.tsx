@@ -5,7 +5,7 @@ import { useLocation } from 'react-router'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { LayoutRouteComponentPropsRRV6 } from '../routes'
+import { LayoutRouteComponentProps } from '../routes'
 
 import { parseSearchURLQuery } from '.'
 
@@ -16,9 +16,7 @@ const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSe
  * Renders the Search home page or Search results depending on whether a query
  * was submitted (present in the URL) or not.
  */
-export const SearchPageWrapper: React.FunctionComponent<
-    React.PropsWithChildren<LayoutRouteComponentPropsRRV6<{}>>
-> = props => {
+export const SearchPageWrapper: React.FunctionComponent<React.PropsWithChildren<LayoutRouteComponentProps>> = props => {
     const location = useLocation()
     const hasSearchQuery = parseSearchURLQuery(location.search)
 
