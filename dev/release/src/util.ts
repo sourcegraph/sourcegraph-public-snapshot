@@ -1,12 +1,13 @@
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
-import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import * as update from './update'
+
 import { EditFunc } from './github'
+import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
