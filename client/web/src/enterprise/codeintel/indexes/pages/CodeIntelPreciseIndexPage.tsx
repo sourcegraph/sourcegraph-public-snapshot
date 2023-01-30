@@ -119,7 +119,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
     const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
 
-    const hackOrError = useObservable(
+    const indexOrError = useObservable(
         useMemo(
             () => queryPreciseIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
             [id, queryPreciseIndex, apolloClient]
@@ -136,13 +136,13 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
 
     const deleteUpload = useCallback(async (): Promise<void> => {
-        if (!hackOrError || isErrorLike(hackOrError)) {
+        if (!indexOrError || isErrorLike(indexOrError)) {
             return
         }
 
-        let description = `${hackOrError.inputCommit.slice(0, 7)}`
-        if (hackOrError.inputRoot) {
-            description += ` rooted at ${hackOrError.inputRoot}`
+        let description = `${indexOrError.inputCommit.slice(0, 7)}`
+        if (indexOrError.inputRoot) {
+            description += ` rooted at ${indexOrError.inputRoot}`
         }
 
         if (!window.confirm(`Delete upload for commit ${description}?`)) {
@@ -172,32 +172,32 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 },
             })
         }
-    }, [id, hackOrError, handleDeleteLsifUpload, history])
+    }, [id, indexOrError, handleDeleteLsifUpload, history])
 
     const queryDependencies = useCallback(
         (args: FilteredConnectionQueryArguments) => {
-            if (hackOrError && !isErrorLike(hackOrError)) {
-                return queryDependencyGraph({ ...args, dependencyOf: hackOrError.id }, apolloClient)
+            if (indexOrError && !isErrorLike(indexOrError)) {
+                return queryDependencyGraph({ ...args, dependencyOf: indexOrError.id }, apolloClient)
             }
             throw new Error('unreachable: queryDependencies referenced with invalid upload')
         },
-        [hackOrError, queryDependencyGraph, apolloClient]
+        [indexOrError, queryDependencyGraph, apolloClient]
     )
 
     const queryDependents = useCallback(
         (args: FilteredConnectionQueryArguments) => {
-            if (hackOrError && !isErrorLike(hackOrError)) {
-                return queryDependencyGraph({ ...args, dependentOf: hackOrError.id }, apolloClient)
+            if (indexOrError && !isErrorLike(indexOrError)) {
+                return queryDependencyGraph({ ...args, dependentOf: indexOrError.id }, apolloClient)
             }
 
             throw new Error('unreachable: queryDependents referenced with invalid upload')
         },
-        [hackOrError, queryDependencyGraph, apolloClient]
+        [indexOrError, queryDependencyGraph, apolloClient]
     )
 
     const queryRetentionPoliciesCallback = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-            if (hackOrError && !isErrorLike(hackOrError)) {
+            if (indexOrError && !isErrorLike(indexOrError)) {
                 return queryPreciseIndexRetention(apolloClient, id, {
                     matchesOnly: retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowMatchingOnly,
                     ...args,
@@ -206,16 +206,16 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
             throw new Error('unreachable: queryRetentionPolicies referenced with invalid upload')
         },
-        [hackOrError, apolloClient, id, queryPreciseIndexRetention, retentionPolicyMatcherState]
+        [indexOrError, apolloClient, id, queryPreciseIndexRetention, retentionPolicyMatcherState]
     )
 
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
-    ) : isErrorLike(hackOrError) ? (
-        <ErrorAlert prefix="Error fetching hack" error={hackOrError} />
-    ) : !hackOrError ? (
+    ) : isErrorLike(indexOrError) ? (
+        <ErrorAlert prefix="Error fetching precise idnex" error={indexOrError} />
+    ) : !indexOrError ? (
         <LoadingSpinner />
     ) : (
         <>
@@ -223,7 +223,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 headingElement="h2"
                 path={[
                     {
-                        text: `HACK ${hackOrError.id}`,
+                        text: `Precise index ${indexOrError.id}`,
                     },
                 ]}
                 className="mb-3"
@@ -233,7 +233,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 <>
                     <Container className="mt-2">
                         <CodeIntelDeleteUpload
-                            state={hackOrError.state}
+                            state={indexOrError.state}
                             deleteUpload={deleteUpload}
                             deletionOrError={deletionOrError}
                         />
@@ -247,9 +247,9 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 <Card>
                     <CardBody>
                         <CardTitle>
-                            {hackOrError.projectRoot ? (
-                                <Link to={hackOrError.projectRoot.repository.url}>
-                                    {hackOrError.projectRoot.repository.name}
+                            {indexOrError.projectRoot ? (
+                                <Link to={indexOrError.projectRoot.repository.url}>
+                                    {indexOrError.projectRoot.repository.name}
                                 </Link>
                             ) : (
                                 <span>Unknown repository</span>
@@ -259,13 +259,13 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                         <CardSubtitle className="mb-2 text-muted">
                             {/* TODO - share this */}
 
-                            {hackOrError.uploadedAt ? (
+                            {indexOrError.uploadedAt ? (
                                 <span>
-                                    Uploaded <Timestamp date={hackOrError.uploadedAt} now={now} noAbout={true} />
+                                    Uploaded <Timestamp date={indexOrError.uploadedAt} now={now} noAbout={true} />
                                 </span>
-                            ) : hackOrError.queuedAt ? (
+                            ) : indexOrError.queuedAt ? (
                                 <span>
-                                    Queued <Timestamp date={hackOrError.queuedAt} now={now} noAbout={true} />
+                                    Queued <Timestamp date={indexOrError.queuedAt} now={now} noAbout={true} />
                                 </span>
                             ) : (
                                 <></>
@@ -274,38 +274,38 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
                         <CardText>
                             Directory{' '}
-                            {hackOrError.projectRoot ? (
-                                <Link to={hackOrError.projectRoot.url}>
-                                    <strong>{hackOrError.projectRoot.path || '/'}</strong>
+                            {indexOrError.projectRoot ? (
+                                <Link to={indexOrError.projectRoot.url}>
+                                    <strong>{indexOrError.projectRoot.path || '/'}</strong>
                                 </Link>
                             ) : (
-                                <span>{hackOrError.inputRoot || '/'}</span>
+                                <span>{indexOrError.inputRoot || '/'}</span>
                             )}{' '}
                             indexed at commit{' '}
                             <Code>
-                                {hackOrError.projectRoot ? (
-                                    <Link to={hackOrError.projectRoot.commit.url}>
-                                        <Code>{hackOrError.projectRoot.commit.abbreviatedOID}</Code>
+                                {indexOrError.projectRoot ? (
+                                    <Link to={indexOrError.projectRoot.commit.url}>
+                                        <Code>{indexOrError.projectRoot.commit.abbreviatedOID}</Code>
                                     </Link>
                                 ) : (
-                                    <span>{hackOrError.inputCommit.slice(0, 7)}</span>
+                                    <span>{indexOrError.inputCommit.slice(0, 7)}</span>
                                 )}
                             </Code>{' '}
                             by{' '}
                             <span>
-                                {hackOrError.indexer &&
-                                    (hackOrError.indexer.url === '' ? (
-                                        <>{hackOrError.indexer.name}</>
+                                {indexOrError.indexer &&
+                                    (indexOrError.indexer.url === '' ? (
+                                        <>{indexOrError.indexer.name}</>
                                     ) : (
-                                        <Link to={hackOrError.indexer.url}>{hackOrError.indexer.name}</Link>
+                                        <Link to={indexOrError.indexer.url}>{indexOrError.indexer.name}</Link>
                                     ))}
                             </span>
                             {', '}
                             {/* TODO - share this */}
-                            {hackOrError.tags.length > 0 && (
+                            {indexOrError.tags.length > 0 && (
                                 <>
                                     tagged as{' '}
-                                    {hackOrError.tags
+                                    {indexOrError.tags
                                         .slice(0, 3)
                                         .map<React.ReactNode>(tag => (
                                             <Badge key={tag} variant="outlineSecondary">
@@ -313,52 +313,52 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                             </Badge>
                                         ))
                                         .reduce((previous, current) => [previous, ', ', current])}
-                                    {hackOrError.tags.length > 3 && <> and {hackOrError.tags.length - 3} more</>}
+                                    {indexOrError.tags.length > 3 && <> and {indexOrError.tags.length - 3} more</>}
                                 </>
                             )}
                         </CardText>
                     </CardBody>
                 </Card>
 
-                <Alert variant={variantByState.get(hackOrError.state) ?? 'primary'}>
+                <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
                     <span>
-                        {hackOrError.state === PreciseIndexState.UPLOADING_INDEX ? (
+                        {indexOrError.state === PreciseIndexState.UPLOADING_INDEX ? (
                             <span>Still uploading...</span>
-                        ) : hackOrError.state === PreciseIndexState.DELETING ? (
+                        ) : indexOrError.state === PreciseIndexState.DELETING ? (
                             <span>Upload is queued for deletion.</span>
-                        ) : hackOrError.state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
+                        ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
                             <>
-                                Hack is queued for indexing.{' '}
+                                Index is queued for indexing.{' '}
                                 <LousyDescription
-                                    placeInQueue={hackOrError.placeInQueue}
-                                    typeName={'hack'}
-                                    pluralTypeName={'hacks'}
+                                    placeInQueue={indexOrError.placeInQueue}
+                                    typeName={'index'}
+                                    pluralTypeName={'indexes'}
                                 />
                             </>
-                        ) : hackOrError.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
+                        ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
                             <>
                                 <span>
-                                    Hack is queued for processing.{' '}
+                                    Index is queued for processing.{' '}
                                     <LousyDescription
-                                        placeInQueue={hackOrError.placeInQueue}
-                                        typeName={'hack'}
-                                        pluralTypeName={'hacks'}
+                                        placeInQueue={indexOrError.placeInQueue}
+                                        typeName={'index'}
+                                        pluralTypeName={'indexes'}
                                     />
                                 </span>
                             </>
-                        ) : hackOrError.state === PreciseIndexState.INDEXING ? (
-                            <span>Hack is currently being indexed...</span>
-                        ) : hackOrError.state === PreciseIndexState.PROCESSING ? (
-                            <span>Hack is currently being processed...</span>
-                        ) : hackOrError.state === PreciseIndexState.COMPLETED ? (
-                            <span>Hack processed successfully.</span>
-                        ) : hackOrError.state === PreciseIndexState.INDEXING_ERRORED ? (
+                        ) : indexOrError.state === PreciseIndexState.INDEXING ? (
+                            <span>Index is currently being indexed...</span>
+                        ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
+                            <span>Index is currently being processed...</span>
+                        ) : indexOrError.state === PreciseIndexState.COMPLETED ? (
+                            <span>Index processed successfully.</span>
+                        ) : indexOrError.state === PreciseIndexState.INDEXING_ERRORED ? (
                             <span>
-                                Hack failed to index: <ErrorMessage error={hackOrError.failure} />
+                                Index failed to index: <ErrorMessage error={indexOrError.failure} />
                             </span>
-                        ) : hackOrError.state === PreciseIndexState.PROCESSING_ERRORED ? (
+                        ) : indexOrError.state === PreciseIndexState.PROCESSING_ERRORED ? (
                             <span>
-                                Hack failed to process: <ErrorMessage error={hackOrError.failure} />
+                                Index failed to process: <ErrorMessage error={indexOrError.failure} />
                             </span>
                         ) : (
                             <></>
@@ -366,7 +366,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                     </span>
                 </Alert>
 
-                {hackOrError.isLatestForRepo && (
+                {indexOrError.isLatestForRepo && (
                     <div>
                         <Icon aria-hidden={true} svgPath={mdiInformationOutline} /> This upload can answer queries for
                         the tip of the default branch and are targets of cross-repository find reference operations.
@@ -374,11 +374,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 )}
 
                 <Container className="mt-2">
-                    <HackTimeline hack={hackOrError} />
+                    <IndexTimeline index={indexOrError} />
                 </Container>
 
-                {(hackOrError.state === PreciseIndexState.COMPLETED ||
-                    hackOrError.state === PreciseIndexState.DELETING) && (
+                {(indexOrError.state === PreciseIndexState.COMPLETED ||
+                    indexOrError.state === PreciseIndexState.DELETING) && (
                     <>
                         <Container className="mt-2">
                             {/* <Collapsible
@@ -489,8 +489,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
                 <Container className="mt-2">
                     {/* <Collapsible title={<H3 className="mb-0">Audit Logs</H3>} titleAtStart={true}> */}
-                    {hackOrError.auditLogs?.length ?? 0 > 0 ? (
-                        <UploadAuditLogTimeline logs={hackOrError.auditLogs || []} />
+                    {indexOrError.auditLogs?.length ?? 0 > 0 ? (
+                        <UploadAuditLogTimeline logs={indexOrError.auditLogs || []} />
                     ) : (
                         <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
                             <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
@@ -507,8 +507,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
 const terminalStates = new Set(['TODO']) // TODO
 
-function shouldReload(hack: PreciseIndexFields | ErrorLike | null | undefined): boolean {
-    return !isErrorLike(hack) && !(hack && terminalStates.has(hack.state))
+function shouldReload(index: PreciseIndexFields | ErrorLike | null | undefined): boolean {
+    return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
 
 //
@@ -527,20 +527,20 @@ const LousyDescription: FunctionComponent<React.PropsWithChildren<CodeIntelState
     pluralTypeName,
 }) => {
     if (placeInQueue === 1) {
-        return <>This hack is up next for processing.</>
+        return <>This index is up next for processing.</>
     }
 
-    return <>{placeInQueue ? `There are ${placeInQueue - 1} hacks ahead of this one.` : ''}</>
+    return <>{placeInQueue ? `There are ${placeInQueue - 1} indexes ahead of this one.` : ''}</>
 }
 
-export interface HackTimelineProps {
-    hack: PreciseIndexFields
+export interface IndexTimelineProps {
+    index: PreciseIndexFields
     now?: () => Date
     className?: string
 }
 
-export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelineProps>> = ({
-    hack,
+export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimelineProps>> = ({
+    index,
     now,
     className,
 }) => {
@@ -548,44 +548,44 @@ export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelin
         const stages: TimelineStage[] = []
 
         // TODO - document
-        if (hack.queuedAt) {
+        if (index.queuedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
                 text: 'Queued for indexing',
-                date: hack.queuedAt,
+                date: index.queuedAt,
                 className: 'bg-success',
             })
         }
 
         // TODO - document
-        if (hack.indexingStartedAt) {
+        if (index.indexingStartedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
                 text: 'Began indexing',
-                date: hack.indexingStartedAt,
+                date: index.indexingStartedAt,
                 className: 'bg-success',
             })
         }
 
         // TODO - document
-        var v = indexSetupStage(hack, now)
+        var v = indexSetupStage(index, now)
         if (v) {
             stages.push(v)
         }
-        v = indexPreIndexStage(hack, now)
+        v = indexPreIndexStage(index, now)
         if (v) {
             stages.push(v)
         }
-        v = indexIndexStage(hack, now)
+        v = indexIndexStage(index, now)
         if (v) {
             stages.push(v)
         }
-        v = indexUploadStage(hack, now)
+        v = indexUploadStage(index, now)
         if (v) {
             stages.push(v)
         }
         // TODO - hide a bit more
-        v = indexTeardownStage(hack, now)
+        v = indexTeardownStage(index, now)
         if (v) {
             stages.push(v)
         }
@@ -593,30 +593,30 @@ export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelin
         // Do not distinctly show the end of indexing unless it was a failure that produced
         // to submit an upload record. If we did submit a record, then the end result of this
         // job is successful to the user (if processing succeeds).
-        if (hack.indexingFinishedAt && hack.state === PreciseIndexState.INDEXING_ERRORED) {
+        if (index.indexingFinishedAt && index.state === PreciseIndexState.INDEXING_ERRORED) {
             stages.push({
                 icon: <Icon aria-label="" svgPath={mdiAlertCircle} />,
                 text: 'Failed indexing',
-                date: hack.indexingFinishedAt,
+                date: index.indexingFinishedAt,
                 className: 'bg-danger',
             })
         }
 
         // TODO - document
-        if (hack.uploadedAt) {
-            if (hack.state === PreciseIndexState.UPLOADING_INDEX) {
+        if (index.uploadedAt) {
+            if (index.state === PreciseIndexState.UPLOADING_INDEX) {
                 stages.push({
                     icon: <Icon aria-label="Success" svgPath={mdiFileUpload} />,
                     text: 'Began uploading',
-                    date: hack.uploadedAt,
+                    date: index.uploadedAt,
                     className: 'bg-success',
                 })
-            } else if (hack.state === PreciseIndexState.PROCESSING_ERRORED) {
-                if (!hack.processingStartedAt) {
+            } else if (index.state === PreciseIndexState.PROCESSING_ERRORED) {
+                if (!index.processingStartedAt) {
                     stages.push({
                         icon: <Icon aria-label="" svgPath={mdiAlertCircle} />,
                         text: 'Uploading failed',
-                        date: hack.uploadedAt,
+                        date: index.uploadedAt,
                         className: 'bg-danger',
                     })
                 }
@@ -624,30 +624,30 @@ export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelin
                 stages.push({
                     icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
                     text: 'Queued for processing',
-                    date: hack.uploadedAt,
+                    date: index.uploadedAt,
                     className: 'bg-success',
                 })
             }
         }
 
         // TODO - document
-        if (hack.processingStartedAt) {
+        if (index.processingStartedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
                 text: 'Began processing',
-                date: hack.processingStartedAt,
+                date: index.processingStartedAt,
                 className: 'bg-success',
             })
         }
 
         // TODO - document
-        if (hack.processingFinishedAt) {
-            if (hack.state === PreciseIndexState.PROCESSING_ERRORED) {
-                if (hack.processingStartedAt) {
+        if (index.processingFinishedAt) {
+            if (index.state === PreciseIndexState.PROCESSING_ERRORED) {
+                if (index.processingStartedAt) {
                     stages.push({
                         icon: <Icon aria-label="Failed" svgPath={mdiAlertCircle} />,
                         text: 'Failed',
-                        date: hack.processingFinishedAt,
+                        date: index.processingFinishedAt,
                         className: 'bg-danger',
                     })
                 }
@@ -655,14 +655,14 @@ export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelin
                 stages.push({
                     icon: <Icon aria-label="Success" svgPath={mdiCheck} />,
                     text: 'Finished',
-                    date: hack.processingFinishedAt,
+                    date: index.processingFinishedAt,
                     className: 'bg-success',
                 })
             }
         }
 
         return stages
-    }, [hack, now])
+    }, [index, now])
 
     return (
         <>
@@ -672,29 +672,29 @@ export const HackTimeline: FunctionComponent<React.PropsWithChildren<HackTimelin
     )
 }
 
-const indexSetupStage = (hack: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !hack.steps || hack.steps.setup.length === 0
+const indexSetupStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
+    !index.steps || index.steps.setup.length === 0
         ? undefined
         : {
               text: 'Setup',
-              details: hack.steps.setup.map(logEntry => (
+              details: index.steps.setup.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(hack.steps.setup),
+              ...genericStage(index.steps.setup),
           }
 
-const indexPreIndexStage = (hack: PreciseIndexFields, now?: () => Date): TimelineStage | undefined => {
-    if (!hack.steps) {
+const indexPreIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined => {
+    if (!index.steps) {
         return undefined
     }
 
-    const logEntries = hack.steps.preIndex.map(step => step.logEntry).filter(isDefined)
+    const logEntries = index.steps.preIndex.map(step => step.logEntry).filter(isDefined)
 
     return logEntries.length === 0
         ? undefined
         : {
               text: 'Pre Index',
-              details: hack.steps.preIndex.map(
+              details: index.steps.preIndex.map(
                   step =>
                       step.logEntry && (
                           <div key={`${step.image}${step.root}${step.commands.join(' ')}}`}>
@@ -714,45 +714,45 @@ const indexPreIndexStage = (hack: PreciseIndexFields, now?: () => Date): Timelin
           }
 }
 
-const indexIndexStage = (hack: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !hack.steps || !hack.steps.index.logEntry
+const indexIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
+    !index.steps || !index.steps.index.logEntry
         ? undefined
         : {
               text: 'Index',
               details: (
                   <>
-                      <ExecutionLogEntry logEntry={hack.steps.index.logEntry} now={now}>
+                      <ExecutionLogEntry logEntry={index.steps.index.logEntry} now={now}>
                           <ExecutionMetaInformation
                               {...{
-                                  image: hack.inputIndexer,
-                                  commands: hack.steps.index.indexerArgs,
-                                  root: hack.inputRoot,
+                                  image: index.inputIndexer,
+                                  commands: index.steps.index.indexerArgs,
+                                  root: index.inputRoot,
                               }}
                           />
                       </ExecutionLogEntry>
                   </>
               ),
-              ...genericStage(hack.steps.index.logEntry),
+              ...genericStage(index.steps.index.logEntry),
           }
 
-const indexUploadStage = (hack: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !hack.steps || !hack.steps.upload
+const indexUploadStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
+    !index.steps || !index.steps.upload
         ? undefined
         : {
               text: 'Upload',
-              details: <ExecutionLogEntry logEntry={hack.steps.upload} now={now} />,
-              ...genericStage(hack.steps.upload),
+              details: <ExecutionLogEntry logEntry={index.steps.upload} now={now} />,
+              ...genericStage(index.steps.upload),
           }
 
-const indexTeardownStage = (hack: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !hack.steps || hack.steps.teardown.length === 0
+const indexTeardownStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
+    !index.steps || index.steps.teardown.length === 0
         ? undefined
         : {
               text: 'Teardown',
-              details: hack.steps.teardown.map(logEntry => (
+              details: index.steps.teardown.map(logEntry => (
                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
               )),
-              ...genericStage(hack.steps.teardown),
+              ...genericStage(index.steps.teardown),
           }
 
 const genericStage = <E extends { startTime: string; exitCode: number | null }>(
