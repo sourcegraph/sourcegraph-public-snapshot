@@ -1,4 +1,10 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
+load("//dev:defs.bzl", "ts_project")
+
+# gazelle:ignore
+
+# dev/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
 
 js_binary(
     name = "generate_schema",
@@ -9,8 +15,6 @@ js_binary(
     entry_point = "generateSchema.js",
     visibility = ["//client/shared:__pkg__"],
 )
-
-# gazelle:exclude .
 
 js_library(
     name = "extract_graphql_operation_codegen_plugin",
@@ -36,4 +40,81 @@ js_binary(
     ],
     entry_point = "generateGraphQlOperations.js",
     visibility = ["//client:__subpackages__"],
+)
+
+ts_project(
+    name = "mock_ts",
+    testonly = True,
+    srcs = [
+        "mockDomRect.ts",
+        "mockMatchMedia.ts",
+        "mockReactVisibilitySensor.tsx",
+        "mockResizeObserver.ts",
+        "mockSentryBrowser.ts",
+        "mockUniqueId.ts",
+        "reactCleanup.ts",
+        "setLinkComponentForTest.ts",
+    ],
+    data = [
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/mockdate",
+        "//:node_modules/react",
+        "//:node_modules/react-visibility-sensor",
+        "//:node_modules/resize-observer-polyfill",
+        "//:node_modules/use-resize-observer",
+    ],
+    extends = None,
+    tsconfig = "//client/shared:tsconfig",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/mockdate",
+        "//:node_modules/react",
+        "//:node_modules/react-visibility-sensor",
+        "//:node_modules/resize-observer-polyfill",
+        "//:node_modules/use-resize-observer",
+    ],
+)
+
+js_library(
+    name = "mock",
+    testonly = True,
+    srcs = [
+        "fetch.js",
+        "jest-environment.js",
+        "jestGlobalSetup.js",
+        "mockDate.js",
+        ":mock_ts",
+    ],
+    data = [
+        "//:node_modules/@peculiar/webcrypto",
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/jest-environment-jsdom",
+        "//:node_modules/node-fetch",
+        "//:node_modules/react",
+        "//:node_modules/react-visibility-sensor",
+        "//:node_modules/resize-observer-polyfill",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@peculiar/webcrypto",
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/jest-environment-jsdom",
+        "//:node_modules/node-fetch",
+        "//:node_modules/react",
+        "//:node_modules/react-visibility-sensor",
+        "//:node_modules/resize-observer-polyfill",
+    ],
 )

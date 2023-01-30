@@ -17,6 +17,7 @@ importers:
       '@apollo/client': ^3.5.0
       '@atlassian/aui': ^7.10.3
       '@axe-core/puppeteer': ^4.4.2
+      '@babel/cli': ^7.20.7
       '@babel/core': ^7.20.5
       '@babel/plugin-transform-typescript': ^7.20.2
       '@babel/preset-env': ^7.20.2
@@ -77,16 +78,30 @@ importers:
       '@sentry/cli': ^1.74.4
       '@sentry/webpack-plugin': ^1.20.0
       '@slack/web-api': ^5.15.0
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/browser': workspace:*
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
       '@sourcegraph/eslint-config': 0.32.0
       '@sourcegraph/eslint-plugin-sourcegraph': ^1.0.5
       '@sourcegraph/eslint-plugin-wildcard': workspace:*
       '@sourcegraph/extension-api-classes': ^1.1.0
       '@sourcegraph/extension-api-stubs': ^1.6.1
       '@sourcegraph/extension-api-types': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/observability-client': workspace:*
       '@sourcegraph/prettierrc': ^3.0.3
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/storybook': workspace:*
       '@sourcegraph/stylelint-config': ^1.4.0
       '@sourcegraph/stylelint-plugin-sourcegraph': ^1.0.1
+      '@sourcegraph/template-parser': workspace:*
+      '@sourcegraph/testing': workspace:*
       '@sourcegraph/tsconfig': ^4.0.1
+      '@sourcegraph/web': workspace:*
+      '@sourcegraph/wildcard': workspace:*
       '@statoscope/cli': ^5.24.0
       '@statoscope/webpack-plugin': ^5.24.0
       '@storybook/addon-a11y': ^6.5.14
@@ -442,8 +457,22 @@ importers:
       '@reach/visually-hidden': 0.16.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@react-aria/live-announcer': 3.1.0
       '@sentry/browser': 7.8.1
+      '@sourcegraph/branded': link:client/branded
+      '@sourcegraph/browser': link:client/browser
+      '@sourcegraph/build-config': link:client/build-config
+      '@sourcegraph/client-api': link:client/client-api
+      '@sourcegraph/codeintellify': link:client/codeintellify
+      '@sourcegraph/common': link:client/common
       '@sourcegraph/extension-api-classes': 1.1.0_sohmsbidf4ixb2vnv3mpdkpiau
       '@sourcegraph/extension-api-types': link:client/extension-api-types
+      '@sourcegraph/http-client': link:client/http-client
+      '@sourcegraph/observability-client': link:client/observability-client
+      '@sourcegraph/shared': link:client/shared
+      '@sourcegraph/storybook': link:client/storybook
+      '@sourcegraph/template-parser': link:client/template-parser
+      '@sourcegraph/testing': link:client/testing
+      '@sourcegraph/web': link:client/web
+      '@sourcegraph/wildcard': link:client/wildcard
       '@storybook/addon-controls': 6.5.14_gfp4q6646gfovewejhfnlg2afq
       '@visx/annotation': 2.10.0_ef5jwxihqo6n7gxfmzogljlgcm
       '@visx/axis': 2.11.1_react@18.1.0
@@ -522,7 +551,7 @@ importers:
       react-router: 5.2.0_react@18.1.0
       react-router-dom: 5.2.0_react@18.1.0
       react-router-dom-v5-compat: 6.7.0_xjeikfjhclro5pp2abrahotxli
-      react-spring: 9.4.2_ssv3vkwxg74iun7wj74vdfwzhu
+      react-spring: 9.4.2_4i5ekl7nvibts5bw5j55pf3rfu
       react-sticky-box: 1.0.2_react@18.1.0
       react-visibility-sensor: 5.1.1_ef5jwxihqo6n7gxfmzogljlgcm
       recharts: 1.8.5_ef5jwxihqo6n7gxfmzogljlgcm
@@ -553,6 +582,7 @@ importers:
     devDependencies:
       '@atlassian/aui': 7.10.5_jquery@2.2.4+yarn@1.22.19
       '@axe-core/puppeteer': 4.4.2_puppeteer@13.7.0
+      '@babel/cli': 7.20.7_@babel+core@7.20.5
       '@babel/core': 7.20.5
       '@babel/plugin-transform-typescript': 7.20.2_@babel+core@7.20.5
       '@babel/preset-env': 7.20.2_@babel+core@7.20.5
@@ -950,7 +980,9 @@ importers:
       '@testing-library/jest-dom': ^5.10.1
       '@testing-library/react': ^12.1.3
       '@testing-library/user-event': ^14.0.0
+      '@types/jest': '*'
       '@types/node': '*'
+      '@types/webpack-env': '*'
       cross-fetch: ^3.1.5
       msw: ^0.49.0
       react: ^18.2.0
@@ -977,7 +1009,9 @@ importers:
       '@testing-library/jest-dom': 5.16.4
       '@testing-library/react': 12.1.5_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_tlwynutqiyp5mns3woioasuxnq
+      '@types/jest': 29.2.5
       '@types/node': 18.8.3
+      '@types/webpack-env': 1.18.0
       cross-fetch: 3.1.5
       msw: 0.49.2_typescript@4.9.3
 
@@ -1060,7 +1094,6 @@ importers:
       '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/http-client': workspace:*
       '@sourcegraph/observability-client': workspace:*
-      '@sourcegraph/schema': workspace:*
       '@sourcegraph/shared': workspace:*
       '@sourcegraph/storybook': workspace:*
       '@sourcegraph/testing': workspace:*
@@ -1072,7 +1105,6 @@ importers:
       '@sourcegraph/common': link:../common
       '@sourcegraph/http-client': link:../http-client
       '@sourcegraph/observability-client': link:../observability-client
-      '@sourcegraph/schema': link:../../schema
       '@sourcegraph/shared': link:../shared
       '@sourcegraph/wildcard': link:../wildcard
     devDependencies:
@@ -1212,6 +1244,26 @@ packages:
     dependencies:
       axe-core: 4.4.2
       puppeteer: 13.7.0
+    dev: true
+
+  /@babel/cli/7.20.7_@babel+core@7.20.5:
+    resolution: {integrity: sha512-WylgcELHB66WwQqItxNILsMlaTd8/SO6SgTTjMp4uCI7P4QyH1r3nqgFmO3BfM4AtfniHgFMH3EpYFj/zynBkQ==}
+    engines: {node: '>=6.9.0'}
+    hasBin: true
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.20.5
+      '@jridgewell/trace-mapping': 0.3.17
+      commander: 4.1.1
+      convert-source-map: 1.7.0
+      fs-readdir-recursive: 1.1.0
+      glob: 7.2.3
+      make-dir: 2.1.0
+      slash: 2.0.0
+    optionalDependencies:
+      '@nicolo-ribaudo/chokidar-2': 2.1.8-no-fsevents.3
+      chokidar: 3.5.3
     dev: true
 
   /@babel/code-frame/7.0.0:
@@ -5302,6 +5354,12 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
+  /@nicolo-ribaudo/chokidar-2/2.1.8-no-fsevents.3:
+    resolution: {integrity: sha512-s88O1aVtXftvp5bCPB7WnmXc5IwOZZ7YPuwNPt+GtOOXpPvad1LfbmjYv+qII7zP6RU2QGnqve27dnLycEnyEQ==}
+    requiresBuild: true
+    dev: true
+    optional: true
+
   /@nodelib/fs.scandir/2.1.3:
     resolution: {integrity: sha512-eGmwYQn3gxo4r7jdQnkrrN6bY478C3P+a/y72IJukF8LjB6ZHeB3c+Ehacj3sYeSmUXGlnA67/PmbM9CVwL7Dw==}
     engines: {node: '>= 8'}
@@ -5711,6 +5769,7 @@ packages:
   /@opentelemetry/api-metrics/0.31.0:
     resolution: {integrity: sha512-PcL1x0kZtMie7NsNy67OyMvzLEXqf3xd0TZJKHHPMGTe89oMpNVrD1zJB1kZcwXOxLlHHb6tz21G3vvXPdXyZg==}
     engines: {node: '>=14'}
+    deprecated: Please use @opentelemetry/api >= 1.3.0
     dependencies:
       '@opentelemetry/api': 1.1.0
     dev: false
@@ -6912,7 +6971,7 @@ packages:
       react: 18.1.0
     dev: false
 
-  /@react-spring/konva/9.4.2_ugd7tpmlqeq36yg2vchqtapuyu:
+  /@react-spring/konva/9.4.2_wwzmuz5bozaw6u5w3noaurfh7u:
     resolution: {integrity: sha512-wzSfyHp+qS0OjnipQ8FFrtMh4yu62dkaWAFa+9ThqbQ5KLbEdCK4ArN4h4GfxPoJZ38NJoEO7zbX+ewtQn8N1g==}
     peerDependencies:
       konva: '>=2.6'
@@ -6923,9 +6982,9 @@ packages:
       '@react-spring/core': 9.4.2_react@18.1.0
       '@react-spring/shared': 9.4.2_react@18.1.0
       '@react-spring/types': 9.4.2
-      konva: 8.3.14
+      konva: 8.4.0
       react: 18.1.0
-      react-konva: 16.8.6_3kmdaksehhw5dupxmuiiruylyq
+      react-konva: 16.8.6_ijnk7kgdzm7a2gxwrjkraqqs7i
     dev: false
 
   /@react-spring/native/9.4.2_ed6hdicvoe3mtgaxburxkml6qq:
@@ -6956,7 +7015,7 @@ packages:
       react: 18.1.0
     dev: false
 
-  /@react-spring/three/9.4.2_nz7meixwqem2ylg4kukzica6di:
+  /@react-spring/three/9.4.2_lalrxkleuwssyzr2iuqdcq4jdi:
     resolution: {integrity: sha512-qAPHOMjQjl9V3Eh4Xbdsdx9mAMe+rtSBfEuZGfoF5l8P8zC42gxggbyM1sKUOip3yyz76YTPiosWkmvgCVxMng==}
     peerDependencies:
       '@react-three/fiber': '>=6.0'
@@ -6967,7 +7026,7 @@ packages:
       '@react-spring/core': 9.4.2_react@18.1.0
       '@react-spring/shared': 9.4.2_react@18.1.0
       '@react-spring/types': 9.4.2
-      '@react-three/fiber': 8.9.1_jzt7idab4yy4ustllgk6spsysu
+      '@react-three/fiber': 8.10.0_jzt7idab4yy4ustllgk6spsysu
       react: 18.1.0
       three: 0.148.0
     dev: false
@@ -7008,8 +7067,8 @@ packages:
       zdog: 1.1.3
     dev: false
 
-  /@react-three/fiber/8.9.1_jzt7idab4yy4ustllgk6spsysu:
-    resolution: {integrity: sha512-xRMO9RGp0DkxSFu5BmmkjCxJ4r0dEpLobtxXdZwI0h2rZZaCnkPM5zThRN8xaZNbZhzRSVICeNOFaZltr9xFyQ==}
+  /@react-three/fiber/8.10.0_jzt7idab4yy4ustllgk6spsysu:
+    resolution: {integrity: sha512-veyvW9clPjS0oQ4g8e2E8yW3v8C2wcXhJp3VyTgjzhpKYAL0xq0+aiofHdpNjx/CiqlR25mYyFky6HskWP3B5w==}
     peerDependencies:
       expo: '>=43.0'
       expo-asset: '>=8.4'
@@ -9953,7 +10012,7 @@ packages:
       '@types/unist': 2.0.3
 
   /@types/mime-types/2.1.0:
-    resolution: {integrity: sha1-nKUs2jY/aZxpRmwqbM2q2RPqenM=}
+    resolution: {integrity: sha512-8LDSKVdJxwfJXZAcHRwFDxozsTCo3UmIpDjN1cOnYMTr0h4ivK9I+IdEMdtjnssFm0y66vbnpd21mAgGZ1oGAQ==}
     dev: true
 
   /@types/mime/2.0.0:
@@ -9978,7 +10037,7 @@ packages:
     dev: true
 
   /@types/mockdate/2.0.0:
-    resolution: {integrity: sha1-qvOIoerTsPXtbcFhGVbqe0ClfTw=}
+    resolution: {integrity: sha512-iZeWhi9afjKxZ3Nw8JeJbqwJI7iGqVMGwwOrgpksX1DiMB94Lf5X8W2OMUj2QKkMkcThc1IEmg1lQxVE5yvs6g==}
     dev: true
 
   /@types/ms/0.7.31:
@@ -10119,8 +10178,8 @@ packages:
       '@types/react': 18.0.8
     dev: false
 
-  /@types/react-reconciler/0.28.0:
-    resolution: {integrity: sha512-5cjk9ottZAj7eaTsqzPUIlrVbh3hBAO2YaEL1rkjHKB3xNAId7oU8GhzvAX+gfmlfoxTwJnBjPxEHyxkEA1Ffg==}
+  /@types/react-reconciler/0.28.1:
+    resolution: {integrity: sha512-ExBHUBykCcDh0HqqlJb6BA1yNpvW2iluIThK9tr1CX2tRMe3HeLt5/ow/bTpKGWoRBE5v/ISXFyjbnHRSKT6ng==}
     dependencies:
       '@types/react': 18.0.8
     dev: false
@@ -12096,7 +12155,7 @@ packages:
     dev: true
 
   /backbone/1.1.2:
-    resolution: {integrity: sha1-wsBMZr+HJo+4LBd6zr7/fTe6by0=}
+    resolution: {integrity: sha512-bdiYFVF+mXQ3712Urje2uvYClLPXOd2jsvp8AHlPyMKqpHRPCmCxZf099kCRadhA2sMxp761XB2aZ0/HYF4fDg==}
     dependencies:
       underscore: 1.13.6
     dev: true
@@ -12147,7 +12206,7 @@ packages:
     dev: true
 
   /batch-processor/1.0.0:
-    resolution: {integrity: sha1-dclcMrdI4IUNEMKxaPa9vpiRrOg=}
+    resolution: {integrity: sha512-xoLQD8gmmR32MeuBHgH0Tzd5PuSZx71ZsbhVxOCRbgktZEPe4SQy7s9Z50uPp0F/f7iw2XmkHN2xkgbMfckMDA==}
     dev: true
 
   /batch/0.6.1:
@@ -12894,7 +12953,7 @@ packages:
     dev: true
 
   /charenc/0.0.2:
-    resolution: {integrity: sha1-wKHS86cJLgN3S/qD8UwPxXkKhmc=}
+    resolution: {integrity: sha512-yrLQ/yVUFXkzg7EDQsPieE/53+0RlaWTs+wBrvW36cyilJ2SaDWfl4Yj7MtLTXleV9uEKefbAGUPv2/iWSooRA==}
     dev: true
 
   /check-types/11.2.2:
@@ -13186,7 +13245,7 @@ packages:
     dev: true
 
   /clipboard-js/0.2.0:
-    resolution: {integrity: sha1-uhpgksy85DzMmBdAdzdpLkMvQJs=}
+    resolution: {integrity: sha512-Pbp3Sj3PDX2eEQA26XHJ+w6zsiThu8znDryxj0lKGps0LCEwId+uZGq7rIOvzKetEI5b4+XIlK2fCnpFShH/Mg==}
     deprecated: Please migrate to https://github.com/lgarron/clipboard-polyfill
     dev: true
 
@@ -13898,7 +13957,7 @@ packages:
       which: 2.0.2
 
   /crypt/0.0.2:
-    resolution: {integrity: sha1-iNf/fsDfuG9xPch7u0LQRNPmxBs=}
+    resolution: {integrity: sha512-mCxBlsHFYh9C+HVpiEacem8FEBnMXgU9gy4zmNC+SXAZNB/1idgp/aulFJ4FgCi7GPEVbfyng092GqL2k2rmow==}
     dev: true
 
   /crypto-browserify/3.12.0:
@@ -17268,6 +17327,10 @@ packages:
   /fs-monkey/1.0.3:
     resolution: {integrity: sha512-cybjIfiiE+pTWicSCLFHSrXZ6EilF30oh91FDP9S2B051prEa7QWfrVTQm10/dDpswBDXZugPa1Ogu8Yh+HV0Q==}
 
+  /fs-readdir-recursive/1.1.0:
+    resolution: {integrity: sha512-GNanXlVr2pf02+sPN40XN8HG+ePaNcvM0q5mZBd668Obwb0yD5GiUbZOFgwn8kGMY6I3mdyDJzieUy3PTYyTRA==}
+    dev: true
+
   /fs.realpath/1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
 
@@ -18366,7 +18429,7 @@ packages:
     dev: false
 
   /history/4.5.1:
-    resolution: {integrity: sha1-RJNaUQIeO45n66wmejVnVzKrpWk=}
+    resolution: {integrity: sha512-gfHeJeYeMzFtos61gdA1AloO0hGXPF2Yum+2FRdJvlylYQOz51OnT1zuwg9UYst1BRrONhcAh3Nmsg9iblgl6g==}
     dependencies:
       invariant: 2.2.4
       loose-envify: 1.4.0
@@ -19705,7 +19768,7 @@ packages:
     peerDependencies:
       react: '>=18.0'
     dependencies:
-      '@types/react-reconciler': 0.28.0
+      '@types/react-reconciler': 0.28.1
       react: 18.1.0
     dev: false
 
@@ -21165,7 +21228,7 @@ packages:
     dev: true
 
   /json-buffer/3.0.0:
-    resolution: {integrity: sha1-Wx85evx11ne96Lz8Dkfh+aPZqJg=}
+    resolution: {integrity: sha512-CuUqjv0FUZIdXkHPI8MezCnFCdaTAacej1TZYulLoAg1h/PhwkdXFN4V/gzY4g+fMBCOV2xF+rp7t2XD2ns/NQ==}
     dev: true
 
   /json-buffer/3.0.1:
@@ -21469,8 +21532,8 @@ packages:
     resolution: {integrity: sha512-RTSoaUAfLvpR357vWzAz/50Q/BmHfmE6ETSWfutT0AJiw10e6CmcdYRQJlLRd95B53D0Y2aD1jSxD3V3ySF+PA==}
     dev: true
 
-  /konva/8.3.14:
-    resolution: {integrity: sha512-6I/TZppgY3Frs//AvZ87YVQLFxLywitb8wLS3qMM+Ih9e4QcB5Yy8br6eq7DdUzxPdbsYTz1FQBHzNxs08M1Tw==}
+  /konva/8.4.0:
+    resolution: {integrity: sha512-o38I9j1Gr5CprnBwPI9dCSzb4cvN/8pnjuFHtKrGcNBfKmaLvYfcIakTEDm6xLt17O+S/6nXhLdXa5wqiHHS9Q==}
     dev: false
 
   /language-subtag-registry/0.3.21:
@@ -22485,7 +22548,7 @@ packages:
     dev: true
 
   /metaviewport-parser/0.2.0:
-    resolution: {integrity: sha1-U1w84cz2IjpQJf3cahw2UF9+fbE=}
+    resolution: {integrity: sha512-qL5NtY18LGs7lvZCkj3ep2H4Pes9rIiSLZRUyfDdvVw7pWFA0eLwmqaIxApD74RGvUrNEtk9e5Wt1rT+VlCvGw==}
     dev: true
 
   /methods/1.1.2:
@@ -24367,7 +24430,7 @@ packages:
     dev: true
 
   /parse-cache-control/1.0.1:
-    resolution: {integrity: sha1-juqz5U+laSD+Fro493+iGqzC104=}
+    resolution: {integrity: sha512-60zvsJReQPX5/QP0Kzfd/VrpjScIQ7SHBW6bFCYfEP+fp0Eppr1SHhIO5nd1PjZtvclzSzES9D/p5nFJurwfWg==}
     dev: true
 
   /parse-entities/2.0.0:
@@ -26130,14 +26193,14 @@ packages:
   /react-is/18.2.0:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
 
-  /react-konva/16.8.6_3kmdaksehhw5dupxmuiiruylyq:
+  /react-konva/16.8.6_ijnk7kgdzm7a2gxwrjkraqqs7i:
     resolution: {integrity: sha512-6KRIqHyJuTTMuAehDIXvw+ZrtEj2aMc2fwolhmFlg1HBzH4PJimsMByTcEx292Afh9d38TcHdjXP1C58qqDOlg==}
     peerDependencies:
       konva: ^3.2.3
       react: 16.8.x
       react-dom: 16.8.x
     dependencies:
-      konva: 8.3.14
+      konva: 8.4.0
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
       react-reconciler: 0.20.4_react@18.1.0
@@ -26498,13 +26561,13 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
 
-  /react-spring/9.4.2_ssv3vkwxg74iun7wj74vdfwzhu:
+  /react-spring/9.4.2_4i5ekl7nvibts5bw5j55pf3rfu:
     resolution: {integrity: sha512-mK9xdq1kAhbe5YpP4EG2IzRa2C1M1UfR/MO1f83PE+IpHwCm1nGQhteF3MGyX6I3wnkoBWTXbY6n4443Dp52Og==}
     dependencies:
       '@react-spring/core': 9.4.2_react@18.1.0
-      '@react-spring/konva': 9.4.2_ugd7tpmlqeq36yg2vchqtapuyu
+      '@react-spring/konva': 9.4.2_wwzmuz5bozaw6u5w3noaurfh7u
       '@react-spring/native': 9.4.2_ed6hdicvoe3mtgaxburxkml6qq
-      '@react-spring/three': 9.4.2_nz7meixwqem2ylg4kukzica6di
+      '@react-spring/three': 9.4.2_lalrxkleuwssyzr2iuqdcq4jdi
       '@react-spring/web': 9.4.2_ef5jwxihqo6n7gxfmzogljlgcm
       '@react-spring/zdog': 9.4.2_77gplihovuwhn6erb2kol6s2xa
     transitivePeerDependencies:
@@ -28150,11 +28213,11 @@ packages:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
   /skatejs-template-html/0.0.0:
-    resolution: {integrity: sha1-6ZDBp9S1i3MF/8wzOJOb9AICPfc=}
+    resolution: {integrity: sha512-MjLeYvFx2LGuf+Y1XObipclUj3PP8QfffBka+5gsVFo0gG3Ohs4zlrK8kszdFzN4hOaGEjS8GdIMMzOILo4OVA==}
     dev: true
 
   /skatejs/0.13.17:
-    resolution: {integrity: sha1-eiH7s0NNpF5StHthZHFo7p53gHE=}
+    resolution: {integrity: sha512-2JQHMYYtiWfqaeDlWE2wga/W61mG/DleviTsWXpO9IgrtdclQ+z3MXV2UZC696SnqE6XgAO10+ZnyRnCdEtC4A==}
     engines: {node: '>=0.12.x', npm: 2.x.x}
     dev: true
 
@@ -28575,7 +28638,7 @@ packages:
       stackframe: 1.3.4
 
   /stack-trace/0.0.10:
-    resolution: {integrity: sha1-VHxws0fo0ytOEI6hoqFZ5f3eGcA=}
+    resolution: {integrity: sha512-KGzahc7puUKkzyMt+IqAep+TVNbKP+k2Lmwhub39m1AsTSkaDutx56aDCo+HLDzf/D26BIHTJWNiTG1KAJiQCg==}
     dev: true
 
   /stack-utils/2.0.5:
@@ -28628,7 +28691,7 @@ packages:
     engines: {node: '>= 0.8'}
 
   /stdin/0.0.1:
-    resolution: {integrity: sha1-0wQZgarsPf28d6GzjWNy449ftx4=}
+    resolution: {integrity: sha512-2bacd1TXzqOEsqRa+eEWkRdOSznwptrs4gqFcpMq5tOtmJUGPZd10W5Lam6wQ4YQ/+qjQt4e9u35yXCF6mrlfQ==}
     dev: true
 
   /store2/2.12.0:
@@ -29729,7 +29792,7 @@ packages:
     dev: true
 
   /trim-extra-html-whitespace/1.3.0:
-    resolution: {integrity: sha1-tH77DRpfKlaoXMRc6lJWUek0BM8=}
+    resolution: {integrity: sha512-yuD+lLG/oZ9Tzxne5Y27938Lxbl7Hcs4o02LrHYruoiHtZstHvvSKyxSWPPlJfRZ7LDlVbXGPBx0jroL5q/UUQ==}
     dev: true
 
   /trim-lines/3.0.1:
@@ -31067,7 +31130,7 @@ packages:
     dev: true
 
   /webcomponents.js/0.7.20:
-    resolution: {integrity: sha1-NnJyGPv1lDOuEBOeWerzz93cEcU=}
+    resolution: {integrity: sha512-d+VP4W05V1IXKNFClX5Rt6YlqRUuCxFk+jZMKuxKupQFjaMWi8oo2LzGSKrBtfGx7AsQ8Qhi5evvVAguBJl7Sg==}
     dev: true
 
   /webcrypto-core/1.7.5:

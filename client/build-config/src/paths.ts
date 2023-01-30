@@ -16,7 +16,7 @@ export function resolveWithSymlink(...args: string[]): string {
     }
 }
 
-export const ROOT_PATH = resolveWithSymlink(__dirname, '../../../')
+export const ROOT_PATH = process.cwd()
 export const WORKSPACES_PATH = resolveWithSymlink(ROOT_PATH, 'client')
 export const NODE_MODULES_PATH = resolveWithSymlink(ROOT_PATH, 'node_modules')
 export const MONACO_EDITOR_PATH = resolveWithSymlink(NODE_MODULES_PATH, 'monaco-editor')

@@ -1,27 +1,29 @@
-load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
-js_library(
-    name = "graphql_operations_files",
-    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
-    srcs = glob(
-        [
-            "webview/src/**/*.ts",
-            "webview/src/**/*.tsx",
-        ],
-        # TODO: Ignore legacy build generated file as it conflicts with the Bazel
-        # build. This can be removed after the migration.
-        [
-            "webview/src/graphql-operations.ts",
-        ],
-    ),
+# dts-only done manually
+# gazelle:js disabled
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/branded:tsconfig",
+        "//client/build-config:tsconfig",
+        "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
+        "//client/shared:tsconfig",
+        "//client/storybook:tsconfig",
+        "//client/wildcard:tsconfig",
+    ],
 )
 
-generate_graphql_operations(
-    name = "graphql_operations",
-    srcs = [
-        "//client/jetbrains/webview:graphql_operations_files",
-    ],
-    out = "src/graphql-operations.ts",
-    interface_name = "JetBrainsGraphQlOperations",
+js_library(
+    name = "jetbrains",
+    srcs = ["globals.d.ts"],
 )

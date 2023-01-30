@@ -1,0 +1,2 @@
+# gazelle:js_files **/*.{ts,tsx}
+# gazelle:ignore

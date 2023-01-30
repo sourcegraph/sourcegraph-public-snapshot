@@ -1,0 +1,14 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+# TODO(bazel): disabled for now
+# gazelle:js disabled
+
+# integration/ does not contain a src/
+# # gazelle:js_files **/*.{ts,tsx}
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(["**/*.{ts,tsx}"]),
+    visibility = ["//client/browser:__pkg__"],
+)

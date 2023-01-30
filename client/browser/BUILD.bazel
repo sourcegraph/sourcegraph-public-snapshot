@@ -1,5 +1,45 @@
-load("//dev:defs.bzl", "sass")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+
+# TODO(bazel): remove when no longer generated into src
+# gazelle:exclude **/*.module.scss.d.ts
+# gazelle:exclude **/src/graphql-operations.ts
+
+# TODO(bazel): storybook build
+# gazelle:exclude **/*.story.{ts,tsx}
+
+# gazelle:js_resolve **/*.module.scss :module_style_typings
+
+# Assets included as data
+# gazelle:js_ignore_imports ../../../../assets/img/sourcegraph-mark.svg
+
+# Bundled [s]css:
+# gazelle:js_resolve **/branded.scss :src/branded.css
+
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/branded:tsconfig",
+        "//client/build-config:tsconfig",
+        "//client/client-api:tsconfig",
+        "//client/codeintellify:tsconfig",
+        "//client/common:tsconfig",
+        "//client/extension-api-types:tsconfig",
+        "//client/http-client:tsconfig",
+        "//client/shared:tsconfig",
+        "//client/wildcard:tsconfig",
+    ],
+)
 
 module_style_typings(
     name = "module_style_typings",
@@ -25,5 +65,282 @@ sass(
         "//client/wildcard:global-styles",
         "//client/wildcard:sass-breakpoints",
         "//client/wildcard:sass-utils",
+    ],
+)
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        [
+            "src/**/*.ts",
+            "src/**/*.tsx",
+        ],
+        # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+        # build. This can be removed after the migration.
+        [
+            "src/graphql-operations.ts",
+            "src/**/*.module.scss.d.ts",
+        ],
+    ),
+    visibility = ["//client/shared:__pkg__"],
+)
+
+generate_graphql_operations(
+    name = "graphql_operations_ts",
+    srcs = [
+        ":graphql_operations_files",
+        "//client/browser/src/browser-extension/scripts:graphql_operations_files",
+        "//client/browser/src/integration:graphql_operations_files",
+    ],
+    out = "src/graphql-operations.ts",
+    interface_name = "BrowserGraphQlOperations",
+    visibility = ["//client/shared:__pkg__"],
+)
+
+ts_project(
+    name = "graphql_operations",
+    srcs = ["src/graphql-operations.ts"],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "browser_lib",
+    srcs = [
+        "code-intel-extensions.json",
+        "src/browser-extension/ThemeWrapper.tsx",
+        "src/browser-extension/after-install-page/AfterInstallPageContent.tsx",
+        "src/browser-extension/browser-action-icon.ts",
+        "src/browser-extension/environmentAssertion.ts",
+        "src/browser-extension/knownCodeHosts.ts",
+        "src/browser-extension/options-menu/OptionsPage.tsx",
+        "src/browser-extension/options-menu/OptionsPageAdvancedSettings.tsx",
+        "src/browser-extension/options-menu/components/OptionsPageContainer.tsx",
+        "src/browser-extension/util/index.ts",
+        "src/browser-extension/web-extension-api/ExtensionStorageSubject.ts",
+        "src/browser-extension/web-extension-api/fromBrowserEvent.ts",
+        "src/browser-extension/web-extension-api/runtime.ts",
+        "src/browser-extension/web-extension-api/storage.ts",
+        "src/browser-extension/web-extension-api/types.ts",
+        "src/globals.d.ts",
+        "src/native-integration/integration.main.ts",
+        "src/native-integration/phabricator/integration.main.ts",
+        "src/native-integration/phabricator/util.ts",
+        "src/shared/backend/diffs.tsx",
+        "src/shared/backend/extension-api-conversion.tsx",
+        "src/shared/backend/headers.ts",
+        "src/shared/backend/requestGraphQl.ts",
+        "src/shared/backend/search.tsx",
+        "src/shared/backend/server.ts",
+        "src/shared/backend/userEvents.tsx",
+        "src/shared/cli/index.ts",
+        "src/shared/cli/search.ts",
+        "src/shared/code-hosts/bitbucket-cloud/codeHost.ts",
+        "src/shared/code-hosts/bitbucket-cloud/context.ts",
+        "src/shared/code-hosts/bitbucket-cloud/domFunctions.ts",
+        "src/shared/code-hosts/bitbucket-cloud/fileInfo.ts",
+        "src/shared/code-hosts/bitbucket-cloud/scrape.ts",
+        "src/shared/code-hosts/bitbucket/api.ts",
+        "src/shared/code-hosts/bitbucket/codeHost.tsx",
+        "src/shared/code-hosts/bitbucket/context.tsx",
+        "src/shared/code-hosts/bitbucket/domFunctions.ts",
+        "src/shared/code-hosts/bitbucket/fileInfo.ts",
+        "src/shared/code-hosts/bitbucket/scrape.ts",
+        "src/shared/code-hosts/gerrit/codeHost.ts",
+        "src/shared/code-hosts/github/codeHost.tsx",
+        "src/shared/code-hosts/github/domFunctions.ts",
+        "src/shared/code-hosts/github/extensions.tsx",
+        "src/shared/code-hosts/github/fileInfo.ts",
+        "src/shared/code-hosts/github/scrape.ts",
+        "src/shared/code-hosts/github/util.tsx",
+        "src/shared/code-hosts/gitlab/api.ts",
+        "src/shared/code-hosts/gitlab/codeHost.ts",
+        "src/shared/code-hosts/gitlab/domFunctions.ts",
+        "src/shared/code-hosts/gitlab/extensions.ts",
+        "src/shared/code-hosts/gitlab/fileInfo.ts",
+        "src/shared/code-hosts/gitlab/scrape.ts",
+        "src/shared/code-hosts/phabricator/backend.tsx",
+        "src/shared/code-hosts/phabricator/codeHost.ts",
+        "src/shared/code-hosts/phabricator/domFunctions.ts",
+        "src/shared/code-hosts/phabricator/fileInfo.ts",
+        "src/shared/code-hosts/phabricator/index.tsx",
+        "src/shared/code-hosts/phabricator/scrape.ts",
+        "src/shared/code-hosts/phabricator/util.tsx",
+        "src/shared/code-hosts/shared/SignInButton.tsx",
+        "src/shared/code-hosts/shared/ViewOnSourcegraphButton.tsx",
+        "src/shared/code-hosts/shared/codeHost.tsx",
+        "src/shared/code-hosts/shared/codeHostTestUtils.ts",
+        "src/shared/code-hosts/shared/codeViews.ts",
+        "src/shared/code-hosts/shared/errors.ts",
+        "src/shared/code-hosts/shared/extensions.tsx",
+        "src/shared/code-hosts/shared/getNotificationClassName.ts",
+        "src/shared/code-hosts/shared/hoverAlerts.tsx",
+        "src/shared/code-hosts/shared/inject.ts",
+        "src/shared/code-hosts/shared/nativeTooltips.tsx",
+        "src/shared/code-hosts/shared/testHelpers.ts",
+        "src/shared/code-hosts/shared/util/fileInfo.ts",
+        "src/shared/code-hosts/shared/util/selections.ts",
+        "src/shared/code-hosts/shared/views.ts",
+        "src/shared/code-hosts/sourcegraph/inject.tsx",
+        "src/shared/components/CodeViewToolbar.tsx",
+        "src/shared/components/OpenDiffOnSourcegraph.tsx",
+        "src/shared/components/OpenOnSourcegraph.tsx",
+        "src/shared/components/ShortcutProvider.tsx",
+        "src/shared/components/SourcegraphIconButton.tsx",
+        "src/shared/components/TrackAnchorClick.tsx",
+        "src/shared/components/WildcardThemeProvider.tsx",
+        "src/shared/context.ts",
+        "src/shared/platform/context.ts",
+        "src/shared/platform/extensionHost.ts",
+        "src/shared/platform/inlineExtensionsService.ts",
+        "src/shared/platform/ports.ts",
+        "src/shared/platform/settings.ts",
+        "src/shared/platform/worker.ts",
+        "src/shared/polyfills.ts",
+        "src/shared/repo/backend.tsx",
+        "src/shared/repo/index.tsx",
+        "src/shared/sentry/index.ts",
+        "src/shared/tracking/eventLogger.tsx",
+        "src/shared/util/context.tsx",
+        "src/shared/util/dom.tsx",
+        "src/shared/util/featureFlags.ts",
+        "src/shared/util/optionFlags.ts",
+        "src/types/ajs/index.d.ts",
+        "src/types/string-score/index.d.ts",
+        "src/types/webextension-polyfill/index.d.ts",
+    ],
+    data = [
+        "//:node_modules/@mdi/js",
+        "//:node_modules/@reach/combobox",
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/classnames",
+        "//:node_modules/graphql",
+        "//:node_modules/history",
+        "//:node_modules/jest",  #keep
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/mdi-react",
+        "//:node_modules/mz",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/rxjs",
+        "//:node_modules/simmerjs",
+        "//:node_modules/uuid",
+        "//:node_modules/webextension-polyfill",
+        "//client/browser/assets",  #keep
+    ],
+    tsconfig = ":tsconfig",
+    # TODO(bazel): type-only #keep imports
+    deps = [
+        ":graphql_operations",
+        ":module_style_typings",
+        ":node_modules/@sourcegraph/branded",
+        ":node_modules/@sourcegraph/client-api",
+        ":node_modules/@sourcegraph/codeintellify",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@mdi/js",
+        "//:node_modules/@reach/combobox",
+        "//:node_modules/@sentry/browser",
+        "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/history",
+        "//:node_modules/@types/jest",  #keep
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mz",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/react-dom",
+        "//:node_modules/@types/simmerjs",
+        "//:node_modules/@types/uuid",
+        "//:node_modules/classnames",
+        "//:node_modules/comlink",  #keep
+        "//:node_modules/graphql",
+        "//:node_modules/history",
+        "//:node_modules/jest",  #keep
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/mdi-react",
+        "//:node_modules/mz",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/rxjs",
+        "//:node_modules/simmerjs",
+        "//:node_modules/utility-types",  #keep
+        "//:node_modules/uuid",
+        "//:node_modules/webextension-polyfill",
+    ],
+)
+
+ts_project(
+    name = "browser_tests",
+    testonly = True,
+    srcs = [
+        "src/shared/code-hosts/bitbucket-cloud/codeHost.test.ts",
+        "src/shared/code-hosts/bitbucket/codeHost.test.ts",
+        "src/shared/code-hosts/bitbucket/domFunctions.test.ts",
+        "src/shared/code-hosts/bitbucket/scrape.test.ts",
+        "src/shared/code-hosts/github/codeHost.test.ts",
+        "src/shared/code-hosts/github/domFunctions.test.ts",
+        "src/shared/code-hosts/github/fileInfo.test.ts",
+        "src/shared/code-hosts/github/util.test.ts",
+        "src/shared/code-hosts/gitlab/codeHost.test.ts",
+        "src/shared/code-hosts/gitlab/domFunctions.test.ts",
+        "src/shared/code-hosts/gitlab/scrape.test.ts",
+        "src/shared/code-hosts/phabricator/codeHost.test.ts",
+        "src/shared/code-hosts/phabricator/domFunctions.test.ts",
+        "src/shared/code-hosts/phabricator/fileInfo.test.ts",
+        "src/shared/code-hosts/shared/ViewOnSourcegraphButton.test.tsx",
+        "src/shared/code-hosts/shared/codeHost.test.tsx",
+        "src/shared/code-hosts/shared/codeViews.test.ts",
+        "src/shared/code-hosts/shared/views.test.ts",
+        "src/shared/code-hosts/sourcegraph/inject.test.tsx",
+    ],
+    data = [
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/jest-fetch-mock",
+        "//:node_modules/lodash",
+        "//:node_modules/mz",
+        "//:node_modules/process",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
+        "//:node_modules/util",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":browser_lib",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/wildcard",  #keep
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mz",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/sinon",
+        "//:node_modules/jest-fetch-mock",
+        "//:node_modules/lodash",
+        "//:node_modules/mz",
+        "//:node_modules/process",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
+        "//:node_modules/util",
+    ],
+)
+
+npm_package(
+    name = "browser",
+    srcs = [
+        "package.json",
+        "src/browser-extension/manifest.spec.json",  #keep
+        ":browser_lib",
+        ":module_styles",  #keep
     ],
 )

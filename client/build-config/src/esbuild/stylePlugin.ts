@@ -7,9 +7,6 @@ import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import postcssConfig from '../../../../postcss.config'
 import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
 
 /**
@@ -53,6 +50,9 @@ export const stylePlugin: esbuild.Plugin = {
             const outputPath = isSCSS ? inputPath.replace(/\.scss$/, '.css') : inputPath
 
             const isCSSModule = outputPath.endsWith('.module.css')
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const postcssConfig = require('../../../../postcss.config')
             const result = await postcss(
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 isCSSModule ? [...postcssConfig.plugins, modulesPlugin] : postcssConfig.plugins

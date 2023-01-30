@@ -1,10 +1,21 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "ts_project")
+load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
-# gazelle:aspect_js enabled
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/extension-api-types:tsconfig",
+    ],
+)
 
 ts_project(
-    name = "common",
+    name = "common_lib",
     srcs = [
         "src/errors/constants.ts",
         "src/errors/errors.ts",
@@ -38,6 +49,17 @@ ts_project(
         "src/util/types.ts",
         "src/util/url.ts",
     ],
+    data = [
+        "//:node_modules/highlight.js",
+        "//:node_modules/highlightjs-graphql",
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/marked",
+        "//:node_modules/rxjs",
+        "//:node_modules/sanitize-html",
+    ],
+    tsconfig = ":tsconfig",
+    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         "//:node_modules/@sourcegraph/extension-api-types",  #keep
         "//:node_modules/@types/highlight.js",
@@ -61,6 +83,7 @@ ts_project(
 
 ts_project(
     name = "common_tests",
+    testonly = True,
     srcs = [
         "src/errors/errors.test.ts",
         "src/util/fetchCache.test.ts",
@@ -74,9 +97,14 @@ ts_project(
         "src/util/string.test.ts",
         "src/util/url.test.ts",
     ],
+    data = [
+        "//:node_modules/jest-fetch-mock",
+        "//:node_modules/mockdate",
+        "//:node_modules/rxjs",
+    ],
+    tsconfig = ":tsconfig",
     deps = [
-        ":common",
-        "//:node_modules/@types/jest",  #keep
+        ":common_lib",
         "//:node_modules/@types/mockdate",
         "//:node_modules/@types/node",
         "//:node_modules/jest-fetch-mock",
@@ -85,4 +113,17 @@ ts_project(
     ],
 )
 
-npm_link_all_packages(name = "node_modules")
+npm_package(
+    name = "common",
+    srcs = [
+        "package.json",
+        ":common_lib",
+    ],
+)
+
+jest_test(
+    name = "test",
+    data = [
+        ":common_tests",
+    ],
+)

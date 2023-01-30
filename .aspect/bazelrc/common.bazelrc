@@ -66,11 +66,6 @@ build --incompatible_remote_results_ignore_disk
 # Docs: https://bazel.build/reference/command-line-reference#flag--reuse_sandbox_directories
 build --experimental_reuse_sandbox_directories
 
-# Avoid waiting on `Waiting for build events upload: Build Event Service`. Don't make the user wait
-# for uploads, instead allow the bazel command to complete and exit.
-# Docs: https://github.com/bazelbuild/bazel/blob/1af61b21df99edc2fc66939cdf14449c2661f873/src/main/java/com/google/devtools/build/lib/buildeventservice/BuildEventServiceOptions.java#L133
-build --bes_upload_mode=fully_async
-
 # Do not build runfiles symlink forests for external repositories under
 # `.runfiles/wsname/external/repo` (in addition to `.runfiles/repo`). This reduces runfiles &
 # sandbox creation times & prevents accidentally depending on this feature which may flip to off by
