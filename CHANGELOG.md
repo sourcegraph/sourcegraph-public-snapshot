@@ -39,6 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where the `repo:has.description()` parameter now shows description on Bitbucket server repos, previously it shows the repo name  [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752/files)
 - Fixed a bug where the `repo:has.description()` parameter now shows description on Bitbucket server repos, previously it shows the repo name [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752/files)
 - Fixed a bug where the `repo:has.description()` parameter now shows description on Bitbucket server repos, previously it shows the repo name [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752)
+- Fixed a bug where removing an auth provider would render a user's Account Security page inaccessible if they still had an external account associated with the removed auth provider. [#47092](https://github.com/sourcegraph/sourcegraph/pull/47092)
 
 ### Removed
 
