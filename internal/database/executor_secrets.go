@@ -291,45 +291,33 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
-	// Grab the secret and make sure that namespace write access from the actor
-	// is acceptable.
-	var tx ExecutorSecretStore
-	if s.InTransaction() {
-		tx = s
-	} else {
-		var err error
-		tx, err = s.Transact(ctx)
+	return s.WithTransact(ctx, func(tx ExecutorSecretStore) error {
+		secret, err := tx.GetByID(ctx, scope, id)
 		if err != nil {
 			return err
 		}
-		defer func() { err = tx.Done(err) }()
-	}
 
-	secret, err := tx.GetByID(ctx, scope, id)
-	if err != nil {
-		return err
-	}
+		// SECURITY: check that the current user is authorized to delete a secret in the given namespace.
+		if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
+			return err
+		}
 
-	// SECURITY: check that the current user is authorized to delete a secret in the given namespace.
-	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
-		return err
-	}
+		authz := executorSecretsAuthzQueryConds(ctx)
 
-	authz := executorSecretsAuthzQueryConds(ctx)
+		q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
+		res, err := tx.ExecResult(ctx, q)
+		if err != nil {
+			return err
+		}
 
-	q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
-	res, err := tx.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
+		if rows, err := res.RowsAffected(); err != nil {
+			return err
+		} else if rows == 0 {
+			return ExecutorSecretNotFoundErr{id: id}
+		}
 
-	if rows, err := res.RowsAffected(); err != nil {
-		return err
-	} else if rows == 0 {
-		return ExecutorSecretNotFoundErr{id: id}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
