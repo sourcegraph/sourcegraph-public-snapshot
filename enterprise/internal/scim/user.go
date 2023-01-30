@@ -57,16 +57,16 @@ func (h *UserResourceHandler) Get(r *http.Request, id string) (scim.Resource, er
 // An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
 // Page.Resources. Otherwise, is an empty slice is assigned, an empty list will be represented as `[]`.
 func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
-	h.observationCtx.Logger.Error("XXXXX GetAll", log.String("method", r.Method))
+	// Get total count
+	totalCount, err := h.db.Users().Count(r.Context(), &database.UsersListOptions{})
 
+	// Calculate offset
 	var offset int
 	if params.StartIndex > 0 {
 		offset = params.StartIndex - 1
 	}
 
-	// Collect username, verified email addresses, and external accounts to be used
-	// for revoking user permissions later, otherwise they will be removed from database
-	// if it's a hard delete.
+	// Get users
 	users, err := h.db.Users().List(r.Context(), &database.UsersListOptions{
 		LimitOffset: &database.LimitOffset{
 			Limit:  params.Count,
@@ -81,14 +81,15 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	for _, user := range users {
 		resource, err := h.convertUserToSCIMResource(r.Context(), user)
 		if err != nil {
-			// TODO: Log error
+			// Log error and skip user
+			h.observationCtx.Logger.Error("Error converting user to SCIM resource", log.String("username", user.Username), log.Error(err))
 			continue
 		}
 		resources = append(resources, *resource)
 	}
 
 	return scim.Page{
-		TotalResults: len(users),
+		TotalResults: totalCount,
 		Resources:    resources,
 	}, nil
 }
