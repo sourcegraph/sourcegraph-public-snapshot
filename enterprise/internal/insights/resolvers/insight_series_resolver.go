@@ -328,8 +328,9 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 	if err != nil {
 		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
+	fmt.Println(fmt.Sprintf("oldest: %s", oldest.String()))
 	if !oldest.IsZero() {
-		opts.After = &oldest
+		opts.From = &oldest
 	}
 
 	includeRepo := func(regex ...string) {
