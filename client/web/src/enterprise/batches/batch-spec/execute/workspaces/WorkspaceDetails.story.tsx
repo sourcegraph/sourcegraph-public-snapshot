@@ -30,7 +30,7 @@ import {
     BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 
-import { WorkspaceDetails, OUTPUT_LINES_PER_PAGE } from './WorkspaceDetails'
+import { WorkspaceDetails } from './WorkspaceDetails'
 
 const queryChangesetSpecFileDiffs = () =>
     of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
