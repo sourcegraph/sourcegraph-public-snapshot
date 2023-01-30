@@ -91,7 +91,7 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			repositoryByteSizesQ1:  []int64{100, 100, 100},
 			query2:                 "patterntype:structural [a] archive:yes fork:yes index:no",
 			numberOfRepositoriesQ2: 3,
-			repositoryByteSizesQ2:  []int64{100, megarepoSizeThresold, gigarepoSizethreshold},
+			repositoryByteSizesQ2:  []int64{100, megarepoSizeThreshold, gigarepoSizeThreshold},
 			handlers:               defaultHandlers,
 			compare:                assert.Less,
 		},
