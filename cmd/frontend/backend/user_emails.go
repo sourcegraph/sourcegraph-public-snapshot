@@ -191,7 +191,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 // SetVerified sets the supplied e-mail as the verified email for the given user.
 // If verified is false, Perforce external accounts using the e-mail will be
 // removed.
-func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) (err error) {
+func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
 	logger := e.logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
@@ -201,40 +201,36 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
-	tx, err := e.db.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "starting transaction")
-	}
-	defer func() {
-		err = tx.Done(err)
-		if err != nil {
-			return
+	err := e.db.WithTransact(ctx, func(tx database.DB) error {
+		if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+			return err
 		}
 
-		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-		// transaction has committed so that it takes into account any changes triggered
-		// by changes in the verification status of the e-mail.
-		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailVerified)
-	}()
+		if !verified {
+			if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+				return errors.Wrap(err, "removing stale perforce external account")
+			}
+			return nil
+		}
 
-	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+		if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
-	if !verified {
-		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-			return errors.Wrap(err, "removing stale perforce external account")
-		}
-		return nil
-	}
-
-	if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}); err != nil {
-		logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
-	}
+	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+	// transaction has committed so that it takes into account any changes triggered
+	// by changes in the verification status of the e-mail.
+	triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailVerified)
 
 	return nil
 }
