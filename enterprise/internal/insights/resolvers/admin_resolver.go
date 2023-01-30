@@ -280,7 +280,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: string(toDBBackfillListColumn(orderBy))},
+				{Field: string(orderByToDBBackfillColumn(orderBy))},
 				{Field: string(scheduler.BackfillID)},
 			},
 			Ascending: !args.Descending})
@@ -341,12 +341,13 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 
 // MarshalCursor returns cursor for a node and is called for generating start and end cursors.
 func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
+	// This is the enum the client requested ordering by
 	column := orderBy[0].Field
 	var value string
 
 	switch scheduler.BackfillQueueColumn(column) {
 	case scheduler.State:
-		value = fmt.Sprintf("'%s'", strings.ToLower(node.BackfillStatus.State()))
+		value = strings.ToLower(node.BackfillStatus.State())
 	case scheduler.QueuePosition:
 		pos := node.BackfillStatus.QueuePosition()
 		if pos != nil {
@@ -355,13 +356,13 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 			value = "NULL"
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (state.backfill_state, jq.queue_position). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actual: %s", column))
 	}
 
-	// format of the "Value" is the value for the sorted by column followed by the ID of the current node
+	// format of the "Value" is the value for the sorted by column ie `QUEUED` followed by the ID of the current node
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
-			Column: column,
+			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
 			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
 		},
 	)
@@ -377,17 +378,18 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, err
 	}
 
-	column := orderBy[0].Field
-	if backfillCursor.Column != column {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, backfillCursor.Column))
+	orderByColumn := scheduler.BackfillQueueColumn(orderBy[0].Field)
+	cursorColumn := orderByToDBBackfillColumn(backfillCursor.Column)
+	if cursorColumn != orderByColumn {
+		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
 	csv := ""
 	values := strings.Split(backfillCursor.Value, "@")
 	if len(values) != 2 {
-		return nil, errors.New("Invalid cursor. Expected Value: <column>@<id>")
+		return nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
 	}
-	switch scheduler.BackfillQueueColumn(column) {
+	switch orderByColumn {
 	case scheduler.State:
 		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
 	case scheduler.BackfillID, scheduler.QueuePosition:
@@ -396,12 +398,10 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, errors.New("Invalid OrderBy Field.")
 	}
 
-	csv = fmt.Sprintf("%v, %v", values[0], values[1])
-
 	return &csv, err
 }
 
-const backfillCursorKind = "InsightsBackfillItem"
+const backfillCursorKind = "InsightsAdminBackfillItem"
 
 func marshalBackfillItemCursor(cursor *itypes.Cursor) string {
 	return string(relay.MarshalID(backfillCursorKind, cursor))
@@ -472,7 +472,7 @@ func (r *backfillStatusResolver) Runtime() *string {
 	return nil
 }
 
-func toDBBackfillListColumn(ob string) scheduler.BackfillQueueColumn {
+func orderByToDBBackfillColumn(ob string) scheduler.BackfillQueueColumn {
 	switch ob {
 	case "STATE":
 		return scheduler.State
@@ -480,5 +480,16 @@ func toDBBackfillListColumn(ob string) scheduler.BackfillQueueColumn {
 		return scheduler.QueuePosition
 	default:
 		return ""
+	}
+}
+
+func dbToOrderBy(dbField scheduler.BackfillQueueColumn) scheduler.BackfillQueueColumn {
+	switch dbField {
+	case scheduler.State:
+		return "STATE"
+	case scheduler.QueuePosition:
+		return "QUEUE_POSITION"
+	default:
+		return "STATE" //default
 	}
 }
