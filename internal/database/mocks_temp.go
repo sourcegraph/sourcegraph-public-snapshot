@@ -3925,9 +3925,6 @@ type MockDB struct {
 	// OrgMembersFunc is an instance of a mock function object controlling
 	// the behavior of the method OrgMembers.
 	OrgMembersFunc *DBOrgMembersFunc
-	// OrgStatsFunc is an instance of a mock function object controlling the
-	// behavior of the method OrgStats.
-	OrgStatsFunc *DBOrgStatsFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
@@ -4116,11 +4113,6 @@ func NewMockDB() *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: func() (r0 OrgMemberStore) {
-				return
-			},
-		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: func() (r0 OrgStatsStore) {
 				return
 			},
 		},
@@ -4376,11 +4368,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.OrgMembers")
 			},
 		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: func() OrgStatsStore {
-				panic("unexpected invocation of MockDB.OrgStats")
-			},
-		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: func() OrgStore {
 				panic("unexpected invocation of MockDB.Orgs")
@@ -4594,9 +4581,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: i.OrgMembers,
-		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: i.OrgStats,
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -6584,104 +6568,6 @@ func (c DBOrgMembersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOrgMembersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBOrgStatsFunc describes the behavior when the OrgStats method of the
-// parent MockDB instance is invoked.
-type DBOrgStatsFunc struct {
-	defaultHook func() OrgStatsStore
-	hooks       []func() OrgStatsStore
-	history     []DBOrgStatsFuncCall
-	mutex       sync.Mutex
-}
-
-// OrgStats delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) OrgStats() OrgStatsStore {
-	r0 := m.OrgStatsFunc.nextHook()()
-	m.OrgStatsFunc.appendCall(DBOrgStatsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the OrgStats method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBOrgStatsFunc) SetDefaultHook(hook func() OrgStatsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// OrgStats method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBOrgStatsFunc) PushHook(hook func() OrgStatsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBOrgStatsFunc) SetDefaultReturn(r0 OrgStatsStore) {
-	f.SetDefaultHook(func() OrgStatsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBOrgStatsFunc) PushReturn(r0 OrgStatsStore) {
-	f.PushHook(func() OrgStatsStore {
-		return r0
-	})
-}
-
-func (f *DBOrgStatsFunc) nextHook() func() OrgStatsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBOrgStatsFunc) appendCall(r0 DBOrgStatsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBOrgStatsFuncCall objects describing the
-// invocations of this function.
-func (f *DBOrgStatsFunc) History() []DBOrgStatsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBOrgStatsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBOrgStatsFuncCall is an object that describes an invocation of method
-// OrgStats on an instance of MockDB.
-type DBOrgStatsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 OrgStatsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBOrgStatsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBOrgStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

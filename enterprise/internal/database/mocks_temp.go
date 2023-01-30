@@ -6874,9 +6874,6 @@ type MockEnterpriseDB struct {
 	// OrgMembersFunc is an instance of a mock function object controlling
 	// the behavior of the method OrgMembers.
 	OrgMembersFunc *EnterpriseDBOrgMembersFunc
-	// OrgStatsFunc is an instance of a mock function object controlling the
-	// behavior of the method OrgStats.
-	OrgStatsFunc *EnterpriseDBOrgStatsFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *EnterpriseDBOrgsFunc
@@ -7076,11 +7073,6 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		OrgMembersFunc: &EnterpriseDBOrgMembersFunc{
 			defaultHook: func() (r0 database.OrgMemberStore) {
-				return
-			},
-		},
-		OrgStatsFunc: &EnterpriseDBOrgStatsFunc{
-			defaultHook: func() (r0 database.OrgStatsStore) {
 				return
 			},
 		},
@@ -7351,11 +7343,6 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.OrgMembers")
 			},
 		},
-		OrgStatsFunc: &EnterpriseDBOrgStatsFunc{
-			defaultHook: func() database.OrgStatsStore {
-				panic("unexpected invocation of MockEnterpriseDB.OrgStats")
-			},
-		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: func() database.OrgStore {
 				panic("unexpected invocation of MockEnterpriseDB.Orgs")
@@ -7583,9 +7570,6 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		OrgMembersFunc: &EnterpriseDBOrgMembersFunc{
 			defaultHook: i.OrgMembers,
-		},
-		OrgStatsFunc: &EnterpriseDBOrgStatsFunc{
-			defaultHook: i.OrgStats,
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -9697,105 +9681,6 @@ func (c EnterpriseDBOrgMembersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBOrgMembersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// EnterpriseDBOrgStatsFunc describes the behavior when the OrgStats method
-// of the parent MockEnterpriseDB instance is invoked.
-type EnterpriseDBOrgStatsFunc struct {
-	defaultHook func() database.OrgStatsStore
-	hooks       []func() database.OrgStatsStore
-	history     []EnterpriseDBOrgStatsFuncCall
-	mutex       sync.Mutex
-}
-
-// OrgStats delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEnterpriseDB) OrgStats() database.OrgStatsStore {
-	r0 := m.OrgStatsFunc.nextHook()()
-	m.OrgStatsFunc.appendCall(EnterpriseDBOrgStatsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the OrgStats method of
-// the parent MockEnterpriseDB instance is invoked and the hook queue is
-// empty.
-func (f *EnterpriseDBOrgStatsFunc) SetDefaultHook(hook func() database.OrgStatsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// OrgStats method of the parent MockEnterpriseDB instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EnterpriseDBOrgStatsFunc) PushHook(hook func() database.OrgStatsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterpriseDBOrgStatsFunc) SetDefaultReturn(r0 database.OrgStatsStore) {
-	f.SetDefaultHook(func() database.OrgStatsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBOrgStatsFunc) PushReturn(r0 database.OrgStatsStore) {
-	f.PushHook(func() database.OrgStatsStore {
-		return r0
-	})
-}
-
-func (f *EnterpriseDBOrgStatsFunc) nextHook() func() database.OrgStatsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterpriseDBOrgStatsFunc) appendCall(r0 EnterpriseDBOrgStatsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnterpriseDBOrgStatsFuncCall objects
-// describing the invocations of this function.
-func (f *EnterpriseDBOrgStatsFunc) History() []EnterpriseDBOrgStatsFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterpriseDBOrgStatsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterpriseDBOrgStatsFuncCall is an object that describes an invocation of
-// method OrgStats on an instance of MockEnterpriseDB.
-type EnterpriseDBOrgStatsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.OrgStatsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnterpriseDBOrgStatsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterpriseDBOrgStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
