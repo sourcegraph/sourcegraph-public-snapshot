@@ -5,9 +5,11 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -91,6 +93,10 @@ type CreateTeamArgs struct {
 }
 
 func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to create teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can create teams")
+	}
 	teams := r.db.Teams()
 	var t types.Team
 	t.Name = args.Name
@@ -102,13 +108,8 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 		return nil, errors.New("must specify at most one: ParentTeam or ParentTeamName")
 	}
 	if args.ParentTeam != nil {
-		id, err := strconv.Atoi(string(*args.ParentTeam))
-		if err != nil {
-			return nil, errors.Wrapf(err, "ParentTeam ID does not conform to integer: %q", *args.ParentTeam)
-		}
-		t.ParentTeamID = int32(id)
-		if id != int(t.ParentTeamID) {
-			return nil, errors.Wrapf(err, "ParentTeam ID does not conform to int32: %q", *args.ParentTeam)
+		if err := relay.UnmarshalSpec(*args.ParentTeam, &t.ParentTeamID); err != nil {
+			return nil, errors.Wrapf(err, "Cannot interpret ParentTeam ID: %q", *args.ParentTeam)
 		}
 		if _, err := teams.GetTeamByID(ctx, t.ParentTeamID); errcode.IsNotFound(err) {
 			return nil, errors.Wrapf(err, "ParentTeam ID=%d not found", t.ParentTeamID)

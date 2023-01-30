@@ -2,12 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -51,9 +50,10 @@ func TestCreateTeamBare(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, user, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!) {
 			createTeam(name: $name) {
 				id
@@ -73,7 +73,7 @@ func TestCreateTeamBare(t *testing.T) {
 	expected := &types.Team{
 		ID:        1,
 		Name:      "team-name-testing",
-		CreatorID: actorID,
+		CreatorID: user.ID,
 	}
 	if diff := cmp.Diff([]*types.Team{expected}, fakeTeams.list); diff != "" {
 		t.Errorf("unexpected teams in fake database (-want,+got):\n%s", diff)
@@ -84,9 +84,10 @@ func TestCreateTeamDisplayName(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!, $displayName: String!) {
 			createTeam(name: $name, displayName: $displayName) {
 				displayName
@@ -108,9 +109,10 @@ func TestCreateTeamReadOnlyDefault(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!) {
 			createTeam(name: $name) {
 				readonly
@@ -131,9 +133,10 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!, $readonly: Boolean!) {
 			createTeam(name: $name, readonly: $readonly) {
 				readonly
@@ -159,9 +162,10 @@ func TestCreateTeamParentByID(t *testing.T) {
 	}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!, $parentTeamID: ID!) {
 			createTeam(name: $name, parentTeam: $parentTeamID) {
 				parentTeam {
@@ -178,7 +182,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 		}`,
 		Variables: map[string]any{
 			"name":         "team-name-testing",
-			"parentTeamID": strconv.Itoa(int(parentTeam.ID)),
+			"parentTeamID": string(relay.MarshalID("Team", parentTeam.ID)),
 		},
 	})
 }
@@ -191,9 +195,10 @@ func TestCreateTeamParentByName(t *testing.T) {
 	}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorID}),
+		Context: ctx,
 		Query: `mutation CreateTeam($name: String!, $parentTeamName: String!) {
 			createTeam(name: $name, parentTeamName: $parentTeamName) {
 				parentTeam {
