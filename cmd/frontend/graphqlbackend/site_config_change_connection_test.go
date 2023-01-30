@@ -53,16 +53,14 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	conf := db.Conf()
 	siteConfigsToCreate := []*database.SiteConfig{
 		{
-			Contents: `
-{
+			Contents: `{
   "auth.Providers": []
 }`,
 		},
 		{
 			AuthorUserID: 2,
 			// A new line is added.
-			Contents: `
-{
+			Contents: `{
   "disableAutoGitUpdates": true,
   "auth.Providers": []
 }`,
@@ -70,8 +68,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		{
 			AuthorUserID: 1,
 			// Existing line is changed.
-			Contents: `
-{
+			Contents: `{
   "disableAutoGitUpdates": false,
   "auth.Providers": []
 }`,
@@ -79,8 +76,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		{
 			AuthorUserID: 1,
 			// Existing line is removed.
-			Contents: `
-{
+			Contents: `{
   "auth.Providers": []
 }`,
 		},
