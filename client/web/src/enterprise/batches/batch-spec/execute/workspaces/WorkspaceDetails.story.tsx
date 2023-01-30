@@ -85,8 +85,8 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
                     workspaceID: 'test-1234',
                     stepIndex: 1,
                     first: 500,
-                    after: null
-                }
+                    after: null,
+                },
             },
             result: {
                 data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
@@ -100,8 +100,8 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
                     workspaceID: 'test-1234',
                     stepIndex: 1,
                     first: 500,
-                    after: "5"
-                }
+                    after: '500',
+                },
             },
             result: {
                 data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,

@@ -635,7 +635,7 @@ export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE = {
                 nodes: generateMockOutputLines(1, 500),
                 totalCount: 10,
                 pageInfo: {
-                    endCursor: "5",
+                    endCursor: '500',
                     hasNextPage: true,
                 },
             },
