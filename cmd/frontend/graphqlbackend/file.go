@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
 type FileResolver interface {

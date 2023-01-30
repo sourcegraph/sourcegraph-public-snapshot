@@ -425,11 +425,19 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
-    description: Build web application for integration tests
+    description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
+
+  web-integration-build-prod:
+    description: Build production web application for integration tests
+    cmd: pnpm --filter @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
+      NODE_ENV: production
 
   docsite:
     description: Docsite instance serving the docs
@@ -1218,7 +1226,7 @@ tests:
   web-integration:
     preamble: |
       A web application should be built for these tests to work, most
-      commonly with: `sg run web-integration-build`
+      commonly with: `sg run web-integration-build` or `sg run web-integration-build-prod` for production build.
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
 

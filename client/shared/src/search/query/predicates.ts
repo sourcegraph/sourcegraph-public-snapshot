@@ -53,7 +53,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'content' }],
+                fields: [{ name: 'content' }, { name: 'owner' }],
             },
         ],
     },
@@ -212,6 +212,25 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.key(...)',
                 insertText: 'has.key(${1})',
+                asSnippet: true,
+            },
+        ]
+    }
+    if (field === 'file') {
+        return [
+            {
+                label: 'contains.content(...)',
+                insertText: 'contains.content(${1:TODO})',
+                asSnippet: true,
+            },
+            {
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
+                asSnippet: true,
+            },
+            {
+                label: 'has.owner(...)',
+                insertText: 'has.owner(${1})',
                 asSnippet: true,
             },
         ]

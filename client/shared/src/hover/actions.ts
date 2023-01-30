@@ -1,6 +1,7 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
 import {
     catchError,
@@ -447,6 +448,9 @@ export function registerHoverContributions({
                         if (isExternalLink(result.url)) {
                             // External links must be navigated to through the browser
                             locationAssign(result.url)
+                        } else if (typeof historyOrNavigate === 'function') {
+                            // Use react router to handle in-app navigation
+                            historyOrNavigate(result.url)
                         } else {
                             compatNavigate(historyOrNavigate, result.url)
                         }

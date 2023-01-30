@@ -17,6 +17,7 @@ type SourcedCommits struct {
 type GetUploadsOptions struct {
 	RepositoryID            int
 	State                   string
+	States                  []string
 	Term                    string
 	VisibleAtTip            bool
 	DependencyOf            int
