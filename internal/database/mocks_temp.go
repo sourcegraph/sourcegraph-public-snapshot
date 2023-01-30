@@ -28614,12 +28614,12 @@ type MockOrgMemberStore struct {
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *OrgMemberStoreRemoveFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *OrgMemberStoreTransactFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *OrgMemberStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *OrgMemberStoreWithTransactFunc
 }
 
 // NewMockOrgMemberStore creates a new mock of the OrgMemberStore interface.
@@ -28671,13 +28671,13 @@ func NewMockOrgMemberStore() *MockOrgMemberStore {
 				return
 			},
 		},
-		TransactFunc: &OrgMemberStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 OrgMemberStore, r1 error) {
+		WithFunc: &OrgMemberStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 OrgMemberStore) {
 				return
 			},
 		},
-		WithFunc: &OrgMemberStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 OrgMemberStore) {
+		WithTransactFunc: &OrgMemberStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(OrgMemberStore) error) (r0 error) {
 				return
 			},
 		},
@@ -28733,14 +28733,14 @@ func NewStrictMockOrgMemberStore() *MockOrgMemberStore {
 				panic("unexpected invocation of MockOrgMemberStore.Remove")
 			},
 		},
-		TransactFunc: &OrgMemberStoreTransactFunc{
-			defaultHook: func(context.Context) (OrgMemberStore, error) {
-				panic("unexpected invocation of MockOrgMemberStore.Transact")
-			},
-		},
 		WithFunc: &OrgMemberStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) OrgMemberStore {
 				panic("unexpected invocation of MockOrgMemberStore.With")
+			},
+		},
+		WithTransactFunc: &OrgMemberStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(OrgMemberStore) error) error {
+				panic("unexpected invocation of MockOrgMemberStore.WithTransact")
 			},
 		},
 	}
@@ -28778,11 +28778,11 @@ func NewMockOrgMemberStoreFrom(i OrgMemberStore) *MockOrgMemberStore {
 		RemoveFunc: &OrgMemberStoreRemoveFunc{
 			defaultHook: i.Remove,
 		},
-		TransactFunc: &OrgMemberStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		WithFunc: &OrgMemberStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &OrgMemberStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -29767,111 +29767,6 @@ func (c OrgMemberStoreRemoveFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// OrgMemberStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockOrgMemberStore instance is invoked.
-type OrgMemberStoreTransactFunc struct {
-	defaultHook func(context.Context) (OrgMemberStore, error)
-	hooks       []func(context.Context) (OrgMemberStore, error)
-	history     []OrgMemberStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockOrgMemberStore) Transact(v0 context.Context) (OrgMemberStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(OrgMemberStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockOrgMemberStore instance is invoked and the hook queue is
-// empty.
-func (f *OrgMemberStoreTransactFunc) SetDefaultHook(hook func(context.Context) (OrgMemberStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockOrgMemberStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *OrgMemberStoreTransactFunc) PushHook(hook func(context.Context) (OrgMemberStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *OrgMemberStoreTransactFunc) SetDefaultReturn(r0 OrgMemberStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (OrgMemberStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *OrgMemberStoreTransactFunc) PushReturn(r0 OrgMemberStore, r1 error) {
-	f.PushHook(func(context.Context) (OrgMemberStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *OrgMemberStoreTransactFunc) nextHook() func(context.Context) (OrgMemberStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *OrgMemberStoreTransactFunc) appendCall(r0 OrgMemberStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of OrgMemberStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *OrgMemberStoreTransactFunc) History() []OrgMemberStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]OrgMemberStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// OrgMemberStoreTransactFuncCall is an object that describes an invocation
-// of method Transact on an instance of MockOrgMemberStore.
-type OrgMemberStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 OrgMemberStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c OrgMemberStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c OrgMemberStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // OrgMemberStoreWithFunc describes the behavior when the With method of the
 // parent MockOrgMemberStore instance is invoked.
 type OrgMemberStoreWithFunc struct {
@@ -29971,6 +29866,111 @@ func (c OrgMemberStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgMemberStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// OrgMemberStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockOrgMemberStore instance is invoked.
+type OrgMemberStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(OrgMemberStore) error) error
+	hooks       []func(context.Context, func(OrgMemberStore) error) error
+	history     []OrgMemberStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockOrgMemberStore) WithTransact(v0 context.Context, v1 func(OrgMemberStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(OrgMemberStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockOrgMemberStore instance is invoked and the hook queue
+// is empty.
+func (f *OrgMemberStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(OrgMemberStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockOrgMemberStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *OrgMemberStoreWithTransactFunc) PushHook(hook func(context.Context, func(OrgMemberStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgMemberStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(OrgMemberStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgMemberStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(OrgMemberStore) error) error {
+		return r0
+	})
+}
+
+func (f *OrgMemberStoreWithTransactFunc) nextHook() func(context.Context, func(OrgMemberStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgMemberStoreWithTransactFunc) appendCall(r0 OrgMemberStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgMemberStoreWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *OrgMemberStoreWithTransactFunc) History() []OrgMemberStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgMemberStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgMemberStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockOrgMemberStore.
+type OrgMemberStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(OrgMemberStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgMemberStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgMemberStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
