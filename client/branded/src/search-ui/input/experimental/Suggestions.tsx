@@ -3,6 +3,7 @@ import React, { MouseEvent, useMemo, useState, useCallback, useLayoutEffect } fr
 import { mdiInformationOutline } from '@mdi/js'
 import classnames from 'classnames'
 
+import { isSafari } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
@@ -66,7 +67,9 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
 
     useLayoutEffect(() => {
         if (container) {
-            container.querySelector('[aria-selected="true"]')?.scrollIntoView(false)
+            // Options are not supported in Safari according to
+            // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#browser_compatibility
+            container.querySelector('[aria-selected="true"]')?.scrollIntoView(isSafari() ? false : { block: 'nearest' })
         }
     }, [container, focusedItem])
 
@@ -101,20 +104,22 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                             <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
                                         </div>
                                     )}
-                                    <div role="gridcell">
-                                        {option.render ? (
-                                            option.render(option)
-                                        ) : option.matches ? (
-                                            <HighlightedLabel label={option.label} matches={option.matches} />
-                                        ) : (
-                                            option.label
+                                    <div className={classnames(!option.multiline && 'd-flex', 'flex-wrap')}>
+                                        <div role="gridcell" className={styles.label}>
+                                            {option.render ? (
+                                                option.render(option)
+                                            ) : option.matches ? (
+                                                <HighlightedLabel label={option.label} matches={option.matches} />
+                                            ) : (
+                                                option.label
+                                            )}
+                                        </div>
+                                        {option.description && (
+                                            <div role="gridcell" className={styles.description}>
+                                                {option.description}
+                                            </div>
                                         )}
                                     </div>
-                                    {option.description && (
-                                        <div role="gridcell" className={styles.description}>
-                                            {option.description}
-                                        </div>
-                                    )}
                                     <div className={styles.note}>
                                         <div role="gridcell">{getActionName(option.action)}</div>
                                         {option.alternativeAction && (
@@ -173,19 +178,42 @@ const ActionInfo: React.FunctionComponent<{ action: Action; shortcut: string }> 
     }
 }
 
-export const HighlightedLabel: React.FunctionComponent<{ label: string; matches: Set<number> }> = ({
+export const HighlightedLabel: React.FunctionComponent<{ label: string; matches: Set<number>; offset?: number }> = ({
     label,
     matches,
-}) => (
-    <>
-        {[...label].map((char, index) =>
-            matches.has(index) ? (
-                <span key={index} className={styles.match}>
-                    {char}
-                </span>
-            ) : (
-                char
-            )
-        )}
-    </>
-)
+    offset = 0,
+}) => {
+    const spans: [number, number, boolean][] = []
+    let currentStart = 0
+    let currentEnd = 0
+    let currentMatch = false
+
+    // Includes length as upper bound to include the last character when
+    // creating the last span.
+    for (let index = 0; index <= label.length; index++) {
+        currentEnd = index
+
+        const match = matches.has(index + offset)
+        if (currentMatch !== match || index === label.length) {
+            // close previous span
+            spans.push([currentStart, currentEnd, currentMatch])
+            currentStart = index
+            currentMatch = match
+        }
+    }
+
+    return (
+        <span>
+            {spans.map(([start, end, match]) => {
+                const value = label.slice(start, end)
+                return match ? (
+                    <span key={offset + start} className={styles.match}>
+                        {value}
+                    </span>
+                ) : (
+                    value
+                )
+            })}
+        </span>
+    )
+}

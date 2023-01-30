@@ -1,9 +1,8 @@
 import classnames from 'classnames'
 
-import { SyntaxHighlightedSearchQuery } from '../../components'
-
 import { HighlightedLabel } from './Suggestions'
 import { Option } from './suggestionsExtension'
+import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
 import styles from './Suggestions.module.scss'
 
@@ -32,7 +31,7 @@ const FilterValueOption: React.FunctionComponent<{ option: Option }> = ({ option
 }
 
 const QueryOption: React.FunctionComponent<{ option: Option }> = ({ option }) => (
-    <SyntaxHighlightedSearchQuery query={option.label} />
+    <SyntaxHighlightedSearchQuery query={option.label} matches={option.matches} />
 )
 
 // Custom renderer for filter suggestions

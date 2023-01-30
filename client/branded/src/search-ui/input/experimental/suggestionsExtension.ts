@@ -1,6 +1,7 @@
 import React from 'react'
 
 import {
+    Compartment,
     EditorSelection,
     EditorState,
     Extension,
@@ -10,10 +11,21 @@ import {
     StateField,
     Transaction,
 } from '@codemirror/state'
-import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import {
+    Command as CodeMirrorCommand,
+    Decoration,
+    EditorView,
+    KeyBinding,
+    keymap,
+    ViewPlugin,
+    ViewUpdate,
+    WidgetType,
+} from '@codemirror/view'
 import { createRoot, Root } from 'react-dom/client'
 
 import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
+
+import { placeholder as placeholderExtension } from '../codemirror/placeholder'
 
 import { Suggestions } from './Suggestions'
 
@@ -33,7 +45,10 @@ export function getEditorConfig(state: EditorState): EditorConfig {
 /**
  * A source for completion/suggestion results
  */
-export type Source = (state: EditorState, position: number) => SuggestionResult
+export interface Source {
+    query: (state: EditorState, position: number, mode?: string) => SuggestionResult
+    mode?: string
+}
 
 export interface SuggestionResult {
     /**
@@ -71,6 +86,11 @@ export interface Option {
      */
     description?: string
     /**
+     * Whether or not to render the description on a separate line, regardless
+     * of whether it fits into one line or not.
+     */
+    multiline?: boolean
+    /**
      * The SVG path of the icon to use for this option.
      */
     icon?: string
@@ -92,7 +112,7 @@ export interface Option {
 
 export interface CommandAction {
     type: 'command'
-    apply: (view: EditorView) => void
+    apply: (option: Option, view: EditorView) => void
     name?: string
 }
 export interface GoToAction {
@@ -284,9 +304,10 @@ class RegisteredSource {
     public timestamp: number
 
     constructor(
-        public readonly source: Source,
+        public readonly sources: readonly Source[],
         public readonly state: RegisteredSourceState,
         public readonly result: Result,
+        public readonly selectedMode: (ModeDefinition & { previousInput: string }) | null,
         private readonly next?: () => Promise<SuggestionResult>
     ) {
         switch (state) {
@@ -299,49 +320,69 @@ class RegisteredSource {
     }
 
     public update(transaction: Transaction): RegisteredSource {
+        // Aliasing this makes it easier to create new instances based on all
+        // changes and effects of the transaction.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, unicorn/no-this-assignment
+        let source: RegisteredSource = this
+
         // TODO: We probably don't want to trigger fetches on every doc changed
         if (isUserInput(transaction) || transaction.docChanged) {
-            return this.query(transaction.state)
-        }
-
-        if (transaction.selection) {
+            source = source.query(transaction.state)
+        } else if (transaction.selection) {
             if (!transaction.selection.main.empty) {
                 // Hide suggestions when the user selects a range in the input
-                return new RegisteredSource(this.source, RegisteredSourceState.Inactive, this.result)
+                source = new RegisteredSource(
+                    source.sources,
+                    RegisteredSourceState.Inactive,
+                    source.result,
+                    source.selectedMode
+                )
+            } else if (!this.result.valid(transaction.state, transaction.newSelection.main.head)) {
+                source = this.query(transaction.state)
             }
-            if (this.result.valid(transaction.state, transaction.newSelection.main.head)) {
-                return this
-            }
-            return this.query(transaction.state)
         }
 
         for (const effect of transaction.effects) {
             if (
                 effect.is(updateResultEffect) &&
-                effect.value.source.source === this.source &&
-                this.state === RegisteredSourceState.Pending
+                effect.value.source.sources === source.sources &&
+                source.state === RegisteredSourceState.Pending
             ) {
                 const { result } = effect.value
-                return new RegisteredSource(
-                    this.source,
+                source = new RegisteredSource(
+                    source.sources,
                     result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete,
                     new Result(result.result, result.valid),
+                    source.selectedMode,
                     result.next
                 )
             }
 
             if (effect.is(startCompletion)) {
-                return this.query(transaction.state)
+                source = source.query(transaction.state)
+            }
+
+            if (effect.is(setModeEffect) && source.selectedMode?.name !== effect.value.mode.name) {
+                source = source.query(transaction.state, { ...effect.value.mode, previousInput: effect.value.input })
+            }
+            if (effect.is(clearModeEffect) && this.selectedMode) {
+                source = source.query(transaction.state, null)
             }
         }
 
-        return this
+        return source
     }
 
-    private query(state: EditorState): RegisteredSource {
-        const result = this.source(state, state.selection.main.head)
+    /**
+     * Accepts a new mode as second argument.
+     */
+    private query(state: EditorState, mode: RegisteredSource['selectedMode'] = this.selectedMode): RegisteredSource {
+        const activeSources = this.sources.filter(source => source.mode === mode?.name)
+        const result = combineResults(
+            activeSources.map(source => source.query(state, state.selection.main.head, mode?.name))
+        )
         const nextState = result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete
-        return new RegisteredSource(this.source, nextState, new Result(result.result, result.valid), result.next)
+        return new RegisteredSource(this.sources, nextState, new Result(result.result, result.valid), mode, result.next)
     }
 
     public run(): Promise<SuggestionResult> | null {
@@ -352,6 +393,83 @@ class RegisteredSource {
         return this.state === RegisteredSourceState.Inactive
     }
 }
+
+/**
+ * Takes multiple suggestion results and combines the groups of each of them.
+ * The order of items within a group is determined by the order of results.
+ */
+export function combineResults(results: (SuggestionResult | null)[]): SuggestionResult {
+    const options: Record<Group['title'], Group['options'][]> = {}
+    let hasValid = false
+    let hasNext = false
+
+    for (const result of results) {
+        if (!result) {
+            continue
+        }
+        for (const group of result.result) {
+            if (!options[group.title]) {
+                options[group.title] = []
+            }
+            options[group.title].push(group.options)
+        }
+        if (result.next) {
+            hasNext = true
+        }
+        if (result.valid) {
+            hasValid = true
+        }
+    }
+
+    const staticResult: SuggestionResult = {
+        result: Object.entries(options).map(([title, options]) => ({ title, options: options.flat() })),
+    }
+
+    if (hasValid) {
+        staticResult.valid = (...args) => results.every(result => result?.valid?.(...args) ?? false)
+    }
+    if (hasNext) {
+        staticResult.next = () => Promise.all(results.map(result => result?.next?.() ?? result)).then(combineResults)
+    }
+
+    return staticResult
+}
+
+export interface ModeDefinition {
+    name: string
+    keybinding?: Omit<KeyBinding, 'run' | 'scope' | 'any' | 'shift'>
+    placeholder?: string
+}
+
+const setModeEffect = StateEffect.define<{ mode: ModeDefinition; input: string }>()
+export const clearModeEffect = StateEffect.define()
+
+export const suggestionModes = Facet.define<ModeDefinition[], ModeDefinition[]>({
+    combine(modes) {
+        return modes.flat()
+    },
+    enables(facet) {
+        return Prec.highest([
+            keymap.compute([facet], state => {
+                const modes = state.facet(facet)
+                return [
+                    {
+                        key: 'Escape',
+                        run: clearMode,
+                    },
+                    ...modes
+                        .filter(mode => mode.keybinding)
+                        .map(
+                            (mode): KeyBinding => ({
+                                ...mode.keybinding,
+                                run: view => setMode(view, mode.name),
+                            })
+                        ),
+                ]
+            }),
+        ])
+    },
+})
 
 /**
  * Main suggestions state. Mangages of data source and selected option.
@@ -368,11 +486,11 @@ class SuggestionsState {
         // eslint-disable-next-line @typescript-eslint/no-this-alias,unicorn/no-this-assignment
         let state: SuggestionsState = this
 
-        const source = transaction.state.facet(suggestionSource)
+        const sources = transaction.state.facet(suggestionSources)
         let registeredSource =
-            source === state.source.source
+            sources === state.source.sources
                 ? state.source
-                : new RegisteredSource(source, RegisteredSourceState.Inactive, emptyResult)
+                : new RegisteredSource(sources, RegisteredSourceState.Inactive, emptyResult, state.source.selectedMode)
         registeredSource = registeredSource.update(transaction)
         if (registeredSource !== state.source) {
             state = new SuggestionsState(
@@ -404,6 +522,10 @@ class SuggestionsState {
     public get result(): Result {
         return this.source.result
     }
+
+    public get selectedMode(): RegisteredSource['selectedMode'] {
+        return this.source.selectedMode
+    }
 }
 
 function isUserInput(transaction: Transaction): boolean {
@@ -432,7 +554,7 @@ const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
         return new SuggestionsState(
-            new RegisteredSource(() => ({ result: [] }), RegisteredSourceState.Inactive, emptyResult),
+            new RegisteredSource([], RegisteredSourceState.Inactive, emptyResult, null),
             false,
             -1
         )
@@ -443,17 +565,72 @@ const suggestionsStateField = StateField.define<SuggestionsState>({
     },
 
     provide(field) {
-        return EditorView.contentAttributes.compute([field, suggestionsConfig], state => {
-            const id = state.facet(suggestionsConfig).id
-            const suggestionState = state.field(field)
-            const groupRowIndex = suggestionState.result.groupRowIndex(suggestionState.selectedOption)
-            return {
-                'aria-expanded': suggestionState.result.empty() ? 'false' : 'true',
-                'aria-activedescendant': groupRowIndex ? `${id}-${groupRowIndex[0]}x${groupRowIndex[1]}` : '',
-            }
-        })
+        return [
+            EditorView.contentAttributes.compute([field, suggestionsConfig], state => {
+                const id = state.facet(suggestionsConfig).id
+                const suggestionState = state.field(field)
+                const groupRowIndex = suggestionState.result.groupRowIndex(suggestionState.selectedOption)
+                return {
+                    class: suggestionState.selectedMode ? `sg-mode-${suggestionState.selectedMode.name}` : '',
+                    'aria-expanded': suggestionState.result.empty() ? 'false' : 'true',
+                    'aria-activedescendant': groupRowIndex ? `${id}-${groupRowIndex[0]}x${groupRowIndex[1]}` : '',
+                }
+            }),
+            EditorView.theme({
+                '.sg-mode-marker': {
+                    color: 'var(--logo-purple)',
+                    paddingRight: '0.125rem',
+                },
+            }),
+            EditorView.decorations.compute([field], state => {
+                const selectedMode = state.field(field).selectedMode
+                if (!selectedMode) {
+                    return Decoration.none
+                }
+                return Decoration.set(
+                    Decoration.widget({
+                        widget: new (class extends WidgetType {
+                            public toDOM(): HTMLElement {
+                                const marker = document.createElement('span')
+                                marker.className = 'sg-mode-marker'
+                                marker.textContent = selectedMode.name + ':'
+                                return marker
+                            }
+                        })(),
+                        side: -1,
+                    }).range(0)
+                )
+            }),
+        ]
     },
 })
+
+/**
+ * Extension which dynamically configures the placeholder text based on the
+ * selected name.
+ */
+function modePlaceholder(): Extension {
+    const compartment = new Compartment()
+    return [
+        Prec.highest(compartment.of([])),
+        EditorState.transactionExtender.of(transaction => {
+            for (const effect of transaction.effects) {
+                if (effect.is(clearModeEffect)) {
+                    return {
+                        effects: compartment.reconfigure([]),
+                    }
+                }
+                if (effect.is(setModeEffect) && effect.value.mode.placeholder) {
+                    return {
+                        effects: compartment.reconfigure(placeholderExtension(effect.value.mode.placeholder)),
+                    }
+                }
+            }
+
+            return null
+        }),
+    ]
+}
 
 function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     const forward = direction === 'forward'
@@ -479,25 +656,27 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
         case 'completion':
             {
                 const text = action.insertValue ?? option.label
-                view.dispatch({
-                    ...view.state.changeByRange(range => {
-                        if (range === view.state.selection.main) {
-                            return {
-                                changes: {
-                                    from: action.from,
-                                    to: action.to ?? view.state.selection.main.head,
-                                    insert: text,
-                                },
-                                range: EditorSelection.cursor(action.from + text.length),
-                            }
+                const changeSet = view.state.changeByRange(range => {
+                    if (range === view.state.selection.main) {
+                        return {
+                            changes: {
+                                from: action.from,
+                                to: action.to ?? view.state.selection.main.head,
+                                insert: text,
+                            },
+                            range: EditorSelection.cursor(action.from + text.length),
                         }
-                        return { range }
-                    }),
+                    }
+                    return { range }
+                })
+                view.dispatch({
+                    ...changeSet,
+                    effects: changeSet.effects.concat(clearModeEffect.of(null)),
                 })
             }
             break
         case 'command':
-            action.apply(view)
+            action.apply(option, view)
             break
         case 'goto':
             {
@@ -510,10 +689,90 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
     }
 }
 
-export const suggestionSource = Facet.define<Source, Source>({
-    combine(sources) {
-        return sources[0] || (() => {})
+const defaultKeyboardBindings: KeyBinding[] = [
+    {
+        key: 'ArrowDown',
+        run: moveSelection('forward'),
     },
+    {
+        key: 'ArrowUp',
+        run: moveSelection('backward'),
+    },
+    {
+        key: 'Mod-Space',
+        run(view) {
+            view.dispatch({ effects: startCompletion.of() })
+            return true
+        },
+    },
+    {
+        key: 'Enter',
+        run(view) {
+            const state = view.state.field(suggestionsStateField)
+            const option = state.result.at(state.selectedOption)
+            if (!state.open || !option) {
+                return false
+            }
+            applyAction(view, option.action, option)
+            return true
+        },
+        shift(view) {
+            const state = view.state.field(suggestionsStateField)
+            const option = state.result.at(state.selectedOption)
+            if (!state.open || !option || !option.alternativeAction) {
+                return false
+            }
+            applyAction(view, option.alternativeAction, option)
+            return true
+        },
+    },
+    {
+        key: 'Escape',
+        run(view) {
+            if (view.state.field(suggestionsStateField).open) {
+                view.dispatch({ effects: hideCompletion.of() })
+                return true
+            }
+            return false
+        },
+    },
+]
+
+export function getSelectedMode(state: EditorState): ModeDefinition | null {
+    return state.field(suggestionsStateField).selectedMode
+}
+
+export function setMode(view: EditorView, name: string): boolean {
+    const mode = view.state.facet(suggestionModes).find(mode => mode.name === name)
+    if (mode) {
+        const input = view.state.sliceDoc()
+        view.dispatch({
+            effects: setModeEffect.of({ mode, input }),
+            changes: { from: 0, to: view.state.doc.length, insert: '' },
+            // It seems that setting the selection explicitly
+            // ensures that the cursor is rendered correctly
+            // after the widget decoration.
+            selection: { anchor: 0 },
+        })
+        return true
+    }
+    return false
+}
+
+export function clearMode(view: EditorView): boolean {
+    const selectedMode = view.state.field(suggestionsStateField).selectedMode
+    if (selectedMode) {
+        view.dispatch({
+            effects: clearModeEffect.of(null),
+            changes: { from: 0, to: view.state.doc.length, insert: selectedMode.previousInput },
+            selection: { anchor: selectedMode.previousInput.length },
+        })
+        return true
+    }
+    return false
+}
+
+export const suggestionSources = Facet.define<Source>({
     enables: [
         completionPlugin,
         suggestionsStateField,
@@ -526,66 +785,19 @@ export const suggestionSource = Facet.define<Source, Source>({
                 update.view.dispatch({ effects: startCompletion.of() })
             }
         }),
-        Prec.highest(
-            keymap.of([
-                {
-                    key: 'ArrowDown',
-                    run: moveSelection('forward'),
-                },
-                {
-                    key: 'ArrowUp',
-                    run: moveSelection('backward'),
-                },
-                {
-                    key: 'Mod-Space',
-                    run(view) {
-                        view.dispatch({ effects: startCompletion.of() })
-                        return true
-                    },
-                },
-                {
-                    key: 'Enter',
-                    run(view) {
-                        const state = view.state.field(suggestionsStateField)
-                        const option = state.result.at(state.selectedOption)
-                        if (!state.open || !option) {
-                            return false
-                        }
-                        applyAction(view, option.action, option)
-                        return true
-                    },
-                    shift(view) {
-                        const state = view.state.field(suggestionsStateField)
-                        const option = state.result.at(state.selectedOption)
-                        if (!state.open || !option || !option.alternativeAction) {
-                            return false
-                        }
-                        applyAction(view, option.alternativeAction, option)
-                        return true
-                    },
-                },
-                {
-                    key: 'Escape',
-                    run(view) {
-                        if (view.state.field(suggestionsStateField).open) {
-                            view.dispatch({ effects: hideCompletion.of() })
-                            return true
-                        }
-                        return false
-                    },
-                },
-            ])
-        ),
+        Prec.highest(keymap.of(defaultKeyboardBindings)),
     ],
 })
 
-export const suggestions = (
-    id: string,
-    parent: HTMLDivElement,
-    source: Source,
-    historyOrNavigate: HistoryOrNavigate
-): Extension => [
+interface ExternalConfig extends Config {
+    parent: HTMLDivElement
+    source: Source
+}
+
+export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
+    suggestionModes.of([]), // makes sure the facet is defined
+    modePlaceholder(),
     suggestionsConfig.of({ historyOrNavigate, id }),
-    suggestionSource.of(source),
+    suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]

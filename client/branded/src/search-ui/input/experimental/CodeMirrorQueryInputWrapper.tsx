@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
@@ -14,6 +14,7 @@ import { HistoryOrNavigate } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
@@ -55,8 +56,8 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
     }
 
     // If there are two tokens, only show the placeholder if the second one is a
-    // whitespace.
-    if (queryTokens.length === 2 && queryTokens[1].type !== 'whitespace') {
+    // whitespace of length 1
+    if (queryTokens.length === 2 && (queryTokens[1].type !== 'whitespace' || getTokenLength(queryTokens[1]) !== 1)) {
         return false
     }
 
@@ -126,7 +127,14 @@ function configureExtensions({
     }
 
     if (suggestionSource && suggestionsContainer) {
-        extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, historyOrNavigate))
+        extensions.push(
+            suggestions({
+                id: popoverID,
+                parent: suggestionsContainer,
+                source: suggestionSource,
+                historyOrNavigate,
+            })
+        )
     }
 
     return extensions
@@ -160,6 +168,7 @@ function createEditor(
             doc: queryState.query,
             selection: { anchor: queryState.query.length },
             extensions: [
+                drawSelection(),
                 EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
                     role: 'combobox',
@@ -217,6 +226,8 @@ function updateValueIfNecessary(editor: EditorView | null, queryState: QueryStat
     }
 }
 
+const empty: any[] = []
+
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
@@ -226,6 +237,7 @@ export interface CodeMirrorQueryInputWrapperProps {
     patternType: SearchPatternType
     placeholder: string
     suggestionSource: Source
+    extensions?: Extension
 }
 
 export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
@@ -239,6 +251,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     patternType,
     placeholder,
     suggestionSource,
+    extensions: externalExtensions = empty,
     children,
 }) => {
     const navigate = useNavigate()
@@ -255,7 +268,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
 
     // Update extensions whenever any of these props change
     const extensions = useMemo(
-        () =>
+        () => [
             configureExtensions({
                 popoverID,
                 isLightTheme,
@@ -266,6 +279,8 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                 suggestionSource,
                 historyOrNavigate: navigate,
             }),
+            externalExtensions,
+        ],
         [
             popoverID,
             isLightTheme,
@@ -276,6 +291,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             suggestionsContainer,
             suggestionSource,
             navigate,
+            externalExtensions,
         ]
     )
 
