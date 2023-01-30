@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -60,12 +61,12 @@ func TestCreateTeamBare(t *testing.T) {
 				name
 			}
 		}`,
-		ExpectedResult: `{
+		ExpectedResult: fmt.Sprintf(`{
 			"createTeam": {
-				"id": "1",
+				"id": %q,
 				"name": "team-name-testing"
 			}
-		}`,
+		}`, relay.MarshalID("Team", 1)),
 		Variables: map[string]any{
 			"name": "team-name-testing",
 		},

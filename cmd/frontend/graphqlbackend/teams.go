@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -37,12 +36,8 @@ type teamResolver struct {
 	teamsDb database.TeamStore
 }
 
-// TODO: handle nil teamResolver gracefully in case there is no team
-// like in querying parent of a hierarnchy root.
 func (r *teamResolver) ID() graphql.ID {
-	intID := int(r.team.ID)
-	stringID := strconv.Itoa(intID)
-	return graphql.ID(stringID)
+	return relay.MarshalID("Team", r.team.ID)
 }
 func (r *teamResolver) Name() string { return r.team.Name }
 func (r *teamResolver) URL() string  { return "" }
@@ -55,8 +50,7 @@ func (r *teamResolver) DisplayName() *string {
 func (r *teamResolver) Readonly() bool { return r.team.ReadOnly }
 func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	if r.team.ParentTeamID == 0 {
-		// TODO: How to handle this gracefully for query?
-		return nil, errors.New("no parent team")
+		return nil, nil
 	}
 	parentTeam, err := r.teamsDb.GetTeamByID(ctx, r.team.ParentTeamID)
 	if err != nil {
