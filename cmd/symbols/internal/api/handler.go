@@ -9,14 +9,14 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -78,11 +78,12 @@ func (s *grpcService) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 }
 
 func NewHandler(
+	ctx context.Context,
 	searchFunc types.SearchFunc,
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
-) http.Handler {
+) (handler http.Handler, startFn func() error) {
 
 	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
 		// Massage the arguments to ensure that First is set to a reasonable value.
@@ -105,7 +106,20 @@ func NewHandler(
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
+
 	reflection.Register(grpcServer)
+
+	localListener := newInMemoryListener("symbols")
+
+	// setup grpcUI client connection options
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithContextDialer(localListener.ContextDial))
+	opts = append(opts, defaults.DialOptions()...)
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	target := localListener.Addr().String()
+
+	grpcUIHandler, grpcUIStartFn := NewGRPCUIHandler(ctx, target, opts...)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
 
@@ -114,12 +128,33 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
+
+	mux.Handle("/grpcui/", http.StripPrefix("/grpcui", grpcUIHandler))
+
 	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}
 
-	return internalgrpc.MultiplexHandlers(grpcServer, mux)
+	start := func() error {
+		// TODO:@ggilmore: This seems a bit racy? Is there a way to ensure that the server
+		// is listening before we start the grpcui server?
+		go func() {
+			if err := grpcServer.Serve(localListener); err != nil {
+				rootLogger.Error("failed to serve HTTP server", logger.Error(err))
+			}
+		}()
+
+		if err := grpcUIStartFn(); err != nil {
+			return errors.Wrap(err, "initializing grpcui")
+		}
+
+		return nil
+	}
+
+	wrappedHandler := internalgrpc.MultiplexHandlers(grpcServer, mux)
+
+	return wrappedHandler, start
 }
 
 func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.HandlerFunc {
