@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
