@@ -15,7 +15,7 @@ var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
 func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
-	ops := operations.NewSet()
+	ops := operations.NewNamedSet("Base image builds")
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	for _, c := range changedFiles {
@@ -32,7 +32,7 @@ func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 
 func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
-	ops := operations.NewSet()
+	ops := operations.NewNamedSet("Dependency packages")
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	var stepKeys []string
