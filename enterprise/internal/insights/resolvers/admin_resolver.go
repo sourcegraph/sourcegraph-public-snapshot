@@ -3,17 +3,26 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -245,4 +254,242 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 
 	}
 	return viewDebug, nil
+}
+
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
+	// 🚨 SECURITY
+	// only admin users can access this resolver
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	store := &adminBackfillQueueConnectionStore{
+		args:          args,
+		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
+		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
+	}
+
+	// `STATE` is the default enum value in the graphql schema.
+	orderBy := "STATE"
+	if args.OrderBy != "" {
+		orderBy = args.OrderBy
+	}
+
+	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](
+		store,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			OrderBy: database.OrderBy{
+				{Field: string(orderByToDBBackfillColumn(orderBy))},
+				{Field: string(scheduler.BackfillID)},
+			},
+			Ascending: !args.Descending})
+	if err != nil {
+		return nil, err
+	}
+	return resolver, nil
+}
+
+type adminBackfillQueueConnectionStore struct {
+	backfillStore *scheduler.BackfillStore
+	logger        log.Logger
+	args          *graphqlbackend.AdminBackfillQueueArgs
+}
+
+// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
+func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	filterArgs := scheduler.BackfillQueueArgs{}
+	if a.args != nil {
+		filterArgs.States = a.args.States
+		filterArgs.TextSearch = a.args.TextSearch
+	}
+
+	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx, filterArgs)
+	if err != nil {
+		return nil, err
+	}
+	return i32Ptr(&count), nil
+}
+
+func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
+	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
+	if a.args != nil {
+		filterArgs.States = a.args.States
+		filterArgs.TextSearch = a.args.TextSearch
+	}
+	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, filterArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
+	for _, item := range backfillItems {
+		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
+			BackfillID:   item.ID,
+			InsightTitle: item.InsightTitle,
+			CreatorID:    nil,
+			Label:        item.SeriesLabel,
+			Query:        item.SeriesSearchQuery,
+			BackfillStatus: &backfillStatusResolver{
+				queueItem: item,
+			},
+		})
+	}
+
+	return resolvers, nil
+}
+
+// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
+func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
+	// This is the enum the client requested ordering by
+	column := orderBy[0].Field
+	var value string
+
+	switch scheduler.BackfillQueueColumn(column) {
+	case scheduler.State:
+		value = strings.ToLower(node.BackfillStatus.State())
+	case scheduler.QueuePosition:
+		pos := node.BackfillStatus.QueuePosition()
+		if pos != nil {
+			value = fmt.Sprintf("%d", pos)
+		} else {
+			value = "NULL"
+		}
+	default:
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actual: %s", column))
+	}
+
+	// format of the "Value" is the value for the sorted by column ie `QUEUED` followed by the ID of the current node
+	cursor := marshalBackfillItemCursor(
+		&itypes.Cursor{
+			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
+			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
+		},
+	)
+
+	return &cursor, nil
+
+}
+
+// UnmarshalCursor returns node id from after/before cursor string.
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	orderByColumn := scheduler.BackfillQueueColumn(orderBy[0].Field)
+	cursorColumn := orderByToDBBackfillColumn(backfillCursor.Column)
+	if cursorColumn != orderByColumn {
+		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
+	}
+
+	csv := ""
+	values := strings.Split(backfillCursor.Value, "@")
+	if len(values) != 2 {
+		return nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
+	}
+	switch orderByColumn {
+	case scheduler.State:
+		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
+	case scheduler.BackfillID, scheduler.QueuePosition:
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	default:
+		return nil, errors.New("Invalid OrderBy Field.")
+	}
+
+	return &csv, err
+}
+
+const backfillCursorKind = "InsightsAdminBackfillItem"
+
+func marshalBackfillItemCursor(cursor *itypes.Cursor) string {
+	return string(relay.MarshalID(backfillCursorKind, cursor))
+}
+
+func unmarshalBackfillItemCursor(cursor *string) (*itypes.Cursor, error) {
+	if cursor == nil {
+		return nil, nil
+	}
+	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != backfillCursorKind {
+		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+	}
+	var spec *itypes.Cursor
+	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+		return nil, err
+	}
+	return spec, nil
+}
+
+func i32Ptr(n *int) *int32 {
+	if n != nil {
+		tmp := int32(*n)
+		return &tmp
+	}
+	return nil
+}
+
+type backfillStatusResolver struct {
+	queueItem scheduler.BackfillQueueItem
+}
+
+func (r *backfillStatusResolver) State() string {
+	return strings.ToUpper(r.queueItem.BackfillState)
+}
+
+func (r *backfillStatusResolver) QueuePosition() *int32 {
+	return i32Ptr(r.queueItem.QueuePosition)
+}
+
+func (r *backfillStatusResolver) Cost() *int32 {
+	return i32Ptr(r.queueItem.BackfillCost)
+}
+
+func (r *backfillStatusResolver) PercentComplete() *int32 {
+	return i32Ptr(r.queueItem.PercentComplete)
+}
+
+func (r *backfillStatusResolver) CreatedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCreatedAt)
+}
+
+func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillStartedAt)
+}
+
+func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
+}
+func (r *backfillStatusResolver) Errors() *[]string {
+	return r.queueItem.Errors
+}
+
+func (r *backfillStatusResolver) Runtime() *string {
+	if r.queueItem.RuntimeDuration != nil {
+		tmp := r.queueItem.RuntimeDuration.String()
+		return &tmp
+	}
+	return nil
+}
+
+func orderByToDBBackfillColumn(ob string) scheduler.BackfillQueueColumn {
+	switch ob {
+	case "STATE":
+		return scheduler.State
+	case "QUEUE_POSITION":
+		return scheduler.QueuePosition
+	default:
+		return ""
+	}
+}
+
+func dbToOrderBy(dbField scheduler.BackfillQueueColumn) scheduler.BackfillQueueColumn {
+	switch dbField {
+	case scheduler.State:
+		return "STATE"
+	case scheduler.QueuePosition:
+		return "QUEUE_POSITION"
+	default:
+		return "STATE" //default
+	}
 }
