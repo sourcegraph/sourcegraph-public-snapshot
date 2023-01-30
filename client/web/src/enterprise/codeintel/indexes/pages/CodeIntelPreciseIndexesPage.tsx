@@ -48,6 +48,7 @@ import { useDeleteLsifIndexes } from '../hooks/useDeleteLsifIndexes'
 import { useReindexLsifIndex } from '../hooks/useReindexLsifIndex'
 import { useReindexLsifIndexes } from '../hooks/useReindexLsifIndexes'
 import { isErrorLike } from '@sourcegraph/common'
+import { tap } from 'rxjs/operators'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -136,7 +137,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const deletes = useMemo(() => new Subject<undefined>(), [])
 
     const apolloClient = useApolloClient()
-    const queryHackListCallback = useCallback(
+    const queryIndexListCallback = useCallback(
         (args: FilteredConnectionQueryArguments) => {
             setArgs({
                 query: args.query ?? null,
@@ -160,11 +161,17 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         )
     )
 
+    const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
+
     const queryConnection = useCallback(
         (args: FilteredConnectionQueryArguments) => {
-            return queryHackListCallback(args)
+            return queryIndexListCallback(args).pipe(
+                tap(connection => {
+                    setTotalCount(connection.totalCount ?? undefined)
+                })
+            )
         },
-        [queryHackListCallback]
+        [queryIndexListCallback]
     )
 
     const querySubject = useMemo(() => new Subject<string>(), [])
@@ -254,7 +261,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         deletes.next()
                     }}
                 >
-                    Delete {selection === 'all' ? 'matching' : selection.size === 0 ? '' : selection.size}
+                    Delete {selection === 'all' ? totalCount ?? 'all' : selection.size === 0 ? '' : selection.size}
                 </Button>
                 <Button
                     className="mr-2"
@@ -293,13 +300,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         }
                     }}
                 >
-                    Reindex {selection === 'all' ? 'matching' : selection.size === 0 ? '' : selection.size}
-                </Button>
-                <Button
-                    variant="secondary"
-                    onClick={() => setSelection(selection => (selection === 'all' ? new Set() : 'all'))}
-                >
-                    {selection === 'all' ? 'Deselect' : 'Select matching'}
+                    Reindex {selection === 'all' ? totalCount ?? 'all' : selection.size === 0 ? '' : selection.size}
                 </Button>
             </div>
 
@@ -312,15 +313,23 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
             <Container>
                 <div className="list-group position-relative">
-                    <FilteredConnection<PreciseIndexFields, Omit<HackNodeProps, 'node'>>
+                    <FilteredConnection<PreciseIndexFields, Omit<IndexNodeProps, 'node'>>
                         listComponent="div"
                         inputClassName="ml-2 flex-1"
                         listClassName={classNames(styles.grid, 'mb-3')}
                         noun="precise index"
                         pluralNoun="precise indexes"
                         querySubject={querySubject}
-                        nodeComponent={HackNode}
+                        nodeComponent={IndexNode}
                         nodeComponentProps={{ selection, onCheckboxToggle, history }}
+                        headComponent={() => (
+                            <Checkbox
+                                label=""
+                                id="checkAll"
+                                checked={selection === 'all'}
+                                onChange={() => setSelection(selection => (selection === 'all' ? new Set() : 'all'))}
+                            />
+                        )}
                         queryConnection={queryConnection}
                         history={history}
                         location={location}
@@ -335,7 +344,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     )
 }
 
-export interface HackNodeProps {
+interface IndexNodeProps {
     node: PreciseIndexFields
     now?: () => Date
     selection: Set<string> | 'all'
@@ -343,7 +352,7 @@ export interface HackNodeProps {
     history: H.History
 }
 
-export const HackNode: FunctionComponent<React.PropsWithChildren<HackNodeProps>> = ({
+const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
     node,
     now,
     selection,
@@ -465,13 +474,13 @@ export const HackNode: FunctionComponent<React.PropsWithChildren<HackNodeProps>>
     </>
 )
 
-export interface CodeIntelStateIconProps {
+interface CodeIntelStateIconProps {
     state: PreciseIndexState
     autoIndexed: boolean
     className?: string
 }
 
-export const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeIntelStateIconProps>> = ({
+const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeIntelStateIconProps>> = ({
     state,
     autoIndexed,
     className,
@@ -531,7 +540,7 @@ export const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeI
         <></>
     )
 
-export interface CodeIntelStateLabelProps {
+interface CodeIntelStateLabelProps {
     state: PreciseIndexState
     autoIndexed: boolean
     placeInQueue?: number | null
@@ -540,7 +549,7 @@ export interface CodeIntelStateLabelProps {
 
 const labelClassNames = classNames(styles.label, 'text-muted')
 
-export const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<CodeIntelStateLabelProps>> = ({
+const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<CodeIntelStateLabelProps>> = ({
     state,
     autoIndexed,
     placeInQueue,
@@ -578,7 +587,7 @@ export const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<Code
         <></>
     )
 
-export interface CodeIntelStateLabelPlaceInQueueProps {
+interface CodeIntelStateLabelPlaceInQueueProps {
     placeInQueue?: number | null
 }
 
@@ -586,7 +595,7 @@ const CodeIntelStateLabelPlaceInQueue: FunctionComponent<
     React.PropsWithChildren<CodeIntelStateLabelPlaceInQueueProps>
 > = ({ placeInQueue }) => (placeInQueue ? <span className={styles.block}>(#{placeInQueue})</span> : <></>)
 
-export interface EnqueueFormProps {
+interface EnqueueFormProps {
     repoId: string
     querySubject: Subject<string>
 }
@@ -597,7 +606,7 @@ enum State {
     Queued,
 }
 
-export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
+const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
     const [revlike, setRevlike] = useState('HEAD')
     const [state, setState] = useState(() => State.Idle)
     const [queueResult, setQueueResult] = useState<number>()
