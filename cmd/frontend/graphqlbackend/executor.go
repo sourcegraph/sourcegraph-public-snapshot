@@ -58,7 +58,7 @@ func (e *ExecutorResolver) Compatibility() (*string, error) {
 }
 
 func calculateExecutorCompatibility(ev string) (*string, error) {
-	var compatibility ExecutorCompatibility = ExecutorCompatibilityUpToDate
+	var compatibility = ExecutorCompatibilityUpToDate
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)

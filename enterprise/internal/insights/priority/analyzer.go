@@ -104,7 +104,7 @@ func QueryCost(o *QueryObject) {
 
 var (
 	megarepoSizeThresold  int64 = 5368709120                // 5GB
-	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 50GB
+	gigarepoSizethreshold       = megarepoSizeThresold * 10 // 50GB
 )
 
 func RepositoriesCost(o *QueryObject) {

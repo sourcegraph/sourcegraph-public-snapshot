@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	Simple        float64 = LiteralCost
-	Slow          float64 = RegexpCost
-	Long          float64 = StructuralCost
-	LikelyTimeout float64 = StructuralCost * 10
+	Simple        = LiteralCost
+	Slow          = RegexpCost
+	Long          = StructuralCost
+	LikelyTimeout = StructuralCost * 10
 ) // values that could associate a speed to a floating point
 
 func TestQueryAnalyzerCost(t *testing.T) {
