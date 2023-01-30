@@ -57,6 +57,14 @@
             "pointer": true
           }
         },
+        "setupWizard": {
+          "description": "Experimental setup wizard",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",

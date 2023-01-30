@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { getExperimentalFeatures } from '../stores'
+import { useExperimentalFeatures } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
 const onClickCTA = (): void => {
@@ -19,7 +19,7 @@ const onClickCTA = (): void => {
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string }>
 > = ({ className }) => {
-    const isSetupWizardEnabled = !!getExperimentalFeatures().enableSetupWizard
+    const isSetupWizardEnabled = useExperimentalFeatures(features => features.setupWizard)
 
     return (
         <DismissibleAlert
