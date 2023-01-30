@@ -127,11 +127,13 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// collect results before ranking.
 		searchOpts.FlushWallTime = 500 * time.Millisecond
 
-		// This enables the use of PageRank scores if they are available.
+		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
 
-		// This damps the impact of document ranks on the final ranking.
-		searchOpts.RanksDampingFactor = 0.5
+		// This controls the impact of document ranks on the final ranking. The value is set to 0.5 * 9000 (half the
+		// zoekt default), to match existing behavior where ranks are given half the priority as existing scoring
+		// signals. We plan to eventually remove this, once we experiment on real data to find a good default.
+		searchOpts.DocumentRanksWeight = 4500
 
 		return searchOpts
 	}
