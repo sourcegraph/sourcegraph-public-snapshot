@@ -1388,6 +1388,9 @@ enum BackfillQueueOrderBy {
     QUEUE_POSITION
 }
 
+"""
+Returns information regarding the insights backfill queue to admin users.
+"""
 type InsightBackfillQueueItemConnection implements Connection {
     """
     A list of insight backfill queue items.
