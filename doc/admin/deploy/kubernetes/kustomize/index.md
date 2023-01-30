@@ -307,9 +307,3 @@ $ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
 It's important to review the changes, and ensure that the new overlay produces similar resources as the ones currently being used by the active cluster, before applying the new overlay.
 
 > NOTE: Make sure to test the new overlay and the migration process in a non-production environment before applying it to your production cluster.
-
-
-
-## Learn more
-
-See examples for [Amazon EKS](eks.md), [Google GKE](gke.md) and OpenShift(coming soon).
