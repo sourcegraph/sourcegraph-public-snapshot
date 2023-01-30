@@ -9,7 +9,7 @@ import (
 
 // redisGroup is which type of data we have. We use the term group since that
 // is what redis uses in its documentation to segregate the different types of
-// commands you can run ("string", list, hash).
+// commands you can run (string, list, hash).
 type redisGroup byte
 
 const (
