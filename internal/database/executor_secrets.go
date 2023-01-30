@@ -85,6 +85,7 @@ type ExecutorSecretStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) ExecutorSecretStore
 	Transact(context.Context) (ExecutorSecretStore, error)
+	WithTransact(context.Context, func(ExecutorSecretStore) error) error
 	Done(err error) error
 	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
 
@@ -185,6 +186,16 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 		Store:  txBase,
 		key:    s.key,
 	}, err
+}
+
+func (s *executorSecretStore) WithTransact(ctx context.Context, f func(tx ExecutorSecretStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&executorSecretStore{
+			logger: s.logger,
+			Store:  tx,
+			key:    s.key,
+		})
+	})
 }
 
 var (
