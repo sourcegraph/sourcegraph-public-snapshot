@@ -40053,15 +40053,15 @@ type MockSavedSearchStore struct {
 	// object controlling the behavior of the method
 	// ListSavedSearchesByUserID.
 	ListSavedSearchesByUserIDFunc *SavedSearchStoreListSavedSearchesByUserIDFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *SavedSearchStoreTransactFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *SavedSearchStoreUpdateFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *SavedSearchStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *SavedSearchStoreWithTransactFunc
 }
 
 // NewMockSavedSearchStore creates a new mock of the SavedSearchStore
@@ -40119,11 +40119,6 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 				return
 			},
 		},
-		TransactFunc: &SavedSearchStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 SavedSearchStore, r1 error) {
-				return
-			},
-		},
 		UpdateFunc: &SavedSearchStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (r0 *types.SavedSearch, r1 error) {
 				return
@@ -40131,6 +40126,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 		},
 		WithFunc: &SavedSearchStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 SavedSearchStore) {
+				return
+			},
+		},
+		WithTransactFunc: &SavedSearchStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(SavedSearchStore) error) (r0 error) {
 				return
 			},
 		},
@@ -40191,11 +40191,6 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByUserID")
 			},
 		},
-		TransactFunc: &SavedSearchStoreTransactFunc{
-			defaultHook: func(context.Context) (SavedSearchStore, error) {
-				panic("unexpected invocation of MockSavedSearchStore.Transact")
-			},
-		},
 		UpdateFunc: &SavedSearchStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.Update")
@@ -40204,6 +40199,11 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 		WithFunc: &SavedSearchStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) SavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.With")
+			},
+		},
+		WithTransactFunc: &SavedSearchStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(SavedSearchStore) error) error {
+				panic("unexpected invocation of MockSavedSearchStore.WithTransact")
 			},
 		},
 	}
@@ -40244,14 +40244,14 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: i.ListSavedSearchesByUserID,
 		},
-		TransactFunc: &SavedSearchStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateFunc: &SavedSearchStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
 		WithFunc: &SavedSearchStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &SavedSearchStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -41343,111 +41343,6 @@ func (c SavedSearchStoreListSavedSearchesByUserIDFuncCall) Results() []interface
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// SavedSearchStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockSavedSearchStore instance is invoked.
-type SavedSearchStoreTransactFunc struct {
-	defaultHook func(context.Context) (SavedSearchStore, error)
-	hooks       []func(context.Context) (SavedSearchStore, error)
-	history     []SavedSearchStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSavedSearchStore) Transact(v0 context.Context) (SavedSearchStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(SavedSearchStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockSavedSearchStore instance is invoked and the hook queue is
-// empty.
-func (f *SavedSearchStoreTransactFunc) SetDefaultHook(hook func(context.Context) (SavedSearchStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockSavedSearchStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SavedSearchStoreTransactFunc) PushHook(hook func(context.Context) (SavedSearchStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SavedSearchStoreTransactFunc) SetDefaultReturn(r0 SavedSearchStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (SavedSearchStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SavedSearchStoreTransactFunc) PushReturn(r0 SavedSearchStore, r1 error) {
-	f.PushHook(func(context.Context) (SavedSearchStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *SavedSearchStoreTransactFunc) nextHook() func(context.Context) (SavedSearchStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SavedSearchStoreTransactFunc) appendCall(r0 SavedSearchStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SavedSearchStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *SavedSearchStoreTransactFunc) History() []SavedSearchStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]SavedSearchStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SavedSearchStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockSavedSearchStore.
-type SavedSearchStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 SavedSearchStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SavedSearchStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SavedSearchStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // SavedSearchStoreUpdateFunc describes the behavior when the Update method
 // of the parent MockSavedSearchStore instance is invoked.
 type SavedSearchStoreUpdateFunc struct {
@@ -41655,6 +41550,112 @@ func (c SavedSearchStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// SavedSearchStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockSavedSearchStore instance is
+// invoked.
+type SavedSearchStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(SavedSearchStore) error) error
+	hooks       []func(context.Context, func(SavedSearchStore) error) error
+	history     []SavedSearchStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) WithTransact(v0 context.Context, v1 func(SavedSearchStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(SavedSearchStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockSavedSearchStore instance is invoked and the hook queue
+// is empty.
+func (f *SavedSearchStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(SavedSearchStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockSavedSearchStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SavedSearchStoreWithTransactFunc) PushHook(hook func(context.Context, func(SavedSearchStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(SavedSearchStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(SavedSearchStore) error) error {
+		return r0
+	})
+}
+
+func (f *SavedSearchStoreWithTransactFunc) nextHook() func(context.Context, func(SavedSearchStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreWithTransactFunc) appendCall(r0 SavedSearchStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SavedSearchStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *SavedSearchStoreWithTransactFunc) History() []SavedSearchStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockSavedSearchStore.
+type SavedSearchStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(SavedSearchStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
