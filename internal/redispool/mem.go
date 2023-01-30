@@ -8,18 +8,18 @@ import (
 // MemoryKeyValue returns an in memory KeyValue.
 func MemoryKeyValue() KeyValue {
 	var mu sync.Mutex
-	m := map[string]string{}
+	m := map[string]NaiveValue{}
 	store := func(_ context.Context, key string, f NaiveUpdater) error {
 		mu.Lock()
 		defer mu.Unlock()
-		currentValue, found := m[key]
-		newValue, remove := f(currentValue, found)
+		before, found := m[key]
+		after, remove := f(before, found)
 		if remove {
 			if found {
 				delete(m, key)
 			}
-		} else if currentValue != newValue {
-			m[key] = newValue
+		} else if before != after {
+			m[key] = after
 		}
 		return nil
 	}

@@ -7,16 +7,22 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// NaiveUpdater operates on the value for a key in a NaiveKeyValueStore.
-// currentValue is the current value in the store, found is if the key exists
-// in the store. newValue is the new value for it that needs to be stored, or
-// remove is true if the key should be removed.
+// NaiveValue is the value we send to and from a NaiveKeyValueStore. This
+// represents the marshalled value the NaiveKeyValueStore operates on. See the
+// unexported redisValue type for more details. However, NaiveKeyValueStore
+// should treat this value as opaque.
 //
 // Note: strings are used to ensure we pass copies around and avoid mutating
 // values. They should not be treated as utf8 text.
+type NaiveValue string
+
+// NaiveUpdater operates on the value for a key in a NaiveKeyValueStore.
+// before is the before value in the store, found is if the key exists in the
+// store. after is the new value for it that needs to be stored, or remove is
+// true if the key should be removed.
 //
 // Note: a store should do this update atomically/under concurrency control.
-type NaiveUpdater func(currentValue string, found bool) (newValue string, remove bool)
+type NaiveUpdater func(before NaiveValue, found bool) (after NaiveValue, remove bool)
 
 // NaiveKeyValueStore is a function on a store which runs f for key.
 //
@@ -52,9 +58,9 @@ func (kv *naiveKeyValue) Get(key string) Value {
 
 func (kv *naiveKeyValue) GetSet(key string, value any) Value {
 	var oldValue Value
-	v := kv.maybeUpdateGroup(redisGroupString, key, func(currentValue redisValue, found bool) (redisValue, updaterOp, error) {
+	v := kv.maybeUpdateGroup(redisGroupString, key, func(before redisValue, found bool) (redisValue, updaterOp, error) {
 		if found {
-			oldValue.reply = currentValue.Reply
+			oldValue.reply = before.Reply
 		} else {
 			oldValue.err = redis.ErrNil
 		}
@@ -109,7 +115,7 @@ func (kv *naiveKeyValue) Incr(key string) error {
 }
 
 func (kv *naiveKeyValue) Del(key string) error {
-	return kv.store(kv.ctx, key, func(_ string, _ bool) (string, bool) {
+	return kv.store(kv.ctx, key, func(_ NaiveValue, _ bool) (NaiveValue, bool) {
 		return "", true
 	})
 }
@@ -309,7 +315,7 @@ var (
 
 // storeUpdater operates on the redisValue for a key and returns its new value
 // or error. See doStore for more information.
-type storeUpdater func(currentValue redisValue, found bool) (newValue redisValue, op updaterOp, err error)
+type storeUpdater func(before redisValue, found bool) (after redisValue, op updaterOp, err error)
 
 // maybeUpdate is a helper for NaiveKeyValueStore and NaiveUpdater. It
 // provides consistent behaviour for KeyValue as well as reducing the work
@@ -321,12 +327,12 @@ type storeUpdater func(currentValue redisValue, found bool) (newValue redisValue
 //   - Handle updaters that only want to read (readOnly updaterOp, error)
 func (kv *naiveKeyValue) maybeUpdate(key string, updater storeUpdater) Value {
 	var returnValue Value
-	storeErr := kv.store(kv.ctx, key, func(currentRaw string, found bool) (string, bool) {
-		var currentValue redisValue
+	storeErr := kv.store(kv.ctx, key, func(beforeRaw NaiveValue, found bool) (NaiveValue, bool) {
+		var before redisValue
 		defaultDelete := false
 		if found {
 			// We found the value so we can unmarshal it.
-			if err := currentValue.Unmarshal([]byte(currentRaw)); err != nil {
+			if err := before.Unmarshal([]byte(beforeRaw)); err != nil {
 				// Bad data at key, delete it and return an error
 				returnValue.err = err
 				return "", true
@@ -336,7 +342,7 @@ func (kv *naiveKeyValue) maybeUpdate(key string, updater storeUpdater) Value {
 			// read time if the value has expired. If it has pretend we didn't
 			// find it and mark that we need to delete the value if we don't
 			// get a new one.
-			if currentValue.DeadlineUnix != 0 && time.Now().UTC().Unix() >= currentValue.DeadlineUnix {
+			if before.DeadlineUnix != 0 && time.Now().UTC().Unix() >= before.DeadlineUnix {
 				found = false
 				// We need to inform the store to delete the value, unless we
 				// have a new value to takes its place.
@@ -346,41 +352,41 @@ func (kv *naiveKeyValue) maybeUpdate(key string, updater storeUpdater) Value {
 
 		// Call out to the provided updater to get back what we need to do to
 		// the value.
-		newValue, op, err := updater(currentValue, found)
+		after, op, err := updater(before, found)
 		if err != nil {
-			// If updater fails, we tell store to keep the current value (or
+			// If updater fails, we tell store to keep the before value (or
 			// delete if expired).
 			returnValue.err = err
-			return currentRaw, defaultDelete
+			return beforeRaw, defaultDelete
 		}
 
 		// We don't need to update the value, so set the appropriate response
 		// values based on what we found at get time.
 		if op == readOnly {
 			if found {
-				returnValue.reply = currentValue.Reply
+				returnValue.reply = before.Reply
 			} else {
 				returnValue.err = redis.ErrNil
 			}
-			return currentRaw, defaultDelete
+			return beforeRaw, defaultDelete
 		}
 
 		// Redis will automatically delete keys if some value types become
 		// empty.
-		if isRedisDeleteValue(newValue) {
-			returnValue.reply = newValue.Reply
+		if isRedisDeleteValue(after) {
+			returnValue.reply = after.Reply
 			return "", true
 		}
 
 		// Lets convert our redisValue into bytes so we can store the new
 		// value.
-		newRaw, err := newValue.Marshal()
+		afterRaw, err := after.Marshal()
 		if err != nil {
 			returnValue.err = err
-			return currentRaw, defaultDelete
+			return beforeRaw, defaultDelete
 		}
-		returnValue.reply = newValue.Reply
-		return string(newRaw), false
+		returnValue.reply = after.Reply
+		return NaiveValue(afterRaw), false
 	})
 	if storeErr != nil {
 		return Value{err: storeErr}
@@ -389,7 +395,7 @@ func (kv *naiveKeyValue) maybeUpdate(key string, updater storeUpdater) Value {
 }
 
 // maybeUpdateGroup is a wrapper of maybeUpdate which additionally will return
-// an error if the currentValue is not of the type group.
+// an error if the before is not of the type group.
 func (kv *naiveKeyValue) maybeUpdateGroup(group redisGroup, key string, updater storeUpdater) Value {
 	return kv.maybeUpdate(key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
 		if found && value.Group != group {
@@ -399,9 +405,9 @@ func (kv *naiveKeyValue) maybeUpdateGroup(group redisGroup, key string, updater 
 	})
 }
 
-// valuesUpdater takes in the currentValues. If newValues is different op must
+// valuesUpdater takes in the befores. If afters is different op must
 // be write so maybeUpdateValues knows to update.
-type valuesUpdater func(currentValues []any) (newValues []any, op updaterOp, err error)
+type valuesUpdater func(befores []any) (afters []any, op updaterOp, err error)
 
 // maybeUpdateValues is a specialization of maybeUpdate for all values operations
 // on key via updater.
