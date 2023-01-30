@@ -30,11 +30,11 @@ The base resources in Sourcegraph include the services that make up the main Sou
 
 ### RBAC
 
-Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from the default base cluster. This means service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap, which is automatically done by one of the component defined in the [kustomization file](intro.md#kustomization-yaml) built for Sourcegraph.
+Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from the default base cluster. This means service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap, which is automatically done by one of the component defined in the [kustomization file](index.md#kustomization-yaml) built for Sourcegraph.
 
 ### Non-Privileged
 
-By default, all Sourcegraph services are deployed in a **non-root and non-privileged** mode, as defined in the [base](intro.md#base) cluster.
+By default, all Sourcegraph services are deployed in a **non-root and non-privileged** mode, as defined in the [base](index.md#base) cluster.
 
 ### Privileged
 
@@ -257,6 +257,16 @@ components:
 
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) for more information.
 
+### k3s
+
+Configure to use the default storage class `local-path` in a k3s cluster:
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/storage-class/k3s
+```
+
 ### Trident
 
 If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
@@ -312,7 +322,7 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables under the [BUILD CONFIGURATIONS](intro.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
+Update the following variables under the [BUILD CONFIGURATIONS](index.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
@@ -367,11 +377,118 @@ NAME                   CLASS    HOSTS             ADDRESS     PORTS     AGE
 sourcegraph-frontend   <none>   sourcegraph.com   8.8.8.8     80, 443   1d
 ```
 
+### TLS
+
+To ensure secure communication, it is recommended to enable Transport Layer Security (TLS) and properly configure a certificate on your Ingress. This can be done by utilizing managed certificate solutions provided by cloud providers or by manually configuring a certificate.
+
+To manually configure a certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets), follow these steps:
+
+**Step 1**: Move the `tls.crt` and `tls.key` files to the root of your overlay directory (e.g. `overlays/$INSTANCE_NAME`).
+
+**Step 2**: Include the following lines in your overlay to generate secrets with the provided files:
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
+secretGenerator:
+- name: sourcegraph-frontend-tls
+  behavior: create
+  files:
+  - tls.crt
+  - tls.key
+```
+
+This will create a new Secret resource named sourcegraph-frontend-tls that contains the encoded cert and key.
+
+```yaml
+# cluster.yaml - output file after running build
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: sourcegraph-frontend-tls-99dh8g92m5
+  namespace: $YOUR_NAMESPACE
+data:
+  tls.crt: |
+    LS...FUlRJRklDQVRFLS0tLS0=
+  tls.key: |
+    LS...SSVZBVEUgS0VZLS0tLS0=
+# the data is abbreviated in this example
+```
+
+**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
+
+- **TLS_HOST**: your domain name
+- **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
+- **TLS_CLUSTER_ISSUER**: name of the cluster-issuer
+
+Example:
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
+configMapGenerator:
+  # Handle updating configs using env vars for kustomize
+  - name: sourcegraph-kustomize-env
+    behavior: merge
+    literals:
+      ...
+      - TLS_HOST=sourcegraph.company.com
+      - TLS_INGRESS_CLASS_NAME=example-ingress-class-name
+      - TLS_CLUSTER_ISSUER=letsencrypt
+```
+
+Step 4: Include the tls component:
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/network/tls
+```
+
+### TLS with Let’s Encrypt
+
+Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the BUILD CONFIGURATIONS section, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+
+## Ingress
+
+Configuration options for ingress installed for sourcegraph-frontend.
+
+### AWS ALB
+
+Component to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly by updating annotation to `kubernetes.io/ingress.class: alb` in frontend ingress. 
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/ingress/alb
+```
+
+### GKE
+
+Component to configure network access for GKE clusters with HTTP load balancing enabled.
+
+It also adds a [BackendConfig CRD](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig). This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/ingress/gke
+```
+
+### k3s
+
+Component to configure Ingress to use the default HTTP reverse proxy and load balancer `traefik` in k3s clusters.
+
+```yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/ingress/k3s
+```
+
 ### Hostname
 
 To configure the hostname for your Sourcegraph ingress, follow these steps:
 
-**Step 1**: Under the [BUILD CONFIGURATIONS](intro.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
+**Step 1**: Under the [BUILD CONFIGURATIONS](index.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
@@ -427,7 +544,7 @@ To configure ingress-nginx annotations for the Sourcegraph frontend ingress:
 $ mkdir -p overlays/$INSTANCE_NAME/patches
 ```
 
-**Step 2**: Copy the `frontend-ingress-annotations.yaml` patch file from the components/patches directory to the new [patches subdirectory](intro.md#patches-directory)
+**Step 2**: Copy the `frontend-ingress-annotations.yaml` patch file from the components/patches directory to the new [patches subdirectory](index.md#patches-directory)
 
 ```bash
 $ cp components/patches/frontend-ingress-annotations.yaml overlays/$INSTANCE_NAME/patches/frontend-ingress-annotations.yaml
@@ -447,77 +564,6 @@ $ cp components/patches/frontend-ingress-annotations.yaml overlays/$INSTANCE_NAM
   ```
 
 This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
-
-### TLS
-
-To ensure secure communication, it is recommended to enable Transport Layer Security (TLS) and properly configure a certificate on your Ingress. This can be done by utilizing managed certificate solutions provided by cloud providers or by manually configuring a certificate.
-
-To manually configure a certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets), follow these steps:
-
-**Step 1**: Move the `tls.crt` and `tls.key` files to the root of your overlay directory (e.g. `overlays/$INSTANCE_NAME`).
-
-**Step 2**: Include the following lines in your overlay to generate secrets with the provided files:
-
-```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
-secretGenerator:
-- name: sourcegraph-frontend-tls
-  behavior: create
-  files:
-  - tls.crt
-  - tls.key
-```
-
-This will create a new Secret resource named sourcegraph-frontend-tls that contains the encoded cert and key.
-
-```yaml
-# cluster.yaml - output file after running build
-apiVersion: v1
-kind: Secret
-type: kubernetes.io/tls
-metadata:
-  name: sourcegraph-frontend-tls-99dh8g92m5
-  namespace: $YOUR_NAMESPACE
-data:
-  tls.crt: |
-    LS...FUlRJRklDQVRFLS0tLS0=
-  tls.key: |
-    LS...SSVZBVEUgS0VZLS0tLS0=
-# the data is abbreviated in this example
-```
-
-**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [BUILD CONFIGURATIONS](intro.md#build-configurations) section:
-
-- **TLS_HOST**: your domain name
-- **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
-- **TLS_CLUSTER_ISSUER**: name of the cluster-issuer
-
-Example:
-
-```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      - TLS_HOST=sourcegraph.company.com
-      - TLS_INGRESS_CLASS_NAME=example-ingress-class-name
-      - TLS_CLUSTER_ISSUER=letsencrypt
-```
-
-Step 4: Include the tls component:
-
-```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
-components:
-- ../../components/network/tls
-```
-
-### TLS with Let’s Encrypt
-
-Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the BUILD CONFIGURATIONS section, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
 
 ### NetworkPolicy
 
@@ -610,7 +656,7 @@ components:
 
 ## Environment variables
 
-To update the environment variables for the **sourcegraph-frontend** service, edit the [FRONTEND ENV VARS](intro.md#frontend-env-vars) section at the bottom of your [kustomization file](intro.md#kustomizationyaml). For example:
+To update the environment variables for the **sourcegraph-frontend** service, edit the [FRONTEND ENV VARS](index.md#frontend-env-vars) section at the bottom of your [kustomization file](index.md#kustomizationyaml). For example:
 
 ```yaml
 # overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
@@ -637,7 +683,7 @@ For optimal performance and resilience, it is recommended to use an external dat
 
 To connect Sourcegraph to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the frontend ConfigMap with the following steps:
 
-**Step 1**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](intro.md#patches-directory) in your overlay
+**Step 1**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
 
 ```bash
 $ cp components/patches/frontend-vars.yaml overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
@@ -695,7 +741,7 @@ components:
 - ../../components/services/redis
 ```
 
-**Step 2**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](intro.md#patches-directory) in your overlay
+**Step 2**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
 
 ```bash
 $ cp components/patches/frontend-vars.yaml overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
@@ -785,7 +831,7 @@ Sourcegraph currently supports exporting tracing data to several backends. Refer
 By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
 
 1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](intro.md#patches-directory)
+2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](index.md#patches-directory)
 3. In the copied file, make the necessary changes to the `exporters` and `service` blocks to connect to your backend based on the documentation linked above
 4. Include the following in your overlay:
 
@@ -812,7 +858,7 @@ cAdvisor can pick up metrics for services unrelated to the Sourcegraph deploymen
 ([Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers)). To work around this:
 
 1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the `base/prometheus/prometheus.ConfigMap.yaml` file to the new [patches subdirectory](intro.md#patches-directory)
+2. Copy and paste the `base/prometheus/prometheus.ConfigMap.yaml` file to the new [patches subdirectory](index.md#patches-directory)
 2. In the copied file, include the lines highlighted [here](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L262-264).
 3. Replace [ns-sourcegraph](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L263) with your namespace
 4. Include the following in your overlay:
@@ -835,7 +881,7 @@ components:
 - ../../components/enable/private-registry
 ```
 
-Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](intro.md#build-configurations) section:
+Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]

@@ -126,9 +126,9 @@ The `storage-class/update-class-name` component updates the `storageClassName` f
 
 #### Create a new storage class
 
-Alternatively, you choose one of the preconfigured components to create a new storage class named `sourcegraph` for your Sourcegraph deployment. 
+Alternatively, choose one of the preconfigured components to create a new storage class named `sourcegraph` for your Sourcegraph deployment --_[cluster role administrator access required](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)_.
 
-Example for Google Kubernetes Engine (GKE): Include the `storage-class/gke` component under the components list in the `kustomization.yaml` file. The component takes care of creating a new storage class named sourcegraph with the following configurations:
+Example for Google GKE: Include the `storage-class/gke` component under the components list in the `kustomization.yaml` file. The component takes care of creating a new storage class named sourcegraph with the following configurations:
 
 - Provisioner: pd.csi.storage.gke.io
 - SSD: types: pd-ssd
@@ -154,7 +154,6 @@ Please refer to the configurations guide for a complete list of available storag
 Generate a new set of manifests using the configuration applied to the `dev` directory without applying to the cluster.
 
   ```bash
-  # instances/dev/kustomization.yaml
   $ kubectl kustomize instances/dev -o cluster.yaml
   ```
 
@@ -190,7 +189,7 @@ To access Sourcegraph in a web browser, forward the remote port temporarily.
   $ kubectl port-forward svc/sourcegraph-frontend 3080:30080
   ```
 
-You can then access your new Sourcegraph instance at http://localhost:3080  🎉
+You can then access your new Sourcegraph instance at http://localhost:3080 to continue with the site admin setup process🎉
 
   ```bash
   $ open http://localhost:3080
@@ -201,21 +200,20 @@ You can then access your new Sourcegraph instance at http://localhost:3080  🎉
 
 After the initial deployment, additional configuration might be required for Sourcegraph to customize your deployment to suit your specific needs:
 
-- [Add monitoring](configure.md#monitoring-stack)
-- [Allocate resources based on your instance size](configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
-- [Enable TLS](configure.md#tls)
-- [Configure network](configure.md#network-access)
-- [Set up an external PostgreSQL Database](configure.md#external-postgres)
-- [Set up SSH connection for cloning repositories](configure.md#ssh-for-cloning)
+- [Add monitoring](kustomize/configure.md#monitoring-stack)
+- [Allocate resources based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
+- [Enable TLS](kustomize/configure.md#tls)
+- [Configure ingress](kustomize/configure.md#ingress)
+- [Set up an external PostgreSQL Database](kustomize/configure.md#external-postgres)
+- [Set up SSH connection for cloning repositories](kustomize/configure.md#ssh-for-cloning)
 
-This can all be done by commenting or uncommenting specific components in the kustomization file. Please see the [configuration guide for Kustomize](kustomize/configure.md) for more configuration options.
+This can all be done by commenting or uncommenting specific components in the kustomization file. Please see the [configuration guide for Kustomize](kustomize/kustomize/configure.md) for more configuration options.
 
 ## Learn more
 
-Please refer to the deployment examples below for each cloud provider:
-
-- [Amazon EKS](kustomize/eks.md)
-- [Google GKE](kustomize/gke.md)
-
+- [Migrate from the old Kustomize setup](kustomize/index.md#migrating-from-deploy-scripts)
+- Deployment examples below for each cloud provider:
+  - [Amazon EKS](kustomize/eks.md)
+  - [Google GKE](kustomize/gke.md)
 
 Not sure if Kubernetes is the best choice for you? Check out our [deployment documentations](../index.md) to learn about other available deployment options.
