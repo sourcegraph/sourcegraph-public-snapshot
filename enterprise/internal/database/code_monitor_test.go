@@ -81,7 +81,7 @@ func populateCodeMonitorFixtures(t *testing.T, db EnterpriseDB) codeMonitorTestF
 	require.NoError(t, err)
 	err = db.Repos().Create(ctx, &types.Repo{Name: "test"})
 	require.NoError(t, err)
-	r, err := db.Repos().GetByName(ctx, api.RepoName("test"))
+	r, err := db.Repos().GetByName(ctx, "test")
 	require.NoError(t, err)
 	ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
 	m, err := db.CodeMonitors().CreateMonitor(ctx, MonitorArgs{NamespaceUserID: &u.ID, Enabled: true})

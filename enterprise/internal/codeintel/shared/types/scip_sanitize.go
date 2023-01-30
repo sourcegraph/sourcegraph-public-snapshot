@@ -98,5 +98,5 @@ func sanitizeString(s string) string {
 	}
 
 	// magic
-	return string([]rune(s))
+	return string(s)
 }

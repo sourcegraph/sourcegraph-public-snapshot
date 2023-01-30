@@ -97,11 +97,11 @@ func TestStreamBlame(t *testing.T) {
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		switch rev {
 		case "1234":
-			return api.CommitID("efgh"), nil
+			return "efgh", nil
 		case "":
-			return api.CommitID("abcd"), nil
+			return "abcd", nil
 		default:
-			return api.CommitID(""), &gitdomain.RevisionNotFoundError{Repo: repo.Name}
+			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
 		}
 	}
 	usersStore := database.NewMockUserStore()

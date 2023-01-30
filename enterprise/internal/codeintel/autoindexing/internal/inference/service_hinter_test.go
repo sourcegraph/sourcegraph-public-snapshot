@@ -39,7 +39,7 @@ func testHinter(t *testing.T, testCase hinterTestCase) {
 
 		jobHints, err := service.InferIndexJobHints(
 			context.Background(),
-			api.RepoName("github.com/test/test"),
+			"github.com/test/test",
 			"HEAD",
 			"",
 		)

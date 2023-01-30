@@ -55,7 +55,7 @@ func contentMatch(repo, path string, repoID int32, chunks ...string) result.Matc
 			Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
 			Path: path,
 		},
-		ChunkMatches: result.ChunkMatches(matches),
+		ChunkMatches: matches,
 	}
 }
 

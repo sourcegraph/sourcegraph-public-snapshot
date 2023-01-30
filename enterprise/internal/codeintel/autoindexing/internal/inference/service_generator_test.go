@@ -144,7 +144,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 
 		jobs, err := service.InferIndexJobs(
 			context.Background(),
-			api.RepoName("github.com/test/test"),
+			"github.com/test/test",
 			"HEAD",
 			testCase.overrideScript,
 		)

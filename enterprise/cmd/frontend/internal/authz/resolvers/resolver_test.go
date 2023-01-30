@@ -1507,7 +1507,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "either both pathIncludes and pathExcludes needs to be set, or paths needs to be set",
-						Path:    []any{string("setSubRepositoryPermissionsForUsers")},
+						Path:    []any{"setSubRepositoryPermissionsForUsers"},
 					},
 				},
 				ExpectedResult: "null",

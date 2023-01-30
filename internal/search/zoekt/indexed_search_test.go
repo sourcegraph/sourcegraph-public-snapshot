@@ -887,7 +887,7 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 		},
 		// One chunk per line, not one per fragment
 		output: result.ChunkMatches{{
-			Content:      string("testing 1 2 3"),
+			Content:      "testing 1 2 3",
 			ContentStart: result.Location{0, 0, 0},
 			Ranges: result.Ranges{{
 				Start: result.Location{8, 0, 8},

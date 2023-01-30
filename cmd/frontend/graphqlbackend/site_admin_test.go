@@ -215,7 +215,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "must be site admin",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -271,7 +271,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -324,7 +324,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "current user is not an org member",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -370,7 +370,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is not supported",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -399,7 +399,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "soft deleting organization is not supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
