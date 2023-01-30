@@ -125,12 +125,12 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
     )?.path
 
-    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
+    const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
-    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+    const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true

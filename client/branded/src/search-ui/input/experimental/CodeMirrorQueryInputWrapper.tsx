@@ -5,12 +5,12 @@ import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { History } from 'history'
 import inRange from 'lodash/inRange'
-import { useNavigate, type NavigateFunction } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 
+import { HistoryOrNavigate } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
@@ -35,7 +35,7 @@ interface ExtensionConfig {
     onSubmit?: () => void
     suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
-    historyOrNavigate: History | NavigateFunction
+    historyOrNavigate: HistoryOrNavigate
 }
 
 // We want to show a placeholder also if the query only contains a context
