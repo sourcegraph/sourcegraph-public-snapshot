@@ -175,6 +175,6 @@ func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, ar
 	return r.autoIndexingRootResolver.UpdateCodeIntelligenceInferenceScript(ctx, args)
 }
 
-func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []resolverstubs.GitObjectFilterPreviewResolver, err error) {
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ resolverstubs.GitObjectFilterPreviewResolver, err error) {
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
 }
