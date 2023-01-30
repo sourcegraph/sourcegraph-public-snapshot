@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -896,6 +897,9 @@ type UsersListOptions struct {
 	// user accounts.
 	ExcludeSourcegraphOperators bool
 
+	// OnlySCIM filters for SCIM-controlled users
+	OnlySCIM bool
+
 	*LimitOffset
 }
 
@@ -992,6 +996,15 @@ EXISTS (
 		AND org_members.org_id = %d)
 `
 
+const scimCond = `
+EXISTS (
+	SELECT 1
+	FROM user_external_accounts AS uea
+	WHERE
+		uea.user_id = u.id
+		AND uea.service_type = %d)
+`
+
 func newQueryCond(query *string) *sqlf.Query {
 	if query != nil && *query != "" {
 		q := "%" + *query + "%"
@@ -1033,6 +1046,9 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
+	}
+	if opt.OnlySCIM == true {
+		conds = append(conds, sqlf.Sprintf(scimCond, strings.ToLower(extsvc.KindSCIM)))
 	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))

@@ -3,13 +3,17 @@ package scim
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type UserResourceHandler struct {
@@ -52,16 +56,105 @@ func (h *UserResourceHandler) Get(r *http.Request, id string) (scim.Resource, er
 // An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
 // Page.Resources. Otherwise, is an empty slice is assigned, an empty list will be represented as `[]`.
 func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
-	// TODO: Add real logic
-	h.observationCtx.Logger.Error("XXXXX GetAll", log.String("method", r.Method), log.Int("params", params.Count))
+	h.observationCtx.Logger.Error("XXXXX GetAll", log.String("method", r.Method))
+
+	var offset int
+	if params.StartIndex > 0 {
+		offset = params.StartIndex - 1
+	}
+
+	// Collect username, verified email addresses, and external accounts to be used
+	// for revoking user permissions later, otherwise they will be removed from database
+	// if it's a hard delete.
+	users, err := h.db.Users().List(r.Context(), &database.UsersListOptions{
+		OnlySCIM: true,
+		LimitOffset: &database.LimitOffset{
+			Limit:  params.Count,
+			Offset: offset,
+		},
+	})
+	if err != nil {
+		return scim.Page{}, err
+	}
+
+	resources := make([]scim.Resource, 0, len(users))
+	for _, user := range users {
+		resource, err := h.convertUserToSCIMResource(r.Context(), user)
+		if err != nil {
+			// TODO: Log error
+			continue
+		}
+		resources = append(resources, *resource)
+	}
 
 	return scim.Page{
-		Resources: []scim.Resource{
-			{
-				ID: "123",
+		TotalResults: len(users),
+		Resources:    resources,
+	}, nil
+}
+
+func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, user *types.User) (*scim.Resource, error) {
+	// Get accounts
+	var accounts []*extsvc.Accounts
+	extAccounts, err := h.db.UserExternalAccounts().List(h.ctx, database.ExternalAccountsListOptions{UserID: user.ID})
+	if err != nil {
+		return nil, errors.Wrap(err, "list external accounts")
+	}
+	for _, acct := range extAccounts {
+		accounts = append(accounts, &extsvc.Accounts{
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			AccountIDs:  []string{acct.AccountID},
+		})
+	}
+
+	verifiedEmails, err := h.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID:       user.ID,
+		OnlyVerified: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	emailStrings := make([]interface{}, len(verifiedEmails))
+	for i := range verifiedEmails {
+		emailStrings[i] = map[string]interface{}{
+			"value": verifiedEmails[i].Email,
+		}
+	}
+
+	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
+
+	return &scim.Resource{
+		ID:         "123",
+		ExternalID: optional.NewString("111"),
+		Attributes: scim.ResourceAttributes{
+			"userName":   user.Username,
+			"externalId": "TODO",
+			"name": map[string]interface{}{
+				"givenName":  firstName,
+				"middleName": middleName,
+				"familyName": lastName,
+				"formatted":  user.DisplayName,
 			},
+			"displayName": user.DisplayName,
+			"emails":      emailStrings,
+			"active":      true,
 		},
 	}, nil
+}
+
+func displayNameToPieces(displayName string) (first, middle, last string) {
+	pieces := strings.Fields(displayName)
+	switch len(pieces) {
+	case 0:
+		return "", "", ""
+	case 1:
+		return pieces[0], "", ""
+	case 2:
+		return pieces[0], "", pieces[1]
+	default:
+		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
+	}
 }
 
 // Replace replaces ALL existing attributes of the resource with given identifier. Given attributes that are empty
