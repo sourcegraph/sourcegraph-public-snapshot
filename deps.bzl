@@ -662,6 +662,14 @@ def go_dependencies():
         version = "v0.0.0-20220621081337-cb9428e4ac1e",
     )
     go_repository(
+        name = "com_github_bahlo_generic_list_go",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bahlo/generic-list-go",
+        sum = "h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=",
+        version = "v0.2.0",
+    )
+
+    go_repository(
         name = "com_github_beevik_etree",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/beevik/etree",
@@ -920,8 +928,8 @@ def go_dependencies():
         name = "com_github_buger_jsonparser",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/buger/jsonparser",
-        sum = "h1:y853v6rXx+zefEcjET3JuKAqvhj+FKflQijjeaSv2iA=",
-        version = "v0.0.0-20180808090653-f4dd9f5a6b44",
+        sum = "h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=",
+        version = "v1.1.1",
     )
     go_repository(
         name = "com_github_bugsnag_bugsnag_go",
@@ -6054,8 +6062,8 @@ def go_dependencies():
         name = "com_github_rjeczalik_notify",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/rjeczalik/notify",
-        sum = "h1:MiTWrPj55mNDHEiIX5YUSKefw/+lCQVoAFmD6oQm5w8=",
-        version = "v0.9.2",
+        sum = "h1:6rJAzHTGKXGj76sbRgDiDcYj/HniypXmSJo1SWakZeY=",
+        version = "v0.9.3",
     )
     go_repository(
         name = "com_github_roaringbitmap_roaring",
@@ -6475,13 +6483,13 @@ def go_dependencies():
 
     go_repository(
         name = "com_github_sourcegraph_conc",
+        build_directives = [
+            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/conc",
         sum = "h1:9GeYVmWWa1jeOq3zGq17m10d9pjYZpiGTj/N4hQFl58=",
         version = "v0.1.0",
-        build_directives = [
-            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
-        ]
     )
     go_repository(
         name = "com_github_sourcegraph_go_ctags",
@@ -7106,6 +7114,14 @@ def go_dependencies():
         sum = "h1:N7Z7E9UvjW+sGsEl7k/SJrvY2reP1A07MrGuCjIOjRE=",
         version = "v1.1.11",
     )
+    go_repository(
+        name = "com_github_wk8_go_ordered_map_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/wk8/go-ordered-map/v2",
+        sum = "h1:jLbYIFyWQMUwHLO20cImlCRBoNc5lp0nmE2dvwcxc7k=",
+        version = "v2.1.5",
+    )
+
     go_repository(
         name = "com_github_wsxiaoys_terminal",
         build_file_proto_mode = "disable_global",
