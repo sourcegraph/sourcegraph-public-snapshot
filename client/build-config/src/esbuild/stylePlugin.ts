@@ -9,7 +9,7 @@ import sass from 'sass'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import postcssConfig from '../../../../postcss.config'
+const postcssConfig = require('../../../../postcss.config')
 import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
 
 /**

@@ -1,8 +1,30 @@
-load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "npm_package")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 package(default_visibility = ["//visibility:public"])
 
+# .dts-only library done manually
+# gazelle:js disabled
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
+
+npm_link_all_packages(name = "node_modules")
+
 npm_package(
     name = "extension-api-types",
-    srcs = ["package.json"] + glob(["src/**/*.d.ts"]),
+    srcs = [
+        "package.json",
+        "src/hover.d.ts",
+        "src/index.d.ts",
+        "src/location.d.ts",
+        "src/workspace.d.ts",
+    ],
 )

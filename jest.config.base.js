@@ -2,6 +2,26 @@
 
 const path = require('path')
 
+// TODO(bazel): drop when non-bazel removed.
+const IS_BAZEL = !!(process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
+const SRC_EXT = IS_BAZEL ? 'js' : 'ts'
+const rootDir = IS_BAZEL ? process.cwd() : __dirname
+
+function toPackagePath(pkgPath) {
+  // TODO(bazel): bazel runs tests using the pre-compiled npm packages from
+  // the pnpm workspace projects. the legacy non-bazel tests run on local ts
+  // source files which are compiled by jest and npm packages are mapped to
+  // the compiled or local js files.
+  if (IS_BAZEL) {
+    return pkgPath
+      .replace(path.join(__dirname, 'client/shared'), '@sourcegraph/shared')
+      .replace('.ts', '')
+      .replace('.js', '')
+  }
+
+  return pkgPath
+}
+
 // Use the same locale for test runs so that snapshots generated using code that
 // uses Intl or toLocaleString() are consistent.
 //
@@ -15,42 +35,54 @@ process.env.LANG = 'en_US.UTF-8'
 
 const ESM_NPM_DEPS = [
   'abortable-rx',
-  '@sourcegraph/comlink',
+  '@sourcegraph/.*',
   'monaco-editor',
   'monaco-yaml',
+  '@ampproject/.*',
   'marked',
   'date-fns',
   'react-sticky-box',
   'uuid',
   'vscode-languageserver-types',
-]
-  .join('|')
-  .replace(/\//g, '\\+')
+].join('|')
 
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
   // for example to change the URL in window.location
-  testEnvironment: __dirname + '/client/shared/dev/jest-environment.js',
+  testEnvironment: toPackagePath(__dirname + '/client/shared/dev/jest-environment.js'),
 
   collectCoverage: !!process.env.CI,
-  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
+  collectCoverageFrom: [`<rootDir>/src/**/*.{${SRC_EXT},${SRC_EXT}x}`],
   coverageDirectory: '<rootDir>/coverage',
-  coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.tsx?$/.source, /\.d\.ts$/.source],
+  coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.[jt]sx?$/.source, /\.d\.ts$/.source],
   roots: ['<rootDir>/src'],
+  snapshotResolver: path.join(__dirname, 'jest.snapshot-resolver.js'),
 
-  transform: { '\\.[jt]sx?$': ['babel-jest', { root: __dirname }] },
+  transform: {
+    [IS_BAZEL ? '\\.js$' : '\\.[jt]sx?$']: [
+      'babel-jest',
+      {
+        root: rootDir,
+        configFile: path.join(rootDir, IS_BAZEL ? 'babel.config.jest.js' : 'babel.config.js'),
+      },
+    ],
+  },
 
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
   // modules). If you get an error from jest like "Jest encountered an unexpected token. ... SyntaxError:
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
+  // Include the pnpm-style rules_js.
+  // See pnpm notes at https://jestjs.io/docs/configuration#transformignorepatterns-arraystring
   transformIgnorePatterns: [
+    // TODO(bazel): remove when @sourcegraph/shared is no longer compiled as commonjs. See client/common/BUILD.bazel
+    '@sourcegraph/shared',
     // packages within the root pnpm/rules_js package store
-    `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    `<rootDir>/node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS.replace('/', '\\+')})@)`,
     // files under a subdir: eg. '/packages/lib-a/'
-    `(../)+node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS})@)`,
+    `(../)+node_modules/.(aspect_rules_js|pnpm)/(?!(${ESM_NPM_DEPS.replace('/', '\\+')})@)`,
     // packages nested within another
     `node_modules/(?!.aspect_rules_js|.pnpm|${ESM_NPM_DEPS})`,
   ],
@@ -83,14 +115,15 @@ const config = {
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
     path.join(__dirname, 'client/shared/dev/mockMatchMedia.ts'),
-  ],
+  ].map(toPackagePath),
+
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
-    path.join(__dirname, 'client/shared/dev/reactCleanup.ts'),
+    toPackagePath(path.join(__dirname, 'client/shared/dev/reactCleanup.ts')),
   ],
-  globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
+  globalSetup: toPackagePath(path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js')),
   globals: {
     Uint8Array,
   },

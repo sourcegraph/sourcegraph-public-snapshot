@@ -1,0 +1,99 @@
+load("//dev:defs.bzl", "ts_project")
+
+# integration/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+
+# gazelle:js_resolve sourcegraph //client/shared:node_modules/@sourcegraph/client-api
+
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    deps = [
+        "//client/shared/src/testing:tsconfig",
+        "//client/web:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "integration",
+    srcs = [
+        "context.ts",
+        "environment.ts",
+        "graphQlResponseHelpers.ts",
+        "graphQlResults.ts",
+        "insights/utils/override-insights-graphql-api.ts",
+        "jscontext.ts",
+        "temporarySettingsContext.ts",
+        "utils.ts",
+    ],
+    tsconfig = ":tsconfig",
+    # TODO(bazel): type-only imports
+    deps = [
+        "//:node_modules/@types/pollyjs__core",  #keep
+        "//:node_modules/puppeteer",  #keep
+        "//client/web:graphql_operations",
+        "//client/web:node_modules/@sourcegraph/common",
+        "//client/web:node_modules/@sourcegraph/shared",
+        "//client/web:web_lib",  #keep
+        "//client/web/dev",
+    ],
+)
+
+ts_project(
+    name = "integration_tests",
+    testonly = True,
+    srcs = [
+        "batches.test.ts",
+        "blob-viewer.test.ts",
+        "code-monitoring.test.ts",
+        "codemirror-blob-view.test.ts",
+        "commit-page.test.ts",
+        "insights/create-insights.test.ts",
+        "insights/dashboards/add-remove-insights.test.ts",
+        "insights/dashboards/create-dashboard.test.ts",
+        "insights/dashboards/delete-dashboard.test.ts",
+        "insights/dashboards/render-empty-dashboard.test.ts",
+        "insights/dashboards/render-populated-dashboard.test.ts",
+        "insights/dashboards/update-dashboard.test.ts",
+        "insights/delete-insights.test.ts",
+        "insights/drill-down-filters.test.ts",
+        "insights/edit-search-insights.test.ts",
+        "insights/fixtures/calculated-insights.ts",
+        "insights/fixtures/dashboards.ts",
+        "insights/fixtures/insights-metadata.ts",
+        "insights/fixtures/runtime-insights.ts",
+        "insights/insight/dashboard-cards.test.ts",
+        "insights/insight/insight-chart-focus.test.ts",
+        "insights/single-insight-page.test.ts",
+        "insights/utils/mock-helpers.ts",
+        "nav.test.ts",
+        "notebook.test.ts",
+        "org.test.ts",
+        "profile.test.ts",
+        "repository.test.ts",
+        "search.test.ts",
+        "search-aggregation.test.ts",
+        "search-contexts.test.ts",
+        "settings.test.ts",
+        "sign-in.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":integration",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
+        "//:node_modules/date-fns",
+        "//:node_modules/delay",
+        "//:node_modules/expect",
+        "//:node_modules/lodash",
+        "//:node_modules/mocha",
+        "//:node_modules/sourcegraph",
+        "//:node_modules/ts-key-enum",
+        "//client/web:graphql_operations",
+        "//client/web:node_modules/@sourcegraph/common",
+        "//client/web:node_modules/@sourcegraph/shared",
+    ],
+)
