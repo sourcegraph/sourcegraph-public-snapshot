@@ -1646,28 +1646,18 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
 })
 
-func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
-	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
-
-	// Flush writes more aggressively than standard net/http so that clients
-	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(logger, w); fw != nil {
-		w = fw
-		defer fw.Close()
-	}
-
+func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, w io.Writer) error {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
+		// logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
 
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid command"))
-		return
+		// TODO create sentinel error
+		return errors.New("bad request")
+		// w.WriteHeader(http.StatusBadRequest)
+		// _, _ = w.Write([]byte("invalid command"))
 	}
-
-	ctx := r.Context()
 
 	if !req.NoTimeout {
 		var cancel context.CancelFunc
@@ -1736,7 +1726,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
-				ev.AddField("client", r.UserAgent())
+				// ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdin_size", len(req.Stdin))
 				ev.AddField("stdout_size", stdoutN)
@@ -1779,9 +1769,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		} else {
 			status = "repo-not-found"
 		}
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(notFoundPayload)
-		return
+
+		// TODO return not found error
+		// w.WriteHeader(http.StatusNotFound)
+		// _ = json.NewEncoder(w).Encode(notFoundPayload)
+		return errors.New("not found")
 	}
 
 	dir := s.dir(req.Repo)
@@ -1789,24 +1781,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		ensureRevisionStatus = "fetched"
 	}
 
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-
-	w.Header().Set("Trailer", "X-Exec-Error")
-	w.Header().Add("Trailer", "X-Exec-Exit-Status")
-	w.Header().Add("Trailer", "X-Exec-Stderr")
-	w.WriteHeader(http.StatusOK)
-
 	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
 		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
-			w.Header().Set("X-Exec-Error", "")
-			w.Header().Set("X-Exec-Exit-Status", "0")
-			w.Header().Set("X-Exec-Stderr", "")
-			return
+			// w.Header().Set("X-Exec-Error", "")
+			// w.Header().Set("X-Exec-Exit-Status", "0")
+			// w.Header().Set("X-Exec-Stderr", "")
+			// return
+			// TODO well-typed error
+			return errors.New("exec error")
 		}
 	}
 	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
@@ -1815,10 +1801,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
 		if resolved, err := quickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
-			w.Header().Set("X-Exec-Error", "")
-			w.Header().Set("X-Exec-Exit-Status", "0")
-			w.Header().Set("X-Exec-Stderr", "")
-			return
+			// w.Header().Set("X-Exec-Error", "")
+			// w.Header().Set("X-Exec-Exit-Status", "0")
+			// w.Header().Set("X-Exec-Stderr", "")
+			// return
+			// TODO well-typed error
+			return errors.New("exec error")
 		}
 	}
 
@@ -1841,6 +1829,37 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	stderr := stderrBuf.String()
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
+
+	if exitStatus != 0 {
+		// TODO well-typed error
+		return errors.New("nonzero exit")
+	}
+	return nil
+}
+
+func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
+	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+
+	// Flush writes more aggressively than standard net/http so that clients
+	// with a context deadline see as much partial response body as possible.
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
+		w = fw
+		defer fw.Close()
+	}
+
+	ctx := r.Context()
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	w.Header().Set("Trailer", "X-Exec-Error")
+	w.Header().Add("Trailer", "X-Exec-Exit-Status")
+	w.Header().Add("Trailer", "X-Exec-Stderr")
+	w.WriteHeader(http.StatusOK)
+
+	err := s.execShared(ctx, logger, req)
+
+	// TODO: Switch on error type
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
