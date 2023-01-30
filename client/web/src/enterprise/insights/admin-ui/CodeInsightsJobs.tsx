@@ -29,6 +29,7 @@ import {
     PopoverContent,
     PopoverTail,
     PageSwitcher,
+    Container,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -136,50 +137,52 @@ export const CodeInsightsJobs: FC = props => {
                 className="mb-3"
             />
 
-            <header className={styles.header}>
-                <CodeInsightsJobActions />
+            <Container>
+                <header className={styles.header}>
+                    <CodeInsightsJobActions />
 
-                <CodeInsightsFiltersPicker
-                    selectedFilters={selectedFilters}
-                    className={styles.statusFilter}
-                    onFiltersChange={setFilters}
-                />
+                    <CodeInsightsFiltersPicker
+                        selectedFilters={selectedFilters}
+                        className={styles.statusFilter}
+                        onFiltersChange={setFilters}
+                    />
 
-                <CodeInsightsOrderPicker order={orderBy} className={styles.orderBy} onOrderChange={setOrderBy} />
+                    <CodeInsightsOrderPicker order={orderBy} className={styles.orderBy} onOrderChange={setOrderBy} />
 
-                <Input
-                    placeholder="Search jobs by title or series label"
-                    value={search}
-                    className={styles.search}
-                    onChange={event => setSearch(event.target.value)}
-                />
-            </header>
+                    <Input
+                        placeholder="Search jobs by title or series label"
+                        value={search}
+                        className={styles.search}
+                        onChange={event => setSearch(event.target.value)}
+                    />
+                </header>
 
-            {loading && !connection && (
-                <small className={styles.insightJobsMessage}>
-                    <LoadingSpinner /> Loading code insights job
-                </small>
-            )}
+                {loading && !connection && (
+                    <small className={styles.insightJobsMessage}>
+                        <LoadingSpinner /> Loading code insights job
+                    </small>
+                )}
 
-            {/* { error && <ErrorAlert error={error}/> }*/}
+                {/* { error && <ErrorAlert error={error}/> }*/}
 
-            {connection && connection.nodes.length === 0 && (
-                <span className={styles.insightJobsMessage}>
-                    <Icon svgPath={mdiMapSearch} inline={false} aria-hidden={true} /> No code insight jobs yet. Enable
-                    code insights and <Link to="/insights/create">create</Link> at least one insight to see its jobs
-                    here.
-                </span>
-            )}
+                {connection && connection.nodes.length === 0 && (
+                    <span className={styles.insightJobsMessage}>
+                        <Icon svgPath={mdiMapSearch} inline={false} aria-hidden={true} /> No code insight jobs yet.
+                        Enable code insights and <Link to="/insights/create">create</Link> at least one insight to see
+                        its jobs here.
+                    </span>
+                )}
 
-            {JOBS && (
-                <ul className={styles.insightJobs}>
-                    {JOBS.map(job => (
-                        <CodeInsightJobCard key={job.id} job={job} />
-                    ))}
-                </ul>
-            )}
+                {JOBS && (
+                    <ul className={styles.insightJobs}>
+                        {JOBS.map(job => (
+                            <CodeInsightJobCard key={job.id} job={job} />
+                        ))}
+                    </ul>
+                )}
 
-            <PageSwitcher {...paginationProps} hasPreviousPage={true} className="mt-3" />
+                <PageSwitcher {...paginationProps} hasPreviousPage={true} className="mt-5" />
+            </Container>
         </div>
     )
 }
