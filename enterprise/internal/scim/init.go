@@ -29,7 +29,7 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 		DocumentationURI: optional.NewString("www.example.com/scim"),
 	}
 
-	var userResourceHandler = NewUserResourceHandler(ctx, db, observationCtx)
+	var userResourceHandler = NewUserResourceHandler(ctx, observationCtx, db)
 
 	resourceTypes := []scim.ResourceType{createUserResourceType(userResourceHandler)}
 

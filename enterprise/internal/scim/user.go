@@ -19,16 +19,16 @@ import (
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
 type UserResourceHandler struct {
 	ctx            context.Context
-	db             database.DB
 	observationCtx *observation.Context
+	db             database.DB
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
-func NewUserResourceHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) *UserResourceHandler {
+func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *UserResourceHandler {
 	return &UserResourceHandler{
 		ctx:            ctx,
-		db:             db,
 		observationCtx: observationCtx,
+		db:             db,
 	}
 }
 
