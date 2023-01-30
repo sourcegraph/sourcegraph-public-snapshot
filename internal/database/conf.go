@@ -286,7 +286,7 @@ func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
 		&s.ID,
 		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
-		&s.RedactedContents,
+		&dbutil.NullString{S: &s.RedactedContents},
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
