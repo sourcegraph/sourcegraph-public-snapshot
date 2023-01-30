@@ -1,4 +1,5 @@
 import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -87,42 +88,38 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.SearchNotebook,
-        render: () => <Redirect to={EnterprisePageRoutes.Notebooks} />,
-        exact: true,
+        render: () => <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.NotebookCreate,
-        render: props =>
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) =>
             useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
                 <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
             ) : (
-                <Redirect to={EnterprisePageRoutes.Notebooks} />
+                <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />
             ),
-        exact: true,
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.Notebook,
-        render: props => {
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) => {
             const { showSearchNotebook } = useExperimentalFeatures.getState()
 
             return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
-        exact: true,
     },
     {
-        isV6: false,
+        isV6: true,
         path: EnterprisePageRoutes.Notebooks,
-        render: props =>
+        render: (props: LayoutRouteComponentPropsRRV6<{}>) =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <NotebooksListPage {...props} />
             ) : (
-                <Redirect to={PageRoutes.Search} />
+                <Navigate to={PageRoutes.Search} replace={true} />
             ),
-        exact: true,
     },
     ...routes,
 ]
