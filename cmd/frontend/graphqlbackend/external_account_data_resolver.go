@@ -15,7 +15,7 @@ type externalAccountDataResolver struct {
 func NewExternalAccountDataResolver(ctx context.Context, account extsvc.Account) (*externalAccountDataResolver, error) {
 	data, err := publicAccountDataFromJSON(ctx, account)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 	return &externalAccountDataResolver{
 		data: data,
