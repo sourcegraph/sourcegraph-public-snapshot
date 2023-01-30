@@ -28,6 +28,7 @@ func TestCreateNamespacePermission(t *testing.T) {
 		Action:     "READ",
 	})
 	assert.NoError(t, err)
+	assert.Equal(t, np.UserID, user.ID)
 
 	// check that the namespace permission created esists
 	existingNp, err := store.Get(ctx, GetNamespacePermissionOpts{
@@ -112,6 +113,10 @@ func TestGetNamespacePermission(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{ID: np.ID})
 		assert.NoError(t, err)
 		assert.Equal(t, n.ID, np.ID)
+		assert.Equal(t, n.Namespace, np.Namespace)
+		assert.Equal(t, n.Action, np.Action)
+		assert.Equal(t, n.ResourceID, np.ResourceID)
+		assert.Equal(t, n.UserID, np.UserID)
 	})
 
 	t.Run("non-existent namespace permission", func(t *testing.T) {
