@@ -231,7 +231,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
             >
                 {isLarge ? (
-                    <ul className="navbar-nav">
+                    <ul className={classNames('navbar-nav', styles.actionList)}>
                         {rightActions.map((a, index) => (
                             <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}
