@@ -362,3 +362,22 @@ function getPositionAt(text: string, offset: number): monaco.IPosition {
     }
     throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
 }
+
+declare global {
+    interface Window {
+        MonacoEnvironment?: monaco.Environment | undefined
+    }
+}
+
+// When using esbuild, we need to manually configure the MonacoEnvironment for the Monaco editor.
+// This is not needed when using Webpack because the monaco-editor-webpack-plugin does this for us.
+if (process.env.DEV_WEB_BUILDER === 'esbuild' && !window.MonacoEnvironment) {
+    window.MonacoEnvironment = {
+        getWorkerUrl(_moduleId: string, label: string): string {
+            if (label === 'json') {
+                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
+            }
+            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
+        },
+    }
+}
