@@ -1,7 +1,5 @@
 import { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Redirect, RouteComponentProps, useLocation } from 'react-router'
-
 import { useApolloClient } from '@apollo/client'
 import {
     mdiDatabaseEdit,
@@ -15,6 +13,12 @@ import {
     mdiRedo,
     mdiTimerSand,
 } from '@mdi/js'
+import classNames from 'classnames'
+import * as H from 'history'
+import { Redirect, RouteComponentProps, useLocation } from 'react-router'
+import { Observable } from 'rxjs'
+import { takeWhile } from 'rxjs/operators'
+
 import { ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -44,10 +48,7 @@ import {
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
-import classNames from 'classnames'
-import * as H from 'history'
-import { Observable } from 'rxjs'
-import { takeWhile } from 'rxjs/operators'
+
 import {
     Connection,
     FilteredConnection,
@@ -60,6 +61,7 @@ import {
     PreciseIndexFields,
     PreciseIndexState,
 } from '../../../../graphql-operations'
+import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
 import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
@@ -76,10 +78,10 @@ import {
     RetentionPolicyMatch,
     UploadReferenceMatch,
 } from '../hooks/queryPreciseIndexRetention'
-import styles from './CodeIntelPreciseIndexPage.module.scss'
 import { useDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
-import { FlashMessage } from '../../configuration/components/FlashMessage'
+
+import styles from './CodeIntelPreciseIndexPage.module.scss'
 
 export interface CodeIntelPreciseIndexPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -154,7 +156,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             history.push({
                 state: {
                     modal: 'SUCCESS',
-                    message: `Marked as replaceable.`, // TODO
+                    message: 'Marked as replaceable.', // TODO
                 },
             })
         } catch (error) {
@@ -162,7 +164,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             history.push({
                 state: {
                     modal: 'ERROR',
-                    message: `There was an error while marking index as replaceable.`, // TODO
+                    message: 'There was an error while marking index as replaceable.', // TODO
                 },
             })
         }
@@ -304,7 +306,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                     </Alert>
 
                     {indexOrError.isLatestForRepo && (
-                        <Alert variant={'secondary'}>
+                        <Alert variant="secondary">
                             <span>
                                 This upload can answer queries for the tip of the default branch and are targets of
                                 cross-repository find reference operations.
@@ -774,7 +776,7 @@ const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeInte
     reindexUpload,
     reindexOrError,
 }) => (
-    <Tooltip content={'TODO'}>
+    <Tooltip content="TODO">
         <Button type="button" variant="link" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
             <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
         </Button>

@@ -3,8 +3,7 @@ import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import { DeletePreciseIndexesResult, DeletePreciseIndexesVariables } from '../../../../graphql-operations'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type DeletePreciseIndexesResults = Promise<
     FetchResult<DeletePreciseIndexesResult, Record<string, any>, Record<string, any>>
 >

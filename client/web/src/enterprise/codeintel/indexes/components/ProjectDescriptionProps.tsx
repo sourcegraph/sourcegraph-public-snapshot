@@ -1,5 +1,7 @@
-import { Badge, Code, Link } from '@sourcegraph/wildcard'
 import { FunctionComponent } from 'react'
+
+import { Badge, Code, Link } from '@sourcegraph/wildcard'
+
 import { PreciseIndexFields } from '../../../../graphql-operations'
 
 export interface ProjectDescriptionProps {

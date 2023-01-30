@@ -1,15 +1,18 @@
 import { FunctionComponent, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiCheck, mdiCheckCircle, mdiFileUpload, mdiProgressClock, mdiTimerSand } from '@mdi/js'
+import classNames from 'classnames'
+
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isDefined } from '@sourcegraph/common'
 import { Card, CardBody, Code, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+
 import { Collapsible } from '../../../../components/Collapsible'
 import { LogOutput } from '../../../../components/LogOutput'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { formatDurationLong } from '../../../../util/time'
-import classNames from 'classnames'
+
 import styles from './IndexTimeline.module.scss'
 
 export interface IndexTimelineProps {
@@ -47,7 +50,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
         }
 
         // TODO - document
-        var v = indexSetupStage(index, now)
+        let v = indexSetupStage(index, now)
         if (v) {
             stages.push(v)
         }

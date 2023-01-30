@@ -3,8 +3,7 @@ import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import { ReindexPreciseIndexesResult, ReindexPreciseIndexesVariables } from '../../../../graphql-operations'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type ReindexPreciseIndexesResults = Promise<
     FetchResult<ReindexPreciseIndexesResult, Record<string, any>, Record<string, any>>
 >

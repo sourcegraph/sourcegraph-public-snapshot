@@ -1,11 +1,11 @@
 import { FunctionComponent } from 'react'
 
-import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
-import { PreciseIndexState } from '../../../../graphql-operations'
-
 import { mdiAlertCircle, mdiCheckCircle, mdiDatabase, mdiFileUpload, mdiSourceRepository, mdiTimerSand } from '@mdi/js'
-
 import classNames from 'classnames'
+
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { PreciseIndexState } from '../../../../graphql-operations'
 
 export interface CodeIntelStateIconProps {
     state: PreciseIndexState

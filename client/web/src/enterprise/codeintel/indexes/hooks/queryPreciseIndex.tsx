@@ -1,9 +1,12 @@
 import { ApolloClient } from '@apollo/client'
-import { ErrorLike } from '@sourcegraph/common'
-import { fromObservableQuery, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
+import { ErrorLike } from '@sourcegraph/common'
+import { fromObservableQuery, getDocumentNode, gql } from '@sourcegraph/http-client'
+
 import { PreciseIndexFields, PreciseIndexResult } from '../../../../graphql-operations'
+
 import { preciseIndexFieldsFragment } from './types'
 
 const PRECISE_INDEX_FIELDS = gql`

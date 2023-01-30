@@ -1,8 +1,8 @@
 import { FunctionComponent } from 'react'
 
-import { PreciseIndexState } from '../../../../graphql-operations'
-
 import classNames from 'classnames'
+
+import { PreciseIndexState } from '../../../../graphql-operations'
 
 export interface CodeIntelStateLabelProps {
     state: PreciseIndexState

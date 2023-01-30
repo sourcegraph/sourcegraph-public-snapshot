@@ -1,4 +1,12 @@
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+
 import { useApolloClient } from '@apollo/client'
+import classNames from 'classnames'
+import * as H from 'history'
+import { RouteComponentProps, useLocation } from 'react-router'
+import { of, Subject } from 'rxjs'
+import { tap } from 'rxjs/operators'
+
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -6,10 +14,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
-    Badge,
     Button,
     Checkbox,
-    Code,
     Container,
     ErrorAlert,
     H3,
@@ -20,12 +26,7 @@ import {
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
-import classNames from 'classnames'
-import * as H from 'history'
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
-import { RouteComponentProps, useLocation } from 'react-router'
-import { of, Subject } from 'rxjs'
-import { tap } from 'rxjs/operators'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -45,6 +46,7 @@ import { useDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
 import { useReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
+
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
@@ -112,19 +114,22 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
     const [args, setArgs] = useState<any>()
     const [selection, setSelection] = useState<Set<string> | 'all'>(new Set())
-    const onCheckboxToggle = useCallback((id: string, checked: boolean): void => {
-        setSelection(selection => {
-            if (selection === 'all') {
-                return selection
-            }
-            if (checked) {
-                selection.add(id)
-            } else {
-                selection.delete(id)
-            }
-            return new Set(selection)
-        })
-    }, [])
+    const onCheckboxToggle = useCallback(
+        (id: string, checked: boolean): void => {
+            setSelection(selection => {
+                if (selection === 'all') {
+                    return selection
+                }
+                if (checked) {
+                    selection.add(id)
+                } else {
+                    selection.delete(id)
+                }
+                return new Set(selection)
+            })
+        },
+        [setSelection]
+    )
 
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
     const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
@@ -161,13 +166,12 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
 
     const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            return queryIndexListCallback(args).pipe(
+        (args: FilteredConnectionQueryArguments) =>
+            queryIndexListCallback(args).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })
-            )
-        },
+            ),
         [queryIndexListCallback]
     )
 
@@ -179,7 +183,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Precise indexes' }]}
-                description={'Precise code intelligence index data and auto-indexing jobs.'}
+                description="Precise code intelligence index data and auto-indexing jobs."
                 className="mb-3"
             />
 
