@@ -619,8 +619,8 @@ export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
 const generateMockOutputLines = (start: number, end: number): string[] => {
     const result: string[] = []
 
-    for (let i = start; i <= end; i++) {
-        result.push(`stdout: Hello world ${i}`)
+    for (let index = start; index <= end; index++) {
+        result.push(`stdout: Hello world ${index}`)
     }
 
     return result
