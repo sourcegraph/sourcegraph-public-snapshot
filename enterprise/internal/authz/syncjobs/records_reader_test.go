@@ -8,14 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSyncJobRecordsRead(t *testing.T) {
 	c := &memCache{}
 
 	// Write multiple records
-	s := NewRecordsStore(logtest.Scoped(t))
+	s := NewRecordsStore(logtest.Scoped(t), configWithRecordsLimit(0))
 	s.cache = c
 	s.Record("repo", 12, []ProviderStatus{{
 		ProviderID:   "https://github.com",
@@ -57,4 +59,12 @@ func TestSyncJobRecordsRead(t *testing.T) {
 		assert.True(t, first.Completed.Before(second.Completed))
 		assert.True(t, second.Completed.Before(third.Completed))
 	})
+}
+
+func configWithRecordsLimit(limit int) conftypes.SiteConfigQuerier {
+	return &siteConfigQuerier{
+		conf: schema.SiteConfiguration{
+			AuthzSyncJobsRecordsLimit: limit,
+		},
+	}
 }

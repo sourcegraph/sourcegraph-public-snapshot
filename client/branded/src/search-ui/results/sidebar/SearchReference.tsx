@@ -143,6 +143,12 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['file:has.content(github.com/sourcegraph/sourcegraph)'],
     },
     {
+        ...createQueryExampleFromString('has.owner({name})'),
+        field: FilterType.file,
+        description: 'Search only inside files that are owned by the given owner.',
+        examples: ['file:has.owner(johndoe)'],
+    },
+    {
         ...createQueryExampleFromString('{yes/only}'),
         field: FilterType.fork,
         description:

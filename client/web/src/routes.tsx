@@ -49,7 +49,9 @@ export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps<Parameters_>) => boolean
+    condition?: (
+        props: Omit<LayoutRouteComponentProps<Parameters_>, 'location' | 'history' | 'match' | 'staticContext'>
+    ) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.

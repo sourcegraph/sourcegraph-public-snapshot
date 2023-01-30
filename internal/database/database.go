@@ -62,8 +62,10 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	Teams() TeamStore
 
 	Transact(context.Context) (DB, error)
+	WithTransact(context.Context, func(tx DB) error) error
 	Done(error) error
 }
 
@@ -104,6 +106,12 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&db{logger: d.logger, Store: tx})
+	})
+}
+
 func (d *db) Done(err error) error {
 	return d.Store.Done(err)
 }
@@ -121,7 +129,10 @@ func (d *db) Authz() AuthzStore {
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+	return &confStore{
+		Store:  basestore.NewWithHandle(d.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -274,4 +285,8 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) Teams() TeamStore {
+	return TeamsWith(d.Store)
 }

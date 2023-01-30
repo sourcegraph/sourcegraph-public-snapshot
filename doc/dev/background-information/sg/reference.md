@@ -129,7 +129,8 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
-* web-integration-build: Build web application for integration tests
+* web-integration-build-prod: Build production web application for integration tests
+* web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -241,6 +242,7 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * bzl
+* wolfi
 * main-dry-run
 * docker-images-patch
 * docker-images-patch-notest
@@ -460,6 +462,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint protobuf
+
+Check protobuf code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ### sg lint format
 
 Check client code and docs for formatting errors.
@@ -495,7 +506,7 @@ Flags:
 
 ### sg generate buf
 
-Re-generate protcol buffer bindings using buf.
+Re-generate protocol buffer bindings using buf.
 
 
 Flags:
@@ -798,6 +809,7 @@ Flags:
 * `--db="<value>"`: The target `schema` to compare.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--skip-version-check`: Skip validation of the instance's current version.
 * `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
 
 ### sg migration add-log

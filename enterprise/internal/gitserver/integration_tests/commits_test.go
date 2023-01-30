@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	inttests "github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests"
@@ -24,9 +23,6 @@ func TestGetCommits(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	repo1 := inttests.MakeGitRepository(t, getGitCommandsWithFiles("file1", "file2")...)
 	repo2 := inttests.MakeGitRepository(t, getGitCommandsWithFiles("file3", "file4")...)
@@ -71,7 +67,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, db, inttests.GitserverAddresses).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -120,7 +116,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 
 func TestHead(t *testing.T) {
 	inttests.InitGitserver()
-	client := gitserver.NewTestClient(http.DefaultClient, database.NewMockDB(), inttests.GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses)
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
 		gitCommands := []string{

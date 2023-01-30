@@ -19,7 +19,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 24 Jan 2023 09:52:43 GMT
+      - Tue, 24 Jan 2023 12:39:52 GMT
       Pragma:
       - no-cache
       Server:
@@ -27,9 +27,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@TCJ96Jx592x10818030x10'
+      - '@TCJ96Jx759x12219485x3'
       X-Asessionid:
-      - mxgl2a
+      - 12yp3xp
       X-Auserid:
       - "253"
       X-Ausername:
@@ -57,7 +57,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 24 Jan 2023 09:52:43 GMT
+      - Tue, 24 Jan 2023 12:39:53 GMT
       Pragma:
       - no-cache
       Server:
@@ -65,9 +65,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@TCJ96Jx592x10818073x7'
+      - '@TCJ96Jx759x12219556x1'
       X-Asessionid:
-      - 6vcxoj
+      - 2r5pg6
       X-Auserid:
       - "253"
       X-Ausername:
@@ -137,9 +137,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 24 Jan 2023 09:52:45 GMT
-      Location:
-      - https://bitbucket.sgdev.org/rest/api/1.0/projects/~ENGINEERS/repos/bat-vcr-fork-test-repo-already-forked
+      - Tue, 24 Jan 2023 12:39:53 GMT
       Pragma:
       - no-cache
       Server:
@@ -147,9 +145,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@TCJ96Jx592x10818130x8'
+      - '@TCJ96Jx759x12219662x8'
       X-Asessionid:
-      - 1e3wdnr
+      - a9iuyw
       X-Auserid:
       - "253"
       X-Ausername:

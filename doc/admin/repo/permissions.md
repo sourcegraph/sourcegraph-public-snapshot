@@ -5,6 +5,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
+- [Gerrit](#gerrit)
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -259,6 +260,24 @@ Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field an
 ### Fast permission sync with Bitbucket Server plugin
 
 By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server / Bitbucket Data Center permissions on larger instances.
+
+<br />
+
+## Gerrit
+
+Prerequisite: [Add Gerrit as an authentication provider](../auth/index.md#gerrit).
+
+Then, [add or edit a Gerrit connection](../external_service/gerrit.md) and include the `authorization` field:
+
+```json
+{
+  // The Gerrit URL used to set up the Gerrit authentication provider must match this URL.
+  "url": "https://gerrit.example.com",
+  "username": "<admin username>",
+  "password": "<admin password>",
+  "authorization": {}
+}
+```
 
 <br />
 

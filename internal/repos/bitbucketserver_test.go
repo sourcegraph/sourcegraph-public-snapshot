@@ -445,6 +445,11 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			cli := bitbucketserver.NewTestClient(t, name, update(name))
 			s.client = cli
 
+			// This project has 2 repositories in it. that's why we expect 2
+			// repos further down.
+			// As soon as more repositories are added to the
+			// "SOURCEGRAPH" project, we need to update this condition.
+			wantNumRepos := 2
 			s.config.ProjectKeys = []string{
 				"SOURCEGRAPH",
 			}
@@ -459,20 +464,17 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 			var got []*types.Repo
 
-			for {
+			for i := 0; i < wantNumRepos; i++ {
 				select {
 				case res := <-results:
 					got = append(got, res.Repo)
 				case <-ctxWithTimeOut.Done():
-					t.Fatal(errors.New("timeout!"))
-				default:
-					if len(got) == 1 {
-						path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
-						testutil.AssertGolden(t, path, update(name), got)
-						return
-					}
+					t.Fatalf("timeout! expected %d repos, but so far only got %d", wantNumRepos, len(got))
 				}
 			}
+
+			path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
+			testutil.AssertGolden(t, path, update(name), got)
 		})
 	}
 

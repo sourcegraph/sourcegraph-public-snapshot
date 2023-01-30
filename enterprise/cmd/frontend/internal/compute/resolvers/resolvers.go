@@ -194,7 +194,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -202,7 +202,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 	results := make([]gql.ComputeResultResolver, 0, len(matches))
 	for _, m := range matches {
-		computeResult, err := cmd.Run(ctx, db, m)
+		computeResult, err := cmd.Run(ctx, m)
 		if err != nil {
 			return nil, err
 		}

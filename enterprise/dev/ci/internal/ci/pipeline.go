@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.3.0"
+	const minimumUpgradeableVersion = "4.4.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -91,6 +91,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	switch c.RunType {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
+	case runtype.WolfiExpBranch:
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(WolfiBaseImagesOperations(c.ChangedFiles[changed.WolfiBaseImages]))
+		}
+		if c.Diff.Has(changed.WolfiPackages) {
+			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.

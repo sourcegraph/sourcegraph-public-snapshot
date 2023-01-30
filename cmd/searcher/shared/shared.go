@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
@@ -23,16 +25,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,18 +48,6 @@ var (
 )
 
 const port = "3181"
-
-func frontendDB(observationCtx *observation.Context) (database.DB, error) {
-	logger := log.Scoped("frontendDB", "")
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
-	if err != nil {
-		return nil, err
-	}
-	return database.NewDB(logger, sqlDB), nil
-}
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
@@ -134,11 +124,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to frontend database")
-	}
-	git := gitserver.NewClient(db)
+	git := gitserver.NewClient()
 
 	service := &search.Service{
 		Store: &search.Store{
@@ -170,7 +156,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			MaxCacheSizeBytes: cacheSizeBytes,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
-			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),
@@ -193,7 +178,12 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
+	reflection.Register(grpcServer)
+	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
+		Service: service,
+	})
 
 	host := ""
 	if env.InsecureDev {
@@ -207,7 +197,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -215,8 +205,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				return
 			}
 			handler.ServeHTTP(w, r)
-		}),
+		})),
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Listen
 	g.Go(func() error {

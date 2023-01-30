@@ -574,6 +574,16 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-k8s',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`sg ops update-images -pin-tag ${release.version} base/`],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-docker',
                         base: `${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
@@ -586,7 +596,7 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
-                        repo: 'https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1',
+                        repo: 'deploy-sourcegraph-docker-customer-replica-1',
                         base: `${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,

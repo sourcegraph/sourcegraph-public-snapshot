@@ -168,6 +168,9 @@ const config = {
       new WebpackManifestPlugin({
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
+        seed: {
+          environment: NODE_ENV,
+        },
         // Only output files that are required to run the application.
         filter: ({ isInitial, name }) =>
           isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),

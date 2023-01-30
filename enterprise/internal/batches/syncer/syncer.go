@@ -495,7 +495,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(s.syncStore.DatabaseDB()), source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and

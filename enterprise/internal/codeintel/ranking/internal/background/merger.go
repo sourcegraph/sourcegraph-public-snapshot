@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -55,7 +53,7 @@ func NewRankMerger(
 }
 
 func (m *rankMerger) mergeRanks(ctx context.Context, config RankMergerConfig) (err error) {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if m.resultsBucket == nil {
 		return nil
 	}
 

@@ -32,7 +32,8 @@ function preservedQuery(query: string): string {
  * flow.
  */
 export function submitSearch({
-    history,
+    historyOrNavigate,
+    location,
     query,
     patternType,
     caseSensitive,
@@ -48,7 +49,7 @@ export function submitSearch({
         searchMode
     )
 
-    const preserved = preservedQuery(history.location.search)
+    const preserved = preservedQuery(location.search)
     if (preserved !== '') {
         searchQueryParameter = searchQueryParameter + '&' + preserved
     }
@@ -65,5 +66,11 @@ export function submitSearch({
         },
         { source }
     )
-    history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
+    const state = { ...(typeof location.state === 'object' ? location.state : null), query }
+
+    if (typeof historyOrNavigate === 'function') {
+        historyOrNavigate(path, { state })
+    } else {
+        historyOrNavigate.push(path, state)
+    }
 }

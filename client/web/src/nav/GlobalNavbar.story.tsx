@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -17,16 +16,12 @@ import { ThemePreference } from '../theme'
 
 import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
 
-const history = createMemoryHistory()
-
 const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     isSourcegraphDotCom: false,
     settingsCascade: {
         final: null,
         subjects: null,
     },
-    location: history.location,
-    history,
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
