@@ -914,7 +914,7 @@ input Event {
 }
 
 """
-TODO
+The external service configuration used to retrieve a list of repositories.
 """
 input ExternalServiceRepositoriesInput {
     """
@@ -922,21 +922,17 @@ input ExternalServiceRepositoriesInput {
     """
     kind: ExternalServiceKind!
     """
-    TODO
+    The secret token value that is used to authenticate.
     """
     token: String!
     """
-    TODO
+    The url of the external service.
     """
     url: String!
-    """
-    TODO
-    """
-    config: String!
 }
 
 """
-TODO
+The external service configuration used to retrieve a list of namespaces.
 """
 input ExternalServiceNamespacesInput {
     """
@@ -944,11 +940,11 @@ input ExternalServiceNamespacesInput {
     """
     kind: ExternalServiceKind!
     """
-    TODO
+    The secret token value that is used to authenticate.
     """
     token: String!
     """
-    TODO
+    The url of the external service.
     """
     url: String!
 }
@@ -1323,11 +1319,12 @@ type Query {
         after: String
     ): ExternalServiceConnection!
     """
-    TODO
+    Lists all repositories for a given external service connection.
     """
     externalServiceRepositories(input: ExternalServiceRepositoriesInput!): ExternalServiceSourceRepositoryConnection!
     """
-    TODO
+    Lists all namespaces for a given external service connection.
+    A namespace is an entity on the code host that repositories are assignable to.
     """
     externalServiceNamespaces(input: ExternalServiceNamespacesInput!): ExternalServiceNamespaceConnection!
     """
@@ -2967,7 +2964,7 @@ type ExternalService implements Node {
 }
 
 """
-TODO: Desc
+A list of repositories available to an external service configuration.
 """
 type ExternalServiceSourceRepositoryConnection {
     """
@@ -2987,25 +2984,27 @@ type ExternalServiceSourceRepositoryConnection {
 }
 
 """
-TODO: Desc
+A repository sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
 """
 type ExternalServiceSourceRepo implements Node {
     """
-    TODO
+    The unique identifier of the external service repository.
     """
     id: ID!
     """
-    TODO
+    The name of the external service repository.
     """
     name: String!
     """
-    TODO
+    The repository's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
     """
     externalID: String!
 }
 
 """
-TODO: Desc
+A list of namespaces available to an external service configuration.
 """
 type ExternalServiceNamespaceConnection {
     """
@@ -3027,19 +3026,21 @@ type ExternalServiceNamespaceConnection {
 }
 
 """
-TODO: Desc
+A namespace sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
+before any sync or mirror operations.
 """
 type ExternalServiceNamespace implements Node {
     """
-    TODO
+    The unique identifier of the external service namespace.
     """
     id: ID!
     """
-    TODO
+    The name of the external service namespace.
     """
     name: String!
     """
-    TODO
+    The Namespace's ID on the external service.
+    Example: For GitHub, this is the GitHub GraphQL API's node ID for the organization.
     """
     externalID: String!
 }
