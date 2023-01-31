@@ -36,3 +36,4 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       chmod +x cs-x86_64-pc-linux
       cp cs-x86_64-pc-linux ${{targets.destdir}}/usr/local/bin/coursier
+# Modified
