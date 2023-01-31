@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -35,7 +35,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 				return nil
 			}
 
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
 				if err == nil {
 					return nil
@@ -86,7 +86,7 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 		if err != nil {
 			hasAccess := false
 			// allow invited user to view org details
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
 				if err == nil {
 					hasAccess = true
@@ -244,7 +244,7 @@ func (o *OrgResolver) SettingsCascade() *settingsCascade {
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -272,7 +272,7 @@ func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
@@ -298,7 +298,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	DisplayName *string
 	StatsID     *string
 }) (*OrgResolver, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
