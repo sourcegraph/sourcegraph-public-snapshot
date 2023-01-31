@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	soap "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -357,5 +358,60 @@ func TestMiddleware(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
 		mockrequire.Called(t, usersStore.HardDeleteFunc)
+	})
+
+	t.Run("lifetime expired, but is service account", func(t *testing.T) {
+		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:        id,
+				CreatedAt: time.Now().Add(-61 * time.Minute),
+			}, nil
+		})
+		accountData, err := soap.MarshalAccountData(soap.ExternalAccountData{
+			ServiceAccount: true,
+		})
+		require.NoError(t, err)
+		userExternalAccountsStore.ListFunc.SetDefaultReturn(
+			[]*extsvc.Account{
+				{
+					AccountSpec: extsvc.AccountSpec{
+						ServiceType: internalauth.SourcegraphOperatorProviderType,
+					},
+					AccountData: accountData,
+				},
+			},
+			nil,
+		)
+
+		state := &openidconnect.AuthnState{
+			CSRFToken:  "good",
+			Redirect:   "https://evil.com",
+			ProviderID: mockProvider.ConfigID().ID,
+		}
+		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+			require.Equal(t, testIDToken, rawIDToken)
+			return &oidc.IDToken{
+				Issuer:  oidcIDServer.URL,
+				Subject: testOIDCUser,
+				Expiry:  time.Now().Add(time.Hour),
+				Nonce:   state.Encode(),
+			}
+		}
+		defer func() { openidconnect.MockVerifyIDToken = nil }()
+
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
+		cookies := []*http.Cookie{
+			{
+				Name:  stateCookieName,
+				Value: state.Encode(),
+			},
+		}
+		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), "Found")
+		mockrequire.NotCalled(t, usersStore.HardDeleteFunc)
 	})
 }
