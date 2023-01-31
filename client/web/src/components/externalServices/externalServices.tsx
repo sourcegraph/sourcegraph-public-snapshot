@@ -88,6 +88,11 @@ export interface AddExternalServiceOptions {
      * Default external service configuration
      */
     defaultConfig: string
+
+    /**
+     * If present, denotes that we should show a status label, e.g. Beta or Experimental
+     */
+    status?: 'experimental' | 'beta'
 }
 
 const defaultModificationOptions: ModificationOptions = {
@@ -1276,6 +1281,7 @@ const GERRIT: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
+    status: 'beta',
 }
 
 const AZUREDEVOPS: AddExternalServiceOptions = {
