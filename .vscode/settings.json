@@ -37,7 +37,7 @@
     "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph"
   },
-  "jest.jestCommandLine": "pnpm test",
+  "jest.jestCommandLine": "pnpm run test",
   "jest.showCoverageOnLoad": false,
   "gulp.autoDetect": "off",
   "npm.packageManager": "pnpm",
