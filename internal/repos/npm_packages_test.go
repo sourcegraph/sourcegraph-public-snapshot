@@ -35,7 +35,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, _, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
@@ -67,7 +67,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 	for _, testCase := range testCases {
 		var depStrs []string
-		deps, _, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
@@ -100,7 +100,7 @@ func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	depsSvc := dependencies.TestService(db, nil)
 
-	_, _, err := depsSvc.InsertDependencyRepos(ctx, dependencyRepos)
+	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

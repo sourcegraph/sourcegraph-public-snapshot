@@ -206,7 +206,7 @@ type fakeDepsService struct {
 	upsertedDeps []dependencies.MinimalPackageRepoRef
 }
 
-func (s *fakeDepsService) InsertDependencyRepos(ctx context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
+func (s *fakeDepsService) InsertPackageRepoRefs(ctx context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
 	s.upsertedDeps = append(s.upsertedDeps, depsToAdd...)
 	for _, depToAdd := range depsToAdd {
 		if existingDep, exists := s.deps[depToAdd.Name]; exists {
@@ -246,7 +246,7 @@ func (s *fakeDepsService) InsertDependencyRepos(ctx context.Context, depsToAdd [
 	return
 }
 
-func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error) {
+func (s *fakeDepsService) ListPackageRepoRefs(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error) {
 	return []dependencies.PackageRepoReference{s.deps[opts.Name]}, 1, nil
 }
 

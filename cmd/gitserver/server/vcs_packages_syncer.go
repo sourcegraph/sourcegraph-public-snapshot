@@ -61,8 +61,8 @@ type packagesDownloadSource interface {
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
 // used to make testing easier.
 type dependenciesService interface {
-	ListDependencyRepos(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
-	InsertDependencyRepos(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
+	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
 }
 
 func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
@@ -153,7 +153,7 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		return nil
 	}
 
-	_, _, err = s.svc.InsertDependencyRepos(ctx, []dependencies.MinimalPackageRepoRef{
+	_, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
 			Scheme:   dep.Scheme(),
 			Name:     dep.PackageSyntax(),
@@ -338,7 +338,7 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 		}
 	}
 
-	listedPackages, _, err := s.svc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 		Scheme:              s.scheme,
 		Name:                packageName,
 		ExactNameOnly:       true,

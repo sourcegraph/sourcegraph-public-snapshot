@@ -25,5 +25,5 @@ type ExternalServiceStore interface {
 }
 
 type DependenciesService interface {
-	InsertDependencyRepos(ctx context.Context, deps []shared.MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error)
+	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error)
 }

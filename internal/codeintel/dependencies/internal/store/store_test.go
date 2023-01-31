@@ -42,7 +42,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	var allNewDeps []shared.PackageRepoReference
 	var allNewVersions []shared.PackageRepoRefVersion
 	for _, batch := range batches {
-		newDeps, newVersions, err := store.InsertDependencyRepos(ctx, batch)
+		newDeps, newVersions, err := store.InsertPackageRepoRefs(ctx, batch)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
 
-	have, _, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 }
 
-func TestListDependencyRepos(t *testing.T) {
+func TestListPackageRepoRefs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -104,7 +104,7 @@ func TestListDependencyRepos(t *testing.T) {
 		{Scheme: "npm", Name: "turtle", Versions: []string{"4.2.0"}}, // id=7
 	}
 
-	if _, _, err := store.InsertDependencyRepos(ctx, batches); err != nil {
+	if _, _, err := store.InsertPackageRepoRefs(ctx, batches); err != nil {
 		t.Fatal(err)
 	}
 
@@ -113,7 +113,7 @@ func TestListDependencyRepos(t *testing.T) {
 		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
 		{{Scheme: "npm", Name: "turtle"}},
 	} {
-		depRepos, _, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+		depRepos, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 			Scheme: "npm",
 			After:  lastID,
 			Limit:  3,
@@ -135,7 +135,7 @@ func TestListDependencyRepos(t *testing.T) {
 	}
 }
 
-func TestDeleteDependencyReposByID(t *testing.T) {
+func TestDeletePackageRepoRefsByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -154,18 +154,18 @@ func TestDeleteDependencyReposByID(t *testing.T) {
 		{Scheme: "npm", Name: "banan", Versions: []string{"4.2.0"}}, // deleted
 	}
 
-	if _, _, err := store.InsertDependencyRepos(ctx, repos); err != nil {
+	if _, _, err := store.InsertPackageRepoRefs(ctx, repos); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DeleteDependencyReposByID(ctx, 1); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := store.DeleteDependencyRepoVersionsByID(ctx, 3, 4); err != nil {
+	if err := store.DeletePackageRepoRefsByID(ctx, 1); err != nil {
 		t.Fatal(err)
 	}
 
-	have, _, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+	if err := store.DeletePackageRepoRefVersionsByID(ctx, 3, 4); err != nil {
+		t.Fatal(err)
+	}
+
+	have, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 		Scheme: shared.NpmPackagesScheme,
 	})
 	if err != nil {

@@ -160,7 +160,7 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			return err
 		}
 
-		newCrates, newVersions, err := b.dependenciesSvc.InsertDependencyRepos(ctx, pkgs)
+		newCrates, newVersions, err := b.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert Rust crate")
 		}

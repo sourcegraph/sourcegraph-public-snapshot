@@ -20,10 +20,10 @@ import (
 
 // Store provides the interface for package dependencies storage.
 type Store interface {
-	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error)
-	InsertDependencyRepos(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
-	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
-	DeleteDependencyRepoVersionsByID(ctx context.Context, ids ...int) (err error)
+	ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error)
+	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
+	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
+	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -51,7 +51,7 @@ type ListDependencyReposOpts struct {
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
-func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error) {
+func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, err error) {
 	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
@@ -156,7 +156,7 @@ func makeLimit(limit int) *sqlf.Query {
 
 // InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
 // [{npm, @types/nodejs, [v0.0.1]}, {npm, @types/nodejs, [v0.0.2]}] will be collapsed into [{npm, @types/nodejs, [v0.0.1, v0.0.2]}]
-func (s *store) InsertDependencyRepos(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error) {
+func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error) {
 	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numInputDeps", len(deps)),
 	}})
@@ -340,7 +340,7 @@ UNION
 `
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
-func (s *store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+func (s *store) DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
@@ -358,7 +358,7 @@ DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `
 
-func (s *store) DeleteDependencyRepoVersionsByID(ctx context.Context, ids ...int) (err error) {
+func (s *store) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
 	if len(ids) == 0 {
 		return nil
 	}

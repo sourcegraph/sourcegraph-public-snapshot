@@ -95,7 +95,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	const batchLimit = 100
 	var lastID int
 	for {
-		depRepos, _, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+		depRepos, _, err := s.depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme: s.scheme,
 			After:  lastID,
 			Limit:  batchLimit,

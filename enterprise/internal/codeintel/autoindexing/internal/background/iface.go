@@ -20,7 +20,7 @@ import (
 )
 
 type DependenciesService interface {
-	InsertDependencyRepos(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
 }
 
 type GitserverRepoStore interface {

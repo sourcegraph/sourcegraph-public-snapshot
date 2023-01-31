@@ -127,7 +127,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			continue
 		}
 
-		newRepo, newVersion, err := h.insertDependencyRepo(ctx, pkg)
+		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -240,8 +240,8 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	return &p, nil
 }
 
-func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (newRepos, newVersions bool, err error) {
-	insertedRepos, insertedVersions, err := h.depsSvc.InsertDependencyRepos(ctx, []dependencies.MinimalPackageRepoRef{
+func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package) (newRepos, newVersions bool, err error) {
+	insertedRepos, insertedVersions, err := h.depsSvc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
 			Name:     reposource.PackageName(pkg.Name),
 			Scheme:   pkg.Scheme,

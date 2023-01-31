@@ -46,7 +46,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		opts.After = *args.After
 	}
 
-	deps, total, err := depsService.ListDependencyRepos(ctx, opts)
+	deps, total, err := depsService.ListPackageRepoRefs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
