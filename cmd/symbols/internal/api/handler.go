@@ -9,15 +9,13 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -105,6 +103,7 @@ func NewHandler(
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
+
 	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
@@ -114,6 +113,7 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
+
 	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)

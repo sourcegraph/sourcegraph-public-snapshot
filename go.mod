@@ -200,6 +200,7 @@ require (
 	github.com/di-wu/parser v0.2.2 // indirect
 	github.com/di-wu/xsd-datetime v1.0.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
+	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/gosimple/slug v1.12.0 // indirect
@@ -230,6 +231,7 @@ require (
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
 	github.com/frankban/quicktest v1.14.3
+	github.com/fullstorydev/grpcui v1.3.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
 	github.com/hexops/autogold/v2 v2.0.3
