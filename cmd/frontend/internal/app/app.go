@@ -75,6 +75,12 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	// One-click export ZIP download
 	r.Get(router.OneClickExportArchive).Handler(trace.Route(oneClickExportHandler(db, logger)))
 
+	// Database Archive ZIP download
+	r.Get(router.ArchiveDownload).Handler(trace.Route(archiveDownloadHandler(logger, db)))
+
+	// Database Archive ZIP upload
+	r.Get(router.ArchiveUpload).Handler(trace.Route(archiveUploadHandler(logger, db)))
+
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
 

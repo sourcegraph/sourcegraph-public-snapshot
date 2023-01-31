@@ -168,6 +168,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/background-jobs',
             source: 'server',
         },
+        {
+            label: 'Archive & Restore',
+            to: '/site-admin/archive',
+        },
     ],
 }
 

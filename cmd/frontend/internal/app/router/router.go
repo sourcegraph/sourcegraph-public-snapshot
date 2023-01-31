@@ -39,6 +39,9 @@ const (
 
 	OneClickExportArchive = "one-click-export.archive"
 
+	ArchiveDownload = "archive.download"
+	ArchiveUpload   = "archive.upload"
+
 	LatestPing = "pings.latest"
 
 	SetupGitHubAppCloud = "setup.github.app.cloud"
@@ -102,6 +105,9 @@ func newRouter() *mux.Router {
 	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
 
 	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
+
+	base.Path("/site-admin/archive/download").Methods("GET").Name(ArchiveDownload)
+	base.Path("/site-admin/archive/upload").Methods("POST").Name(ArchiveUpload)
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
