@@ -17,7 +17,7 @@ Search subexpressions combine groups of
 [operators](../reference/queries.md#boolean-operators) like `or`. Compared to [basic examples](examples.md), search subexpressions allow more sophisticated queries.
 Here are examples of how they can help you:
 
-→ [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28Github+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal).
+→ [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28Github+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal)
 
 ```sgquery
  repo:sourcegraph ((Github case:yes) or (organisation case:no))
@@ -28,7 +28,7 @@ Here are examples of how they can help you:
 
 <br/>
 
-→ [Search for either a file name or file contents scoped to the same repository](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:html+%28file:router+or+newRouter%29&patternType=literal).
+→ [Search for either a file name or file contents scoped to the same repository](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:html+%28file:router+or+newRouter%29&patternType=literal)
 
 ```sgquery
 repo:sourcegraph -file:html (file:router or newRouter)
@@ -53,7 +53,7 @@ repo:sourcegraph -file:html (file:router or newRouter)
 > Combine matches of `hover(...)` in the `schema.graphql` file and matches of
  `Line` or `Character` in the `codeintel.go` file in the same repository. Useful
  for crafting queries that precisely match related fragments of a codebase to
- capture context and e.g., share with coworkers.
+ capture context and e.g. share with coworkers.
 
 > <sup>Note: The query is formatted for readability, it is valid as a single line query.</sup>
 
@@ -61,7 +61,7 @@ repo:sourcegraph -file:html (file:router or newRouter)
 <br/>
 
 
-→ [Search across multiple repositories at multiple revisions](https://sourcegraph.com/search?q=%28repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40v3.22.0:v3.22.1+or+repo:%5Egithub%5C.com/sourcegraph/src-cli%24%403.22.0:3.22.1%29+file:CHANGELOG+campaigns&patternType=literal).
+→ [Search across multiple repositories at multiple revisions](https://sourcegraph.com/search?q=%28repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40v3.22.0:v3.22.1+or+repo:%5Egithub%5C.com/sourcegraph/src-cli%24%403.22.0:3.22.1%29+file:CHANGELOG+campaigns&patternType=literal)
 
 ```sgquery
  (
@@ -80,9 +80,7 @@ repo:sourcegraph -file:html (file:router or newRouter)
 
 ### Fully parenthesize subexpressions
 
-It's best practice to parenthesize
-queries to avoid confusion. For example, there are multiple ways to group the
-query, which is not fully parenthesized:
+It's best practice to parenthesize queries to avoid confusion. For example, there are multiple ways to group this query, which is not fully parenthesized:
 
 ```sgquery
 repo:sourcegraph (Github case:yes) or (organisation case:no)
@@ -111,9 +109,7 @@ but it may not be what you intended:
 (repo:sourcegraph (Github case:yes)) or (organisation case:no)
 ```
 
-Fully parenthesizing subexpressions makes it clear what the intent is, so that
-you can avoid relying on conventions that may not interpret the query the way
-you intended.
+Fully parenthesizing subexpressions makes it clear what the intent is so that you can avoid relying on conventions that may not interpret the query the way you intended.
 
 
 ### Subexpression expansion
