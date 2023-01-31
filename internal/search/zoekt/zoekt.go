@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -99,6 +100,12 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		ChunkMatches: true,
 	}
 
+	// If we're searching repos, ignore the other options and only check one file per repo
+	if o.Selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+		return searchOpts
+	}
+
 	if o.Features.Debug {
 		searchOpts.DebugScore = true
 	}
@@ -127,21 +134,9 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// collect results before ranking.
 		searchOpts.FlushWallTime = 500 * time.Millisecond
 
-		// This enables the use of PageRank scores if they are available.
+		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
-
-		// This damps the impact of document ranks on the final ranking.
-		searchOpts.RanksDampingFactor = 0.5
-
-		return searchOpts
-	}
-
-	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
-
-	if o.Selector.Root() == filter.Repository {
-		searchOpts.ShardRepoMaxMatchCount = 1
+		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 	} else {
 		k := o.resultCountFactor()
 		searchOpts.ShardMaxMatchCount = 100 * k

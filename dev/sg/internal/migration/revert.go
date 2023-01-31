@@ -91,11 +91,11 @@ func Revert(databases []db.Database, commit string) error {
 func selectMigrationsDefinedInCommit(database db.Database, commit string) ([]int, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
-	output, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)
+	gitCmdOutput, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	versions := parseVersions(strings.Split(output, "\n"), migrationsDir)
+	versions := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
 	return versions, nil
 }

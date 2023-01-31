@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "rcache",
     srcs = [
-        "backwards.go",
         "fifo_list.go",
         "rcache.go",
     ],

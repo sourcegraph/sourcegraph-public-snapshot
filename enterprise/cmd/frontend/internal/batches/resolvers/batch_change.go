@@ -69,16 +69,16 @@ func (r *batchChangeResolver) Description() *string {
 }
 
 func (r *batchChangeResolver) State() string {
-	var state btypes.BatchChangeState
+	var batchChangeState btypes.BatchChangeState
 	if r.batchChange.Closed() {
-		state = btypes.BatchChangeStateClosed
+		batchChangeState = btypes.BatchChangeStateClosed
 	} else if r.batchChange.IsDraft() {
-		state = btypes.BatchChangeStateDraft
+		batchChangeState = btypes.BatchChangeStateDraft
 	} else {
-		state = btypes.BatchChangeStateOpen
+		batchChangeState = btypes.BatchChangeStateOpen
 	}
 
-	return state.ToGraphQL()
+	return batchChangeState.ToGraphQL()
 }
 
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {

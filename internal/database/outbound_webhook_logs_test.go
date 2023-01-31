@@ -40,9 +40,9 @@ func TestOutboundWebhookLogs(t *testing.T) {
 				want := errors.New("bad key")
 				key := &et.BadKey{Err: want}
 
-				log := newOutboundWebhookLogSuccess(t, job, webhook, 200, "req", "resp")
+				owLog := newOutboundWebhookLogSuccess(t, job, webhook, 200, "req", "resp")
 
-				have := OutboundWebhookLogsWith(store, key).Create(ctx, log)
+				have := OutboundWebhookLogsWith(store, key).Create(ctx, owLog)
 				assert.ErrorIs(t, have, want)
 			})
 

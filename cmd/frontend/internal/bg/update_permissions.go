@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UpdatePermissions is a startup process that compares the permissions in the database against those
@@ -16,40 +17,37 @@ import (
 // This method is called as part of the background process by the `frontend` service.
 func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
-	tx, err := db.Transact(ctx)
-	if err != nil {
-		scopedLog.Error("starting transaction", log.Error(err))
-		return
-	}
-	defer func() { tx.Done(err) }()
+	err := db.WithTransact(ctx, func(tx database.DB) error {
+		pstore := tx.Permissions()
 
-	pstore := tx.Permissions()
-
-	dbPerms, err := pstore.List(ctx)
-	if err != nil {
-		scopedLog.Error("fetching permissions from database", log.Error(err))
-		return
-	}
-
-	toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms)
-	scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
-
-	if len(toBeDeleted) > 0 {
-		// We delete all the permissions that need to be deleted from the database
-		err = pstore.BulkDelete(ctx, toBeDeleted)
+		dbPerms, err := pstore.List(ctx)
 		if err != nil {
-			scopedLog.Error("deleting redundant permissions", log.Error(err))
-			return
+			return errors.Wrap(err, "fetching permissions from database")
 		}
-	}
 
-	if len(toBeAdded) > 0 {
-		// Adding new permissions to the database
-		_, err = pstore.BulkCreate(ctx, toBeAdded)
-		if err != nil {
-			scopedLog.Error("creating new permissions", log.Error(err))
-			return
+		toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms)
+		scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
+
+		if len(toBeDeleted) > 0 {
+			// We delete all the permissions that need to be deleted from the database
+			err = pstore.BulkDelete(ctx, toBeDeleted)
+			if err != nil {
+				return errors.Wrap(err, "deleting redundant permissions")
+			}
 		}
-	}
 
+		if len(toBeAdded) > 0 {
+			// Adding new permissions to the database
+			_, err = pstore.BulkCreate(ctx, toBeAdded)
+			if err != nil {
+				return errors.Wrap(err, "creating new permissions")
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		scopedLog.Error("failed to update RBAC permissions", log.Error(err))
+	}
 }

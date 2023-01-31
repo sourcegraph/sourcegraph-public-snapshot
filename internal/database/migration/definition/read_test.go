@@ -16,12 +16,12 @@ const relativeWorkingDirectory = "internal/database/migration/definition"
 
 func TestReadDefinitions(t *testing.T) {
 	t.Run("well-formed", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "well-formed")
+		fsys, err := fs.Sub(testdata.Content, "well-formed")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "well-formed", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -40,12 +40,12 @@ func TestReadDefinitions(t *testing.T) {
 	})
 
 	t.Run("concurrent", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "concurrent")
+		fsys, err := fs.Sub(testdata.Content, "concurrent")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -76,12 +76,12 @@ func TestReadDefinitions(t *testing.T) {
 	})
 
 	t.Run("privileged", func(t *testing.T) {
-		fs, err := fs.Sub(testdata.Content, "privileged")
+		fsys, err := fs.Sub(testdata.Content, "privileged")
 		if err != nil {
 			t.Fatalf("unexpected error fetching schema %q: %s", "privileged", err)
 		}
 
-		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -124,12 +124,12 @@ func TestReadDefinitions(t *testing.T) {
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {
 	t.Helper()
 
-	fs, err := fs.Sub(testdata.Content, name)
+	fsys, err := fs.Sub(testdata.Content, name)
 	if err != nil {
 		t.Fatalf("unexpected error fetching schema %q: %s", name, err)
 	}
 
-	if _, err := ReadDefinitions(fs, relativeWorkingDirectory); err == nil || !strings.Contains(err.Error(), expectedError) {
+	if _, err := ReadDefinitions(fsys, relativeWorkingDirectory); err == nil || !strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("unexpected error. want=%q got=%q", expectedError, err)
 	}
 }

@@ -8,11 +8,11 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -130,7 +130,7 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 			return
 		}
 
-		result, err := searchFunc(r.Context(), args)
+		resultSymbols, err := searchFunc(r.Context(), args)
 		if err != nil {
 			// Ignore reporting errors where client disconnected
 			if r.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
@@ -150,7 +150,7 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: result}); err != nil {
+		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: resultSymbols}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}

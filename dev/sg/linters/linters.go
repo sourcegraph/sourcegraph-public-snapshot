@@ -90,6 +90,13 @@ var Targets = []Target{
 			bashSyntax,
 		},
 	},
+	{
+		Name:        "protobuf",
+		Description: "Check protobuf code for linting errors, formatting, etc",
+		Checks: []*linter{
+			bufFormat,
+		},
+	},
 	Formatting,
 }
 

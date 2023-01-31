@@ -16,6 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	azureDevOpsServicesURL = "https://dev.azure.com/"
+	// TODO: @varsanojidan look into which API version/s we want to support.
+	apiVersion = "7.0"
+)
+
 // Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
@@ -65,12 +71,10 @@ type ListRepositoriesByProjectOrOrgArgs struct {
 }
 
 func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	qs := make(url.Values)
+	queryParams := make(url.Values)
+	queryParams.Set("api-version", apiVersion)
 
-	// TODO: @varsanojidan look into which API version/s we want to support.
-	qs.Set("api-version", "7.0")
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: qs.Encode()}
+	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: queryParams.Encode()}
 
 	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
 	if err != nil {
@@ -78,16 +82,45 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRe
 	}
 
 	var repos ListRepositoriesResponse
-	if _, err = c.do(ctx, req, &repos); err != nil {
+	if _, err = c.do(ctx, req, "", &repos); err != nil {
 		return nil, err
 	}
 
 	return repos.Value, nil
 }
 
+// AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
+func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
+	queryParams := make(url.Values)
+
+	queryParams.Set("api-version", apiVersion)
+
+	urlProfile := url.URL{Path: "/_apis/profile/profiles/me", RawQuery: queryParams.Encode()}
+
+	req, err := http.NewRequest("GET", urlProfile.String(), nil)
+	if err != nil {
+		return Profile{}, err
+	}
+
+	var p Profile
+	if _, err = c.do(ctx, req, "https://app.vssps.visualstudio.com", &p); err != nil {
+		return Profile{}, err
+	}
+
+	return p, nil
+}
+
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	req.URL = c.URL.ResolveReference(req.URL)
+func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (*http.Response, error) {
+	var err error
+	u := c.URL
+	if urlOverride != "" {
+		u, err = url.Parse(urlOverride)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req.URL = u.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
 	c.auth.Authenticate(req)
@@ -139,6 +172,12 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 	}, nil
 }
 
+// IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
+// Services (https://dev.azure.com
+func (c *Client) IsAzureDevOpsServices() bool {
+	return c.URL.String() == azureDevOpsServicesURL
+}
+
 type ListRepositoriesResponse struct {
 	Value []Repository `json:"value"`
 	Count int          `json:"count"`
@@ -161,6 +200,12 @@ type Project struct {
 	State      string `json:"state"`
 	Revision   int    `json:"revision"`
 	Visibility string `json:"visibility"`
+}
+
+type Profile struct {
+	ID           string `json:"id"`
+	DisplayName  string `json:"displayName"`
+	EmailAddress string `json:"emailAddress"`
 }
 
 type httpError struct {

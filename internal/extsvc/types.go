@@ -139,6 +139,7 @@ const (
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
 	KindAzureDevOps     = "AZUREDEVOPS"
+	KindSCIM            = "SCIM"
 	KindOther           = "OTHER"
 )
 

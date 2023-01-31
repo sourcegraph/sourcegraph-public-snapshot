@@ -310,7 +310,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 		go func(projectQuery string) {
 			defer wg.Done()
 
-			url, err := projectQueryToURL(projectQuery, perPage) // first page URL
+			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
 			if err != nil {
 				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
 				return
@@ -321,16 +321,16 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{err: err}
 					return
 				}
-				projects, nextPageURL, err := s.client.ListProjects(ctx, url)
+				projects, nextPageURL, err := s.client.ListProjects(ctx, urlStr)
 				if err != nil {
-					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", url)}
+					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", urlStr)}
 					return
 				}
 				ch <- batch{projs: projects}
 				if nextPageURL == nil {
 					return
 				}
-				url = *nextPageURL
+				urlStr = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
 				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))

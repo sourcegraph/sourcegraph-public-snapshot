@@ -30,6 +30,7 @@ Use this to start your Sourcegraph environment!
 Available comamndsets in `sg.config.yaml`:
 
 * api-only
+* app
 * batches 🦡
 * codeintel
 * dotcom
@@ -37,12 +38,10 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
-* enterprise-single-program
 * iam
 * monitoring
 * monitoring-alerts
 * oss
-* oss-single-program
 * oss-web-standalone
 * oss-web-standalone-prod
 * otel
@@ -129,7 +128,8 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
-* web-integration-build: Build web application for integration tests
+* web-integration-build-prod: Build production web application for integration tests
+* web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
@@ -455,6 +455,15 @@ Flags:
 ### sg lint shell
 
 Check shell code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg lint protobuf
+
+Check protobuf code for linting errors, formatting, etc.
 
 
 Flags:

@@ -163,12 +163,12 @@ func Squash(database db.Database, commit string, inContainer, runInTimescaleDBCo
 func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
-	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
+	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
 		return definition.Definition{}, false, err
 	}
 
-	versionsAtCommit := parseVersions(strings.Split(output, "\n"), migrationsDir)
+	versionsAtCommit := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
 
 	filteredDefinitions, err := ds.Filter(versionsAtCommit)
 	if err != nil {
@@ -277,8 +277,8 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 
 	var dbs []*sql.DB
 	defer func() {
-		for _, db := range dbs {
-			_ = db.Close()
+		for _, dbHandle := range dbs {
+			_ = dbHandle.Close()
 		}
 	}()
 
@@ -530,8 +530,8 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 	allDefinitions := ds.All()
 
 	allIDs := make([]int, 0, len(allDefinitions))
-	for _, definition := range allDefinitions {
-		allIDs = append(allIDs, definition.ID)
+	for _, def := range allDefinitions {
+		allIDs = append(allIDs, def.ID)
 	}
 
 	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
@@ -540,16 +540,16 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 	}
 
 	keep := make(map[int]struct{}, len(properDescendants))
-	for _, definition := range properDescendants {
-		keep[definition.ID] = struct{}{}
+	for _, def := range properDescendants {
+		keep[def.ID] = struct{}{}
 	}
 
 	// Gather the set of filtered that are NOT a proper descendant of the given target version.
 	// This will leave us with the ancestors of the target version (including itself).
 	filteredIDs := make([]int, 0, len(allDefinitions))
-	for _, definition := range allDefinitions {
-		if _, ok := keep[definition.ID]; !ok {
-			filteredIDs = append(filteredIDs, definition.ID)
+	for _, def := range allDefinitions {
+		if _, ok := keep[def.ID]; !ok {
+			filteredIDs = append(filteredIDs, def.ID)
 		}
 	}
 
