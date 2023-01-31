@@ -18,7 +18,7 @@ var clearRedisCache = ff.ClearEvaluatedFlagFromCache
 type FeatureFlagStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) FeatureFlagStore
-	Transact(context.Context) (FeatureFlagStore, error)
+	WithTransact(context.Context, func(FeatureFlagStore) error) error
 	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	DeleteFeatureFlag(context.Context, string) error
@@ -51,9 +51,10 @@ func (f *featureFlagStore) With(other basestore.ShareableStore) FeatureFlagStore
 	return &featureFlagStore{Store: f.Store.With(other)}
 }
 
-func (f *featureFlagStore) Transact(ctx context.Context) (FeatureFlagStore, error) {
-	txBase, err := f.Store.Transact(ctx)
-	return &featureFlagStore{Store: txBase}, err
+func (f *featureFlagStore) WithTransact(ctx context.Context, fn func(FeatureFlagStore) error) error {
+	return f.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return fn(&featureFlagStore{Store: tx})
+	})
 }
 
 func (f *featureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {

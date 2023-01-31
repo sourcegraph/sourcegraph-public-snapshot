@@ -129,8 +129,7 @@ type EventLogStore interface {
 	// '%codeintel%' events in the event_logs table.
 	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
 
-	Transact(ctx context.Context) (EventLogStore, error)
-	Done(error) error
+	WithTransact(context.Context, func(EventLogStore) error) error
 	With(other basestore.ShareableStore) EventLogStore
 	basestore.ShareableStore
 }
@@ -148,9 +147,10 @@ func (l *eventLogStore) With(other basestore.ShareableStore) EventLogStore {
 	return &eventLogStore{Store: l.Store.With(other)}
 }
 
-func (l *eventLogStore) Transact(ctx context.Context) (EventLogStore, error) {
-	txBase, err := l.Store.Transact(ctx)
-	return &eventLogStore{Store: txBase}, err
+func (l *eventLogStore) WithTransact(ctx context.Context, f func(EventLogStore) error) error {
+	return l.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&eventLogStore{Store: tx})
+	})
 }
 
 // SanitizeEventURL makes the given URL is using HTTP/HTTPS scheme and within
