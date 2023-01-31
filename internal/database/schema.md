@@ -1191,6 +1191,21 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 **src_cli_version**: The version of src-cli used by the executor.
 
+# Table "public.executor_job_tokens"
+```
+    Column    |  Type   | Collation | Nullable |                     Default                     
+--------------+---------+-----------+----------+-------------------------------------------------
+ id           | integer |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea   |           | not null | 
+ job_id       | bigint  |           | not null | 
+ queue        | text    |           | not null | 
+Indexes:
+    "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
+    "executor_job_tokens_job_id_queue_key" UNIQUE CONSTRAINT, btree (job_id, queue)
+    "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
+
+```
+
 # Table "public.executor_secret_access_logs"
 ```
        Column       |           Type           | Collation | Nullable |                         Default                         

@@ -1921,6 +1921,23 @@ CREATE SEQUENCE executor_heartbeats_id_seq
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 
+CREATE TABLE executor_job_tokens (
+    id integer NOT NULL,
+    value_sha256 bytea NOT NULL,
+    job_id bigint NOT NULL,
+    queue text NOT NULL
+);
+
+CREATE SEQUENCE executor_job_tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_job_tokens_id_seq OWNED BY executor_job_tokens.id;
+
 CREATE TABLE executor_secret_access_logs (
     id integer NOT NULL,
     executor_secret_id integer NOT NULL,
@@ -4058,6 +4075,8 @@ ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('ev
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
+ALTER TABLE ONLY executor_job_tokens ALTER COLUMN id SET DEFAULT nextval('executor_job_tokens_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval('executor_secret_access_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
@@ -4293,6 +4312,15 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_job_tokens
+    ADD CONSTRAINT executor_job_tokens_job_id_queue_key UNIQUE (job_id, queue);
+
+ALTER TABLE ONLY executor_job_tokens
+    ADD CONSTRAINT executor_job_tokens_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_job_tokens
+    ADD CONSTRAINT executor_job_tokens_value_sha256_key UNIQUE (value_sha256);
 
 ALTER TABLE ONLY executor_secret_access_logs
     ADD CONSTRAINT executor_secret_access_logs_pkey PRIMARY KEY (id);
