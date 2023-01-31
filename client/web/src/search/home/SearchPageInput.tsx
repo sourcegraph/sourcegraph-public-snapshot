@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
@@ -52,8 +52,6 @@ interface Props
         SearchContextInputProps,
         Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     /** Whether globbing is enabled for filters. */
     globbing: boolean
@@ -71,6 +69,9 @@ const queryStateSelector = (
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
     const applySuggestionsOnEnter =
@@ -86,8 +87,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 submitSearch({
                     source: 'home',
                     query,
-                    historyOrNavigate: props.history,
-                    location: props.history.location,
+                    historyOrNavigate: navigate,
+                    location,
                     patternType,
                     caseSensitive,
                     searchMode,
@@ -101,7 +102,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         [
             props.queryState.query,
             props.selectedSearchContextSpec,
-            props.history,
+            navigate,
+            location,
             patternType,
             caseSensitive,
             searchMode,
@@ -152,7 +154,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
-            history={props.history}
         />
     ) : (
         <SearchBox

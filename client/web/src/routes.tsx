@@ -1,6 +1,6 @@
-import * as React from 'react'
+import { useEffect } from 'react'
 
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -25,10 +25,20 @@ const InstallGitHubAppSuccessPage = lazyComponent(
     () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
     'InstallGitHubAppSuccessPage'
 )
+const RedirectToUserSettings = lazyComponent(
+    () => import('./user/settings/RedirectToUserSettings'),
+    'RedirectToUserSettings'
+)
+const RedirectToUserPage = lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage')
+const OrgsArea = lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea')
+const ResetPasswordPage = lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage')
+const ApiConsole = lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole')
+const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
+const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
+const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 
-export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
-    extends RouteComponentProps<RouteParameters>,
-        Omit<LayoutProps, 'match'>,
+export interface LayoutRouteComponentProps
+    extends Omit<LayoutProps, 'match'>,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -39,24 +49,23 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
     isMacPlatform: boolean
 }
 
-export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
+export interface LayoutRouteProps {
     path: string
-    exact?: boolean
-    render: (props: LayoutRouteComponentProps<Parameters_>) => React.ReactNode
+    render: (props: LayoutRouteComponentProps) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (
-        props: Omit<LayoutRouteComponentProps<Parameters_>, 'location' | 'history' | 'match' | 'staticContext'>
-    ) => boolean
+    condition?: (props: LayoutRouteComponentProps) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
-function passThroughToServer(): React.ReactNode {
-    window.location.reload()
+const PassThroughToServer: React.FC = () => {
+    useEffect(() => {
+        window.location.reload()
+    })
     return null
 }
 
@@ -66,17 +75,15 @@ function passThroughToServer(): React.ReactNode {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps<any>[] = (
+export const routes: readonly LayoutRouteProps[] = (
     [
         {
             path: PageRoutes.Index,
-            render: () => <Redirect to={PageRoutes.Search} />,
-            exact: true,
+            render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
             path: PageRoutes.Search,
             render: props => <SearchPageWrapper {...props} />,
-            exact: true,
         },
         {
             path: PageRoutes.SearchConsole,
@@ -86,31 +93,26 @@ export const routes: readonly LayoutRouteProps<any>[] = (
                 return showMultilineSearchConsole ? (
                     <SearchConsolePage {...props} />
                 ) : (
-                    <Redirect to={PageRoutes.Search} />
+                    <Navigate replace={true} to={PageRoutes.Search} />
                 )
             },
-            exact: true,
         },
         {
             path: PageRoutes.SignIn,
             render: props => <SignInPage {...props} context={window.context} />,
-            exact: true,
         },
         {
             path: PageRoutes.SignUp,
             render: props => <SignUpPage {...props} context={window.context} />,
-            exact: true,
         },
         {
             path: PageRoutes.UnlockAccount,
             render: props => <UnlockAccountPage {...props} context={window.context} />,
-            exact: true,
         },
         {
             path: PageRoutes.Welcome,
             // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-            render: props => <Redirect to={PageRoutes.Search} />,
-            exact: true,
+            render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
             path: PageRoutes.InstallGitHubAppSuccess,
@@ -118,19 +120,18 @@ export const routes: readonly LayoutRouteProps<any>[] = (
         },
         {
             path: PageRoutes.Settings,
-            render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
+            render: props => <RedirectToUserSettings {...props} />,
         },
         {
             path: PageRoutes.User,
-            render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
+            render: props => <RedirectToUserPage {...props} />,
         },
         {
             path: PageRoutes.Organizations,
-            render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
+            render: props => <OrgsArea {...props} />,
         },
         {
             path: PageRoutes.SiteAdminInit,
-            exact: true,
             render: props => <SiteInitPage {...props} context={window.context} />,
         },
         {
@@ -146,34 +147,32 @@ export const routes: readonly LayoutRouteProps<any>[] = (
         },
         {
             path: PageRoutes.PasswordReset,
-            render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
-            exact: true,
+            render: props => <ResetPasswordPage {...props} />,
         },
         {
             path: PageRoutes.ApiConsole,
-            render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
-            exact: true,
+            render: () => <ApiConsole />,
         },
         {
             path: PageRoutes.UserArea,
-            render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
+            render: props => <UserArea {...props} />,
         },
         {
             path: PageRoutes.Survey,
-            render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
+            render: props => <SurveyPage {...props} />,
         },
         {
             path: PageRoutes.Help,
-            render: passThroughToServer,
+            render: () => <PassThroughToServer />,
         },
         {
             path: PageRoutes.Debug,
-            render: passThroughToServer,
+            render: () => <PassThroughToServer />,
         },
         ...communitySearchContextsRoutes,
         {
             path: PageRoutes.RepoContainer,
-            render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+            render: props => <RepoContainer {...props} />,
         },
-    ] as readonly (LayoutRouteProps<any> | undefined)[]
-).filter(Boolean) as readonly LayoutRouteProps<any>[]
+    ] as readonly (LayoutRouteProps | undefined)[]
+).filter(Boolean) as readonly LayoutRouteProps[]

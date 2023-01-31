@@ -17152,6 +17152,19 @@
           "Comment": ""
         },
         {
+          "Name": "no_perms",
+          "Index": 21,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "num_failures",
           "Index": 10,
           "TypeName": "integer",

@@ -86,7 +86,7 @@ func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: ids,
 		Options: opts,
-		Reason:  permssync.ReasonGitHubUserEvent,
+		Reason:  database.ReasonGitHubUserEvent,
 	})
 
 	return nil
