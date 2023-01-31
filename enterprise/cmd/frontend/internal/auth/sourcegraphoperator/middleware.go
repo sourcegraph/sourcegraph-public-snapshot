@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -202,6 +203,18 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
 					return
 				}
+
+				if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, result.User.ID, types.SiteAdministratorSystemRole); err != nil {
+					logger.Error("failed to assign SITE_ADMINISTRATOR role to Sourcegraph Operator")
+					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
+					return
+				}
+			}
+
+			if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, result.User.ID, types.UserSystemRole); err != nil {
+				logger.Error("failed to assign USER role to Sourcegraph Operator")
+				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
+				return
 			}
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid the open-redirect vulnerability.

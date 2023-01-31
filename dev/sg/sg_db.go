@@ -192,6 +192,10 @@ func dbAddUserAction(cmd *cli.Context) error {
 		return err
 	}
 
+	if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, user.ID, types.SiteAdministratorSystemRole); err != nil {
+		return err
+	}
+
 	// Report back the new user information.
 	std.Out.WriteSuccessf(
 		// the space after the last %s is so the user can select the password easily in the shell to copy it.

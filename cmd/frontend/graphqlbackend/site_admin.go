@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -323,6 +324,10 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	}
 
 	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+		return nil, err
+	}
+
+	if _, err = r.db.UserRoles().AssignSystemRoleToUser(ctx, affectedUserID, types.SiteAdministratorSystemRole); err != nil {
 		return nil, err
 	}
 

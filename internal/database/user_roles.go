@@ -43,6 +43,8 @@ type BulkCreateForUserOpts struct {
 type UserRoleStore interface {
 	basestore.ShareableStore
 
+	// AssignSystemRoleToUser assigns a system role to a user
+	AssignSystemRoleToUser(ctx context.Context, userID int32, role types.SystemRole) (*types.UserRole, error)
 	// Create inserts the given user and role relationship into the database.
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
 	// BulkCreateForUser assigns multiple roles to a single user. This is useful
@@ -88,6 +90,31 @@ INSERT INTO
 VALUES %s
 RETURNING %s;
 `
+
+func (r *userRoleStore) AssignSystemRoleToUser(ctx context.Context, userID int32, role types.SystemRole) (*types.UserRole, error) {
+	if userID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if role == "" {
+		return nil, errors.New("missing role")
+	}
+
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", role)
+
+	q := sqlf.Sprintf(
+		userRoleCreateQueryFmtStr,
+		sqlf.Join(userRoleInsertColumns, ", "),
+		sqlf.Sprintf("( %s, %s )", userID, roleQuery),
+		sqlf.Join(userRoleColumns, ", "),
+	)
+
+	rm, err := scanUserRole(r.QueryRow(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning user role")
+	}
+	return rm, nil
+}
 
 func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error) {
 	if opts.UserID == 0 {

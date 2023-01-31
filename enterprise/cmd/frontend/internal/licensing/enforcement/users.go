@@ -94,6 +94,11 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
 				return err
 			}
+
+			// Assign site administrator role to this user
+			if _, err := tx.UserRoles().AssignSystemRoleToUser(ctx, user.ID, types.SiteAdministratorSystemRole); err != nil {
+				return err
+			}
 		}
 
 		return nil
