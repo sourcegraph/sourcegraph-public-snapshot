@@ -23,6 +23,42 @@ export interface AuthProvider {
     serviceID: string
 }
 
+export interface JsContextCurrentUser {
+    ID: number
+    DatabaseID: number
+    Username: string
+    AvatarURL: string
+    DisplayName: string
+    SiteAdmin: boolean
+    URL: string
+    SettingsURL: string
+    ViewerCanAdminister: boolean
+    Tags: string[]
+    TosAccepted: boolean
+    Searchable: boolean
+    Organizations: {
+        ID: number
+        Name: string
+        DisplayName: string
+        CreatedAt: string
+        UpdatedAt: string
+    }[]
+    CanSignOut: boolean
+    Emails: {
+        UserID: number
+        Email: string
+        CreatedAt: string
+        VerificationCode: string
+        VerifiedAt: string
+        LastVerificationSentAt: string
+        Primary: boolean
+    }[]
+    LatestSettings: {
+        ID: number
+        Contents: string
+    }
+}
+
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     userAgentIsBot: boolean
@@ -31,6 +67,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
+    readonly CurrentUser: JsContextCurrentUser
 
     readonly sentryDSN: string | null
 

@@ -1,12 +1,12 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 
-import { logger } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from './backend/graphql'
+import { JsContextCurrentUser } from './jscontext'
 
 /**
  * Always represents the latest state of the currently authenticated user.
@@ -15,6 +15,13 @@ import { requestGraphQL } from './backend/graphql'
  * in, sign out, and account changes all require a full-page reload in the browser to take effect.
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
+
+/**
+ * Represent the current user info on the initial application load. Instead waiting for the `currentAuthStateQuery` query
+ * we use the value provided us from the server. Subsequent updates are done received via `authenticatedUser`.
+ */
+export const authenticatedUserValue = jsContextCurrentUserToAuthenticatedUser(window.context.CurrentUser)
+authenticatedUser.next(authenticatedUserValue)
 
 export type AuthenticatedUser = SharedAuthenticatedUser
 
@@ -46,12 +53,51 @@ export const authRequired = authenticatedUser.pipe(
     map(user => user === null && typeof window !== 'undefined' && !window.context?.sourcegraphDotComMode)
 )
 
-// Populate authenticatedUser.
-if (typeof window !== 'undefined' && window.context?.isAuthenticatedUser) {
-    refreshAuthenticatedUser()
-        .toPromise()
-        .then(() => undefined)
-        .catch(error => logger.error(error))
-} else {
-    authenticatedUser.next(null)
+/**
+ * Convert `JsContextCurrentUser` to `AuthenticatedUser` received from the GraphQL query `currentAuthStateQuery`.
+ * Using pre-loaded user information allows us to skip this query on the inital render of the application.
+ */
+function jsContextCurrentUserToAuthenticatedUser(user: JsContextCurrentUser): AuthenticatedUser | null {
+    if (!user) {
+        return null
+    }
+
+    return {
+        __typename: 'User',
+        id: String(user.ID),
+        databaseID: user.DatabaseID,
+        username: user.Username,
+        avatarURL: user.AvatarURL,
+        displayName: user.DisplayName,
+        siteAdmin: user.SiteAdmin,
+        tags: user.Tags,
+        url: user.URL,
+        settingsURL: user.SettingsURL,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: user.Organizations.map(org => ({
+                __typename: 'Org',
+                id: String(org.ID),
+                name: org.Name,
+                displayName: org.DisplayName,
+                url: `/organizations/${org.Name}`,
+                settingsURL: `/organizations/${org.Name}/settings`,
+            })),
+        },
+        session: {
+            canSignOut: user.CanSignOut,
+        },
+        viewerCanAdminister: user.ViewerCanAdminister,
+        tosAccepted: user.TosAccepted,
+        searchable: user.Searchable,
+        emails: user.Emails.map(emailItem => ({
+            email: emailItem.Email,
+            verified: Boolean(emailItem.VerifiedAt),
+            isPrimary: emailItem.Primary,
+        })),
+        latestSettings: {
+            id: user.LatestSettings.ID,
+            contents: user.LatestSettings.Contents,
+        },
+    }
 }
