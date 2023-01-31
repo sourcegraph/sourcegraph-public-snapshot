@@ -1165,13 +1165,13 @@ def go_dependencies():
         name = "com_github_cloudflare_circl",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/cloudflare/circl",
-        sum = "h1:Anq00jxDtoyX3+aCaYUZ0vXC5r4k4epberfWGDXV1zE=",
         patches = [
             "//third_party/com_github_cloudflare_circl:math_fp25519_BUILD_bazel.patch",  # keep
             "//third_party/com_github_cloudflare_circl:math_fp448_BUILD_bazel.patch",  # keep
             "//third_party/com_github_cloudflare_circl:dh_x25519_BUILD_bazel.patch",  # keep
             "//third_party/com_github_cloudflare_circl:dh_x448_BUILD_bazel.patch",  # keep
         ],
+        sum = "h1:Anq00jxDtoyX3+aCaYUZ0vXC5r4k4epberfWGDXV1zE=",
         version = "v1.3.0",
     )
 
@@ -1787,6 +1787,21 @@ def go_dependencies():
         version = "v0.0.0-20200911182023-62edffca9245",
     )
     go_repository(
+        name = "com_github_di_wu_parser",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/di-wu/parser",
+        sum = "h1:I9oHJ8spBXOeL7Wps0ffkFFFiXJf/pk7NX9lcAMqRMU=",
+        version = "v0.2.2",
+    )
+    go_repository(
+        name = "com_github_di_wu_xsd_datetime",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/di-wu/xsd-datetime",
+        sum = "h1:vZoGNkbzpBNoc+JyfVLEbutNDNydYV8XwHeV7eUJoxI=",
+        version = "v1.0.0",
+    )
+
+    go_repository(
         name = "com_github_digitalocean_godo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/digitalocean/godo",
@@ -2004,6 +2019,14 @@ def go_dependencies():
         sum = "h1:yUdfgN0XgIJw7foRItutHYUIhlcKzcSf5vDpdhQAKTc=",
         version = "v0.0.0-20180725130230-947c36da3153",
     )
+    go_repository(
+        name = "com_github_elimity_com_scim",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/elimity-com/scim",
+        sum = "h1:6fUaAaX4Xe07LhVrHNmpfnlU41Nsto4skz4vhVqGwYk=",
+        version = "v0.0.0-20220121082953-15165b1a61c8",
+    )
+
     go_repository(
         name = "com_github_emicklei_go_restful",
         build_file_proto_mode = "disable_global",
@@ -5016,8 +5039,8 @@ def go_dependencies():
         name = "com_github_microcosm_cc_bluemonday",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/microcosm-cc/bluemonday",
-        sum = "h1:dNH3e4PSyE4vNX+KlRGHT5KrSvjeUkoNPwEORjffHJg=",
-        version = "v1.0.21",
+        sum = "h1:p2tT7RNzRdCi0qmwxG+HbqD6ILkmwter1ZwVZn1oTxA=",
+        version = "v1.0.22",
     )
     go_repository(
         name = "com_github_microsoft_go_winio",
@@ -6238,6 +6261,13 @@ def go_dependencies():
         sum = "h1:VcmmNRO+eFN3B0m5dta6FXYXY+MEJmXdWoIS+jjssQM=",
         version = "v3.8.5",
     )
+    go_repository(
+        name = "com_github_scim2_filter_parser_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/scim2/filter-parser/v2",
+        sum = "h1:QGadEcsmypxg8gYChRSM2j1edLyE/2j72j+hdmI4BJM=",
+        version = "v2.2.0",
+    )
 
     go_repository(
         name = "com_github_sclevine_agouti",
@@ -6590,8 +6620,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:PfXc9P7gulVNg+uDkGN+bSkQuKAm0mwii6YRDsYBH3M=",
-        version = "v0.0.0-20230124062116-f4df546826ea",
+        sum = "h1:MEvC8UWR19i4EQWMdN4AYNCkubEZYn86MPZ+ENp6JDI=",
+        version = "v0.0.0-20230127201130-f6d0aa0032d5",
     )
 
     go_repository(

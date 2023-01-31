@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scim",
+    srcs = [
+        "init.go",
+        "user.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/scim",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//enterprise/internal/codeintel",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/observation",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_elimity_com_scim//:scim",
+        "@com_github_elimity_com_scim//optional",
+        "@com_github_elimity_com_scim//schema",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "scim_test",
+    srcs = ["user_test.go"],
+    embed = [":scim"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/observation",
+        "//internal/types",
+        "@com_github_elimity_com_scim//:scim",
+        "@com_github_scim2_filter_parser_v2//:filter-parser",
+        "@com_github_stretchr_testify//require",
+    ],
+)

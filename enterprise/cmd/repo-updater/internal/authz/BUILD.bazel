@@ -65,7 +65,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/authz/permssync",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/extsvc",
