@@ -34,9 +34,8 @@ func TestReindexUploads(t *testing.T) {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("upload missing")
-		_ = upload // TODO
-		// } else if !upload.ShouldReindex {
-		// 	t.Fatal("upload not marked for reindexing")
+	} else if !upload.ShouldReindex {
+		t.Fatal("upload not marked for reindexing")
 	}
 }
 
@@ -57,8 +56,7 @@ func TestReindexUploadByID(t *testing.T) {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("upload missing")
-		_ = upload // TODO
-		// } else if !upload.ShouldReindex {
-		// 	t.Fatal("upload not marked for reindexing")
+	} else if !upload.ShouldReindex {
+		t.Fatal("upload not marked for reindexing")
 	}
 }
