@@ -57,7 +57,7 @@ See the Terraform Modules for additional configurations.
 
 ## Terraform Version
 
-Terraform modules `4.2.x` and above allow Terraform from `1.1.x` to `< 2.x` to be used. 
+Terraform modules `4.2.x` and above allow Terraform from `1.1.x` to `< 2.x` to be used.
 
 If using a Terraform module `4.1.x` or below, use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
 1.1+.
@@ -330,7 +330,7 @@ Here's an example of how one would configure auto-scaling.
 module "executors" {
   source  = "sourcegraph/executors/<aws | google>"
   version = "<version>"
-  
+
   # Basic configuration...
 
   # Auto-scaling
