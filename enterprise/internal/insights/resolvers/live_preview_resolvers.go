@@ -229,7 +229,6 @@ func (e livePreviewError) Error() string {
 
 func (e livePreviewError) Extensions() map[string]interface{} {
 	return map[string]interface{}{
-		"code":    e.Code,
-		"message": e.Message,
+		"code": e.Code,
 	}
 }
