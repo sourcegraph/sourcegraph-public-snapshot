@@ -115,6 +115,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
+	// After our DB, redis is our next most important datastore
+	if err := redispoolRegisterDB(db); err != nil {
+		return errors.Wrap(err, "failed to register postgres backed redis")
+	}
+
 	// override site config first
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
@@ -379,4 +384,16 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
+}
+
+// redispoolRegisterDB registers our postgres backed redis. These package
+// avoid depending on each other, hence the wrapping to get Go to play nice
+// with the interface definitions.
+func redispoolRegisterDB(db database.DB) error {
+	kvNoTX := db.RedisKeyValue()
+	return redispool.DBRegisterStore(func(ctx context.Context, f func(redispool.DBStore) error) error {
+		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
+			return f(tx)
+		})
+	})
 }
