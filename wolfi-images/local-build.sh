@@ -10,10 +10,15 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-name=${1%/}
+cd "$(dirname "${BASH_SOURCE[0]}")/../"
+cd "wolfi-images"
 
-if [ ! -f "$name.yaml" ]; then
-  echo "File '$name.yaml' does not exist"
+# Normalise name by adding .yaml if necessary
+name=${1%/}
+name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
+
+if [ ! -f "$name" ]; then
+  echo "File '$name' does not exist"
   exit 1
 fi
 
@@ -22,7 +27,7 @@ echo " * Building base image '$name' using apko"
 docker run \
   -v "$PWD":/work \
   cgr.dev/chainguard/apko \
-  build --debug "${name}.yaml" \
+  build --debug "${name}" \
   "sourcegraph-wolfi/$name-base:latest" \
   "sourcegraph-wolfi-$name-base.tar" ||
   (echo "*** Build failed ***" && exit 1)
