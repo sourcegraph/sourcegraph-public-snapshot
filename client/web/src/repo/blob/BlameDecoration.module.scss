@@ -23,26 +23,28 @@
     position: relative;
     // Using 1px for a hairline border
     // stylelint-disable-next-line declaration-property-unit-allowed-list
-    height: calc(1.5rem + 1px);
+    height: calc(100% + 1px);
     flex: 0 0 var(--blame-recency-width);
 }
 
 .recency-first-in-hunk {
-    height: calc(1.5rem) !important;
+    height: calc(100%) !important;
     top: 0 !important;
 }
 
 .popover {
     &-trigger {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
+        display: inline-flex;
         width: calc(100% - var(--blame-recency-width));
         max-width: calc(var(--blame-decoration-width) - var(--blame-recency-width));
-        height: 1.5rem;
+
         color: var(--text-muted);
         &:hover {
             color: var(--text-muted);
+            text-decoration: none;
+            .content {
+                text-decoration: underline;
+            }
         }
 
         .avatar {
@@ -61,17 +63,25 @@
             text-decoration: none;
         }
 
+        .content {
+            flex-shrink: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .date {
+            min-width: 80px;
+            display: inline-block;
+        }
+
         .content,
         .author,
         .date {
             white-space: pre;
             color: var(--text-muted);
             font-family: var(--font-family-base);
-        }
-
-        .date {
-            min-width: 80px;
-            display: inline-block;
+            height: 1.5rem;
         }
     }
 

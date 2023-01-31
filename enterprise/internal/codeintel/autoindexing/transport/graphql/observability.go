@@ -35,6 +35,9 @@ type operations struct {
 	repositorySummary    *observation.Operation
 	getSupportedByCtags  *observation.Operation
 	gitBlobCodeIntelInfo *observation.Operation
+
+	preciseIndexes   *observation.Operation
+	preciseIndexByID *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -81,5 +84,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		repositorySummary:    op("RepositorySummary"),
 		getSupportedByCtags:  op("GetSupportedByCtags"),
 		gitBlobCodeIntelInfo: op("GitBlobCodeIntelInfo"),
+
+		preciseIndexes:   op("PreciseIndexes"),
+		preciseIndexByID: op("PreciseIndexByID"),
 	}
 }

@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,7 +20,7 @@ func TestGetRepoRank(t *testing.T) {
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
-	rank, err := svc.GetRepoRank(ctx, api.RepoName("foo"))
+	rank, err := svc.GetRepoRank(ctx, "foo")
 	if err != nil {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
@@ -54,7 +53,7 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 		},
 	})
 
-	rank, err := svc.GetRepoRank(ctx, api.RepoName("github.com/foo/bar"))
+	rank, err := svc.GetRepoRank(ctx, "github.com/foo/bar")
 	if err != nil {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
@@ -95,7 +94,7 @@ func TestGetDocumentRanks(t *testing.T) {
 		"node_modules/baz.js", // vendor
 	}, nil)
 
-	ranks, err := svc.GetDocumentRanks(ctx, api.RepoName("foo"))
+	ranks, err := svc.GetDocumentRanks(ctx, "foo")
 	if err != nil {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}

@@ -205,7 +205,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	// Find the result for the last step. This is the one we'll be building the execution
 	// result from.
-	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
+	latestStepResult := stepResults[0]
 	for _, r := range stepResults {
 		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
 			latestStepResult = r

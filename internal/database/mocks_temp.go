@@ -3880,9 +3880,6 @@ type MockDB struct {
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *DBDoneFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -3925,9 +3922,6 @@ type MockDB struct {
 	// OrgMembersFunc is an instance of a mock function object controlling
 	// the behavior of the method OrgMembers.
 	OrgMembersFunc *DBOrgMembersFunc
-	// OrgStatsFunc is an instance of a mock function object controlling the
-	// behavior of the method OrgStats.
-	OrgStatsFunc *DBOrgStatsFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
@@ -3988,9 +3982,6 @@ type MockDB struct {
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *DBTransactFunc
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *DBUserCredentialsFunc
@@ -4041,11 +4032,6 @@ func NewMockDB() *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() (r0 ConfStore) {
-				return
-			},
-		},
-		DoneFunc: &DBDoneFunc{
-			defaultHook: func(error) (r0 error) {
 				return
 			},
 		},
@@ -4116,11 +4102,6 @@ func NewMockDB() *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: func() (r0 OrgMemberStore) {
-				return
-			},
-		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: func() (r0 OrgStatsStore) {
 				return
 			},
 		},
@@ -4224,11 +4205,6 @@ func NewMockDB() *MockDB {
 				return
 			},
 		},
-		TransactFunc: &DBTransactFunc{
-			defaultHook: func(context.Context) (r0 DB, r1 error) {
-				return
-			},
-		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) (r0 UserCredentialsStore) {
 				return
@@ -4301,11 +4277,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Conf")
 			},
 		},
-		DoneFunc: &DBDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockDB.Done")
-			},
-		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: func() EventLogStore {
 				panic("unexpected invocation of MockDB.EventLogs")
@@ -4374,11 +4345,6 @@ func NewStrictMockDB() *MockDB {
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: func() OrgMemberStore {
 				panic("unexpected invocation of MockDB.OrgMembers")
-			},
-		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: func() OrgStatsStore {
-				panic("unexpected invocation of MockDB.OrgStats")
 			},
 		},
 		OrgsFunc: &DBOrgsFunc{
@@ -4481,11 +4447,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.TemporarySettings")
 			},
 		},
-		TransactFunc: &DBTransactFunc{
-			defaultHook: func(context.Context) (DB, error) {
-				panic("unexpected invocation of MockDB.Transact")
-			},
-		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) UserCredentialsStore {
 				panic("unexpected invocation of MockDB.UserCredentials")
@@ -4550,9 +4511,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
 		},
-		DoneFunc: &DBDoneFunc{
-			defaultHook: i.Done,
-		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
 		},
@@ -4594,9 +4552,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: i.OrgMembers,
-		},
-		OrgStatsFunc: &DBOrgStatsFunc{
-			defaultHook: i.OrgStats,
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -4657,9 +4612,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
-		},
-		TransactFunc: &DBTransactFunc{
-			defaultHook: i.Transact,
 		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
@@ -5083,107 +5035,6 @@ func (c DBConfFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBConfFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBDoneFunc describes the behavior when the Done method of the parent
-// MockDB instance is invoked.
-type DBDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []DBDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(DBDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockDB instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *DBDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *DBDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBDoneFunc) appendCall(r0 DBDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBDoneFuncCall objects describing the
-// invocations of this function.
-func (f *DBDoneFunc) History() []DBDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]DBDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBDoneFuncCall is an object that describes an invocation of method Done
-// on an instance of MockDB.
-type DBDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -6584,104 +6435,6 @@ func (c DBOrgMembersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOrgMembersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBOrgStatsFunc describes the behavior when the OrgStats method of the
-// parent MockDB instance is invoked.
-type DBOrgStatsFunc struct {
-	defaultHook func() OrgStatsStore
-	hooks       []func() OrgStatsStore
-	history     []DBOrgStatsFuncCall
-	mutex       sync.Mutex
-}
-
-// OrgStats delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) OrgStats() OrgStatsStore {
-	r0 := m.OrgStatsFunc.nextHook()()
-	m.OrgStatsFunc.appendCall(DBOrgStatsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the OrgStats method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBOrgStatsFunc) SetDefaultHook(hook func() OrgStatsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// OrgStats method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBOrgStatsFunc) PushHook(hook func() OrgStatsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBOrgStatsFunc) SetDefaultReturn(r0 OrgStatsStore) {
-	f.SetDefaultHook(func() OrgStatsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBOrgStatsFunc) PushReturn(r0 OrgStatsStore) {
-	f.PushHook(func() OrgStatsStore {
-		return r0
-	})
-}
-
-func (f *DBOrgStatsFunc) nextHook() func() OrgStatsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBOrgStatsFunc) appendCall(r0 DBOrgStatsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBOrgStatsFuncCall objects describing the
-// invocations of this function.
-func (f *DBOrgStatsFunc) History() []DBOrgStatsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBOrgStatsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBOrgStatsFuncCall is an object that describes an invocation of method
-// OrgStats on an instance of MockDB.
-type DBOrgStatsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 OrgStatsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBOrgStatsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBOrgStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -8697,110 +8450,6 @@ func (c DBTemporarySettingsFuncCall) Args() []interface{} {
 // invocation.
 func (c DBTemporarySettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// DBTransactFunc describes the behavior when the Transact method of the
-// parent MockDB instance is invoked.
-type DBTransactFunc struct {
-	defaultHook func(context.Context) (DB, error)
-	hooks       []func(context.Context) (DB, error)
-	history     []DBTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) Transact(v0 context.Context) (DB, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(DBTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBTransactFunc) SetDefaultHook(hook func(context.Context) (DB, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBTransactFunc) PushHook(hook func(context.Context) (DB, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBTransactFunc) SetDefaultReturn(r0 DB, r1 error) {
-	f.SetDefaultHook(func(context.Context) (DB, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBTransactFunc) PushReturn(r0 DB, r1 error) {
-	f.PushHook(func(context.Context) (DB, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBTransactFunc) nextHook() func(context.Context) (DB, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBTransactFunc) appendCall(r0 DBTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBTransactFuncCall objects describing the
-// invocations of this function.
-func (f *DBTransactFunc) History() []DBTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]DBTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBTransactFuncCall is an object that describes an invocation of method
-// Transact on an instance of MockDB.
-type DBTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 DB
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBUserCredentialsFunc describes the behavior when the UserCredentials
@@ -15358,15 +15007,15 @@ type MockExecutorSecretStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExecutorSecretStoreListFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *ExecutorSecretStoreTransactFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *ExecutorSecretStoreUpdateFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *ExecutorSecretStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *ExecutorSecretStoreWithTransactFunc
 }
 
 // NewMockExecutorSecretStore creates a new mock of the ExecutorSecretStore
@@ -15414,11 +15063,6 @@ func NewMockExecutorSecretStore() *MockExecutorSecretStore {
 				return
 			},
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 ExecutorSecretStore, r1 error) {
-				return
-			},
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: func(context.Context, ExecutorSecretScope, *ExecutorSecret, string) (r0 error) {
 				return
@@ -15426,6 +15070,11 @@ func NewMockExecutorSecretStore() *MockExecutorSecretStore {
 		},
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 ExecutorSecretStore) {
+				return
+			},
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(ExecutorSecretStore) error) (r0 error) {
 				return
 			},
 		},
@@ -15477,11 +15126,6 @@ func NewStrictMockExecutorSecretStore() *MockExecutorSecretStore {
 				panic("unexpected invocation of MockExecutorSecretStore.List")
 			},
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: func(context.Context) (ExecutorSecretStore, error) {
-				panic("unexpected invocation of MockExecutorSecretStore.Transact")
-			},
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: func(context.Context, ExecutorSecretScope, *ExecutorSecret, string) error {
 				panic("unexpected invocation of MockExecutorSecretStore.Update")
@@ -15490,6 +15134,11 @@ func NewStrictMockExecutorSecretStore() *MockExecutorSecretStore {
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) ExecutorSecretStore {
 				panic("unexpected invocation of MockExecutorSecretStore.With")
+			},
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(ExecutorSecretStore) error) error {
+				panic("unexpected invocation of MockExecutorSecretStore.WithTransact")
 			},
 		},
 	}
@@ -15524,14 +15173,14 @@ func NewMockExecutorSecretStoreFrom(i ExecutorSecretStore) *MockExecutorSecretSt
 		ListFunc: &ExecutorSecretStoreListFunc{
 			defaultHook: i.List,
 		},
-		TransactFunc: &ExecutorSecretStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
 		UpdateFunc: &ExecutorSecretStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
 		WithFunc: &ExecutorSecretStoreWithFunc{
 			defaultHook: i.With,
+		},
+		WithTransactFunc: &ExecutorSecretStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
 		},
 	}
 }
@@ -16402,111 +16051,6 @@ func (c ExecutorSecretStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// ExecutorSecretStoreTransactFunc describes the behavior when the Transact
-// method of the parent MockExecutorSecretStore instance is invoked.
-type ExecutorSecretStoreTransactFunc struct {
-	defaultHook func(context.Context) (ExecutorSecretStore, error)
-	hooks       []func(context.Context) (ExecutorSecretStore, error)
-	history     []ExecutorSecretStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockExecutorSecretStore) Transact(v0 context.Context) (ExecutorSecretStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(ExecutorSecretStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockExecutorSecretStore instance is invoked and the hook queue
-// is empty.
-func (f *ExecutorSecretStoreTransactFunc) SetDefaultHook(hook func(context.Context) (ExecutorSecretStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockExecutorSecretStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ExecutorSecretStoreTransactFunc) PushHook(hook func(context.Context) (ExecutorSecretStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ExecutorSecretStoreTransactFunc) SetDefaultReturn(r0 ExecutorSecretStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (ExecutorSecretStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ExecutorSecretStoreTransactFunc) PushReturn(r0 ExecutorSecretStore, r1 error) {
-	f.PushHook(func(context.Context) (ExecutorSecretStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *ExecutorSecretStoreTransactFunc) nextHook() func(context.Context) (ExecutorSecretStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ExecutorSecretStoreTransactFunc) appendCall(r0 ExecutorSecretStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ExecutorSecretStoreTransactFuncCall objects
-// describing the invocations of this function.
-func (f *ExecutorSecretStoreTransactFunc) History() []ExecutorSecretStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]ExecutorSecretStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ExecutorSecretStoreTransactFuncCall is an object that describes an
-// invocation of method Transact on an instance of MockExecutorSecretStore.
-type ExecutorSecretStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 ExecutorSecretStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ExecutorSecretStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ExecutorSecretStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ExecutorSecretStoreUpdateFunc describes the behavior when the Update
 // method of the parent MockExecutorSecretStore instance is invoked.
 type ExecutorSecretStoreUpdateFunc struct {
@@ -16717,6 +16261,114 @@ func (c ExecutorSecretStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExecutorSecretStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorSecretStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockExecutorSecretStore instance is
+// invoked.
+type ExecutorSecretStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(ExecutorSecretStore) error) error
+	hooks       []func(context.Context, func(ExecutorSecretStore) error) error
+	history     []ExecutorSecretStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExecutorSecretStore) WithTransact(v0 context.Context, v1 func(ExecutorSecretStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(ExecutorSecretStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockExecutorSecretStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(ExecutorSecretStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockExecutorSecretStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretStoreWithTransactFunc) PushHook(hook func(context.Context, func(ExecutorSecretStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(ExecutorSecretStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(ExecutorSecretStore) error) error {
+		return r0
+	})
+}
+
+func (f *ExecutorSecretStoreWithTransactFunc) nextHook() func(context.Context, func(ExecutorSecretStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretStoreWithTransactFunc) appendCall(r0 ExecutorSecretStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretStoreWithTransactFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretStoreWithTransactFunc) History() []ExecutorSecretStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of
+// MockExecutorSecretStore.
+type ExecutorSecretStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(ExecutorSecretStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -53659,6 +53311,9 @@ type MockUserStore struct {
 	// a mock function object controlling the behavior of the method
 	// RandomizePasswordAndClearPasswordResetRateLimit.
 	RandomizePasswordAndClearPasswordResetRateLimitFunc *UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc
+	// RecoverUsersListFunc is an instance of a mock function object
+	// controlling the behavior of the method RecoverUsersList.
+	RecoverUsersListFunc *UserStoreRecoverUsersListFunc
 	// RenewPasswordResetCodeFunc is an instance of a mock function object
 	// controlling the behavior of the method RenewPasswordResetCode.
 	RenewPasswordResetCodeFunc *UserStoreRenewPasswordResetCodeFunc
@@ -53824,6 +53479,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		RecoverUsersListFunc: &UserStoreRecoverUsersListFunc{
+			defaultHook: func(context.Context, []int32) (r0 []int32, r1 error) {
 				return
 			},
 		},
@@ -54014,6 +53674,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.RandomizePasswordAndClearPasswordResetRateLimit")
 			},
 		},
+		RecoverUsersListFunc: &UserStoreRecoverUsersListFunc{
+			defaultHook: func(context.Context, []int32) ([]int32, error) {
+				panic("unexpected invocation of MockUserStore.RecoverUsersList")
+			},
+		},
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: func(context.Context, int32) (string, error) {
 				panic("unexpected invocation of MockUserStore.RenewPasswordResetCode")
@@ -54146,6 +53811,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: i.RandomizePasswordAndClearPasswordResetRateLimit,
+		},
+		RecoverUsersListFunc: &UserStoreRecoverUsersListFunc{
+			defaultHook: i.RecoverUsersList,
 		},
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: i.RenewPasswordResetCode,
@@ -57073,6 +56741,114 @@ func (c UserStoreRandomizePasswordAndClearPasswordResetRateLimitFuncCall) Args()
 // invocation.
 func (c UserStoreRandomizePasswordAndClearPasswordResetRateLimitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// UserStoreRecoverUsersListFunc describes the behavior when the
+// RecoverUsersList method of the parent MockUserStore instance is invoked.
+type UserStoreRecoverUsersListFunc struct {
+	defaultHook func(context.Context, []int32) ([]int32, error)
+	hooks       []func(context.Context, []int32) ([]int32, error)
+	history     []UserStoreRecoverUsersListFuncCall
+	mutex       sync.Mutex
+}
+
+// RecoverUsersList delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserStore) RecoverUsersList(v0 context.Context, v1 []int32) ([]int32, error) {
+	r0, r1 := m.RecoverUsersListFunc.nextHook()(v0, v1)
+	m.RecoverUsersListFunc.appendCall(UserStoreRecoverUsersListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RecoverUsersList
+// method of the parent MockUserStore instance is invoked and the hook queue
+// is empty.
+func (f *UserStoreRecoverUsersListFunc) SetDefaultHook(hook func(context.Context, []int32) ([]int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecoverUsersList method of the parent MockUserStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UserStoreRecoverUsersListFunc) PushHook(hook func(context.Context, []int32) ([]int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreRecoverUsersListFunc) SetDefaultReturn(r0 []int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int32) ([]int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreRecoverUsersListFunc) PushReturn(r0 []int32, r1 error) {
+	f.PushHook(func(context.Context, []int32) ([]int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreRecoverUsersListFunc) nextHook() func(context.Context, []int32) ([]int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreRecoverUsersListFunc) appendCall(r0 UserStoreRecoverUsersListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreRecoverUsersListFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreRecoverUsersListFunc) History() []UserStoreRecoverUsersListFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreRecoverUsersListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreRecoverUsersListFuncCall is an object that describes an
+// invocation of method RecoverUsersList on an instance of MockUserStore.
+type UserStoreRecoverUsersListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreRecoverUsersListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreRecoverUsersListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreRenewPasswordResetCodeFunc describes the behavior when the

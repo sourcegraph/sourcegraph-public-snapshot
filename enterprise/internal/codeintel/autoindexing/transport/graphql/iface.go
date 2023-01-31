@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -53,6 +53,7 @@ type UploadsService interface {
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
+	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 }
 
 type PolicyService interface {

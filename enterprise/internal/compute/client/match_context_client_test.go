@@ -57,9 +57,9 @@ data: {}`
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("resultCount", int(1)).Equal(t, resultCount)
-	autogold.Want("progressCount", int(2)).Equal(t, progressCount)
-	autogold.Want("alertCount", int(1)).Equal(t, alertCount)
-	autogold.Want("errorCount", int(1)).Equal(t, errorCount)
-	autogold.Want("unknownCount", int(0)).Equal(t, unknownCount)
+	autogold.Want("resultCount", 1).Equal(t, resultCount)
+	autogold.Want("progressCount", 2).Equal(t, progressCount)
+	autogold.Want("alertCount", 1).Equal(t, alertCount)
+	autogold.Want("errorCount", 1).Equal(t, errorCount)
+	autogold.Want("unknownCount", 0).Equal(t, unknownCount)
 }

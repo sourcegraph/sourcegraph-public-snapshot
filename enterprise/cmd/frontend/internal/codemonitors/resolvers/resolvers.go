@@ -123,57 +123,60 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// Start transaction.
-	tx, err := r.transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	var newMonitor *edb.Monitor
+	err = r.withTransact(ctx, func(tx *Resolver) error {
+		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
+		if err != nil {
+			return err
+		}
 
-	userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
-	if err != nil {
-		return nil, err
-	}
+		// Create monitor.
+		m, err := tx.db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{
+			Description:     args.Monitor.Description,
+			Enabled:         args.Monitor.Enabled,
+			NamespaceUserID: userID,
+			NamespaceOrgID:  orgID,
+		})
+		if err != nil {
+			return err
+		}
 
-	// Create monitor.
-	m, err := tx.db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{
-		Description:     args.Monitor.Description,
-		Enabled:         args.Monitor.Enabled,
-		NamespaceUserID: userID,
-		NamespaceOrgID:  orgID,
+		// Create trigger.
+		_, err = tx.db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
+		if err != nil {
+			return err
+		}
+
+		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
+			settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
+			if err != nil {
+				return err
+			}
+
+			// Snapshot the state of the searched repos when the monitor is created so that
+			// we can distinguish new repos.
+			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID, settings)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Create actions.
+		err = tx.createActions(ctx, m.ID, args.Actions)
+		if err != nil {
+			return err
+		}
+
+		newMonitor = m
+		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Create trigger.
-	_, err = tx.db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
-	if err != nil {
-		return nil, err
-	}
-
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
-		if err != nil {
-			return nil, err
-		}
-
-		// Snapshot the state of the searched repos when the monitor is created so that
-		// we can distinguish new repos.
-		err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID, settings)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Create actions.
-	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
 	}
 
 	return &monitor{
 		Resolver: r,
-		Monitor:  m,
+		Monitor:  newMonitor,
 	}, nil
 }
 
@@ -239,25 +242,29 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 
 	// Run all queries within a transaction.
-	tx, err := r.transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	var updatedMonitor *monitor
+	err = r.withTransact(ctx, func(tx *Resolver) error {
+		if err = tx.deleteActions(ctx, monitorID, toDelete); err != nil {
+			return err
+		}
+		if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
+			return err
+		}
+		m, err := tx.updateCodeMonitor(ctx, args)
+		if err != nil {
+			return err
+		}
 
-	if err = tx.deleteActions(ctx, monitorID, toDelete); err != nil {
-		return nil, err
-	}
-	if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
-		return nil, err
-	}
-	m, err := tx.updateCodeMonitor(ctx, args)
+		updatedMonitor = m
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	// Hydrate monitor with Resolver.
-	m.Resolver = r
-	return m, nil
+	updatedMonitor.Resolver = r
+	return updatedMonitor, nil
 }
 
 func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*graphqlbackend.CreateActionArgs) error {
@@ -636,15 +643,14 @@ func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbac
 	return err
 }
 
-func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
-	tx, err := r.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &Resolver{
-		logger: r.logger,
-		db:     edb.NewEnterpriseDB(tx),
-	}, nil
+func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) error {
+	return r.db.WithTransact(ctx, func(tx database.DB) error {
+		return f(&Resolver{
+			logger: r.logger,
+			db:     edb.NewEnterpriseDB(tx),
+		})
+	})
+
 }
 
 // isAllowedToEdit checks whether an actor is allowed to edit a given monitor.

@@ -415,7 +415,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // header contains the correct value. See "What does X-Requested-With do, anyway?" in
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
 
 		// Do not apply the middleware to /ping and /git endpoints.
@@ -437,7 +437,7 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		}
 
 		next.ServeHTTP(w, r)
-	})
+	}
 }
 
 // recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded

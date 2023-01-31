@@ -66,7 +66,7 @@ func fileMatch(chunks ...string) result.Match {
 			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
 			Path: "my/awesome/path.ml",
 		},
-		ChunkMatches: result.ChunkMatches(matches),
+		ChunkMatches: matches,
 	}
 }
 

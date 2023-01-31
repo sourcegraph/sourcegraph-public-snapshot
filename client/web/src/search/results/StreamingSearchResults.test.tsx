@@ -2,7 +2,6 @@ import React from 'react'
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createBrowserHistory } from 'history'
 import { BrowserRouter } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
@@ -32,16 +31,12 @@ import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
-    const history = createBrowserHistory()
-
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
-        history,
-        location: history.location,
         authenticatedUser: null,
 
         settingsCascade: {

@@ -1,0 +1,27 @@
+.root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+}
+
+.header {
+    background: radial-gradient(
+        113.96% 113.96% at 50% -8.21%,
+        var(--violet-06) 0%,
+        var(--violet-07) 57.81%,
+        var(--violet-08) 100%
+    );
+    width: 100%;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    align-self: center;
+    width: 12rem;
+}

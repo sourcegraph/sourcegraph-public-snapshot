@@ -2269,7 +2269,7 @@ Foreign-key constraints:
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
  action      | text                     |           | not null | 
- user_id     | integer                  |           |          | 
+ user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
@@ -2657,6 +2657,7 @@ Referenced by:
  priority             | integer                  |           | not null | 0
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
+ no_perms             | boolean                  |           | not null | false
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
