@@ -285,22 +285,7 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, t
 	if MockExternalServiceRepositories != nil {
 		return MockExternalServiceRepositories(ctx, kind, token, url)
 	}
-
 	// TODO Spans
-	//span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
-	//defer func() {
-	//	if result != nil {
-	//		span.SetTag("found", result.Repo != nil)
-	//	}
-	//	if err != nil {
-	//		ext.Error.Set(span, true)
-	//		span.SetTag("err", err.Error())
-	//	}
-	//	span.Finish()
-	//}()
-	//if args.Repo != "" {
-	//	span.SetTag("Repo", string(args.Repo))
-	//}
 
 	args := &protocol.ExternalServiceRepositoriesArgs{Kind: kind, Token: token, Url: url}
 	resp, err := c.httpPost(ctx, "ext-svc-repos", args)
@@ -309,40 +294,11 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, t
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	// TODO Errors
-	//if resp.StatusCode != http.StatusOK {
-	//	// best-effort inclusion of body in error message
-	//	body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-	//	return nil, errors.Errorf(
-	//		"RepoLookup for %+v failed with http status %d: %s",
-	//		args,
-	//		resp.StatusCode,
-	//		string(body),
-	//	)
-	//}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err == nil && result != nil {
-
 		// TODO Errors
-		//switch {
-		//case result.ErrorNotFound:
-		//	err = &ErrNotFound{
-		//		Repo:       args.Repo,
-		//		IsNotFound: true,
-		//	}
-		//case result.ErrorUnauthorized:
-		//	err = &ErrUnauthorized{
-		//		Repo:    args.Repo,
-		//		NoAuthz: true,
-		//	}
-		//case result.ErrorTemporarilyUnavailable:
-		//	err = &ErrTemporary{
-		//		Repo:        args.Repo,
-		//		IsTemporary: true,
-		//	}
-		//}
 	}
 	return result, err
 }
@@ -358,21 +314,6 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, kind string, tok
 	}
 
 	// TODO Spans
-	//span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
-	//defer func() {
-	//	if result != nil {
-	//		span.SetTag("found", result.Repo != nil)
-	//	}
-	//	if err != nil {
-	//		ext.Error.Set(span, true)
-	//		span.SetTag("err", err.Error())
-	//	}
-	//	span.Finish()
-	//}()
-	//if args.Repo != "" {
-	//	span.SetTag("Repo", string(args.Repo))
-	//}
-
 	args := &protocol.ExternalServiceNamespacesArgs{Kind: kind, Token: token, Url: url}
 	resp, err := c.httpPost(ctx, "ext-svc-namespaces", args)
 
@@ -382,38 +323,10 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, kind string, tok
 	defer resp.Body.Close()
 
 	// TODO Errors
-	//if resp.StatusCode != http.StatusOK {
-	//	// best-effort inclusion of body in error message
-	//	body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-	//	return nil, errors.Errorf(
-	//		"RepoLookup for %+v failed with http status %d: %s",
-	//		args,
-	//		resp.StatusCode,
-	//		string(body),
-	//	)
-	//}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err == nil && result != nil {
-
 		// TODO Errors
-		//switch {
-		//case result.ErrorNotFound:
-		//	err = &ErrNotFound{
-		//		Repo:       args.Repo,
-		//		IsNotFound: true,
-		//	}
-		//case result.ErrorUnauthorized:
-		//	err = &ErrUnauthorized{
-		//		Repo:    args.Repo,
-		//		NoAuthz: true,
-		//	}
-		//case result.ErrorTemporarilyUnavailable:
-		//	err = &ErrTemporary{
-		//		Repo:        args.Repo,
-		//		IsTemporary: true,
-		//	}
-		//}
 	}
 	return result, err
 }

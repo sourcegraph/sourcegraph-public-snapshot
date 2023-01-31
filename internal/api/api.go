@@ -109,18 +109,6 @@ func (r ExternalRepoSpec) String() string {
 	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
 }
 
-// TODO Desc
-type ExternalServiceSourceRepoSpec struct {
-	ID   RepoID   `json:"id"`
-	Name RepoName `json:"name"`
-}
-
-// TODO Desc
-type ExternalServiceNamespaceSpec struct {
-	ID   int32  `json:"id"`
-	Name string `json:"name"`
-}
-
 // A SettingsSubject is something that can have settings. Exactly 1 field must be nonzero.
 type SettingsSubject struct {
 	Default bool   // whether this is for default settings

@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -214,46 +213,6 @@ type externalServiceSyncJobsArgs struct {
 
 func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
 	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
-}
-
-// TODO Mock sourceRepos() for tests
-
-func (r *externalServiceResolver) SourceRepos(ctx context.Context, args *externalServiceSourceReposArgs) (*externalServiceSourceRepositoryConnectionResolver, error) {
-	//es := r.externalService
-	//parsed, err := extsvc.ParseEncryptableConfig(ctx, es.Kind, es.Config)
-	//if err != nil {
-	// TODO
-
-	//r.webhookErr = errors.Wrap(err, "parsing external service config")
-	//return
-	//}
-
-	// TODO Don't use default, pass client as argument
-	repoupdaterClient := repoupdater.DefaultClient
-
-	//// Set a timeout to validate external service sync. It usually fails in
-	//// under 5s if there is a problem.
-	//ctx, cancel := context.WithTimeout(ctx, timeout)
-	//defer cancel()
-
-	// ERROR HANDLING TODO
-
-	//var repositories []string
-	//for _, repo := range res.Repos {
-	//	repositories = append(repositories, string(repo.Name))
-	//}
-	//
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	return &externalServiceSourceRepositoryConnectionResolver{
-		db: r.db,
-		//args: args,
-		//externalService:   es,
-		//externalServiceID: es.ID,
-		repoupdaterClient: repoupdaterClient,
-	}, nil
 }
 
 // mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
@@ -479,28 +438,8 @@ func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.Re
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
 
-type externalServiceSourceReposArgs struct {
-	First *int32
-}
-
 func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSourceRepo, int32, error) {
 	r.once.Do(func() {
-
-		// TODO Handle first arg
-		//opts := database.ExternalServicesGetSyncJobsOptions{
-		//	ExternalServiceID: r.externalServiceID,
-		//}
-		//if r.args.First != nil {
-		//	opts.LimitOffset = &database.LimitOffset{
-		//		Limit: int(*r.args.First),
-		//	}
-		//}
-		//r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
-		//if r.err != nil {
-		//	return
-		//}
-		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
-
 		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url)
 		if err != nil {
 			r.err = err
@@ -509,7 +448,6 @@ func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.
 
 		for _, repo := range res.Repos {
 			node := &types.ExternalServiceSourceRepo{
-				ID:         repo.ExternalRepo.ID,
 				Name:       repo.Name,
 				ExternalID: repo.ExternalRepo.ID,
 			}
@@ -555,7 +493,7 @@ type externalServiceSourceRepoResolver struct {
 }
 
 func (r *externalServiceSourceRepoResolver) ID() graphql.ID {
-	return relay.MarshalID("ExternalServiceSourceRepo", r.srcRepo.ExternalID)
+	return relay.MarshalID("ExternalServiceSourceRepo", r.srcRepo)
 }
 
 func (r *externalServiceSourceRepoResolver) Name() string {
@@ -566,28 +504,8 @@ func (r *externalServiceSourceRepoResolver) ExternalID() string {
 	return r.srcRepo.ExternalID
 }
 
-type externalServiceNamespaceArgs struct {
-	First *int32
-}
-
 func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
 	r.once.Do(func() {
-
-		// TODO Handle first arg
-		//opts := database.ExternalServicesGetSyncJobsOptions{
-		//	ExternalServiceID: r.externalServiceID,
-		//}
-		//if r.args.First != nil {
-		//	opts.LimitOffset = &database.LimitOffset{
-		//		Limit: int(*r.args.First),
-		//	}
-		//}
-		//r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
-		//if r.err != nil {
-		//	return
-		//}
-		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
-
 		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url)
 		if err != nil {
 			r.err = err

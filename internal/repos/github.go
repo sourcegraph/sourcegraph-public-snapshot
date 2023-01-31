@@ -312,7 +312,7 @@ func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNa
 	}
 	for _, org := range orgs {
 		s.logger.Debug("github org sent to namespaces result", log.String("org login", org.Login), log.Int("org id", org.ID))
-		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
+		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{Name: org.Login, ExternalID: org.NodeID}}
 	}
 }
 

@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,7 +49,6 @@ type addExternalServiceInput struct {
 	DisplayName string
 	Config      string
 	Namespace   *graphql.ID
-	Discovery   bool
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
@@ -452,15 +451,9 @@ type externalServiceRepositoriesArgs struct {
 }
 
 type externalServiceRepositoriesInput struct {
-	Kind   string
-	Token  string
-	Url    string
-	Config string
-
-	// TODO Add namespace?
-
-	// TODO
-	// First *int32
+	Kind  string
+	Token string
+	Url   string
 }
 
 // TODO Comment Desc,
@@ -505,14 +498,12 @@ type externalServiceNamespacesInput struct {
 	Kind  string
 	Token string
 	Url   string
-	//Config string
-
-	// TODO Add namespace?
-
-	// TODO
-	// First *int32
 }
 
+// TODO Comment Desc,
+// Error Handling,
+// Logging,
+// Metrics
 func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
 	start := time.Now()
 	var err error
@@ -525,7 +516,7 @@ func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *ex
 
 	_, err = r.repoupdaterClient.ExternalServiceNamespaces(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
 	res := externalServiceNamespaceConnectionResolver{
-		db:                r.db,
+		//db:                r.db,
 		args:              args,
 		repoupdaterClient: r.repoupdaterClient,
 	}
@@ -533,8 +524,8 @@ func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *ex
 }
 
 type externalServiceNamespaceConnectionResolver struct {
-	args              *externalServiceNamespacesArgs
-	db                database.DB
+	args *externalServiceNamespacesArgs
+	//db                database.DB
 	repoupdaterClient *repoupdater.Client
 
 	once       sync.Once

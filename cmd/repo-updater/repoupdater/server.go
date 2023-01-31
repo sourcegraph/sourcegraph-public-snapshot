@@ -159,19 +159,8 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 	}
 
 	// TODO Check connection?
-	//if err := genericSrc.CheckConnection(ctx); err != nil {
-	//	return err
-	//}
 
 	results := make(chan repos.SourceResult)
-
-	//defer func() {
-	//	cancel()
-	//
-	//	// We need to drain the rest of the results to not leak a blocked goroutine.
-	//	for range results {
-	//	}
-	//}()
 
 	go func() {
 		genericSrc.ListRepos(ctx, results)
@@ -193,10 +182,6 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		repositories = append(repositories, res.Repo)
 	}
 
-	if repositories == nil {
-		repositories = make([]*types.Repo, 0)
-	}
-
 	var result *protocol.ExternalServiceRepositoriesResult
 	if sourceErrs != nil {
 		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories, Error: sourceErrs.Error()}
@@ -216,16 +201,12 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		return
 	}
 
-	repoQuery := []string{"affiliated"}
-
 	config := struct {
-		Url             string   `json:"url"`
-		Token           string   `json:"token"`
-		RepositoryQuery []string `json:"repositoryQuery"`
+		Url   string `json:"url"`
+		Token string `json:"token"`
 	}{
-		Url:             req.Url,
-		Token:           req.Token,
-		RepositoryQuery: repoQuery,
+		Url:   req.Url,
+		Token: req.Token,
 	}
 
 	configMarshalled, err := json.Marshal(config)
@@ -252,9 +233,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 
 	genericSrc, err := genericSourcer(ctx, extsvc)
 	if err != nil {
-		//logger.Error("server.external-service-sync", log.Error(err))
-		return
-		// TODO better error handling
+		// TODO error handling
 	}
 
 	var (
@@ -266,19 +245,8 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 	}
 
 	// TODO Check connection?
-	//if err := genericSrc.CheckConnection(ctx); err != nil {
-	//	return err
-	//}
 
 	results := make(chan repos.SourceNamespaceResult)
-
-	//defer func() {
-	//	cancel()
-	//
-	//	// We need to drain the rest of the results to not leak a blocked goroutine.
-	//	for range results {
-	//	}
-	//}()
 
 	go func() {
 		discoverableSrc.ListNamespaces(ctx, results)
@@ -290,10 +258,6 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		namespaces []*types.ExternalServiceNamespace
 	)
 
-	//
-	// TODO
-	//namespaces = make([]*types.ExternalServiceNamespace, 0)
-
 	for res := range results {
 		if res.Err != nil {
 			for _, extSvc := range res.Source.ExternalServices() {
@@ -303,10 +267,6 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		}
 		namespaces = append(namespaces, res.Namespace)
 	}
-	//
-	//if namespaces == nil {
-	//	namespaces = make([]*types.ExternalServiceNamespace, 0)
-	//}
 
 	var result *protocol.ExternalServiceNamespacesResult
 	if sourceErrs != nil {

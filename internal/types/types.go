@@ -624,14 +624,14 @@ type ExternalServiceSyncJob struct {
 
 // TODO Desc
 type ExternalServiceSourceRepo struct {
-	ID         string       `json:"id"`
+	//ID         string       `json:"id"`
 	Name       api.RepoName `json:"name"`
 	ExternalID string       `json:"external_id"`
 }
 
 // TODO Desc
 type ExternalServiceNamespace struct {
-	ID int `json:"id"`
+	//ID int `json:"id"`
 	// TODO Replace ID with Node ID (github api) ?
 	Name       string `json:"name"`
 	ExternalID string `json:"external_id"`

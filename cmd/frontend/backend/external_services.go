@@ -72,38 +72,6 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 	return err
 }
 
-//
-//// TODO Comments
-//// func (e *externalServices) ExternalServiceRepositories(ctx context.Context, displayName string, kind string, config *extsvc.EncryptableConfig) (err error) {
-//func (e *externalServices) ExternalServiceRepositories(ctx context.Context, svc *types.ExternalService) (err error) {
-//	//TODO desc
-//	logger := e.logger.Scoped("ExternalServiceRepositories", "")
-//
-//	//// Set a timeout to validate external service sync. It usually fails in
-//	//// under 5s if there is a problem.
-//	//ctx, cancel := context.WithTimeout(ctx, timeout)
-//	//defer cancel()
-//
-//	defer func() {
-//		// err is either nil or contains an actual error from the API call. And we return it
-//		// nonetheless.
-//
-//		//TODO Error
-//		//err = errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", kind, iD)
-//		//err = errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", svc.Kind, svc.ID)
-//
-//		// If context error is anything but a deadline exceeded error, we do not want to propagate
-//		// it. But we definitely want to log the error as a warning.
-//		if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
-//			logger.Warn("context error discarded", log.Error(ctx.Err()))
-//			err = nil
-//		}
-//	}()
-//
-//	_, err = e.repoupdaterClient.ExternalServiceRepositories(ctx, svc)
-//	return err
-//}
-
 // ExcludeRepoFromExternalService excludes given repo from given external service config.
 //
 // Function is pretty beefy, what it does is:
