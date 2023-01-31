@@ -5,7 +5,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
-- [Gerrit](#gerrit)
+- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -264,6 +264,7 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 <br />
 
 ## Gerrit
+<span class="badge badge-beta">Beta</span>
 
 Prerequisite: [Add Gerrit as an authentication provider](../auth/index.md#gerrit).
 
