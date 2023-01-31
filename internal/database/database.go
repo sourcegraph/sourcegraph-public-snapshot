@@ -63,9 +63,7 @@ type DB interface {
 	ZoektRepos() ZoektReposStore
 	Teams() TeamStore
 
-	Transact(context.Context) (DB, error)
 	WithTransact(context.Context, func(tx DB) error) error
-	Done(error) error
 }
 
 var _ DB = (*db)(nil)
