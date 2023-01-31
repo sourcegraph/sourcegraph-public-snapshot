@@ -9,12 +9,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,11 +78,12 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 
 	gerritURL := "https://gerrit.mycorp.com/"
 	testCases := map[string]struct {
-		user           *types.User
-		serviceType    string
-		serviceID      string
-		accountDetails string
-		wantErr        bool
+		user            *types.User
+		serviceType     string
+		serviceID       string
+		accountDetails  string
+		wantErr         bool
+		wantErrContains string
 	}{
 		"unauthed returns err": {
 			user:    nil,
@@ -103,6 +106,18 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			serviceID:      gerritURL,
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
+		},
+		"SOAP account can only be added to site admins": {
+			user:            &types.User{ID: 1, SiteAdmin: false},
+			serviceType:     auth.SourcegraphOperatorProviderType,
+			wantErr:         true,
+			wantErrContains: "must be site admin",
+		},
+		"SOAP provider not found": {
+			user:            &types.User{ID: 1, SiteAdmin: true},
+			serviceType:     auth.SourcegraphOperatorProviderType,
+			wantErr:         true,
+			wantErrContains: "provider does not exist",
 		},
 	}
 
@@ -179,6 +194,9 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			_, err = sr.AddExternalAccount(ctx, &args)
 			if tc.wantErr {
 				require.Error(t, err)
+				if tc.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tc.wantErrContains)
+				}
 			} else {
 				require.NoError(t, err)
 			}
