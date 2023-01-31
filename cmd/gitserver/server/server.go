@@ -70,6 +70,7 @@ const tempDirName = ".tmp"
 // and where it will store cache data.
 const P4HomeName = ".p4home"
 
+// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
 const UnsetExitStatus = -10810
 
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
@@ -1842,6 +1843,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	return nil
 }
 
+// execHTTP translates the results of an exec into the expected HTTP statuses and payloads
 func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
 
@@ -1861,6 +1863,8 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 	w.Header().Add("Trailer", "X-Exec-Exit-Status")
 	w.Header().Add("Trailer", "X-Exec-Stderr")
 
+	// Ensure we always send declared trailers even if we didn't
+	// get an error from the exec.
 	sentTrailers := false
 	defer func() {
 		if !sentTrailers {
