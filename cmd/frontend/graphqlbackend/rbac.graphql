@@ -11,7 +11,7 @@ type Role implements Node {
     """
     name: String!
     """
-    This indicates whether a role can be modified or deleted.
+    Indicates whether a role is a default system role, which cannot be modified or deleted, or a custom role added by a site admin.
     """
     system: Boolean!
     """
