@@ -60,7 +60,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
     <div className="w-100">
         <Routes>
             <Route
-                path="/batch-changes"
+                path=""
                 element={
                     <BatchChangeListPage
                         headingElement="h1"
@@ -73,7 +73,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
             />
             {!isSourcegraphDotCom && (
                 <Route
-                    path="/batch-changes/create"
+                    path="create"
                     element={
                         <AuthenticatedCreateBatchChangePage
                             {...props}
