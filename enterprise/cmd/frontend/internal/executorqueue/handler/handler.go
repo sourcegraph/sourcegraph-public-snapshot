@@ -2,19 +2,14 @@ package handler
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/sourcegraph/log"
 
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -23,50 +18,76 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// ExecutorHandler
 type ExecutorHandler interface {
+	// Name
 	Name() string
-	handleDequeue(w http.ResponseWriter, r *http.Request)
-	handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	handleMarkComplete(w http.ResponseWriter, r *http.Request)
-	handleMarkErrored(w http.ResponseWriter, r *http.Request)
-	handleMarkFailed(w http.ResponseWriter, r *http.Request)
-	handleHeartbeat(w http.ResponseWriter, r *http.Request)
-	handleCanceledJobs(w http.ResponseWriter, r *http.Request)
+	// AuthMiddleware
+	AuthMiddleware(next http.Handler) http.Handler
+	// HandleDequeue
+	HandleDequeue(w http.ResponseWriter, r *http.Request)
+	// HandleAddExecutionLogEntry
+	HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
+	// HandleUpdateExecutionLogEntry
+	HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request)
+	// HandleMarkComplete
+	HandleMarkComplete(w http.ResponseWriter, r *http.Request)
+	// HandleMarkErrored
+	HandleMarkErrored(w http.ResponseWriter, r *http.Request)
+	// HandleMarkFailed
+	HandleMarkFailed(w http.ResponseWriter, r *http.Request)
+	// HandleHeartbeat
+	HandleHeartbeat(w http.ResponseWriter, r *http.Request)
+	// HandleCanceledJobs
+	HandleCanceledJobs(w http.ResponseWriter, r *http.Request)
 }
 
 var _ ExecutorHandler = &handler[workerutil.Record]{}
 
 type handler[T workerutil.Record] struct {
-	QueueOptions[T]
+	queueHandler  QueueHandler[T]
 	executorStore database.ExecutorStore
+	jobTokenStore executor.JobTokenStore
 	metricsStore  metricsstore.DistributedStore
 	logger        log.Logger
 }
 
-type QueueOptions[T workerutil.Record] struct {
+// QueueHandler
+type QueueHandler[T workerutil.Record] struct {
 	// Name signifies the type of work the queue serves to executors.
 	Name string
 
-	// Store is a required dbworker store store for each registered queue.
+	// Store is a required dbworker store.
 	Store store.Store[T]
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (executor.Job, error)
 }
 
-func NewHandler[T workerutil.Record](executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions[T]) *handler[T] {
+// NewHandler
+func NewHandler[T workerutil.Record](
+	executorStore database.ExecutorStore,
+	jobTokenStore executor.JobTokenStore,
+	metricsStore metricsstore.DistributedStore,
+	queueHandler QueueHandler[T],
+) ExecutorHandler {
 	return &handler[T]{
 		executorStore: executorStore,
+		jobTokenStore: jobTokenStore,
 		metricsStore:  metricsStore,
-		logger:        log.Scoped("executor-queue-handler", "The route handler for all executor dbworker API tunnel endpoints"),
-		QueueOptions:  queueOptions,
+		logger: log.Scoped(
+			fmt.Sprintf("executor-queue-handler-%s", queueHandler.Name),
+			fmt.Sprintf("The route handler for all executor %s dbworker API tunnel endpoints", queueHandler.Name),
+		),
+		queueHandler: queueHandler,
 	}
 }
 
+// ErrUnknownJob
 var ErrUnknownJob = errors.New("unknown job")
 
+// ResourceMetadata
 type ResourceMetadata struct {
 	NumCPUs   int
 	Memory    string
@@ -74,49 +95,47 @@ type ResourceMetadata struct {
 }
 
 type executorMetadata struct {
-	Name      string
-	Version   string
-	Resources ResourceMetadata
+	name      string
+	version   string
+	resources ResourceMetadata
 }
-
-func (h *handler[T]) Name() string { return h.QueueOptions.Name }
 
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ apiclient.Job, dequeued bool, _ error) {
-	if err := validateWorkerHostname(metadata.Name); err != nil {
-		return apiclient.Job{}, false, err
+func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata executorMetadata) (executor.Job, bool, error) {
+	if err := validateWorkerHostname(metadata.name); err != nil {
+		return executor.Job{}, false, err
 	}
 
 	version2Supported := false
-	if metadata.Version != "" {
+	if metadata.version != "" {
 		var err error
-		version2Supported, err = api.CheckSourcegraphVersion(metadata.Version, "4.3.0-0", "2022-11-24")
+		version2Supported, err = api.CheckSourcegraphVersion(metadata.version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			return apiclient.Job{}, false, err
+			return executor.Job{}, false, err
 		}
 	}
 
 	// executorName is supposed to be unique.
-	record, dequeued, err := h.Store.Dequeue(ctx, metadata.Name, nil)
+	record, dequeued, err := h.queueHandler.Store.Dequeue(ctx, metadata.name, nil)
 	if err != nil {
-		return apiclient.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
+		return executor.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
 	}
 	if !dequeued {
-		return apiclient.Job{}, false, nil
+		return executor.Job{}, false, nil
 	}
 
 	logger := log.Scoped("dequeue", "Select a job record from the database.")
-	job, err := h.RecordTransformer(ctx, metadata.Version, record, metadata.Resources)
+	job, err := h.queueHandler.RecordTransformer(ctx, metadata.version, record, metadata.resources)
 	if err != nil {
-		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
+		if _, err := h.queueHandler.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
 			logger.Error("Failed to mark record as failed",
 				log.Int("recordID", record.RecordID()),
 				log.Error(err))
 		}
 
-		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
+		return executor.Job{}, false, errors.Wrap(err, "RecordTransformer")
 	}
 
 	// If this executor supports v2, return a v2 payload. Based on this field,
@@ -125,54 +144,31 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		job.Version = 2
 	}
 
-	// To not break users right away, if job tokens are not configured then we will default to the general access token.
-	if conf.SiteConfig().Executors != nil &&
-		conf.SiteConfig().Executors.JobAccessToken != nil &&
-		len(conf.SiteConfig().Executors.JobAccessToken.SigningKey) > 0 {
-
-		token, err := newJobToken(metadata.Name, job.ID)
-		if err != nil {
-			return apiclient.Job{}, false, errors.Wrap(err, "Job Token")
+	token, err := h.jobTokenStore.Create(ctx, job.ID, queueName)
+	if err != nil {
+		// Maybe the token already exists (executor may have dies midway though processing the Job)?
+		tokenExists, existsErr := h.jobTokenStore.Exists(ctx, job.ID, queueName)
+		if existsErr != nil {
+			return executor.Job{}, false, errors.CombineErrors(errors.Wrap(err, "CreateToken"), errors.Wrap(existsErr, "Exists"))
 		}
-		job.Token = token
+		// The token does not exist AND we failed to created it. So bail out with the first error.
+		if !tokenExists {
+			return executor.Job{}, false, errors.Wrap(err, "CreateToken")
+		}
+		// The token does exist. Regenerate the token
+		token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
+		if err != nil {
+			return executor.Job{}, false, errors.Wrap(err, "Regenerate")
+		}
 	}
+	job.Token = token
 
 	return job, true, nil
 }
 
-func newJobToken(hostname string, jobId int) (string, error) {
-	expiry := time.Now().Add(time.Minute * time.Duration(conf.SiteConfig().Executors.JobAccessToken.Expiry))
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jobOperationClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hostname,
-			ExpiresAt: jwt.NewNumericDate(expiry),
-			Subject:   strconv.FormatInt(int64(jobId), 10),
-		},
-		AccessToken: conf.SiteConfig().ExecutorsAccessToken,
-	})
-	decodedSigningKey, err := base64.StdEncoding.DecodeString(conf.SiteConfig().Executors.JobAccessToken.SigningKey)
-	if err != nil {
-		return "", err
-	}
-	tokenString, err := token.SignedString(decodedSigningKey)
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
-}
-
-type jobOperationClaims struct {
-	jwt.RegisteredClaims
-	AccessToken string `json:"accessToken"`
-}
-
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
-func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry executor.ExecutionLogEntry) (entryID int, err error) {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return 0, err
-	}
-
-	entryID, err = h.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
+func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry internalexecutor.ExecutionLogEntry) (int, error) {
+	entryID, err := h.queueHandler.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -187,12 +183,8 @@ func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName stri
 }
 
 // updateExecutionLogEntry calls UpdateExecutionLogEntry for the given job and entry.
-func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry executor.ExecutionLogEntry) error {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return err
-	}
-
-	err := h.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
+func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry internalexecutor.ExecutionLogEntry) error {
+	err := h.queueHandler.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -207,12 +199,8 @@ func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName s
 }
 
 // markComplete calls MarkComplete for the given job.
-func (h *handler[T]) markComplete(ctx context.Context, executorName string, jobID int) error {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return err
-	}
-
-	ok, err := h.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{
+func (h *handler[T]) markComplete(ctx context.Context, queueName string, executorName string, jobID int) error {
+	ok, err := h.queueHandler.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -224,16 +212,17 @@ func (h *handler[T]) markComplete(ctx context.Context, executorName string, jobI
 	if !ok {
 		return ErrUnknownJob
 	}
+
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
+		return errors.Wrap(err, "jobTokenStore.Delete")
+	}
+
 	return nil
 }
 
 // markErrored calls MarkErrored for the given job.
-func (h *handler[T]) markErrored(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return err
-	}
-
-	ok, err := h.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{
+func (h *handler[T]) markErrored(ctx context.Context, queueName string, executorName string, jobID int, errorMessage string) error {
+	ok, err := h.queueHandler.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -245,16 +234,17 @@ func (h *handler[T]) markErrored(ctx context.Context, executorName string, jobID
 	if !ok {
 		return ErrUnknownJob
 	}
+
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
+		return errors.Wrap(err, "jobTokenStore.Delete")
+	}
+
 	return nil
 }
 
 // markFailed calls MarkFailed for the given job.
-func (h *handler[T]) markFailed(ctx context.Context, executorName string, jobID int, errorMessage string) error {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return err
-	}
-
-	ok, err := h.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{
+func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorName string, jobID int, errorMessage string) error {
+	ok, err := h.queueHandler.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -266,11 +256,16 @@ func (h *handler[T]) markFailed(ctx context.Context, executorName string, jobID 
 	if !ok {
 		return ErrUnknownJob
 	}
+
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
+		return errors.Wrap(err, "jobTokenStore.Delete")
+	}
+
 	return nil
 }
 
 // heartbeat calls Heartbeat for the given jobs.
-func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs, cancelIDs []int, err error) {
+func (h *handler[T]) heartbeat(ctx context.Context, queueName string, executor types.Executor, ids []int) ([]int, []int, error) {
 	if err := validateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
@@ -282,7 +277,7 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 		logger.Error("Failed to upsert executor heartbeat", log.Error(err))
 	}
 
-	knownIDs, cancelIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
+	knownIDs, cancelIDs, err := h.queueHandler.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -291,16 +286,16 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 	return knownIDs, cancelIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
 }
 
-// canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
+// canceled reaches to the queueHandlers.FetchCanceled to determine jobs that need
 // to be canceled.
 // This endpoint is deprecated and should be removed in Sourcegraph 4.4.
-func (h *handler[T]) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+func (h *handler[T]) canceled(ctx context.Context, queueName string, executorName string, knownIDs []int) ([]int, error) {
 	if err := validateWorkerHostname(executorName); err != nil {
 		return nil, err
 	}
 	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
 	// we fall back to this method.
-	_, canceledIDs, err = h.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
+	_, canceledIDs, err := h.queueHandler.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
