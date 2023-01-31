@@ -50,7 +50,7 @@ import (
 )
 
 var (
-	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
+	printLogo, _ = strconv.ParseBool(env.Get("LOGO", defaultPrintLogo(), "print Sourcegraph logo upon startup"))
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -65,6 +65,14 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
+
+func defaultPrintLogo() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return "true"
+	}
+	return "false"
+}
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
