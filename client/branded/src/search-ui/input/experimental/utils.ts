@@ -3,8 +3,8 @@
  * as close to the length as possible (but doesn't gurantee it). The first two
  * and last two path segements are always visible.
  */
-export function shortenPath(path: string, desiredLength: number): string {
-    if (path.length <= desiredLength) {
+export function shortenPath(path: string, desiredChars: number): string {
+    if (path.length <= desiredChars) {
         return path
     }
 
