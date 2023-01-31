@@ -64,3 +64,4 @@ In both environments, server proxies API requests to `SOURCEGRAPH_API_URL` provi
 ### esbuild (experimental)
 
 See https://docs.sourcegraph.com/dev/background-information/web/build#esbuild.
+Hello World

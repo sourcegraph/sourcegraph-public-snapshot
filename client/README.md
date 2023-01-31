@@ -29,3 +29,4 @@
 6. Packages should use package name (e.g. `@sourcegraph/wildcard`) for imports instead of the relative paths (e.g. `../../../../wildcard/src/components/Markdown`) to avoid long relative-paths and make dependency graph between packages clear. (Typescript will warn if packages have circular dependencies). It's easy to refactor such isolated packages, extract functionality into new ones, or even into new repositories.
 
 7. **build** or **config** package should be added later to encapsulate all the configurations reused between packages which will allow removing `jest.config`, `babel.config` from the root of the repo.
+Hello World
