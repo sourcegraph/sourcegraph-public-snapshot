@@ -317,6 +317,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 	if !skipIndexes {
+		// TODO - without upload?
 		if err := r.autoindexSvc.DeleteIndexes(ctx, autoindexingshared.DeleteIndexesOptions{
 			RepositoryID: repositoryID,
 			States:       indexStates,
@@ -401,6 +402,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
+		// TODO - without upload?
 		if err := r.autoindexSvc.ReindexIndexes(ctx, autoindexingshared.ReindexIndexesOptions{
 			States:       indexStates,
 			Term:         term,

@@ -12,8 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// TODO - test
-// TODO - support visible at tip
 // ReindexUploads reindexes uploads matching the given filter criteria.
 func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) (err error) {
 	ctx, _, endObservation := s.operations.reindexUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -33,6 +31,9 @@ func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOp
 	}
 	if len(opts.States) > 0 {
 		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.VisibleAtTip {
+		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
