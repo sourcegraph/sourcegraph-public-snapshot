@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+const memoryKeyValueURI = "keyvalue:memory"
+
 // MemoryKeyValue returns an in memory KeyValue.
 func MemoryKeyValue() KeyValue {
 	var mu sync.Mutex

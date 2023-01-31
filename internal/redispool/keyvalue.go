@@ -2,6 +2,7 @@ package redispool
 
 import (
 	"context"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -102,6 +103,25 @@ type redisKeyValue struct {
 	pool   *redis.Pool
 	ctx    context.Context
 	prefix string
+}
+
+// NewKeyValue returns a KeyValue for addr. If addr matches the scheme for in
+// memory it will return an in memory KeyValue.
+//
+// poolOpts is a required argument which sets defaults in the case we connect
+// to redis. If used we only override TestOnBorrow and Dial.
+func NewKeyValue(addr string, poolOpts redis.Pool) KeyValue {
+	if addr == memoryKeyValueURI {
+		return MemoryKeyValue()
+	}
+	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
+		_, err := c.Do("PING")
+		return err
+	}
+	poolOpts.Dial = func() (redis.Conn, error) {
+		return dialRedis(addr)
+	}
+	return RedisKeyValue(&poolOpts)
 }
 
 // RedisKeyValue returns a KeyValue backed by pool.
