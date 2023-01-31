@@ -682,11 +682,12 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 
 // RecoverList recovers a list of users by their IDs.
 func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
-	tx, err := u.Transact(ctx)
+	tx, err := u.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+
 	userIDs := make([]*sqlf.Query, len(ids))
 	for i := range ids {
 		userIDs[i] = sqlf.Sprintf("%d", ids[i])
@@ -739,7 +740,7 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 
-	updateIds, err := basestore.ScanInt32s(u.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
+	updateIds, err := basestore.ScanInt32s(tx.Query(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=NULL, updated_at=now() WHERE id IN (%s) AND deleted_at IS NOT NULL RETURNING id", idsCond)))
 	if err != nil {
 		return nil, err
 	}
