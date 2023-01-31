@@ -376,7 +376,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         GitCommitFields,
                         Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
                     >
-                        location={props.location}
                         listClassName="list-group list-group-flush"
                         noun="commit in this tree"
                         pluralNoun="commits in this tree"

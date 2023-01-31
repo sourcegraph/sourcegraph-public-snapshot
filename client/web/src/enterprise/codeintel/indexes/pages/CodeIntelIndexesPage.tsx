@@ -85,7 +85,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     queryLsifIndexList = defaultQueryLsifIndexList,
     now,
     telemetryService,
-    history,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
     const location = useLocation<{ message: string; modal: string }>()
@@ -273,8 +272,6 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now, selection, onCheckboxToggle }}
                         queryConnection={queryConnection}
-                        history={history}
-                        location={location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyAutoIndex />}

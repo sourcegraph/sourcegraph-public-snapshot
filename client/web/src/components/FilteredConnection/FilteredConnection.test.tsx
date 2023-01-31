@@ -60,8 +60,6 @@ describe('FilteredConnection', () => {
             render(
                 <FilteredConnection
                     {...defaultConnectionNodesProps}
-                    location={history.location}
-                    history={history}
                     useURLQuery={true}
                     queryConnection={() => connectionSubject}
                 />

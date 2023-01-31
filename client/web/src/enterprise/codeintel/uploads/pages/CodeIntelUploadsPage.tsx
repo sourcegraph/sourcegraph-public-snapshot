@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 import { of, Subject } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -28,7 +28,7 @@ import { useDeleteLsifUploads } from '../hooks/useDeleteLsifUploads'
 
 import styles from './CodeIntelUploadsPage.module.scss'
 
-export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface CodeIntelUploadsPageProps extends TelemetryProps {
     repo?: { id: string }
     queryLsifUploadsByRepository?: typeof defaultQueryLsifUploadsByRepository
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
@@ -101,7 +101,6 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
     queryCommitGraphMetadata = defaultQueryCommitGraphMetadata,
     now,
     telemetryService,
-    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
@@ -270,8 +269,6 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                         nodeComponent={CodeIntelUploadNode}
                         nodeComponentProps={{ now, selection, onCheckboxToggle }}
                         queryConnection={queryConnection}
-                        history={history}
-                        location={props.location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyUploads />}
