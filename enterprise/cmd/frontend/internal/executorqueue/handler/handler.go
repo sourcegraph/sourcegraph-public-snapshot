@@ -18,27 +18,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ExecutorHandler
+// ExecutorHandler handles the HTTP requests of an executor.
 type ExecutorHandler interface {
-	// Name
+	// Name is the name of the queue the handler processes.
 	Name() string
-	// AuthMiddleware
+	// AuthMiddleware is the specific auth middleware for the queue.
 	AuthMiddleware(next http.Handler) http.Handler
-	// HandleDequeue
+	// HandleDequeue retrieves the next executor.Job to be processed in the queue.
 	HandleDequeue(w http.ResponseWriter, r *http.Request)
-	// HandleAddExecutionLogEntry
+	// HandleAddExecutionLogEntry adds the log entry for the executor.Job.
 	HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	// HandleUpdateExecutionLogEntry
+	// HandleUpdateExecutionLogEntry updates the log entry for the executor.Job.
 	HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	// HandleMarkComplete
+	// HandleMarkComplete updates the executor.Job to have a completed status.
 	HandleMarkComplete(w http.ResponseWriter, r *http.Request)
-	// HandleMarkErrored
+	// HandleMarkErrored updates the executor.Job to have an errored status.
 	HandleMarkErrored(w http.ResponseWriter, r *http.Request)
-	// HandleMarkFailed
+	// HandleMarkFailed updates the executor.Job to have a failed status.
 	HandleMarkFailed(w http.ResponseWriter, r *http.Request)
-	// HandleHeartbeat
+	// HandleHeartbeat handles the heartbeat of an executor.
 	HandleHeartbeat(w http.ResponseWriter, r *http.Request)
-	// HandleCanceledJobs
+	// HandleCanceledJobs cancels the specified executor.Jobs.
 	HandleCanceledJobs(w http.ResponseWriter, r *http.Request)
 }
 
@@ -52,20 +52,18 @@ type handler[T workerutil.Record] struct {
 	logger        log.Logger
 }
 
-// QueueHandler
+// QueueHandler the specific logic for handling a queue.
 type QueueHandler[T workerutil.Record] struct {
 	// Name signifies the type of work the queue serves to executors.
 	Name string
-
 	// Store is a required dbworker store.
 	Store store.Store[T]
-
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
 	RecordTransformer func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (executor.Job, error)
 }
 
-// NewHandler
+// NewHandler creates a new ExecutorHandler.
 func NewHandler[T workerutil.Record](
 	executorStore database.ExecutorStore,
 	jobTokenStore executor.JobTokenStore,
@@ -82,22 +80,6 @@ func NewHandler[T workerutil.Record](
 		),
 		queueHandler: queueHandler,
 	}
-}
-
-// ErrUnknownJob
-var ErrUnknownJob = errors.New("unknown job")
-
-// ResourceMetadata
-type ResourceMetadata struct {
-	NumCPUs   int
-	Memory    string
-	DiskSpace string
-}
-
-type executorMetadata struct {
-	name      string
-	version   string
-	resources ResourceMetadata
 }
 
 // dequeue selects a job record from the database and stashes metadata including
@@ -164,6 +146,19 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 	job.Token = token
 
 	return job, true, nil
+}
+
+type executorMetadata struct {
+	name      string
+	version   string
+	resources ResourceMetadata
+}
+
+// ResourceMetadata is the specific resource data for an executor instance.
+type ResourceMetadata struct {
+	NumCPUs   int
+	Memory    string
+	DiskSpace string
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
@@ -263,6 +258,9 @@ func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorN
 
 	return nil
 }
+
+// ErrUnknownJob
+var ErrUnknownJob = errors.New("unknown job")
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler[T]) heartbeat(ctx context.Context, queueName string, executor types.Executor, ids []int) ([]int, []int, error) {
