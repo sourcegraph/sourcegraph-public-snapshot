@@ -68,7 +68,8 @@ func BuildWolfiOperations(buildImages []string, version string, tag string) *ope
 
 	for _, dockerImage := range buildImages {
 		// Don't upload sourcemaps
-		wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
+		// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
+		wolfiImageBuildOps.Append(buildCandidateWolfiDockerImage(dockerImage, version, tag, false))
 	}
 
 	return wolfiImageBuildOps
