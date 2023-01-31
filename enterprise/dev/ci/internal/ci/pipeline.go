@@ -101,18 +101,28 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// false means not optional, so this build will fail if Bazel build doesn't pass.
 		ops.Merge(BazelOperations(false))
 	case runtype.WolfiExpBranch:
-		if c.Diff.Has(changed.WolfiPackages) {
+		// Rebuild packages if package configs have changed
+		updatePackages := c.Diff.Has(changed.WolfiPackages)
+		// Rebuild base images if base image OR package configs have changed
+		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
+
+		if updatePackages {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
 		}
-		if c.Diff.Has(changed.WolfiBaseImages) {
+		if updateBaseImages {
 			ops.Merge(
 				WolfiBaseImagesOperations(
-					c.ChangedFiles[changed.WolfiBaseImages],
+					c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
 					c.Version,
-					c.Diff.Has(changed.WolfiPackages),
+					updatePackages,
 				),
 			)
 		}
+		// Always rebuild Wolfi images
+		ops.Merge(
+			// TODO: Just hardcode a single image initially
+			BuildWolfiOperations([]string{"gitserver"}, c.Version, c.candidateImageTag()),
+		)
 
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
