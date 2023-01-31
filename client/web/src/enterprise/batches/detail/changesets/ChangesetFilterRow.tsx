@@ -71,7 +71,9 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
             checkState: checkState || null,
             search: search || null,
         })
-    }, [state, reviewState, checkState, search, location, onFiltersChange, navigate])
+        // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state, reviewState, checkState, search, onFiltersChange])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
