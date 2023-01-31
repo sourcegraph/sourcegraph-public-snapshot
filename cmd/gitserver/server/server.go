@@ -1659,13 +1659,16 @@ type NotFoundError struct {
 func (e *NotFoundError) Error() string { return "not found" }
 
 func (e *NotFoundError) As(target interface{}) bool {
-	if v, ok := target.(*errcode.HTTPErr); ok {
-		v.Err = e
-		v.Status = http.StatusNotFound
+	switch v := target.(type) {
+	case **errcode.HTTPErr:
+		*v = &errcode.HTTPErr{
+			Err:    e,
+			Status: http.StatusNotFound,
+		}
 		return true
+	default:
+		return false
 	}
-
-	return false
 }
 
 type CmdError struct {
