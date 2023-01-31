@@ -42,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -1649,29 +1648,13 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
 })
 
-var ErrBadRequest = &errcode.HTTPErr{
-	Status: http.StatusBadRequest,
-	Err:    errors.New("invalid command"),
-}
+var ErrInvalidCommand = errors.New("invalid command")
 
 type NotFoundError struct {
 	Payload *protocol.NotFoundPayload
 }
 
 func (e *NotFoundError) Error() string { return "not found" }
-
-func (e *NotFoundError) As(target interface{}) bool {
-	switch v := target.(type) {
-	case **errcode.HTTPErr:
-		*v = &errcode.HTTPErr{
-			Err:    e,
-			Status: http.StatusNotFound,
-		}
-		return true
-	default:
-		return false
-	}
-}
 
 type CmdError struct {
 	ExitStatus int
@@ -1686,7 +1669,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		return ErrBadRequest
+		return ErrInvalidCommand
 	}
 
 	if !req.NoTimeout {
@@ -1889,16 +1872,16 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 
 	err := s.exec(ctx, logger, req, w)
 	if err != nil {
-		if v := (&errcode.HTTPErr{}); errors.As(err, &v) {
-			w.WriteHeader(v.HTTPStatusCode())
-		}
-
 		if v := (&NotFoundError{}); errors.As(err, &v) {
+			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(v.Payload)
+			return
 		}
 
-		if errors.Is(err, ErrBadRequest) {
+		if errors.Is(err, ErrInvalidCommand) {
+			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("invalid command"))
+			return
 		}
 
 		if v := (&CmdError{}); errors.As(err, &v) {
@@ -1906,7 +1889,13 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 			w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(v.ExitStatus))
 			w.Header().Set("X-Exec-Stderr", v.Stderr)
 			sentTrailers = true
+			return
 		}
+
+		// If it's not a well-known error, send the error text
+		// and a generic error code.
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 	}
 }
 
