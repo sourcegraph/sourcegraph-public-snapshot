@@ -118,7 +118,7 @@ extend type Query {
         """
         role: ID
         """
-        Return permissions associated with the user.
+        Only return permissions associated with the user with this ID.
         """
         user: ID
     ): PermissionConnection!
