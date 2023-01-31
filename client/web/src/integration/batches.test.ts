@@ -633,7 +633,7 @@ describe('Batches', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change', {
                     // Wait for page to be fully loaded.
-                    waitUntil: 'networkidle2',
+                    waitUntil: 'networkidle0',
                 })
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page', { visible: true })
