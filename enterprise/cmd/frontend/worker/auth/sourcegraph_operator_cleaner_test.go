@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	osssoap "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -40,9 +42,11 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		lifecycleDuration: 60 * time.Minute,
 	}
 
-	// Make sure it doesn't blow up if there is nothing to clean up
-	err := handler.Handle(ctx)
-	require.NoError(t, err)
+	t.Run("handle with nothing to clean up", func(t *testing.T) {
+		// Make sure it doesn't blow up if there is nothing to clean up
+		err := handler.Handle(ctx)
+		require.NoError(t, err)
+	})
 
 	// Create test users:
 	//   1. logan, who has no external accounts
@@ -50,7 +54,11 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   3. jordan, who is a SOAP user that has not expired
 	//   4. riley, who is an expired SOAP user (will be cleaned up)
 	//   5. cris, who has a non-SOAP external account
-	_, err = db.Users().Create(
+	//   6. robert, who is an expired SOAP user on the permanent accounts list
+	// All the above except riley will be deleted.
+	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "robert"}
+
+	_, err := db.Users().Create(
 		ctx,
 		database.NewUser{
 			Username: "logan",
@@ -134,16 +142,40 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = handler.Handle(ctx)
+	serializedData, err := json.Marshal(&osssoap.ExternalAccountData{
+		ServiceAccount: true,
+	})
+	require.NoError(t, err)
+	robertID, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		database.NewUser{
+			Username: "robert",
+		},
+		extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   "https://sourcegraph.com",
+			ClientID:    "soap",
+			AccountID:   "robert",
+		},
+		extsvc.AccountData{
+			Data: extsvc.NewUnencryptedData(serializedData),
+		},
+	)
+	require.NoError(t, err)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), robertID)
 	require.NoError(t, err)
 
-	users, err := db.Users().List(ctx, nil)
-	require.NoError(t, err)
+	t.Run("handle with cleanup", func(t *testing.T) {
+		err = handler.Handle(ctx)
+		require.NoError(t, err)
 
-	got := make([]string, 0, len(users))
-	for _, u := range users {
-		got = append(got, u.Username)
-	}
-	want := []string{"logan", "morgan", "jordan", "cris"}
-	assert.Equal(t, want, got)
+		users, err := db.Users().List(ctx, nil)
+		require.NoError(t, err)
+
+		got := make([]string, 0, len(users))
+		for _, u := range users {
+			got = append(got, u.Username)
+		}
+		assert.Equal(t, wantNotDeleted, got)
+	})
 }
