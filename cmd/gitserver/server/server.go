@@ -1657,22 +1657,21 @@ type NotFoundError struct {
 
 func (e *NotFoundError) Error() string { return "not found" }
 
-type CmdError struct {
+type execStatus struct {
 	ExitStatus int
 	Stderr     string
 	Err        error
 }
 
-func (e *CmdError) Error() string {
-	return fmt.Sprintf("command exited with non-zero status %d", e.ExitStatus)
-}
-
-func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
+// exec runs a git command. After the first write to w, it must not return an error.
+// TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
+// because gRPC can handle trailing errors on a stream.
+func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		return ErrInvalidCommand
+		return execStatus{}, ErrInvalidCommand
 	}
 
 	if !req.NoTimeout {
@@ -1786,7 +1785,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 			status = "repo-not-found"
 		}
 
-		return &NotFoundError{notFoundPayload}
+		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
 	dir := s.dir(req.Repo)
@@ -1800,7 +1799,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
 		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
-			return nil
+			return execStatus{}, nil
 		}
 	}
 
@@ -1810,7 +1809,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
 		if resolved, err := quickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
-			return nil
+			return execStatus{}, nil
 		}
 	}
 
@@ -1834,15 +1833,11 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderr := stderrBuf.String()
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
-	if execErr != nil || exitStatus != 0 || stderr != "" {
-		return &CmdError{
-			Err:        execErr,
-			Stderr:     stderr,
-			ExitStatus: exitStatus,
-		}
-	}
-
-	return nil
+	return execStatus{
+		Err:        execErr,
+		Stderr:     stderr,
+		ExitStatus: exitStatus,
+	}, nil
 }
 
 // execHTTP translates the results of an exec into the expected HTTP statuses and payloads
@@ -1865,43 +1860,25 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 	w.Header().Add("Trailer", "X-Exec-Exit-Status")
 	w.Header().Add("Trailer", "X-Exec-Stderr")
 
-	// Ensure we always send declared trailers even if we didn't
-	// get an error from the exec.
-	sentTrailers := false
-	defer func() {
-		if !sentTrailers {
-			w.Header().Set("X-Exec-Error", "")
-			w.Header().Set("X-Exec-Exit-Status", "0")
-			w.Header().Set("X-Exec-Stderr", "")
-		}
-	}()
-
-	err := s.exec(ctx, logger, req, r.UserAgent(), w)
+	execStatus, err := s.exec(ctx, logger, req, r.UserAgent(), w)
+	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
+	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
+	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(v.Payload)
-			return
-		}
 
-		if errors.Is(err, ErrInvalidCommand) {
+		} else if errors.Is(err, ErrInvalidCommand) {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("invalid command"))
-			return
-		}
 
-		if v := (&CmdError{}); errors.As(err, &v) {
-			w.Header().Set("X-Exec-Error", errorString(v.Err))
-			w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(v.ExitStatus))
-			w.Header().Set("X-Exec-Stderr", v.Stderr)
-			sentTrailers = true
-			return
+		} else {
+			// If it's not a well-known error, send the error text
+			// and a generic error code.
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 		}
-
-		// If it's not a well-known error, send the error text
-		// and a generic error code.
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
 	}
 }
 
