@@ -2,12 +2,14 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -72,25 +74,34 @@ func TestDeleteUser(t *testing.T) {
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, Username: "alice"}, nil
 	})
+	const notFoundUID = 8
+	users.ListFunc.SetDefaultHook(func(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+		var users []*types.User
+		for _, id := range opts.UserIDs {
+			if id != notFoundUID { // test not-found user
+				users = append(users, &types.User{ID: id, Username: "alice"})
+			}
+		}
+		return users, nil
+	})
 
 	userEmails := database.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
 
 	externalAccounts := database.NewMockUserExternalAccountsStore()
-	externalAccounts.ListFunc.SetDefaultReturn(
-		[]*extsvc.Account{{
-			AccountSpec: extsvc.AccountSpec{
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.com/",
-				AccountID:   "alice_gitlab",
-			},
-		}},
-		nil,
-	)
+	externalAccountsListDefaultReturn := []*extsvc.Account{{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+			AccountID:   "alice_gitlab",
+		},
+	}}
+	externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil)
 
+	const aliceUID = 6
 	authzStore := database.NewMockAuthzStore()
 	authzStore.RevokeUserPermissionsFunc.SetDefaultHook(func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
-		if args.UserID != 6 {
+		if args.UserID != aliceUID {
 			return errors.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}
 
@@ -120,8 +131,29 @@ func TestDeleteUser(t *testing.T) {
 
 	tests := []struct {
 		name     string
+		setup    func(t *testing.T)
 		gqlTests []*Test
 	}{
+		{
+			name: "target is not a user",
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo4") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `{ "deleteUser": null }`,
+					ExpectedErrors: []*gqlerrors.QueryError{{
+						Path:    []any{"deleteUser"},
+						Message: fmt.Sprintf("no users found with IDs: [%d]", notFoundUID),
+					}},
+				},
+			},
+		},
 		{
 			name: "soft delete a user",
 			gqlTests: []*Test{
@@ -166,9 +198,91 @@ func TestDeleteUser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "non-soap user cannot delete soap user",
+			setup: func(t *testing.T) {
+				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+
+				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+					switch opts.UserID {
+					case 1:
+						// actor is just a normal user
+						assert.Equal(t, opts.ServiceType, auth.SourcegraphOperatorProviderType)
+						return []*extsvc.Account{}, nil
+					case aliceUID:
+						// delete target is a SOAP user
+						return []*extsvc.Account{{
+							AccountSpec: extsvc.AccountSpec{
+								ServiceType: auth.SourcegraphOperatorProviderType,
+								ServiceID:   "soap",
+								AccountID:   "alice_soap",
+							},
+						}}, nil
+					}
+					return nil, errors.Newf("unexpected user %d", opts.UserID)
+				})
+			},
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo2") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `{ "deleteUser": null }`,
+					ExpectedErrors: []*gqlerrors.QueryError{
+						{
+							Path: []any{"deleteUser"},
+							Message: fmt.Sprintf("%[1]q users cannot be deleted by non-%[1]q users",
+								auth.SourcegraphOperatorProviderType),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "soap user deletes soap user",
+			setup: func(t *testing.T) {
+				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+
+				// everyone's a SOAP user!
+				externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{{
+					AccountSpec: extsvc.AccountSpec{
+						ServiceType: auth.SourcegraphOperatorProviderType,
+						ServiceID:   "soap",
+						AccountID:   "soap_soap",
+					},
+				}}, nil)
+			},
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo2") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"deleteUser": {
+						"alwaysNil": null
+					}
+				}
+			`,
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if test.setup != nil {
+				test.setup(t)
+			}
 			RunTests(t, test.gqlTests)
 		})
 	}

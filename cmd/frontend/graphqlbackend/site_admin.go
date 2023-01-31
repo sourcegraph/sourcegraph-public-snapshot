@@ -109,6 +109,9 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, errors.Wrap(err, "list users by IDs")
 	}
+	if len(users) == 0 {
+		return nil, errors.Newf("no users found with IDs: %+v", ids)
+	}
 
 	accountsList := make([][]*extsvc.Accounts, len(users))
 	var revokeUserPermissionsArgsList []*database.RevokeUserPermissionsArgs
@@ -120,6 +123,19 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			return nil, errors.Wrap(err, "list external accounts")
 		}
 		for _, acct := range extAccounts {
+			// If the delete target is a SOAP user, make sure the actor is also a SOAP
+			// user - regular users should not be able to delete SOAP users.
+			if acct.ServiceType == auth.SourcegraphOperatorProviderType {
+				actorSoapAccts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+					UserID:      a.UID,
+					ServiceType: auth.SourcegraphOperatorProviderType,
+				})
+				if err != nil || len(actorSoapAccts) == 0 {
+					return nil, errors.Newf("%[1]q users cannot be deleted by non-%[1]q users",
+						auth.SourcegraphOperatorProviderType)
+				}
+			}
+
 			accounts = append(accounts, &extsvc.Accounts{
 				ServiceType: acct.ServiceType,
 				ServiceID:   acct.ServiceID,
