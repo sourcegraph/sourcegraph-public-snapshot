@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -56,9 +58,16 @@ type UserLatestSettings struct {
 	ID       int32  // the unique ID of this settings value
 	Contents string // the raw JSON (with comments and trailing commas allowed)
 }
+type UserOrganization struct {
+	ID          graphql.ID
+	Name        string
+	DisplayName *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
 
 type CurrentUser struct {
-	ID                  int32
+	ID                  graphql.ID
 	DatabaseID          int32
 	Username            string
 	AvatarURL           string
@@ -71,7 +80,7 @@ type CurrentUser struct {
 	TosAccepted         bool
 	Searchable          bool
 
-	Organizations  []*types.Org
+	Organizations  []*UserOrganization
 	CanSignOut     *bool
 	Emails         []*database.UserEmail
 	LatestSettings *UserLatestSettings
@@ -310,7 +319,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	settingsURL := fmt.Sprintf("%s/settings", url)
 
 	return &CurrentUser{
-		ID: user.ID,
+		ID: relay.MarshalID("User", user.ID),
 		// DatabaseID is just a user ID
 		DatabaseID:          user.ID,
 		Username:            user.Username,
@@ -356,7 +365,7 @@ func resolveViewerCanAdminister(ctx context.Context, user *types.User, db databa
 	return true
 }
 
-func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*types.Org {
+func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*UserOrganization {
 	// 🚨 SECURITY: Only the user and admins are allowed to access user
 	// organisations.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
@@ -366,7 +375,21 @@ func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*t
 	if err != nil {
 		return nil
 	}
-	return orgs
+	userOrganizations := make([]*UserOrganization, 0, len(orgs))
+	for _, org := range orgs {
+		userOrganizations = append(userOrganizations, convertOrgToUserOrganization(org))
+	}
+	return userOrganizations
+}
+
+func convertOrgToUserOrganization(org *types.Org) *UserOrganization {
+	return &UserOrganization{
+		ID:          relay.MarshalID("Org", org.ID),
+		Name:        org.Name,
+		DisplayName: org.DisplayName,
+		CreatedAt:   org.CreatedAt,
+		UpdatedAt:   org.UpdatedAt,
+	}
 }
 
 func resolveUserCanSignOut(ctx context.Context, user *types.User) *bool {
