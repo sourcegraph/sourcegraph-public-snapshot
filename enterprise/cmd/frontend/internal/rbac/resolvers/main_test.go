@@ -15,7 +15,7 @@ import (
 )
 
 func newSchema(db database.DB, r gql.RBACResolver) (*graphql.Schema, error) {
-	return gql.MewSchemaWithRBACResolver(db, r)
+	return gql.NewSchemaWithRBACResolver(db, r)
 }
 
 var createTestUser = func() func(*testing.T, database.DB, bool) *types.User {
