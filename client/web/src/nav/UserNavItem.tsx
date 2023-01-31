@@ -23,7 +23,7 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
-import { UserAvatar } from '../user/UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 

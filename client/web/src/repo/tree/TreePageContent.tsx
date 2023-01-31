@@ -46,7 +46,7 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { UserAvatar } from '../../user/UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { fetchBlob } from '../blob/backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'

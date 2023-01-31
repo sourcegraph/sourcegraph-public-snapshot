@@ -7,7 +7,7 @@ import { Input, Label } from '@sourcegraph/wildcard'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
 import { EditUserProfilePage } from '../../../graphql-operations'
-import { UserAvatar } from '../../UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
 import styles from './UserProfileFormFields.module.scss'
 

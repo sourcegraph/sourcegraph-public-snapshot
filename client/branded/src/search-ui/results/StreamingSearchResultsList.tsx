@@ -35,6 +35,7 @@ import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNa
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
+import { PersonSearchResult } from '../components/PersonSearchResult'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,
@@ -221,6 +222,16 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 onSelect={() => logSearchResultClicked(index, 'repo')}
                                 containerClassName={resultClassName}
                                 as="li"
+                            />
+                        )
+                    case 'owner':
+                        return (
+                            <PersonSearchResult
+                                index={index}
+                                result={result}
+                                as="li"
+                                onSelect={() => logSearchResultClicked(index, 'person')}
+                                containerClassName={resultClassName}
                             />
                         )
                 }
