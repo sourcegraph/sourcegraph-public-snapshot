@@ -2,8 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Maybe } from '../graphql-operations'
 import { ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
+
+import { Maybe } from '../graphql-operations'
 
 import styles from './UserAvatar.module.scss'
 

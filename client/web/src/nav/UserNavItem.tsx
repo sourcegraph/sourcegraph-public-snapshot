@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -23,7 +24,6 @@ import {
 
 import { AuthenticatedUser } from '../auth'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
-import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
