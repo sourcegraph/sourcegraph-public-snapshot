@@ -40,7 +40,7 @@ import { GET_CODE_INSIGHTS_JOBS } from './query'
 
 import styles from './CodeInsightsJobs.module.scss'
 
-export const CodeInsightsJobs: FC = props => {
+export const CodeInsightsJobs: FC = () => {
     const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.STATE)
     const [selectedFilters, setFilters] = useState<InsightQueueItemState[]>([])
     const [search, setSearch] = useState<string>('')
@@ -95,7 +95,7 @@ export const CodeInsightsJobs: FC = props => {
 
                 {error && <ErrorAlert error={error} />}
 
-                {connection && connection.nodes.length === 0 && (
+                {connection && connection.nodes.length === 0 && !error && (
                     <span className={styles.insightJobsMessage}>
                         <Icon svgPath={mdiMapSearch} inline={false} aria-hidden={true} /> No code insight jobs yet.
                         Enable code insights and <Link to="/insights/create">create</Link> at least one insight to see
