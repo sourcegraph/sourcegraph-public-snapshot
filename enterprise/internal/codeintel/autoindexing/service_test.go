@@ -24,7 +24,7 @@ func init() {
 }
 
 func TestQueueIndexesExplicit(t *testing.T) {
-	config := `{
+	conf := `{
 		"shared_steps": [
 			{
 				"root": "/",
@@ -74,7 +74,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		mockGitserverClient,
 		nil, // symbolsClient
 	)
-	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
+	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", conf, false, false)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))

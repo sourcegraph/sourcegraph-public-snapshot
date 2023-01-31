@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	insightsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -22,7 +22,7 @@ func Test_NewBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	ctx := context.Background()
-	insightStore := store.NewInsightStore(insightsDB)
+	insightStore := insightsstore.NewInsightStore(insightsDB)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	store := newBackfillStoreWithClock(insightsDB, clock)

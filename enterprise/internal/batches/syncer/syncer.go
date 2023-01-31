@@ -287,7 +287,7 @@ type syncerMetrics struct {
 }
 
 func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
-	metrics := &syncerMetrics{
+	m := &syncerMetrics{
 		syncs: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "src_repoupdater_changeset_syncer_syncs",
 			Help: "Total number of changeset syncs",
@@ -315,14 +315,14 @@ func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
 			Help: "The number of changesets behind schedule",
 		}, []string{"codehost"}),
 	}
-	observationCtx.Registerer.MustRegister(metrics.syncs)
-	observationCtx.Registerer.MustRegister(metrics.priorityQueued)
-	observationCtx.Registerer.MustRegister(metrics.syncDuration)
-	observationCtx.Registerer.MustRegister(metrics.computeScheduleDuration)
-	observationCtx.Registerer.MustRegister(metrics.scheduleSize)
-	observationCtx.Registerer.MustRegister(metrics.behindSchedule)
+	observationCtx.Registerer.MustRegister(m.syncs)
+	observationCtx.Registerer.MustRegister(m.priorityQueued)
+	observationCtx.Registerer.MustRegister(m.syncDuration)
+	observationCtx.Registerer.MustRegister(m.computeScheduleDuration)
+	observationCtx.Registerer.MustRegister(m.scheduleSize)
+	observationCtx.Registerer.MustRegister(m.behindSchedule)
 
-	return metrics
+	return m
 }
 
 // Run will start the process of changeset syncing. It is long running

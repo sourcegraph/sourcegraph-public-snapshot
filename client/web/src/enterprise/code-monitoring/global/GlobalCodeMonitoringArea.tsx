@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Route, Switch } from 'react-router'
+import { Routes, Route } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -28,23 +28,11 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithCh
 }) => (
     <div className="w-100">
         <Page>
-            <Switch>
-                <Route
-                    path="/code-monitoring"
-                    render={props => <CodeMonitoringPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path="/code-monitoring/new"
-                    render={props => <CreateCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path="/code-monitoring/:id"
-                    render={props => <ManageCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-            </Switch>
+            <Routes>
+                <Route path="" element={<CodeMonitoringPage {...outerProps} />} />
+                <Route path="new" element={<CreateCodeMonitorPage {...outerProps} />} />
+                <Route path=":id" element={<ManageCodeMonitorPage {...outerProps} />} />
+            </Routes>
         </Page>
     </div>
 )

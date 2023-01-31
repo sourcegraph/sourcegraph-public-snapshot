@@ -67,7 +67,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	}
 
 	// mutable context
-	context := matcherContext{
+	mContext := matcherContext{
 		repositoryID:   repositoryID,
 		policies:       policies,
 		patterns:       patterns,
@@ -85,26 +85,26 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 			switch refDescription.Type {
 			case gitdomain.RefTypeTag:
 				// Match tagged commits
-				m.matchTaggedCommits(context, commit, refDescription, now)
+				m.matchTaggedCommits(mContext, commit, refDescription, now)
 
 			case gitdomain.RefTypeBranch:
 				// Match tips of branches
-				m.matchBranchHeads(context, commit, refDescription, now)
+				m.matchBranchHeads(mContext, commit, refDescription, now)
 			}
 		}
 	}
 
 	// Match commits on branches but not at tip
-	if err := m.matchCommitsOnBranch(ctx, context, now); err != nil {
+	if err := m.matchCommitsOnBranch(ctx, mContext, now); err != nil {
 		return nil, err
 	}
 
 	// Match comments via rev-parse
-	if err := m.matchCommitPolicies(ctx, context, now); err != nil {
+	if err := m.matchCommitPolicies(ctx, mContext, now); err != nil {
 		return nil, err
 	}
 
-	return context.commitMap, nil
+	return mContext.commitMap, nil
 }
 
 type matcherContext struct {

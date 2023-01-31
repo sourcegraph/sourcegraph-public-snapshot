@@ -54,12 +54,12 @@ func TestRoundtrip(t *testing.T) {
 		readEnvFallback("AWS_SECRET_ACCESS_KEY", "test"),
 		"",
 	)))
-	config, err := config.LoadDefaultConfig(ctx, configOpts...)
+	defaultConfig, err := config.LoadDefaultConfig(ctx, configOpts...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	k, err := newKey(ctx, keyConfig, config)
+	k, err := newKey(ctx, keyConfig, defaultConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
