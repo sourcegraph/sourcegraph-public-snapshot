@@ -137,32 +137,34 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("parent team is identified by either id or name, but both were specified")
 	}
-	tx, err := r.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-	t, err := findTeam(ctx, tx.Teams(), args.ID, args.Name)
-	if err != nil {
-		return nil, err
-	}
-	var needsUpdate bool
-	if args.DisplayName != nil && *args.DisplayName != t.DisplayName {
-		needsUpdate = true
-		t.DisplayName = *args.DisplayName
-	}
-	if args.ParentTeam != nil || args.ParentTeamName != nil {
-		parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
+	var t *types.Team
+	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+		t, err = findTeam(ctx, tx.Teams(), args.ID, args.Name)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot find parent team")
+			return err
 		}
-		if parentTeam.ID != t.ParentTeamID {
+		var needsUpdate bool
+		if args.DisplayName != nil && *args.DisplayName != t.DisplayName {
 			needsUpdate = true
-			t.ParentTeamID = parentTeam.ID
+			t.DisplayName = *args.DisplayName
 		}
-	}
-	if needsUpdate {
-		tx.Teams().UpdateTeam(ctx, t)
+		if args.ParentTeam != nil || args.ParentTeamName != nil {
+			parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
+			if err != nil {
+				return errors.Wrap(err, "cannot find parent team")
+			}
+			if parentTeam.ID != t.ParentTeamID {
+				needsUpdate = true
+				t.ParentTeamID = parentTeam.ID
+			}
+		}
+		if needsUpdate {
+			return tx.Teams().UpdateTeam(ctx, t)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return &teamResolver{team: t, teamsDb: r.db.Teams()}, nil
 }
