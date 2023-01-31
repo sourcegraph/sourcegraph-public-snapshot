@@ -36,11 +36,10 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
     bordered = true,
     status,
 }) => {
-    const titleBadge = status ? <ProductStatusBadge status={status} className="ml-2" /> : null
     let cardTitle = (
         <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
             {title}
-            {titleBadge}
+            {status && <ProductStatusBadge status={status} className="ml-2" />}
         </H3>
     )
     cardTitle = tooltip ? <Tooltip content={tooltip}>{cardTitle}</Tooltip> : cardTitle
