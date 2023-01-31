@@ -478,6 +478,12 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error) {
+	id := r.ID()
+	args.UserID = &id
+	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false

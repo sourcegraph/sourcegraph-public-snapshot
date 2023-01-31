@@ -80,7 +80,7 @@ func TestPermissionList(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	ps, err := store.List(ctx)
+	ps, err := store.List(ctx, PermissionListOpts{})
 	assert.NoError(t, err)
 	assert.Len(t, ps, totalPerms)
 }

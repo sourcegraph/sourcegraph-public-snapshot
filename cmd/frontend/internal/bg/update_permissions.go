@@ -20,7 +20,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	err := db.WithTransact(ctx, func(tx database.DB) error {
 		pstore := tx.Permissions()
 
-		dbPerms, err := pstore.List(ctx)
+		dbPerms, err := pstore.List(ctx, database.PermissionListOpts{})
 		if err != nil {
 			return errors.Wrap(err, "fetching permissions from database")
 		}

@@ -1,0 +1,94 @@
+"""
+A role
+"""
+type Role {
+    """
+    The globally unique identifier for this role.
+    """
+    id: ID!
+    """
+    The human readable name for this role.
+    """
+    name: String!
+    """
+    This indicates whether a role can be modified or deleted.
+    """
+    readonly: Boolean!
+    """
+    The list of permissions assigned to any user with this role.
+    """
+    permissions: PermissionConnection
+}
+
+"""
+A list of roles.
+"""
+type RoleConnection {
+    """
+    A list of roles.
+    """
+    nodes: [Role!]!
+    """
+    The total count of roles in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A list of permissions.
+"""
+type PermissionConnection {
+    """
+    A list of permissions.
+    """
+    nodes: [Permission!]!
+    """
+    The total count of permissions in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A permission
+"""
+type Permission {
+    """
+    The globally unique identifier for this permission.
+    """
+    id: ID!
+    """
+    The namespace in which this permission belongs to.
+    """
+    namespace: String!
+    """
+    The action in which the bearer of this permission is allowed.
+    """
+    action: String!
+}
+
+extend type Query {
+    """
+    Roles returns all the roles in the database that matches the arguments
+    """
+    roles(
+        """
+        User which this role is assigned to
+        """
+        userID: ID
+    ): RoleConnection!
+
+    role(
+        """
+        ID of the role to be retrieved
+        """
+        id: ID!
+    ): Role
+}

@@ -41,8 +41,10 @@ type PermissionStore interface {
 	BulkDelete(ctx context.Context, opts []DeletePermissionOpts) error
 	// GetByID returns the permission matching the given ID, or PermissionNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetPermissionOpts) (*types.Permission, error)
-	// List returns all the permissions in the database.
-	List(ctx context.Context) ([]*types.Permission, error)
+	// List returns all the permissions in the database that matches the options.
+	List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error)
+	// Count returns the number of permissions in the database mtching the options provided.
+	Count(ctx context.Context, opts PermissionListOpts) (int, error)
 }
 
 type CreatePermissionOpts struct {
@@ -58,6 +60,11 @@ type (
 	GetPermissionOpts    PermissionOpts
 	DeletePermissionOpts PermissionOpts
 )
+
+type PermissionListOpts struct {
+	*LimitOffset
+	RoleID int32
+}
 
 type PermissionNotFoundErr struct {
 	ID int32
@@ -246,25 +253,66 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 // We compare permissions in the database to those generated from the schema and both
 // need to be sorted.
 const permissionListQueryFmtStr = `
-SELECT * FROM permissions
-ORDER BY permissions.namespace, permissions.action ASC
+SELECT %s FROM permissions
+%s
+WHERE %s
 `
 
-func (p *permissionStore) List(ctx context.Context) ([]*types.Permission, error) {
+func (p *permissionStore) List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error) {
 	var permissions []*types.Permission
-	rows, err := p.Query(ctx, sqlf.Sprintf(permissionListQueryFmtStr))
+
+	scanFunc := func(rows *sql.Rows) error {
+		permission, err := scanPermission(rows)
+		if err != nil {
+			return errors.Wrap(err, "scanning permission")
+		}
+		permissions = append(permissions, permission)
+		return nil
+	}
+
+	err := p.list(ctx, opts, sqlf.Join(permissionColumns, ", "), scanFunc)
+	return permissions, err
+}
+
+func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, selects *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
+	preds := sqlf.Sprintf("TRUE")
+	joins := sqlf.Sprintf("")
+
+	if opts.RoleID != 0 {
+		preds = sqlf.Sprintf("role_permissions.role_id = %s", opts.RoleID)
+		joins = sqlf.Sprintf("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id")
+	}
+
+	q := sqlf.Sprintf(
+		permissionListQueryFmtStr,
+		selects,
+		joins,
+		preds,
+	)
+
+	if opts.LimitOffset != nil {
+		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
+	}
+
+	rows, err := p.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
+		return errors.Wrap(err, "error running query")
 	}
 
 	defer rows.Close()
 	for rows.Next() {
-		perm, err := scanPermission(rows)
-		if err != nil {
-			return nil, err
+		if err := scanFunc(rows); err != nil {
+			return err
 		}
-		permissions = append(permissions, perm)
 	}
 
-	return permissions, rows.Err()
+	return rows.Err()
+}
+
+func (p *permissionStore) Count(ctx context.Context, opts PermissionListOpts) (c int, err error) {
+	opts.LimitOffset = nil
+	err = p.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
+		return rows.Scan(&c)
+	})
+	return c, err
 }

@@ -61,6 +61,7 @@ type (
 type RolesListOptions struct {
 	*LimitOffset
 	System bool
+	UserID int32
 }
 
 type RoleNotFoundErr struct {
@@ -136,7 +137,7 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 }
 
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
-	roles := make([]*types.Role, 0, 20)
+	var roles []*types.Role
 
 	scanFunc := func(rows *sql.Rows) error {
 		role, err := scanRole(rows)
