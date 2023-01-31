@@ -21,6 +21,7 @@ import { OVERVIEW_STATISTICS } from './queries'
 import { Sidebar } from './Sidebar'
 
 import styles from './index.module.scss'
+import { getByteUnitLabel, getByteUnitValue } from '../utils'
 
 interface IProps {
     history: H.History
@@ -131,8 +132,8 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                                             value: data.repositories.totalCount || 0,
                                         },
                                         {
-                                            label: 'Bytes stored',
-                                            value: Number(data.repositoryStats.gitDirBytes),
+                                            label: `${getByteUnitLabel(Number(data.repositoryStats.gitDirBytes))} stored`, 
+                                            value: getByteUnitValue(Number(data.repositoryStats.gitDirBytes)),
                                         },
                                         {
                                             label: 'Lines of code',
