@@ -101,13 +101,13 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
     <div className="pb-3">
         <Switch>
             <Route path={`${match.url}/apply/:specID`}>
-                <ExtractParams
+                <ExtractParams<'specID'>
                     render={params => <BatchChangePreviewPage {...outerProps} batchSpecID={params.specID!} />}
                 />
             </Route>
 
             <Route path={`${match.url}/:batchChangeName/close`}>
-                <ExtractParams
+                <ExtractParams<'batchChangeName'>
                     render={params => (
                         <BatchChangeClosePage
                             {...outerProps}
@@ -118,7 +118,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 />
             </Route>
             <Route path={`${match.url}/:batchChangeName/executions`}>
-                <ExtractParams
+                <ExtractParams<'batchChangeName'>
                     render={params => (
                         <BatchChangeDetailsPage
                             {...outerProps}
@@ -130,7 +130,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 />
             </Route>
             <Route path={`${match.url}/:batchChangeName`}>
-                <ExtractParams
+                <ExtractParams<'batchChangeName'>
                     render={params => (
                         <BatchChangeDetailsPage
                             {...outerProps}
@@ -147,10 +147,10 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
     </div>
 ))
 
-interface ExtractParamsProps {
-    render: (params: Readonly<Params<string>>) => JSX.Element
+interface ExtractParamsProps<P extends string> {
+    render: (params: Readonly<[P] extends [string] ? Params<P> : Partial<P>>) => JSX.Element
 }
-const ExtractParams: React.FC<ExtractParamsProps> = ({ render }) => {
-    const params = useParams()
+const ExtractParams = <P extends string>({ render }: ExtractParamsProps<P>): JSX.Element => {
+    const params = useParams<P>()
     return render(params)
 }
