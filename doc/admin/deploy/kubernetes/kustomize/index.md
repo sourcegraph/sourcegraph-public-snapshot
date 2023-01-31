@@ -11,15 +11,18 @@
 
 ## Build process
 
-During the build process, Kustomize will first build the resources from the base layer of the application. If generators are used, it will then create ConfigMaps and Secrets. These resources can be generated from files, or from data stored in ConfigMaps, or from image metadata.
+During the build process, Kustomize will:
 
-Next, Kustomize will apply patches specified by the components to selectively overwrite resources in the base layer. Patching allows you to modify the resources defined in the base layer without changing the original source files. This is useful for making small, targeted changes to the resources that are needed for your specific deployment.
-
-Finally, Kustomize will perform validation to ensure that the modified resources are valid and conform to the Kubernetes API. This is to ensure that the customized deployment is ready for use. Once the validation is passed, the modified resources are grouped into a single file, known as the output. After that, you can use kubectl to apply the overlaid resources to your cluster.
+1. First build the resources from the base layer of the application.
+2. If generators are used, it will then create ConfigMaps and Secrets. These resources can be generated from files, or from data stored in ConfigMaps, or from image metadata.
+3. Next, Kustomize will apply patches specified by the components to selectively overwrite resources in the base layer. Patching allows you to modify the resources defined in the base layer without changing the original source files. This is useful for making small, targeted changes to the resources that are needed for your specific deployment.
+4. Finally, Kustomize will perform validation to ensure that the modified resources are valid and conform to the Kubernetes API. This is to ensure that the customized deployment is ready for use.
+   
+Once the validation is passed, the modified resources are grouped into a single file, known as the output. After that, you can use kubectl to apply the overlaid resources to your cluster.
 
 ## Deployment repository
 
-All the Kustomize resources for Sourcegraph are located inside the **new** directory of our deployment repository.
+You can find all the configuration files and components needed to deploy Sourcegraph with Kustomize in the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
 
 Here is the file structure:
 
@@ -258,52 +261,4 @@ With the new Kustomize we have introduced in this documentation, these issues ca
 
 > NOTE: The latest version of our Kustomize overlays does not work on instances that are v4.5.0 or older.
 
-❌ See the [docs for the deprecated version of Kustomize for Sourcegraph](../deprecated/index.md).
-
-
-## Migrating from deploy scripts
-
-Prior to version 4.5.0, custom scripts were used for deploying Sourcegraph with Kubernetes. However, as of version 4.5.0, this method is now [deprecated](../deprecated/index.md). It is important to note that the transition from the older deployment scripts to the new Sourcegraph Kustomize setup is relatively straightforward, as the older scripts utilize Kustomize internally.
-
-It's crucial to note that both tools are used for generating manifests for deployment and will not alter existing resources in an active cluster. The objective is to produce a new overlay that generates a similar set of resources as the ones currently used in the running cluster. This will ensure that the deployment process is smooth and does not disrupt the existing cluster resources. This change will provide an improved and more maintainable way of deploying Sourcegraph on Kubernetes clusters.
-
-### Old cluster vs new cluster
-
-As of the latest version, all Sourcegraph services run in non-root and non-privileged mode without any RBAC resources by default. This change was implemented by recreating the cluster using a modified version of the previous [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/v4.3.0/instances/non-privileged) overlay and [non-privileged-create-cluster](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/v4.3.0/instances/non-privileged-create-cluster) overlay. This modification was made to ensure that the Sourcegraph cluster is running in a more secure and stable environment.
-
-For instructions on deploying Sourcegraph with privileged access, please refer to the [privileged section in our configuration docs](configure.md#privileged).
-
-### Migration process
-
-The migration process for transitioning from the old to the new Sourcegraph Kustomize setup involves the following steps:
-
-**Step 1**: Create a new release branch from our latest release branch (must be on v4.5.0 or above) in your private copy of our reference repository ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) with the latest Kustomize setup
-
-**Step 2**: Follow the instructions detailed in the [Kustomize configuration docs](./configure.md) to create a new overlay for deploying Sourcegraph
-
-**Step 3**: Build the manifests with your new overlay
-
-```bash
-$ kubectl kustomize instances/$INSTANCE_NAME -o new-cluster.yaml
-```
-
-**Step 4**: [Compare the manifests](#between-an-overlay-and-a-running-cluster) generated by your new overlay with the ones in your running cluster using the command below:
-
-```bash
-$ kubectl diff -f new-cluster.yaml
-```
-
-Review the changes to ensure that the manifests generated by your new overlay are similar to the ones currently being used by your active cluster.
-
-**Step 4**: Once you are satisfied with the overlay output, you can now deploy the new overlay using these commands:
-
-```bash
-# Build manifests again with overlay
-$ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
-# Apply manifests to cluster
-$ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
-```
-
-It's important to review the changes, and ensure that the new overlay produces similar resources as the ones currently being used by the active cluster, before applying the new overlay.
-
-> NOTE: Make sure to test the new overlay and the migration process in a non-production environment before applying it to your production cluster.
+See the [docs for the deprecated version of Kustomize for Sourcegraph](../deprecated/index.md).

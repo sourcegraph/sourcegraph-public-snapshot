@@ -76,7 +76,7 @@ The steps above have guided you to deploy Sourcegraph using the [quick-start/aws
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
 ```yaml
-# overlays/$OVERLAY_NAME/kustomization.yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
@@ -107,7 +107,7 @@ In order to use a managed certificate from [AWS Certificate Manager](https://doc
 Step 1: Add the `aws/mange-cert` component to your overlay:
 
 ```yaml
-# overlays/$OVERLAY_NAME/kustomization.yaml
+# overlays/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
@@ -121,11 +121,11 @@ components:
 - ../../components/clusters/aws/mange-cert
 ```
 
-Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [OVERLAY CONFIGURATIONS](intro.md#overlayconfig) section:
+Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
 
 ```yaml
-# overlays/$OVERLAY_NAME/kustomization.yaml
-# OVERLAY CONFIGURATIONS
+# overlays/$INSTANCE_NAME/kustomization.yaml
+# BUILD CONFIGURATIONS
 configMapGenerator:
   # Handle updating configs using env vars for kustomize
   - name: sourcegraph-kustomize-env

@@ -26,7 +26,9 @@ By following these rule of thumbs, you can ensure that the components you includ
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services. These services are configured to run as non-root users without privileges, ensuring a secure deployment. The base resources also include a set of services that are responsible for providing metrics about the Sourcegraph cluster, such as CPU and memory usage. To enable cluster metrics, you will need to deploy Cadvisor, which is a container resource usage monitoring service. Cadvisor is configured for Sourcegraph and can be deployed using one of the provided components. This component contains RBAC resources and must be run with privileges to ensure that it has the necessary permissions to access the container metrics. 
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services. These services are configured to run as non-root users without privileges, ensuring a secure deployment.
+
+The base resources also include a set of services that are responsible for providing metrics about the Sourcegraph cluster, such as CPU and memory usage. To enable cluster metrics, you will need to deploy Cadvisor, which is a container resource usage monitoring service. Cadvisor is configured for Sourcegraph and can be deployed using one of the provided components. This component contains RBAC resources and must be run with privileges to ensure that it has the necessary permissions to access the container metrics.
 
 ### RBAC
 
@@ -34,11 +36,13 @@ Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from 
 
 ### Non-Privileged
 
-By default, all Sourcegraph services are deployed in a **non-root and non-privileged** mode, as defined in the [base](index.md#base) cluster.
+By default, all Sourcegraph services are deployed in a non-root and non-privileged mode, as defined in the [base](index.md#base) cluster.
 
 ### Privileged
 
-To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the 'privileged' and 'monitoring' components in your components list. This will enable Kubernetes service discovery for the frontend and also provide privileged access and run all Sourcegraph services as the root user by adding 'cadvisor' component in the list.
+To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the [privileged](#privileged) and [monitoring](#monitoring-stack) components in your components list. 
+
+This will enable Kubernetes service discovery for the frontend and also provide privileged access and run all Sourcegraph services as the root user by adding [cadvisor component](#deploy-cadvisor) in the list.
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml
@@ -197,7 +201,7 @@ components:
 - ../../components/monitoring
 # component to remove all daemonsets from the monitoring stack
 - ../../components/remove/daemonset
-# ❌ Make sure the cadvisor is excluded from the components list
+# Make sure the cadvisor is excluded from the components list
 # - ../../components/monitoring/cadvisor
 ```
 
@@ -220,6 +224,13 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 components:
 - ../../components/storage-class/gcp
 ```
+
+The component takes care of creating a new storage class named `sourcegraph` with the following configurations:
+
+- Provisioner: pd.csi.storage.gke.io
+- SSD: types: pd-ssd
+
+It also update the storage class name for all resources to `sourcegraph`.
 
 [Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for more information.
 

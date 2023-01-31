@@ -33,128 +33,102 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 * A [Kubernetes](https://kubernetes.io/) cluster
    - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/)
    - Support for Persistent Volumes (SSDs recommended)
-
-> NOTE: Alternatively, you can use our [terraform configs](https://github.com/sourcegraph/tf-k8s-configs) to quickly setup a cluster that will support a standard Sourcegraph instance on [Google Cloud Platform (GKE)](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp),  [Amazon Web Services (EKS)](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws), or [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure).
+   - You can optionally refer to our [terraform configurations](https://github.com/sourcegraph/tf-k8s-configs) for setting up clusters on:
+     - [Amazon Web Services EKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws)
+     - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
+     - [Google Cloud Platform GKE](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp)
 
 ---
 
-### **Step 1**: Setup the reference repository
+### **Step 1**: Set up a release branch
 
-Clone [Sourcegraph reference repository for Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph-k8s) for config files and components needed to deploy Sourcegraph to a Kubernetes cluster using Kustomize.
-
-```bash
-$ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
-```
-
->NOTE: Please refer to the [reference repository docs](../repositories.md) on setting up a private copy of the reference repository.
-
-### **Step 2**: Setup an overlay
-
-From the root of your repository clone, create a new directory for `$INSTANCE_NAME`, a specific Sourcegraph instance (e.g. `instances/dev`) using the branch for the latest version.
+Set up a release branch from the default branch in your local forked copy of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
 
 ```bash
-$ export INSTANCE_NAME=dev
-$ git checkout v4.4.1
-$ git checkout -b $INSTANCE_NAME
-$ mkdir instance/$INSTANCE_NAME
+$ git checkout -b release
 ```
 
-### **Step 3**: Setup a configuration file
+### **Step 2**: Set up an overlay
 
-Copy [instances/kustomization.template.yaml](intro.md#template) to `instances/$INSTANCE_NAME` as `kustomization.yaml` for deployment config.
+`cd` into the repository and create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
 
 ```bash
-# The new kustomization.yaml file will be used to configure your deployment.
-$ cp instances/kustomization.template.yaml instances/$INSTANCE_NAME/kustomization.yaml
+$ mkdir instance/my-sourcegraph
 ```
 
-### **Step 4**: Configure namespace
+### **Step 3**: Set up a configuration file
 
-You can specify the namespace for the Sourcegraph deployment in the `kustomization.yaml` file. The `namespace` field can be set to match an existing namespace in the cluster.
+Copy [instances/kustomization.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
 
-You can also create a new namespace ([cluster role administrator access required](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)) by uncommenting the `resources/namespace` component under the components list:
+```bash
+$ cp instances/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
+```
+
+The new `kustomization.yaml` file will be used to configure your deployment.
+
+### **Step 4**: Set namespace
+
+Replace `sourcegraph` with a namespace that matches an existing namespace in your cluster. 
+
+Set it to `default` to deploy to the default namespace.
 
   ```yaml
-  # instances/dev/kustomization.yaml
-  apiVersion: kustomize.config.k8s.io/v1beta1
-  kind: Kustomization
-  resources:
-    # Resources for Sourcegraph base cluster with default settings
-    - ../../base/sourcegraph
-  # -- Set namespace to namespace values for all resources
-  namespace: sg-dev # -- [ACTION] Set namespace value here
-  components:
-    # This create a new namespace with the namespace value input above
-    # Leave this component commented if you do not need to create one
-    - ../../components/resources/namespace
+  # instances/my-sourcegraph/kustomization.yaml
+  namespace: sourcegraph
   ```
 
-### **Step 5**: Configure storage class
+### **Step 5**: Set storage class
 
-Sourcegraph requires a storage class that supports SSDs for proper storage and instance performance. You can either use an [exisitng storage class](#existing-storage-class) pre-configured for Sourcegraph, or [create a new storage class](#create-a-new-storage-class) ([cluster role administrator access required](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)).
+Sourcegraph requires a storage class that supports SSDs for proper storage and instance performance.
 
-You can also chooses to use the default storage class without SSD support for non-prod and configure storage class during the [post-installation step](#post-install-configure) later. However, you must recreate cluster with SSDs for production.
+Here are the options to set the storage class for your instance:
 
-#### Existing storage class
+#### Option 1: Create a new storage class
 
-For Sourcegraph to use an exisiting storage class in your cluster:
-
-1. Include the `storage-class/update-class-name` component under the components list in the `kustomization.yaml` file.
-2. Enter the value for `storageClassName` under the **literals** list in the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
-
-Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
+If you have the ability to create a new storage class, choose a storage-class component that corresponds to your cluster provider:
 
   ```yaml
-  # instances/dev/kustomization.yaml
-  apiVersion: kustomize.config.k8s.io/v1beta1
-  kind: Kustomization
-  resources:
-    - ../../base/sourcegraph
-  namespace: sg-dev
+  # instances/my-sourcegraph/kustomization.yaml
   components:
-    - ../../components/resources/namespace
+    - ../../components/storage-class/aws
+    - ../../components/storage-class/azure
+    - ../../components/storage-class/gke
+  ```
+
+Please refer to our [configurations guide](kustomize/configure.md) for a complete list of available storage class components and other specific configuration options.
+
+#### Option 2: Use an existing storage class
+
+If you'd like to use an exisiting storage class:
+
+1. Include the `storage-class/update-class-name` component under the components list
+2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
+   
+For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+  components:
     # Update storageClassName to the STORAGECLASS_NAME value set below
     - ../../components/storage-class/update-class-name
-    
+  # ...
   configMapGenerator:
   - name: sourcegraph-kustomize-env
     behavior: merge
     literals:
-      - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
-  ```
-The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
-
-#### Create a new storage class
-
-Alternatively, choose one of the preconfigured components to create a new storage class named `sourcegraph` for your Sourcegraph deployment --_[cluster role administrator access required](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)_.
-
-Example for Google GKE: Include the `storage-class/gke` component under the components list in the `kustomization.yaml` file. The component takes care of creating a new storage class named sourcegraph with the following configurations:
-
-- Provisioner: pd.csi.storage.gke.io
-- SSD: types: pd-ssd
-
-It also update the storage class name for all resources to `sourcegraph`.
-
-  ```yaml
-  # instances/dev/kustomization.yaml
-  apiVersion: kustomize.config.k8s.io/v1beta1
-  kind: Kustomization
-  resources:
-    - ../../base/sourcegraph
-  namespace: sg-dev
-  components:
-    - ../../components/resources/namespace
-    - ../../components/storage-class/gke
+      - STORAGECLASS_NAME=sourcegraph # Set STORAGECLASS_NAME value to 'sourcegraph'
   ```
 
-Please refer to the configurations guide for a complete list of available storage class components and other specific configuration options.
+#### Option 3: Use default storage class
+
+Skip this step to use the default storage class without SSD support for non-prod environment; however, you must recreate the cluster with SSDs configured for a production environment later.
 
 ### **Step 6**: Build manifests with Kustomize
 
-Generate a new set of manifests using the configuration applied to the `dev` directory without applying to the cluster.
+Generate a new set of manifests using the configuration applied to the `my-sourcegraph` subdirectory without applying to the cluster.
 
   ```bash
-  $ kubectl kustomize instances/dev -o cluster.yaml
+  $ kubectl kustomize instances/my-sourcegraph -o cluster.yaml
   ```
 
 ### **Step 7**: Review manifests
@@ -167,7 +141,7 @@ Review the generated manifests to ensure they match your intended configuration.
 
 ### **Step 8**: Deploy the generated manifests
 
-Apply the manifests from the ouput file cluster.yaml to your cluster:
+Apply the manifests from the ouput file `cluster.yaml` to your cluster:
 
   ```bash
   $ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
@@ -183,37 +157,44 @@ Monitor the deployment status to ensure all components are running properly.
 
 ### **Step 10**: Access Sourcegraph in Browser
 
-To access Sourcegraph in a web browser, forward the remote port temporarily.
+To access Sourcegraph in a web browser, you must first forward the remote port temporarily:
 
   ```bash
   $ kubectl port-forward svc/sourcegraph-frontend 3080:30080
   ```
 
-You can then access your new Sourcegraph instance at http://localhost:3080 to continue with the site admin setup process🎉
+Then access your new Sourcegraph instance at http://localhost:3080 to proceed to the site-admin setup step.
 
   ```bash
   $ open http://localhost:3080
   ```
 
+---
 
 ## Configure
 
-After the initial deployment, additional configuration might be required for Sourcegraph to customize your deployment to suit your specific needs:
+After the initial deployment, additional configuration might be required for Sourcegraph to customize your deployment to suit your specific needs.
+
+Common configurations that are strongly recommended for all Sourcegraph deployments:
 
 - [Add monitoring](kustomize/configure.md#monitoring-stack)
 - [Allocate resources based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
-- [Enable TLS](kustomize/configure.md#tls)
 - [Configure ingress](kustomize/configure.md#ingress)
+- [Enable TLS](kustomize/configure.md#tls)
+
+Other common configurations include:
+
 - [Set up an external PostgreSQL Database](kustomize/configure.md#external-postgres)
 - [Set up SSH connection for cloning repositories](kustomize/configure.md#ssh-for-cloning)
 
-This can all be done by commenting or uncommenting specific components in the kustomization file. Please see the [configuration guide for Kustomize](kustomize/kustomize/configure.md) for more configuration options.
+See the [configuration guide for Kustomize](kustomize/configure.md) for more configuration options.
 
 ## Learn more
 
-- [Migrate from the old Kustomize setup](kustomize/index.md#migrating-from-deploy-scripts)
-- Deployment examples below for each cloud provider:
+- [Migrate from deploy-sourcegraph to deploy-sourcegraph-k8s](kustomize/migrate.md)
+- Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)
+- [Troubleshooting](troubleshoot.md)
 
 Not sure if Kubernetes is the best choice for you? Check out our [deployment documentations](../index.md) to learn about other available deployment options.
