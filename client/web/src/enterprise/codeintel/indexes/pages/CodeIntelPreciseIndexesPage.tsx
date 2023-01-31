@@ -33,7 +33,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { PreciseIndexesVariables, PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
@@ -138,7 +138,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     )
 
     // Poke filtered connection to refresh
-    const deletes = useMemo(() => new Subject<undefined>(), [])
+    const refresh = useMemo(() => new Subject<undefined>(), [])
     const querySubject = useMemo(() => new Subject<string>(), [])
 
     // State used to control bulk index selection
@@ -157,24 +157,26 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         [setSelection]
     )
 
-    // State used to spy on
-    const [args, setArgs] = useState<any>()
+    // State used to spy on the query connection callback defined below
+    const [args, setArgs] = useState<
+        Partial<Omit<PreciseIndexesVariables, 'states'>> & { states?: string; isLatestForRepo?: boolean }
+    >()
     const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
 
     // Query indexes matching filter criteria
     const queryConnection = useCallback(
         (args: FilteredConnectionQueryArguments) => {
             const stashArgs = {
-                repository: repo?.id ?? null,
-                query: args.query ?? null,
-                states: (args as any).states ?? null,
-                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                repo: repo?.id,
+                query: args.query,
+                states: (args as any).states,
+                isLatestForRepo: (args as any).isLatestForRepo,
             }
 
             setArgs(stashArgs)
             setSelection(new Set())
 
-            return queryPreciseIndexes(args, apolloClient).pipe(
+            return queryPreciseIndexes(stashArgs, apolloClient).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })
@@ -186,10 +188,13 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const onRawDelete = () => {
         if (selection === 'all') {
             if (args !== undefined && confirm(`Delete ${totalCount} indexes?`)) {
+                const typedStates = statesFromString(args?.states)
                 return handleDeletePreciseIndexes({
                     variables: {
-                        ...args,
-                        states: statesFromString(args?.states),
+                        repo: args.repo ?? null,
+                        query: args.query ?? null,
+                        states: typedStates.length > 0 ? typedStates : null,
+                        isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
                 })
@@ -208,15 +213,16 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         )
     }
 
-    const onDelete = () => onRawDelete().then(() => deletes.next())
-
-    const onReindex = () => {
+    const onRawReindex = () => {
         if (selection === 'all') {
             if (args !== undefined && confirm(`Mark ${totalCount} indexes as replaceable by auto-indexing?`)) {
+                const typedStates = statesFromString(args?.states)
                 return handleReindexPreciseIndexes({
                     variables: {
-                        ...args,
-                        states: statesFromString(args?.states),
+                        repo: args.repo ?? null,
+                        query: args.query ?? null,
+                        states: typedStates.length > 0 ? typedStates : null,
+                        isLatestForRepo: args.isLatestForRepo ?? null,
                     },
                     update: cache => cache.modify({ fields: { node: () => {} } }),
                 })
@@ -234,6 +240,9 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
             )
         )
     }
+
+    const onDelete = () => onRawDelete().then(() => refresh.next())
+    const onReindex = () => onRawReindex().then(() => refresh.next())
 
     return (
         <div>
@@ -358,7 +367,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyIndex />}
-                        updates={deletes}
+                        updates={refresh}
                     />
                 </div>
             </Container>

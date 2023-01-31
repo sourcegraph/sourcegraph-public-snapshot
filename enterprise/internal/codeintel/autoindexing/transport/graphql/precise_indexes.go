@@ -466,6 +466,16 @@ func NewPreciseIndexResolver(
 	upload *types.Upload,
 	index *types.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
+	if index != nil && index.AssociatedUploadID != nil && upload == nil {
+		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			upload = &v
+		}
+	}
+
 	var uploadResolver resolverstubs.LSIFUploadResolver
 	if upload != nil {
 		uploadResolver = sharedresolvers.NewUploadResolver(uploadsSvc, autoindexingSvc, policySvc, *upload, prefetcher, locationResolver, traceErrs)
@@ -687,14 +697,17 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 }
 
 func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
-	if r.index == nil {
-		return r.upload != nil && r.upload.ShouldReindex
-	}
-	if r.upload == nil {
+	if r.index != nil {
+		if r.upload != nil {
+			return r.upload.ShouldReindex && r.index.ShouldReindex
+		}
+
 		return r.index.ShouldReindex
 	}
-
-	return r.upload.ShouldReindex && r.index.ShouldReindex
+	if r.upload != nil {
+		return r.upload.ShouldReindex
+	}
+	return false
 }
 
 func (r *preciseIndexResolver) IsLatestForRepo() bool {

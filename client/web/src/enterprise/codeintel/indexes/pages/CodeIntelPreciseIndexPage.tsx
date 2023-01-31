@@ -5,7 +5,7 @@ import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } fr
 import classNames from 'classnames'
 import * as H from 'history'
 import { Redirect, RouteComponentProps, useLocation } from 'react-router'
-import { takeWhile } from 'rxjs/operators'
+import { map, switchMap, takeWhile, tap } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -48,6 +48,8 @@ import { AuditLogPanel } from '../components/AuditLog'
 import { DependenciesList, DependentsList } from '../components/Dependencies'
 import styles from './CodeIntelPreciseIndexPage.module.scss'
 import { RetentionList } from '../components/RetentionList'
+import { merge } from 'lodash'
+import { of, Subject } from 'rxjs'
 
 export interface CodeIntelPreciseIndexPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -93,11 +95,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     useEffect(() => setDeletionOrError(deleteError), [deleteError])
     useEffect(() => setReindexOrError(reindexError), [reindexError])
 
-    // Continuously re-fetch state while it's in a non-terminal state
     const indexOrError = useObservable(
         useMemo(
+            // Continuously re-fetch state while it's in a non-terminal state
             () => queryPreciseIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
-            [id, queryPreciseIndex, apolloClient]
+            [id, queryPreciseIndex, apolloClient, reindexOrError]
         )
     )
 
@@ -165,6 +167,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
+    ) : isErrorLike(reindexOrError) ? (
+        <ErrorAlert prefix="Error marking precise index as replaceable by auto-indexing" error={reindexOrError} />
     ) : isErrorLike(indexOrError) ? (
         <ErrorAlert prefix="Error fetching precise index" error={indexOrError} />
     ) : !indexOrError ? (

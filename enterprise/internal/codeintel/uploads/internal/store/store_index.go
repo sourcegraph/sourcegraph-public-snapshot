@@ -82,7 +82,7 @@ index_candidates AS (
 	ORDER BY u.id
 	FOR UPDATE
 )
-UPDATE lsif_indexes U
+UPDATE lsif_indexes u
 SET should_reindex = true
 WHERE u.id IN (SELECT id FROM index_candidates)
 `
@@ -100,11 +100,17 @@ func (s *store) ReindexUploadByID(ctx context.Context, id int) (err error) {
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	return tx.db.Exec(ctx, sqlf.Sprintf(reindexUploadByIDQuery, id))
+	return tx.db.Exec(ctx, sqlf.Sprintf(reindexUploadByIDQuery, id, id))
 }
 
 const reindexUploadByIDQuery = `
-UPDATE lsif_uploads u
+WITH
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET should_reindex = true
+	WHERE id = %s
+)
+UPDATE lsif_indexes u
 SET should_reindex = true
-WHERE id = %s
+WHERE id IN (SELECT associated_index_id FROM lsif_uploads WHERE id = %s)
 `
