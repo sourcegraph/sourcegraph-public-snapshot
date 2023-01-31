@@ -139,7 +139,7 @@ extend type User {
         after: String
     ): RoleConnection!
     """
-    The list of all permissions belonging to roles assigned to this user.
+    The list of permissions granted to this user based on their roles.
     """
     permissions(
         """
