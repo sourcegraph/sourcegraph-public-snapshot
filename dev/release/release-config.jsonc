@@ -15,7 +15,7 @@
     "captainGitHubUsername": "keegancsmith",
     // Release versions
     "previousRelease": "4.4.1",
-    "upcomingRelease": "4.5.0",
+    "upcomingRelease": "4.6.0",
     "oneWorkingWeekBeforeRelease": "15 February 2023 10:00 PST",
     "threeWorkingDaysBeforeRelease": "17 February 2023 10:00 PST",
     "releaseDate": "22 February 2023 10:00 PST",
