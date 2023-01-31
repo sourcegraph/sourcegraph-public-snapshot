@@ -427,6 +427,10 @@ func resolveLatestSettings(ctx context.Context, user *types.User, db database.DB
 	if err != nil {
 		return nil
 	}
+	if settings == nil {
+		return nil
+	}
+
 	return &UserLatestSettings{ID: settings.ID, Contents: settings.Contents}
 }
 
