@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -85,11 +84,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines = append(routines, newRoutines...)
 
 	// Create HTTP server
-	handler, handlerStartFn := api.NewHandler(ctx, searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
-	err = handlerStartFn()
-	if err != nil {
-		return errors.Wrap(err, "initializing handler resources")
-	}
+	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
 
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())

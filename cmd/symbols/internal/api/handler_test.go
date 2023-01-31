@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-ctags"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/semaphore"
 )
 
 func init() {
@@ -66,12 +65,7 @@ func TestHandler(t *testing.T) {
 	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	ctx := context.Background()
-	handler, start := NewHandler(ctx, MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
-	err = start()
-	if err != nil {
-		t.Fatalf("failed to intialalize handler resources: %s", err)
-	}
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()

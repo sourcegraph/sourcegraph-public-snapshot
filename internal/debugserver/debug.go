@@ -13,11 +13,10 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/trace"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"golang.org/x/net/trace"
 )
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
@@ -50,6 +49,9 @@ type Endpoint struct {
 	Name string
 	// Path is passed to http.Mux.Handle as the pattern.
 	Path string
+	// IsPrefix, if true, indicates that the Path should be treated as a prefix matcher. All
+	// requests with the given prefix should be routed to Handler.
+	IsPrefix bool
 	// Handler is the debug handler
 	Handler http.Handler
 }
@@ -131,6 +133,11 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
 
 		for _, e := range extra {
+			if e.IsPrefix {
+				router.PathPrefix(e.Path).Handler(e.Handler)
+				continue
+			}
+
 			router.Handle(e.Path, e.Handler)
 		}
 	})
