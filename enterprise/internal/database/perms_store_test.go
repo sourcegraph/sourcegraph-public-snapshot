@@ -34,7 +34,7 @@ func cleanupPermsTables(t *testing.T, s *permsStore) {
 		return
 	}
 
-	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, src_permissions;`
+	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
 	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
@@ -668,17 +668,17 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 	}
 }
 
-func checkSrcPermissionsTable(s *permsStore, where string, expected []authz.SrcPermission) ([]authz.SrcPermission, error) {
-	format := "SELECT user_id, ext_account_id, repo_id, created_at, updated_at FROM src_permissions WHERE %s;"
+func checkSrcPermissionsTable(s *permsStore, where string, expected []authz.Permission) ([]authz.Permission, error) {
+	format := "SELECT user_id, user_external_account_id, repo_id, created_at, updated_at FROM user_repo_permissions WHERE %s;"
 	rows, err := s.Query(context.Background(), sqlf.Sprintf(format, where))
 	if err != nil {
 		return nil, err
 	}
 
-	permissions := []authz.SrcPermission{}
+	permissions := []authz.Permission{}
 	index := 0
 	for rows.Next() {
-		p := authz.SrcPermission{}
+		p := authz.Permission{}
 		if err = rows.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -702,21 +702,21 @@ func checkSrcPermissionsTable(s *permsStore, where string, expected []authz.SrcP
 	return permissions, nil
 }
 
-func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
+func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 	source := "test"
 
 	tests := []struct {
 		name                string
-		origPermissions     []authz.SrcPermission
-		permissions         []authz.SrcPermission
-		expectedPermissions []authz.SrcPermission
+		origPermissions     []authz.Permission
+		permissions         []authz.Permission
+		expectedPermissions []authz.Permission
 		entity              authz.PermissionEntity
 	}{
 		{
 			name:                "empty",
-			origPermissions:     []authz.SrcPermission{},
-			permissions:         []authz.SrcPermission{},
-			expectedPermissions: []authz.SrcPermission{},
+			origPermissions:     []authz.Permission{},
+			permissions:         []authz.Permission{},
+			expectedPermissions: []authz.Permission{},
 			entity: authz.PermissionEntity{
 				UserID:            1,
 				ExternalAccountID: 1,
@@ -724,8 +724,8 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 		},
 		{
 			name:            "add",
-			origPermissions: []authz.SrcPermission{},
-			permissions: []authz.SrcPermission{
+			origPermissions: []authz.Permission{},
+			permissions: []authz.Permission{
 				{
 					UserID:            1,
 					ExternalAccountID: 1,
@@ -742,7 +742,7 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 					RepoID:            3,
 				},
 			},
-			expectedPermissions: []authz.SrcPermission{
+			expectedPermissions: []authz.Permission{
 				{
 					UserID:            1,
 					ExternalAccountID: 1,
@@ -766,7 +766,7 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 		},
 		{
 			name: "add, update and remove",
-			origPermissions: []authz.SrcPermission{
+			origPermissions: []authz.Permission{
 				{
 					UserID:            1,
 					ExternalAccountID: 1,
@@ -783,7 +783,7 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 					RepoID:            3,
 				},
 			},
-			permissions: []authz.SrcPermission{
+			permissions: []authz.Permission{
 				{
 					UserID:            1,
 					ExternalAccountID: 1,
@@ -795,7 +795,7 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 					RepoID:            4,
 				},
 			},
-			expectedPermissions: []authz.SrcPermission{
+			expectedPermissions: []authz.Permission{
 				{
 					UserID:            1,
 					ExternalAccountID: 1,
@@ -824,9 +824,9 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 					cleanupPermsTables(t, s)
 				})
 
-				err := s.SetSrcPermissions(context.Background(), test.permissions, test.entity, source)
+				err := s.SetUserRepoPermissions(context.Background(), test.permissions, test.entity, source)
 				if err != nil {
-					t.Fatal("testing src permissions", err)
+					t.Fatal("testing user repo permissions", err)
 				}
 
 				if test.entity.UserID > 0 {
@@ -836,7 +836,7 @@ func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
 				}
 
 				if err != nil {
-					t.Fatal("src_permissions:", err)
+					t.Fatal("user_repo_permissions:", err)
 				}
 			})
 		}
@@ -2807,11 +2807,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
 		}
 
-		if userIDs["alice_gitlab"] != 1 {
-			t.Fatalf(`userIDs["alice_gitlab"]: want 1 but got %d`, userIDs["alice_gitlab"])
-		} else if userIDs["bob_gitlab"] != 2 {
-			t.Fatalf(`userIDs["bob_gitlab"]: want 2 but got %d`, userIDs["bob_gitlab"])
-		}
+		assert.Equal(t, 1, userIDs["alice_gitlab"].UserID)
+		assert.Equal(t, 1, userIDs["alice_gitlab"].ExternalAccountID)
+		assert.Equal(t, 2, userIDs["bob_gitlab"].UserID)
+		assert.Equal(t, 2, userIDs["bob_gitlab"].ExternalAccountID)
 
 		accounts = &extsvc.Accounts{
 			ServiceType: "github",
