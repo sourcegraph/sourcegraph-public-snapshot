@@ -7,6 +7,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,6 +20,14 @@ var (
 	addrStore string
 )
 
+func defaultRedisEndpoint() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return "localhost:6379"
+	}
+	return ""
+}
+
 func init() {
 	// Set addresses. Prefer in this order:
 	// * Specific envvar REDIS_${NAME}_ENDPOINT
@@ -26,7 +35,7 @@ func init() {
 	// * Default
 	//
 	// Additionally keep this logic in sync with cmd/server/redis.go
-	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
+	fallback := env.Get("REDIS_ENDPOINT", defaultRedisEndpoint(), "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
 
 	// addrCache
 	for _, addr := range []string{
