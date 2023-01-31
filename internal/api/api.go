@@ -50,6 +50,7 @@ func (c CommitID) Short() string {
 
 // RevSpec is a revision range specifier suitable for passing to git. See
 // the manpage gitrevisions(7).
+// TODO Perforce's versioning is strictly numerical; can/should this be updated to reflect that?
 type RevSpec string
 
 // RepoCommit scopes a commit to a repository.

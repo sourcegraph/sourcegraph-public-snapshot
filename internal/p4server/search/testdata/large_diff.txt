@@ -1,0 +1,618 @@
+diff --git cmd/frontend/graphqlbackend/search_suggestions.go cmd/frontend/graphqlbackend/search_suggestions.go
+index de6ee08821..d19b72e222 100644
+--- cmd/frontend/graphqlbackend/search_suggestions.go
++++ cmd/frontend/graphqlbackend/search_suggestions.go
+@@ -211,294 +211,264 @@ var (
+ 	mockShowSymbolMatches   showSearchSuggestionResolvers
+ )
+ 
+-func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
+-
+-	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
+-	// from "field:^foo$" to "field:^foo".
+-	globbing := false
+-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
+-		globbing = true
+-	}
+-	if globbing {
+-		r.Query = query.FuzzifyRegexPatterns(r.Query)
++func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	if mockShowRepoSuggestions != nil {
++		return mockShowRepoSuggestions()
+ 	}
+ 
+-	args.applyDefaultsAndConstraints()
+-
+-	if len(r.Query) == 0 {
+-		return nil, nil
++	// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
++	// * If only repo fields (except 1 term in query), show repo suggestions.
++
++	hasSingleField := len(r.Query.Fields()) == 1
++	hasTwoFields := len(r.Query.Fields()) == 2
++	hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
++	hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
++	var effectiveRepoFieldValues []string
++	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
++		effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
++	} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
++		effectiveRepoFieldValues, _ = r.Query.Repositories()
+ 	}
+ 
+-	// Only suggest for type:file.
+-	typeValues, _ := r.Query.StringValues(query.FieldType)
+-	for _, resultType := range typeValues {
+-		if resultType != "file" {
+-			return nil, nil
++	// If we have a query which is not valid, just ignore it since this is for a suggestion.
++	i := 0
++	for _, v := range effectiveRepoFieldValues {
++		if _, err := regexp.Compile(v); err == nil {
++			effectiveRepoFieldValues[i] = v
++			i++
+ 		}
+ 	}
++	effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
+ 
+-	var suggesters []func(ctx context.Context) ([]SearchSuggestionResolver, error)
++	if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
++		repoOptions := r.toRepoOptions(r.Query,
++			resolveRepositoriesOpts{
++				effectiveRepoFieldValues: effectiveRepoFieldValues,
++				limit:                    maxSearchSuggestions,
++			})
+ 
+-	showRepoSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+-		if mockShowRepoSuggestions != nil {
+-			return mockShowRepoSuggestions()
++		resolved, err := r.resolveRepositories(ctx, repoOptions)
++		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
++		for i, rev := range resolved.RepoRevs {
++			resolvers = append(resolvers, repositorySuggestionResolver{
++				repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
++				// Encode the returned order in score.
++				score: math.MaxInt32 - i,
++			})
+ 		}
+ 
+-		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
+-		// * If only repo fields (except 1 term in query), show repo suggestions.
+-
+-		hasSingleField := len(r.Query.Fields()) == 1
+-		hasTwoFields := len(r.Query.Fields()) == 2
+-		hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
+-		hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
+-		var effectiveRepoFieldValues []string
+-		if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
+-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
+-		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
+-			effectiveRepoFieldValues, _ = r.Query.Repositories()
+-		}
++		return resolvers, err
++	}
++	return nil, nil
++}
+ 
+-		// If we have a query which is not valid, just ignore it since this is for a suggestion.
+-		i := 0
+-		for _, v := range effectiveRepoFieldValues {
+-			if _, err := regexp.Compile(v); err == nil {
+-				effectiveRepoFieldValues[i] = v
+-				i++
+-			}
+-		}
+-		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
+-
+-		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
+-			repoOptions := r.toRepoOptions(r.Query,
+-				resolveRepositoriesOpts{
+-					effectiveRepoFieldValues: effectiveRepoFieldValues,
+-					limit:                    maxSearchSuggestions,
+-				})
+-
+-			resolved, err := r.resolveRepositories(ctx, repoOptions)
+-			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
+-			for i, rev := range resolved.RepoRevs {
+-				resolvers = append(resolvers, repositorySuggestionResolver{
+-					repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
+-					// Encode the returned order in score.
+-					score: math.MaxInt32 - i,
+-				})
+-			}
++func (r *searchResolver) showFileSuggestions(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	if mockShowFileSuggestions != nil {
++		return mockShowFileSuggestions()
++	}
+ 
+-			return resolvers, err
+-		}
++	// If only repos/repogroups and files are specified (and at most 1 term), then show file
++	// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
++	// make it easy to jump to files by just typing in their name, not `file:<their name>`).
++	hasOnlyEmptyRepoField := len(r.Query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.Query.RegexpPatterns(query.FieldRepo)) && len(r.Query.Fields()) == 1
++	hasRepoOrFileFields := len(r.Query.Values(query.FieldRepoGroup)) > 0 || len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
++	if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.Query.Values(query.FieldDefault)) <= 1 {
++		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
++		defer cancel()
++		return r.suggestFilePaths(ctx, maxSearchSuggestions)
++	}
++	return nil, nil
++}
++
++func (r *searchResolver) showLangSuggestions(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	if mockShowLangSuggestions != nil {
++		return mockShowLangSuggestions()
++	}
++
++	// The "repo:" field must be specified for showing language suggestions.
++	// For performance reasons, only try to get languages of the first repository found
++	// within the scope of the "repo:" field value.
++	if len(r.Query.Values(query.FieldRepo)) == 0 {
+ 		return nil, nil
+ 	}
+-	suggesters = append(suggesters, showRepoSuggestions)
++	effectiveRepoFieldValues, _ := r.Query.Repositories()
+ 
+-	showFileSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+-		if mockShowFileSuggestions != nil {
+-			return mockShowFileSuggestions()
++	validValues := effectiveRepoFieldValues[:0]
++	for _, v := range effectiveRepoFieldValues {
++		if i := strings.LastIndexByte(v, '@'); i > -1 {
++			// Strip off the @revision suffix so that we can use
++			// the trigram index on the name column in Postgres.
++			v = v[:i]
+ 		}
+ 
+-		// If only repos/repogroups and files are specified (and at most 1 term), then show file
+-		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
+-		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
+-		hasOnlyEmptyRepoField := len(r.Query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.Query.RegexpPatterns(query.FieldRepo)) && len(r.Query.Fields()) == 1
+-		hasRepoOrFileFields := len(r.Query.Values(query.FieldRepoGroup)) > 0 || len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
+-		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.Query.Values(query.FieldDefault)) <= 1 {
+-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+-			defer cancel()
+-			return r.suggestFilePaths(ctx, maxSearchSuggestions)
++		if _, err := regexp.Compile(v); err == nil {
++			validValues = append(validValues, v)
+ 		}
++	}
++	if len(validValues) == 0 {
+ 		return nil, nil
+ 	}
+-	suggesters = append(suggesters, showFileSuggestions)
+ 
+-	showLangSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+-		if mockShowLangSuggestions != nil {
+-			return mockShowLangSuggestions()
+-		}
++	// Only care about the first found repository.
++	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
++		IncludePatterns: validValues,
++		LimitOffset: &database.LimitOffset{
++			Limit: 1,
++		},
++	})
++	if err != nil || len(repos) == 0 {
++		return nil, err
++	}
++	repo := repos[0]
+ 
+-		// The "repo:" field must be specified for showing language suggestions.
+-		// For performance reasons, only try to get languages of the first repository found
+-		// within the scope of the "repo:" field value.
+-		if len(r.Query.Values(query.FieldRepo)) == 0 {
+-			return nil, nil
+-		}
+-		effectiveRepoFieldValues, _ := r.Query.Repositories()
+-
+-		validValues := effectiveRepoFieldValues[:0]
+-		for _, v := range effectiveRepoFieldValues {
+-			if i := strings.LastIndexByte(v, '@'); i > -1 {
+-				// Strip off the @revision suffix so that we can use
+-				// the trigram index on the name column in Postgres.
+-				v = v[:i]
+-			}
++	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
++	defer cancel()
+ 
+-			if _, err := regexp.Compile(v); err == nil {
+-				validValues = append(validValues, v)
+-			}
+-		}
+-		if len(validValues) == 0 {
+-			return nil, nil
+-		}
++	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
++	if err != nil {
++		return nil, err
++	}
++
++	inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
++	if err != nil {
++		return nil, err
++	}
+ 
+-		// Only care about the first found repository.
+-		repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+-			IncludePatterns: validValues,
+-			LimitOffset: &database.LimitOffset{
+-				Limit: 1,
+-			},
++	resolvers := make([]SearchSuggestionResolver, 0, len(inventory.Languages))
++	for _, l := range inventory.Languages {
++		resolvers = append(resolvers, languageSuggestionResolver{
++			lang:  &languageResolver{name: strings.ToLower(l.Name)},
++			score: math.MaxInt32,
+ 		})
+-		if err != nil || len(repos) == 0 {
+-			return nil, err
+-		}
+-		repo := repos[0]
++	}
+ 
+-		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+-		defer cancel()
++	return resolvers, err
++}
+ 
+-		commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
++func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	if mockShowSymbolMatches != nil {
++		return mockShowSymbolMatches()
++	}
++
++	b, err := query.ToBasicQuery(r.Query)
++	if err != nil {
++		return nil, err
++	}
++	if !query.IsPatternAtom(b) {
++		// Not an atomic pattern, can't guarantee it will behave well.
++		return nil, nil
++	}
++
++	var fileMatches []result.Match
++	if featureflag.FromContext(ctx).GetBoolOr("sh_search_suggestions_symbols", false) {
++		args, jobs, err := r.toSearchInputs(r.Query)
+ 		if err != nil {
+ 			return nil, err
+ 		}
++		args.ResultTypes = result.TypeSymbol
+ 
+-		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
++		results, err := r.doResults(ctx, args, jobs)
++		if errors.Is(err, context.DeadlineExceeded) {
++			err = nil
++		}
+ 		if err != nil {
+ 			return nil, err
+ 		}
+-
+-		resolvers := make([]SearchSuggestionResolver, 0, len(inventory.Languages))
+-		for _, l := range inventory.Languages {
+-			resolvers = append(resolvers, languageSuggestionResolver{
+-				lang:  &languageResolver{name: strings.ToLower(l.Name)},
+-				score: math.MaxInt32,
+-			})
++		if results != nil {
++			fileMatches = results.Matches
+ 		}
+-
+-		return resolvers, err
+-	}
+-	suggesters = append(suggesters, showLangSuggestions)
+-
+-	showSymbolMatches := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+-		if mockShowSymbolMatches != nil {
+-			return mockShowSymbolMatches()
+-		}
+-
+-		b, err := query.ToBasicQuery(r.Query)
++	} else {
++		repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
++		resolved, err := r.resolveRepositories(ctx, repoOptions)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+-		if !query.IsPatternAtom(b) {
+-			// Not an atomic pattern, can't guarantee it will behave well.
++
++		p := search.ToTextPatternInfo(b, search.Batch, query.Identity)
++		if p.Pattern == "" {
+ 			return nil, nil
+ 		}
+ 
+-		var fileMatches []result.Match
+-		if featureflag.FromContext(ctx).GetBoolOr("sh_search_suggestions_symbols", false) {
+-			args, jobs, err := r.toSearchInputs(r.Query)
+-			if err != nil {
+-				return nil, err
+-			}
+-			args.ResultTypes = result.TypeSymbol
++		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
++		defer cancel()
+ 
+-			results, err := r.doResults(ctx, args, jobs)
+-			if errors.Is(err, context.DeadlineExceeded) {
+-				err = nil
+-			}
+-			if err != nil {
+-				return nil, err
+-			}
+-			if results != nil {
+-				fileMatches = results.Matches
+-			}
+-		} else {
+-			repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
+-			resolved, err := r.resolveRepositories(ctx, repoOptions)
+-			if err != nil {
+-				return nil, err
+-			}
++		fileMatches, _, err = streaming.CollectStream(func(stream streaming.Sender) error {
++			return symbol.Search(ctx, &search.TextParameters{
++				PatternInfo:  p,
++				Repos:        resolved.RepoRevs,
++				Query:        r.Query,
++				Zoekt:        r.zoekt,
++				SearcherURLs: r.searcherURLs,
++			}, 7, stream)
++		})
++		if err != nil {
++			return nil, err
++		}
++	}
+ 
+-			p := search.ToTextPatternInfo(b, search.Batch, query.Identity)
+-			if p.Pattern == "" {
+-				return nil, nil
++	suggestions := make([]SearchSuggestionResolver, 0)
++	for _, match := range fileMatches {
++		fileMatch, ok := match.(*result.FileMatch)
++		if !ok {
++			continue
++		}
++		for _, sm := range fileMatch.Symbols {
++			score := 20
++			if sm.Symbol.Parent == "" {
++				score++
+ 			}
+-
+-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+-			defer cancel()
+-
+-			fileMatches, _, err = streaming.CollectStream(func(stream streaming.Sender) error {
+-				return symbol.Search(ctx, &search.TextParameters{
+-					PatternInfo:  p,
+-					Repos:        resolved.RepoRevs,
+-					Query:        r.Query,
+-					Zoekt:        r.zoekt,
+-					SearcherURLs: r.searcherURLs,
+-				}, 7, stream)
+-			})
+-			if err != nil {
+-				return nil, err
++			if len(sm.Symbol.Name) < 12 {
++				score++
+ 			}
+-		}
+-
+-		suggestions := make([]SearchSuggestionResolver, 0)
+-		for _, match := range fileMatches {
+-			fileMatch, ok := match.(*result.FileMatch)
+-			if !ok {
+-				continue
++			switch sm.Symbol.LSPKind() {
++			case lsp.SKFunction, lsp.SKMethod:
++				score += 2
++			case lsp.SKClass:
++				score += 3
+ 			}
+-			for _, sm := range fileMatch.Symbols {
+-				score := 20
+-				if sm.Symbol.Parent == "" {
+-					score++
+-				}
+-				if len(sm.Symbol.Name) < 12 {
+-					score++
+-				}
+-				switch sm.Symbol.LSPKind() {
+-				case lsp.SKFunction, lsp.SKMethod:
+-					score += 2
+-				case lsp.SKClass:
+-					score += 3
+-				}
+-				repoName := strings.ToLower(string(sm.File.Repo.Name))
+-				fileName := strings.ToLower(sm.File.Path)
+-				symbolName := strings.ToLower(sm.Symbol.Name)
+-				if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
+-					score++
+-				}
+-				suggestions = append(suggestions, symbolSuggestionResolver{
+-					symbol: symbolResolver{
+-						db: r.db,
+-						commit: toGitCommitResolver(
+-							NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+-							r.db,
+-							fileMatch.CommitID,
+-							nil,
+-						),
+-						SymbolMatch: sm,
+-					},
+-					score: score,
+-				})
++			repoName := strings.ToLower(string(sm.File.Repo.Name))
++			fileName := strings.ToLower(sm.File.Path)
++			symbolName := strings.ToLower(sm.Symbol.Name)
++			if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
++				score++
+ 			}
++			suggestions = append(suggestions, symbolSuggestionResolver{
++				symbol: symbolResolver{
++					db: r.db,
++					commit: toGitCommitResolver(
++						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
++						r.db,
++						fileMatch.CommitID,
++						nil,
++					),
++					SymbolMatch: sm,
++				},
++				score: score,
++			})
+ 		}
++	}
+ 
+-		sortSearchSuggestions(suggestions)
+-		const maxBoostedSymbolResults = 3
+-		boost := maxBoostedSymbolResults
+-		if len(suggestions) < boost {
+-			boost = len(suggestions)
+-		}
+-		if boost > 0 {
+-			for i := 0; i < boost; i++ {
+-				if res, ok := suggestions[i].(symbolSuggestionResolver); ok {
+-					res.score += 200
+-					suggestions[i] = res
+-				}
++	sortSearchSuggestions(suggestions)
++	const maxBoostedSymbolResults = 3
++	boost := maxBoostedSymbolResults
++	if len(suggestions) < boost {
++		boost = len(suggestions)
++	}
++	if boost > 0 {
++		for i := 0; i < boost; i++ {
++			if res, ok := suggestions[i].(symbolSuggestionResolver); ok {
++				res.score += 200
++				suggestions[i] = res
+ 			}
+ 		}
+-
+-		return suggestions, nil
+ 	}
+-	suggesters = append(suggesters, showSymbolMatches)
+ 
+-	showFilesWithTextMatches := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	return suggestions, nil
++}
++
++// showFilesWithTextMatches returns a suggester bounded by `first`.
++func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
++	return func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+ 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
+ 		// to avoid delaying repo and file suggestions for too long.
+ 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+@@ -515,8 +485,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
+ 			}
+ 			var suggestions []SearchSuggestionResolver
+ 			if results != nil {
+-				if len(results.Matches) > int(*args.First) {
+-					results.Matches = results.Matches[:*args.First]
++				if len(results.Matches) > int(first) {
++					results.Matches = results.Matches[:first]
+ 				}
+ 				suggestions = make([]SearchSuggestionResolver, 0, len(results.Matches))
+ 				for i, res := range results.Matches {
+@@ -536,38 +506,74 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
+ 		}
+ 		return nil, nil
+ 	}
+-	suggesters = append(suggesters, showFilesWithTextMatches)
++}
++
++func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]SearchSuggestionResolver, error) {
++	hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
++	if !hasSingleContextField {
++		return nil, nil
++	}
++	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
++	parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(searchContextSpec)
++	searchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
++		ctx,
++		database.ListSearchContextsPageOptions{First: maxSearchSuggestions},
++		database.ListSearchContextsOptions{
++			Name:              parsedSearchContextSpec.SearchContextName,
++			NamespaceName:     parsedSearchContextSpec.NamespaceName,
++			OrderBy:           database.SearchContextsOrderBySpec,
++			OrderByDescending: true,
++		},
++	)
++	if err != nil {
++		return nil, err
++	}
++	suggestions := make([]SearchSuggestionResolver, 0, len(searchContexts))
++	for i, searchContext := range searchContexts {
++		suggestions = append(suggestions, &searchContextSuggestionResolver{
++			searchContext: &searchContextResolver{searchContext, r.db},
++			score:         len(searchContexts) - i,
++		})
++	}
++	return suggestions, nil
++}
++
++type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
++
++func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
++
++	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
++	// from "field:^foo$" to "field:^foo".
++	globbing := false
++	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
++		globbing = true
++	}
++	if globbing {
++		r.Query = query.FuzzifyRegexPatterns(r.Query)
++	}
++
++	args.applyDefaultsAndConstraints()
++
++	if len(r.Query) == 0 {
++		return nil, nil
++	}
+ 
+-	showSearchContextSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
+-		hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
+-		if !hasSingleContextField {
++	// Only suggest for type:file.
++	typeValues, _ := r.Query.StringValues(query.FieldType)
++	for _, resultType := range typeValues {
++		if resultType != "file" {
+ 			return nil, nil
+ 		}
+-		searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
+-		parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(searchContextSpec)
+-		searchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
+-			ctx,
+-			database.ListSearchContextsPageOptions{First: maxSearchSuggestions},
+-			database.ListSearchContextsOptions{
+-				Name:              parsedSearchContextSpec.SearchContextName,
+-				NamespaceName:     parsedSearchContextSpec.NamespaceName,
+-				OrderBy:           database.SearchContextsOrderBySpec,
+-				OrderByDescending: true,
+-			},
+-		)
+-		if err != nil {
+-			return nil, err
+-		}
+-		suggestions := make([]SearchSuggestionResolver, 0, len(searchContexts))
+-		for i, searchContext := range searchContexts {
+-			suggestions = append(suggestions, &searchContextSuggestionResolver{
+-				searchContext: &searchContextResolver{searchContext, r.db},
+-				score:         len(searchContexts) - i,
+-			})
+-		}
+-		return suggestions, nil
+ 	}
+-	suggesters = append(suggesters, showSearchContextSuggestions)
++
++	suggesters := []suggester{
++		r.showRepoSuggestions,
++		r.showFileSuggestions,
++		r.showLangSuggestions,
++		r.showSymbolMatches,
++		r.showFilesWithTextMatches(*args.First),
++		r.showSearchContextSuggestions,
++	}
+ 
+ 	// Run suggesters.
+ 	var (
