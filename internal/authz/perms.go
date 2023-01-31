@@ -89,6 +89,38 @@ func (e ErrStalePermissions) Error() string {
 	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
 }
 
+// SrcPermission determine if a user with a specific id
+// can read a repository with a specific id
+type SrcPermission struct {
+	UserID            int32     // The internal database ID of a user
+	RepoID            int32     // The internal database ID of a repo
+	ExternalAccountID int32     // The internal database ID of a user external account
+	CreatedAt         time.Time // The creation time
+	UpdatedAt         time.Time // The last updated time
+	Source            string    // source of the permission
+}
+
+// A struct that holds the entity we are updating the permissions for
+// It can be either a user or a repository.
+type PermissionEntity struct {
+	UserID            int32 // The internal database ID of a user
+	ExternalAccountID int32 // The internal database ID of a user external account
+	RepoID            int32 // The internal database ID of a repo
+}
+
+// TracingFields returns tracing fields for the opentracing log.
+func (p *SrcPermission) TracingFields() []otlog.Field {
+	fs := []otlog.Field{
+		otlog.Int32("SrcPermissions.UserID", p.UserID),
+		otlog.Int32("SrcPermissions.RepoID", p.RepoID),
+		otlog.Int32("SrcPermissions.ExternalAccountID", p.ExternalAccountID),
+		otlog.String("SrcPermissions.CreatedAt", p.CreatedAt.String()),
+		otlog.String("SrcPermissions.UpdatedAt", p.UpdatedAt.String()),
+		otlog.String("SrcPermissions.UpdatedAt", p.Source),
+	}
+	return fs
+}
+
 // UserPermissions are the permissions of a user to perform an action
 // on the given set of object IDs of the defined type.
 type UserPermissions struct {

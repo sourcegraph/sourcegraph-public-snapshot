@@ -12872,6 +12872,9 @@ type MockPermsStore struct {
 	// object controlling the behavior of the method
 	// SetRepoPermissionsUnrestricted.
 	SetRepoPermissionsUnrestrictedFunc *PermsStoreSetRepoPermissionsUnrestrictedFunc
+	// SetSrcPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method SetSrcPermissions.
+	SetSrcPermissionsFunc *PermsStoreSetSrcPermissionsFunc
 	// SetUserPermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method SetUserPermissions.
 	SetUserPermissionsFunc *PermsStoreSetUserPermissionsFunc
@@ -12986,6 +12989,11 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
 			defaultHook: func(context.Context, []int32, bool) (r0 error) {
+				return
+			},
+		},
+		SetSrcPermissionsFunc: &PermsStoreSetSrcPermissionsFunc{
+			defaultHook: func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) (r0 error) {
 				return
 			},
 		},
@@ -13121,6 +13129,11 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.SetRepoPermissionsUnrestricted")
 			},
 		},
+		SetSrcPermissionsFunc: &PermsStoreSetSrcPermissionsFunc{
+			defaultHook: func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error {
+				panic("unexpected invocation of MockPermsStore.SetSrcPermissions")
+			},
+		},
 		SetUserPermissionsFunc: &PermsStoreSetUserPermissionsFunc{
 			defaultHook: func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 				panic("unexpected invocation of MockPermsStore.SetUserPermissions")
@@ -13216,6 +13229,9 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
 			defaultHook: i.SetRepoPermissionsUnrestricted,
+		},
+		SetSrcPermissionsFunc: &PermsStoreSetSrcPermissionsFunc{
+			defaultHook: i.SetSrcPermissions,
 		},
 		SetUserPermissionsFunc: &PermsStoreSetUserPermissionsFunc{
 			defaultHook: i.SetUserPermissions,
@@ -15200,6 +15216,118 @@ func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreSetSrcPermissionsFunc describes the behavior when the
+// SetSrcPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreSetSrcPermissionsFunc struct {
+	defaultHook func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error
+	hooks       []func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error
+	history     []PermsStoreSetSrcPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetSrcPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) SetSrcPermissions(v0 context.Context, v1 []authz.SrcPermission, v2 authz.PermissionEntity, v3 string) error {
+	r0 := m.SetSrcPermissionsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetSrcPermissionsFunc.appendCall(PermsStoreSetSrcPermissionsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetSrcPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreSetSrcPermissionsFunc) SetDefaultHook(hook func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetSrcPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreSetSrcPermissionsFunc) PushHook(hook func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreSetSrcPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreSetSrcPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreSetSrcPermissionsFunc) nextHook() func(context.Context, []authz.SrcPermission, authz.PermissionEntity, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreSetSrcPermissionsFunc) appendCall(r0 PermsStoreSetSrcPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreSetSrcPermissionsFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreSetSrcPermissionsFunc) History() []PermsStoreSetSrcPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreSetSrcPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreSetSrcPermissionsFuncCall is an object that describes an
+// invocation of method SetSrcPermissions on an instance of MockPermsStore.
+type PermsStoreSetSrcPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []authz.SrcPermission
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 authz.PermissionEntity
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreSetSrcPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreSetSrcPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

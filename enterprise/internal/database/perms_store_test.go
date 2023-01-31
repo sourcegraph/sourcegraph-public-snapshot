@@ -34,7 +34,7 @@ func cleanupPermsTables(t *testing.T, s *permsStore) {
 		return
 	}
 
-	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions;`
+	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, src_permissions;`
 	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
@@ -662,6 +662,181 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
 				if err != nil {
 					t.Fatal("repo_permissions:", err)
+				}
+			})
+		}
+	}
+}
+
+func checkSrcPermissionsTable(s *permsStore, where string, expected []authz.SrcPermission) ([]authz.SrcPermission, error) {
+	format := "SELECT user_id, ext_account_id, repo_id, created_at, updated_at FROM src_permissions WHERE %s;"
+	rows, err := s.Query(context.Background(), sqlf.Sprintf(format, where))
+	if err != nil {
+		return nil, err
+	}
+
+	permissions := []authz.SrcPermission{}
+	index := 0
+	for rows.Next() {
+		p := authz.SrcPermission{}
+		if err = rows.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, p)
+
+		if cmp.Diff(expected[index], p) != "" {
+			return nil, errors.Errorf("Comparing %d item, want %v, got %v", index, expected[index], p)
+		}
+
+		index++
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+
+	if index != len(expected) {
+		return nil, errors.Errorf("Want %d rows, got %d", len(expected), index)
+	}
+
+	return permissions, nil
+}
+
+func testPermsStore_SetSrcPermissions(db database.DB) func(*testing.T) {
+	source := "test"
+
+	tests := []struct {
+		name                string
+		origPermissions     []authz.SrcPermission
+		permissions         []authz.SrcPermission
+		expectedPermissions []authz.SrcPermission
+		entity              authz.PermissionEntity
+	}{
+		{
+			name:                "empty",
+			origPermissions:     []authz.SrcPermission{},
+			permissions:         []authz.SrcPermission{},
+			expectedPermissions: []authz.SrcPermission{},
+			entity: authz.PermissionEntity{
+				UserID:            1,
+				ExternalAccountID: 1,
+			},
+		},
+		{
+			name:            "add",
+			origPermissions: []authz.SrcPermission{},
+			permissions: []authz.SrcPermission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            2,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            3,
+				},
+			},
+			expectedPermissions: []authz.SrcPermission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            2,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            3,
+				},
+			},
+			entity: authz.PermissionEntity{
+				UserID:            1,
+				ExternalAccountID: 1,
+			},
+		},
+		{
+			name: "add, update and remove",
+			origPermissions: []authz.SrcPermission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            2,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            3,
+				},
+			},
+			permissions: []authz.SrcPermission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            4,
+				},
+			},
+			expectedPermissions: []authz.SrcPermission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            4,
+				},
+			},
+			entity: authz.PermissionEntity{
+				UserID:            1,
+				ExternalAccountID: 1,
+			},
+		},
+	}
+
+	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := perms(logger, db, clock)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
+
+				err := s.SetSrcPermissions(context.Background(), test.permissions, test.entity, source)
+				if err != nil {
+					t.Fatal("testing src permissions", err)
+				}
+
+				if test.entity.UserID > 0 {
+					_, err = checkSrcPermissionsTable(s, fmt.Sprintf("user_id = %d", test.entity.UserID), test.expectedPermissions)
+				} else if test.entity.RepoID > 0 {
+					_, err = checkSrcPermissionsTable(s, fmt.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
+				}
+
+				if err != nil {
+					t.Fatal("src_permissions:", err)
 				}
 			})
 		}
