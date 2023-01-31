@@ -1,12 +1,8 @@
-import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { ApolloError, FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import {
-    DeletePreciseIndexesResult,
-    DeletePreciseIndexesVariables,
-    PreciseIndexState,
-} from '../../../../graphql-operations'
+import { DeletePreciseIndexesResult, DeletePreciseIndexesVariables } from '../../../../graphql-operations'
 
 type DeletePreciseIndexesResults = Promise<
     FetchResult<DeletePreciseIndexesResult, Record<string, any>, Record<string, any>>
@@ -14,12 +10,7 @@ type DeletePreciseIndexesResults = Promise<
 
 interface UseDeletePreciseIndexesResult {
     handleDeletePreciseIndexes: (
-        options?:
-            | MutationFunctionOptions<
-                  DeletePreciseIndexesResult,
-                  Omit<DeletePreciseIndexesVariables, 'states'> & { state?: PreciseIndexState }
-              >
-            | undefined
+        options?: MutationFunctionOptions<DeletePreciseIndexesResult, DeletePreciseIndexesVariables> | undefined
     ) => DeletePreciseIndexesResults
     deletesError: ApolloError | undefined
 }
@@ -50,16 +41,11 @@ export const useDeletePreciseIndexes = (): UseDeletePreciseIndexesResult => {
 
     return {
         handleDeletePreciseIndexes: (
-            options?:
-                | MutationFunctionOptions<
-                      DeletePreciseIndexesResult,
-                      Omit<DeletePreciseIndexesVariables, 'states'> & { state?: PreciseIndexState }
-                  >
-                | undefined
+            options?: MutationFunctionOptions<DeletePreciseIndexesResult, DeletePreciseIndexesVariables> | undefined
         ): DeletePreciseIndexesResults => {
             const variables = {
                 query: options?.variables?.query ?? null,
-                states: options?.variables?.state ? [options.variables.state] : null,
+                states: options?.variables?.states ?? null,
                 repository: options?.variables?.repository ?? null,
                 isLatestForRepo: options?.variables?.isLatestForRepo ?? null,
             }

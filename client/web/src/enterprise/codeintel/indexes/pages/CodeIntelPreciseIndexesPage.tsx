@@ -40,7 +40,7 @@ import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { ProjectDescription } from '../components/ProjectDescription'
 import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
-import { queryPreciseIndexes as defaultQueryPreciseIndexes } from '../hooks/queryPreciseIndexes'
+import { queryPreciseIndexes as defaultQueryPreciseIndexes, statesFromString } from '../hooks/queryPreciseIndexes'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
@@ -165,10 +165,10 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const queryConnection = useCallback(
         (args: FilteredConnectionQueryArguments) => {
             const stashArgs = {
-                query: args.query ?? null,
-                state: (args as any).state ?? null,
-                isLatestForRepo: (args as any).isLatestForRepo ?? null,
                 repository: repo?.id ?? null,
+                query: args.query ?? null,
+                states: (args as any).states ?? null,
+                isLatestForRepo: (args as any).isLatestForRepo ?? null,
             }
 
             setArgs(stashArgs)
@@ -185,14 +185,17 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
     const onRawDelete = () => {
         if (selection === 'all') {
-            if (args === undefined || !confirm(`Delete ${totalCount} indexes?`)) {
-                return Promise.resolve()
+            if (args !== undefined && confirm(`Delete ${totalCount} indexes?`)) {
+                return handleDeletePreciseIndexes({
+                    variables: {
+                        ...args,
+                        states: statesFromString(args?.states),
+                    },
+                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                })
             }
 
-            return handleDeletePreciseIndexes({
-                variables: args,
-                update: cache => cache.modify({ fields: { node: () => {} } }),
-            })
+            return Promise.resolve()
         }
 
         return Promise.all(
@@ -209,14 +212,17 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
     const onReindex = () => {
         if (selection === 'all') {
-            if (args === undefined || !confirm(`Mark ${totalCount} indexes as replaceable by auto-indexing?`)) {
-                return Promise.resolve()
+            if (args !== undefined && confirm(`Mark ${totalCount} indexes as replaceable by auto-indexing?`)) {
+                return handleReindexPreciseIndexes({
+                    variables: {
+                        ...args,
+                        states: statesFromString(args?.states),
+                    },
+                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                })
             }
 
-            return handleReindexPreciseIndexes({
-                variables: args,
-                update: cache => cache.modify({ fields: { node: () => {} } }),
-            })
+            return Promise.resolve()
         }
 
         return Promise.all(

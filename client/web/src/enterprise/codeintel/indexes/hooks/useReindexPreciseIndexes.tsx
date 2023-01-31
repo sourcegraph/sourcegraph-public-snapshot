@@ -1,12 +1,8 @@
-import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { ApolloError, FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import {
-    PreciseIndexState,
-    ReindexPreciseIndexesResult,
-    ReindexPreciseIndexesVariables,
-} from '../../../../graphql-operations'
+import { ReindexPreciseIndexesResult, ReindexPreciseIndexesVariables } from '../../../../graphql-operations'
 
 type ReindexPreciseIndexesResults = Promise<
     FetchResult<ReindexPreciseIndexesResult, Record<string, any>, Record<string, any>>
@@ -14,12 +10,7 @@ type ReindexPreciseIndexesResults = Promise<
 
 interface UseReindexPreciseIndexesResult {
     handleReindexPreciseIndexes: (
-        options?:
-            | MutationFunctionOptions<
-                  ReindexPreciseIndexesResult,
-                  Omit<ReindexPreciseIndexesVariables, 'states'> & { state?: PreciseIndexState }
-              >
-            | undefined
+        options?: MutationFunctionOptions<ReindexPreciseIndexesResult, ReindexPreciseIndexesVariables> | undefined
     ) => ReindexPreciseIndexesResults
     reindexesError: ApolloError | undefined
 }
@@ -50,16 +41,11 @@ export const useReindexPreciseIndexes = (): UseReindexPreciseIndexesResult => {
 
     return {
         handleReindexPreciseIndexes: (
-            options?:
-                | MutationFunctionOptions<
-                      ReindexPreciseIndexesResult,
-                      Omit<ReindexPreciseIndexesVariables, 'states'> & { state?: PreciseIndexState }
-                  >
-                | undefined
+            options?: MutationFunctionOptions<ReindexPreciseIndexesResult, ReindexPreciseIndexesVariables> | undefined
         ): ReindexPreciseIndexesResults => {
             const variables = {
                 query: options?.variables?.query ?? null,
-                states: options?.variables?.state ? [options.variables.state] : null,
+                states: options?.variables?.states ?? null,
                 repository: options?.variables?.repository ?? null,
                 isLatestForRepo: options?.variables?.isLatestForRepo ?? null,
             }
