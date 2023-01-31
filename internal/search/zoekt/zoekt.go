@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -99,6 +100,12 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		ChunkMatches: true,
 	}
 
+	// If we're searching repos, ignore the other options and only check one file per repo
+	if o.Selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+		return searchOpts
+	}
+
 	if o.Features.Debug {
 		searchOpts.DebugScore = true
 	}
@@ -129,17 +136,7 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 
 		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
-
-		// This controls the impact of document ranks on the final ranking. The value is set to 0.5 * 9000 (half the
-		// zoekt default), to match existing behavior where ranks are given half the priority as existing scoring
-		// signals. We plan to eventually remove this, once we experiment on real data to find a good default.
-		searchOpts.DocumentRanksWeight = 4500
-
-		return searchOpts
-	}
-
-	if o.Selector.Root() == filter.Repository {
-		searchOpts.ShardRepoMaxMatchCount = 1
+		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 	} else {
 		k := o.resultCountFactor()
 		searchOpts.ShardMaxMatchCount = 100 * k
