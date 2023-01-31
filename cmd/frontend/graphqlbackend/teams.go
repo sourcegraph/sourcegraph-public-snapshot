@@ -101,26 +101,18 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("must specify at most one: ParentTeam or ParentTeamName")
 	}
-	if args.ParentTeam != nil {
-		if err := relay.UnmarshalSpec(*args.ParentTeam, &t.ParentTeamID); err != nil {
-			return nil, errors.Wrapf(err, "Cannot interpret ParentTeam ID: %q", *args.ParentTeam)
-		}
-		if _, err := teams.GetTeamByID(ctx, t.ParentTeamID); errcode.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "ParentTeam ID=%d not found", t.ParentTeamID)
-		}
+	parentTeam, err := findTeam(ctx, teams, args.ParentTeam, args.ParentTeamName)
+	if err != nil {
+		return nil, errors.Wrap(err, "parent team")
 	}
-	if args.ParentTeamName != nil {
-		parentTeam, err := teams.GetTeamByName(ctx, *args.ParentTeamName)
-		if errcode.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "ParentTeam name=%q not found", *args.ParentTeamName)
-		}
+	if parentTeam != nil {
 		t.ParentTeamID = parentTeam.ID
 	}
 	t.CreatorID = actor.FromContext(ctx).UID
 	if err := teams.CreateTeam(ctx, &t); err != nil {
 		return nil, err
 	}
-	return &teamResolver{team: &t, teamsDb: teams}, nil
+	return &teamResolver{team: &t, teamsDb: r.db.Teams()}, nil
 }
 
 type UpdateTeamArgs struct {
@@ -131,8 +123,81 @@ type UpdateTeamArgs struct {
 	ParentTeamName *string
 }
 
-func (r *schemaResolver) UpdateTeam(args *UpdateTeamArgs) *teamResolver {
-	return &teamResolver{}
+func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to create teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can update teams")
+	}
+	if args.ID == nil && args.Name == nil {
+		return nil, errors.New("team to update is identifier by either id or name, but neither was specified")
+	}
+	if args.ID != nil && args.Name != nil {
+		return nil, errors.New("team to update is identifier by either id or name, but both were specified")
+	}
+	if args.ParentTeam != nil && args.ParentTeamName != nil {
+		return nil, errors.New("parent team is identified by either id or name, but both were specified")
+	}
+	var t *types.Team
+	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+		t, err = findTeam(ctx, tx.Teams(), args.ID, args.Name)
+		if err != nil {
+			return err
+		}
+		var needsUpdate bool
+		if args.DisplayName != nil && *args.DisplayName != t.DisplayName {
+			needsUpdate = true
+			t.DisplayName = *args.DisplayName
+		}
+		if args.ParentTeam != nil || args.ParentTeamName != nil {
+			parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
+			if err != nil {
+				return errors.Wrap(err, "cannot find parent team")
+			}
+			if parentTeam.ID != t.ParentTeamID {
+				needsUpdate = true
+				t.ParentTeamID = parentTeam.ID
+			}
+		}
+		if needsUpdate {
+			return tx.Teams().UpdateTeam(ctx, t)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &teamResolver{team: t, teamsDb: r.db.Teams()}, nil
+}
+
+// findTeam returns a team by either GraphQL ID or name.
+// If both parameters are nil, the result is nil.
+func findTeam(ctx context.Context, teams database.TeamStore, graphqlID *graphql.ID, name *string) (*types.Team, error) {
+	if graphqlID != nil {
+		var id int32
+		err := relay.UnmarshalSpec(*graphqlID, &id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot interpret team id: %q", *graphqlID)
+		}
+		team, err := teams.GetTeamByID(ctx, id)
+		if errcode.IsNotFound(err) {
+			return nil, errors.Wrapf(err, "team id=%d not found", id)
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "error fetching team id=%d", id)
+		}
+		return team, nil
+	}
+	if name != nil {
+		team, err := teams.GetTeamByName(ctx, *name)
+		if errcode.IsNotFound(err) {
+			return nil, errors.Wrapf(err, "team name=%q not found", *name)
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not fetch team name=%q", *name)
+		}
+		return team, nil
+	}
+	return nil, nil
 }
 
 type DeleteTeamArgs struct {
