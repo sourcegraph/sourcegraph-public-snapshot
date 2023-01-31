@@ -273,14 +273,21 @@ type ExternalServiceSyncResult struct {
 }
 
 type ExternalServiceRepositoriesArgs struct {
-	//ExternalService *types.ExternalService
-
-	Kind   string
-	Token  string
-	Url    string
-	Config string
+	Kind  string
+	Token string
+	Url   string
 }
 type ExternalServiceRepositoriesResult struct {
 	Repos []*types.Repo
 	Error string
+}
+
+type ExternalServiceNamespacesArgs struct {
+	Kind  string
+	Token string
+	Url   string
+}
+type ExternalServiceNamespacesResult struct {
+	Namespaces []*types.ExternalServiceNamespace
+	Error      string
 }

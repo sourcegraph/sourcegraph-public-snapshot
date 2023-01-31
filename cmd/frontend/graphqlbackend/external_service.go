@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"strings"
 	"sync"
 	"time"
@@ -502,16 +501,19 @@ func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.
 		//}
 		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
 
-		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url, r.args.Input.Config)
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url)
 		if err != nil {
 			r.err = err
 			return
 		}
 
 		for _, repo := range res.Repos {
-			//r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ExternalServiceID: r.externalServiceID, CloneURLs: repo.CloneURLs(), Name: repo.Name})
-
-			r.nodes = append(r.nodes, &types.ExternalServiceSourceRepo{ID: repo.ID, CloneURLs: repo.CloneURLs(), Name: repo.Name})
+			node := &types.ExternalServiceSourceRepo{
+				ID:         repo.ExternalRepo.ID,
+				Name:       repo.Name,
+				ExternalID: repo.ExternalRepo.ID,
+			}
+			r.nodes = append(r.nodes, node)
 		}
 		r.totalCount = int32(len(r.nodes))
 	})
@@ -528,7 +530,7 @@ func (r *externalServiceSourceRepositoryConnectionResolver) Nodes(ctx context.Co
 	nodes := make([]*externalServiceSourceRepoResolver, totalCount)
 	for i, j := range sourceRepos {
 		nodes[i] = &externalServiceSourceRepoResolver{
-			repo: j,
+			srcRepo: j,
 		}
 	}
 
@@ -549,17 +551,99 @@ func (r *externalServiceSourceRepositoryConnectionResolver) PageInfo(ctx context
 }
 
 type externalServiceSourceRepoResolver struct {
-	repo *types.ExternalServiceSourceRepo
-}
-
-func (r *externalServiceSourceRepoResolver) IDInt32() api.RepoID {
-	return r.repo.ID
+	srcRepo *types.ExternalServiceSourceRepo
 }
 
 func (r *externalServiceSourceRepoResolver) ID() graphql.ID {
-	return MarshalRepositoryID(r.IDInt32())
+	return relay.MarshalID("ExternalServiceSourceRepo", r.srcRepo.ExternalID)
 }
 
 func (r *externalServiceSourceRepoResolver) Name() string {
-	return string(r.repo.Name)
+	return string(r.srcRepo.Name)
+}
+
+func (r *externalServiceSourceRepoResolver) ExternalID() string {
+	return r.srcRepo.ExternalID
+}
+
+type externalServiceNamespaceArgs struct {
+	First *int32
+}
+
+func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
+	r.once.Do(func() {
+
+		// TODO Handle first arg
+		//opts := database.ExternalServicesGetSyncJobsOptions{
+		//	ExternalServiceID: r.externalServiceID,
+		//}
+		//if r.args.First != nil {
+		//	opts.LimitOffset = &database.LimitOffset{
+		//		Limit: int(*r.args.First),
+		//	}
+		//}
+		//r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
+		//if r.err != nil {
+		//	return
+		//}
+		//r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
+
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		for _, namespace := range res.Namespaces {
+			r.nodes = append(r.nodes, namespace)
+		}
+		r.totalCount = int32(len(r.nodes))
+	})
+
+	return r.nodes, r.totalCount, r.err
+}
+
+func (r *externalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
+	namespaces, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceNamespaceResolver, totalCount)
+	for i, j := range namespaces {
+		nodes[i] = &externalServiceNamespaceResolver{
+			namespace: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+func (r *externalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	return totalCount, err
+}
+
+func (r *externalServiceNamespaceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	jobs, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
+}
+
+type externalServiceNamespaceResolver struct {
+	namespace *types.ExternalServiceNamespace
+}
+
+func (r *externalServiceNamespaceResolver) ID() graphql.ID {
+	return relay.MarshalID("ExternalServiceNamespace", r.namespace)
+}
+
+func (r *externalServiceNamespaceResolver) Name() string {
+	return r.namespace.Name
+}
+
+func (r *externalServiceNamespaceResolver) ExternalID() string {
+	return r.namespace.ExternalID
 }

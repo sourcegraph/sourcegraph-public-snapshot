@@ -166,6 +166,11 @@ func (r *NodeResolver) ToExternalServiceSourceRepo() (*externalServiceSourceRepo
 	return n, ok
 }
 
+func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
+	n, ok := r.Node.(*externalServiceNamespaceResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok

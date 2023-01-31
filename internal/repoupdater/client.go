@@ -277,15 +277,13 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 }
 
 // MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
-var MockExternalServiceRepositories func(ctx context.Context, kind string, token string, url string, config string) (*protocol.ExternalServiceRepositoriesResult, error)
+var MockExternalServiceRepositories func(ctx context.Context, kind string, token string, url string) (*protocol.ExternalServiceRepositoriesResult, error)
 
 // ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
-
 // TODO : add parameter for count
-
-func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, token string, url string, config string) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, token string, url string) (result *protocol.ExternalServiceRepositoriesResult, err error) {
 	if MockExternalServiceRepositories != nil {
-		return MockExternalServiceRepositories(ctx, kind, token, url, config)
+		return MockExternalServiceRepositories(ctx, kind, token, url)
 	}
 
 	// TODO Spans
@@ -304,8 +302,79 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, t
 	//	span.SetTag("Repo", string(args.Repo))
 	//}
 
-	args := &protocol.ExternalServiceRepositoriesArgs{Kind: kind, Token: token, Url: url, Config: config}
+	args := &protocol.ExternalServiceRepositoriesArgs{Kind: kind, Token: token, Url: url}
 	resp, err := c.httpPost(ctx, "ext-svc-repos", args)
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// TODO Errors
+	//if resp.StatusCode != http.StatusOK {
+	//	// best-effort inclusion of body in error message
+	//	body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	//	return nil, errors.Errorf(
+	//		"RepoLookup for %+v failed with http status %d: %s",
+	//		args,
+	//		resp.StatusCode,
+	//		string(body),
+	//	)
+	//}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil {
+
+		// TODO Errors
+		//switch {
+		//case result.ErrorNotFound:
+		//	err = &ErrNotFound{
+		//		Repo:       args.Repo,
+		//		IsNotFound: true,
+		//	}
+		//case result.ErrorUnauthorized:
+		//	err = &ErrUnauthorized{
+		//		Repo:    args.Repo,
+		//		NoAuthz: true,
+		//	}
+		//case result.ErrorTemporarilyUnavailable:
+		//	err = &ErrTemporary{
+		//		Repo:        args.Repo,
+		//		IsTemporary: true,
+		//	}
+		//}
+	}
+	return result, err
+}
+
+// MockExternalServiceNamespaces mocks (*Client).ExternalServiceNamespaces for tests.
+var MockExternalServiceNamespaces func(ctx context.Context, kind string, token string, url string) (*protocol.ExternalServiceNamespacesResult, error)
+
+// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
+// TODO : add parameter for count
+func (c *Client) ExternalServiceNamespaces(ctx context.Context, kind string, token string, url string) (result *protocol.ExternalServiceNamespacesResult, err error) {
+	if MockExternalServiceNamespaces != nil {
+		return MockExternalServiceNamespaces(ctx, kind, token, url)
+	}
+
+	// TODO Spans
+	//span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
+	//defer func() {
+	//	if result != nil {
+	//		span.SetTag("found", result.Repo != nil)
+	//	}
+	//	if err != nil {
+	//		ext.Error.Set(span, true)
+	//		span.SetTag("err", err.Error())
+	//	}
+	//	span.Finish()
+	//}()
+	//if args.Repo != "" {
+	//	span.SetTag("Repo", string(args.Repo))
+	//}
+
+	args := &protocol.ExternalServiceNamespacesArgs{Kind: kind, Token: token, Url: url}
+	resp, err := c.httpPost(ctx, "ext-svc-namespaces", args)
 
 	if err != nil {
 		return nil, err

@@ -71,7 +71,6 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
-		Discovery:   args.Input.Discovery,
 	}
 
 	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
@@ -478,7 +477,7 @@ func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *
 		return nil, err
 	}
 
-	_, err = r.repoupdaterClient.ExternalServiceRepositories(ctx, args.Input.Kind, args.Input.Token, args.Input.Url, args.Input.Config)
+	_, err = r.repoupdaterClient.ExternalServiceRepositories(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
 	res := externalServiceSourceRepositoryConnectionResolver{
 		db:                r.db,
 		args:              args,
@@ -494,6 +493,52 @@ type externalServiceSourceRepositoryConnectionResolver struct {
 
 	once       sync.Once
 	nodes      []*types.ExternalServiceSourceRepo
+	totalCount int32
+	err        error
+}
+
+type externalServiceNamespacesArgs struct {
+	Input externalServiceNamespacesInput
+}
+
+type externalServiceNamespacesInput struct {
+	Kind  string
+	Token string
+	Url   string
+	//Config string
+
+	// TODO Add namespace?
+
+	// TODO
+	// First *int32
+}
+
+func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
+	start := time.Now()
+	var err error
+	defer reportExternalServiceDuration(start, Add, &err)
+
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = auth.ErrMustBeSiteAdmin
+		return nil, err
+	}
+
+	_, err = r.repoupdaterClient.ExternalServiceNamespaces(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
+	res := externalServiceNamespaceConnectionResolver{
+		db:                r.db,
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}
+	return &res, err
+}
+
+type externalServiceNamespaceConnectionResolver struct {
+	args              *externalServiceNamespacesArgs
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceNamespace
 	totalCount int32
 	err        error
 }
