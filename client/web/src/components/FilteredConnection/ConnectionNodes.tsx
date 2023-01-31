@@ -93,8 +93,6 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
     /** The fetched connection data or an error (if an error occurred). */
     connection: C
 
-    location: H.Location
-
     onShowMore: () => void
 }
 

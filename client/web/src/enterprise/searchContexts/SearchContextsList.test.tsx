@@ -18,10 +18,9 @@ import { setDefaultSearchContextResult } from '../../graphql-operations'
 
 import { SET_DEFAULT_SEARCH_CONTEXT_MUTATION } from './hooks/useDefaultContext'
 import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
+import { MemoryRouter } from 'react-router-dom-v5-compat'
 
 describe('SearchContextsList', () => {
-    const history = createMemoryHistory()
-
     const defaultProps: SearchContextsListProps = {
         authenticatedUser: mockAuthenticatedUser,
         fetchSearchContexts: mockFetchSearchContexts,
@@ -34,9 +33,9 @@ describe('SearchContextsList', () => {
         it('renders list with default context', () => {
             const { container } = render(
                 <MockedProvider>
-                    <Router history={history}>
+                    <MemoryRouter>
                         <SearchContextsList {...defaultProps} />
-                    </Router>
+                    </MemoryRouter>
                 </MockedProvider>
             )
 
@@ -62,9 +61,9 @@ describe('SearchContextsList', () => {
 
             const { container } = render(
                 <MockedProvider mocks={[mockSetDefault]}>
-                    <Router history={history}>
+                    <MemoryRouter>
                         <SearchContextsList {...defaultProps} setAlert={setAlert} />
-                    </Router>
+                    </MemoryRouter>
                 </MockedProvider>
             )
 
