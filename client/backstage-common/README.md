@@ -34,22 +34,23 @@ The plugin scaffolding now has been generated but the scaffolding assumes the pl
     "baseUrl": "./src",
     "paths": {
       "@sourcegraph/*": ["../*"],
-      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
+      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "jsx": "react-jsx",
+    "jsx": "react-jsx"
   },
   "references": [
     {
-      "path": "../shared",
-    },
+      "path": "../shared"
+    }
   ],
   "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
-  "exclude": ["node_modules", "../../node_modules", "dist"],
+  "exclude": ["node_modules", "../../node_modules", "dist"]
 }
 ```
+
 The above `tsconfig` was copied from `client/jetbrains` and adapted to fit our usecase.
 
 2. Take note of the plugin directory structure.
@@ -102,8 +103,9 @@ The above `tsconfig` was copied from `client/jetbrains` and adapted to fit our u
 3. The plugin will use libraries and components from the Sourcegraph repo which are all private and not available on the npm registry. Which means, when this plugin is installed into Backstage will try to look for any dependencies defined in the `package.json` on the npm registry. It will find some, but any Sourcegraph referenced projects, it won't be able to find anything. We thus need make some changes to the `package.json` and also look into using a buncler like `esbuild`.
 
 4. The notable changes we make in the `package.json` are that:
-* change the `main` attribute to have the `dist/index.js` - note no `cjs`. This is due to use using a bundler, which bundles everything into a `js` file.
-* add a script `es` which invokes `esbuild` with a particular config and we copy `package.dist.json` to `dist/package.json`.  `package.dist.json` is a slimmed down version of our root package.json and defines how one should install the bundled artefact of our plugin, namely `index.js`.
+
+- change the `main` attribute to have the `dist/index.js` - note no `cjs`. This is due to use using a bundler, which bundles everything into a `js` file.
+- add a script `es` which invokes `esbuild` with a particular config and we copy `package.dist.json` to `dist/package.json`. `package.dist.json` is a slimmed down version of our root package.json and defines how one should install the bundled artefact of our plugin, namely `index.js`.
 
 ```json
 {
@@ -145,15 +147,13 @@ The above `tsconfig` was copied from `client/jetbrains` and adapted to fit our u
     "@backstage/plugin-catalog-backend": "^1.7.1",
     "@sourcegraph/shared": "workspace:^1.0.0"
   },
-  "files": [
-    "dist"
-  ]
+  "files": ["dist"]
 }
-
 ```
 
 5. If we take a look at the `esbuild` config defined in `scripts/esbuild.ts` there are a few options to take note of:
-* we use `external` and define most of our dependencies except the Sourcegraph related ones. External tells `esbuild` that it shouldn't bundle these dependencies into the final artefact. We set it to the values we defined in our `package.json` because they can be found on the npm registry. This also explains why we don't have `@sourcegraph/*` defined there, since we **do** want them bundled. Unfortunately, some transitive dependencies will also be bundled as they're imported, which why `lodash` and `apollo` are defined. It is a bit of a cat and mouse game, to get the right dependencies excluded.
+
+- we use `external` and define most of our dependencies except the Sourcegraph related ones. External tells `esbuild` that it shouldn't bundle these dependencies into the final artefact. We set it to the values we defined in our `package.json` because they can be found on the npm registry. This also explains why we don't have `@sourcegraph/*` defined there, since we **do** want them bundled. Unfortunately, some transitive dependencies will also be bundled as they're imported, which why `lodash` and `apollo` are defined. It is a bit of a cat and mouse game, to get the right dependencies excluded.
 
 6. We can now copy the directory to wherever we want, like the Sourcgraph repo `cp plugins/backstage-plugin-test ~/sourcegraph/client/backstage/test`.
 

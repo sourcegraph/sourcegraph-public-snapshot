@@ -8,7 +8,7 @@ export const parseCatalog = (src: SearchResult[], providerName: string): Deferre
     src.forEach((r: SearchResult) => {
         const location = {
             type: 'url',
-            target: `${r.repository}/catalog-info.yaml`,
+            target: `${r.repository}/${r.filename}`,
         }
         const yaml = Buffer.from(r.fileContent, 'utf8')
 

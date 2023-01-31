@@ -38,9 +38,9 @@ class SourcegraphClient implements SourcegraphService, UserService, SearchServic
 
     async SearchQuery(query: string): Promise<SearchResult[]> {
         const q = new SearchQuery(query)
-        const data = await this.client.fetch(q)
+        const results = await this.client.fetch(q)
 
-        return q.Marshal(data)
+        return results
     }
 
     async CurrentUsername(): Promise<string> {

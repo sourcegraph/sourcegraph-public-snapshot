@@ -10,6 +10,7 @@ export interface Query<T> {
 
 export interface SearchResult {
     readonly repository: string
+    readonly filename: string
     readonly fileContent: string
 }
 
@@ -22,13 +23,15 @@ export class SearchQuery implements Query<SearchResult> {
 
     Marshal(data: any): SearchResult[] {
         const results = new Array<SearchResult>()
+        if (!data.search) {
+            console.log('undefined data.search')
+            return results
+        }
 
-        for (let v in data.search.results.results) {
-            let {
-                repository,
-                file: { fileContent },
-            } = v as any
-            results.push({ repository, fileContent })
+        console.log('raw', data)
+
+        for (const v of data.search.results.results) {
+            results.push({ repository: v.repository.name, filename: v.file.name, fileContent: v.file.content })
         }
 
         return results
@@ -43,12 +46,17 @@ export class SearchQuery implements Query<SearchResult> {
             query ($search: String!) {
                 search(query: $search) {
                     results {
-                        __typename
-                        ... on FileMatch {
-                            repository
-                        }
-                        file {
-                            content
+                        results {
+                            __typename
+                            ... on FileMatch {
+                                repository {
+                                    name
+                                }
+                                file {
+                                    name
+                                    content
+                                }
+                            }
                         }
                     }
                 }

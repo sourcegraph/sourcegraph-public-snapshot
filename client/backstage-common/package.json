@@ -29,9 +29,11 @@
     "@jest/globals": "^29.4.0",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@types/jest": "^29.4.0",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "winston": "^3.8.2"
   },
   "dependencies": {
+    "@backstage/backend-common": "^0.18.1",
     "@backstage/catalog-model": "^1.1.5",
     "@backstage/config": "^1.0.6",
     "@backstage/plugin-catalog-backend": "^1.7.1",
