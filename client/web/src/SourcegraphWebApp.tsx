@@ -5,8 +5,8 @@ import * as React from 'react'
 import { ApolloProvider } from '@apollo/client'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { Route, Switch, Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { Router } from 'react-router'
+import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { first, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
@@ -346,10 +346,12 @@ export class SourcegraphWebApp extends React.Component<
             return null
         }
 
+        const { children, ...props } = this.props
+
         const root = (
             <Route
-                path="/"
-                render={routeComponentProps => (
+                path="*"
+                element={
                     <Layout
                         {...props}
                         authenticatedUser={authenticatedUser}
@@ -380,11 +382,9 @@ export class SourcegraphWebApp extends React.Component<
                         streamSearch={aggregateStreamingSearch}
                         onCreateNotebookFromNotepad={this.onCreateNotebook}
                     />
-                )}
+                }
             />
         )
-
-        const { children, ...props } = this.props
 
         return (
             <ComponentsComposer
@@ -405,16 +405,16 @@ export class SourcegraphWebApp extends React.Component<
             >
                 <Router history={history} key={0}>
                     <CompatRouter>
-                        {this.state.isSetupWizardEnabled ? (
-                            <Switch>
-                                <Route path="/setup" exact={true}>
-                                    <SetupWizard />
-                                </Route>
-                                {root}
-                            </Switch>
-                        ) : (
-                            root
-                        )}
+                        <Routes>
+                            {this.state.isSetupWizardEnabled ? (
+                                <>
+                                    <Route path="/setup" element={<SetupWizard />} />
+                                    {root}
+                                </>
+                            ) : (
+                                root
+                            )}
+                        </Routes>
                     </CompatRouter>
                 </Router>
                 {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
