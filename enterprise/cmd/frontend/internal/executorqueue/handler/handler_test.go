@@ -45,9 +45,9 @@ func TestDequeue(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -112,9 +112,9 @@ func TestDequeueNoRecord(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: workerstoremocks.NewMockStore[testRecord]()})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: workerstoremocks.NewMockStore[testRecord]()})
 
-	_, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	_, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -135,9 +135,9 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -149,7 +149,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
-	haveEntryID, err := handler.addExecutionLogEntry(context.Background(), "deadbeef", job.ID, entry)
+	haveEntryID, err := h.addExecutionLogEntry(context.Background(), "deadbeef", job.ID, entry)
 	if err != nil {
 		t.Fatalf("unexpected error updating log contents: %s", err)
 	}
@@ -174,13 +174,13 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
 	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
-	if _, err := handler.addExecutionLogEntry(context.Background(), "deadbeef", 42, entry); err != ErrUnknownJob {
+	if _, err := h.addExecutionLogEntry(context.Background(), "deadbeef", 42, entry); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
@@ -195,9 +195,9 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -210,7 +210,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		Out:     "<log payload>",
 	}
 
-	if err := handler.updateExecutionLogEntry(context.Background(), "deadbeef", job.ID, 99, entry); err != nil {
+	if err := h.updateExecutionLogEntry(context.Background(), "deadbeef", job.ID, 99, entry); err != nil {
 		t.Fatalf("unexpected error updating log contents: %s", err)
 	}
 
@@ -234,13 +234,13 @@ func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
 	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
-	if err := handler.updateExecutionLogEntry(context.Background(), "deadbeef", 42, 99, entry); err != ErrUnknownJob {
+	if err := h.updateExecutionLogEntry(context.Background(), "deadbeef", 42, 99, entry); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
@@ -256,9 +256,9 @@ func TestMarkComplete(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -266,7 +266,7 @@ func TestMarkComplete(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	if err := handler.markComplete(context.Background(), "deadbeef", job.ID); err != nil {
+	if err := h.markComplete(context.Background(), "deadbeef", job.ID); err != nil {
 		t.Fatalf("unexpected error completing job: %s", err)
 	}
 
@@ -284,9 +284,9 @@ func TestMarkCompleteUnknownJob(t *testing.T) {
 	store.MarkCompleteFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
+	if err := h.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
@@ -297,9 +297,9 @@ func TestMarkCompleteStoreError(t *testing.T) {
 	store.MarkCompleteFunc.SetDefaultReturn(false, internalErr)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markComplete(context.Background(), "deadbeef", 42); err == nil || errors.UnwrapAll(err).Error() != internalErr.Error() {
+	if err := h.markComplete(context.Background(), "deadbeef", 42); err == nil || errors.UnwrapAll(err).Error() != internalErr.Error() {
 		t.Fatalf("unexpected error. want=%q have=%q", internalErr, errors.UnwrapAll(err))
 	}
 }
@@ -315,9 +315,9 @@ func TestMarkErrored(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -325,7 +325,7 @@ func TestMarkErrored(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	if err := handler.markErrored(context.Background(), "deadbeef", job.ID, "OH NO"); err != nil {
+	if err := h.markErrored(context.Background(), "deadbeef", job.ID, "OH NO"); err != nil {
 		t.Fatalf("unexpected error completing job: %s", err)
 	}
 
@@ -346,9 +346,9 @@ func TestMarkErroredUnknownJob(t *testing.T) {
 	store.MarkErroredFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
+	if err := h.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
@@ -359,9 +359,9 @@ func TestMarkErroredStoreError(t *testing.T) {
 	store.MarkErroredFunc.SetDefaultReturn(false, storeErr)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
+	if err := h.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
 		t.Fatalf("unexpected error. want=%q have=%q", storeErr, errors.UnwrapAll(err))
 	}
 }
@@ -377,9 +377,9 @@ func TestMarkFailed(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := h.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -387,7 +387,7 @@ func TestMarkFailed(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	if err := handler.markFailed(context.Background(), "deadbeef", job.ID, "OH NO"); err != nil {
+	if err := h.markFailed(context.Background(), "deadbeef", job.ID, "OH NO"); err != nil {
 		t.Fatalf("unexpected error completing job: %s", err)
 	}
 
@@ -408,9 +408,9 @@ func TestMarkFailedUnknownJob(t *testing.T) {
 	store.MarkFailedFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
+	if err := h.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }
@@ -421,9 +421,9 @@ func TestMarkFailedStoreError(t *testing.T) {
 	store.MarkFailedFunc.SetDefaultReturn(false, storeErr)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
 
-	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
+	if err := h.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
 		t.Fatalf("unexpected error. want=%q have=%q", storeErr, errors.UnwrapAll(err))
 	}
 }
@@ -453,9 +453,9 @@ func TestHeartbeat(t *testing.T) {
 		SrcCliVersion:   "test-src-cli-version",
 	}
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: s, RecordTransformer: recordTransformer})
+	h := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, canceled, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
+	if knownIDs, canceled, err := h.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
