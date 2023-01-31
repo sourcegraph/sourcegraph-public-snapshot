@@ -174,10 +174,7 @@ const history = createBrowserHistory()
 /**
  * The root component.
  */
-export class SourcegraphWebApp extends React.Component<
-    React.PropsWithChildren<SourcegraphWebAppProps>,
-    SourcegraphWebAppState
-> {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -347,44 +344,37 @@ export class SourcegraphWebApp extends React.Component<
         }
 
         const root = (
-            <Route
-                path="/"
-                render={routeComponentProps => (
-                    <Layout
-                        {...props}
-                        authenticatedUser={authenticatedUser}
-                        viewerSubject={this.state.viewerSubject}
-                        settingsCascade={this.state.settingsCascade}
-                        batchChangesEnabled={this.props.batchChangesEnabled}
-                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
-                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                        // Search query
-                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                        // Extensions
-                        platformContext={this.platformContext}
-                        extensionsController={this.extensionsController}
-                        telemetryService={eventLogger}
-                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                        searchContextsEnabled={this.props.searchContextsEnabled}
-                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                        fetchSearchContexts={fetchSearchContexts}
-                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                        fetchSearchContext={fetchSearchContext}
-                        createSearchContext={createSearchContext}
-                        updateSearchContext={updateSearchContext}
-                        deleteSearchContext={deleteSearchContext}
-                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                        globbing={this.state.globbing}
-                        streamSearch={aggregateStreamingSearch}
-                        onCreateNotebookFromNotepad={this.onCreateNotebook}
-                    />
-                )}
+            <Layout
+                {...this.props}
+                authenticatedUser={authenticatedUser}
+                viewerSubject={this.state.viewerSubject}
+                settingsCascade={this.state.settingsCascade}
+                batchChangesEnabled={this.props.batchChangesEnabled}
+                batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
+                batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                // Search query
+                fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                // Extensions
+                platformContext={this.platformContext}
+                extensionsController={this.extensionsController}
+                telemetryService={eventLogger}
+                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                searchContextsEnabled={this.props.searchContextsEnabled}
+                selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                fetchSearchContexts={fetchSearchContexts}
+                fetchSearchContextBySpec={fetchSearchContextBySpec}
+                fetchSearchContext={fetchSearchContext}
+                createSearchContext={createSearchContext}
+                updateSearchContext={updateSearchContext}
+                deleteSearchContext={deleteSearchContext}
+                isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                globbing={this.state.globbing}
+                streamSearch={aggregateStreamingSearch}
+                onCreateNotebookFromNotepad={this.onCreateNotebook}
             />
         )
-
-        const { children, ...props } = this.props
 
         return (
             <ComponentsComposer
