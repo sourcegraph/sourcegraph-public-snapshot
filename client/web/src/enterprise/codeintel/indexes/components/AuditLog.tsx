@@ -13,7 +13,7 @@ export interface AuditLogPanelProps {
     logs: LsifUploadsAuditLogsFields[]
 }
 
-export const AuditLogPanel: FunctionComponent<React.PropsWithChildren<AuditLogPanelProps>> = ({ logs }) => {
+export const AuditLogPanel: FunctionComponent<AuditLogPanelProps> = ({ logs }) => {
     const stages = logs?.map(
         (log): TimelineStage => ({
             icon:

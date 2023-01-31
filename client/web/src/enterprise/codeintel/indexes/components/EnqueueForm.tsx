@@ -18,7 +18,7 @@ enum State {
     Queued,
 }
 
-export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({
+export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({
     repoId,
     querySubject,
     useEnqueueIndexJob = defaultUseEnqueueIndexJob,

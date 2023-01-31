@@ -21,15 +21,11 @@ export interface IndexTimelineProps {
     className?: string
 }
 
-export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimelineProps>> = ({
-    index,
-    now,
-    className,
-}) => {
+export const IndexTimeline: FunctionComponent<IndexTimelineProps> = ({ index, now, className }) => {
     const stages = useMemo(() => {
         const stages: TimelineStage[] = []
 
-        // TODO - document
+        // Stage: queued for indexing
         if (index.queuedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiTimerSand} />,
@@ -39,7 +35,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
             })
         }
 
-        // TODO - document
+        // Stage: indexing started
         if (index.indexingStartedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
@@ -49,7 +45,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
             })
         }
 
-        // TODO - document
+        // Stage: indexing job steps
         let v = indexSetupStage(index, now)
         if (v) {
             stages.push(v)
@@ -66,12 +62,13 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
         if (v) {
             stages.push(v)
         }
-        // TODO - hide a bit more
         v = indexTeardownStage(index, now)
         if (v) {
             stages.push(v)
         }
 
+        // Stage: Indexing failed (shown conditionally)
+        //
         // Do not distinctly show the end of indexing unless it was a failure that produced
         // to submit an upload record. If we did submit a record, then the end result of this
         // job is successful to the user (if processing succeeds).
@@ -84,7 +81,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
             })
         }
 
-        // TODO - document
+        // Stage: Manual upload, or indexing job uploaded artifact
         if (index.uploadedAt) {
             if (index.state === PreciseIndexState.UPLOADING_INDEX) {
                 stages.push({
@@ -112,7 +109,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
             }
         }
 
-        // TODO - document
+        // Stage: Post-upload processing stated
         if (index.processingStartedAt) {
             stages.push({
                 icon: <Icon aria-label="Success" svgPath={mdiProgressClock} />,
@@ -122,7 +119,7 @@ export const IndexTimeline: FunctionComponent<React.PropsWithChildren<IndexTimel
             })
         }
 
-        // TODO - document
+        // Stage: Processing terminated (success or failure)
         if (index.processingFinishedAt) {
             if (index.state === PreciseIndexState.PROCESSING_ERRORED) {
                 if (index.processingStartedAt) {
@@ -254,7 +251,7 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     }
 }
 
-interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
+interface ExecutionLogEntryProps {
     logEntry: {
         key: string
         command: string[]
@@ -334,7 +331,7 @@ interface ExecutionMetaInformationProps {
     root: string
 }
 
-const ExecutionMetaInformation: React.FunctionComponent<React.PropsWithChildren<ExecutionMetaInformationProps>> = ({
+const ExecutionMetaInformation: React.FunctionComponent<ExecutionMetaInformationProps> = ({
     image,
     commands,
     root,

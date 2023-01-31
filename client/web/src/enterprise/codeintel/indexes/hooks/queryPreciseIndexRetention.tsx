@@ -42,7 +42,14 @@ export interface UploadReferenceMatch {
 }
 
 const UPLOAD_RETENTIONS_QUERY = gql`
-    query PreciseIndexRetention($id: ID!, $matchesOnly: Boolean!, $after: String, $first: Int, $query: String) {
+    query PreciseIndexRetention(
+        $id: ID!
+        $matchesOnly: Boolean!
+        $after: String
+        $first: Int
+        $query: String
+        $numReferences: Int
+    ) {
         node(id: $id) {
             __typename
             ... on PreciseIndex {
@@ -69,7 +76,7 @@ const UPLOAD_RETENTIONS_QUERY = gql`
             }
         }
 
-        preciseIndexes(dependentOf: $id) {
+        preciseIndexes(dependentOf: $id, first: $numReferences) {
             __typename
             totalCount
             nodes {
@@ -94,6 +101,7 @@ export const queryPreciseIndexRetention = (
         after,
         first,
         query,
+        numReferences,
     }: Partial<PreciseIndexRetentionVariables> & Pick<PreciseIndexRetentionVariables, 'matchesOnly'>
 ): Observable<Connection<NormalizedUploadRetentionMatch>> => {
     const variables: PreciseIndexRetentionVariables = {
@@ -102,6 +110,7 @@ export const queryPreciseIndexRetention = (
         query: query ?? null,
         first: first ?? null,
         after: after ?? null,
+        numReferences: numReferences ?? null,
     }
 
     return from(

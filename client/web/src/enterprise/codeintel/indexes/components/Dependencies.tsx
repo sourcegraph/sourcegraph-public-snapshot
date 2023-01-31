@@ -1,19 +1,24 @@
 import { FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { H3, Link, Tooltip } from '@sourcegraph/wildcard'
+import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import {
+    Connection,
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+} from '../../../../components/FilteredConnection'
 import { PreciseIndexFields } from '../../../../graphql-operations'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
-import { ProjectDescription } from './ProjectDescription'
+import { ProjectDescription } from '../components/ProjectDescription'
 import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 
 import styles from './Dependencies.module.scss'
+import { Observable } from 'rxjs'
 
 export interface DependencyListProps {
     index: PreciseIndexFields
@@ -22,7 +27,7 @@ export interface DependencyListProps {
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
-export const DependenciesPanel: FunctionComponent<DependencyListProps> = ({
+export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     index,
     history,
     location,
@@ -30,29 +35,18 @@ export const DependenciesPanel: FunctionComponent<DependencyListProps> = ({
 }) => {
     const apolloClient = useApolloClient()
     const queryDependencies = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (index && !isErrorLike(index)) {
-                return queryDependencyGraph({ ...args, dependencyOf: index.id }, apolloClient)
-            }
-            throw new Error('unreachable: queryDependencies referenced with invalid upload')
-        },
+        (args: FilteredConnectionQueryArguments) =>
+            queryDependencyGraph({ ...args, dependencyOf: index.id }, apolloClient),
         [index, queryDependencyGraph, apolloClient]
     )
 
     return (
-        <FilteredConnection
-            listComponent="div"
-            listClassName={classNames(styles.grid, 'mb-3')}
+        <DependencyOrDependentsPanel
             noun="dependency"
             pluralNoun="dependencies"
-            nodeComponent={DependencyOrDependentNode}
-            nodeComponentProps={{ history }}
             queryConnection={queryDependencies}
             history={history}
             location={location}
-            cursorPaging={true}
-            useURLQuery={false}
-            // emptyElement={<EmptyDependencies />}
         />
     )
 }
@@ -64,7 +58,7 @@ export interface DependentListProps {
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
-export const DependentsPanel: FunctionComponent<DependentListProps> = ({
+export const DependentsList: FunctionComponent<DependentListProps> = ({
     index,
     history,
     location,
@@ -72,43 +66,59 @@ export const DependentsPanel: FunctionComponent<DependentListProps> = ({
 }) => {
     const apolloClient = useApolloClient()
     const queryDependents = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (index && !isErrorLike(index)) {
-                return queryDependencyGraph({ ...args, dependentOf: index.id }, apolloClient)
-            }
-
-            throw new Error('unreachable: queryDependents referenced with invalid upload')
-        },
+        (args: FilteredConnectionQueryArguments) =>
+            queryDependencyGraph({ ...args, dependentOf: index.id }, apolloClient),
         [index, queryDependencyGraph, apolloClient]
     )
 
     return (
-        <FilteredConnection
-            listComponent="div"
-            listClassName={classNames(styles.grid, 'mb-3')}
+        <DependencyOrDependentsPanel
             noun="dependent"
             pluralNoun="dependents"
-            nodeComponent={DependencyOrDependentNode}
-            nodeComponentProps={{ history }}
             queryConnection={queryDependents}
             history={history}
             location={location}
-            cursorPaging={true}
-            useURLQuery={false}
-            // emptyElement={<EmptyDependents />}
         />
     )
 }
+
+interface DependencyOrDependentsPanelProps {
+    noun: string
+    pluralNoun: string
+    queryConnection: (args: FilteredConnectionQueryArguments) => Observable<Connection<PreciseIndexFields>>
+    history: H.History
+    location: H.Location
+}
+
+const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanelProps> = ({
+    noun,
+    pluralNoun,
+    queryConnection,
+    history,
+    location,
+}) => (
+    <FilteredConnection
+        listComponent="div"
+        listClassName={classNames(styles.grid, 'mb-3')}
+        noun={noun}
+        pluralNoun={pluralNoun}
+        nodeComponent={DependencyOrDependentNode}
+        nodeComponentProps={{ history }}
+        queryConnection={queryConnection}
+        history={history}
+        location={location}
+        cursorPaging={true}
+        useURLQuery={false}
+        emptyElement={<EmptyDependencyOrDependents pluralNoun={pluralNoun} />}
+    />
+)
 
 interface DependencyOrDependentNodeProps {
     node: PreciseIndexFields
     history: H.History
 }
 
-const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
-    node,
-    history,
-}) => (
+const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node, history }) => (
     <div
         className={classNames(styles.grid, 'px-4')}
         onClick={() => {
@@ -144,4 +154,16 @@ const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<Depen
             </small>
         </div>
     </div>
+)
+
+interface EmptyDependencyOrDependentsProps {
+    pluralNoun: string
+}
+
+const EmptyDependencyOrDependents: React.FunctionComponent<EmptyDependencyOrDependentsProps> = ({ pluralNoun }) => (
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <br />
+        No {pluralNoun}.
+    </Text>
 )

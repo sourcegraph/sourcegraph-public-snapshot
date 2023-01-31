@@ -44,11 +44,10 @@ import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/qu
 import { queryPreciseIndex as defaultQueryPreciseIndex } from '../hooks/queryPreciseIndex'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
-
 import { AuditLogPanel } from '../components/AuditLog'
-import { DependenciesPanel, DependentsPanel } from '../components/Dependencies'
+import { DependenciesList, DependentsList } from '../components/Dependencies'
 import styles from './CodeIntelPreciseIndexPage.module.scss'
-import { RetentionPanel } from '../components/Retention'
+import { RetentionList } from '../components/RetentionList'
 
 export interface CodeIntelPreciseIndexPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -73,8 +72,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         params: { id },
     },
     authenticatedUser,
-    now,
-    queryDependencyGraph = defaultQueryDependencyGraph,
     queryPreciseIndex = defaultQueryPreciseIndex,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
@@ -85,11 +82,18 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
+    const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
+    const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
+
+    // State to track reindex/delete operations
     const [reindexOrError, setReindexOrError] = useState<'loading' | 'reindexed' | ErrorLike>()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
-    const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
-    const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
 
+    // Seed initial state
+    useEffect(() => setDeletionOrError(deleteError), [deleteError])
+    useEffect(() => setReindexOrError(reindexError), [reindexError])
+
+    // Continuously re-fetch state while it's in a non-terminal state
     const indexOrError = useObservable(
         useMemo(
             () => queryPreciseIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
@@ -97,17 +101,35 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         )
     )
 
-    useEffect(() => {
-        if (deleteError) {
-            setDeletionOrError(deleteError)
+    const deleteUpload = useCallback(async (): Promise<void> => {
+        if (!indexOrError || isErrorLike(indexOrError) || !window.confirm(`Delete index?`)) {
+            return
         }
-    }, [deleteError])
 
-    useEffect(() => {
-        if (reindexError) {
-            setReindexOrError(reindexError)
+        setDeletionOrError('loading')
+
+        try {
+            await handleDeletePreciseIndex({
+                variables: { id },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
+            setDeletionOrError('deleted')
+            history.push({
+                state: {
+                    modal: 'SUCCESS',
+                    message: `Index deleted.`,
+                },
+            })
+        } catch (error) {
+            setDeletionOrError(error)
+            history.push({
+                state: {
+                    modal: 'ERROR',
+                    message: `There was an error while deleting an index.`,
+                },
+            })
         }
-    }, [reindexError])
+    }, [id, indexOrError, handleDeletePreciseIndex, history])
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -125,7 +147,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             history.push({
                 state: {
                     modal: 'SUCCESS',
-                    message: 'Marked as replaceable.', // TODO
+                    message: 'Marked index as replaceable by auto-indexing.',
                 },
             })
         } catch (error) {
@@ -133,50 +155,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             history.push({
                 state: {
                     modal: 'ERROR',
-                    message: 'There was an error while marking index as replaceable.', // TODO
+                    message: 'There was an error while marking index as replaceable by auto-indexing.',
                 },
             })
         }
     }, [id, indexOrError, handleReindexPreciseIndex, history])
-
-    const deleteUpload = useCallback(async (): Promise<void> => {
-        if (!indexOrError || isErrorLike(indexOrError)) {
-            return
-        }
-
-        let description = `${indexOrError.inputCommit.slice(0, 7)}`
-        if (indexOrError.inputRoot) {
-            description += ` rooted at ${indexOrError.inputRoot}`
-        }
-
-        if (!window.confirm(`Delete upload for commit ${description}?`)) {
-            return
-        }
-
-        setDeletionOrError('loading')
-
-        try {
-            await handleDeletePreciseIndex({
-                variables: { id },
-                update: cache => cache.modify({ fields: { node: () => {} } }),
-            })
-            setDeletionOrError('deleted')
-            history.push({
-                state: {
-                    modal: 'SUCCESS',
-                    message: `Upload for commit ${description} is deleting.`,
-                },
-            })
-        } catch (error) {
-            setDeletionOrError(error)
-            history.push({
-                state: {
-                    modal: 'ERROR',
-                    message: `There was an error while deleting upload for commit ${description}.`,
-                },
-            })
-        }
-    }, [id, indexOrError, handleDeletePreciseIndex, history])
 
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
@@ -275,6 +258,18 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                     )}
                 </div>
 
+                {authenticatedUser?.siteAdmin && (
+                    <div className="my-4">
+                        <CodeIntelDeleteUpload
+                            state={indexOrError.state}
+                            deleteUpload={deleteUpload}
+                            deletionOrError={deletionOrError}
+                        />
+
+                        <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                    </div>
+                )}
+
                 <Tabs size="medium" className={classNames('mt-2', styles.tabs)}>
                     <TabList>
                         <Tab>
@@ -332,61 +327,48 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
                     <TabPanels>
                         <TabPanel>
-                            <Container className="mt-2">
+                            <div className="mt-2">
                                 <IndexTimeline index={indexOrError} />
-                            </Container>
+                            </div>
                         </TabPanel>
 
                         {(indexOrError.state === PreciseIndexState.COMPLETED ||
                             indexOrError.state === PreciseIndexState.DELETING) && (
                             <>
                                 <TabPanel>
-                                    <Container className="mt-2">
-                                        <DependenciesPanel index={indexOrError} history={history} location={location} />
-                                    </Container>
+                                    <div className="mt-2">
+                                        <DependenciesList index={indexOrError} history={history} location={location} />
+                                    </div>
                                 </TabPanel>
 
                                 <TabPanel>
-                                    <Container className="mt-2">
-                                        <DependentsPanel index={indexOrError} history={history} location={location} />
-                                    </Container>
+                                    <div className="mt-2">
+                                        <DependentsList index={indexOrError} history={history} location={location} />
+                                    </div>
                                 </TabPanel>
 
                                 <TabPanel>
-                                    <Container className="mt-2">
-                                        <RetentionPanel index={indexOrError} history={history} location={location} />
-                                    </Container>
+                                    <div className="mt-2">
+                                        <RetentionList index={indexOrError} history={history} location={location} />
+                                    </div>
                                 </TabPanel>
 
                                 {(indexOrError.auditLogs?.length ?? 0) > 0 && (
                                     <TabPanel>
-                                        <Container className="mt-2">
+                                        <div className="mt-2">
                                             <AuditLogPanel logs={indexOrError.auditLogs || []} />
-                                        </Container>
+                                        </div>
                                     </TabPanel>
                                 )}
                             </>
                         )}
                     </TabPanels>
                 </Tabs>
-
-                {authenticatedUser?.siteAdmin && (
-                    <div className="mt-4">
-                        <>
-                            <CodeIntelDeleteUpload
-                                state={indexOrError.state}
-                                deleteUpload={deleteUpload}
-                                deletionOrError={deletionOrError}
-                            />
-
-                            <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
-                        </>
-                    </div>
-                )}
             </Container>
         </>
     )
 }
+
 interface IndexDescriptionProps {
     index: PreciseIndexFields
     history: H.History
@@ -428,15 +410,10 @@ interface CodeIntelReindexUploadProps {
     reindexOrError?: 'loading' | 'reindexed' | ErrorLike
 }
 
-const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeIntelReindexUploadProps>> = ({
-    reindexUpload,
-    reindexOrError,
-}) => (
-    <Tooltip content="TODO">
-        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
-            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
-        </Button>
-    </Tooltip>
+const CodeIntelReindexUpload: FunctionComponent<CodeIntelReindexUploadProps> = ({ reindexUpload, reindexOrError }) => (
+    <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+        <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
+    </Button>
 )
 
 interface CodeIntelDeleteUploadProps {
@@ -445,7 +422,7 @@ interface CodeIntelDeleteUploadProps {
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteUploadProps>> = ({
+const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
     state,
     deleteUpload,
     deletionOrError,
@@ -472,7 +449,7 @@ const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntel
         </Tooltip>
     )
 
-const terminalStates = new Set(['TODO']) // TODO
+const terminalStates = new Set(['COMPLETED', 'INDEXING_ERRORED', 'PROCESSING_ERRORED'])
 
 function shouldReload(index: PreciseIndexFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))

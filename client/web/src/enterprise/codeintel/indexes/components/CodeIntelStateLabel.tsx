@@ -13,7 +13,7 @@ export interface CodeIntelStateLabelProps {
 
 const labelClassName = 'text-muted text-center'
 
-export const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<CodeIntelStateLabelProps>> = ({
+export const CodeIntelStateLabel: FunctionComponent<CodeIntelStateLabelProps> = ({
     state,
     autoIndexed,
     placeInQueue,

@@ -19,8 +19,10 @@ import {
     Container,
     ErrorAlert,
     H3,
+    Icon,
     Link,
     PageHeader,
+    Text,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
@@ -46,6 +48,7 @@ import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../
 
 import { EnqueueForm } from '../components/EnqueueForm'
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
+import { mdiMapSearch } from '@mdi/js'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -122,50 +125,11 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexesPage'), [telemetryService])
     const location = useLocation<{ message: string; modal: string }>()
 
-    const [args, setArgs] = useState<any>()
-    const [selection, setSelection] = useState<Set<string> | 'all'>(new Set())
-    const onCheckboxToggle = useCallback(
-        (id: string, checked: boolean): void => {
-            setSelection(selection => {
-                if (selection === 'all') {
-                    return selection
-                }
-                if (checked) {
-                    selection.add(id)
-                } else {
-                    selection.delete(id)
-                }
-                return new Set(selection)
-            })
-        },
-        [setSelection]
-    )
-
+    const apolloClient = useApolloClient()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
     const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const { handleReindexPreciseIndexes, reindexesError } = useReindexPreciseIndexes()
-
-    const deletes = useMemo(() => new Subject<undefined>(), [])
-
-    const apolloClient = useApolloClient()
-    const queryIndexListCallback = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            setArgs({
-                query: args.query ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                state: (args as any).state ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                isLatestForRepo: (args as any).isLatestForRepo ?? null,
-                repository: repo?.id ?? null,
-            })
-            setSelection(new Set())
-
-            return queryPreciseIndexes({ ...args, repo: repo?.id }, apolloClient)
-        },
-        [queryPreciseIndexes, apolloClient]
-    )
-
     const commitGraphMetadata = useObservable(
         useMemo(
             () => (repo ? queryCommitGraph(repo?.id, apolloClient) : of(undefined)),
@@ -173,19 +137,97 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         )
     )
 
+    // Poke filtered connection to refresh
+    const deletes = useMemo(() => new Subject<undefined>(), [])
+    const querySubject = useMemo(() => new Subject<string>(), [])
+
+    // State used to control bulk index selection
+    const [selection, setSelection] = useState<Set<string> | 'all'>(new Set())
+
+    // Updates state of bulk index selection
+    const onCheckboxToggle = useCallback(
+        (id: string, checked: boolean) =>
+            setSelection(selection =>
+                selection === 'all'
+                    ? selection
+                    : checked
+                    ? new Set([...selection, id])
+                    : new Set([...selection].filter(selected => selected !== id))
+            ),
+        [setSelection]
+    )
+
+    // State used to spy on
+    const [args, setArgs] = useState<any>()
     const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
 
+    // Query indexes matching filter criteria
     const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryIndexListCallback(args).pipe(
+        (args: FilteredConnectionQueryArguments) => {
+            const stashArgs = {
+                query: args.query ?? null,
+                state: (args as any).state ?? null,
+                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                repository: repo?.id ?? null,
+            }
+
+            setArgs(stashArgs)
+            setSelection(new Set())
+
+            return queryPreciseIndexes(args, apolloClient).pipe(
                 tap(connection => {
                     setTotalCount(connection.totalCount ?? undefined)
                 })
-            ),
-        [queryIndexListCallback]
+            )
+        },
+        [queryPreciseIndexes, apolloClient]
     )
 
-    const querySubject = useMemo(() => new Subject<string>(), [])
+    const onRawDelete = () => {
+        if (selection === 'all') {
+            if (args === undefined || !confirm(`Delete ${totalCount} indexes?`)) {
+                return Promise.resolve()
+            }
+
+            return handleDeletePreciseIndexes({
+                variables: args,
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
+        }
+
+        return Promise.all(
+            [...selection].map(id =>
+                handleDeletePreciseIndex({
+                    variables: { id },
+                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                })
+            )
+        )
+    }
+
+    const onDelete = () => onRawDelete().then(() => deletes.next())
+
+    const onReindex = () => {
+        if (selection === 'all') {
+            if (args === undefined || !confirm(`Mark ${totalCount} indexes as replaceable by auto-indexing?`)) {
+                return Promise.resolve()
+            }
+
+            return handleReindexPreciseIndexes({
+                variables: args,
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
+        }
+
+        return Promise.all(
+            [...selection].map(id =>
+                handleReindexPreciseIndex({
+                    variables: { id },
+                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                })
+            )
+        )
+    }
 
     return (
         <div>
@@ -266,42 +308,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                             variant="danger"
                                             disabled={selection !== 'all' && selection.size === 0}
                                             // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                                            onClick={async () => {
-                                                if (selection === 'all') {
-                                                    if (args === undefined) {
-                                                        return
-                                                    }
-
-                                                    if (
-                                                        !confirm(
-                                                            `Delete all uploads matching the filter criteria?\n\n${Object.entries(
-                                                                args
-                                                            )
-                                                                .map(([key, value]) => `${key}: ${value}`)
-                                                                .join('\n')}`
-                                                        )
-                                                    ) {
-                                                        return
-                                                    }
-
-                                                    await handleDeletePreciseIndexes({
-                                                        variables: args,
-                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
-                                                    })
-
-                                                    deletes.next()
-                                                    return
-                                                }
-
-                                                for (const id of selection) {
-                                                    await handleDeletePreciseIndex({
-                                                        variables: { id },
-                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
-                                                    })
-                                                }
-
-                                                deletes.next()
-                                            }}
+                                            onClick={onDelete}
                                         >
                                             Delete{' '}
                                             {(selection === 'all' ? totalCount : selection.size) === 0 ? (
@@ -321,39 +328,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                             variant="secondary"
                                             disabled={selection !== 'all' && selection.size === 0}
                                             // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                                            onClick={async () => {
-                                                if (selection === 'all') {
-                                                    if (args === undefined) {
-                                                        return
-                                                    }
-
-                                                    if (
-                                                        !confirm(
-                                                            `Reindex all uploads matching the filter criteria?\n\n${Object.entries(
-                                                                args
-                                                            )
-                                                                .map(([key, value]) => `${key}: ${value}`)
-                                                                .join('\n')}`
-                                                        )
-                                                    ) {
-                                                        return
-                                                    }
-
-                                                    await handleReindexPreciseIndexes({
-                                                        variables: args,
-                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
-                                                    })
-
-                                                    return
-                                                }
-
-                                                for (const id of selection) {
-                                                    await handleReindexPreciseIndex({
-                                                        variables: { id },
-                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
-                                                    })
-                                                }
-                                            }}
+                                            onClick={onReindex}
                                         >
                                             Reindex{' '}
                                             {(selection === 'all' ? totalCount : selection.size) === 0 ? (
@@ -376,7 +351,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         location={location}
                         cursorPaging={true}
                         filters={filters}
-                        // emptyElement={<EmptyAutoIndex />}
+                        emptyElement={<EmptyIndex />}
                         updates={deletes}
                     />
                 </div>
@@ -393,13 +368,7 @@ interface IndexNodeProps {
     history: H.History
 }
 
-const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
-    node,
-    repo,
-    selection,
-    onCheckboxToggle,
-    history,
-}) => (
+const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, onCheckboxToggle, history }) => (
     <>
         <div className={classNames(styles.grid, 'px-4')} onClick={() => history.push(`./indexes/${node.id}`)}>
             <div className="px-3 py-4" onClick={event => event.stopPropagation()}>
@@ -459,4 +428,12 @@ const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
             </span>
         </div>
     </>
+)
+
+const EmptyIndex: React.FunctionComponent<{}> = () => (
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <br />
+        No indexes.
+    </Text>
 )

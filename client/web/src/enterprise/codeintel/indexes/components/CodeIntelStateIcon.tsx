@@ -13,11 +13,7 @@ export interface CodeIntelStateIconProps {
     className?: string
 }
 
-export const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeIntelStateIconProps>> = ({
-    state,
-    autoIndexed,
-    className,
-}) =>
+export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({ state, autoIndexed, className }) =>
     state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
         <div className="text-center">
             <Icon className={className} svgPath={mdiTimerSand} inline={false} aria-label="Queued" />
