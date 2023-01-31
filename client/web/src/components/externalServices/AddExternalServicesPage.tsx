@@ -140,6 +140,9 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 )}
                 {Object.entries(codeHostExternalServices)
                     .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
+                    .sort(([, externalService1], [, externalService2]) =>
+                        externalService1.title.localeCompare(externalService2.title)
+                    )
                     .map(([id, externalService]) => (
                         <div className={styles.addExternalServicesPageCard} key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
@@ -156,6 +159,9 @@ export const AddExternalServicesPage: React.FunctionComponent<
                         {Object.entries(codeHostExternalServices)
                             .filter(
                                 externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1])
+                            )
+                            .sort(([, externalService1], [, externalService2]) =>
+                                externalService1.title.localeCompare(externalService2.title)
                             )
                             .map(([id, externalService]) => (
                                 <div className={styles.addExternalServicesPageCard} key={id}>
