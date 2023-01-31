@@ -9,7 +9,6 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -17,7 +16,7 @@ func TestRedisKeyValue(t *testing.T) {
 	testKeyValue(t, redisKeyValueForTest(t))
 }
 
-func testKeyValue(t *testing.T, kv redispool.KeyValue) {
+func testKeyValue(t *testing.T, kv KeyValue) {
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
 	t.Run("classic", func(t *testing.T) {
 		require := require{TB: t}
@@ -228,7 +227,7 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
 // between the two packages becomes cleaner.
-func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
+func redisKeyValueForTest(t *testing.T) KeyValue {
 	t.Helper()
 
 	pool := &redis.Pool{
@@ -259,8 +258,8 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
-	kv := redispool.RedisKeyValue(pool).(interface {
-		WithPrefix(string) redispool.KeyValue
+	kv := RedisKeyValue(pool).(interface {
+		WithPrefix(string) KeyValue
 	})
 	return kv.WithPrefix(prefix)
 }
@@ -303,7 +302,7 @@ func bytes(ss ...string) [][]byte {
 	return bs
 }
 
-// require is redispool.Value helpers to make test readable
+// require is redis.Value helpers to make test readable
 type require struct {
 	testing.TB
 }
@@ -316,7 +315,7 @@ func (t require) Works(err error) {
 	}
 }
 
-func (t require) Equal(got redispool.Value, want any) {
+func (t require) Equal(got Value, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
 	case bool:
@@ -361,7 +360,7 @@ func (t require) Equal(got redispool.Value, want any) {
 	}
 }
 
-func (t require) AllEqual(got redispool.Values, want any) {
+func (t require) AllEqual(got Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
 	case [][]byte:
@@ -387,7 +386,7 @@ func (t require) AllEqual(got redispool.Values, want any) {
 	}
 }
 
-func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
+func (t require) ListLen(kv KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.LLen(key)
 	if err != nil {
@@ -398,7 +397,7 @@ func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 	}
 }
 
-func (t require) TTL(kv redispool.KeyValue, key string, want int) {
+func (t require) TTL(kv KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.TTL(key)
 	if err != nil {
