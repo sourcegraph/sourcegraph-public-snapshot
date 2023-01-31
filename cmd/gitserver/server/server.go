@@ -1663,7 +1663,9 @@ type CmdError struct {
 	Err        error
 }
 
-func (e *CmdError) Error() string { return fmt.Sprintf("command exited with non-zero status") }
+func (e *CmdError) Error() string {
+	return fmt.Sprintf("command exited with non-zero status %d", e.ExitStatus)
+}
 
 func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
@@ -1832,7 +1834,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderr := stderrBuf.String()
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
-	if execErr != nil || exitStatus != UnsetExitStatus || stderr != "" {
+	if execErr != nil || exitStatus != 0 || stderr != "" {
 		return &CmdError{
 			Err:        execErr,
 			Stderr:     stderr,
