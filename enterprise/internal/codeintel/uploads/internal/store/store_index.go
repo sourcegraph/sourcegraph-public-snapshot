@@ -18,6 +18,7 @@ func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOp
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
+		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -60,17 +61,30 @@ func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOp
 }
 
 const reindexUploadsQuery = `
-WITH candidates AS (
-    SELECT u.id
+WITH
+upload_candidates AS (
+    SELECT u.id, u.associated_index_id
 	FROM lsif_uploads u
 	JOIN repo ON repo.id = u.repository_id
 	WHERE %s
     ORDER BY u.id
     FOR UPDATE
+),
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET should_reindex = true
+	WHERE u.id IN (SELECT id FROM upload_candidates)
+),
+index_candidates AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE u.id IN (SELECT associated_index_id FROM upload_candidates)
+	ORDER BY u.id
+	FOR UPDATE
 )
-UPDATE lsif_uploads u
+UPDATE lsif_indexes U
 SET should_reindex = true
-WHERE u.id IN (SELECT id FROM candidates)
+WHERE u.id IN (SELECT id FROM index_candidates)
 `
 
 // ReindexUploadByID reindexes an upload by its identifier.

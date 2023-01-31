@@ -197,6 +197,9 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 	if len(opts.States) > 0 {
 		conds = append(conds, makeStateCondition(opts.States))
 	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
@@ -246,6 +249,9 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 	}
 	if len(opts.States) > 0 {
 		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))

@@ -90,6 +90,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size,
 	COUNT(*) OVER() AS count
@@ -130,6 +131,7 @@ SELECT
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id, au.content_type,
+	false AS should_reindex, -- TODO
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
 	NULL::bigint AS uncompressed_size
 FROM (
@@ -238,6 +240,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -308,6 +311,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -411,6 +415,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
@@ -916,13 +921,23 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 }
 
 const hardDeleteUploadsByIDsQuery = `
-WITH locked_uploads AS (
-	SELECT u.id
+WITH
+locked_uploads AS (
+	SELECT u.id, u.associated_index_id
 	FROM lsif_uploads u
 	WHERE u.id IN (%s)
 	ORDER BY u.id FOR UPDATE
+),
+delete_uploads AS (
+	DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+),
+locked_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes U
+	WHERE u.id IN (SELECT associated_index_id FROM locked_uploads)
+	ORDER BY u.id FOR UPDATE
 )
-DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 `
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -2057,6 +2072,7 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				upload_size,
 				associated_index_id,
 				content_type,
+				should_reindex,
 				expired,
 				uncompressed_size
 			FROM lsif_uploads

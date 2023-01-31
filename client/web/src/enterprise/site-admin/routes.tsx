@@ -125,41 +125,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
         },
 
-        // // Code graph upload routes
-        // {
-        //     path: '/code-graph/uploads',
-        //     render: lazyComponent(
-        //         () => import('../codeintel/uploads/pages/CodeIntelUploadsPage'),
-        //         'CodeIntelUploadsPage'
-        //     ),
-        //     exact: true,
-        // },
-        // {
-        //     path: '/code-graph/uploads/:id',
-        //     render: lazyComponent(
-        //         () => import('../codeintel/uploads/pages/CodeIntelUploadPage'),
-        //         'CodeIntelUploadPage'
-        //     ),
-        //     exact: true,
-        // },
-
-        // // Auto-indexing routes
-        // {
-        //     path: '/code-graph/indexes',
-        //     render: lazyComponent(
-        //         () => import('../codeintel/indexes/pages/CodeIntelIndexesPage'),
-        //         'CodeIntelIndexesPage'
-        //     ),
-        //     exact: true,
-        //     condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-        // },
-        // {
-        //     path: '/code-graph/indexes/:id',
-        //     render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
-        //     exact: true,
-        //     condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-        // },
-
         // Code graph configuration
         {
             path: '/code-graph/configuration',
@@ -187,6 +152,17 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
 
         // Legacy routes
+        {
+            path: '/code-graph/uploads/:id',
+            render: props => (
+                <Redirect
+                    to={`../indexes/${btoa(
+                        `PreciseIndex:"U:${(atob(props.match.params.id).match(/(\d+)/) ?? [''])[0]}"`
+                    )}`}
+                />
+            ),
+            exact: true,
+        },
         {
             path: '/lsif-uploads/:id',
             render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),

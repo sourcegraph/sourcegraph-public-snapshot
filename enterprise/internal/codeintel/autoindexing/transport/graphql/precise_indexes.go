@@ -262,8 +262,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		if _, err := r.uploadSvc.DeleteUploadByID(ctx, int(uploadID)); err != nil {
 			return nil, err
 		}
-	}
-	if indexID != 0 {
+	} else if indexID != 0 {
 		if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
 			return nil, err
 		}
@@ -317,11 +316,11 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 	if !skipIndexes {
-		// TODO - without upload?
 		if err := r.autoindexSvc.DeleteIndexes(ctx, autoindexingshared.DeleteIndexesOptions{
-			RepositoryID: repositoryID,
-			States:       indexStates,
-			Term:         term,
+			RepositoryID:  repositoryID,
+			States:        indexStates,
+			Term:          term,
+			WithoutUpload: true,
 		}); err != nil {
 			return nil, err
 		}
@@ -347,8 +346,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		if err := r.uploadSvc.ReindexUploadByID(ctx, int(uploadID)); err != nil {
 			return nil, err
 		}
-	}
-	if indexID != 0 {
+	} else if indexID != 0 {
 		if err := r.autoindexSvc.ReindexIndexByID(ctx, int(indexID)); err != nil {
 			return nil, err
 		}
@@ -402,11 +400,11 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
-		// TODO - without upload?
 		if err := r.autoindexSvc.ReindexIndexes(ctx, autoindexingshared.ReindexIndexesOptions{
-			States:       indexStates,
-			Term:         term,
-			RepositoryID: repositoryID,
+			States:        indexStates,
+			Term:          term,
+			RepositoryID:  repositoryID,
+			WithoutUpload: true,
 		}); err != nil {
 			return nil, err
 		}
@@ -414,10 +412,6 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 
 	return &resolverstubs.EmptyResponse{}, nil
 }
-
-//
-// TODO - add trigger to delete/reindex index record when upload record changes
-//
 
 type preciseIndexConnectionResolver struct {
 	nodes      []resolverstubs.PreciseIndexResolver
@@ -694,10 +688,13 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 
 func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
 	if r.index == nil {
-		return false
+		return r.upload != nil && r.upload.ShouldReindex
+	}
+	if r.upload == nil {
+		return r.index.ShouldReindex
 	}
 
-	return r.index.ShouldReindex
+	return r.upload.ShouldReindex && r.index.ShouldReindex
 }
 
 func (r *preciseIndexResolver) IsLatestForRepo() bool {

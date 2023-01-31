@@ -76,28 +76,15 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         exact: true,
         render: props => <CodeIntelPreciseIndexPage {...props} />,
     },
-    // {
-    //     path: '/uploads',
-    //     exact: true,
-    //     render: props => <CodeIntelUploadsPage {...props} />,
-    // },
-    // {
-    //     path: '/uploads/:id',
-    //     exact: true,
-    //     render: props => <CodeIntelUploadPage {...props} />,
-    // },
-    // {
-    //     path: '/indexes',
-    //     exact: true,
-    //     render: props => <CodeIntelIndexesPage {...props} />,
-    //     condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-    // },
-    // {
-    //     path: '/indexes/:id',
-    //     exact: true,
-    //     render: props => <CodeIntelIndexPage {...props} />,
-    //     condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-    // },
+    {
+        path: '/uploads/:id',
+        exact: true,
+        render: props => (
+            <Redirect
+                to={`../indexes/${btoa(`PreciseIndex:"U:${(atob(props.match.params.id).match(/(\d+)/) ?? [''])[0]}"`)}`}
+            />
+        ),
+    },
     {
         path: '/configuration',
         exact: true,

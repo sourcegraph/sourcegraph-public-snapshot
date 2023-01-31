@@ -34,13 +34,15 @@ type IndexesWithRepositoryNamespace struct {
 }
 
 type DeleteIndexesOptions struct {
-	States       []string
-	Term         string
-	RepositoryID int
+	States        []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
 }
 
 type ReindexIndexesOptions struct {
-	States       []string
-	Term         string
-	RepositoryID int
+	States        []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
 }
