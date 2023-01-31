@@ -123,8 +123,8 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	// submitted to the job queue
 	g.Go(func() error {
 		for resultChan := range resultChans {
-			for result := range resultChan {
-				onMatch(result)
+			for res := range resultChan {
+				onMatch(res)
 			}
 		}
 

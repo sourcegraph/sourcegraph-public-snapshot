@@ -38,7 +38,7 @@ func NewService(
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
-	locker := locker.NewWith(db, "codeintel")
+	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
 		if rankingBucketCredentialsFile == "" {
@@ -68,7 +68,7 @@ func NewService(
 		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
-		locker,
+		ciLocker,
 	)
 	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
 

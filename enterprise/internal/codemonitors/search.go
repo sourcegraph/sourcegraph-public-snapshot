@@ -62,12 +62,12 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 		return nil, errors.Wrap(err, "marshal request body")
 	}
 
-	url, err := gqlURL("CodeMonitorSettings")
+	urlStr, err := gqlURL("CodeMonitorSettings")
 	if err != nil {
 		return nil, errors.Wrap(err, "construct frontend URL")
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", urlStr, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, errors.Wrap(err, "construct request")
 	}

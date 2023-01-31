@@ -17,11 +17,11 @@ import (
 
 func Test_output(t *testing.T) {
 	test := func(input string, cmd *Output) string {
-		result, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
+		content, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
 		if err != nil {
 			return err.Error()
 		}
-		return result
+		return content
 	}
 
 	autogold.Want(
@@ -83,17 +83,17 @@ func commitMatch(content string) result.Match {
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
 		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), m)
+		commandResult, err := computeQuery.Command.Run(context.Background(), m)
 		if err != nil {
 			return err.Error()
 		}
 
-		switch r := res.(type) {
+		switch r := commandResult.(type) {
 		case *Text:
 			return r.Value
 		case *TextExtra:
-			result, _ := json.Marshal(r)
-			return string(result)
+			commandResult, _ := json.Marshal(r)
+			return string(commandResult)
 		}
 		return "Error, unrecognized result type returned"
 	}

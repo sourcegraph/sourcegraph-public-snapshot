@@ -40,13 +40,13 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
 	}
 
-	keyring := keyring.Default()
+	defaultKeyring := keyring.Default()
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
-		keyring:        &keyring,
+		keyring:        &defaultKeyring,
 	})
 }
 

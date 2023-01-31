@@ -183,8 +183,8 @@ func toJSONString(template *Template) string {
 	for _, atom := range *template {
 		jsons = append(jsons, toJSON(atom))
 	}
-	json, _ := json.Marshal(jsons)
-	return string(json)
+	j, _ := json.Marshal(jsons)
+	return string(j)
 }
 
 type MetaEnvironment struct {

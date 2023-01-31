@@ -83,7 +83,7 @@ func (h *HighlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.Li
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*HighlightedFileResolver, error) {
 	var (
-		result          = &HighlightedFileResolver{}
+		resolver        = &HighlightedFileResolver{}
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
@@ -98,12 +98,12 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Format:             gosyntect.GetResponseFormat(args.Format),
 	})
 
-	result.aborted = aborted
-	result.response = response
+	resolver.aborted = aborted
+	resolver.response = response
 
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return resolver, nil
 }

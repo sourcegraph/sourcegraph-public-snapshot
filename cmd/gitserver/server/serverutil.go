@@ -54,8 +54,8 @@ func (dir GitDir) Set(cmd *exec.Cmd) {
 }
 
 func (s *Server) dir(name api.RepoName) GitDir {
-	path := string(protocol.NormalizeRepo(name))
-	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(path), ".git"))
+	p := string(protocol.NormalizeRepo(name))
+	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
 func (s *Server) name(dir GitDir) api.RepoName {
