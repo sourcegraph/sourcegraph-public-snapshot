@@ -56,6 +56,24 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	return ops
 }
 
+// BuildWolfiOperations builds the specified docker images, or all images if none are provided
+func BuildWolfiOperations(buildImages []string, version string, tag string) *operations.Set {
+	// If buildImages is not specified, rebuild all images
+	// TODO: Maintain a list of Wolfi-based images?
+	if len(buildImages) == 0 {
+		buildImages = images.SourcegraphDockerImages
+	}
+
+	wolfiImageBuildOps := operations.NewNamedSet("Wolfi image builds")
+
+	for _, dockerImage := range buildImages {
+		// Don't upload sourcemaps
+		wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
+	}
+
+	return wolfiImageBuildOps
+}
+
 // Dependency tree between steps:
 // (buildPackage[1], buildPackage[2], ...) <-- buildRepoIndex <-- (buildWolfi[1], buildWolfi[2], ...)
 
