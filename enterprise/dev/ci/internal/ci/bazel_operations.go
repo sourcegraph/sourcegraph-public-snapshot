@@ -53,7 +53,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Tests"),
+		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
 	}
@@ -77,7 +77,7 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Build ..."),
+		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
 	}
