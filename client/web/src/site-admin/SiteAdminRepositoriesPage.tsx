@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, ReactNode } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
@@ -54,6 +54,7 @@ import { ValueLegendList, ValueLegendListProps } from './analytics/components/Va
 import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { PageRoutes } from './../routes.constants'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
@@ -264,50 +265,57 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
 
     return (
         <div className="site-admin-repositories-page">
-            <PageTitle title="Repositories - Admin" />
-            {showRepositoriesAddedBanner && (
-                <Alert variant="success" as="p">
-                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
-                    statuses are displayed below.
-                </Alert>
-            )}
-            <PageHeader
-                path={[{ text: 'Repositories' }]}
-                headingElement="h2"
-                description={
-                    <>
-                        Repositories are synced from connected{' '}
-                        <Link
-                            to="/site-admin/external-services"
-                            data-testid="test-repositories-code-host-connections-link"
-                        >
-                            code hosts
-                        </Link>
-                        .
-                    </>
-                }
-                className="mb-3"
-            />
-            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
-                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
-                    <H4>
+            <SiteAdminRepositoriesContainer>
+                <PageTitle title="Repositories - Admin" />
+                {showRepositoriesAddedBanner && (
+                    <Alert variant="success" as="p">
+                        Syncing repositories. It may take a few moments to clone and index each repository. Repository
+                        statuses are displayed below.
+                    </Alert>
+                )}
+                <PageHeader
+                    path={[{ text: 'Repositories' }]}
+                    headingElement="h2"
+                    description={
+                        <>
+                            Repositories are synced from connected{' '}
+                            <Link
+                                to="/site-admin/external-services"
+                                data-testid="test-repositories-code-host-connections-link"
+                            >
+                                code hosts
+                            </Link>
+                            .
+                        </>
+                    }
+                    className="mb-3"
+                />
+                {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                    <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                        <H4>
+                            {licenseInfo.codeScaleExceededLimit ? (
+                                <>You've used all 100GiB of storage</>
+                            ) : (
+                                <>Your Sourcegraph is almost full</>
+                            )}
+                        </H4>
                         {licenseInfo.codeScaleExceededLimit ? (
-                            <>You've used all 100GiB of storage</>
+                            <>You're about to reach the 100GiB storage limit. </>
                         ) : (
-                            <>Your Sourcegraph is almost full</>
+                            <></>
                         )}
-                    </H4>
-                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
-                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
-                    unlimited storage for your code.
-                </Alert>
-            )}
-            <SiteAdminRepositoriesContainer />
+                        Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                        unlimited storage for your code.
+                    </Alert>
+                )}
+            </SiteAdminRepositoriesContainer>
         </div>
     )
 }
 
-export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
+export const SiteAdminRepositoriesContainer: React.FunctionComponent<
+    React.PropsWithChildren<{ children: ReactNode }>
+> = ({ children }) => {
     const {
         data,
         loading: repoStatsLoading,
@@ -359,7 +367,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         }
 
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
-        if (location.pathname !== '/setup') {
+        if (location.pathname !== PageRoutes.Setup) {
             filtersWithExternalServices.push({
                 id: 'codeHost',
                 label: 'Code Host',
@@ -535,7 +543,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
 
     return (
         <>
-            <Container className="mb-3">
+            {children}
+            <Container className="py-3 mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
@@ -556,7 +565,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1"
+                            className="flex-1 ml-5"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}

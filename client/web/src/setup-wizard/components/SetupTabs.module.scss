@@ -28,11 +28,13 @@
 }
 
 .panels {
-    margin-top: 0;
-    padding: 1rem;
-    border-top-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-    border-top: none !important;
+    margin: 1rem auto;
+    padding: 1rem 0;
+    min-width: 75%;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    background: none;
 }
 
 .actions {

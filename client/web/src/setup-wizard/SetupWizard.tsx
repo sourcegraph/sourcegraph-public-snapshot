@@ -6,6 +6,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesPage'
 
 import { SetupSteps, SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
+import { Text } from '@sourcegraph/wildcard'
 
 import styles from './Setup.module.scss'
 
@@ -29,7 +30,12 @@ export const SetupWizard: FC = props => {
                 </SetupList>
             </SetupTabs>
             <SetupSteps>
-                <SiteAdminRepositoriesContainer />
+                <SiteAdminRepositoriesContainer>
+                    <Text>
+                        It may take a few moments to clone and index each repository. Repository statuses are displayed
+                        below.
+                    </Text>
+                </SiteAdminRepositoriesContainer>
             </SetupSteps>
         </div>
     )

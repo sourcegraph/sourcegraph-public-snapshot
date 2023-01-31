@@ -150,6 +150,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         location.pathname === PageRoutes.SignUp ||
         location.pathname === PageRoutes.PasswordReset ||
         location.pathname === PageRoutes.Welcome
+    const isSetup = location.pathname === PageRoutes.Setup
 
     const themeProps = useThemeProps()
     const themeState = useTheme()
@@ -222,15 +223,17 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 />
             )}
 
-            <GlobalAlerts
-                authenticatedUser={props.authenticatedUser}
-                settingsCascade={props.settingsCascade}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
+            {!isSetup && (
+                <GlobalAlerts
+                    authenticatedUser={props.authenticatedUser}
+                    settingsCascade={props.settingsCascade}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
+            )}
+            {!isSiteInit && !isSignInOrUp && !isSetup && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isSetup && (
                 <GlobalNavbar
                     {...props}
                     {...themeProps}

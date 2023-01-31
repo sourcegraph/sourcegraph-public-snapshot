@@ -6,6 +6,7 @@ export enum PageRoutes {
     SignUp = '/sign-up',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
+    Setup = '/setup',
     Settings = '/settings',
     User = '/user/*',
     Organizations = '/organizations/*',
