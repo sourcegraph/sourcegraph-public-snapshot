@@ -140,8 +140,8 @@ func TestComparePositionToRange(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if cmp := comparePositionToRange(5, 11, 5, 13, testCase.line, testCase.character); cmp != testCase.expected {
-			t.Errorf("unexpected ComparePositionSCIP result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmp)
+		if cmpRes := comparePositionToRange(5, 11, 5, 13, testCase.line, testCase.character); cmpRes != testCase.expected {
+			t.Errorf("unexpected ComparePositionSCIP result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmpRes)
 		}
 	}
 }

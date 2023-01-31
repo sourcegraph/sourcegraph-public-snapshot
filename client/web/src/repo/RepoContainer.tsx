@@ -5,7 +5,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, Switch } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -103,8 +104,7 @@ const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>
 )
 
 interface RepoContainerProps
-    extends RouteComponentProps<{ repoRevAndRest: string }>,
-        SettingsCascadeProps<Settings>,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         TelemetryProps,
         ExtensionsControllerProps,
@@ -124,7 +124,6 @@ interface RepoContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
@@ -143,6 +142,7 @@ export interface HoverThresholdProps {
 export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
     const { extensionsController, globbing } = props
 
+    const location = useLocation()
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -274,14 +274,16 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
+    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
+
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
         if (!window.context.enableLegacyExtensions) {
             return true
         }
         const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
-        return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
-    }, [props.repoContainerRoutes, props.match])
+        return paths.some(path => matchPath(location.pathname, { path: repoMatchURL + path }))
+    }, [props.repoContainerRoutes, repoMatchURL, location.pathname])
 
     if (isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
@@ -296,13 +298,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }
 
     const isCodeIntelRepositoryBadgeVisible = getIsCodeIntelRepositoryBadgeVisible({
-        match: props.match,
+        location,
         settingsCascade: props.settingsCascade,
         revision,
         repoName,
     })
-
-    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
@@ -314,6 +314,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         resolvedRevision: resolvedRevisionOrError,
         routePrefix: repoMatchURL,
         useActionItemsBar,
+        location,
     }
 
     /**
@@ -368,8 +369,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 repoName={repoName}
                 revision={revision}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                location={props.location}
-                history={props.history}
                 settingsCascade={props.settingsCascade}
                 authenticatedUser={props.authenticatedUser}
                 platformContext={props.platformContext}
@@ -427,7 +426,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 </RepoHeaderContributionPortal>
             )}
 
-            <ErrorBoundary location={props.location}>
+            <ErrorBoundary location={location}>
                 <Suspense fallback={null}>
                     <Switch>
                         {[
@@ -469,11 +468,11 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
 function getIsCodeIntelRepositoryBadgeVisible(options: {
     settingsCascade: RepoContainerProps['settingsCascade']
-    match: RepoContainerProps['match']
+    location: H.Location
     repoName: string
     revision: string | undefined
 }): boolean {
-    const { settingsCascade, repoName, match, revision } = options
+    const { settingsCascade, repoName, revision, location } = options
 
     const isCodeIntelRepositoryBadgeEnabled =
         !isErrorLike(settingsCascade.final) &&
@@ -482,7 +481,9 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
     // Remove leading repository name and possible leading revision, then compare the remaining routes to
     // see if we should display the code graph badge for this route. We want this to be visible on
     // the repo root page, as well as directory and code views, but not administrative/non-code views.
-    const matchRevisionAndRest = match.params.repoRevAndRest.slice(repoName.length)
+    //
+    // + 1 for the leading `/` in the pathname
+    const matchRevisionAndRest = location.pathname.slice(repoName.length + 1)
     const matchOnlyRest =
         revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
             ? matchRevisionAndRest.slice(revision.length + 1)

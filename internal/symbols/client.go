@@ -474,7 +474,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	url, err := c.url(repo)
+	repoUrl, err := c.url(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -484,10 +484,10 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	if !strings.HasSuffix(url, "/") {
-		url += "/"
+	if !strings.HasSuffix(repoUrl, "/") {
+		repoUrl += "/"
 	}
-	req, err := http.NewRequest("POST", url+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", repoUrl+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}

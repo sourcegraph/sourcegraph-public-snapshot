@@ -1130,9 +1130,6 @@ commandsets:
 
   app:
     requiresDevPrivate: true
-    env:
-      # TODO(slimsag): remove the need for this
-      BLOBSTORE_DATA_DIR: /tmp/blobstore-data
     checks:
       - docker
       # TODO: App's dependency on Redis will be removed.

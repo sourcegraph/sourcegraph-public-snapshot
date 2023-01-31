@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -103,15 +102,15 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 
 	// Adding repo perms sync jobs.
 	syncJobsStore := db.PermissionSyncJobs()
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding user perms sync job, which should not be processed by current worker!
 	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: permssync.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.
@@ -213,15 +212,15 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	// Adding user perms sync jobs.
 	syncJobsStore := db.PermissionSyncJobs()
 	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
-		database.PermissionSyncJobOpts{Reason: permssync.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
+		database.PermissionSyncJobOpts{Reason: database.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
 	require.NoError(t, err)
 
 	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: permssync.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding repo perms sync job, which should not be processed by current worker!
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.

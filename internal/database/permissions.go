@@ -28,8 +28,8 @@ var permissionInsertColumns = []*sqlf.Query{
 type PermissionStore interface {
 	basestore.ShareableStore
 
-	// Transact creates a transaction-enabled store for the permissionStore
-	Transact(context.Context) (PermissionStore, error)
+	// WithTransact creates a transaction-enabled store for the permissionStore
+	WithTransact(context.Context, func(PermissionStore) error) error
 
 	// Create inserts the given permission into the database.
 	Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error)
@@ -88,9 +88,10 @@ VALUES %S
 RETURNING %s
 `
 
-func (p *permissionStore) Transact(ctx context.Context) (PermissionStore, error) {
-	txBase, err := p.Store.Transact(ctx)
-	return &permissionStore{Store: txBase}, err
+func (p *permissionStore) WithTransact(ctx context.Context, f func(PermissionStore) error) error {
+	return p.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&permissionStore{Store: tx})
+	})
 }
 
 func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error) {

@@ -10,6 +10,7 @@ go_library(
         "//cmd/frontend/external/app",
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth",
+        "//enterprise/cmd/frontend/internal/auth/gerrit",
         "//enterprise/cmd/frontend/internal/auth/githuboauth",
         "//enterprise/cmd/frontend/internal/auth/gitlaboauth",
         "//enterprise/cmd/frontend/internal/auth/httpheader",

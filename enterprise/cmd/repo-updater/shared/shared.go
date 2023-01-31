@@ -36,7 +36,7 @@ func EnterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, string) error) {
+) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, ossDB.PermissionSyncJobReason) error) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		observationCtx.Logger.Info("enterprise edition")
@@ -58,7 +58,7 @@ func EnterpriseInit(
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
 	permsJobStore := db.PermissionSyncJobs()
-	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason string) error {
+	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason ossDB.PermissionSyncJobReason) error {
 		if authz.PermissionSyncingDisabled() {
 			return nil
 		}

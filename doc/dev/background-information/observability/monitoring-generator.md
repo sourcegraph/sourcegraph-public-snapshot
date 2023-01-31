@@ -22,7 +22,7 @@ These include:
 - [Alert solutions reference](https://docs.sourcegraph.com/admin/observability/alerts)
 - [Dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards)
 
-Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate alert solutions entry, and [Grafana panels](#grafana-integration) will link to the appropriate dashboards reference entry.
+Links to generated documentation can be provided in our other generated integrations—for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate alert solutions entry, and [Grafana panels](#grafana-integration) will link to the appropriate dashboards reference entry.
 
 ### Grafana integration
 
@@ -39,7 +39,7 @@ It also takes care of the following:
 - Configuring annotation layers for alert events and version changes
 - Maintaining a uniform look and feel across all dashboards
 
-Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate service's dashboard.
+Links to generated documentation can be provided in our other generated integrations—for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate service's dashboard.
 
 ### Prometheus integration
 

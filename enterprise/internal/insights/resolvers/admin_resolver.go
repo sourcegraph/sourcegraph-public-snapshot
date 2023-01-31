@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	insightsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -43,7 +43,7 @@ func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend
 		}
 	}
 
-	series, err := r.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{IncludeDeleted: true, SeriesID: args.Input.SeriesId})
+	series, err := r.dataSeriesStore.GetDataSeries(ctx, insightsstore.GetDataSeriesArgs{IncludeDeleted: true, SeriesID: args.Input.SeriesId})
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 	}
 
 	// need to do a manual join with metadata since this lives in a separate database.
-	seriesMetadata, err := r.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{IncludeDeleted: true})
+	seriesMetadata, err := r.dataSeriesStore.GetDataSeries(ctx, insightsstore.GetDataSeriesArgs{IncludeDeleted: true})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 	}
 
 	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authorization
-	viewSeries, err := r.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
+	viewSeries, err := r.insightStore.Get(ctx, insightsstore.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
 	if err != nil {
 		return nil, err
 	}

@@ -7,35 +7,49 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	// addrCache is the network address of redis cache.
-	addrCache string
-	// addrStore is the network address of redis store.
-	addrStore string
-)
+// Set addresses. We do it as a function closure to ensure the addresses are
+// set before we create Store and Cache. Prefer in this order:
+// * Specific envvar REDIS_${NAME}_ENDPOINT
+// * Fallback envvar REDIS_ENDPOINT
+// * Default
+//
+// Additionally keep this logic in sync with cmd/server/redis.go
+var addresses = func() struct {
+	Cache string
+	Store string
+} {
+	redis := struct {
+		Cache string
+		Store string
+	}{}
 
-func init() {
-	// Set addresses. Prefer in this order:
-	// * Specific envvar REDIS_${NAME}_ENDPOINT
-	// * Fallback envvar REDIS_ENDPOINT
-	// * Default
-	//
-	// Additionally keep this logic in sync with cmd/server/redis.go
 	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
 
-	// addrCache
+	// maybe is a convenience which returns s if include is true, otherwise
+	// returns the empty string.
+	maybe := func(include bool, s string) string {
+		if include {
+			return s
+		}
+		return ""
+	}
+
+	deployType := deploy.Type()
+
 	for _, addr := range []string{
 		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),
 		fallback,
+		maybe(deploy.IsDeployTypeSingleProgram(deployType), MemoryKeyValueURI),
 		"redis-cache:6379",
 	} {
 		if addr != "" {
-			addrCache = addr
+			redis.Cache = addr
 			break
 		}
 	}
@@ -44,14 +58,17 @@ func init() {
 	for _, addr := range []string{
 		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Default redis-store:6379"),
 		fallback,
+		maybe(deploy.IsDeployTypeSingleProgram(deployType), MemoryKeyValueURI),
 		"redis-store:6379",
 	} {
 		if addr != "" {
-			addrStore = addr
+			redis.Store = addr
 			break
 		}
 	}
-}
+
+	return redis
+}()
 
 var schemeMatcher = lazyregexp.New(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
 
@@ -75,30 +92,16 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 // rather than having it in-memory only.
 //
 // In Kubernetes the service is called redis-cache.
-var Cache = RedisKeyValue(&redis.Pool{
+var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
-	Dial: func() (redis.Conn, error) {
-		return dialRedis(addrCache)
-	},
-	TestOnBorrow: func(c redis.Conn, t time.Time) error {
-		_, err := c.Do("PING")
-		return err
-	},
 })
 
 // Store is a redis configured for persisting data. Do not abuse this pool,
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.
-var Store = RedisKeyValue(&redis.Pool{
+var Store = NewKeyValue(addresses.Store, &redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
-	TestOnBorrow: func(c redis.Conn, t time.Time) error {
-		_, err := c.Do("PING")
-		return err
-	},
-	Dial: func() (redis.Conn, error) {
-		return dialRedis(addrStore)
-	},
 })

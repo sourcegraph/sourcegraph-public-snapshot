@@ -262,15 +262,15 @@ func TestFileContainsFilterJob(t *testing.T) {
 				}
 				return false, nil
 			}
-			var result streaming.SearchEvent
+			var resultEvent streaming.SearchEvent
 			streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
-				result = ev
+				resultEvent = ev
 			})
 			j := NewFileContainsFilterJob(tc.includePatterns, tc.originalPattern, tc.caseSensitive, childJob)
 			alert, err := j.Run(context.Background(), job.RuntimeClients{}, streamCollector)
 			require.Nil(t, alert)
 			require.NoError(t, err)
-			require.Equal(t, tc.outputEvent, result)
+			require.Equal(t, tc.outputEvent, resultEvent)
 		})
 	}
 }

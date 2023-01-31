@@ -216,12 +216,12 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	extsvc := &types.ExternalService{
+	externalService := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err = db.ExternalServices().Create(ctx, confGet, extsvc)
+	err = db.ExternalServices().Create(ctx, confGet, externalService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +229,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 VALUES (%s, %s, '')
-`, extsvc.ID, privateRepo1.ID)
+`, externalService.ID, privateRepo1.ID)
 
 	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {

@@ -85,7 +85,7 @@ We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connecti
 Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 
 - **Domain names**: Fully qualified domain name: your domain
-- **Select validation method**: DNS validation - recommended
+- **Select validation method**: DNS validation—recommended
  
 After the certificate has been created, you will need to attach the `CNAME name` and `CNAME values` to your DNS.
 

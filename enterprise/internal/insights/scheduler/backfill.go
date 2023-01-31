@@ -261,12 +261,12 @@ func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args Bac
 
 func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
-	if args.TextSearch != nil {
+	if args.TextSearch != nil && len(*args.TextSearch) > 0 {
 		likeStr := "%" + *args.TextSearch + "%"
 		where = append(where, sqlf.Sprintf("(title LIKE %s OR label LIKE %s)", likeStr, likeStr))
 	}
 
-	if args.States != nil {
+	if args.States != nil && len(*args.States) > 0 {
 		states := make([]string, 0, len(*args.States))
 		for _, s := range *args.States {
 			states = append(states, fmt.Sprintf("'%s'", strings.ToLower(s)))
