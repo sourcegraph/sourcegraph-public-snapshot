@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func QueueOptions(observationCtx *observation.Context, db database.DB, _ func() string) handler.QueueOptions[*btypes.BatchSpecWorkspaceExecutionJob] {
+func QueueHandler(observationCtx *observation.Context, db database.DB, _ func() string) handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob] {
 	logger := log.Scoped("executor-queue.batches", "The executor queue handlers for the batches queue")
 	recordTransformer := func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, _ handler.ResourceMetadata) (apiclient.Job, error) {
 		batchesStore := store.New(db, observationCtx, nil)
@@ -21,7 +21,7 @@ func QueueOptions(observationCtx *observation.Context, db database.DB, _ func() 
 	}
 
 	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx, db.Handle())
-	return handler.QueueOptions[*btypes.BatchSpecWorkspaceExecutionJob]{
+	return handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{
 		Name:              "batches",
 		Store:             store,
 		RecordTransformer: recordTransformer,

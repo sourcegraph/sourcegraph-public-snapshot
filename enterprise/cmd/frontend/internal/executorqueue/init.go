@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -40,19 +41,20 @@ func Init(
 
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
+	jobTokenStore := executor.NewJobTokenStore(observationCtx, db)
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
-	codeintelHandler := handler.NewHandler(executorStore, metricsStore, codeintelqueue.QueueOptions(observationCtx, db, accessToken))
-	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(observationCtx, db, accessToken))
-	queueOptions := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
+	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeintelqueue.QueueHandler(observationCtx, db, accessToken))
+	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batches.QueueHandler(observationCtx, db, accessToken))
+	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	queueHandler := newExecutorQueueHandler(
 		logger,
-		queueOptions,
+		handlers,
 		accessToken,
 		codeintelUploadHandler,
 		batchesWorkspaceFileGetHandler,

@@ -12,14 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func QueueOptions(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueOptions[types.Index] {
+func QueueHandler(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueHandler[types.Index] {
 	recordTransformer := func(ctx context.Context, _ string, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
 		return transformRecord(ctx, db, record, resourceMetadata, accessToken())
 	}
 
 	store := store.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
 
-	return handler.QueueOptions[types.Index]{
+	return handler.QueueHandler[types.Index]{
 		Name:              "codeintel",
 		Store:             store,
 		RecordTransformer: recordTransformer,
