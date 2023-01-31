@@ -1,8 +1,8 @@
 import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Switch, Route, RouteComponentProps } from 'react-router-dom'
-import { useParams, Params } from 'react-router-dom-v5-compat'
+import { Switch, Route, RouteComponentProps, useParams } from 'react-router-dom'
+import { Params } from 'react-router-dom-v5-compat'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -101,13 +101,13 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
     <div className="pb-3">
         <Switch>
             <Route path={`${match.url}/apply/:specID`}>
-                <ExtractParams<'specID'>
+                <ExtractParams<{ specID: string }>
                     render={params => <BatchChangePreviewPage {...outerProps} batchSpecID={params.specID!} />}
                 />
             </Route>
 
             <Route path={`${match.url}/:batchChangeName/close`}>
-                <ExtractParams<'batchChangeName'>
+                <ExtractParams<{ batchChangeName: string }>
                     render={params => (
                         <BatchChangeClosePage
                             {...outerProps}
@@ -118,7 +118,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 />
             </Route>
             <Route path={`${match.url}/:batchChangeName/executions`}>
-                <ExtractParams<'batchChangeName'>
+                <ExtractParams<{ batchChangeName: string }>
                     render={params => (
                         <BatchChangeDetailsPage
                             {...outerProps}
@@ -130,7 +130,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 />
             </Route>
             <Route path={`${match.url}/:batchChangeName`}>
-                <ExtractParams<'batchChangeName'>
+                <ExtractParams<{ batchChangeName: string }>
                     render={params => (
                         <BatchChangeDetailsPage
                             {...outerProps}
@@ -147,10 +147,11 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
     </div>
 ))
 
-interface ExtractParamsProps<P extends string> {
+interface ExtractParamsProps<P extends { [K in keyof Params]?: string }> {
     render: (params: Readonly<[P] extends [string] ? Params<P> : Partial<P>>) => JSX.Element
 }
-const ExtractParams = <P extends string>({ render }: ExtractParamsProps<P>): JSX.Element => {
+const ExtractParams = <P extends { [K in keyof Params]?: string }>({ render }: ExtractParamsProps<P>): JSX.Element => {
+    // TODO: Replace useParams to V6 API once the above V5 <Switch> can be changed to a V6 <Routes>
     const params = useParams<P>()
     return render(params)
 }
