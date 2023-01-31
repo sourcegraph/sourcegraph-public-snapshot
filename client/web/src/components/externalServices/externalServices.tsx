@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
-import { MdiReactIconComponentType } from 'mdi-react'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -43,6 +42,8 @@ import {
     ExternalServiceSyncJobState,
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
+
+import GerritIcon from './GerritIcon'
 
 /**
  * Metadata associated with adding a given external service.
@@ -1257,25 +1258,6 @@ const PAGURE: AddExternalServiceOptions = {
     ),
     editorActions: [],
 }
-
-const GerritIcon: MdiReactIconComponentType = props => (
-    <svg
-        className={'mdi-icon ' + (props.className || '')}
-        width={props.size}
-        height={props.size}
-        fill={props.color}
-        viewBox="0 0 52 52"
-    >
-        <path
-            d="M4,0 h32 a4,4 0 0 1 4,4 v8 h8 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-8 h-8 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z
-         m14,22 h12 v4 h-12 v-4 z
-         m16,0 h12 v4 h-12 v-4 z
-         m-16,14 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z
-         m16,0 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z"
-            fillRule="evenodd"
-        />
-    </svg>
-)
 
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
