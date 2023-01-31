@@ -60,14 +60,14 @@ func Start(ctx context.Context, observationCtx *observation.Context, config *Con
 	// Ready immediately
 	ready()
 
-	service := &blobstore.Service{
+	bsService := &blobstore.Service{
 		DataDir:        config.DataDir,
 		Log:            logger,
 		ObservationCtx: observation.NewContext(logger),
 	}
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, bsService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 

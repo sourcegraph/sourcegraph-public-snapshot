@@ -3,9 +3,9 @@ import { MdiReactIconComponentType } from 'mdi-react'
 export const GerritIcon: MdiReactIconComponentType = props => (
     <svg
         className={'mdi-icon ' + (props.className || '')}
-        width={props.size}
-        height={props.size}
-        fill={props.color}
+        width={props.size ?? 24}
+        height={props.size ?? 24}
+        fill={props.color ?? 'currentColor'}
         viewBox="0 0 52 52"
     >
         <path

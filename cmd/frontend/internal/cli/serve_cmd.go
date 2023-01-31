@@ -138,7 +138,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
+	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
@@ -209,18 +209,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	schema, err := graphqlbackend.NewSchema(db,
 		gitserver.NewClient(),
-		enterprise.BatchChangesResolver,
-		enterprise.CodeIntelResolver,
-		enterprise.InsightsResolver,
-		enterprise.AuthzResolver,
-		enterprise.CodeMonitorsResolver,
-		enterprise.LicenseResolver,
-		enterprise.DotcomResolver,
-		enterprise.SearchContextsResolver,
-		enterprise.NotebooksResolver,
-		enterprise.ComputeResolver,
-		enterprise.InsightsAggregationResolver,
-		enterprise.WebhooksResolver,
+		enterpriseServices.BatchChangesResolver,
+		enterpriseServices.CodeIntelResolver,
+		enterpriseServices.InsightsResolver,
+		enterpriseServices.AuthzResolver,
+		enterpriseServices.CodeMonitorsResolver,
+		enterpriseServices.LicenseResolver,
+		enterpriseServices.DotcomResolver,
+		enterpriseServices.SearchContextsResolver,
+		enterpriseServices.NotebooksResolver,
+		enterpriseServices.ComputeResolver,
+		enterpriseServices.InsightsAggregationResolver,
+		enterpriseServices.WebhooksResolver,
 	)
 	if err != nil {
 		return err
@@ -231,12 +231,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	server, err := makeExternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
 	if err != nil {
 		return err
 	}

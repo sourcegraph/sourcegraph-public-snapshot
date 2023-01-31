@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
+	autoindexingstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,7 +29,7 @@ func NewService(
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()

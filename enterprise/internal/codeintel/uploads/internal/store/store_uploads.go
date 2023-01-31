@@ -1074,12 +1074,12 @@ func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize 
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
-	batch, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
+	batchOfCommits, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
 	if err != nil {
 		return nil, err
 	}
 
-	return batch, nil
+	return batchOfCommits, nil
 }
 
 const sourcedCommitsWithoutCommittedAtQuery = `
