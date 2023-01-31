@@ -1272,7 +1272,6 @@ const GerritIcon: MdiReactIconComponentType = props => (
          m16,0 h12 v4 h-12 v-4 z
          m-16,14 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z
          m16,0 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z"
-            fill="currentColor"
             fillRule="evenodd"
         />
     </svg>
