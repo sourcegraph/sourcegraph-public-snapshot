@@ -113,7 +113,7 @@ type redisKeyValue struct {
 //
 // poolOpts is a required argument which sets defaults in the case we connect
 // to redis. If used we only override TestOnBorrow and Dial.
-func NewKeyValue(addr string, poolOpts redis.Pool) KeyValue {
+func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
 	if addr == MemoryKeyValueURI {
 		return MemoryKeyValue()
 	}
@@ -124,7 +124,7 @@ func NewKeyValue(addr string, poolOpts redis.Pool) KeyValue {
 	poolOpts.Dial = func() (redis.Conn, error) {
 		return dialRedis(addr)
 	}
-	return RedisKeyValue(&poolOpts)
+	return RedisKeyValue(poolOpts)
 }
 
 // RedisKeyValue returns a KeyValue backed by pool.

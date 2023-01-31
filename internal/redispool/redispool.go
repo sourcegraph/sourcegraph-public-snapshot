@@ -92,7 +92,7 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 // rather than having it in-memory only.
 //
 // In Kubernetes the service is called redis-cache.
-var Cache = NewKeyValue(addresses.Cache, redis.Pool{
+var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
 })
@@ -101,7 +101,7 @@ var Cache = NewKeyValue(addresses.Cache, redis.Pool{
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.
-var Store = NewKeyValue(addresses.Store, redis.Pool{
+var Store = NewKeyValue(addresses.Store, &redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
 })
