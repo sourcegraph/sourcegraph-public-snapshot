@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS src_permissions(
+CREATE TABLE IF NOT EXISTS user_repo_permissions(
     id SERIAL PRIMARY KEY,
     user_id INT NULL REFERENCES users(id) ON DELETE CASCADE,
     repo_id INT NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS src_permissions(
     source TEXT NOT NULL DEFAULT 'sync'
 );
 
-CREATE INDEX IF NOT EXISTS src_permissions_user_id_idx ON src_permissions(user_id);
-CREATE INDEX IF NOT EXISTS src_permissions_repo_id_idx ON src_permissions(repo_id);
-CREATE INDEX IF NOT EXISTS src_permissions_ext_account_id_idx ON src_permissions(ext_account_id);
-CREATE INDEX IF NOT EXISTS src_permissions_updated_at_idx ON src_permissions(updated_at);
-CREATE INDEX IF NOT EXISTS src_permissions_source_idx ON src_permissions(source);
+CREATE INDEX IF NOT EXISTS user_repo_permissions_user_id_idx ON user_repo_permissions(user_id);
+CREATE INDEX IF NOT EXISTS user_repo_permissions_repo_id_idx ON user_repo_permissions(repo_id);
+CREATE INDEX IF NOT EXISTS user_repo_permissions_user_external_account_id_idx ON user_repo_permissions(user_external_account_id);
+CREATE INDEX IF NOT EXISTS user_repo_permissions_updated_at_idx ON user_repo_permissions(updated_at);
+CREATE INDEX IF NOT EXISTS user_repo_permissions_source_idx ON user_repo_permissions(source);
