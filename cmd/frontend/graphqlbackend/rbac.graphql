@@ -19,7 +19,7 @@ type Role implements Node {
     """
     permissions: PermissionConnection!
     """
-    The date and time when the permission was created.
+    The date and time when the role was created.
     """
     createdAt: DateTime!
 }
