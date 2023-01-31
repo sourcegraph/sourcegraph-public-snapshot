@@ -8,6 +8,8 @@ This is a fork of SourceGraph with a few modifications:
    - See the documentation in the readme. Use carefully.
  - A docker image is provided.
    - `ghcr.io/sintef/sourcegraph-server-libre:libre`
+ - Sending telemetry data to SourceGraph.com, such as number of users or number of repositories, is removed.
+ - Updates are disabled by default.
 
 ## Oauth2 Proxy Mode
 

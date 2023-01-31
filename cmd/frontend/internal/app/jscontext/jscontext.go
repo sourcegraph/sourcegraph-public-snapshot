@@ -271,7 +271,7 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
 	updateChannel := c.UpdateChannel
 	if updateChannel == "" {
-		updateChannel = "release"
+		updateChannel = "none"
 	}
 	return schema.SiteConfiguration{
 		AuthPublic:                  c.AuthPublic,

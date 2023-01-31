@@ -19,16 +19,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -392,219 +389,9 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 }
 
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
-	logFunc := scopedLog.Debug
-	if envvar.SourcegraphDotComMode() {
-		logFunc = scopedLog.Warn
-	}
-	// Used for cases where large pings objects might otherwise fail silently.
-	logFuncWarn := scopedLog.Warn
-
 	r := &pingRequest{
-		ClientSiteID:                  siteid.Get(),
-		DeployType:                    deploy.Type(),
-		ClientVersionString:           version.Version(),
-		LicenseKey:                    conf.Get().LicenseKey,
-		CodeIntelUsage:                []byte("{}"),
-		NewCodeIntelUsage:             []byte("{}"),
-		SearchUsage:                   []byte("{}"),
-		BatchChangesUsage:             []byte("{}"),
-		GrowthStatistics:              []byte("{}"),
-		SavedSearches:                 []byte("{}"),
-		HomepagePanels:                []byte("{}"),
-		Repositories:                  []byte("{}"),
-		RetentionStatistics:           []byte("{}"),
-		SearchOnboarding:              []byte("{}"),
-		ExtensionsUsage:               []byte("{}"),
-		CodeInsightsUsage:             []byte("{}"),
-		CodeInsightsCriticalTelemetry: []byte("{}"),
-		CodeMonitoringUsage:           []byte("{}"),
-		NotebooksUsage:                []byte("{}"),
-		CodeHostIntegrationUsage:      []byte("{}"),
-		IDEExtensionsUsage:            []byte("{}"),
-		MigratedExtensionsUsage:       []byte("{}"),
-	}
-
-	totalUsers, err := getTotalUsersCount(ctx, db)
-	if err != nil {
-		logFunc("database.Users.Count failed", log.Error(err))
-	}
-	r.TotalUsers = int32(totalUsers)
-	r.InitialAdminEmail, r.TosAccepted, err = getInitialSiteAdminInfo(ctx, db)
-	if err != nil {
-		logFunc("database.UserEmails.GetInitialSiteAdminInfo failed", log.Error(err))
-	}
-
-	r.DependencyVersions, err = getDependencyVersions(ctx, db, logger)
-	if err != nil {
-		logFunc("getDependencyVersions failed", log.Error(err))
-	}
-
-	// Yes dear reader, this is a feature ping in critical telemetry. Why do you ask? Because for the purposes of
-	// licensing enforcement, we need to know how many insights our customers have created. Please see RFC 584
-	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
-	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalCodeInsightsCriticalTelemetry failed", log.Error(err))
-	}
-
-	if !conf.Get().DisableNonCriticalTelemetry {
-		// TODO(Dan): migrate this to the new usagestats package.
-		//
-		// For the time being, instances will report daily active users through the legacy package via this argument,
-		// as well as using the new package through the `act` argument below. This will allow comparison during the
-		// transition.
-		count, err := getUsersActiveTodayCount(ctx, db)
-		if err != nil {
-			logFunc("getUsersActiveToday failed", log.Error(err))
-		}
-		r.UniqueUsers = int32(count)
-
-		totalOrgs, err := getTotalOrgsCount(ctx, db)
-		if err != nil {
-			logFunc("database.Orgs.Count failed", log.Error(err))
-		}
-		r.TotalOrgs = int32(totalOrgs)
-
-		r.HasRepos, err = hasRepos(ctx, db)
-		if err != nil {
-			logFunc("hasRepos failed", log.Error(err))
-		}
-
-		r.EverSearched, err = hasSearchOccurred(ctx)
-		if err != nil {
-			logFunc("hasSearchOccurred failed", log.Error(err))
-		}
-		r.EverFindRefs, err = hasFindRefsOccurred(ctx)
-		if err != nil {
-			logFunc("hasFindRefsOccurred failed", log.Error(err))
-		}
-		r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
-		}
-		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
-		}
-
-		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
-		}
-
-		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalHomepagePanelsJSON failed", log.Error(err))
-		}
-
-		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
-		}
-
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
-		}
-
-		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
-		}
-
-		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
-		}
-
-		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
-		if err != nil {
-			logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
-		}
-
-		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
-		}
-
-		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalNotebooksUsageJSON failed", log.Error(err))
-		}
-
-		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
-		}
-
-		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
-		}
-
-		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
-		}
-
-		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
-		}
-
-		r.ExternalServices, err = externalServiceKinds(ctx, db)
-		if err != nil {
-			logFunc("externalServicesKinds failed", log.Error(err))
-		}
-
-		r.HasExtURL = conf.UsingExternalURL()
-		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
-		r.AuthProviders = authProviderTypes()
-
-		// The following methods are the most expensive to calculate, so we do them in
-		// parallel.
-
-		var wg sync.WaitGroup
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
-			if err != nil {
-				logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
-			}
-		}()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
-			if err != nil {
-				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
-			}
-		}()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
-			if err != nil {
-				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
-			}
-		}()
-
-		wg.Wait()
-	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
-		}
-
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, true)
-		if err != nil {
-			logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
-		}
+		ClientSiteID:        ".",
+		ClientVersionString: "0.0.0",
 	}
 
 	contents, err := json.Marshal(r)
@@ -740,6 +527,7 @@ func Start(logger log.Logger, db database.DB) {
 	}
 	started = true
 
+	// Disabled by default
 	if channel := conf.UpdateChannel(); channel != "release" {
 		return // no update check
 	}
