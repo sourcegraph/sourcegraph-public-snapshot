@@ -7,3 +7,16 @@
 .alert-content {
     white-space: break-spaces;
 }
+
+.cloned {
+    background-color: var(--success) !important;
+    color: var(--white) !important;
+}
+
+.queued {
+    background-color: transparent !important;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted) !important;
+}
+
+// TODO: Error status style

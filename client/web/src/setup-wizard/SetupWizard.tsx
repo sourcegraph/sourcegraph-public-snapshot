@@ -3,8 +3,9 @@ import { FC, useState } from 'react'
 import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesPage'
 
-import { SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
+import { SetupSteps, SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
 
 import styles from './Setup.module.scss'
 
@@ -27,6 +28,9 @@ export const SetupWizard: FC = props => {
                     <SetupTab index={1}>Sync repositories</SetupTab>
                 </SetupList>
             </SetupTabs>
+            <SetupSteps>
+                <SiteAdminRepositoriesContainer />
+            </SetupSteps>
         </div>
     )
 }

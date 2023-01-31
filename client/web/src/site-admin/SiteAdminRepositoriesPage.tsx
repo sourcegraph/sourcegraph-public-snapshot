@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -10,6 +11,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
+    Badge,
     Button,
     Code,
     Container,
@@ -59,55 +61,74 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
-    <li
-        className="repository-node list-group-item px-0 py-2"
-        data-test-repository={node.name}
-        data-test-cloned={node.mirrorInfo.cloned}
-    >
-        <div className="d-flex align-items-center justify-content-between">
-            <div>
-                <ExternalRepositoryIcon externalRepo={node.externalRepository} />
-                <RepoLink repoName={node.name} to={node.url} />
-                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
+    let status: string = 'queued'
+    if (node.mirrorInfo.cloned) {
+        status = 'cloned'
+    } else if (node.mirrorInfo.cloneInProgress) {
+        status = 'cloning'
+    }
+
+    return (
+        <li
+            className="repository-node list-group-item px-0 py-2"
+            data-test-repository={node.name}
+            data-test-cloned={node.mirrorInfo.cloned}
+        >
+            <div className="d-flex align-items-center justify-content-between">
+                <div className="d-flex">
+                    <Badge
+                        className={classNames(styles[status], 'h-100 py-0 px-1 mr-3 text-uppercase font-weight-normal')}
+                    >
+                        {status}
+                    </Badge>
+                    <div className="d-flex flex-column">
+                        <div>
+                            <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                            <RepoLink repoName={node.name} to={node.url} />
+                        </div>
+                        <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
+                    </div>
+                </div>
+
+                <div className="repository-node__actions">
+                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
+                        </Button>
+                    )}{' '}
+                    <Tooltip content="Repository code graph data">
+                        <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Repository settings">
+                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>
+                    </Tooltip>
+                </div>
             </div>
 
-            <div className="repository-node__actions">
-                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
-                    </Button>
-                )}{' '}
-                <Tooltip content="Repository code graph data">
-                    <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
-                    </Button>
-                </Tooltip>{' '}
-                <Tooltip content="Repository settings">
-                    <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                    </Button>
-                </Tooltip>
-            </div>
-        </div>
-
-        {node.mirrorInfo.lastError && (
-            <div className={styles.alertWrapper}>
-                <Alert variant="warning">
-                    <Text className="font-weight-bold">Error syncing repository:</Text>
-                    <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
-                </Alert>
-            </div>
-        )}
-        {node.mirrorInfo.isCorrupted && (
-            <div className={styles.alertWrapper}>
-                <Alert variant="danger">
-                    Repository is corrupt. <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
-                </Alert>
-            </div>
-        )}
-    </li>
-)
+            {node.mirrorInfo.lastError && (
+                <div className={styles.alertWrapper}>
+                    <Alert variant="warning">
+                        <Text className="font-weight-bold">Error syncing repository:</Text>
+                        <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                    </Alert>
+                </div>
+            )}
+            {node.mirrorInfo.isCorrupted && (
+                <div className={styles.alertWrapper}>
+                    <Alert variant="danger">
+                        Repository is corrupt.{' '}
+                        <LinkOrSpan to={`/${node.name}/-/settings/mirror`}>More details</LinkOrSpan>
+                    </Alert>
+                </div>
+            )}
+        </li>
+    )
+}
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -218,7 +239,6 @@ const FILTERS: FilteredConnectionFilter[] = [
  * A page displaying the repositories on this site.
  */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
     location,
     telemetryService,
 }) => {
@@ -238,6 +258,56 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
     }, [])
 
+    const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
+
+    const licenseInfo = window.context.licenseInfo
+
+    return (
+        <div className="site-admin-repositories-page">
+            <PageTitle title="Repositories - Admin" />
+            {showRepositoriesAddedBanner && (
+                <Alert variant="success" as="p">
+                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
+                    statuses are displayed below.
+                </Alert>
+            )}
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GiB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+            <SiteAdminRepositoriesContainer />
+        </div>
+    )
+}
+
+export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const {
         data,
         loading: repoStatsLoading,
@@ -245,6 +315,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         startPolling,
         stopPolling,
     } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    const history = useHistory()
+    const location = useLocation()
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -287,12 +359,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         }
 
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
-        filtersWithExternalServices.push({
-            id: 'codeHost',
-            label: 'Code Host',
-            type: 'select',
-            values,
-        })
+        if (location.pathname !== '/setup') {
+            filtersWithExternalServices.push({
+                id: 'codeHost',
+                label: 'Code Host',
+                type: 'select',
+                values,
+            })
+        }
         return filtersWithExternalServices
     }, [extSvcs])
 
@@ -341,7 +415,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             {
                 value: data.repositoryStats.cloned,
                 description: 'Cloned',
-                color: 'var(--body-color)',
+                color: 'var(--success)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
                 onClick: () =>
@@ -456,104 +530,58 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         refetch(variables)
     }, [refetch, variables])
 
-    const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
-
-    const licenseInfo = window.context.licenseInfo
-
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
 
     return (
-        <div className="site-admin-repositories-page">
-            <PageTitle title="Repositories - Admin" />
-            {showRepositoriesAddedBanner && (
-                <Alert variant="success" as="p">
-                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
-                    statuses are displayed below.
-                </Alert>
-            )}
-            <PageHeader
-                path={[{ text: 'Repositories' }]}
-                headingElement="h2"
-                description={
-                    <>
-                        Repositories are synced from connected{' '}
-                        <Link
-                            to="/site-admin/external-services"
-                            data-testid="test-repositories-code-host-connections-link"
-                        >
-                            code hosts
-                        </Link>
-                        .
-                    </>
-                }
-                className="mb-3"
-            />
-            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
-                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
-                    <H4>
-                        {licenseInfo.codeScaleExceededLimit ? (
-                            <>You've used all 100GiB of storage</>
-                        ) : (
-                            <>Your Sourcegraph is almost full</>
-                        )}
-                    </H4>
-                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
-                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
-                    unlimited storage for your code.
-                </Alert>
-            )}
-
+        <>
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
-                {extSvcs && (
-                    <>
-                        <div className="d-flex justify-content-center">
-                            <FilterControl
-                                filters={filters}
-                                values={filterValues}
-                                onValueSelect={(
-                                    filter: FilteredConnectionFilter,
-                                    value: FilteredConnectionFilterValue
-                                ) =>
-                                    setFilterValues(values => {
-                                        const newValues = new Map(values)
-                                        newValues.set(filter.id, value)
-                                        return newValues
-                                    })
-                                }
-                            />
-                            <Input
-                                type="search"
-                                className="flex-1"
-                                placeholder="Search repositories..."
-                                name="query"
-                                value={searchQuery}
-                                onChange={event => setSearchQuery(event.currentTarget.value)}
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="off"
-                                spellCheck={false}
-                                aria-label="Search repositories..."
-                                variant="regular"
-                            />
-                        </div>
-                        <ul className="list-group list-group-flush mt-4">
-                            {(connection?.nodes || []).map(node => (
-                                <RepositoryNode key={node.id} node={node} />
-                            ))}
-                        </ul>
-                        <PageSwitcher
-                            {...paginationProps}
-                            className="mt-4"
-                            totalCount={connection?.totalCount ?? null}
-                            totalLabel="repositories"
-                        />
-                    </>
-                )}
             </Container>
-        </div>
+            {extSvcs && (
+                <Container>
+                    <div className="d-flex justify-content-center">
+                        <FilterControl
+                            filters={filters}
+                            values={filterValues}
+                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
+                                setFilterValues(values => {
+                                    const newValues = new Map(values)
+                                    newValues.set(filter.id, value)
+                                    return newValues
+                                })
+                            }
+                        />
+                        <Input
+                            type="search"
+                            className="flex-1"
+                            placeholder="Search repositories..."
+                            name="query"
+                            value={searchQuery}
+                            onChange={event => setSearchQuery(event.currentTarget.value)}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            aria-label="Search repositories..."
+                            variant="regular"
+                        />
+                    </div>
+                    <ul className="list-group list-group-flush mt-4">
+                        {(connection?.nodes || []).map(node => (
+                            <RepositoryNode key={node.id} node={node} />
+                        ))}
+                    </ul>
+                    <PageSwitcher
+                        {...paginationProps}
+                        className="mt-4"
+                        totalCount={connection?.totalCount ?? null}
+                        totalLabel="repositories"
+                    />
+                </Container>
+            )}
+        </>
     )
 }

@@ -3,7 +3,18 @@ import { createContext, FC, PropsWithChildren, useContext } from 'react'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Button, Tab, TabList, TabPanel, Tabs, TabListProps, useTabsContext } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Card,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    TabListProps,
+    TabPanelsProps,
+    useTabsContext,
+} from '@sourcegraph/wildcard'
 
 import styles from './SetupTabs.module.scss'
 
@@ -67,6 +78,10 @@ export const SetupTab: FC<PropsWithChildren<SetupTabProps>> = props => {
         </Tab>
     )
 }
+
+export const SetupSteps: FC<PropsWithChildren<TabPanelsProps>> = props => (
+    <TabPanels {...props} as={Card} className={classNames(styles.panels, props.className)} />
+)
 
 export { TabPanel as SetupStep }
 
