@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS src_permissions;
+DROP TABLE IF EXISTS user_repo_permissions;
