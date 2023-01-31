@@ -9354,7 +9354,7 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
     """
-    addTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    addTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9367,7 +9367,7 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
     """
-    setTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    setTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9379,5 +9379,37 @@ extend type Mutation {
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+    removeTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
+}
+
+"""
+Options to specify a user for team membership. Multiple options can be provided,
+with the following precedence order: (Other mismatches will be discarded)
+- ID
+- Username
+- Email
+- External Account fields
+
+Examples:
+- If ID is set and no match, return.
+- If ID and username is set, and ID matches but username doesn't, match.
+"""
+input TeamMemberInput {
+    """
+    Explicitly define a user by ID.
+    """
+    id: ID
+    """
+    Explicitly define a user by username in Sourcegraph.
+    """
+    username: String
+    """
+    If the email is associated to a user and verified, the user account will be matched.
+    """
+    email: String
+
+    externalAccountServiceID: String
+    externalAccountServiceType: String
+    externalAccountAccountID: String
+    externalAccountLogin: String
 }
