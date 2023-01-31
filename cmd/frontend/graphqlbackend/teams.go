@@ -130,6 +130,9 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if args.ID != nil && args.Name != nil {
 		return nil, errors.New("team to update is identifier by either id or name, but both were specified")
 	}
+	if args.ParentTeam != nil && args.ParentTeamName != nil {
+		return nil, errors.New("parent team is identified by either id or name, but both were specified")
+	}
 	teams := r.db.Teams()
 	t, err := findTeam(ctx, teams, args.ID, args.Name)
 	if err != nil {
@@ -139,6 +142,16 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if args.DisplayName != nil && *args.DisplayName != t.DisplayName {
 		needsUpdate = true
 		t.DisplayName = *args.DisplayName
+	}
+	if args.ParentTeam != nil || args.ParentTeamName != nil {
+		parentTeam, err := findTeam(ctx, teams, args.ParentTeam, args.ParentTeamName)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot find parent team")
+		}
+		if parentTeam.ID != t.ParentTeamID {
+			needsUpdate = true
+			t.ParentTeamID = parentTeam.ID
+		}
 	}
 	if needsUpdate {
 		teams.UpdateTeam(ctx, t)
