@@ -33,7 +33,7 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                     caseSensitive,
                     trace: undefined,
                     searchMode: SearchMode.SmartSearch,
-                }).pipe(),
+                }),
             [query, caseSensitive]
         )
     )
