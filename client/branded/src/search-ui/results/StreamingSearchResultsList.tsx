@@ -24,6 +24,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
 import { FilePathSearchResult } from '../components/FilePathSearchResult'
+import { PersonSearchResult } from '../components/PersonSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
 import { smartSearchClickedEvent } from '../util/events'
@@ -35,7 +36,6 @@ import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNa
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
-import { PersonSearchResult } from '../components/PersonSearchResult'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,

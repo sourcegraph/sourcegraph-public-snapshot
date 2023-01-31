@@ -6,6 +6,7 @@ import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     createRectangle,
     createLinkClickHandler,
@@ -21,7 +22,6 @@ import {
 
 import { ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 

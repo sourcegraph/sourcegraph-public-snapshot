@@ -1,7 +1,9 @@
-import { PersonMatch } from '@sourcegraph/shared/src/search/stream'
 import React from 'react'
-import { ResultContainer } from './ResultContainer'
+
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { PersonMatch } from '@sourcegraph/shared/src/search/stream'
+
+import { ResultContainer } from './ResultContainer'
 
 export interface PersonSearchResultProps {
     result: PersonMatch
