@@ -156,11 +156,12 @@ func (s *teamStore) With(other basestore.ShareableStore) TeamStore {
 	}
 }
 
-func (s *teamStore) Transact(ctx context.Context) (TeamStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &teamStore{
-		Store: txBase,
-	}, err
+func (s *teamStore) WithTransact(ctx context.Context, f func(TeamStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&teamStore{
+			Store: tx,
+		})
+	})
 }
 
 func (s *teamStore) GetTeamByID(ctx context.Context, id int32) (*types.Team, error) {
@@ -323,76 +324,70 @@ FROM team_members
 WHERE %s
 `
 
-func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	if team.CreatedAt.IsZero() {
-		team.CreatedAt = timeutil.Now()
-	}
-
-	if team.UpdatedAt.IsZero() {
-		team.UpdatedAt = team.CreatedAt
-	}
-
-	q := sqlf.Sprintf(
-		createTeamQueryFmtstr,
-		sqlf.Join(teamInsertColumns, ","),
-		team.Name,
-		dbutil.NewNullString(team.DisplayName),
-		team.ReadOnly,
-		dbutil.NewNullInt32(team.ParentTeamID),
-		dbutil.NewNullInt32(team.CreatorID),
-		team.CreatedAt,
-		team.UpdatedAt,
-		sqlf.Join(teamColumns, ","),
-	)
-
-	row := tx.Handle().QueryRowContext(
-		ctx,
-		q.Query(sqlf.PostgresBindVar),
-		q.Args()...,
-	)
-	if err := row.Err(); err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) {
-			switch e.ConstraintName {
-			case "teams_name":
-				return ErrTeamNameAlreadyExists
-			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return errors.Errorf("team name invalid: %s", e.ConstraintName)
-			case "orgs_display_name_max_length":
-				return errors.Errorf("team display name invalid: %s", e.ConstraintName)
-			}
+func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) error {
+	return s.WithTransact(ctx, func(tx TeamStore) error {
+		if team.CreatedAt.IsZero() {
+			team.CreatedAt = timeutil.Now()
 		}
 
-		return err
-	}
-
-	if err := scanTeam(row, team); err != nil {
-		return err
-	}
-
-	q = sqlf.Sprintf(createTeamNameReservationQueryFmtstr, team.Name, team.ID)
-
-	// Reserve team name in shared users+orgs+teams namespace.
-	if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) {
-			switch e.ConstraintName {
-			case "names_pkey":
-				return ErrTeamNameAlreadyExists
-			}
+		if team.UpdatedAt.IsZero() {
+			team.UpdatedAt = team.CreatedAt
 		}
-		return err
-	}
 
-	return nil
+		q := sqlf.Sprintf(
+			createTeamQueryFmtstr,
+			sqlf.Join(teamInsertColumns, ","),
+			team.Name,
+			dbutil.NewNullString(team.DisplayName),
+			team.ReadOnly,
+			dbutil.NewNullInt32(team.ParentTeamID),
+			dbutil.NewNullInt32(team.CreatorID),
+			team.CreatedAt,
+			team.UpdatedAt,
+			sqlf.Join(teamColumns, ","),
+		)
+
+		row := tx.Handle().QueryRowContext(
+			ctx,
+			q.Query(sqlf.PostgresBindVar),
+			q.Args()...,
+		)
+		if err := row.Err(); err != nil {
+			var e *pgconn.PgError
+			if errors.As(err, &e) {
+				switch e.ConstraintName {
+				case "teams_name":
+					return ErrTeamNameAlreadyExists
+				case "orgs_name_max_length", "orgs_name_valid_chars":
+					return errors.Errorf("team name invalid: %s", e.ConstraintName)
+				case "orgs_display_name_max_length":
+					return errors.Errorf("team display name invalid: %s", e.ConstraintName)
+				}
+			}
+
+			return err
+		}
+
+		if err := scanTeam(row, team); err != nil {
+			return err
+		}
+
+		q = sqlf.Sprintf(createTeamNameReservationQueryFmtstr, team.Name, team.ID)
+
+		// Reserve team name in shared users+orgs+teams namespace.
+		if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			var e *pgconn.PgError
+			if errors.As(err, &e) {
+				switch e.ConstraintName {
+				case "names_pkey":
+					return ErrTeamNameAlreadyExists
+				}
+			}
+			return err
+		}
+
+		return nil
+	})
 }
 
 const createTeamQueryFmtstr = `
@@ -442,41 +437,35 @@ RETURNING
 `
 
 func (s *teamStore) DeleteTeam(ctx context.Context, team int32) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
+	return s.WithTransact(ctx, func(tx TeamStore) error {
+		conds := []*sqlf.Query{
+			sqlf.Sprintf("teams.id = %s", team),
+		}
+
+		q := sqlf.Sprintf(deleteTeamQueryFmtstr, sqlf.Join(conds, "AND"))
+
+		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return err
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return TeamNotFoundError{args: conds}
+		}
+
+		conds = []*sqlf.Query{
+			sqlf.Sprintf("names.team_id = %s", team),
+		}
+
+		q = sqlf.Sprintf(deleteTeamNameReservationQueryFmtstr, sqlf.Join(conds, "AND"))
+
+		// Release the teams name so it can be used by another user, team or org.
+		_, err = tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		return err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("teams.id = %s", team),
-	}
-
-	q := sqlf.Sprintf(deleteTeamQueryFmtstr, sqlf.Join(conds, "AND"))
-
-	res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return TeamNotFoundError{args: conds}
-	}
-
-	conds = []*sqlf.Query{
-		sqlf.Sprintf("names.team_id = %s", team),
-	}
-
-	q = sqlf.Sprintf(deleteTeamNameReservationQueryFmtstr, sqlf.Join(conds, "AND"))
-
-	// Release the teams name so it can be used by another user, team or org.
-	_, err = tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	})
 }
 
 const deleteTeamQueryFmtstr = `
