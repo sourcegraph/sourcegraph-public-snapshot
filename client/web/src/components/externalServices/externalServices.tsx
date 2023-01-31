@@ -43,6 +43,8 @@ import {
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
+import { GerritIcon } from './GerritIcon'
+
 /**
  * Metadata associated with adding a given external service.
  */
@@ -1265,7 +1267,7 @@ const PAGURE: AddExternalServiceOptions = {
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
     title: 'Gerrit',
-    icon: GitIcon,
+    icon: GerritIcon,
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
