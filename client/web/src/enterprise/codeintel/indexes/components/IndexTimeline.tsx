@@ -46,25 +46,25 @@ export const IndexTimeline: FunctionComponent<IndexTimelineProps> = ({ index, no
         }
 
         // Stage: indexing job steps
-        let v = indexSetupStage(index, now)
-        if (v) {
-            stages.push(v)
+        let stage = indexSetupStage(index, now)
+        if (stage) {
+            stages.push(stage)
         }
-        v = indexPreIndexStage(index, now)
-        if (v) {
-            stages.push(v)
+        stage = indexPreIndexStage(index, now)
+        if (stage) {
+            stages.push(stage)
         }
-        v = indexIndexStage(index, now)
-        if (v) {
-            stages.push(v)
+        stage = indexIndexStage(index, now)
+        if (stage) {
+            stages.push(stage)
         }
-        v = indexUploadStage(index, now)
-        if (v) {
-            stages.push(v)
+        stage = indexUploadStage(index, now)
+        if (stage) {
+            stages.push(stage)
         }
-        v = indexTeardownStage(index, now)
-        if (v) {
-            stages.push(v)
+        stage = indexTeardownStage(index, now)
+        if (stage) {
+            stages.push(stage)
         }
 
         // Stage: Indexing failed (shown conditionally)
