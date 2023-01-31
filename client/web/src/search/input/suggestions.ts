@@ -148,6 +148,7 @@ interface CodeSymbol {
     kind: SymbolKind
     name: string
     url: string
+    path: string
 }
 
 /**
