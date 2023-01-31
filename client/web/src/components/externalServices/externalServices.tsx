@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
+import { MdiReactIconComponentType } from 'mdi-react'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -12,7 +13,6 @@ import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
 import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
-import { MdiReactIconComponentType, MdiReactIconProps } from 'mdi-react'
 
 import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -257,16 +257,16 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
 const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     ...(isEnterprise
         ? [
-            {
-                id: 'setURL',
-                label: 'Set GitHub URL',
-                run: (config: string) => {
-                    const value = 'https://github.example.com'
-                    const edits = modify(config, ['url'], value, defaultModificationOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ]
+              {
+                  id: 'setURL',
+                  label: 'Set GitHub URL',
+                  run: (config: string) => {
+                      const value = 'https://github.example.com'
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+          ]
         : []),
     {
         id: 'setAccessToken',
@@ -348,16 +348,16 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     ...(isSelfManaged
         ? [
-            {
-                id: 'setURL',
-                label: 'Set GitLab URL',
-                run: (config: string) => {
-                    const value = 'https://gitlab.example.com'
-                    const edits = modify(config, ['url'], value, defaultModificationOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ]
+              {
+                  id: 'setURL',
+                  label: 'Set GitLab URL',
+                  run: (config: string) => {
+                      const value = 'https://gitlab.example.com'
+                      const edits = modify(config, ['url'], value, defaultModificationOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+          ]
         : []),
     {
         id: 'setAccessToken',
@@ -414,25 +414,25 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
     ...(isSelfManaged
         ? [
-            {
-                id: 'addInternalProjects',
-                label: 'Add internal projects',
-                run: (config: string) => {
-                    const value = 'projects?visibility=internal'
-                    const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'addPrivateProjects',
-                label: 'Add private projects',
-                run: (config: string) => {
-                    const value = 'projects?visibility=private'
-                    const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ]
+              {
+                  id: 'addInternalProjects',
+                  label: 'Add internal projects',
+                  run: (config: string) => {
+                      const value = 'projects?visibility=internal'
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+              {
+                  id: 'addPrivateProjects',
+                  label: 'Add private projects',
+                  run: (config: string) => {
+                      const value = 'projects?visibility=private'
+                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+          ]
         : []),
     {
         id: 'excludeProject',
@@ -445,67 +445,67 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
     ...(isSelfManaged
         ? [
-            {
-                id: 'enforcePermissionsOAuth',
-                label: 'Enforce permissions (OAuth)',
-                run: (config: string) => {
-                    const value = {
-                        identityProvider: {
-                            COMMENT_SENTINEL: true,
-                            type: 'oauth',
-                        },
-                    }
-                    const comment = editorActionComments.enforcePermissionsOAuth
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
-            },
-            {
-                id: 'enforcePermissionsSudo',
-                label: 'Enforce permissions (sudo)',
-                run: (config: string) => {
-                    const value = {
-                        COMMENT_SENTINEL: true,
-                        identityProvider: {
-                            type: 'external',
-                            authProviderID: '<configID field of the auth provider>',
-                            authProviderType: '<type field of the auth provider>',
-                            gitlabProvider:
-                                '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
-                        },
-                    }
-                    const comment = editorActionComments.enforcePermissionsSSO
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
-            },
-            {
-                id: 'setSelfSignedCert',
-                label: 'Set internal or self-signed certificate',
-                run: (config: string) => {
-                    const value = '<certificate>'
-                    const edits = modify(config, ['certificate'], value, defaultModificationOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ]
+              {
+                  id: 'enforcePermissionsOAuth',
+                  label: 'Enforce permissions (OAuth)',
+                  run: (config: string) => {
+                      const value = {
+                          identityProvider: {
+                              COMMENT_SENTINEL: true,
+                              type: 'oauth',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsOAuth
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
+                  },
+              },
+              {
+                  id: 'enforcePermissionsSudo',
+                  label: 'Enforce permissions (sudo)',
+                  run: (config: string) => {
+                      const value = {
+                          COMMENT_SENTINEL: true,
+                          identityProvider: {
+                              type: 'external',
+                              authProviderID: '<configID field of the auth provider>',
+                              authProviderType: '<type field of the auth provider>',
+                              gitlabProvider:
+                                  '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsSSO
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
+                  },
+              },
+              {
+                  id: 'setSelfSignedCert',
+                  label: 'Set internal or self-signed certificate',
+                  run: (config: string) => {
+                      const value = '<certificate>'
+                      const edits = modify(config, ['certificate'], value, defaultModificationOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+          ]
         : [
-            {
-                id: 'enforcePermissionsOAuth',
-                label: 'Enforce permissions',
-                run: (config: string) => {
-                    const value = {
-                        identityProvider: {
-                            COMMENT_SENTINEL: true,
-                            type: 'oauth',
-                        },
-                    }
-                    const comment = editorActionComments.enforcePermissionsOAuth
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
-            },
-        ]),
+              {
+                  id: 'enforcePermissionsOAuth',
+                  label: 'Enforce permissions',
+                  run: (config: string) => {
+                      const value = {
+                          identityProvider: {
+                              COMMENT_SENTINEL: true,
+                              type: 'oauth',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsOAuth
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
+                  },
+              },
+          ]),
     {
         id: 'addWebhooks',
         label: 'Add webhook',
@@ -1259,14 +1259,24 @@ const PAGURE: AddExternalServiceOptions = {
 }
 
 const GerritIcon: MdiReactIconComponentType = props => (
-    <svg className={'mdi-icon ' + (props.className || '')} width={props.size} height={props.size} fill={props.color} viewBox='0 0 52 52'>
-        <path d="M4,0 h32 a4,4 0 0 1 4,4 v8 h8 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-8 h-8 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z
+    <svg
+        className={'mdi-icon ' + (props.className || '')}
+        width={props.size}
+        height={props.size}
+        fill={props.color}
+        viewBox="0 0 52 52"
+    >
+        <path
+            d="M4,0 h32 a4,4 0 0 1 4,4 v8 h8 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-8 h-8 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z
          m14,22 h12 v4 h-12 v-4 z
          m16,0 h12 v4 h-12 v-4 z
          m-16,14 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z
-         m16,0 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z" fill="currentColor" fillRule="evenodd" />
+         m16,0 h4 v-4 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 z"
+            fill="currentColor"
+            fillRule="evenodd"
+        />
     </svg>
-);
+)
 
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
@@ -1558,10 +1568,10 @@ export const resolveExternalServiceCategory = (
         const parsedConfig: unknown = parseJSONC(externalService.config)
         const url =
             typeof parsedConfig === 'object' &&
-                parsedConfig !== null &&
-                hasProperty('url')(parsedConfig) &&
-                typeof parsedConfig.url === 'string' &&
-                isValidURL(parsedConfig.url)
+            parsedConfig !== null &&
+            hasProperty('url')(parsedConfig) &&
+            typeof parsedConfig.url === 'string' &&
+            isValidURL(parsedConfig.url)
                 ? new URL(parsedConfig.url)
                 : undefined
         // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
