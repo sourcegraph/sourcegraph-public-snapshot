@@ -18,6 +18,7 @@ ts_project(
         "src/types/utils.ts",
         "src/util/LocalStorageSubject.ts",
         "src/util/browserDetection.ts",
+        "src/util/compatNavigate.ts",
         "src/util/fetchCache.ts",
         "src/util/hashCode.ts",
         "src/util/highlightNode.ts",
@@ -40,15 +41,18 @@ ts_project(
     deps = [
         "//:node_modules/@sourcegraph/extension-api-types",  #keep
         "//:node_modules/@types/highlight.js",
+        "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",  #keep
         "//:node_modules/@types/sanitize-html",
         "//:node_modules/highlight.js",
         "//:node_modules/highlightjs-graphql",
+        "//:node_modules/history",  #keep
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/marked",
+        "//:node_modules/react-router-dom-v5-compat",  #keep
         "//:node_modules/rxjs",
         "//:node_modules/sanitize-html",
         "//:node_modules/utility-types",  #keep
