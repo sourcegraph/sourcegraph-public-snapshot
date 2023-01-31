@@ -1665,7 +1665,7 @@ type CmdError struct {
 
 func (e *CmdError) Error() string { return fmt.Sprintf("command exited with non-zero status") }
 
-func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, w io.Writer) error {
+func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
@@ -1740,6 +1740,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
+				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdin_size", len(req.Stdin))
 				ev.AddField("stdout_size", stdoutN)
@@ -1873,7 +1874,7 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 		}
 	}()
 
-	err := s.exec(ctx, logger, req, w)
+	err := s.exec(ctx, logger, req, r.UserAgent(), w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
 			w.WriteHeader(http.StatusNotFound)
