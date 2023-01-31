@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS src_permissions(
     id SERIAL PRIMARY KEY,
     user_id INT NULL REFERENCES users(id) ON DELETE CASCADE,
     repo_id INT NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
-    ext_account_id INT NULL REFERENCES user_external_accounts(id) ON DELETE CASCADE,
+    user_external_account_id INT NULL REFERENCES user_external_accounts(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     source TEXT NOT NULL DEFAULT 'sync'
