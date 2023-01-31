@@ -2259,12 +2259,14 @@ Indexes:
  name    | citext  |           | not null | 
  user_id | integer |           |          | 
  org_id  | integer |           |          | 
+ team_id | integer |           |          | 
 Indexes:
     "names_pkey" PRIMARY KEY, btree (name)
 Check constraints:
-    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL)
+    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL)
 Foreign-key constraints:
     "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
@@ -2277,7 +2279,7 @@ Foreign-key constraints:
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
  action      | text                     |           | not null | 
- user_id     | integer                  |           |          | 
+ user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
@@ -2665,6 +2667,7 @@ Referenced by:
  priority             | integer                  |           | not null | 0
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
+ no_perms             | boolean                  |           | not null | false
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -3224,6 +3227,51 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.team_members"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ team_id    | integer                  |           | not null | 
+ user_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "team_members_team_id_user_id_key" PRIMARY KEY, btree (team_id, user_id)
+Foreign-key constraints:
+    "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.teams"
+```
+     Column     |           Type           | Collation | Nullable |              Default              
+----------------+--------------------------+-----------+----------+-----------------------------------
+ id             | integer                  |           | not null | nextval('teams_id_seq'::regclass)
+ name           | citext                   |           | not null | 
+ display_name   | text                     |           |          | 
+ readonly       | boolean                  |           | not null | false
+ parent_team_id | integer                  |           |          | 
+ creator_id     | integer                  |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "teams_pkey" PRIMARY KEY, btree (id)
+    "teams_name" UNIQUE, btree (name)
+Check constraints:
+    "teams_display_name_max_length" CHECK (char_length(display_name) <= 255)
+    "teams_name_max_length" CHECK (char_length(name::text) <= 255)
+    "teams_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+Foreign-key constraints:
+    "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+
+```
+
 # Table "public.temporary_settings"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                     
@@ -3469,6 +3517,8 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "team_members" CONSTRAINT "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

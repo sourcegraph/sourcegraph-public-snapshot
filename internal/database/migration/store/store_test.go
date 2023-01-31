@@ -316,14 +316,14 @@ func TestWrappedUp(t *testing.T) {
 
 	// Seed a few migrations
 	for _, id := range []int{13, 14, 15} {
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID:      id,
 			UpQuery: sqlf.Sprintf(`-- No-op`),
 		}
 		f := func() error {
-			return store.Up(ctx, definition)
+			return store.Up(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
+		if err := store.WithMigrationLog(ctx, def, true, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 	}
@@ -350,7 +350,7 @@ func TestWrappedUp(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID: 16,
 			UpQuery: sqlf.Sprintf(`
 				CREATE TABLE test_trees (
@@ -366,9 +366,9 @@ func TestWrappedUp(t *testing.T) {
 			`),
 		}
 		f := func() error {
-			return store.Up(ctx, definition)
+			return store.Up(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
+		if err := store.WithMigrationLog(ctx, def, true, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 
@@ -391,7 +391,7 @@ func TestWrappedUp(t *testing.T) {
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "ERROR: relation"
 
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID: 17,
 			UpQuery: sqlf.Sprintf(`
 				-- Note: table already exists
@@ -404,9 +404,9 @@ func TestWrappedUp(t *testing.T) {
 			`),
 		}
 		f := func() error {
-			return store.Up(ctx, definition)
+			return store.Up(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+		if err := store.WithMigrationLog(ctx, def, true, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -459,14 +459,14 @@ func TestWrappedDown(t *testing.T) {
 
 	// Seed a few migrations
 	for _, id := range []int{12, 13, 14} {
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID:      id,
 			UpQuery: sqlf.Sprintf(`-- No-op`),
 		}
 		f := func() error {
-			return store.Up(ctx, definition)
+			return store.Up(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
+		if err := store.WithMigrationLog(ctx, def, true, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 	}
@@ -493,16 +493,16 @@ func TestWrappedDown(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID: 14,
 			DownQuery: sqlf.Sprintf(`
 				DROP TABLE test_trees;
 			`),
 		}
 		f := func() error {
-			return store.Down(ctx, definition)
+			return store.Down(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, false, f); err != nil {
+		if err := store.WithMigrationLog(ctx, def, false, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 
@@ -524,7 +524,7 @@ func TestWrappedDown(t *testing.T) {
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "ERROR: syntax error at or near"
 
-		definition := definition.Definition{
+		def := definition.Definition{
 			ID: 13,
 			DownQuery: sqlf.Sprintf(`
 				-- Note: table does not exist
@@ -532,9 +532,9 @@ func TestWrappedDown(t *testing.T) {
 			`),
 		}
 		f := func() error {
-			return store.Down(ctx, definition)
+			return store.Down(ctx, def)
 		}
-		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+		if err := store.WithMigrationLog(ctx, def, false, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 

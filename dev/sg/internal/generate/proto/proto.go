@@ -10,19 +10,15 @@ import (
 	"time"
 
 	"github.com/sourcegraph/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var dependencies = []dependency{
-	"github.com/bufbuild/buf/cmd/buf@v1.11.0",
-	"github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.5.1",
-	"google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1",
-}
-
-func Generate(ctx context.Context) *generate.Report {
+func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
 	// Save working directory
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -41,13 +37,11 @@ func Generate(ctx context.Context) *generate.Report {
 	if err != nil {
 		return &generate.Report{Err: err}
 	}
-	gobin := filepath.Join(rootDir, ".bin")
 
-	// Install dependencies into $ROOT/.bin
-	for _, d := range dependencies {
-		if err := d.install(ctx, gobin, &sb); err != nil {
-			return &generate.Report{Err: err}
-		}
+	output := std.NewOutput(&sb, verboseOutput)
+	err = buf.InstallDependencies(ctx, output)
+	if err != nil {
+		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
 	// Run buf generate in every directory with buf.gen.yaml
@@ -66,11 +60,19 @@ func Generate(ctx context.Context) *generate.Report {
 	if err != nil {
 		return &generate.Report{Err: err}
 	}
+
+	gobin := filepath.Join(rootDir, ".bin")
 	for _, p := range bufGenFilePaths {
 		dir := filepath.Dir(p)
-		os.Chdir(dir)
-		if err := runBufGenerate(ctx, gobin, &sb); err != nil {
+		err := os.Chdir(dir)
+		if err != nil {
+			err = errors.Wrapf(err, "changing directory to %q", dir)
 			return &generate.Report{Err: err}
+		}
+
+		err = runBufGenerate(ctx, gobin, &sb)
+		if err != nil {
+			return &generate.Report{Output: sb.String(), Err: err}
 		}
 	}
 
@@ -82,31 +84,20 @@ func Generate(ctx context.Context) *generate.Report {
 
 func FindGeneratedFiles(dir string) ([]string, error) {
 	var paths []string
-	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if strings.HasSuffix(path, ".pb.go") {
+
+	err := filepath.WalkDir(dir, root.SkipGitIgnoreWalkFunc(func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !entry.IsDir() && strings.HasSuffix(path, ".pb.go") {
 			paths = append(paths, path)
 		}
+
 		return nil
-	})
+	}))
+
 	return paths, err
-}
-
-type dependency string
-
-func (d dependency) String() string { return string(d) }
-
-func (d dependency) install(ctx context.Context, gobin string, w io.Writer) error {
-	err := run.Cmd(ctx, "go", "install", d.String()).
-		Environ(os.Environ()).
-		Env(map[string]string{
-			"GOBIN": gobin,
-		}).
-		Run().
-		Stream(w)
-	if err != nil {
-		return errors.Wrapf(err, "go install %s returned an error", d)
-	}
-	return nil
 }
 
 func runBufGenerate(ctx context.Context, gobin string, w io.Writer) error {

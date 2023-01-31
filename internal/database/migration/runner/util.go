@@ -10,8 +10,8 @@ import (
 
 func extractIDs(definitions []definition.Definition) []int {
 	ids := make([]int, 0, len(definitions))
-	for _, definition := range definitions {
-		ids = append(ids, definition.ID)
+	for _, def := range definitions {
+		ids = append(ids, def.ID)
 	}
 
 	return ids

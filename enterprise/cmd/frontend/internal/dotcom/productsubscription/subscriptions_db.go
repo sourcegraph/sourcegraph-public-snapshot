@@ -53,14 +53,14 @@ func (s dbSubscriptions) Create(ctx context.Context, userID int32, username stri
 		accountNumber = username[i+1:]
 	}
 
-	uuid, err := uuid.NewRandom()
+	newUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", errors.Wrap(err, "new UUID")
 	}
 	if err = s.db.QueryRowContext(ctx, `
 INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3) RETURNING id
 `,
-		uuid, userID, accountNumber,
+		newUUID, userID, accountNumber,
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}

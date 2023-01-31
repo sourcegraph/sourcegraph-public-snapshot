@@ -19,6 +19,8 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 			{`content`, `content:test`, &RepoContainsFilePredicate{Content: "test"}},
 			{`path and content`, `path:test.go content:abc`, &RepoContainsFilePredicate{Path: "test.go", Content: "abc"}},
 			{`content and path`, `content:abc path:test.go`, &RepoContainsFilePredicate{Path: "test.go", Content: "abc"}},
+			{`unnamed path`, `test.go`, &RepoContainsFilePredicate{Path: "test.go"}},
+			{`unnamed path regex`, `test(a|b)*.go`, &RepoContainsFilePredicate{Path: "test(a|b)*.go"}},
 		}
 
 		for _, tc := range valid {
@@ -39,9 +41,9 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 			{`empty`, ``, nil},
 			{`negated path`, `-path:test`, nil},
 			{`negated content`, `-content:test`, nil},
-			{`unsupported syntax`, `abc:test`, nil},
-			{`unnamed content`, `test`, nil},
 			{`catch invalid content regexp`, `path:foo content:([)`, nil},
+			{`unsupported syntax`, `content1 content2`, nil},
+			{`invalid unnamed path`, `([)`, nil},
 		}
 
 		for _, tc := range invalid {
@@ -162,6 +164,55 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoHasKVPPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}
+
+func TestRepoContainsPredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *RepoContainsPredicate
+		}
+
+		valid := []test{
+			{`path`, `file:test`, &RepoContainsPredicate{File: "test"}},
+			{`path regex`, `file:test(a|b)*.go`, &RepoContainsPredicate{File: "test(a|b)*.go"}},
+			{`content`, `content:test`, &RepoContainsPredicate{Content: "test"}},
+			{`path and content`, `file:test.go content:abc`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
+			{`content and path`, `content:abc file:test.go`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoContainsPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`empty`, ``, nil},
+			{`negated path`, `-file:test`, nil},
+			{`negated content`, `-content:test`, nil},
+			{`catch invalid content regexp`, `file:foo content:([)`, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoContainsPredicate{}
 				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")

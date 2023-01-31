@@ -407,6 +407,13 @@
               "type": "integer",
               "default": 0,
               "group": "Search"
+            },
+            "documentRanksWeight": {
+              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "type": "number",
+              "default": 4500,
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -798,6 +805,12 @@
           "minimum": 0
         }
       }
+    },
+    "scim.authToken": {
+      "type": "string",
+      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "default": "",
+      "group": "External services"
     },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",

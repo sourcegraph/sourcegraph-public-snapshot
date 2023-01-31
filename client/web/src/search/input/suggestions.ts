@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
@@ -10,13 +8,13 @@ import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 import {
     Group,
     Option,
-    Target,
-    Completion,
     Source,
-    FilterOption,
-    QueryOption,
     getEditorConfig,
     SuggestionResult,
+    submitQueryInfo,
+    queryRenderer,
+    filterRenderer,
+    filterValueRenderer,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -51,11 +49,6 @@ type InternalSource<T extends Token | undefined = Token | undefined> = (params: 
 }) => SuggestionResult | null
 
 const none: any[] = []
-
-// Custom renderer for filter suggestions
-const filterRenderer = (option: Option): React.ReactElement => React.createElement(FilterOption, { option })
-// Custom renderer for (the current) query suggestions
-const queryRenderer = (option: Option): React.ReactElement => React.createElement(QueryOption, { option })
 
 function starTiebraker(a: { item: { stars: number } }, b: { item: { stars: number } }): number {
     return b.item.stars - a.item.stars
@@ -125,37 +118,45 @@ interface File {
 }
 
 /**
- * Converts a Repo value to a (jump) target suggestion.
+ * Converts a Repo value to a suggestion.
  */
-function toRepoTarget({ item, positions }: FzfResultItem<Repo>): Target {
-    return {
-        type: 'target',
-        icon: mdiSourceRepository,
-        value: item.name,
-        url: `/${item.name}`,
-        matches: positions,
+function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number): Option {
+    const option = toRepoCompletion(result, from, to, 'repo:')
+    option.action.name = 'Add'
+    option.alternativeAction = {
+        type: 'goto',
+        url: `/${result.item.name}`,
     }
+    option.render = filterValueRenderer
+    return option
 }
 
 /**
  * Converts a Repo value to a completion suggestion.
  */
-function toRepoCompletion({ item, positions }: FzfResultItem<Repo>, from: number, to?: number): Completion {
+function toRepoCompletion(
+    { item, positions }: FzfResultItem<Repo>,
+    from: number,
+    to?: number,
+    valuePrefix = ''
+): Option {
     return {
-        type: 'completion',
-        icon: mdiSourceRepository,
-        value: item.name,
-        insertValue: regexInsertText(item.name, { globbing: false }) + ' ',
+        label: valuePrefix + item.name,
         matches: positions,
-        from,
-        to,
+        icon: mdiSourceRepository,
+        action: {
+            type: 'completion',
+            insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a Context value to a completion suggestion.
  */
-function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: number, to?: number): Completion {
+function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: number, to?: number): Option {
     let description = item.default ? 'Default' : ''
     if (item.description) {
         if (item.default) {
@@ -165,65 +166,76 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
     }
 
     return {
-        type: 'completion',
+        label: item.spec,
         // Passing an empty string is a hack to draw an "empty" icon
         icon: item.starred ? mdiStar : ' ',
-        value: item.spec,
-        insertValue: item.spec + ' ',
         description,
         matches: positions,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: item.spec + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a filter to a completion suggestion.
  */
-function toFilterCompletion(filter: FilterType, from: number, to?: number): Completion {
+function toFilterCompletion(filter: FilterType, from: number, to?: number): Option {
     const definition = FILTERS[filter]
     const description =
         typeof definition.description === 'function' ? definition.description(false) : definition.description
     return {
-        type: 'completion',
+        label: filter,
         icon: mdiFilterOutline,
         render: filterRenderer,
-        value: filter,
-        insertValue: filter + ':',
         description,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: filter + ':',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a File value to a completion suggestion.
  */
-function toFileCompletion({ item, positions }: FzfResultItem<File>, from: number, to?: number): Completion {
+function toFileCompletion(
+    { item, positions }: FzfResultItem<File>,
+    from: number,
+    to?: number,
+    valuePrefix = ''
+): Option {
     return {
-        type: 'completion',
+        label: valuePrefix + item.path,
         icon: mdiFileOutline,
-        value: item.path,
-        insertValue: regexInsertText(item.path, { globbing: false }) + ' ',
         description: item.repository,
         matches: positions,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a File value to a (jump) target suggestion.
  */
-function toFileTarget({ item, positions }: FzfResultItem<File>): Target {
-    return {
-        type: 'target',
-        icon: mdiFileOutline,
-        value: item.path,
-        description: item.repository,
-        url: item.url,
-        matches: positions,
+function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number): Option {
+    const option = toFileCompletion(result, from, to, 'file:')
+    option.action.name = 'Add'
+    option.alternativeAction = {
+        type: 'goto',
+        url: result.item.url,
     }
+    option.render = filterValueRenderer
+    return option
 }
 
 /**
@@ -235,19 +247,19 @@ const currentQuery: InternalSource = ({ token, input }) => {
         return null
     }
 
-    let value = input
-    let note = 'Search everywhere'
+    let label = input
+    let actionName = 'Search everywhere'
 
     const contextFilter = findFilter(input, FilterType.context, FilterKind.Global)
 
     if (contextFilter) {
-        value = omitFilter(input, contextFilter)
+        label = omitFilter(input, contextFilter)
         if (contextFilter.value?.value !== 'global') {
-            note = `Search '${contextFilter.value?.value ?? ''}'`
+            actionName = `Search '${contextFilter.value?.value ?? ''}'`
         }
     }
 
-    if (value.trim() === '') {
+    if (label.trim() === '') {
         return null
     }
 
@@ -257,14 +269,17 @@ const currentQuery: InternalSource = ({ token, input }) => {
                 title: '',
                 options: [
                     {
-                        type: 'command',
                         icon: mdiTextSearchVariant,
-                        value,
-                        note,
-                        apply: view => {
-                            getEditorConfig(view.state).onSubmit()
+                        label,
+                        action: {
+                            type: 'command',
+                            name: actionName,
+                            apply: view => {
+                                getEditorConfig(view.state).onSubmit()
+                            },
                         },
                         render: queryRenderer,
+                        info: submitQueryInfo,
                     },
                 ],
             },
@@ -318,6 +333,21 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
     }
 
     return options.length > 0 ? { result: [{ title: 'Narrow your search', options }] } : null
+}
+
+const contextActions: Group = {
+    title: 'Actions',
+    options: [
+        {
+            label: 'Manage contexts',
+            description: 'Add, edit, remove search contexts',
+            action: {
+                type: 'goto',
+                name: 'Go to /contexts',
+                url: '/contexts',
+            },
+        },
+    ],
 }
 
 /**
@@ -377,18 +407,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                     title: 'Search contexts',
                                     options: entries.map(entry => toContextCompletion(entry, from, to)),
                                 },
-                                {
-                                    title: 'Actions',
-                                    options: [
-                                        {
-                                            type: 'target',
-                                            value: 'Manage contexts',
-                                            description: 'Add, edit, remove search contexts',
-                                            note: 'Got to /contexts',
-                                            url: '/contexts',
-                                        },
-                                    ],
-                                },
+                                contextActions,
                             ]
                         })
                     default: {
@@ -412,16 +431,18 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
     }
 
     const value = token.value
-    let options: Completion[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
-        type: 'completion',
-        from: token.value?.range.start ?? token.range.end,
-        to: token.value?.range.end,
-        value: value.label,
-        insertValue: (value.insertText ?? value.label) + ' ',
+    let options: Option[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
+        label: value.label,
+        action: {
+            type: 'completion',
+            from: token.value?.range.start ?? token.range.end,
+            to: token.value?.range.end,
+            insertValue: (value.insertText ?? value.label) + ' ',
+        },
     }))
 
     if (value && value.value !== '') {
-        const fzf = new Fzf(options, { selector: option => option.value })
+        const fzf = new Fzf(options, { selector: option => option.label })
         options = fzf.find(value.value).map(match => ({ ...match.item, matches: match.positions }))
     }
 
@@ -446,7 +467,7 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
             results => [
                 {
                     title: 'Repositories',
-                    options: results.slice(0, 5).map(toRepoTarget),
+                    options: results.slice(0, 5).map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -484,7 +505,7 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results.slice(0, 5).map(toFileTarget),
+                    options: results.slice(0, 5).map(result => toFileSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,

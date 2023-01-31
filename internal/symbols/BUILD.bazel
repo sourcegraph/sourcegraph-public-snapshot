@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/symbols/proto",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -18,6 +17,7 @@ go_library(
         "//internal/resetonce",
         "//internal/search",
         "//internal/search/result",
+        "//internal/symbols/proto",
         "//internal/trace/ot",
         "//internal/types",
         "//lib/errors",

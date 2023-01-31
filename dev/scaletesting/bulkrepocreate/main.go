@@ -130,7 +130,7 @@ func main() {
 
 	// assign blank repo clones to avoid clogging the remotes
 	blanks := []*blankRepo{}
-	clonesCount := int(cfg.count / 100)
+	clonesCount := cfg.count / 100
 	if clonesCount < 1 {
 		clonesCount = 1
 	}

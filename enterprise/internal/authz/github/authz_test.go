@@ -37,12 +37,12 @@ func TestNewAuthzProviders(t *testing.T) {
 			false,
 		)
 
-		assert := assert.New(t)
+		assertion := assert.New(t)
 
-		assert.Len(initResults.Providers, 0, "unexpected a providers: %+v", initResults.Providers)
-		assert.Len(initResults.Problems, 0, "unexpected problems: %+v", initResults.Problems)
-		assert.Len(initResults.Warnings, 0, "unexpected warnings: %+v", initResults.Warnings)
-		assert.Len(initResults.InvalidConnections, 0, "unexpected invalidConnections: %+v", initResults.InvalidConnections)
+		assertion.Len(initResults.Providers, 0, "unexpected a providers: %+v", initResults.Providers)
+		assertion.Len(initResults.Problems, 0, "unexpected problems: %+v", initResults.Problems)
+		assertion.Len(initResults.Warnings, 0, "unexpected warnings: %+v", initResults.Warnings)
+		assertion.Len(initResults.InvalidConnections, 0, "unexpected invalidConnections: %+v", initResults.InvalidConnections)
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {

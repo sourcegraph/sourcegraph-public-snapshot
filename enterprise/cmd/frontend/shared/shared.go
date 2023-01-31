@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
@@ -50,6 +51,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
+	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
 	"repos.webhooks": webhooks.Init,
 }

@@ -348,8 +348,8 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 // if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitHubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
-		return url
+		assembledURL := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
+		return assembledURL
 	}
 
 	return repo.URL

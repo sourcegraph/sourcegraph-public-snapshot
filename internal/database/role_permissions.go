@@ -48,8 +48,8 @@ type RolePermissionStore interface {
 	GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error)
 	// Delete deletes the permission and role relationship from the database.
 	Delete(ctx context.Context, opts DeleteRolePermissionOpts) error
-	// Transact creates a transaction for the RolePermissionStore.
-	Transact(context.Context) (RolePermissionStore, error)
+	// WithTransact creates a transaction for the RolePermissionStore.
+	WithTransact(context.Context, func(RolePermissionStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
 	With(basestore.ShareableStore) RolePermissionStore
 }
@@ -68,9 +68,10 @@ func (rp *rolePermissionStore) With(other basestore.ShareableStore) RolePermissi
 	return &rolePermissionStore{Store: rp.Store.With(other)}
 }
 
-func (rp *rolePermissionStore) Transact(ctx context.Context) (RolePermissionStore, error) {
-	tx, err := rp.Store.Transact(ctx)
-	return &rolePermissionStore{Store: tx}, err
+func (rp *rolePermissionStore) WithTransact(ctx context.Context, f func(RolePermissionStore) error) error {
+	return rp.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&rolePermissionStore{Store: tx})
+	})
 }
 
 const deleteRolePermissionQueryFmtStr = `

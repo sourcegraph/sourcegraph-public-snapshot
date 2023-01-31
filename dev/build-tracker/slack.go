@@ -53,17 +53,17 @@ func NewSlackNotification(id, channel string) *SlackNotification {
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
-	slack := slack.New(slackToken, slack.OptionDebug(debug))
+	slackClient := slack.New(slackToken, slack.OptionDebug(debug))
 
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
 	}
 	githubClient := github.NewClient(&httpClient)
-	teamResolver := team.NewTeammateResolver(githubClient, slack)
+	teamResolver := team.NewTeammateResolver(githubClient, slackClient)
 
 	return &NotificationClient{
 		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
-		slack:   *slack,
+		slack:   *slackClient,
 		team:    teamResolver,
 		channel: channel,
 	}

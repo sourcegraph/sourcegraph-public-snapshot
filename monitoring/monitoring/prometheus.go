@@ -109,9 +109,9 @@ func (g *PrometheusRuleGroup) appendRow(alertQuery string, labels map[string]str
 
 func CustomPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
 	// Hardcode the desired label matcher values as labels
-	labels := make(map[string]string)
+	labelsMap := make(map[string]string)
 	for _, matcher := range injectLabelMatchers {
-		labels[matcher.Name] = matcher.Value
+		labelsMap[matcher.Name] = matcher.Value
 	}
 
 	var injectErrors error
@@ -131,19 +131,19 @@ func CustomPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRu
 				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
 				Record: "cadvisor_container_cpu_limit",
 				Expr:   injectExpr("avg by (name)(container_spec_cpu_quota) / avg by (name)(container_spec_cpu_period)"),
-				Labels: labels,
+				Labels: labelsMap,
 			}, {
 				// Percentage of CPU cores the container consumed on average over a 1m period.
 				// For example, if a container has a 4 CPU limit and this metric reports 50%,
 				// it means the container consumed 2 cores on average over that 1m period.
 				Record: "cadvisor_container_cpu_usage_percentage_total",
 				Expr:   injectExpr("(avg by (name)(rate(container_cpu_usage_seconds_total[1m])) / cadvisor_container_cpu_limit) * 100.0"),
-				Labels: labels,
+				Labels: labelsMap,
 			}, {
 				// Percentage of memory usage the container is consuming.
 				Record: "cadvisor_container_memory_usage_percentage_total",
 				Expr:   injectExpr("max by (name)(container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100.0"),
-				Labels: labels,
+				Labels: labelsMap,
 			}},
 		}},
 	}

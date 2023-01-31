@@ -415,7 +415,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // header contains the correct value. See "What does X-Requested-With do, anyway?" in
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
 
 		// Do not apply the middleware to /ping and /git endpoints.
@@ -437,7 +437,7 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		}
 
 		next.ServeHTTP(w, r)
-	})
+	}
 }
 
 // recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
@@ -2787,12 +2787,12 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
 		dir.Set(cmd)
-		list, err := cmd.Output()
+		output, err := cmd.Output()
 		if err != nil {
 			logger.Error("Failed to list branches", log.Error(err), log.String("output", string(output)))
 			return errors.Wrap(err, "failed to list branches")
 		}
-		lines := strings.Split(string(list), "\n")
+		lines := strings.Split(string(output), "\n")
 		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
 		if branch != "" {
 			headBranch = branch

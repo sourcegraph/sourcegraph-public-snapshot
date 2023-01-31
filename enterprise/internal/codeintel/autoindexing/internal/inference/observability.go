@@ -21,7 +21,7 @@ type operations struct {
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_autoindexing_inference",
@@ -34,7 +34,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.autoindexing.inference.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

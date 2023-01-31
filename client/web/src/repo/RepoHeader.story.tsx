@@ -163,8 +163,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     repoName: 'sourcegraph/sourcegraph',
     revision: 'main',
     onLifecyclePropsChange,
-    location: LOCATION,
-    history: H.createMemoryHistory(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,
