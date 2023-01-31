@@ -88,16 +88,16 @@ func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.D
 		return nil
 	}
 
-	return h.getRepoAndSyncPerms(ctx, db, e, permssync.ReasonGitHubRepoMadePrivateEvent)
+	return h.getRepoAndSyncPerms(ctx, db, e, database.ReasonGitHubRepoMadePrivateEvent)
 }
 
 func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e *gh.MemberEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason string
+	var reason database.PermissionSyncJobReason
 	if action == "added" {
-		reason = permssync.ReasonGitHubUserAddedEvent
+		reason = database.ReasonGitHubUserAddedEvent
 	} else if action == "removed" {
-		reason = permssync.ReasonGitHubUserRemovedEvent
+		reason = database.ReasonGitHubUserRemovedEvent
 	} else {
 		// unknown event type
 		return nil
@@ -109,11 +109,11 @@ func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e
 
 func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database.DB, e *gh.OrganizationEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason string
+	var reason database.PermissionSyncJobReason
 	if action == "member_added" {
-		reason = permssync.ReasonGitHubOrgMemberAddedEvent
+		reason = database.ReasonGitHubOrgMemberAddedEvent
 	} else if action == "member_removed" {
-		reason = permssync.ReasonGitHubOrgMemberRemovedEvent
+		reason = database.ReasonGitHubOrgMemberRemovedEvent
 	} else {
 		return nil
 	}
@@ -125,11 +125,11 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 
 func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.DB, e *gh.MembershipEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	action := e.GetAction()
-	var reason string
+	var reason database.PermissionSyncJobReason
 	if action == "added" {
-		reason = permssync.ReasonGitHubUserMembershipAddedEvent
+		reason = database.ReasonGitHubUserMembershipAddedEvent
 	} else if action == "removed" {
-		reason = permssync.ReasonGitHubUserMembershipRemovedEvent
+		reason = database.ReasonGitHubUserMembershipRemovedEvent
 	} else {
 		return nil
 	}
@@ -140,11 +140,11 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 
 func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
 	action := e.GetAction()
-	var reason string
+	var reason database.PermissionSyncJobReason
 	if action == "added_to_repository" {
-		reason = permssync.ReasonGitHubTeamAddedToRepoEvent
+		reason = database.ReasonGitHubTeamAddedToRepoEvent
 	} else if action == "removed_from_repository" {
-		reason = permssync.ReasonGitHubTeamRemovedFromRepoEvent
+		reason = database.ReasonGitHubTeamRemovedFromRepoEvent
 	} else {
 		return nil
 	}
@@ -152,7 +152,7 @@ func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db
 	return h.getRepoAndSyncPerms(ctx, db, e, reason)
 }
 
-func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL, reason string) error {
+func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL, reason database.PermissionSyncJobReason) error {
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
 		AccountID:      strconv.Itoa(int(user.GetID())),
@@ -175,7 +175,7 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 	return err
 }
 
-func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }, reason string) error {
+func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }, reason database.PermissionSyncJobReason) error {
 	ghRepo := e.GetRepo()
 
 	repo, err := db.Repos().GetFirstRepoByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))

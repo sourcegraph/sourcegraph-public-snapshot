@@ -114,6 +114,14 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
+
+	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
+	// OOB migration validation fails:
+	//
+	// {"SeverityText":"FATAL","Timestamp":1675128552556359000,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:143","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"sourcegraph","service.version":"0.0.196384-snapshot+20230131-6902ad","service.instance.id":"Stephens-MacBook-Pro.local"},"Attributes":{"service":"frontend","error":"failed to validate out of band migrations: Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n  - migration 1 expected to be at 0.00% (at 100.00%)\n  - migration 13 expected to be at 0.00% (at 100.00%)\n  - migration 14 expected to be at 0.00% (at 100.00%)\n  - migration 15 expected to be at 0.00% (at 100.00%)\n  - migration 16 expected to be at 0.00% (at 100.00%)\n  - migration 17 expected to be at 0.00% (at 100.00%)\n  - migration 18 expected to be at 0.00% (at 100.00%)\n  - migration 19 expected to be at 0.00% (at 100.00%)\n  - migration 2 expected to be at 0.00% (at 100.00%)\n  - migration 20 expected to be at 0.00% (at 100.00%)\n  - migration 4 expected to be at 0.00% (at 100.00%)\n  - migration 5 expected to be at 0.00% (at 100.00%)\n  - migration 7 expected to be at 0.00% (at 100.00%)"}}
+	//
+	setDefaultEnv(logger, "SRC_DISABLE_OOBMIGRATION_VALIDATION", "1")
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you

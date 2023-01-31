@@ -103,7 +103,7 @@ const config = {
     IS_PERSISTENT_CACHE_ENABLED &&
     getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: IS_PRODUCTION,
+    minimize: IS_PRODUCTION && !INTEGRATION_TESTS,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
@@ -150,7 +150,9 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
+  // Inline source maps for integration tests to preserve readable stack traces.
+  // See related issue here: https://github.com/puppeteer/puppeteer/issues/985
+  devtool: IS_PRODUCTION ? (INTEGRATION_TESTS ? 'inline-source-map' : 'source-map') : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
