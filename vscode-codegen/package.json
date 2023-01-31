@@ -61,6 +61,13 @@
         "title": "Cody: Delete Access Token"
       }
     ],
+    "keybindings": [
+      {
+        "command": "cody.recipe.explain-code-high-level",
+        "key": "ctrl+alt+c",
+        "mac": "ctrl+alt+c"
+      }
+    ],
     "submenus": [
       {
         "label": "Ask Cody",
