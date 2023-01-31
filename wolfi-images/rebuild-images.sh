@@ -14,10 +14,10 @@ COMMENT_TOKEN="MANUAL REBUILD"
 DATE=$(date)
 
 # Search Wolfi YAML files - if no matching comment exists, append it
-grep -L "$COMMENT_TOKEN" ./*/apko.yaml | xargs -I {} sh -c "echo \"\n# $COMMENT_TOKEN: \" >> {}"
+grep -L "$COMMENT_TOKEN" ./*.yaml | xargs -I {} sh -c "echo \"\n# $COMMENT_TOKEN: \" >> {}"
 
 # Update comment to include the current date & time
-sed -i '' "s/# $COMMENT_TOKEN: .*/# $COMMENT_TOKEN: $DATE/" ./*/apko.yaml
+sed -i '' "s/# $COMMENT_TOKEN: .*/# $COMMENT_TOKEN: $DATE/" ./*.yaml
 
 echo "Buildkite will rebuild the following base images on next push:"
-grep -l "# $COMMENT_TOKEN: $DATE" ./*/apko.yaml | sed 's/\.\/\(.*\)\/apko\.yaml/ 🐳 \1/'
+grep -l "# $COMMENT_TOKEN: $DATE" ./*.yaml | sed 's/\.\/\(.*\)\.yaml/ 🐳 \1/'
