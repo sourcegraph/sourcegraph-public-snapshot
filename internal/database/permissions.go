@@ -43,7 +43,7 @@ type PermissionStore interface {
 	GetByID(ctx context.Context, opts GetPermissionOpts) (*types.Permission, error)
 	// List returns all the permissions in the database that matches the options.
 	List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error)
-	// Count returns the number of permissions in the database mtching the options provided.
+	// Count returns the number of permissions in the database matching the options provided.
 	Count(ctx context.Context, opts PermissionListOpts) (int, error)
 }
 
