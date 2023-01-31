@@ -1,6 +1,8 @@
 .header {
     display: grid;
     gap: 0.5rem;
+    margin-top: -1rem;
+    padding-top: 1rem;
     grid-template-columns: minmax(15rem, 30%) auto;
     grid-template-areas:
         'actions actions'
@@ -10,6 +12,9 @@
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
+    background-color: var(--color-bg-1);
+    position: sticky;
+    top: 0;
 }
 
 .actions {
@@ -17,7 +22,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1rem;
 }
 
 .status-filter {
@@ -134,4 +138,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.error {
+    margin: 0;
+    flex-shrink: 0;
+    max-width: 40rem;
 }

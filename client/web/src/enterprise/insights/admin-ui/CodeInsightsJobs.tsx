@@ -82,6 +82,7 @@ export const CodeInsightsJobs: FC = props => {
                         placeholder="Search jobs by title or series label"
                         value={search}
                         className={styles.search}
+                        status={loading ? 'loading' : 'initial'}
                         onChange={event => setSearch(event.target.value)}
                     />
                 </header>
@@ -92,7 +93,7 @@ export const CodeInsightsJobs: FC = props => {
                     </small>
                 )}
 
-                 { error && <ErrorAlert error={error}/> }
+                {error && <ErrorAlert error={error} />}
 
                 {connection && connection.nodes.length === 0 && (
                     <span className={styles.insightJobsMessage}>
@@ -110,11 +111,7 @@ export const CodeInsightsJobs: FC = props => {
                     </ul>
                 )}
 
-                <PageSwitcher
-                    totalCount={connection?.totalCount ?? null}
-                    {...paginationProps}
-                    className="mt-5"
-                />
+                <PageSwitcher totalCount={connection?.totalCount ?? null} {...paginationProps} className="mt-5" />
             </Container>
         </div>
     )
@@ -364,7 +361,7 @@ const InsightJobErrors: FC<InsightJobErrorsProps> = props => {
             </PopoverTrigger>
             <PopoverContent className={styles.errorsContent} focusLocked={false}>
                 {errors.map(error => (
-                    <ErrorAlert key={error} error={error} className="m-0" />
+                    <ErrorAlert key={error} error={error} className={styles.error} />
                 ))}
             </PopoverContent>
             <PopoverTail size="sm" />
