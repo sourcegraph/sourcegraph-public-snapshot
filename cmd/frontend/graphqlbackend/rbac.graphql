@@ -114,7 +114,7 @@ extend type Query {
         """
         after: String
         """
-        Return permissions associated with the role.
+        Only return permissions associated with the role with this ID.
         """
         role: ID
         """
