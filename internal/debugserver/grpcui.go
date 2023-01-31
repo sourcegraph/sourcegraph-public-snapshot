@@ -52,13 +52,13 @@ func (g *grpcHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cc, err := grpc.DialContext(ctx, g.target, g.dialOpts...)
-	defer cc.Close()
-
 	if err != nil {
 		err = errors.Wrap(err, "dialing GRPC server")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	defer cc.Close()
 
 	handler, err := standalone.HandlerViaReflection(ctx, cc, g.target)
 	if err != nil {
