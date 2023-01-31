@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,13 +28,15 @@ const (
 
 func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType) *permsSyncerWorker {
 	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permission sync worker")
+	recordsStore := syncjobs.NewRecordsStore(logger.Scoped("records", "Records provider states in redis"), conf.DefaultClient())
 	if syncType == SyncTypeUser {
 		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permission sync worker")
 	}
 	return &permsSyncerWorker{
-		logger:   logger,
-		syncer:   syncer,
-		syncType: syncType,
+		logger:       logger,
+		syncer:       syncer,
+		syncType:     syncType,
+		recordsStore: recordsStore,
 	}
 }
 
@@ -43,9 +46,10 @@ type permsSyncer interface {
 }
 
 type permsSyncerWorker struct {
-	logger   log.Logger
-	syncer   permsSyncer
-	syncType syncType
+	logger       log.Logger
+	syncer       permsSyncer
+	syncType     syncType
+	recordsStore *syncjobs.RecordsStore
 }
 
 // PreDequeue in our case does a nice trick of adding a predicate (WHERE clause)
@@ -90,16 +94,16 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 	switch reqType {
 	case requestTypeUser:
 		providerStatuses, err := h.syncer.syncUserPerms(ctx, reqID, false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
-		return h.handleSyncResults(reqType, providerStatuses, err)
+		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
 	case requestTypeRepo:
 		providerStatuses, err := h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
-		return h.handleSyncResults(reqType, providerStatuses, err)
+		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
 	default:
 		return errors.Newf("unexpected request type: %q", reqType)
 	}
 }
 
-func (h *permsSyncerWorker) handleSyncResults(reqType requestType, providerStates providerStatesSet, err error) error {
+func (h *permsSyncerWorker) handleSyncResults(reqType requestType, reqID int32, providerStates providerStatesSet, err error) error {
 	if err != nil {
 		h.logger.Error("failed to sync permissions", providerStates.SummaryField(), log.Error(err))
 
@@ -111,6 +115,8 @@ func (h *permsSyncerWorker) handleSyncResults(reqType requestType, providerState
 	} else {
 		h.logger.Debug("succeeded in syncing permissions", providerStates.SummaryField())
 	}
+
+	h.recordsStore.Record(reqType.String(), reqID, providerStates, err)
 	return err
 }
 
