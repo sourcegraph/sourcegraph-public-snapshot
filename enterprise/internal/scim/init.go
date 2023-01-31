@@ -40,7 +40,7 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 
 	// wrap server into logger handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if conf.Get().SCIMAuthToken != strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") {
+		if conf.Get().ScimAuthToken != strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
