@@ -119,7 +119,7 @@ export interface SourcegraphWebAppProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps<any>[]
+    routes: readonly LayoutRouteProps[]
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {

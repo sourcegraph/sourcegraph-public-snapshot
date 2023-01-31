@@ -11,8 +11,9 @@ import {
     Transaction,
 } from '@codemirror/state'
 import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
+
+import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
 
 import { Suggestions } from './Suggestions'
 
@@ -415,7 +416,7 @@ function isUserInput(transaction: Transaction): boolean {
 
 interface Config {
     id: string
-    history?: History
+    historyOrNavigate?: HistoryOrNavigate
 }
 
 const suggestionsConfig = Facet.define<Config, Config>({
@@ -500,10 +501,9 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
             break
         case 'goto':
             {
-                const history = view.state.facet(suggestionsConfig).history
-
-                if (history) {
-                    history.push(action.url)
+                const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
+                if (historyOrNavigate) {
+                    compatNavigate(historyOrNavigate, action.url)
                 }
             }
             break
@@ -579,8 +579,13 @@ export const suggestionSource = Facet.define<Source, Source>({
     ],
 })
 
-export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [
-    suggestionsConfig.of({ history, id }),
+export const suggestions = (
+    id: string,
+    parent: HTMLDivElement,
+    source: Source,
+    historyOrNavigate: HistoryOrNavigate
+): Extension => [
+    suggestionsConfig.of({ historyOrNavigate, id }),
     suggestionSource.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]

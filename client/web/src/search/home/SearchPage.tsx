@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -38,8 +37,6 @@ export interface SearchPageProps
         SearchContextInputProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     autoFocus?: boolean
 
