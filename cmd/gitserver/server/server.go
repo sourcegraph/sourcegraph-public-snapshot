@@ -1232,7 +1232,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, treeish, "--")
 	req.Args = append(req.Args, pathspecs...)
 
-	s.exec(w, r, req)
+	s.execHTTP(w, r, req)
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -1641,7 +1641,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		log.Strings("args", args),
 	)
 
-	s.exec(w, r, &req)
+	s.execHTTP(w, r, &req)
 }
 
 var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -1681,7 +1681,7 @@ type CmdError struct {
 
 func (e *CmdError) Error() string { return fmt.Sprintf("command exited with non-zero status") }
 
-func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, w io.Writer) error {
+func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, w io.Writer) error {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
@@ -1859,7 +1859,7 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 	return nil
 }
 
-func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
+func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
 
 	// Flush writes more aggressively than standard net/http so that clients
@@ -1887,7 +1887,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		}
 	}()
 
-	err := s.execShared(ctx, logger, req, w)
+	err := s.exec(ctx, logger, req, w)
 	if err != nil {
 		if v := (&errcode.HTTPErr{}); errors.As(err, &v) {
 			w.WriteHeader(v.HTTPStatusCode())
