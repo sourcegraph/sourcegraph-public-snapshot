@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -24,9 +24,26 @@ type fakeTeamsDb struct {
 
 func (teams *fakeTeamsDb) CreateTeam(_ context.Context, t *types.Team) error {
 	teams.lastUsedID++
-	t.ID = teams.lastUsedID
-	teams.list = append(teams.list, t)
+	u := *t
+	u.ID = teams.lastUsedID
+	teams.list = append(teams.list, &u)
 	return nil
+}
+
+func (teams *fakeTeamsDb) UpdateTeam(_ context.Context, t *types.Team) error {
+	if t == nil {
+		return errors.New("UpdateTeam: team cannot be nil")
+	}
+	if t.ID == 0 {
+		return errors.New("UpdateTeam: team.ID must be set (not 0)")
+	}
+	for _, u := range teams.list {
+		if u.ID == t.ID {
+			*u = *t
+			return nil
+		}
+	}
+	return errors.Newf("UpdateTeam: cannot find team with ID=%d", t.ID)
 }
 
 func (teams *fakeTeamsDb) GetTeamByID(_ context.Context, id int32) (*types.Team, error) {
@@ -57,16 +74,14 @@ func TestCreateTeamBare(t *testing.T) {
 		Context: ctx,
 		Query: `mutation CreateTeam($name: String!) {
 			createTeam(name: $name) {
-				id
 				name
 			}
 		}`,
-		ExpectedResult: fmt.Sprintf(`{
+		ExpectedResult: `{
 			"createTeam": {
-				"id": %q,
 				"name": "team-name-testing"
 			}
-		}`, relay.MarshalID("Team", 1)),
+		}`,
 		Variables: map[string]any{
 			"name": "team-name-testing",
 		},
@@ -157,13 +172,19 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 
 func TestCreateTeamParentByID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
-	parentTeam := types.Team{Name: "team-name-parent"}
-	if err := fakeTeams.CreateTeam(context.Background(), &parentTeam); err != nil {
-		t.Fatal(err)
-	}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	err := fakeTeams.CreateTeam(ctx, &types.Team{
+		Name: "team-name-parent",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentTeam, err := fakeTeams.GetTeamByName(ctx, "team-name-parent")
+	if err != nil {
+		t.Fatal(err)
+	}
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -219,4 +240,49 @@ func TestCreateTeamParentByName(t *testing.T) {
 			"parentTeamName": "team-name-parent",
 		},
 	})
+}
+
+func TestUpdateTeamByID(t *testing.T) {
+	fakeTeams := &fakeTeamsDb{}
+	db := database.NewMockDB()
+	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := fakeTeams.CreateTeam(ctx, &types.Team{
+		Name:        "team-name-testing",
+		DisplayName: "Display Name",
+	}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	team, err := fakeTeams.GetTeamByName(ctx, "team-name-testing")
+	if err != nil {
+		t.Fatalf("failed to get fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation UpdateTeam($id: ID!, $newDisplayName: String!) {
+			updateTeam(id: $id, displayName: $newDisplayName) {
+				displayName
+			}
+		}`,
+		ExpectedResult: `{
+			"updateTeam": {
+				"displayName": "Updated Display Name"
+			}
+		}`,
+		Variables: map[string]any{
+			"id":             string(relay.MarshalID("Team", team.ID)),
+			"newDisplayName": "Updated Display Name",
+		},
+	})
+	wantTeams := []*types.Team{
+		{
+			ID:          1,
+			Name:        "team-name-testing",
+			DisplayName: "Updated Display Name",
+		},
+	}
+	if diff := cmp.Diff(wantTeams, fakeTeams.list); diff != "" {
+		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
+	}
 }
