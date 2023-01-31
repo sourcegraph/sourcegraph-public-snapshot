@@ -15,7 +15,7 @@ type Role implements Node {
     """
     system: Boolean!
     """
-    The list of permissions assigned to any user with this role.
+    The list of permissions that will be granted to any user with this role.
     """
     permissions: PermissionConnection!
     """
