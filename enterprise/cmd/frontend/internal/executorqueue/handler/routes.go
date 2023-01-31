@@ -2,25 +2,22 @@ package handler
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/grafana/regexp"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 
 	"github.com/gorilla/mux"
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,49 +25,38 @@ import (
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(handlers []ExecutorHandler, router *mux.Router) {
-	for _, h := range handlers {
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
-		routes := map[string]func(w http.ResponseWriter, r *http.Request){
-			"dequeue":   h.handleDequeue,
-			"heartbeat": h.handleHeartbeat,
-			// TODO: This endpoint can be removed in Sourcegraph 4.4.
-			"canceledJobs": h.handleCanceledJobs,
-		}
-		for path, route := range routes {
-			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(route)
-		}
-	}
+func SetupRoutes(handler ExecutorHandler, router *mux.Router) {
+	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}", regexp.QuoteMeta(handler.Name()))).Subrouter()
+	subRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(handler.HandleDequeue)
+	subRouter.Path("/heartbeat").Methods(http.MethodPost).HandlerFunc(handler.HandleHeartbeat)
+	subRouter.Path("/canceledJobs").Methods(http.MethodPost).HandlerFunc(handler.HandleCanceledJobs)
 }
 
 // SetupJobRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupJobRoutes(handlers []ExecutorHandler, router *mux.Router) {
-	for _, h := range handlers {
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
-		routes := map[string]func(w http.ResponseWriter, r *http.Request){
-			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
-			"updateExecutionLogEntry": h.handleUpdateExecutionLogEntry,
-			"markComplete":            h.handleMarkComplete,
-			"markErrored":             h.handleMarkErrored,
-			"markFailed":              h.handleMarkFailed,
-		}
-		for path, route := range routes {
-			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(route)
-		}
-	}
+func SetupJobRoutes(handler ExecutorHandler, router *mux.Router) {
+	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}", regexp.QuoteMeta(handler.Name()))).Subrouter()
+	subRouter.Path("/addExecutionLogEntry").Methods(http.MethodPost).HandlerFunc(handler.HandleAddExecutionLogEntry)
+	subRouter.Path("/updateExecutionLogEntry").Methods(http.MethodPost).HandlerFunc(handler.HandleUpdateExecutionLogEntry)
+	subRouter.Path("/markComplete").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkComplete)
+	subRouter.Path("/markErrored").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkErrored)
+	subRouter.Path("/markFailed").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkFailed)
+	subRouter.Use(handler.AuthMiddleware)
 }
 
-// JobAuthMiddleware authenticates job requests,
-func JobAuthMiddleware(next http.Handler) http.Handler {
+func (h *handler[T]) Name() string {
+	return h.queueHandler.Name
+}
+
+func (h *handler[T]) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if validateJobRequest(w, r) {
+		if h.validateJobRequest(w, r) {
 			next.ServeHTTP(w, r)
 		}
 	})
 }
 
-func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
+func (h *handler[T]) validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 	// Read the body and re-set the body, so we can parse the request payload.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -81,10 +67,16 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 	// Every job requests has the basics. Parse out the info we need to see whether the request is valid/authenticated.
-	var payload apiclient.JobOperationRequest
-	if err := json.Unmarshal(body, &payload); err != nil {
+	var payload executor.JobOperationRequest
+	if err = json.Unmarshal(body, &payload); err != nil {
 		log15.Error("failed to parse request body", "err", err)
 		http.Error(w, "Failed to parse request body", http.StatusBadRequest)
+		return false
+	}
+
+	// Since the payload partially deserialize, ensure the worker hostname is valid.
+	if err = validateWorkerHostname(payload.ExecutorName); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
 
@@ -112,11 +104,9 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 
-	accessToken := conf.SiteConfig().ExecutorsAccessToken
-
 	// If the general executor access token was provided, simply check the value.
 	if tokenType == "token-executor" {
-		if authToken == accessToken {
+		if authToken == conf.SiteConfig().ExecutorsAccessToken {
 			return true
 		} else {
 			w.WriteHeader(http.StatusForbidden)
@@ -124,64 +114,44 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
 		}
 	}
 
-	// Parse the provided JWT token with the key.
-	c := jobOperationClaims{}
-	token, err := jwt.ParseWithClaims(authToken, &c, func(token *jwt.Token) (any, error) {
-		return base64.StdEncoding.DecodeString(conf.SiteConfig().Executors.JobAccessToken.SigningKey)
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
-
+	jobToken, err := h.jobTokenStore.GetByToken(r.Context(), authToken)
 	if err != nil {
-		log15.Error("failed to parse token", "err", err)
+		log15.Error("failed to retrieve token", "err", err)
 		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return false
 	}
 
-	// Time to go to work on the provided token.
-	if claims, ok := token.Claims.(*jobOperationClaims); ok && token.Valid {
-		// Make sure the request has the general executor access token.
-		if claims.AccessToken != accessToken {
-			log15.Error("claims access token does not match the executor access token")
-			w.WriteHeader(http.StatusForbidden)
-			return false
-		}
-		// Ensure the token the request was generated for is coming for the correct executor instance.
-		if claims.Issuer != payload.ExecutorName {
-			log15.Error("executor name does not match claims Issuer")
-			w.WriteHeader(http.StatusForbidden)
-			return false
-		}
-		// Parse the job ID from the claims.
-		id, err := strconv.Atoi(claims.Subject)
-		if err != nil {
-			log15.Error("failed to claim Subject to integer", "err", err)
-			w.WriteHeader(http.StatusForbidden)
-			return false
-		}
-		// Ensure the job matches the payload
-		if id != payload.JobID {
-			log15.Error("job ID does not match claims Subject")
-			w.WriteHeader(http.StatusForbidden)
-			return false
-		}
-	}
-
-	// Since the payload partially deserialize, ensure the worker hostname is valid.
-	if err = validateWorkerHostname(payload.ExecutorName); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	// Ensure the token was generated for the correct job.
+	if jobToken.JobId != int64(payload.JobID) {
+		log15.Error("job ID does not match")
+		http.Error(w, "invalid token", http.StatusForbidden)
 		return false
 	}
+	// Ensure the token was generated for the correct queue.
+	if jobToken.Queue != mux.Vars(r)["queueName"] {
+		log15.Error("queue name does not match")
+		http.Error(w, "invalid token", http.StatusForbidden)
+		return false
+	}
+	// Ensure the token came from a legit executor instance.
+	if _, _, err = h.executorStore.GetByHostname(r.Context(), payload.ExecutorName); err != nil {
+		log15.Error("failed to lookup executor by hostname", "err", err)
+		http.Error(w, "invalid token", http.StatusUnauthorized)
+		return false
+	}
+
 	return true
 }
 
 // POST /{queueName}/dequeue
-func (h *handler[T]) handleDequeue(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.DequeueRequest
+func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
+	var payload executor.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		job, dequeued, err := h.dequeue(r.Context(), executorMetadata{
-			Name:    payload.ExecutorName,
-			Version: payload.Version,
-			Resources: ResourceMetadata{
+		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], executorMetadata{
+			name:    payload.ExecutorName,
+			version: payload.Version,
+			resources: ResourceMetadata{
 				NumCPUs:   payload.NumCPUs,
 				Memory:    payload.Memory,
 				DiskSpace: payload.DiskSpace,
@@ -196,8 +166,8 @@ func (h *handler[T]) handleDequeue(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/addExecutionLogEntry
-func (h *handler[T]) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.AddExecutionLogEntryRequest
+func (h *handler[T]) HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	var payload executor.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		id, err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
@@ -206,8 +176,8 @@ func (h *handler[T]) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.R
 }
 
 // POST /{queueName}/updateExecutionLogEntry
-func (h *handler[T]) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.UpdateExecutionLogEntryRequest
+func (h *handler[T]) HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	var payload executor.UpdateExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		err := h.updateExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.EntryID, payload.ExecutionLogEntry)
@@ -216,11 +186,11 @@ func (h *handler[T]) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *htt
 }
 
 // POST /{queueName}/markComplete
-func (h *handler[T]) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.MarkCompleteRequest
+func (h *handler[T]) HandleMarkComplete(w http.ResponseWriter, r *http.Request) {
+	var payload executor.MarkCompleteRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		err := h.markComplete(r.Context(), payload.ExecutorName, payload.JobID)
+		err := h.markComplete(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -230,11 +200,11 @@ func (h *handler[T]) handleMarkComplete(w http.ResponseWriter, r *http.Request) 
 }
 
 // POST /{queueName}/markErrored
-func (h *handler[T]) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.MarkErroredRequest
+func (h *handler[T]) HandleMarkErrored(w http.ResponseWriter, r *http.Request) {
+	var payload executor.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		err := h.markErrored(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -244,11 +214,11 @@ func (h *handler[T]) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/markFailed
-func (h *handler[T]) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.MarkErroredRequest
+func (h *handler[T]) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
+	var payload executor.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		err := h.markFailed(r.Context(), payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}
@@ -258,13 +228,13 @@ func (h *handler[T]) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/heartbeat
-func (h *handler[T]) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.HeartbeatRequest
+func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
+	var payload executor.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		executor := types.Executor{
+		e := types.Executor{
 			Hostname:        payload.ExecutorName,
-			QueueName:       h.QueueOptions.Name,
+			QueueName:       mux.Vars(r)["queueName"],
 			OS:              payload.OS,
 			Architecture:    payload.Architecture,
 			DockerVersion:   payload.DockerVersion,
@@ -290,10 +260,10 @@ func (h *handler[T]) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
+		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), mux.Vars(r)["queueName"], e, payload.JobIDs)
 
-		if payload.Version == apiclient.ExecutorAPIVersion2 {
-			return http.StatusOK, apiclient.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
+		if payload.Version == executor.ExecutorAPIVersion2 {
+			return http.StatusOK, executor.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 		}
 
 		// TODO: Remove in Sourcegraph 4.4.
@@ -303,11 +273,11 @@ func (h *handler[T]) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 // POST /{queueName}/canceledJobs
 // TODO: This handler can be removed in Sourcegraph 4.4.
-func (h *handler[T]) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.CanceledJobsRequest
+func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) {
+	var payload executor.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
+		canceledIDs, err := h.canceled(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.KnownJobIDs)
 		return http.StatusOK, canceledIDs, err
 	})
 }

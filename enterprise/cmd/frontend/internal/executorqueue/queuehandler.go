@@ -15,7 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func newExecutorQueueHandler(logger log.Logger, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
+func newExecutorQueueHandler(
+	logger log.Logger,
+	handlers []handler.ExecutorHandler,
+	accessToken func() string,
+	uploadHandler http.Handler,
+	batchesWorkspaceFileGetHandler http.Handler,
+	batchesWorkspaceFileExistsHandler http.Handler,
+) func() http.Handler {
 	gitserverClient := gitserver.NewClient()
 
 	factory := func() http.Handler {
@@ -30,17 +37,20 @@ func newExecutorQueueHandler(logger log.Logger, queueHandlers []handler.Executor
 		// The git route are treated as an internal actor and require the executor access token to authenticate.
 		gitRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
 
-		// Serve the executor queue API.
+		// Serve the executor queue APIs.
 		queueRouter := base.PathPrefix("/queue").Subrouter()
-		handler.SetupRoutes(queueHandlers, queueRouter)
 		// The queue route are treated as an internal actor and require the executor access token to authenticate.
 		queueRouter.Use(withInternalActor, authExecutorMiddleware(accessToken))
 
 		jobRouter := base.PathPrefix("/queue").Subrouter()
-		handler.SetupJobRoutes(queueHandlers, jobRouter)
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
 		// checked in handler.JobAuthMiddleware.
-		jobRouter.Use(withInternalActor, handler.JobAuthMiddleware)
+		jobRouter.Use(withInternalActor)
+
+		for _, h := range handlers {
+			handler.SetupRoutes(h, queueRouter)
+			handler.SetupJobRoutes(h, jobRouter)
+		}
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		lsifRouter := base.PathPrefix("/lsif").Subrouter()
