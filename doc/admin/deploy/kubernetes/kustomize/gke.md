@@ -30,7 +30,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.4.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.5.0
 ```
 
 Monitor the deployment status to make sure everything is up and running:
