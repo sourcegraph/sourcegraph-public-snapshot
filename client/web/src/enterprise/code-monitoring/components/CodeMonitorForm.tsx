@@ -298,7 +298,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                 <DeleteMonitorModal
                     isOpen={showDeleteModal}
                     deleteCodeMonitor={deleteCodeMonitor}
-                    history={history}
                     codeMonitor={codeMonitor}
                     toggleDeleteModal={toggleDeleteModal}
                 />
