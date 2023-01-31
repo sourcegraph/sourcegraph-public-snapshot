@@ -45,7 +45,7 @@ describe('FilteredConnection', () => {
     afterAll(cleanup)
 
     describe('useURLQuery', () => {
-        it('does not update the history if searchFragment didnt change', async () => {
+        it('does not update the history if searchFragment didnt change', () => {
             let currentLocation: null | H.Location = null
             function ExtractCurrentPathname(): null {
                 const location = useLocation()
