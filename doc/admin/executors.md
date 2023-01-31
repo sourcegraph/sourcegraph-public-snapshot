@@ -28,7 +28,7 @@ There are two supported installation paths (in Beta):
 - <span class="badge badge-beta">Beta</span> Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
 - <span class="badge badge-beta">Beta</span> Deploy [binaries](./deploy_executors_binary.md).
 
-> NOTE: Note to Sourcegraph Customer Engineers and Implementation Engineers: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers (Large Enterprise and Strategic) to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.
+> NOTE: Note to all Technical Success team members: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers (Large Enterprise and Strategic) to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.
 
 ## Why use executors?
 
