@@ -83,3 +83,5 @@ pipeline:
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/
+
+# Modify
