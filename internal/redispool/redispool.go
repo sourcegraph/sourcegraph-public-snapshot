@@ -45,7 +45,7 @@ var addresses = func() struct {
 	for _, addr := range []string{
 		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),
 		fallback,
-		maybe(deploy.IsDeployTypeSingleProgram(deployType), memoryKeyValueURI),
+		maybe(deploy.IsDeployTypeSingleProgram(deployType), MemoryKeyValueURI),
 		"redis-cache:6379",
 	} {
 		if addr != "" {
@@ -58,7 +58,7 @@ var addresses = func() struct {
 	for _, addr := range []string{
 		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Default redis-store:6379"),
 		fallback,
-		maybe(deploy.IsDeployTypeSingleProgram(deployType), memoryKeyValueURI),
+		maybe(deploy.IsDeployTypeSingleProgram(deployType), MemoryKeyValueURI),
 		"redis-store:6379",
 	} {
 		if addr != "" {

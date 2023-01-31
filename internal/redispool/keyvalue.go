@@ -105,13 +105,16 @@ type redisKeyValue struct {
 	prefix string
 }
 
-// NewKeyValue returns a KeyValue for addr. If addr matches the scheme for in
-// memory it will return an in memory KeyValue.
+// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
+//
+//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
+//     in memory of the current process.
+//  2. otherwise treat as a redis address.
 //
 // poolOpts is a required argument which sets defaults in the case we connect
 // to redis. If used we only override TestOnBorrow and Dial.
 func NewKeyValue(addr string, poolOpts redis.Pool) KeyValue {
-	if addr == memoryKeyValueURI {
+	if addr == MemoryKeyValueURI {
 		return MemoryKeyValue()
 	}
 	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
