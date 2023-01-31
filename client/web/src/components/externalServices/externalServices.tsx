@@ -43,7 +43,7 @@ import {
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
-import GerritIcon from './GerritIcon'
+import { GerritIcon } from './GerritIcon'
 
 /**
  * Metadata associated with adding a given external service.

@@ -6,7 +6,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 
 import { AuthProvider } from '../../jscontext'
-import GerritIcon from '../externalServices/GerritIcon'
+import { GerritIcon } from '../externalServices/GerritIcon'
 
 export type ExternalAccountKind = Exclude<
     AuthProvider['serviceType'],

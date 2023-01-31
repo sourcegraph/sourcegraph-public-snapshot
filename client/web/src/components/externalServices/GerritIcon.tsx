@@ -1,6 +1,6 @@
 import { MdiReactIconComponentType } from 'mdi-react'
 
-const GerritIcon: MdiReactIconComponentType = props => (
+export const GerritIcon: MdiReactIconComponentType = props => (
     <svg
         className={'mdi-icon ' + (props.className || '')}
         width={props.size}
@@ -18,5 +18,3 @@ const GerritIcon: MdiReactIconComponentType = props => (
         />
     </svg>
 )
-
-export default GerritIcon
