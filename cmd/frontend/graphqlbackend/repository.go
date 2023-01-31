@@ -336,7 +336,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository match")
+	return "Repository match"
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {

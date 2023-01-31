@@ -6829,9 +6829,6 @@ type MockEnterpriseDB struct {
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *EnterpriseDBConfFunc
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *EnterpriseDBDoneFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *EnterpriseDBEventLogsFunc
@@ -6940,9 +6937,6 @@ type MockEnterpriseDB struct {
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *EnterpriseDBTemporarySettingsFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *EnterpriseDBTransactFunc
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *EnterpriseDBUserCredentialsFunc
@@ -6998,11 +6992,6 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: func() (r0 database.ConfStore) {
-				return
-			},
-		},
-		DoneFunc: &EnterpriseDBDoneFunc{
-			defaultHook: func(error) (r0 error) {
 				return
 			},
 		},
@@ -7186,11 +7175,6 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
-		TransactFunc: &EnterpriseDBTransactFunc{
-			defaultHook: func(context.Context) (r0 database.DB, r1 error) {
-				return
-			},
-		},
 		UserCredentialsFunc: &EnterpriseDBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) (r0 database.UserCredentialsStore) {
 				return
@@ -7266,11 +7250,6 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: func() database.ConfStore {
 				panic("unexpected invocation of MockEnterpriseDB.Conf")
-			},
-		},
-		DoneFunc: &EnterpriseDBDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockEnterpriseDB.Done")
 			},
 		},
 		EventLogsFunc: &EnterpriseDBEventLogsFunc{
@@ -7453,11 +7432,6 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.TemporarySettings")
 			},
 		},
-		TransactFunc: &EnterpriseDBTransactFunc{
-			defaultHook: func(context.Context) (database.DB, error) {
-				panic("unexpected invocation of MockEnterpriseDB.Transact")
-			},
-		},
 		UserCredentialsFunc: &EnterpriseDBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) database.UserCredentialsStore {
 				panic("unexpected invocation of MockEnterpriseDB.UserCredentials")
@@ -7525,9 +7499,6 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: i.Conf,
-		},
-		DoneFunc: &EnterpriseDBDoneFunc{
-			defaultHook: i.Done,
 		},
 		EventLogsFunc: &EnterpriseDBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -7636,9 +7607,6 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		TemporarySettingsFunc: &EnterpriseDBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
-		},
-		TransactFunc: &EnterpriseDBTransactFunc{
-			defaultHook: i.Transact,
 		},
 		UserCredentialsFunc: &EnterpriseDBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
@@ -8164,107 +8132,6 @@ func (c EnterpriseDBConfFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBConfFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// EnterpriseDBDoneFunc describes the behavior when the Done method of the
-// parent MockEnterpriseDB instance is invoked.
-type EnterpriseDBDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []EnterpriseDBDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEnterpriseDB) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(EnterpriseDBDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockEnterpriseDB instance is invoked and the hook queue is empty.
-func (f *EnterpriseDBDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockEnterpriseDB instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EnterpriseDBDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterpriseDBDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *EnterpriseDBDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterpriseDBDoneFunc) appendCall(r0 EnterpriseDBDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnterpriseDBDoneFuncCall objects describing
-// the invocations of this function.
-func (f *EnterpriseDBDoneFunc) History() []EnterpriseDBDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterpriseDBDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterpriseDBDoneFuncCall is an object that describes an invocation of
-// method Done on an instance of MockEnterpriseDB.
-type EnterpriseDBDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnterpriseDBDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterpriseDBDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -11914,111 +11781,6 @@ func (c EnterpriseDBTemporarySettingsFuncCall) Args() []interface{} {
 // invocation.
 func (c EnterpriseDBTemporarySettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// EnterpriseDBTransactFunc describes the behavior when the Transact method
-// of the parent MockEnterpriseDB instance is invoked.
-type EnterpriseDBTransactFunc struct {
-	defaultHook func(context.Context) (database.DB, error)
-	hooks       []func(context.Context) (database.DB, error)
-	history     []EnterpriseDBTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockEnterpriseDB) Transact(v0 context.Context) (database.DB, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(EnterpriseDBTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockEnterpriseDB instance is invoked and the hook queue is
-// empty.
-func (f *EnterpriseDBTransactFunc) SetDefaultHook(hook func(context.Context) (database.DB, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockEnterpriseDB instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EnterpriseDBTransactFunc) PushHook(hook func(context.Context) (database.DB, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterpriseDBTransactFunc) SetDefaultReturn(r0 database.DB, r1 error) {
-	f.SetDefaultHook(func(context.Context) (database.DB, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBTransactFunc) PushReturn(r0 database.DB, r1 error) {
-	f.PushHook(func(context.Context) (database.DB, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnterpriseDBTransactFunc) nextHook() func(context.Context) (database.DB, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterpriseDBTransactFunc) appendCall(r0 EnterpriseDBTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnterpriseDBTransactFuncCall objects
-// describing the invocations of this function.
-func (f *EnterpriseDBTransactFunc) History() []EnterpriseDBTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterpriseDBTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterpriseDBTransactFuncCall is an object that describes an invocation of
-// method Transact on an instance of MockEnterpriseDB.
-type EnterpriseDBTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.DB
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnterpriseDBTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterpriseDBTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // EnterpriseDBUserCredentialsFunc describes the behavior when the

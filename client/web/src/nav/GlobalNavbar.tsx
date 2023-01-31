@@ -62,7 +62,7 @@ export interface GlobalNavbarProps
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: readonly LayoutRouteProps[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -225,7 +225,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -238,7 +238,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>

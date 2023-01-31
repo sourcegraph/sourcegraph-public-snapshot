@@ -799,6 +799,12 @@
         }
       }
     },
+    "scim.authToken": {
+      "type": "string",
+      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "default": "",
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",

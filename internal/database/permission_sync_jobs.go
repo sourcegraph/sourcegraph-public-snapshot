@@ -30,11 +30,47 @@ const (
 	HighPriorityPermissionSync   PermissionSyncJobPriority = 10
 )
 
+type PermissionSyncJobReason string
+
+const (
+	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
+	// syncs.
+	ReasonUserOutdatedPermissions PermissionSyncJobReason = "REASON_USER_OUTDATED_PERMS"
+	ReasonUserNoPermissions       PermissionSyncJobReason = "REASON_USER_NO_PERMS"
+	ReasonUserEmailRemoved        PermissionSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified       PermissionSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg          PermissionSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg      PermissionSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite   PermissionSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonRepoOutdatedPermissions PermissionSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
+	ReasonRepoNoPermissions       PermissionSyncJobReason = "REASON_REPO_NO_PERMS"
+	ReasonRepoUpdatedFromCodeHost PermissionSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
+
+	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
+	// webhook events.
+	ReasonGitHubUserEvent                  PermissionSyncJobReason = "REASON_GITHUB_USER_EVENT"
+	ReasonGitHubUserAddedEvent             PermissionSyncJobReason = "REASON_GITHUB_USER_ADDED_EVENT"
+	ReasonGitHubUserRemovedEvent           PermissionSyncJobReason = "REASON_GITHUB_USER_REMOVED_EVENT"
+	ReasonGitHubUserMembershipAddedEvent   PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
+	ReasonGitHubUserMembershipRemovedEvent PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
+	ReasonGitHubTeamAddedToRepoEvent       PermissionSyncJobReason = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
+	ReasonGitHubTeamRemovedFromRepoEvent   PermissionSyncJobReason = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
+	ReasonGitHubOrgMemberAddedEvent        PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
+	ReasonGitHubOrgMemberRemovedEvent      PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
+	ReasonGitHubRepoEvent                  PermissionSyncJobReason = "REASON_GITHUB_REPO_EVENT"
+	ReasonGitHubRepoMadePrivateEvent       PermissionSyncJobReason = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
+
+	// ReasonManualRepoSync and below are reasons of permission syncs triggered
+	// manually.
+	ReasonManualRepoSync PermissionSyncJobReason = "REASON_MANUAL_REPO_SYNC"
+	ReasonManualUserSync PermissionSyncJobReason = "REASON_MANUAL_USER_SYNC"
+)
+
 type PermissionSyncJobOpts struct {
 	Priority          PermissionSyncJobPriority
 	InvalidateCaches  bool
 	ProcessAfter      time.Time
-	Reason            string
+	Reason            PermissionSyncJobReason
 	TriggeredByUserID int32
 }
 
@@ -243,7 +279,7 @@ type ListPermissionSyncJobOpts struct {
 	ID                  int
 	UserID              int
 	RepoID              int
-	Reason              string
+	Reason              PermissionSyncJobReason
 	State               string
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
@@ -325,7 +361,7 @@ type PermissionSyncJob struct {
 	ID                 int
 	State              string
 	FailureMessage     *string
-	Reason             string
+	Reason             PermissionSyncJobReason
 	CancellationReason string
 	TriggeredByUserID  int32
 	QueuedAt           time.Time

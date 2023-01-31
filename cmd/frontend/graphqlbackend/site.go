@@ -133,11 +133,11 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
-	conf, err := r.db.Conf().SiteGetLatest(ctx)
+	config, err := r.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return conf.ID, nil
+	return config.ID, nil
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {

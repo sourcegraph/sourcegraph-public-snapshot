@@ -274,7 +274,7 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			zoekt := &searchbackend.FakeSearcher{
+			fakeZoekt := &searchbackend.FakeSearcher{
 				Result: &zoekt.SearchResult{Files: tt.args.results},
 				Repos:  zoektRepos,
 			}
@@ -294,7 +294,7 @@ func TestIndexedSearch(t *testing.T) {
 				context.Background(),
 				logtest.Scoped(t),
 				tt.args.repos,
-				zoekt,
+				fakeZoekt,
 				search.TextRequest,
 				query.Yes,
 				query.ContainsRefGlobs(q),
@@ -316,7 +316,7 @@ func TestIndexedSearch(t *testing.T) {
 				Since:          tt.args.since,
 			}
 
-			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -887,7 +887,7 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 		},
 		// One chunk per line, not one per fragment
 		output: result.ChunkMatches{{
-			Content:      string("testing 1 2 3"),
+			Content:      "testing 1 2 3",
 			ContentStart: result.Location{0, 0, 0},
 			Ranges: result.Ranges{{
 				Start: result.Location{8, 0, 8},

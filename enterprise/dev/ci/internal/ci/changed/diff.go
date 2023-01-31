@@ -110,7 +110,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects DB schema
 		if strings.HasPrefix(p, "migrations/") {
-			diff |= (DatabaseSchema | Go)
+			diff |= DatabaseSchema | Go
 		}
 		if strings.HasPrefix(p, "dev/ci/go-backcompat") {
 			diff |= DatabaseSchema
@@ -129,7 +129,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= (Dockerfiles | DockerImages)
+			diff |= Dockerfiles | DockerImages
 		}
 		// Affects anything in docker-images directories (which implies image build
 		// scripts and/or resources are affected)

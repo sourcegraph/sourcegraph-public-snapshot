@@ -18,7 +18,7 @@ var ErrInvalidToken = errors.New("buildkite token is invalid")
 var ErrInvalidHeader = errors.New("Header of request is invalid")
 var ErrUnwantedEvent = errors.New("Unwanted event received")
 
-var nowFunc func() time.Time = time.Now
+var nowFunc = time.Now
 
 // CleanUpInterval determines how often the old build cleaner should run
 var CleanUpInterval = 5 * time.Minute

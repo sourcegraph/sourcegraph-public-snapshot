@@ -109,13 +109,13 @@ func TestSiteConfigConnection(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	// Create a context with an admin user as the actor.
-	context := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	contextWithActor := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	RunTests(t, []*Test{
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get first 2 site configuration history",
-			Context: context,
+			Context: contextWithActor,
 			Query: `
 			{
 			  site {
@@ -184,7 +184,7 @@ func TestSiteConfigConnection(t *testing.T) {
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get last 3 site configuration history",
-			Context: context,
+			Context: contextWithActor,
 			Query: `
 					{
 						site {
@@ -253,7 +253,7 @@ func TestSiteConfigConnection(t *testing.T) {
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get first 2 site configuration history based on an offset",
-			Context: context,
+			Context: contextWithActor,
 			Query: fmt.Sprintf(`
 			{
 				site {
@@ -322,7 +322,7 @@ func TestSiteConfigConnection(t *testing.T) {
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get last 2 site configuration history based on an offset",
-			Context: context,
+			Context: contextWithActor,
 			Query: fmt.Sprintf(`
 			{
 			  site {

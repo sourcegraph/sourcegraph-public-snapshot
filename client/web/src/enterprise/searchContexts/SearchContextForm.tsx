@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -111,8 +111,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
 const LOADING = 'loading' as const
 
 export interface SearchContextFormProps
-    extends RouteComponentProps,
-        ThemeProps,
+    extends ThemeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
@@ -144,7 +143,7 @@ type RepositoriesParseResult =
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
         props
-    const history = useHistory()
+    const navigate = useNavigate()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -290,7 +289,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/contexts?order=updated-at-desc', ALLOW_NAVIGATION)
+                                    navigate('/contexts?order=updated-at-desc', { state: ALLOW_NAVIGATION })
                                 }
                             })
                         )
@@ -305,7 +304,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 queryState,
                 visibility,
                 selectedNamespace,
-                history,
+                navigate,
                 searchContext,
                 contextType,
             ]
@@ -313,8 +312,8 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const onCancel = useCallback(() => {
-        history.push('/contexts')
-    }, [history])
+        navigate('/contexts')
+    }, [navigate])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])

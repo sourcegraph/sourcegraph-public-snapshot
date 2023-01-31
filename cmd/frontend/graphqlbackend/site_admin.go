@@ -18,6 +18,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RecoverUsersRequest struct {
+	UserIDs []graphql.ID
+}
+
+func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can recover users.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if len(args.UserIDs) == 0 {
+		return nil, errors.New("must specify at least one user ID")
+	}
+
+	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
+	a := actor.FromContext(ctx)
+
+	ids := make([]int32, len(args.UserIDs))
+	for index, user := range args.UserIDs {
+		id, err := UnmarshalUserID(user)
+		if err != nil {
+			return nil, err
+		}
+		if a.UID == id {
+			return nil, errors.New("unable to recover current user")
+		}
+		ids[index] = id
+	}
+
+	users, err := r.db.Users().RecoverUsersList(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) != len(ids) {
+		missingUserIds := missingUserIds(ids, users)
+		return nil, errors.Errorf("some users were not found, expected to recover %d users, but found only %d users. Missing user IDs: %s", len(ids), len(users), missingUserIds)
+	}
+
+	return &EmptyResponse{}, nil
+}
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
@@ -322,4 +363,19 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+}
+
+func missingUserIds(id, affectedIds []int32) []graphql.ID {
+	maffectedIds := make(map[int32]struct{}, len(affectedIds))
+	for _, x := range affectedIds {
+		maffectedIds[x] = struct{}{}
+	}
+	var diff []graphql.ID
+	for _, x := range id {
+		if _, found := maffectedIds[x]; !found {
+			strId := MarshalUserID(x)
+			diff = append(diff, strId)
+		}
+	}
+	return diff
 }

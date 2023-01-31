@@ -165,7 +165,7 @@ type Repository struct {
 
 func (r Repository) SearchResultPaths() (list fileMatchPathList) {
 	sort.Strings(r.FileMatches)
-	return fileMatchPathList(r.FileMatches)
+	return r.FileMatches
 }
 
 type fileMatchPathList []string

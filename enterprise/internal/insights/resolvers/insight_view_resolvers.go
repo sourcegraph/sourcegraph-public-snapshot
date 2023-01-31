@@ -1462,8 +1462,8 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 }
 
 func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayOptions, resolvers []graphqlbackend.InsightSeriesResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var sortMode types.SeriesSortMode = types.ResultCount
-	var sortDirection types.SeriesSortDirection = types.Desc
+	sortMode := types.ResultCount
+	sortDirection := types.Desc
 	var limit int32 = 20
 
 	if seriesOptions.SortOptions != nil {
