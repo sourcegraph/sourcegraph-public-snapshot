@@ -7,6 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
+        "//internal/searcher/proto",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],
 )
@@ -14,6 +15,8 @@ go_library(
 go_test(
     name = "protocol_test",
     srcs = ["searcher_test.go"],
-    embed = [":protocol"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        ":protocol",
+        "@com_github_stretchr_testify//require",
+    ],
 )
