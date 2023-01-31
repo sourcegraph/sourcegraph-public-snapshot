@@ -70,6 +70,7 @@ func TestCreateTeamBare(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, user, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
@@ -102,6 +103,7 @@ func TestCreateTeamDisplayName(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
@@ -127,6 +129,7 @@ func TestCreateTeamReadOnlyDefault(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
@@ -151,6 +154,7 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
@@ -176,6 +180,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	err := fakeTeams.CreateTeam(ctx, &types.Team{
 		Name: "team-name-parent",
@@ -219,6 +224,7 @@ func TestCreateTeamParentByName(t *testing.T) {
 	}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
@@ -248,6 +254,7 @@ func TestUpdateTeamByID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
@@ -293,6 +300,7 @@ func TestUpdateTeamByName(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
@@ -334,6 +342,7 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
@@ -372,6 +381,7 @@ func TestUpdateParentByID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
@@ -411,6 +421,7 @@ func TestUpdateParentByName(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
@@ -446,6 +457,7 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	fakeTeams := &fakeTeamsDb{}
 	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
+	db.TransactFunc.SetDefaultReturn(db, nil)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)

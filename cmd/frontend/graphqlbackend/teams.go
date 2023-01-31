@@ -124,6 +124,10 @@ type UpdateTeamArgs struct {
 }
 
 func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to create teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can update teams")
+	}
 	if args.ID == nil && args.Name == nil {
 		return nil, errors.New("team to update is identifier by either id or name, but neither was specified")
 	}
@@ -133,8 +137,12 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("parent team is identified by either id or name, but both were specified")
 	}
-	teams := r.db.Teams()
-	t, err := findTeam(ctx, teams, args.ID, args.Name)
+	tx, err := r.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+	t, err := findTeam(ctx, tx.Teams(), args.ID, args.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +152,7 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 		t.DisplayName = *args.DisplayName
 	}
 	if args.ParentTeam != nil || args.ParentTeamName != nil {
-		parentTeam, err := findTeam(ctx, teams, args.ParentTeam, args.ParentTeamName)
+		parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot find parent team")
 		}
@@ -154,7 +162,7 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 		}
 	}
 	if needsUpdate {
-		teams.UpdateTeam(ctx, t)
+		tx.Teams().UpdateTeam(ctx, t)
 	}
 	return &teamResolver{team: t, teamsDb: r.db.Teams()}, nil
 }
