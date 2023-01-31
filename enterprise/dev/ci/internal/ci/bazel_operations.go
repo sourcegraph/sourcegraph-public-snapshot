@@ -23,7 +23,6 @@ func BazelOperations() *operations.Set {
 		"//cmd/loadtest",
 		"//cmd/migrator",
 		"//cmd/repo-updater",
-		"//cmd/sitemap",
 		"//cmd/server",
 		// "//cmd/sourcegraph-oss", // TODO broken
 		// "//cmd/searcher", // TODO broken
