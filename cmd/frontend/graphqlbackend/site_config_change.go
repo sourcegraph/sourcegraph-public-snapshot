@@ -3,12 +3,17 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+
+	"github.com/hexops/gotextdiff"
+	"github.com/hexops/gotextdiff/myers"
+	"github.com/hexops/gotextdiff/span"
 )
 
 const siteConfigurationChangeKind = "SiteConfigurationChange"
@@ -37,7 +42,9 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 }
 
 func (r SiteConfigurationChangeResolver) ReproducedDiff() bool {
-	if r.previousSiteConfig != nil && r.previousSiteConfig.RedactedContents != "" {
+	// As long as we have a previous siteConfig for this site config entry and the value of redacted
+	// contents is not null for this site config, we can generate a diff.
+	if r.previousSiteConfig != nil && r.siteConfig.RedactedContents != "" {
 		return true
 	}
 
@@ -45,15 +52,25 @@ func (r SiteConfigurationChangeResolver) ReproducedDiff() bool {
 }
 
 // TODO: Implement this.
-func (r SiteConfigurationChangeResolver) Diff() string {
-	// SECURITY
-	// TODO: Implement redaction.
-	if r.previousSiteConfig == nil {
-		return ""
+func (r SiteConfigurationChangeResolver) Diff() *string {
+	if !r.ReproducedDiff() {
+		return nil
 	}
 
 	// return cmp.Diff(r.siteConfig.Contents, r.previousSiteConfig.Contents)
-	return cmp.Diff(r.siteConfig.RedactedContents, r.previousSiteConfig.RedactedContents, transformJSON())
+
+	// 🚨 SECURITY: This should always use "siteConfig.RedactedContents" and never
+	// "siteConfig.Contents" to generate the diff because we do not want to leak secrets in the
+	// diff.
+	diff := cmp.Diff(r.siteConfig.RedactedContents, r.previousSiteConfig.RedactedContents)
+	if diff == "" {
+		return nil
+	}
+
+	edits := myers.ComputeEdits(span.URIFromPath("a.txt"), aString, bString)
+	diff := fmt.Sprint(gotextdiff.ToUnified("a.txt", "b.txt", aString, edits))
+
+	return &diff
 }
 
 func (r SiteConfigurationChangeResolver) CreatedAt() gqlutil.DateTime {
@@ -82,5 +99,4 @@ func transformJSON() cmp.Option {
 	return cmp.FilterValues(func(x, y []byte) bool {
 		return json.Valid(x) && json.Valid(y)
 	}, option)
-
 }

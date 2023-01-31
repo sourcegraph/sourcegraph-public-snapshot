@@ -6819,7 +6819,7 @@ type SiteConfigurationChange implements Node {
     """
     The diff string when diffed against the site config at previousID.
     """
-    diff: String!
+    diff: String
     """
     The timestamp when this change in the site config was applied.
     """
