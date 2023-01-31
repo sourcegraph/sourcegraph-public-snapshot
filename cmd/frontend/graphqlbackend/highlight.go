@@ -8,11 +8,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type highlightedRangeResolver struct {
-	inner result.HighlightedRange
+	inner searchresult.HighlightedRange
 }
 
 func (h highlightedRangeResolver) Line() int32      { return h.inner.Line }
@@ -20,7 +20,7 @@ func (h highlightedRangeResolver) Character() int32 { return h.inner.Character }
 func (h highlightedRangeResolver) Length() int32    { return h.inner.Length }
 
 type highlightedStringResolver struct {
-	inner result.HighlightedString
+	inner searchresult.HighlightedString
 }
 
 func (s *highlightedStringResolver) Value() string { return s.inner.Value }
