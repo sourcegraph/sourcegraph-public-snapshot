@@ -71,6 +71,8 @@ const tempDirName = ".tmp"
 // and where it will store cache data.
 const P4HomeName = ".p4home"
 
+const UnsetExitStatus = -10810
+
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -122,7 +124,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}()
 
 	err = cmd.Run()
-	exitStatus := -10810                  // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
@@ -148,7 +150,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 		span.Finish()
 	}()
 
-	exitCode = -10810 // sentinel value to indicate not set
+	exitCode = UnsetExitStatus
 	err = cmd.Start()
 	if err != nil {
 		return exitCode, err
@@ -1695,7 +1697,7 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := -10810   // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1846,7 +1848,7 @@ func (s *Server) execShared(ctx context.Context, logger log.Logger, req *protoco
 	stderr := stderrBuf.String()
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
-	if exitStatus != 0 {
+	if execErr != nil || exitStatus != UnsetExitStatus || stderr != "" {
 		return &CmdError{
 			Err:        execErr,
 			Stderr:     stderr,
@@ -1893,6 +1895,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		if v := (&NotFoundError{}); errors.As(err, &v) {
 			_ = json.NewEncoder(w).Encode(v.Payload)
+		}
+
+		if errors.Is(err, ErrBadRequest) {
+			_, _ = w.Write([]byte("invalid command"))
 		}
 
 		if v := (&CmdError{}); errors.As(err, &v) {
@@ -1965,7 +1971,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := -10810   // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
