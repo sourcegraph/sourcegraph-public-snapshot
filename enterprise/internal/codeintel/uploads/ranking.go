@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
@@ -65,14 +67,12 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 		return nil
 	}
 
-	fmt.Println("=================== WE ARE IN ==========================")
-
 	referencesByUploadID, err := redisStore.LRange("ranking:references:gold", 0, -1).Strings()
 	if err != nil {
 		return err
 	}
 
-	for _, uid := range referencesByUploadID { //"graph:references:consumable": [006, 007] - 100 for now
+	for _, uid := range referencesByUploadID {
 		symbolNames := make([]string, 0)
 		start := 0
 		stop := 10000
@@ -103,10 +103,6 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 			for _, d := range definitionPath {
 				if d != "" {
 					countMap[d] = countMap[d] + 1
-					// _, err := redisStore.HIncrBy("graph:globalfiles:counts", d, 1).Int()
-					// if err != nil {
-					// 	return err
-					// }
 				}
 			}
 
@@ -145,23 +141,6 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 		}
 	}
 
-	// for _, r := range references {
-	// 	s := strings.Split(r, "{!@@!}")
-	// 	symbol := s[1]
-	// 	definitionPath, err := redisStore.HGet(rankingDefinitionHash, symbol).String()
-	// 	fmt.Printf("DEBUG: definitionPath: %s \n", symbol)
-	// 	if err == nil {
-	// 		countMap[definitionPath] = countMap[definitionPath] + 1
-	// 	} else if err != redis.ErrNil {
-	// 		return err
-	// 	}
-	// }
-
-	// countMap, err := redisStore.HGetAll("graph:globalfiles:counts").StringMap()
-	// if err != nil {
-	// 	return err
-	// }
-
 	countMap, err := redisStore.HGetAll("graph:globalfiles:counts").StringMap()
 	if err != nil {
 		return err
@@ -183,35 +162,10 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 		return err
 	}
 
-	// dirty goes up by 1
-	// set ranking:graph:processed to the one above
-
-	// adjacencyList := make(map[string][]string)
-	// referenceEdges, err := redisStore.HGetAll(rankingReferenceHash).StringMap()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// for symbolName, edgePath := range referenceEdges {
-	// 	vertexPath, err := redisStore.HGet(rankingDefinitionHash, symbolName).String()
-	// 	if err == redis.ErrNil || err == nil {
-	// 		adjacencyList[vertexPath] = append(adjacencyList[vertexPath], edgePath)
-	// 	} else if err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// fmt.Print("==========START========== \n")
-	// for v, e := range adjacencyList {
-	// 	fmt.Printf("HERE HERE vertex: %s, totalRefsByPath: %v \n", v, len(e))
-	// }
-	// fmt.Print("=========END=========== \n")
-
 	return nil
 }
 
 func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error {
-	// fmt.Println("well this is running")
 	// if s.rankingBucket == nil {
 	// 	return nil
 	// }
@@ -220,8 +174,6 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("HERE HERE HERE uploads: %v", uploads)
 
 	g := group.New().WithContext(ctx)
 
@@ -234,9 +186,19 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				fmt.Printf("well this is running and I have uploads in here %v \n", upload)
 				// if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
-				if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root); err != nil {
+				// 	s.logger.Error(
+				// 		"Failed to process upload for ranking graph",
+				// 		log.Int("id", upload.ID),
+				// 		log.String("repo", upload.Repo),
+				// 		log.String("root", upload.Root),
+				// 		log.Error(err),
+				// 	)
+
+				// 	return err
+				// }
+
+				if err := s.lsifstore.CreateDefinitionsAndReferencesForRanking(ctx, upload, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -244,9 +206,12 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 						log.String("root", upload.Root),
 						log.Error(err),
 					)
-
-					return err
 				}
+
+				redisStore.LPush("ranking:references:gold", upload.ID)
+
+				// increment the number of processed uploads
+				redisStore.Incr("ranking:uploads:processed")
 
 				s.logger.Info(
 					"Processed upload for ranking graph",
@@ -263,6 +228,51 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 
 	if err := g.Wait(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error {
+	definitions := map[string]interface{}{}
+	for _, occ := range document.Occurrences {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+			continue
+		}
+
+		if scip.SymbolRole_Definition.Matches(occ) {
+			fullPath := fmt.Sprintf("%s@@%s@@%s", upload.Repo, upload.Root, path)
+			definitions[occ.Symbol] = fullPath
+		}
+	}
+
+	references := []interface{}{}
+	for _, occ := range document.Occurrences {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+			continue
+		}
+
+		if _, ok := definitions[occ.Symbol]; ok {
+			continue
+		}
+		if !scip.SymbolRole_Definition.Matches(occ) {
+			references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
+		}
+	}
+
+	if len(definitions) > 0 {
+		_, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(references) > 0 {
+		hashKey := fmt.Sprintf("graph:references:%d", upload.ID)
+		err := redisStore.LPush(hashKey, references...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -316,51 +326,49 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	id int,
 	repo string,
 	root string,
-	// objectPrefix string,
+	objectPrefix string,
 ) (err error) {
-	// fmt.Println("well this is running")
-	// writers := map[string]*gcsObjectWriter{}
-	// defer func() {
-	// 	for _, wc := range writers {
-	// 		if closeErr := wc.Close(); closeErr != nil {
-	// 			err = errors.Append(err, closeErr)
-	// 		}
-	// 	}
-	// }()
+	writers := map[string]*gcsObjectWriter{}
+	defer func() {
+		for _, wc := range writers {
+			if closeErr := wc.Close(); closeErr != nil {
+				err = errors.Append(err, closeErr)
+			}
+		}
+	}()
 
-	return s.serializeRankingGraphForUpload(ctx, id, repo, root)
-	// return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-	// 	path := fmt.Sprintf("%s/%s", objectPrefix, filename)
+	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
+		path := fmt.Sprintf("%s/%s", objectPrefix, filename)
 
-	// 	ow, ok := writers[path]
-	// 	if !ok {
-	// 		handle := s.rankingBucket.Object(path)
-	// 		if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
-	// 			return err
-	// 		}
+		ow, ok := writers[path]
+		if !ok {
+			handle := s.rankingBucket.Object(path)
+			if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
+				return err
+			}
 
-	// 		wc := handle.NewWriter(ctx)
-	// 		ow = &gcsObjectWriter{
-	// 			Writer:  bufio.NewWriter(wc),
-	// 			c:       wc,
-	// 			written: 0,
-	// 		}
-	// 		writers[path] = ow
-	// 	}
+			wc := handle.NewWriter(ctx)
+			ow = &gcsObjectWriter{
+				Writer:  bufio.NewWriter(wc),
+				c:       wc,
+				written: 0,
+			}
+			writers[path] = ow
+		}
 
-	// 	if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
-	// 		return err
-	// 	} else {
-	// 		ow.written += n
-	// 		s.operations.numBytesUploaded.Add(float64(n))
+		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+			return err
+		} else {
+			ow.written += n
+			s.operations.numBytesUploaded.Add(float64(n))
 
-	// 		if ow.written > maxBytesPerObject {
-	// 			return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
-	// 		}
-	// 	}
+			if ow.written > maxBytesPerObject {
+				return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
+			}
+		}
 
-	// 	return nil
-	// })
+		return nil
+	})
 }
 
 type gcsObjectWriter struct {
@@ -375,107 +383,74 @@ func (b *gcsObjectWriter) Close() error {
 
 var redisStore = redis.RedisKeyValue(redispool.Pool)
 
-func (s *Service) populateDefsAndRefs(ctx context.Context, uploadID int, repo, root, path string, document *scip.Document) error {
-	definitions := map[string]interface{}{}
-	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
-			continue
-		}
-
-		if scip.SymbolRole_Definition.Matches(occ) {
-			fullPath := fmt.Sprintf("%s@@%s@@%s", repo, root, path)
-			definitions[occ.Symbol] = fullPath
-			// err := redisStore.HSet(rankingDefinitionHash, occ.Symbol, fullPath)
-			// if err != nil {
-			// 	return err
-			// }
-		}
-	}
-
-	references := []interface{}{}
-	for _, occ := range document.Occurrences {
-		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
-			continue
-		}
-
-		if _, ok := definitions[occ.Symbol]; ok {
-			continue
-		}
-		if !scip.SymbolRole_Definition.Matches(occ) {
-			// hashKey := fmt.Sprintf("graph:references:%d", uploadID)
-			// item :=
-			references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
-			// err := redisStore.LPush(hashKey, item)
-			// if err != nil {
-			// 	return err
-			// }
-		}
-	}
-
-	if len(definitions) > 0 {
-		_, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(references) > 0 {
-		hashKey := fmt.Sprintf("graph:references:%d", uploadID)
-		err := redisStore.LPush(hashKey, references...)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (s *Service) serializeRankingGraphForUpload(
 	ctx context.Context,
 	id int,
 	repo string,
 	root string,
-	// write func(filename string, format string, args ...any) error,
+	write func(filename string, format string, args ...any) error,
 ) error {
-	// documentsDefiningSymbols := map[string][]int64{}
-	// documentsReferencingSymbols := map[string][]int64{}
+	documentsDefiningSymbols := map[string][]int64{}
+	documentsReferencingSymbols := map[string][]int64{}
 
-	// _ = repo
-	// _ = root
-	// _ = write
+	if err := s.lsifstore.ScanDocuments(ctx, id, func(path string, document *scip.Document) error {
+		documentID := hash(strings.Join([]string{repo, root, path}, ":"))
+		documentMonikers := map[string]map[string]struct{}{}
 
-	// fmt.Printf("we've started with this many definitions: %v \n", definitions)
-	// fmt.Printf("we've started with this many references: %v \n", references)
+		for _, occurrence := range document.Occurrences {
+			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+				continue
+			}
 
-	if err := s.lsifstore.ScanDocuments(ctx, id, repo, root, s.populateDefsAndRefs); err != nil {
+			if scip.SymbolRole_Definition.Matches(occurrence) {
+				if _, ok := documentMonikers[occurrence.Symbol]; !ok {
+					documentMonikers[occurrence.Symbol] = map[string]struct{}{}
+				}
+				documentMonikers[occurrence.Symbol]["definition"] = struct{}{}
+				documentsDefiningSymbols[occurrence.Symbol] = append(documentsDefiningSymbols[occurrence.Symbol], documentID)
+			} else {
+				if _, ok := documentMonikers[occurrence.Symbol]; !ok {
+					documentMonikers[occurrence.Symbol] = map[string]struct{}{}
+				}
+				documentMonikers[occurrence.Symbol]["reference"] = struct{}{}
+				documentsReferencingSymbols[occurrence.Symbol] = append(documentsReferencingSymbols[occurrence.Symbol], documentID)
+			}
+		}
+
+		if err := write("documents.csv", "%d,%s,%s\n", documentID, repo, filepath.Join(root, path)); err != nil {
+			return err
+		}
+
+		for identifier, monikerTypes := range documentMonikers {
+			for monikerType := range monikerTypes {
+				if err := write("monikers.csv", "%d,%s,%s:%s\n", documentID, monikerType, "scip", identifier); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
-	redisStore.LPush("ranking:references:gold", id)
-	// redisStore.LPush("ranking:references:consumable", id)
 
-	// increment the number of processed uploads
-	redisStore.Incr("ranking:uploads:processed")
+	for symbolName, referencingDocumentIDs := range documentsReferencingSymbols {
+		for _, definingDocumentID := range documentsDefiningSymbols[symbolName] {
+			for _, referencingDocumentID := range referencingDocumentIDs {
+				if referencingDocumentID == definingDocumentID {
+					continue
+				}
 
-	// fmt.Printf("we've ENDED up with this many definitions: %v \n", definitions)
-	// fmt.Printf("we've ENDED up with this many references: %v \n", references)
+				if err := write("references.csv", "%d,%d\n", referencingDocumentID, definingDocumentID); err != nil {
+					return err
+				}
+			}
+		}
+	}
 
-	// for symbolName, referencingDocumentIDs := range documentsReferencingSymbols {
-	// 	for _, definingDocumentID := range documentsDefiningSymbols[symbolName] {
-	// 		for _, referencingDocumentID := range referencingDocumentIDs {
-	// 			if referencingDocumentID == definingDocumentID {
-	// 				continue
-	// 			}
-
-	// 			if err := write("references.csv", "%d,%d\n", referencingDocumentID, definingDocumentID); err != nil {
-	// 				return err
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// if err := write("done", "%s\n", time.Now().Format(time.RFC3339)); err != nil {
-	// 	return err
-	// }
+	if err := write("done", "%s\n", time.Now().Format(time.RFC3339)); err != nil {
+		return err
+	}
 
 	return nil
 }

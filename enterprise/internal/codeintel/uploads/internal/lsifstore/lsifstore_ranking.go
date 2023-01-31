@@ -9,21 +9,31 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
+	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error) {
-	ctx, _, endObservation := s.operations.scanDocuments.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+func (s *store) CreateDefinitionsAndReferencesForRanking(
+	ctx context.Context,
+	upload db.ExportedUpload,
+	setDefsAndRefs func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error,
+) (err error) {
+	ctx, _, endObservation := s.operations.createDefinitionsAndReferencesForRanking.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", upload.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return runQuery(ctx, s.db, sqlf.Sprintf(scanDocumentsQuery, id), func(dbs dbutil.Scanner) error {
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getDocumentsByUploadIDQuery, upload.ID))
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
 		var path string
 		var compressedSCIPPayload []byte
-		if err := dbs.Scan(&path, &compressedSCIPPayload); err != nil {
+		if err := rows.Scan(&path, &compressedSCIPPayload); err != nil {
 			return err
 		}
 
@@ -36,12 +46,16 @@ func (s *store) ScanDocuments(ctx context.Context, id int, f func(path string, d
 		if err := proto.Unmarshal(scipPayload, &document); err != nil {
 			return err
 		}
+		err = setDefsAndRefs(ctx, upload, path, &document)
+		if err != nil {
+			return err
+		}
+	}
 
-		return f(path, &document)
-	})
+	return nil
 }
 
-const scanDocumentsQuery = `
+const getDocumentsByUploadIDQuery = `
 SELECT
 	sid.document_path,
 	sd.raw_scip_payload
@@ -50,19 +64,3 @@ JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE sid.upload_id = %s
 ORDER BY sid.document_path
 `
-
-func runQuery(ctx context.Context, store *basestore.Store, query *sqlf.Query, f func(dbutil.Scanner) error) (err error) {
-	rows, queryErr := store.Query(ctx, query)
-	if queryErr != nil {
-		return queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := f(rows); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -34,7 +35,8 @@ type LsifStore interface {
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error)
 
 	// Stream
-	ScanDocuments(ctx context.Context, id int, repo, root string, f func(ctx context.Context, id int, repo, root, path string, document *scip.Document) error) (err error)
+	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
+	CreateDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
 }
 
 type SCIPWriter interface {

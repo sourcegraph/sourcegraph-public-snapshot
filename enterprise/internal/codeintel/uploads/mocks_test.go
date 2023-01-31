@@ -446,7 +446,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SetGlobalRanksFunc: &StoreSetGlobalRanksFunc{
-			defaultHook: func(context.Context, map[string]int) (r0 error) {
+			defaultHook: func(context.Context, map[string]string) (r0 error) {
 				return
 			},
 		},
@@ -738,7 +738,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SetGlobalRanksFunc: &StoreSetGlobalRanksFunc{
-			defaultHook: func(context.Context, map[string]int) error {
+			defaultHook: func(context.Context, map[string]string) error {
 				panic("unexpected invocation of MockStore.SetGlobalRanks")
 			},
 		},
@@ -5724,15 +5724,15 @@ func (c StoreRepoNamesFuncCall) Results() []interface{} {
 // StoreSetGlobalRanksFunc describes the behavior when the SetGlobalRanks
 // method of the parent MockStore instance is invoked.
 type StoreSetGlobalRanksFunc struct {
-	defaultHook func(context.Context, map[string]int) error
-	hooks       []func(context.Context, map[string]int) error
+	defaultHook func(context.Context, map[string]string) error
+	hooks       []func(context.Context, map[string]string) error
 	history     []StoreSetGlobalRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // SetGlobalRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) SetGlobalRanks(v0 context.Context, v1 map[string]int) error {
+func (m *MockStore) SetGlobalRanks(v0 context.Context, v1 map[string]string) error {
 	r0 := m.SetGlobalRanksFunc.nextHook()(v0, v1)
 	m.SetGlobalRanksFunc.appendCall(StoreSetGlobalRanksFuncCall{v0, v1, r0})
 	return r0
@@ -5741,7 +5741,7 @@ func (m *MockStore) SetGlobalRanks(v0 context.Context, v1 map[string]int) error 
 // SetDefaultHook sets function that is called when the SetGlobalRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreSetGlobalRanksFunc) SetDefaultHook(hook func(context.Context, map[string]int) error) {
+func (f *StoreSetGlobalRanksFunc) SetDefaultHook(hook func(context.Context, map[string]string) error) {
 	f.defaultHook = hook
 }
 
@@ -5749,7 +5749,7 @@ func (f *StoreSetGlobalRanksFunc) SetDefaultHook(hook func(context.Context, map[
 // SetGlobalRanks method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreSetGlobalRanksFunc) PushHook(hook func(context.Context, map[string]int) error) {
+func (f *StoreSetGlobalRanksFunc) PushHook(hook func(context.Context, map[string]string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5758,19 +5758,19 @@ func (f *StoreSetGlobalRanksFunc) PushHook(hook func(context.Context, map[string
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreSetGlobalRanksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, map[string]int) error {
+	f.SetDefaultHook(func(context.Context, map[string]string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreSetGlobalRanksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, map[string]int) error {
+	f.PushHook(func(context.Context, map[string]string) error {
 		return r0
 	})
 }
 
-func (f *StoreSetGlobalRanksFunc) nextHook() func(context.Context, map[string]int) error {
+func (f *StoreSetGlobalRanksFunc) nextHook() func(context.Context, map[string]string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5808,7 +5808,7 @@ type StoreSetGlobalRanksFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 map[string]int
+	Arg1 map[string]string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -7664,6 +7664,10 @@ func (c RepoStoreResolveRevFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore)
 // used for unit testing.
 type MockLsifStore struct {
+	// CreateDefinitionsAndReferencesForRankingFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// CreateDefinitionsAndReferencesForRanking.
+	CreateDefinitionsAndReferencesForRankingFunc *LsifStoreCreateDefinitionsAndReferencesForRankingFunc
 	// DeleteLsifDataByUploadIdsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteLsifDataByUploadIds.
@@ -7721,6 +7725,11 @@ type MockLsifStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
+		CreateDefinitionsAndReferencesForRankingFunc: &LsifStoreCreateDefinitionsAndReferencesForRankingFunc{
+			defaultHook: func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) (r0 error) {
+				return
+			},
+		},
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
 				return
@@ -7762,7 +7771,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) (r0 error) {
+			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) (r0 error) {
 				return
 			},
 		},
@@ -7808,6 +7817,11 @@ func NewMockLsifStore() *MockLsifStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
+		CreateDefinitionsAndReferencesForRankingFunc: &LsifStoreCreateDefinitionsAndReferencesForRankingFunc{
+			defaultHook: func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error {
+				panic("unexpected invocation of MockLsifStore.CreateDefinitionsAndReferencesForRanking")
+			},
+		},
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: func(context.Context, ...int) error {
 				panic("unexpected invocation of MockLsifStore.DeleteLsifDataByUploadIds")
@@ -7849,7 +7863,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
+			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) error {
 				panic("unexpected invocation of MockLsifStore.ScanDocuments")
 			},
 		},
@@ -7895,6 +7909,9 @@ func NewStrictMockLsifStore() *MockLsifStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 	return &MockLsifStore{
+		CreateDefinitionsAndReferencesForRankingFunc: &LsifStoreCreateDefinitionsAndReferencesForRankingFunc{
+			defaultHook: i.CreateDefinitionsAndReferencesForRanking,
+		},
 		DeleteLsifDataByUploadIdsFunc: &LsifStoreDeleteLsifDataByUploadIdsFunc{
 			defaultHook: i.DeleteLsifDataByUploadIds,
 		},
@@ -7944,6 +7961,119 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 			defaultHook: i.WriteResultChunks,
 		},
 	}
+}
+
+// LsifStoreCreateDefinitionsAndReferencesForRankingFunc describes the
+// behavior when the CreateDefinitionsAndReferencesForRanking method of the
+// parent MockLsifStore instance is invoked.
+type LsifStoreCreateDefinitionsAndReferencesForRankingFunc struct {
+	defaultHook func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error
+	hooks       []func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error
+	history     []LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateDefinitionsAndReferencesForRanking delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockLsifStore) CreateDefinitionsAndReferencesForRanking(v0 context.Context, v1 store.ExportedUpload, v2 func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error {
+	r0 := m.CreateDefinitionsAndReferencesForRankingFunc.nextHook()(v0, v1, v2)
+	m.CreateDefinitionsAndReferencesForRankingFunc.appendCall(LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateDefinitionsAndReferencesForRanking method of the parent
+// MockLsifStore instance is invoked and the hook queue is empty.
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateDefinitionsAndReferencesForRanking method of the parent
+// MockLsifStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) PushHook(hook func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error {
+		return r0
+	})
+}
+
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) nextHook() func(context.Context, store.ExportedUpload, func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) appendCall(r0 LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreCreateDefinitionsAndReferencesForRankingFunc) History() []LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall is an object
+// that describes an invocation of method
+// CreateDefinitionsAndReferencesForRanking on an instance of MockLsifStore.
+type LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ExportedUpload
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 func(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreCreateDefinitionsAndReferencesForRankingFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // LsifStoreDeleteLsifDataByUploadIdsFunc describes the behavior when the
@@ -8833,24 +8963,24 @@ func (c LsifStoreReconcileCandidatesFuncCall) Results() []interface{} {
 // LsifStoreScanDocumentsFunc describes the behavior when the ScanDocuments
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreScanDocumentsFunc struct {
-	defaultHook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error
-	hooks       []func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error
+	defaultHook func(context.Context, int, func(path string, document *scip.Document) error) error
+	hooks       []func(context.Context, int, func(path string, document *scip.Document) error) error
 	history     []LsifStoreScanDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // ScanDocuments delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 string, v3 string, v4 func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
-	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, v3, v4, r0})
+func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path string, document *scip.Document) error) error {
+	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2)
+	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ScanDocuments method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error) {
+func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
 	f.defaultHook = hook
 }
 
@@ -8858,7 +8988,7 @@ func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, i
 // ScanDocuments method of the parent MockLsifStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error) {
+func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -8867,19 +8997,19 @@ func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, st
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreScanDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
+	f.SetDefaultHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreScanDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
+	f.PushHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
-func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, string, string, func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error) error {
+func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, func(path string, document *scip.Document) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8920,13 +9050,7 @@ type LsifStoreScanDocumentsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(ctx context.Context, id int, repo string, root string, path string, document *scip.Document) error
+	Arg2 func(path string, document *scip.Document) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -8935,7 +9059,7 @@ type LsifStoreScanDocumentsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LsifStoreScanDocumentsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
