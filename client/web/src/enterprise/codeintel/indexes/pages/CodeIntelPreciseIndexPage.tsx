@@ -1,25 +1,13 @@
-import { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import {
-    mdiDatabaseEdit,
-    mdiDatabasePlus,
-    mdiDelete,
-    mdiGraph,
-    mdiHistory,
-    mdiInformationOutline,
-    mdiMapSearch,
-    mdiRecycle,
-    mdiRedo,
-    mdiTimerSand,
-} from '@mdi/js'
+import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { Redirect, RouteComponentProps, useLocation } from 'react-router'
-import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -34,7 +22,6 @@ import {
     Container,
     ErrorAlert,
     ErrorMessage,
-    H3,
     Icon,
     Link,
     LoadingSpinner,
@@ -44,39 +31,24 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    Text,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import {
-    Connection,
-    FilteredConnection,
-    FilteredConnectionQueryArguments,
-} from '../../../../components/FilteredConnection'
-import { Timeline, TimelineStage } from '../../../../components/Timeline'
-import {
-    AuditLogOperation,
-    LsifUploadsAuditLogsFields,
-    PreciseIndexFields,
-    PreciseIndexState,
-} from '../../../../graphql-operations'
+import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { IndexTimeline } from '../components/IndexTimeline'
-import { ProjectDescription } from '../components/ProjectDescriptionProps'
+import { ProjectDescription } from '../components/ProjectDescription'
 import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 import { queryPreciseIndex as defaultQueryPreciseIndex } from '../hooks/queryPreciseIndex'
-import {
-    NormalizedUploadRetentionMatch,
-    queryPreciseIndexRetention,
-    RetentionPolicyMatch,
-    UploadReferenceMatch,
-} from '../hooks/queryPreciseIndexRetention'
-import { useDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
-import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
+import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
+import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
 
+import { AuditLogPanel } from '../components/AuditLog'
+import { DependenciesPanel, DependentsPanel } from '../components/Dependencies'
 import styles from './CodeIntelPreciseIndexPage.module.scss'
+import { RetentionPanel } from '../components/Retention'
 
 export interface CodeIntelPreciseIndexPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -86,11 +58,8 @@ export interface CodeIntelPreciseIndexPageProps
     now?: () => Date
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
     queryPreciseIndex?: typeof defaultQueryPreciseIndex
-}
-
-enum RetentionPolicyMatcherState {
-    ShowMatchingOnly,
-    ShowAll,
+    useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
+    useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
 }
 
 const variantByState = new Map<PreciseIndexState, AlertProps['variant']>([
@@ -107,6 +76,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     now,
     queryDependencyGraph = defaultQueryDependencyGraph,
     queryPreciseIndex = defaultQueryPreciseIndex,
+    useDeletePreciseIndex = defaultUseDeletePreciseIndex,
+    useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     history,
     telemetryService,
 }) => {
@@ -118,7 +89,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
-    const [retentionPolicyMatcherState, setRetentionPolicyMatcherState] = useState(RetentionPolicyMatcherState.ShowAll)
 
     const indexOrError = useObservable(
         useMemo(
@@ -208,20 +178,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         }
     }, [id, indexOrError, handleDeletePreciseIndex, history])
 
-    const queryRetentionPoliciesCallback = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-            if (indexOrError && !isErrorLike(indexOrError)) {
-                return queryPreciseIndexRetention(apolloClient, id, {
-                    matchesOnly: retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowMatchingOnly,
-                    ...args,
-                })
-            }
-
-            throw new Error('unreachable: queryRetentionPolicies referenced with invalid upload')
-        },
-        [indexOrError, apolloClient, id, queryPreciseIndexRetention, retentionPolicyMatcherState]
-    )
-
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
@@ -262,17 +218,33 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             ) : indexOrError.state === PreciseIndexState.DELETING ? (
                                 <span>Upload is queued for deletion.</span>
                             ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_INDEXING ? (
-                                <>
-                                    Index is queued for indexing.{' '}
-                                    <LousyDescription placeInQueue={indexOrError.placeInQueue} />
-                                </>
+                                <span>
+                                    {indexOrError.placeInQueue === 1 ? (
+                                        <>This index is next up for indexing.</>
+                                    ) : (
+                                        <>
+                                            {indexOrError.placeInQueue
+                                                ? `There are ${
+                                                      indexOrError.placeInQueue - 1
+                                                  } indexes ahead of this one in the indexing queue.`
+                                                : ''}
+                                        </>
+                                    )}
+                                </span>
                             ) : indexOrError.state === PreciseIndexState.QUEUED_FOR_PROCESSING ? (
-                                <>
-                                    <span>
-                                        Index is queued for processing.{' '}
-                                        <LousyDescription placeInQueue={indexOrError.placeInQueue} />
-                                    </span>
-                                </>
+                                <span>
+                                    {indexOrError.placeInQueue === 1 ? (
+                                        <>This index is next up for processing.</>
+                                    ) : (
+                                        <>
+                                            {indexOrError.placeInQueue
+                                                ? `There are ${
+                                                      indexOrError.placeInQueue - 1
+                                                  } indexes ahead of this one in the processing queue.`
+                                                : ''}
+                                        </>
+                                    )}
+                                </span>
                             ) : indexOrError.state === PreciseIndexState.INDEXING ? (
                                 <span>Index is currently being indexed...</span>
                             ) : indexOrError.state === PreciseIndexState.PROCESSING ? (
@@ -325,6 +297,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                         </span>
                                     </span>
                                 </Tab>
+
                                 <Tab>
                                     <span>
                                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiGraph} />
@@ -333,6 +306,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                         </span>
                                     </span>
                                 </Tab>
+
                                 <Tab>
                                     <span>
                                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiRecycle} />
@@ -341,17 +315,21 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                         </span>
                                     </span>
                                 </Tab>
-                                <Tab>
-                                    <span>
-                                        <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiHistory} />
-                                        <span className="text-content" data-tab-content="Audit logs">
-                                            Audit logs
+
+                                {(indexOrError.auditLogs?.length ?? 0) > 0 && (
+                                    <Tab>
+                                        <span>
+                                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiHistory} />
+                                            <span className="text-content" data-tab-content="Audit logs">
+                                                Audit logs
+                                            </span>
                                         </span>
-                                    </span>
-                                </Tab>
+                                    </Tab>
+                                )}
                             </>
                         )}
                     </TabList>
+
                     <TabPanels>
                         <TabPanel>
                             <Container className="mt-2">
@@ -364,82 +342,36 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             <>
                                 <TabPanel>
                                     <Container className="mt-2">
-                                        <DependencyList index={indexOrError} history={history} location={location} />
+                                        <DependenciesPanel index={indexOrError} history={history} location={location} />
                                     </Container>
                                 </TabPanel>
+
                                 <TabPanel>
                                     <Container className="mt-2">
-                                        <DependentList index={indexOrError} history={history} location={location} />
+                                        <DependentsPanel index={indexOrError} history={history} location={location} />
                                     </Container>
                                 </TabPanel>
+
                                 <TabPanel>
                                     <Container className="mt-2">
-                                        {retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowAll ? (
-                                            <Button
-                                                type="button"
-                                                className="float-right p-0 mb-2"
-                                                variant="link"
-                                                onClick={() =>
-                                                    setRetentionPolicyMatcherState(
-                                                        RetentionPolicyMatcherState.ShowMatchingOnly
-                                                    )
-                                                }
-                                            >
-                                                Show matching only
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                type="button"
-                                                className="float-right p-0 mb-2"
-                                                variant="link"
-                                                onClick={() =>
-                                                    setRetentionPolicyMatcherState(RetentionPolicyMatcherState.ShowAll)
-                                                }
-                                            >
-                                                Show all
-                                            </Button>
-                                        )}
-                                        <FilteredConnection
-                                            listComponent="div"
-                                            listClassName={classNames(styles.grid, 'mb-3')}
-                                            inputClassName="w-auto"
-                                            noun="match"
-                                            pluralNoun="matches"
-                                            nodeComponent={RetentionMatchNode}
-                                            queryConnection={queryRetentionPoliciesCallback}
-                                            history={history}
-                                            location={location}
-                                            cursorPaging={true}
-                                            useURLQuery={false}
-                                            emptyElement={<EmptyUploadRetentionMatchStatus />}
-                                        />
+                                        <RetentionPanel index={indexOrError} history={history} location={location} />
                                     </Container>
                                 </TabPanel>
-                                <TabPanel>
-                                    <Container className="mt-2">
-                                        {indexOrError.auditLogs?.length ?? 0 > 0 ? (
-                                            <UploadAuditLogTimeline logs={indexOrError.auditLogs || []} />
-                                        ) : (
-                                            <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-                                                <Icon
-                                                    className="mb-2"
-                                                    svgPath={mdiMapSearch}
-                                                    inline={false}
-                                                    aria-hidden={true}
-                                                />
-                                                <br />
-                                                This upload has no audit logs.
-                                            </Text>
-                                        )}
-                                    </Container>
-                                </TabPanel>
+
+                                {(indexOrError.auditLogs?.length ?? 0) > 0 && (
+                                    <TabPanel>
+                                        <Container className="mt-2">
+                                            <AuditLogPanel logs={indexOrError.auditLogs || []} />
+                                        </Container>
+                                    </TabPanel>
+                                )}
                             </>
                         )}
                     </TabPanels>
                 </Tabs>
 
-                <div className="mt-4">
-                    {authenticatedUser?.siteAdmin && (
+                {authenticatedUser?.siteAdmin && (
+                    <div className="mt-4">
                         <>
                             <CodeIntelDeleteUpload
                                 state={indexOrError.state}
@@ -449,323 +381,12 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
                             <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
                         </>
-                    )}
-                </div>
+                    </div>
+                )}
             </Container>
         </>
     )
 }
-
-const terminalStates = new Set(['TODO']) // TODO
-
-function shouldReload(index: PreciseIndexFields | ErrorLike | null | undefined): boolean {
-    return !isErrorLike(index) && !(index && terminalStates.has(index.state))
-}
-
-//
-//
-//
-
-interface CodeIntelStateDescriptionPlaceInQueueProps {
-    placeInQueue?: number | null
-}
-
-const LousyDescription: FunctionComponent<React.PropsWithChildren<CodeIntelStateDescriptionPlaceInQueueProps>> = ({
-    placeInQueue,
-}) => {
-    if (placeInQueue === 1) {
-        return <>This index is up next for processing.</>
-    }
-
-    return <>{placeInQueue ? `There are ${placeInQueue - 1} indexes ahead of this one.` : ''}</>
-}
-
-interface RetentionMatchNodeProps {
-    node: NormalizedUploadRetentionMatch
-}
-
-const retentionByUploadTitle = 'Retention by reference'
-const retentionByBranchTipTitle = 'Retention by tip of default branch'
-
-const RetentionMatchNode: FunctionComponent<React.PropsWithChildren<RetentionMatchNodeProps>> = ({ node }) => {
-    if (node.matchType === 'RetentionPolicy') {
-        return <RetentionPolicyRetentionMatchNode match={node} />
-    }
-    if (node.matchType === 'UploadReference') {
-        return <UploadReferenceRetentionMatchNode match={node} />
-    }
-
-    throw new Error(`invalid node type ${JSON.stringify(node as object)}`)
-}
-
-const RetentionPolicyRetentionMatchNode: FunctionComponent<
-    React.PropsWithChildren<{ match: RetentionPolicyMatch }>
-> = ({ match }) => (
-    <>
-        <span className={styles.separator} />
-
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
-                {match.configurationPolicy ? (
-                    <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                        <H3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</H3>
-                    </Link>
-                ) : (
-                    <H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</H3>
-                )}
-                <div className="mr-2 d-block d-mdinline-block">
-                    Retained: {match.matches ? 'yes' : 'no'}
-                    {match.protectingCommits.length !== 0 && (
-                        <>
-                            , by {match.protectingCommits.length} visible{' '}
-                            {pluralize('commit', match.protectingCommits.length)}, including{' '}
-                            {match.protectingCommits
-                                .slice(0, 4)
-                                .map(hash => hash.slice(0, 7))
-                                .join(', ')}
-                            <Tooltip content="This upload is retained to service code-intel queries for commit(s) with applicable retention policies.">
-                                <Icon
-                                    aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                    className="ml-1"
-                                    svgPath={mdiInformationOutline}
-                                />
-                            </Tooltip>
-                        </>
-                    )}
-                    {!match.configurationPolicy && (
-                        <Tooltip content="Uploads at the tip of the default branch are always retained indefinitely.">
-                            <Icon
-                                aria-label="Uploads at the tip of the default branch are always retained indefinitely."
-                                className="ml-1"
-                                svgPath={mdiInformationOutline}
-                            />
-                        </Tooltip>
-                    )}
-                </div>
-            </div>
-        </div>
-    </>
-)
-
-const UploadReferenceRetentionMatchNode: FunctionComponent<
-    React.PropsWithChildren<{ match: UploadReferenceMatch }>
-> = ({ match }) => (
-    <>
-        <span className={styles.separator} />
-
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
-                <H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</H3>
-                <div className="mr-2 d-block d-mdinline-block">
-                    Referenced by {match.total} {pluralize('upload', match.total, 'uploads')}, including{' '}
-                    {match.uploadSlice
-                        .slice(0, 3)
-                        .map<React.ReactNode>(upload => (
-                            <Link key={upload.id} to={`/site-admin/code-graph/uploads/${upload.id}`}>
-                                {upload.projectRoot?.repository.name ?? 'unknown'}
-                            </Link>
-                        ))
-                        .reduce((previous, current) => [previous, ', ', current])}
-                    <Tooltip content="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries.">
-                        <Icon
-                            aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                            className="ml-1"
-                            svgPath={mdiInformationOutline}
-                        />
-                    </Tooltip>
-                </div>
-            </div>
-        </div>
-    </>
-)
-
-interface DependencyOrDependentNodeProps {
-    node: PreciseIndexFields
-    now?: () => Date
-}
-
-const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
-    node,
-}) => (
-    <div className={classNames(styles.grid, 'px-4')} onClick={() => alert(node.id)}>
-        <div>
-            <H3 className="m-0 mb-1">
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
-                        {node.projectRoot.repository.name}
-                    </Link>
-                ) : (
-                    <span>Unknown repository</span>
-                )}
-            </H3>
-        </div>
-
-        <div>
-            <span className="mr-2 d-block d-mdinline-block">
-                <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
-            </span>
-
-            <small className="text-mute">
-                <PreciseIndexLastUpdated index={node} />{' '}
-                {node.shouldReindex && (
-                    <Tooltip content="This index has been marked as replaceable by auto-indexing.">
-                        <span className={classNames(styles.tag, 'ml-1 rounded')}>(replaceable by auto-indexing)</span>
-                    </Tooltip>
-                )}
-            </small>
-        </div>
-    </div>
-)
-
-interface UploadAuditLogTimelineProps {
-    logs: LsifUploadsAuditLogsFields[]
-}
-
-const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<UploadAuditLogTimelineProps>> = ({ logs }) => {
-    const stages = logs?.map(
-        (log): TimelineStage => ({
-            icon:
-                log.operation === AuditLogOperation.CREATE ? (
-                    <Icon aria-label="Success" svgPath={mdiDatabasePlus} />
-                ) : (
-                    <Icon aria-label="Warn" svgPath={mdiDatabaseEdit} />
-                ),
-            text: stageText(log),
-            className: log.operation === AuditLogOperation.CREATE ? 'bg-success' : 'bg-warning',
-            expandedByDefault: true,
-            date: log.logTimestamp,
-            details: (
-                <>
-                    {log.reason && (
-                        <>
-                            <Container>
-                                <b>Reason</b>: {log.reason}
-                            </Container>
-                            <br />
-                        </>
-                    )}
-                    <div className={styles.tableContainer}>
-                        <table className="table mb-0 table-striped">
-                            <thead>
-                                <tr>
-                                    <th className={styles.dbColumnCol} scope="column">
-                                        Column
-                                    </th>
-                                    <th className={styles.dataColumnCol} scope="column">
-                                        Old
-                                    </th>
-                                    <th scope="column">New</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {log.changedColumns.map((change, index) => (
-                                    // eslint-disable-next-line react/no-array-index-key
-                                    <tr key={index} className="overflow-scroll">
-                                        <td className="mr-2">{change.column}</td>
-                                        <td className="mr-2">{change.old || 'NULL'}</td>
-                                        <td className="mr-2">{change.new || 'NULL'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            ),
-        })
-    )
-
-    return <Timeline showDurations={false} stages={stages} />
-}
-
-function stageText(log: LsifUploadsAuditLogsFields): ReactNode {
-    if (log.operation === AuditLogOperation.CREATE) {
-        return 'Upload created'
-    }
-
-    return (
-        <>
-            Altered columns:{' '}
-            {formatReactNodeList(log.changedColumns.map(change => <span key={change.column}>{change.column}</span>))}
-        </>
-    )
-}
-
-function formatReactNodeList(list: ReactNode[]): ReactNode {
-    if (list.length === 0) {
-        return <></>
-    }
-    if (list.length === 1) {
-        return list[0]
-    }
-
-    return (
-        <>
-            {list.slice(0, -1).reduce((previous, current) => [previous, ', ', current])} and {list[list.length - 1]}
-        </>
-    )
-}
-
-const EmptyUploadRetentionMatchStatus: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
-        <br />
-        No retention policies matched.
-    </Text>
-)
-
-interface CodeIntelDeleteUploadProps {
-    state: PreciseIndexState
-    deleteUpload: () => Promise<void>
-    deletionOrError?: 'loading' | 'deleted' | ErrorLike
-}
-
-const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteUploadProps>> = ({
-    state,
-    deleteUpload,
-    deletionOrError,
-}) =>
-    state === PreciseIndexState.DELETING ? (
-        <></>
-    ) : (
-        <Tooltip
-            content={
-                state === PreciseIndexState.COMPLETED
-                    ? 'Deleting this index will make it unavailable to answer code navigation queries the next time the repository commit graph is refreshed.'
-                    : 'Delete this index immediately'
-            }
-        >
-            <Button
-                type="button"
-                className="float-right"
-                variant="danger"
-                onClick={deleteUpload}
-                disabled={deletionOrError === 'loading'}
-            >
-                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
-            </Button>
-        </Tooltip>
-    )
-
-interface CodeIntelReindexUploadProps {
-    reindexUpload: () => Promise<void>
-    reindexOrError?: 'loading' | 'reindexed' | ErrorLike
-}
-
-const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeIntelReindexUploadProps>> = ({
-    reindexUpload,
-    reindexOrError,
-}) => (
-    <Tooltip content="TODO">
-        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
-            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
-        </Button>
-    </Tooltip>
-)
-
-//
-//
-//
-
 interface IndexDescriptionProps {
     index: PreciseIndexFields
     history: H.History
@@ -802,87 +423,57 @@ const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index, his
     </Card>
 )
 
-export interface DependencyListProps {
-    index: PreciseIndexFields
-    history: H.History
-    location: H.Location
-    queryDependencyGraph?: typeof defaultQueryDependencyGraph
+interface CodeIntelReindexUploadProps {
+    reindexUpload: () => Promise<void>
+    reindexOrError?: 'loading' | 'reindexed' | ErrorLike
 }
 
-export const DependencyList: FunctionComponent<DependencyListProps> = ({
-    index,
-    history,
-    location,
-    queryDependencyGraph = defaultQueryDependencyGraph,
-}) => {
-    const apolloClient = useApolloClient()
-    const queryDependencies = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (index && !isErrorLike(index)) {
-                return queryDependencyGraph({ ...args, dependencyOf: index.id }, apolloClient)
+const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeIntelReindexUploadProps>> = ({
+    reindexUpload,
+    reindexOrError,
+}) => (
+    <Tooltip content="TODO">
+        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
+        </Button>
+    </Tooltip>
+)
+
+interface CodeIntelDeleteUploadProps {
+    state: PreciseIndexState
+    deleteUpload: () => Promise<void>
+    deletionOrError?: 'loading' | 'deleted' | ErrorLike
+}
+
+const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteUploadProps>> = ({
+    state,
+    deleteUpload,
+    deletionOrError,
+}) =>
+    state === PreciseIndexState.DELETING ? (
+        <></>
+    ) : (
+        <Tooltip
+            content={
+                state === PreciseIndexState.COMPLETED
+                    ? 'Deleting this index will make it unavailable to answer code navigation queries the next time the repository commit graph is refreshed.'
+                    : 'Delete this index immediately'
             }
-            throw new Error('unreachable: queryDependencies referenced with invalid upload')
-        },
-        [index, queryDependencyGraph, apolloClient]
+        >
+            <Button
+                type="button"
+                className="float-right"
+                variant="danger"
+                onClick={deleteUpload}
+                disabled={deletionOrError === 'loading'}
+            >
+                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
+            </Button>
+        </Tooltip>
     )
 
-    return (
-        <FilteredConnection
-            listComponent="div"
-            listClassName={classNames(styles.grid, 'mb-3')}
-            inputClassName="w-auto"
-            noun="dependency"
-            pluralNoun="dependencies"
-            nodeComponent={DependencyOrDependentNode}
-            queryConnection={queryDependencies}
-            history={history}
-            location={location}
-            cursorPaging={true}
-            useURLQuery={false}
-            // emptyElement={<EmptyDependencies />}
-        />
-    )
-}
+const terminalStates = new Set(['TODO']) // TODO
 
-export interface DependentListProps {
-    index: PreciseIndexFields
-    history: H.History
-    location: H.Location
-    queryDependencyGraph?: typeof defaultQueryDependencyGraph
-}
-
-export const DependentList: FunctionComponent<DependentListProps> = ({
-    index,
-    history,
-    location,
-    queryDependencyGraph = defaultQueryDependencyGraph,
-}) => {
-    const apolloClient = useApolloClient()
-    const queryDependents = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (index && !isErrorLike(index)) {
-                return queryDependencyGraph({ ...args, dependentOf: index.id }, apolloClient)
-            }
-
-            throw new Error('unreachable: queryDependents referenced with invalid upload')
-        },
-        [index, queryDependencyGraph, apolloClient]
-    )
-
-    return (
-        <FilteredConnection
-            listComponent="div"
-            listClassName={classNames(styles.grid, 'mb-3')}
-            inputClassName="w-auto"
-            noun="dependent"
-            pluralNoun="dependents"
-            nodeComponent={DependencyOrDependentNode}
-            queryConnection={queryDependents}
-            history={history}
-            location={location}
-            cursorPaging={true}
-            useURLQuery={false}
-            // emptyElement={<EmptyDependents />}
-        />
-    )
+function shouldReload(index: PreciseIndexFields | ErrorLike | null | undefined): boolean {
+    return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
