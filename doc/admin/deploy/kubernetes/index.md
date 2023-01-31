@@ -195,6 +195,7 @@ See the [configuration guide for Kustomize](kustomize/configure.md) for more con
 - Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)
+  - [Minikube](../single-node/minikube.md)
 - [Troubleshooting](troubleshoot.md)
 
 Not sure if Kubernetes is the best choice for you? Check out our [deployment documentations](../index.md) to learn about other available deployment options.

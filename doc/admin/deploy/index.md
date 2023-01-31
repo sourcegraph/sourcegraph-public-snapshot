@@ -52,6 +52,7 @@ Both paths require extensive Kubernetes knowledge to set up and maintain. For te
 
 Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
 
+---
 
 ## Recommendations
 
