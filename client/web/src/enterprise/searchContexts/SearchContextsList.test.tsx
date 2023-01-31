@@ -1,8 +1,7 @@
 import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { getAllByRole, getByRole, queryByRole, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryHistory } from 'history'
-import { Router } from 'react-router'
+import { MemoryRouter } from 'react-router-dom-v5-compat'
 import { spy, stub, assert } from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -18,7 +17,6 @@ import { setDefaultSearchContextResult } from '../../graphql-operations'
 
 import { SET_DEFAULT_SEARCH_CONTEXT_MUTATION } from './hooks/useDefaultContext'
 import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
-import { MemoryRouter } from 'react-router-dom-v5-compat'
 
 describe('SearchContextsList', () => {
     const defaultProps: SearchContextsListProps = {

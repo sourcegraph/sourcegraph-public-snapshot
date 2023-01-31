@@ -592,7 +592,6 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                             noShowMore={this.props.noShowMore}
                             noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
                             onShowMore={this.onClickShowMore}
-                            location={this.props.location}
                             emptyElement={this.props.emptyElement}
                             totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                             withCenteredSummary={this.props.withCenteredSummary}
