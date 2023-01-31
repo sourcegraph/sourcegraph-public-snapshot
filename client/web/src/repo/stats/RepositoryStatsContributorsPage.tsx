@@ -41,7 +41,7 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 

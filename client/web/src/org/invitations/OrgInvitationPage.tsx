@@ -20,7 +20,7 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
-import { UserAvatar } from '../../user/UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'

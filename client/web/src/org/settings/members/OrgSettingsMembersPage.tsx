@@ -32,7 +32,7 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { UserAvatar } from '../../../user/UserAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
 
