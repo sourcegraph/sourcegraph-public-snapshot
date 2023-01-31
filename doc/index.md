@@ -80,7 +80,7 @@ For our largest customers, we also offer a Kubernetes multi-node cluster deploym
   <a class="btn-app btn" href="/admin/deploy/docker-single-container">
     <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Container</h3>
-    <p>Spin up a local Sourcegraph instance with pure docker</p>
+    <p>Spin up a local Sourcegraph instance with pure Docker</p>
   </a>
   <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
     <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
