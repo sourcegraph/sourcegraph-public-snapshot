@@ -62,16 +62,11 @@ import {
     PreciseIndexState,
 } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
-import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
-import { CodeIntelUploadOrIndexCommitTags } from '../../shared/components/CodeIntelUploadOrIndexCommitTags'
-import { CodeIntelUploadOrIndexRepository } from '../../shared/components/CodeIntelUploadOrIndexerRepository'
-import { CodeIntelUploadOrIndexIndexer } from '../../shared/components/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadOrIndexRoot } from '../../shared/components/CodeIntelUploadOrIndexRoot'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { IndexTimeline } from '../components/IndexTimeline'
 import { ProjectDescription } from '../components/ProjectDescriptionProps'
-import { queryDependencyGraph } from '../hooks/queryDependencyGraph'
-import { queryPreciseIndex } from '../hooks/queryPreciseIndex'
+import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
+import { queryPreciseIndex as defaultQueryPreciseIndex } from '../hooks/queryPreciseIndex'
 import {
     NormalizedUploadRetentionMatch,
     queryPreciseIndexRetention,
@@ -89,6 +84,8 @@ export interface CodeIntelPreciseIndexPageProps
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     now?: () => Date
+    queryDependencyGraph?: typeof defaultQueryDependencyGraph
+    queryPreciseIndex?: typeof defaultQueryPreciseIndex
 }
 
 enum RetentionPolicyMatcherState {
@@ -108,6 +105,8 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     },
     authenticatedUser,
     now,
+    queryDependencyGraph = defaultQueryDependencyGraph,
+    queryPreciseIndex = defaultQueryPreciseIndex,
     history,
     telemetryService,
 }) => {
@@ -209,17 +208,6 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
         }
     }, [id, indexOrError, handleDeletePreciseIndex, history])
 
-    const queryDependents = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            if (indexOrError && !isErrorLike(indexOrError)) {
-                return queryDependencyGraph({ ...args, dependentOf: indexOrError.id }, apolloClient)
-            }
-
-            throw new Error('unreachable: queryDependents referenced with invalid upload')
-        },
-        [indexOrError, queryDependencyGraph, apolloClient]
-    )
-
     const queryRetentionPoliciesCallback = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<Connection<NormalizedUploadRetentionMatch>> => {
             if (indexOrError && !isErrorLike(indexOrError)) {
@@ -264,7 +252,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
-                <IndexDescription index={indexOrError} />
+                <IndexDescription index={indexOrError} history={history} />
 
                 <div className="mt-2">
                     <Alert variant={variantByState.get(indexOrError.state) ?? 'primary'}>
@@ -381,20 +369,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                 </TabPanel>
                                 <TabPanel>
                                     <Container className="mt-2">
-                                        <FilteredConnection
-                                            listComponent="div"
-                                            listClassName={classNames(styles.grid, 'mb-3')}
-                                            inputClassName="w-auto"
-                                            noun="dependent"
-                                            pluralNoun="dependents"
-                                            nodeComponent={DependencyOrDependentNode}
-                                            queryConnection={queryDependents}
-                                            history={history}
-                                            location={location}
-                                            cursorPaging={true}
-                                            useURLQuery={false}
-                                            // emptyElement={<EmptyDependents />}
-                                        />
+                                        <DependentList index={indexOrError} history={history} location={location} />
                                     </Container>
                                 </TabPanel>
                                 <TabPanel>
@@ -462,20 +437,20 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                         )}
                     </TabPanels>
                 </Tabs>
-            </Container>
 
-            <Container className="mt-2">
-                {authenticatedUser?.siteAdmin && (
-                    <>
-                        <CodeIntelDeleteUpload
-                            state={indexOrError.state}
-                            deleteUpload={deleteUpload}
-                            deletionOrError={deletionOrError}
-                        />
+                <div className="mt-4">
+                    {authenticatedUser?.siteAdmin && (
+                        <>
+                            <CodeIntelDeleteUpload
+                                state={indexOrError.state}
+                                deleteUpload={deleteUpload}
+                                deletionOrError={deletionOrError}
+                            />
 
-                        <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
-                    </>
-                )}
+                            <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                        </>
+                    )}
+                </div>
             </Container>
         </>
     )
@@ -612,30 +587,34 @@ interface DependencyOrDependentNodeProps {
 const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
     node,
 }) => (
-    <>
-        <span className={styles.separator} />
-
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
-                <H3 className="m-0 d-block d-md-inline">
-                    <CodeIntelUploadOrIndexRepository node={node} />
-                </H3>
-            </div>
-
-            <div>
-                <span className="mr-2 d-block d-mdinline-block">
-                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
-                    <CodeIntelUploadOrIndexCommit node={node} />
-                    {node.tags.length > 0 && (
-                        <>
-                            , <CodeIntelUploadOrIndexCommitTags tags={node.tags} />,
-                        </>
-                    )}{' '}
-                    by <CodeIntelUploadOrIndexIndexer node={node} />
-                </span>
-            </div>
+    <div className={classNames(styles.grid, 'px-4')} onClick={() => alert(node.id)}>
+        <div>
+            <H3 className="m-0 mb-1">
+                {node.projectRoot ? (
+                    <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
+                        {node.projectRoot.repository.name}
+                    </Link>
+                ) : (
+                    <span>Unknown repository</span>
+                )}
+            </H3>
         </div>
-    </>
+
+        <div>
+            <span className="mr-2 d-block d-mdinline-block">
+                <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
+            </span>
+
+            <small className="text-mute">
+                <PreciseIndexLastUpdated index={node} />{' '}
+                {node.shouldReindex && (
+                    <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                        <span className={classNames(styles.tag, 'ml-1 rounded')}>(replaceable by auto-indexing)</span>
+                    </Tooltip>
+                )}
+            </small>
+        </div>
+    </div>
 )
 
 interface UploadAuditLogTimelineProps {
@@ -777,7 +756,7 @@ const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeInte
     reindexOrError,
 }) => (
     <Tooltip content="TODO">
-        <Button type="button" variant="link" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
             <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
         </Button>
     </Tooltip>
@@ -789,9 +768,10 @@ const CodeIntelReindexUpload: FunctionComponent<React.PropsWithChildren<CodeInte
 
 interface IndexDescriptionProps {
     index: PreciseIndexFields
+    history: H.History
 }
 
-const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index }) => (
+const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index, history }) => (
     <Card>
         <CardBody>
             <CardTitle>
@@ -808,7 +788,14 @@ const IndexDescription: FunctionComponent<IndexDescriptionProps> = ({ index }) =
                 </span>
 
                 <small className="text-mute">
-                    <PreciseIndexLastUpdated index={index} />
+                    <PreciseIndexLastUpdated index={index} />{' '}
+                    {index.shouldReindex && (
+                        <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                            <span className={classNames(styles.tag, 'ml-1 rounded')}>
+                                (replaceable by auto-indexing)
+                            </span>
+                        </Tooltip>
+                    )}
                 </small>
             </CardText>
         </CardBody>
@@ -819,9 +806,15 @@ export interface DependencyListProps {
     index: PreciseIndexFields
     history: H.History
     location: H.Location
+    queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
-export const DependencyList: FunctionComponent<DependencyListProps> = ({ index, history, location }) => {
+export const DependencyList: FunctionComponent<DependencyListProps> = ({
+    index,
+    history,
+    location,
+    queryDependencyGraph = defaultQueryDependencyGraph,
+}) => {
     const apolloClient = useApolloClient()
     const queryDependencies = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -847,6 +840,49 @@ export const DependencyList: FunctionComponent<DependencyListProps> = ({ index, 
             cursorPaging={true}
             useURLQuery={false}
             // emptyElement={<EmptyDependencies />}
+        />
+    )
+}
+
+export interface DependentListProps {
+    index: PreciseIndexFields
+    history: H.History
+    location: H.Location
+    queryDependencyGraph?: typeof defaultQueryDependencyGraph
+}
+
+export const DependentList: FunctionComponent<DependentListProps> = ({
+    index,
+    history,
+    location,
+    queryDependencyGraph = defaultQueryDependencyGraph,
+}) => {
+    const apolloClient = useApolloClient()
+    const queryDependents = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (index && !isErrorLike(index)) {
+                return queryDependencyGraph({ ...args, dependentOf: index.id }, apolloClient)
+            }
+
+            throw new Error('unreachable: queryDependents referenced with invalid upload')
+        },
+        [index, queryDependencyGraph, apolloClient]
+    )
+
+    return (
+        <FilteredConnection
+            listComponent="div"
+            listClassName={classNames(styles.grid, 'mb-3')}
+            inputClassName="w-auto"
+            noun="dependent"
+            pluralNoun="dependents"
+            nodeComponent={DependencyOrDependentNode}
+            queryConnection={queryDependents}
+            history={history}
+            location={location}
+            cursorPaging={true}
+            useURLQuery={false}
+            // emptyElement={<EmptyDependents />}
         />
     )
 }

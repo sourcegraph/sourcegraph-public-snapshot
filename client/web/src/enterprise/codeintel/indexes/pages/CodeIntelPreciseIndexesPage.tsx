@@ -19,8 +19,6 @@ import {
     Container,
     ErrorAlert,
     H3,
-    Input,
-    Label,
     Link,
     PageHeader,
     Tooltip,
@@ -39,20 +37,26 @@ import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { ProjectDescription } from '../components/ProjectDescriptionProps'
-import { queryCommitGraph } from '../hooks/queryCommitGraph'
-import { queryPreciseIndexes } from '../hooks/queryPreciseIndexes'
-import { useDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
-import { useDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
-import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
-import { useReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
-import { useReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
+import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
+import { queryPreciseIndexes as defaultQueryPreciseIndexes } from '../hooks/queryPreciseIndexes'
+import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
+import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
+import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
+import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 
+import { EnqueueForm } from '../components/EnqueueForm'
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     now?: () => Date
+    queryCommitGraph?: typeof defaultQueryCommitGraph
+    queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
+    useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
+    useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
+    useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
+    useReindexPreciseIndexes?: typeof defaultUseReindexPreciseIndexes
 }
 
 const filters: FilteredConnectionFilter[] = [
@@ -106,6 +110,12 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     authenticatedUser,
     repo,
     now,
+    queryCommitGraph = defaultQueryCommitGraph,
+    queryPreciseIndexes = defaultQueryPreciseIndexes,
+    useDeletePreciseIndex = defaultUseDeletePreciseIndex,
+    useDeletePreciseIndexes = defaultUseDeletePreciseIndexes,
+    useReindexPreciseIndex = defaultUseReindexPreciseIndex,
+    useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
     telemetryService,
     history,
 }) => {
@@ -213,92 +223,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 </Container>
             )}
 
-            <div className="mb-3">
-                <Button
-                    className="mr-2"
-                    variant="primary"
-                    disabled={selection !== 'all' && selection.size === 0}
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    onClick={async () => {
-                        if (selection === 'all') {
-                            if (args === undefined) {
-                                return
-                            }
-
-                            if (
-                                !confirm(
-                                    `Delete all uploads matching the filter criteria?\n\n${Object.entries(args)
-                                        .map(([key, value]) => `${key}: ${value}`)
-                                        .join('\n')}`
-                                )
-                            ) {
-                                return
-                            }
-
-                            await handleDeletePreciseIndexes({
-                                variables: args,
-                                update: cache => cache.modify({ fields: { node: () => {} } }),
-                            })
-
-                            deletes.next()
-
-                            return
-                        }
-
-                        for (const id of selection) {
-                            await handleDeletePreciseIndex({
-                                variables: { id },
-                                update: cache => cache.modify({ fields: { node: () => {} } }),
-                            })
-                        }
-
-                        deletes.next()
-                    }}
-                >
-                    Delete {selection === 'all' ? totalCount ?? 'all' : selection.size === 0 ? '' : selection.size}
-                </Button>
-
-                <Button
-                    className="mr-2"
-                    variant="primary"
-                    disabled={selection !== 'all' && selection.size === 0}
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    onClick={async () => {
-                        if (selection === 'all') {
-                            if (args === undefined) {
-                                return
-                            }
-
-                            if (
-                                !confirm(
-                                    `Reindex all uploads matching the filter criteria?\n\n${Object.entries(args)
-                                        .map(([key, value]) => `${key}: ${value}`)
-                                        .join('\n')}`
-                                )
-                            ) {
-                                return
-                            }
-
-                            await handleReindexPreciseIndexes({
-                                variables: args,
-                                update: cache => cache.modify({ fields: { node: () => {} } }),
-                            })
-
-                            return
-                        }
-
-                        for (const id of selection) {
-                            await handleReindexPreciseIndex({
-                                variables: { id },
-                                update: cache => cache.modify({ fields: { node: () => {} } }),
-                            })
-                        }
-                    }}
-                >
-                    Reindex {selection === 'all' ? totalCount ?? 'all' : selection.size === 0 ? '' : selection.size}
-                </Button>
-            </div>
-
             {isErrorLike(deleteError) && <ErrorAlert prefix="Error deleting precise index" error={deleteError} />}
             {isErrorLike(deletesError) && <ErrorAlert prefix="Error deleting precise indexes" error={deletesError} />}
             {isErrorLike(reindexError) && (
@@ -316,19 +240,136 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                     <FilteredConnection<PreciseIndexFields, Omit<IndexNodeProps, 'node'>>
                         listComponent="div"
                         inputClassName="ml-2 flex-1"
-                        listClassName={classNames(styles.grid, 'mb-3')}
+                        listClassName="mb-3"
                         noun="precise index"
                         pluralNoun="precise indexes"
                         querySubject={querySubject}
                         nodeComponent={IndexNode}
-                        nodeComponentProps={{ selection, onCheckboxToggle, history }}
+                        nodeComponentProps={{ repo, selection, onCheckboxToggle, history }}
                         headComponent={() => (
-                            <Checkbox
-                                label=""
-                                id="checkAll"
-                                checked={selection === 'all'}
-                                onChange={() => setSelection(selection => (selection === 'all' ? new Set() : 'all'))}
-                            />
+                            <div className={classNames(styles.header, 'px-4 py-3')}>
+                                <div className="px-3">
+                                    <Checkbox
+                                        label=""
+                                        id="checkAll"
+                                        checked={selection === 'all'}
+                                        onChange={() =>
+                                            setSelection(selection => (selection === 'all' ? new Set() : 'all'))
+                                        }
+                                    />
+                                </div>
+
+                                {authenticatedUser?.siteAdmin && (
+                                    <div className="text-right">
+                                        <Button
+                                            className="mr-2"
+                                            variant="danger"
+                                            disabled={selection !== 'all' && selection.size === 0}
+                                            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                            onClick={async () => {
+                                                if (selection === 'all') {
+                                                    if (args === undefined) {
+                                                        return
+                                                    }
+
+                                                    if (
+                                                        !confirm(
+                                                            `Delete all uploads matching the filter criteria?\n\n${Object.entries(
+                                                                args
+                                                            )
+                                                                .map(([key, value]) => `${key}: ${value}`)
+                                                                .join('\n')}`
+                                                        )
+                                                    ) {
+                                                        return
+                                                    }
+
+                                                    await handleDeletePreciseIndexes({
+                                                        variables: args,
+                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
+                                                    })
+
+                                                    deletes.next()
+                                                    return
+                                                }
+
+                                                for (const id of selection) {
+                                                    await handleDeletePreciseIndex({
+                                                        variables: { id },
+                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
+                                                    })
+                                                }
+
+                                                deletes.next()
+                                            }}
+                                        >
+                                            Delete{' '}
+                                            {(selection === 'all' ? totalCount : selection.size) === 0 ? (
+                                                ''
+                                            ) : (
+                                                <>
+                                                    {selection === 'all' ? totalCount : selection.size}{' '}
+                                                    {(selection === 'all' ? totalCount : selection.size) === 1
+                                                        ? 'index'
+                                                        : 'indexes'}
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        <Button
+                                            className="mr-2"
+                                            variant="secondary"
+                                            disabled={selection !== 'all' && selection.size === 0}
+                                            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                            onClick={async () => {
+                                                if (selection === 'all') {
+                                                    if (args === undefined) {
+                                                        return
+                                                    }
+
+                                                    if (
+                                                        !confirm(
+                                                            `Reindex all uploads matching the filter criteria?\n\n${Object.entries(
+                                                                args
+                                                            )
+                                                                .map(([key, value]) => `${key}: ${value}`)
+                                                                .join('\n')}`
+                                                        )
+                                                    ) {
+                                                        return
+                                                    }
+
+                                                    await handleReindexPreciseIndexes({
+                                                        variables: args,
+                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
+                                                    })
+
+                                                    return
+                                                }
+
+                                                for (const id of selection) {
+                                                    await handleReindexPreciseIndex({
+                                                        variables: { id },
+                                                        update: cache => cache.modify({ fields: { node: () => {} } }),
+                                                    })
+                                                }
+                                            }}
+                                        >
+                                            Reindex{' '}
+                                            {(selection === 'all' ? totalCount : selection.size) === 0 ? (
+                                                ''
+                                            ) : (
+                                                <>
+                                                    {selection === 'all' ? totalCount : selection.size}{' '}
+                                                    {(selection === 'all' ? totalCount : selection.size) === 1
+                                                        ? 'index'
+                                                        : 'indexes'}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         )}
                         queryConnection={queryConnection}
                         history={history}
@@ -336,7 +377,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         cursorPaging={true}
                         filters={filters}
                         // emptyElement={<EmptyAutoIndex />}
-                        // updates={deletes}
+                        updates={deletes}
                     />
                 </div>
             </Container>
@@ -346,184 +387,76 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
 interface IndexNodeProps {
     node: PreciseIndexFields
+    repo?: { id: string }
     selection: Set<string> | 'all'
     onCheckboxToggle: (id: string, checked: boolean) => void
-    now?: () => Date
     history: H.History
 }
 
 const IndexNode: FunctionComponent<React.PropsWithChildren<IndexNodeProps>> = ({
     node,
+    repo,
     selection,
     onCheckboxToggle,
-    now,
     history,
 }) => (
     <>
-        <span className={styles.separator} />
-
-        <Checkbox
-            label=""
-            id="disabledFieldsetCheck"
-            disabled={selection === 'all'}
-            checked={selection === 'all' ? true : selection.has(node.id)}
-            onChange={input => onCheckboxToggle(node.id, input.target.checked)}
-        />
-
-        <div
-            className={classNames(styles.information, 'd-flex flex-column')}
-            // TODO - captures child link interactions
-            onClick={() => history.push({ pathname: `./indexes/${node.id}` })}
-        >
-            <div className="m-0">
-                <H3>
-                    {node.projectRoot ? (
-                        <Link to={node.projectRoot.repository.url}>{node.projectRoot.repository.name}</Link>
-                    ) : (
-                        <span>Unknown repository</span>
-                    )}
-                </H3>
-                {node.shouldReindex && (
-                    <Tooltip content="This index has been marked for reindexing.">
-                        <div className={classNames(styles.tag, 'ml-1 rounded')}>(marked for reindexing)</div>
-                    </Tooltip>
-                )}
-            </div>
-
-            <div>
-                <span className="mr-2 d-block d-mdinline-block">
-                    <ProjectDescription index={node} />
-                </span>
-
-                <small className="text-mute">
-                    <PreciseIndexLastUpdated index={node} />
-                </small>
-            </div>
-        </div>
-
-        <span className={classNames(styles.state, 'd-none d-md-inline')}>
-            <div className="d-flex flex-column align-items-center">
-                <CodeIntelStateIcon state={node.state} autoIndexed={!!node.indexingFinishedAt} />
-                <CodeIntelStateLabel
-                    state={node.state}
-                    autoIndexed={!!node.indexingFinishedAt}
-                    placeInQueue={node.placeInQueue}
-                    className="mt-2"
+        <div className={classNames(styles.grid, 'px-4')} onClick={() => history.push(`./indexes/${node.id}`)}>
+            <div className="px-3 py-4" onClick={event => event.stopPropagation()}>
+                <Checkbox
+                    label=""
+                    id="disabledFieldsetCheck"
+                    disabled={selection === 'all'}
+                    checked={selection === 'all' ? true : selection.has(node.id)}
+                    onClick={event => event.stopPropagation()}
+                    onChange={input => onCheckboxToggle(node.id, input.target.checked)}
                 />
             </div>
-        </span>
+
+            <div className={classNames(styles.information, 'd-flex flex-column')}>
+                {!repo && (
+                    <div>
+                        <H3 className="m-0 mb-1">
+                            {node.projectRoot ? (
+                                <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
+                                    {node.projectRoot.repository.name}
+                                </Link>
+                            ) : (
+                                <span>Unknown repository</span>
+                            )}
+                        </H3>
+                    </div>
+                )}
+
+                <div>
+                    <span className="mr-2 d-block d-mdinline-block">
+                        <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
+                    </span>
+
+                    <small className="text-mute">
+                        <PreciseIndexLastUpdated index={node} />{' '}
+                        {node.shouldReindex && (
+                            <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                                <span className={classNames(styles.tag, 'ml-1 rounded')}>
+                                    (replaceable by auto-indexing)
+                                </span>
+                            </Tooltip>
+                        )}
+                    </small>
+                </div>
+            </div>
+
+            <span className={classNames(styles.state, 'd-none d-md-inline')}>
+                <div className="d-flex flex-column align-items-center">
+                    <CodeIntelStateIcon state={node.state} autoIndexed={!!node.indexingFinishedAt} />
+                    <CodeIntelStateLabel
+                        state={node.state}
+                        autoIndexed={!!node.indexingFinishedAt}
+                        placeInQueue={node.placeInQueue}
+                        className="mt-2"
+                    />
+                </div>
+            </span>
+        </div>
     </>
 )
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-enum State {
-    Idle,
-    Queueing,
-    Queued,
-}
-
-interface EnqueueFormProps {
-    repoId: string
-    querySubject: Subject<string>
-}
-
-const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
-    const [revlike, setRevlike] = useState('HEAD')
-    const [state, setState] = useState(() => State.Idle)
-    const [queueResult, setQueueResult] = useState<number>()
-    const [enqueueError, setEnqueueError] = useState<Error>()
-    const { handleEnqueueIndexJob } = useEnqueueIndexJob()
-
-    const enqueue = useCallback(async () => {
-        setState(State.Queueing)
-        setEnqueueError(undefined)
-        setQueueResult(undefined)
-
-        try {
-            const indexes = await handleEnqueueIndexJob({
-                variables: { id: repoId, rev: revlike },
-            }).then(({ data }) => data)
-
-            const queueResultLength = indexes?.queueAutoIndexJobsForRepo.length || 0
-            setQueueResult(queueResultLength)
-            if (queueResultLength > 0) {
-                querySubject.next(indexes?.queueAutoIndexJobsForRepo[0].inputCommit)
-            }
-        } catch (error) {
-            setEnqueueError(error)
-            setQueueResult(undefined)
-        } finally {
-            setState(State.Queued)
-        }
-    }, [repoId, revlike, querySubject, handleEnqueueIndexJob])
-
-    return (
-        <>
-            {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
-            <div className="mb-3">
-                Provide a{' '}
-                <Link
-                    to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    Git revspec
-                </Link>{' '}
-                to enqueue a new auto-indexing job.
-            </div>
-            <div className="form-inline">
-                <Label htmlFor="revlike">Git revspec</Label>
-
-                <Input
-                    id="revlike"
-                    className="ml-2"
-                    value={revlike}
-                    onChange={event => setRevlike(event.target.value)}
-                />
-
-                <Button
-                    type="button"
-                    title="Enqueue thing"
-                    disabled={state === State.Queueing}
-                    className="ml-2"
-                    variant="primary"
-                    onClick={enqueue}
-                >
-                    Enqueue
-                </Button>
-            </div>
-
-            {state === State.Queued &&
-                queueResult !== undefined &&
-                (queueResult > 0 ? (
-                    <Alert className="mt-3 mb-0" variant="success">
-                        {queueResult} auto-indexing jobs enqueued.
-                    </Alert>
-                ) : (
-                    <Alert className="mt-3 mb-0" variant="info">
-                        Failed to enqueue any auto-indexing jobs.
-                        <br />
-                        Check if the auto-index configuration is up-to-date.
-                    </Alert>
-                ))}
-        </>
-    )
-}

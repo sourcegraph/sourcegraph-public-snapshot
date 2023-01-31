@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import React, { FunctionComponent } from 'react'
 
 import { Badge, Code, Link } from '@sourcegraph/wildcard'
 
@@ -6,22 +6,25 @@ import { PreciseIndexFields } from '../../../../graphql-operations'
 
 export interface ProjectDescriptionProps {
     index: PreciseIndexFields
+    onLinkClick?: React.MouseEventHandler
 }
 
-export const ProjectDescription: FunctionComponent<ProjectDescriptionProps> = ({ index }) => (
+export const ProjectDescription: FunctionComponent<ProjectDescriptionProps> = ({ index, onLinkClick }) => (
     <>
-        Directory <DirectoryDescription index={index} /> indexed at commit <CommitDescription index={index} /> by{' '}
-        <IndexerDescription index={index} />
+        Directory <DirectoryDescription index={index} onLinkClick={onLinkClick} /> indexed at commit{' '}
+        <CommitDescription index={index} onLinkClick={onLinkClick} /> by{' '}
+        <IndexerDescription index={index} onLinkClick={onLinkClick} />
     </>
 )
 
 interface DirectoryDescriptionProps {
     index: PreciseIndexFields
+    onLinkClick?: React.MouseEventHandler
 }
 
-const DirectoryDescription: FunctionComponent<DirectoryDescriptionProps> = ({ index }) =>
+const DirectoryDescription: FunctionComponent<DirectoryDescriptionProps> = ({ index, onLinkClick }) =>
     index.projectRoot ? (
-        <Link to={index.projectRoot.url}>
+        <Link to={index.projectRoot.url} onClick={onLinkClick}>
             <strong>{index.projectRoot.path || '/'}</strong>
         </Link>
     ) : (
@@ -30,13 +33,14 @@ const DirectoryDescription: FunctionComponent<DirectoryDescriptionProps> = ({ in
 
 interface CommitDescriptionProps {
     index: PreciseIndexFields
+    onLinkClick?: React.MouseEventHandler
 }
 
-const CommitDescription: FunctionComponent<CommitDescriptionProps> = ({ index }) => (
+const CommitDescription: FunctionComponent<CommitDescriptionProps> = ({ index, onLinkClick }) => (
     <>
         <Code>
             {index.projectRoot ? (
-                <Link to={index.projectRoot.commit.url}>
+                <Link to={index.projectRoot.commit.url} onClick={onLinkClick}>
                     <Code>{index.projectRoot.commit.abbreviatedOID}</Code>
                 </Link>
             ) : (
@@ -63,15 +67,21 @@ const CommitDescription: FunctionComponent<CommitDescriptionProps> = ({ index })
 
 interface IndexerDescriptionProps {
     index: PreciseIndexFields
+    onLinkClick?: React.MouseEventHandler
 }
 
-const IndexerDescription: FunctionComponent<IndexerDescriptionProps> = ({ index }) => (
+const IndexerDescription: FunctionComponent<IndexerDescriptionProps> = ({ index, onLinkClick }) => (
     <span>
-        {index.indexer &&
-            (index.indexer.url === '' ? (
-                <>{index.indexer.name}</>
+        {index.indexer ? (
+            index.indexer.url ? (
+                <Link to={index.indexer.url} onClick={onLinkClick}>
+                    {index.indexer.name}
+                </Link>
             ) : (
-                <Link to={index.indexer.url}>{index.indexer.name}</Link>
-            ))}
+                <>{index.indexer.name}</>
+            )
+        ) : (
+            'an unknown indexer'
+        )}
     </span>
 )
