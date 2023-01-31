@@ -40,7 +40,7 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "horse"})
 	require.NoError(t, err)
 
-	// create repos
+	// Create repos.
 	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
 	err = db.Repos().Create(ctx, &repo1)
 	require.NoError(t, err)
@@ -67,11 +67,11 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	// Now let's run cleaner function and preserve a history of last 2 items per
 	// user/repo. Queued and processing items aren't considered to be history. We
 	// should end up with 1 deleted job per repo/user which gives us a total of 4
-	// deleted jobs (all "completed" jobs, effectively).
+	// deleted jobs (all "errored" jobs, effectively, as we are deleting the oldest ones first).
 	cleanedJobsNumber, err = cleanJobs(ctx, db)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), cleanedJobsNumber)
-	assertThereAreNoJobsWithState(t, ctx, store, "completed")
+	assertThereAreNoJobsWithState(t, ctx, store, "errored")
 
 	// Now let's make the history even shorter.
 	historySize = 0
@@ -80,7 +80,7 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(8), cleanedJobsNumber)
 	assertThereAreNoJobsWithState(t, ctx, store, "failed")
-	assertThereAreNoJobsWithState(t, ctx, store, "errored")
+	assertThereAreNoJobsWithState(t, ctx, store, "completed")
 
 	// This way we should only have "queued" and "processing" jobs, let's check the
 	// number, we should have 8 now.
