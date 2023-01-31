@@ -42,7 +42,7 @@ Below are the supported methods to deploy Sourcegraph on Kubernetes:
 Both paths require extensive Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
 
 <div class="getting-started">
-  <a class="btn btn-secondary text-center" href="kubernetes/kustomize/index"><span>Kustomize</span></a>
+  <a class="btn btn-secondary text-center" href="kubernetes/index"><span>Kustomize</span></a>
   <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
 </div>
 
@@ -87,7 +87,7 @@ For Enterprises looking for a self-hosted solution:
 
 For large Enterprises that require a multi-node, self-hosted solution
 
-  - [Kubernetes with Kustomize](kubernetes/kustomize/index.md) - A multi-node deployment option using Kubernetes and Kustomize
+  - [Kubernetes with Kustomize](kubernetes/index.md) - A multi-node deployment option using Kubernetes and Kustomize
   - [Kubernetes with Helm](kubernetes/helm.md) - A multi-node deployment option using Kubernetes and Helm
 
 We strongly recommended you to contact us at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to learn more about the technical complexities involved to make sure Kubernetes is the best option for you and your teams.
