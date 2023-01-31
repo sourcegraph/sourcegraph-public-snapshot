@@ -137,7 +137,7 @@ func run(
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
-			obctx := observation.ScopedContext("", service.Name(), "", obctx)
+			obctx := observation.ContextWithLogger(log.Scoped(service.Name(), service.Name()), obctx)
 			err := service.Start(ctx, obctx, allReadyWG.Done, serviceConfig)
 			if err != nil {
 				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
