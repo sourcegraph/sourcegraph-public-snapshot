@@ -37,21 +37,17 @@ export interface JsContextCurrentUser {
     TosAccepted: boolean
     Searchable: boolean
     Organizations: {
-        ID: number
+        ID: string
         Name: string
         DisplayName: string
-        CreatedAt: string
-        UpdatedAt: string
+        URL: string
+        SettingsURL: string
     }[]
     CanSignOut: boolean
     Emails: {
-        UserID: number
         Email: string
-        CreatedAt: string
-        VerificationCode: string
-        VerifiedAt: string
-        LastVerificationSentAt: string
-        Primary: boolean
+        IsPrimary: boolean
+        Verified: boolean
     }[]
     LatestSettings: {
         ID: number

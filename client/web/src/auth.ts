@@ -77,11 +77,11 @@ function jsContextCurrentUserToAuthenticatedUser(user: JsContextCurrentUser): Au
             __typename: 'OrgConnection',
             nodes: user.Organizations.map(org => ({
                 __typename: 'Org',
-                id: String(org.ID),
+                id: org.ID,
                 name: org.Name,
                 displayName: org.DisplayName,
-                url: `/organizations/${org.Name}`,
-                settingsURL: `/organizations/${org.Name}/settings`,
+                url: org.URL,
+                settingsURL: org.SettingsURL,
             })),
         },
         session: {
@@ -92,8 +92,8 @@ function jsContextCurrentUserToAuthenticatedUser(user: JsContextCurrentUser): Au
         searchable: user.Searchable,
         emails: user.Emails.map(emailItem => ({
             email: emailItem.Email,
-            verified: Boolean(emailItem.VerifiedAt),
-            isPrimary: emailItem.Primary,
+            verified: emailItem.Verified,
+            isPrimary: emailItem.IsPrimary,
         })),
         latestSettings: {
             id: user.LatestSettings.ID,

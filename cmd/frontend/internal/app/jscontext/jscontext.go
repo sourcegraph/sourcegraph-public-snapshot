@@ -12,6 +12,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -62,8 +63,13 @@ type UserOrganization struct {
 	ID          graphql.ID
 	Name        string
 	DisplayName *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	URL         string
+	SettingsURL *string
+}
+type UserEmail struct {
+	Email     string
+	IsPrimary bool
+	Verified  bool
 }
 
 type CurrentUser struct {
@@ -82,7 +88,7 @@ type CurrentUser struct {
 
 	Organizations  []*UserOrganization
 	CanSignOut     *bool
-	Emails         []*database.UserEmail
+	Emails         []UserEmail
 	LatestSettings *UserLatestSettings
 }
 
@@ -377,18 +383,20 @@ func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*U
 	}
 	userOrganizations := make([]*UserOrganization, 0, len(orgs))
 	for _, org := range orgs {
-		userOrganizations = append(userOrganizations, convertOrgToUserOrganization(org))
+		userOrganizations = append(userOrganizations, convertOrgToUserOrganization(db, org))
 	}
 	return userOrganizations
 }
 
-func convertOrgToUserOrganization(org *types.Org) *UserOrganization {
+func convertOrgToUserOrganization(db database.DB, org *types.Org) *UserOrganization {
+	orgResolver := graphqlbackend.NewOrg(db, org)
+
 	return &UserOrganization{
-		ID:          relay.MarshalID("Org", org.ID),
-		Name:        org.Name,
-		DisplayName: org.DisplayName,
-		CreatedAt:   org.CreatedAt,
-		UpdatedAt:   org.UpdatedAt,
+		ID:          orgResolver.ID(),
+		Name:        orgResolver.Name(),
+		DisplayName: orgResolver.DisplayName(),
+		URL:         orgResolver.URL(),
+		SettingsURL: orgResolver.SettingsURL(),
 	}
 }
 
@@ -415,19 +423,25 @@ func resolveUserCanSignOut(ctx context.Context, user *types.User) *bool {
 	return &canSignOut
 }
 
-func resolveUserEmails(ctx context.Context, user *types.User, db database.DB) []*database.UserEmail {
-	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
-	// emails.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
-		return nil
-	}
+func resolveUserEmails(ctx context.Context, user *types.User, db database.DB) []UserEmail {
+	userResolver := graphqlbackend.NewUserResolver(db, user)
+	emailResolvers, err := userResolver.Emails(ctx)
 
-	userEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: user.ID,
-	})
 	if err != nil {
 		return nil
 	}
+
+	userEmails := make([]UserEmail, 0, len(emailResolvers))
+
+	for _, emailResolver := range emailResolvers {
+		userEmail := UserEmail{
+			Email:     emailResolver.Email(),
+			IsPrimary: emailResolver.IsPrimary(),
+			Verified:  emailResolver.Verified(),
+		}
+		userEmails = append(userEmails, userEmail)
+	}
+
 	return userEmails
 }
 
