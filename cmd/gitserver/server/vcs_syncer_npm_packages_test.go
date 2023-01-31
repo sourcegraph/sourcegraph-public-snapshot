@@ -259,8 +259,8 @@ func TestDecompressTgz(t *testing.T) {
 			dir := t.TempDir()
 
 			var fileInfos []fileInfo
-			for _, path := range testData.paths {
-				fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
+			for _, testDataPath := range testData.paths {
+				fileInfos = append(fileInfos, fileInfo{path: testDataPath, contents: []byte("x")})
 			}
 
 			tgz := bytes.NewReader(createTgz(t, fileInfos))

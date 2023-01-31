@@ -312,8 +312,8 @@ func validateExecutorSecret(secret *database.ExecutorSecret, value string) error
 		if dac.CredsStore != "" {
 			return errors.New("cannot use credential stores in docker auth config set via secrets")
 		}
-		for key, auth := range dac.Auths {
-			if !bytes.Contains(auth.Auth, []byte(":")) {
+		for key, dacAuth := range dac.Auths {
+			if !bytes.Contains(dacAuth.Auth, []byte(":")) {
 				return errors.Newf("invalid credential in auths section for %q format has to be base64(username:password)", key)
 			}
 		}

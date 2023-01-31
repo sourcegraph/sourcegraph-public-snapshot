@@ -178,10 +178,10 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 				fileNames = append(fileNames, file.NewName)
 
-				fs := file.Stat()
-				stat.Added += fs.Added
-				stat.Changed += fs.Changed
-				stat.Deleted += fs.Deleted
+				fileStat := file.Stat()
+				stat.Added += fileStat.Added
+				stat.Changed += fileStat.Changed
+				stat.Deleted += fileStat.Deleted
 			}
 			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
 				t.Fatal(diff)

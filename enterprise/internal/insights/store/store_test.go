@@ -66,7 +66,7 @@ SELECT time,
 		t.Fatal(err)
 	}
 
-	time := func(s string) *time.Time {
+	parseTime := func(s string) *time.Time {
 		v, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			t.Fatal(err)
@@ -87,8 +87,8 @@ SELECT time,
 	t.Run("subset of data", func(t *testing.T) {
 		// Confirm we can get a subset of data points.
 		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{
-			From: time("2020-03-01T00:00:00Z"),
-			To:   time("2020-06-01T00:00:00Z"),
+			From: parseTime("2020-03-01T00:00:00Z"),
+			To:   parseTime("2020-06-01T00:00:00Z"),
 		})
 		if err != nil {
 			t.Fatal(err)

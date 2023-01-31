@@ -253,11 +253,11 @@ func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, err
 		return false, err
 	}
 	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
-	output, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
+	outputStr, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
 	if err != nil {
 		return false, err
 	}
-	return len(output) > 0, err
+	return len(outputStr) > 0, err
 
 }
 

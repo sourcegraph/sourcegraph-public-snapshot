@@ -391,7 +391,7 @@ func TestHeartbeat(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	executor := types.Executor{
+	exec := types.Executor{
 		Hostname:        "test-hostname",
 		QueueName:       "test-queue-name",
 		OS:              "test-os",
@@ -405,7 +405,7 @@ func TestHeartbeat(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, canceled, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
+	if knownIDs, canceled, err := handler.heartbeat(context.Background(), exec, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
@@ -415,7 +415,7 @@ func TestHeartbeat(t *testing.T) {
 
 	if callCount := len(executorStore.UpsertHeartbeatFunc.History()); callCount != 1 {
 		t.Errorf("unexpected heartbeat upsert count. want=%d have=%d", 1, callCount)
-	} else if name := executorStore.UpsertHeartbeatFunc.History()[0].Arg1; name != executor {
+	} else if name := executorStore.UpsertHeartbeatFunc.History()[0].Arg1; name != exec {
 		t.Errorf("unexpected heartbeat name. want=%q have=%q", "deadbeef", name)
 	}
 }
