@@ -1117,6 +1117,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains.file(go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
 				name:   `repo contains file but not content`,
 				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
 				counts: counts{Repo: 1},
@@ -1219,6 +1224,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `commit results with repo filter`,
 				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
 				counts: counts{Commit: 2},
+			},
+			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains(file:go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo contains content using deprecated syntax`,
+				query:  `repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,

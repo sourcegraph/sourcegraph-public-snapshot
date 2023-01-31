@@ -16,13 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	// ReasonManualRepoSync and ReasonManualUserSync are copied from permssync
-	// package to avoid import cycles.
-	ReasonManualRepoSync = "REASON_MANUAL_REPO_SYNC"
-	ReasonManualUserSync = "REASON_MANUAL_USER_SYNC"
-)
-
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

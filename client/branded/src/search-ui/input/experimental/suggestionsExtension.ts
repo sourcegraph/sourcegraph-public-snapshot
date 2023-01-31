@@ -11,8 +11,9 @@ import {
     Transaction,
 } from '@codemirror/state'
 import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
+
+import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
 
 import { Suggestions } from './Suggestions'
 
@@ -51,41 +52,62 @@ export interface SuggestionResult {
 
 export type CustomRenderer = (option: Option) => React.ReactElement
 
-export interface Command {
+export interface Option {
+    /**
+     * The label the input is matched against and shown in the UI.
+     */
+    label: string
+    /**
+     * What to do when this option is applied (via Enter)
+     */
+    action: Action
+    /**
+     * Options can have perform an alternative action when applied via
+     * Shift+Enter.
+     */
+    alternativeAction?: Action
+    /**
+     * A short description of the option, shown next to the label.
+     */
+    description?: string
+    /**
+     * The SVG path of the icon to use for this option.
+     */
+    icon?: string
+    /**
+     * If present the provided component will be used to render the label of the
+     * option.
+     */
+    render?: CustomRenderer
+    /**
+     * If present this component is rendered as footer.
+     */
+    info?: CustomRenderer
+    /**
+     * A set of character indexes. If provided the characters of at these
+     * positions in the label will be highlighted as matches.
+     */
+    matches?: Set<number>
+}
+
+export interface CommandAction {
     type: 'command'
-    value: string
     apply: (view: EditorView) => void
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
-    note?: string
+    name?: string
 }
-export interface Target {
-    type: 'target'
-    value: string
+export interface GoToAction {
+    type: 'goto'
     url: string
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
-    note?: string
+    name?: string
 }
-export interface Completion {
+export interface CompletionAction {
     type: 'completion'
     from: number
+    name?: string
     to?: number
-    value: string
     insertValue?: string
-    matches?: Set<number>
-    // svg path
-    icon?: string
-    render?: CustomRenderer
-    description?: string
 }
-export type Option = Command | Target | Completion
+export type Action = CommandAction | GoToAction | CompletionAction
 
 export interface Group {
     title: string
@@ -97,7 +119,7 @@ class SuggestionView {
     private root: Root
 
     private onSelect = (option: Option): void => {
-        applyOption(this.view, option)
+        applyAction(this.view, option.action, option)
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
@@ -394,7 +416,7 @@ function isUserInput(transaction: Transaction): boolean {
 
 interface Config {
     id: string
-    history?: History
+    historyOrNavigate?: HistoryOrNavigate
 }
 
 const suggestionsConfig = Facet.define<Config, Config>({
@@ -452,21 +474,21 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     }
 }
 
-function applyOption(view: EditorView, option: Option): void {
-    switch (option.type) {
+function applyAction(view: EditorView, action: Action, option: Option): void {
+    switch (action.type) {
         case 'completion':
             {
-                const text = option.insertValue ?? option.value
+                const text = action.insertValue ?? option.label
                 view.dispatch({
                     ...view.state.changeByRange(range => {
                         if (range === view.state.selection.main) {
                             return {
                                 changes: {
-                                    from: option.from,
-                                    to: option.to ?? view.state.selection.main.head,
+                                    from: action.from,
+                                    to: action.to ?? view.state.selection.main.head,
                                     insert: text,
                                 },
-                                range: EditorSelection.cursor(option.from + text.length),
+                                range: EditorSelection.cursor(action.from + text.length),
                             }
                         }
                         return { range }
@@ -475,14 +497,13 @@ function applyOption(view: EditorView, option: Option): void {
             }
             break
         case 'command':
-            option.apply(view)
+            action.apply(view)
             break
-        case 'target':
+        case 'goto':
             {
-                const history = view.state.facet(suggestionsConfig).history
-
-                if (history) {
-                    history.push(option.url)
+                const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
+                if (historyOrNavigate) {
+                    compatNavigate(historyOrNavigate, action.url)
                 }
             }
             break
@@ -530,19 +551,16 @@ export const suggestionSource = Facet.define<Source, Source>({
                         if (!state.open || !option) {
                             return false
                         }
-                        applyOption(view, option)
+                        applyAction(view, option.action, option)
                         return true
                     },
-                },
-                {
-                    key: 'Tab',
-                    run(view) {
+                    shift(view) {
                         const state = view.state.field(suggestionsStateField)
                         const option = state.result.at(state.selectedOption)
-                        if (!state.open || !option) {
+                        if (!state.open || !option || !option.alternativeAction) {
                             return false
                         }
-                        applyOption(view, option)
+                        applyAction(view, option.alternativeAction, option)
                         return true
                     },
                 },
@@ -561,8 +579,13 @@ export const suggestionSource = Facet.define<Source, Source>({
     ],
 })
 
-export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [
-    suggestionsConfig.of({ history, id }),
+export const suggestions = (
+    id: string,
+    parent: HTMLDivElement,
+    source: Source,
+    historyOrNavigate: HistoryOrNavigate
+): Extension => [
+    suggestionsConfig.of({ historyOrNavigate, id }),
     suggestionSource.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]

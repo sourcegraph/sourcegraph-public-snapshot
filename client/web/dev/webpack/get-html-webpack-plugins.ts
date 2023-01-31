@@ -7,6 +7,7 @@ import { WebpackPluginInstance } from 'webpack'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
+import { SourcegraphContext } from '../../src/jscontext'
 import { createJsContext, ENVIRONMENT_CONFIG } from '../utils'
 
 const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = ENVIRONMENT_CONFIG
@@ -24,6 +25,8 @@ export interface WebpackManifest {
     'opentelemetry.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
+    /** The node env value production | development*/
+    environment?: 'development' | 'production'
 }
 
 /**
@@ -33,14 +36,17 @@ export interface WebpackManifest {
  * Note: This page should be kept as close as possible to `app.html` to avoid any inconsistencies
  * between our development server and the actual production server.
  */
-export const getHTMLPage = ({
-    'app.js': appBundle,
-    'app.css': cssBundle,
-    'runtime.js': runtimeBundle,
-    'react.js': reactBundle,
-    'opentelemetry.js': oTelBundle,
-    isModule,
-}: WebpackManifest): string => `
+export const getHTMLPage = (
+    {
+        'app.js': appBundle,
+        'app.css': cssBundle,
+        'runtime.js': runtimeBundle,
+        'react.js': reactBundle,
+        'opentelemetry.js': oTelBundle,
+        isModule,
+    }: WebpackManifest,
+    jsContext?: SourcegraphContext
+): string => `
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -64,7 +70,7 @@ export const getHTMLPage = ({
 
             // Required mock of the JS context object.
             window.context = ${JSON.stringify(
-                createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
+                jsContext ?? createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
             )}
         </script>
 

@@ -1,10 +1,15 @@
 package basestore
 
 import (
-	"database/sql"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type Rows interface {
+	Next() bool
+	Close() error
+	Err() error
+	Scan(...interface{}) error
+}
 
 // CloseRows closes the given rows object. The resulting error is a multierror
 // containing the error parameter along with any errors that occur during scanning
@@ -25,6 +30,6 @@ import (
 // ensure that the rows are always properly handled.
 //
 //	things, err := ScanThings(store.Query(ctx, query))
-func CloseRows(rows *sql.Rows, err error) error {
+func CloseRows(rows Rows, err error) error {
 	return errors.Append(err, rows.Close(), rows.Err())
 }

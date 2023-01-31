@@ -865,3 +865,7 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	}
 	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }
+
+func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	return &teamConnectionResolver{}, nil
+}

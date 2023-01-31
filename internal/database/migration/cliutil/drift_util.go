@@ -374,9 +374,9 @@ func makeSearchURL(schemaName, version string, searchTerms ...string) string {
 	qs.Add("patternType", "regexp")
 	qs.Add("q", strings.Join(queryParts, " "))
 
-	url, _ := url.Parse("https://sourcegraph.com/search")
-	url.RawQuery = qs.Encode()
-	return url.String()
+	searchUrl, _ := url.Parse("https://sourcegraph.com/search")
+	searchUrl.RawQuery = qs.Encode()
+	return searchUrl.String()
 }
 
 // quoteTerm converts the given literal search term into a regular expression.

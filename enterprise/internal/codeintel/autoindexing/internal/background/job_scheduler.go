@@ -51,7 +51,7 @@ func NewScheduler(
 		indexEnqueuer: indexEnqueuer,
 	}
 
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_autoindexing_background",
@@ -70,7 +70,7 @@ func NewScheduler(
 		observationCtx.Operation(observation.Op{
 			Name:              "codeintel.indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.As(err, &inference.LimitError{}) {
 					return observation.EmitForDefault.Without(observation.EmitForMetrics)

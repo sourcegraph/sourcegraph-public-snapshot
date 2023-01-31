@@ -132,8 +132,8 @@ func (cl Changelog) ToSlackMessage(cli *SlackClient, bucket *storage.BucketHandl
 	}
 
 	section := func(name string, cs []Change) ([]slack.Block, error) {
-		var text bytes.Buffer
-		fmt.Fprintf(&text, "*%s*\n\n", name)
+		var resultText bytes.Buffer
+		fmt.Fprintf(&resultText, "*%s*\n\n", name)
 
 		avatarURLs := map[string]struct{}{}
 		for _, c := range cs {
@@ -151,12 +151,12 @@ func (cl Changelog) ToSlackMessage(cli *SlackClient, bucket *storage.BucketHandl
 				avatarURLs[gravatarURL(c.GitCommit.Author.Email)] = struct{}{}
 			}
 
-			fmt.Fprintln(&text, c.SlackText(slackUserID))
+			fmt.Fprintln(&resultText, c.SlackText(slackUserID))
 		}
 
 		block := &slack.SectionBlock{
 			Type: slack.MBTSection,
-			Text: &slack.TextBlockObject{Type: "mrkdwn", Text: text.String()},
+			Text: &slack.TextBlockObject{Type: "mrkdwn", Text: resultText.String()},
 		}
 
 		if len(avatarURLs) > 0 {

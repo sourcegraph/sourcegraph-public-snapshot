@@ -863,11 +863,6 @@ type OrgMembership struct {
 	UpdatedAt time.Time
 }
 
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
-}
-
 type PhabricatorRepo struct {
 	ID       int32
 	Name     api.RepoName
@@ -1793,4 +1788,22 @@ type SlowRequest struct {
 	Errors    []string       `json:"errors"`
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

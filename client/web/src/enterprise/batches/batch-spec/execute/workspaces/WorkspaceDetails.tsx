@@ -13,11 +13,11 @@ import {
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Badge,
@@ -49,6 +49,7 @@ import {
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import { FileDiffNode, FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
@@ -60,6 +61,8 @@ import {
     Scalars,
     VisibleBatchSpecWorkspaceFields,
     FileDiffFields,
+    BatchSpecWorkspaceStepResult,
+    BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -68,6 +71,7 @@ import {
     useBatchSpecWorkspace,
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 import { DiagnosticsModal } from '../DiagnosticsModal'
 
@@ -483,6 +487,92 @@ interface WorkspaceStepProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
+export const OUTPUT_LINES_PER_PAGE = 500
+
+export const WorkspaceStepOutputLines: React.FunctionComponent<
+    React.PropsWithChildren<Pick<WorkspaceStepProps, 'step' | 'workspaceID'>>
+> = ({ step, workspaceID }) => {
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+        BatchSpecWorkspaceStepResult,
+        BatchSpecWorkspaceStepVariables,
+        string
+    >({
+        query: BATCH_SPEC_WORKSPACE_STEP,
+        variables: {
+            workspaceID,
+            stepIndex: step.number,
+            first: OUTPUT_LINES_PER_PAGE,
+            after: null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            if (data.node?.__typename !== 'VisibleBatchSpecWorkspace' || data.node.step === null) {
+                throw new Error('unable to fetch workspace step')
+            }
+
+            return data.node.step.outputLines
+        },
+    })
+
+    const additionalOutputLines = useMemo(() => {
+        const lines = []
+
+        if (connection) {
+            if (connection.nodes.length === 0) {
+                lines.push('stdout: This command did not produce any output')
+            }
+
+            if (step.exitCode !== null && step.exitCode !== 0) {
+                lines.push(`stderr: Command failed with status ${step.exitCode}`)
+            }
+
+            if (step.exitCode === 0) {
+                lines.push(`stdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
+            }
+        }
+
+        return lines
+    }, [connection, step.exitCode])
+
+    if (loading && !connection) {
+        return (
+            <div className="d-flex justify-content-center mt-4">
+                <LoadingSpinner />
+            </div>
+        )
+    }
+
+    if (error || !connection || connection.error) {
+        return (
+            <Text className="text-muted">
+                <span className="text-muted">Unable to fetch output logs for step ${step.number}.</span>
+            </Text>
+        )
+    }
+
+    return (
+        <div className={styles.stepOutputContainer}>
+            {connection.nodes.length > 0 && <LogOutput text={connection.nodes.join('\n')} />}
+            {hasNextPage && (
+                <>
+                    {loading ? (
+                        <LoadingSpinner className="bg-transparent ml-3" />
+                    ) : (
+                        <Button size="sm" className={styles.stepOutputShowMoreBtn} onClick={fetchMore}>
+                            Load more ...
+                        </Button>
+                    )}
+                </>
+            )}
+            <LogOutput text={additionalOutputLines.join('\n')} />
+        </div>
+    )
+}
+
 const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
     workspaceID,
@@ -490,33 +580,6 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
-
-    const outputLines = useMemo(() => {
-        const outputLines = cloneDeep(step.outputLines)
-        if (outputLines !== null) {
-            if (
-                outputLines.every(
-                    line =>
-                        line
-                            .replaceAll(/'^std(out|err):'/g, '')
-                            .replaceAll('\n', '')
-                            .trim() === ''
-                )
-            ) {
-                outputLines.push('stdout: This command did not produce any output')
-            }
-
-            if (step.exitCode === 0) {
-                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
-            }
-
-            if (step.exitCode !== null && step.exitCode !== 0) {
-                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
-            }
-        }
-
-        return outputLines
-    }, [step.exitCode, step.outputLines])
     const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
@@ -578,10 +641,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 </TabList>
                                 <TabPanels>
                                     <TabPanel className="pt-2" key="logs">
-                                        {!step.startedAt && (
+                                        {step.startedAt ? (
+                                            <WorkspaceStepOutputLines step={step} workspaceID={workspaceID} />
+                                        ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
                                         )}
-                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="output-variables">
                                         {!step.startedAt && (
