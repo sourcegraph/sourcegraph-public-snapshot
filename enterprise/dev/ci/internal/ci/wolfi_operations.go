@@ -195,14 +195,13 @@ func buildCandidateWolfiDockerImage(app, version, tag string, uploadSourcemaps b
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			// TODO: Re-enable when we're happy this is building as expected
-			// bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
 			// Retry in case of flakes when pushing
 			bk.AutomaticRetryStatus(3, 10),
 			// Retry in case of flakes when pushing
 			bk.AutomaticRetryStatus(3, 222),
 		)
 
-		pipeline.AddStep(fmt.Sprintf(":octopus: :docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":octopus: :docker: :construction: Build Wolfi-based %s", app), cmds...)
 	}
 }
