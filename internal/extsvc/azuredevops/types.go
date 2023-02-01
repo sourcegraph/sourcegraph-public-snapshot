@@ -207,9 +207,11 @@ type Project struct {
 }
 
 type Profile struct {
-	ID           string `json:"id"`
-	DisplayName  string `json:"displayName"`
-	EmailAddress string `json:"emailAddress"`
+	ID           string    `json:"id"`
+	DisplayName  string    `json:"displayName"`
+	EmailAddress string    `json:"emailAddress"`
+	LastChanged  time.Time `json:"timestamp"`
+	PublicAlias  string    `json:"publicAlias"`
 }
 
 type httpError struct {
