@@ -114,7 +114,14 @@ FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
 
-const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+const visibleAtTipSubselectQuery = `
+SELECT 1
+FROM lsif_uploads_visible_at_tip uvt
+WHERE
+	uvt.repository_id = u.repository_id AND
+	uvt.upload_id = u.id AND
+	uvt.is_default_branch
+`
 
 const deletedUploadsFromAuditLogsCTEQuery = `
 SELECT

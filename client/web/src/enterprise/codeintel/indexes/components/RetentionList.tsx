@@ -105,16 +105,27 @@ const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }
                         .
                     </small>
                 </div>
-            ) : node.configurationPolicy ? (
-                // TODO - display protecting commits
-                <Link to={`../configuration/${node.configurationPolicy.id}`} className="p-0">
-                    <H3 className="m-0 d-block d-md-inline">{node.configurationPolicy.name}</H3>
-                </Link>
             ) : (
                 <>
-                    <p>matchType: {node.matchType}</p>
-                    <p>protectingCommits: {node.protectingCommits.join(',')}</p>
-                    <p>matches:{node.matches}</p>
+                    {node.configurationPolicy ? (
+                        // TODO - display protecting commits
+                        <Link to={`../configuration/${node.configurationPolicy.id}`} className="p-0">
+                            <H3 className="m-0 d-block d-md-inline">{node.configurationPolicy.name}</H3>
+                        </Link>
+                    ) : (
+                        <>
+                            <H3 className="m-0 d-block d-md-inline">
+                                Tip of default branch retention policy (implicit)
+                            </H3>
+
+                            <small className="d-block">
+                                This upload can answer queries for the tip of the default branch.
+                            </small>
+                        </>
+                    )}
+
+                    {node.protectingCommits.length > 0 &&
+                        node.protectingCommits.map(commit => <span className="d-inline">!!!{commit}!!!</span>)}
                 </>
             )}
         </td>
