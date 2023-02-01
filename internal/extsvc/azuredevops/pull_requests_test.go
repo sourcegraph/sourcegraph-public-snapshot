@@ -11,10 +11,10 @@ func TestClient_CreatePullRequest(t *testing.T) {
 	cli, save := NewTestClient(t, "CreatePullRequest", *update)
 	t.Cleanup(save)
 
-	args := CreatePullRequestArgs{
-		Org:     "sgtestazure",
-		Project: "sgtestazure",
-		RepoID:  "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+	args := OrgProjectRepoArgs{
+		Org:          "sgtestazure",
+		Project:      "sgtestazure",
+		RepoNameOrID: "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
 	}
 
 	input := CreatePullRequestInput{
@@ -37,14 +37,14 @@ func TestClient_AbandonPullRequest(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "2"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "2",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 
-	resp, err := cli.AbandonPullRequest(context.Background(), prID, args)
+	resp, err := cli.AbandonPullRequest(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,14 +57,14 @@ func TestClient_GetPullRequest(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "2"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "2",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 
-	resp, err := cli.GetPullRequest(context.Background(), prID, args)
+	resp, err := cli.GetPullRequest(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,14 +77,14 @@ func TestClient_GetPullRequestStatuses(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "2"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "2",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 
-	resp, err := cli.GetPullRequestStatuses(context.Background(), prID, args)
+	resp, err := cli.GetPullRequestStatuses(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,20 +97,20 @@ func TestClient_UpdatePullRequest(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "5"
 	title := "new title"
 	description := "new description"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "5",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 	input := PullRequestUpdateInput{
 		Title:       &title,
 		Description: &description,
 	}
 
-	resp, err := cli.UpdatePullRequest(context.Background(), prID, args, input)
+	resp, err := cli.UpdatePullRequest(context.Background(), args, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,11 +123,11 @@ func TestClient_CreatePullRequestCommentThread(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "5"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "5",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 	input := PullRequestCommentInput{
 		Comments: []PullRequestCommentForInput{{
@@ -137,7 +137,7 @@ func TestClient_CreatePullRequestCommentThread(t *testing.T) {
 		}},
 	}
 
-	resp, err := cli.CreatePullRequestCommentThread(context.Background(), prID, args, input)
+	resp, err := cli.CreatePullRequestCommentThread(context.Background(), args, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,17 +150,17 @@ func TestClient_CompletePullRequest(t *testing.T) {
 	t.Cleanup(save)
 
 	// When updating this test make sure you point these args to an active PR.
-	prID := "7"
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	args := PullRequestCommonArgs{
+		PullRequestID: "7",
+		Org:           "sgtestazure",
+		Project:       "sgtestazure",
+		RepoNameOrID:  "sgtestazure3",
 	}
 	input := PullRequestCommitRef{
 		CommitID: "7867eee4f671d69f9a9be0fcacb6a7af764ec962",
 	}
 
-	resp, err := cli.CompletePullRequest(context.Background(), prID, args, input)
+	resp, err := cli.CompletePullRequest(context.Background(), args, input)
 	if err != nil {
 		t.Fatal(err)
 	}

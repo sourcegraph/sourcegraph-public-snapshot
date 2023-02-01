@@ -68,6 +68,13 @@ type Reviewer struct {
 	ID string `json:"id"`
 }
 
+type PullRequestCommonArgs struct {
+	PullRequestID string
+	Org           string
+	Project       string
+	RepoNameOrID  string
+}
+
 type PullRequest struct {
 	Repository            Repository           `json:"repository"`
 	ID                    int                  `json:"pullRequestId"`
