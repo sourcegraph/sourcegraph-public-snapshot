@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -11,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -1036,6 +1039,184 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 	}
 }
 
+func TestHandler_HandleHeartbeat(t *testing.T) {
+	tests := []struct {
+		name                 string
+		body                 string
+		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord])
+		expectedStatusCode   int
+		expectedResponseBody string
+		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord])
+	}{
+		{
+			name: "Heartbeat",
+			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: "[42,7]",
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueName:       "test",
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, store.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name: "V2 Heartbeat",
+			body: `{"version":"V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":[42,7],"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+		{
+			name:                 "Invalid worker hostname",
+			body:                 `{"executorName": "", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name: "Failed to upsert heartbeat",
+			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(errors.New("failed"))
+				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `[42,7]`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+		{
+			name: "Failed to heartbeat",
+			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"dbworkerstore.UpsertHeartbeat: failed"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+		{
+			name: "Has cancelled ids",
+			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `null`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+		{
+			name: "V2 has cancelled ids",
+			body: `{"version": "V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":null,"cancelIds":[42,7]}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			executorStore := database.NewMockExecutorStore()
+			metricsStore := metricsstore.NewMockDistributedStore()
+
+			h := handler.NewHandler(
+				executorStore,
+				executor.NewMockJobTokenStore(),
+				metricsStore,
+				handler.QueueHandler[testRecord]{Store: mockStore},
+			)
+
+			router := mux.NewRouter()
+			router.HandleFunc("/{queueName}", h.HandleHeartbeat)
+
+			req, err := http.NewRequest(http.MethodPost, "/test", strings.NewReader(test.body))
+			require.NoError(t, err)
+
+			rw := httptest.NewRecorder()
+
+			if test.mockFunc != nil {
+				test.mockFunc(metricsStore, executorStore, mockStore)
+			}
+
+			router.ServeHTTP(rw, req)
+
+			assert.Equal(t, test.expectedStatusCode, rw.Code)
+
+			b, err := io.ReadAll(rw.Body)
+			require.NoError(t, err)
+
+			if len(test.expectedResponseBody) > 0 {
+				assert.JSONEq(t, test.expectedResponseBody, string(b))
+			} else {
+				assert.Empty(t, string(b))
+			}
+
+			if test.assertionFunc != nil {
+				test.assertionFunc(t, metricsStore, executorStore, mockStore)
+			}
+		})
+	}
+}
+
+// TODO: add test for prometheus metrics. At the moment, encode will create a string with newlines that causes the
+// json decoder to fail. So... come back to this later...
+func encodeMetrics(t *testing.T, data ...*dto.MetricFamily) string {
+	var buf bytes.Buffer
+	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
+	for _, d := range data {
+		err := enc.Encode(d)
+		require.NoError(t, err)
+	}
+	return buf.String()
+}
+
 type testRecord struct {
 	id int
 }
@@ -1044,4 +1225,12 @@ func (r testRecord) RecordID() int { return r.id }
 
 func newIntPtr(i int) *int {
 	return &i
+}
+
+func newMetricsTypePtr(val dto.MetricType) *dto.MetricType {
+	return &val
+}
+
+func newStringPtr(val string) *string {
+	return &val
 }
