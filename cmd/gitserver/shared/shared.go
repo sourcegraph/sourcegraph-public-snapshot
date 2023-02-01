@@ -190,15 +190,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.StartClonePipeline(ctx)
 
-	addr := os.Getenv("GITSERVER_ADDR")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
-	}
+	addr := getAddr()
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -582,4 +574,17 @@ func syncRateLimiters(ctx context.Context, logger log.Logger, store database.Ext
 		case <-ticker.C:
 		}
 	}
+}
+
+func getAddr() string {
+	addr := os.Getenv("GITSERVER_ADDR")
+	if addr == "" {
+		port := "3178"
+		host := ""
+		if env.InsecureDev {
+			host = "127.0.0.1"
+		}
+		addr = net.JoinHostPort(host, port)
+	}
+	return addr
 }

@@ -14,7 +14,12 @@ type svc struct{}
 func (svc) Name() string { return "gitserver" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	return LoadConfig(), nil
+	c := LoadConfig()
+	endpoints := []debugserver.Endpoint{
+		GRPCWebUIDebugEndpoint(),
+	}
+
+	return c, endpoints
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
