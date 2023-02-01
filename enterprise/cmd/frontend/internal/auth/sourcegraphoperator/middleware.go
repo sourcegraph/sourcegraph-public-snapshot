@@ -114,7 +114,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// If the "sourcegraph-operator" (SOAP) is the only external account associated
 			// with the user, that means the user is a pure Sourcegraph Operator which should
 			// have designated and aggressive session expiry - unless that account is designated
-			// a service account.
+			// as a service account.
 			if len(extAccts) == 1 && extAccts[0].ServiceType == internalauth.SourcegraphOperatorProviderType {
 				soapAccount := extAccts[0]
 
@@ -125,7 +125,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					log.String("soap.accountID", soapAccount.AccountID),
 					log.Bool("soap.serviceAccount", isServiceAccount))
 				if err != nil {
-					logger.Warn("failed to parse account data", log.Error(err))
+					logger.Warn("failed to parse SOAP account data", log.Error(err))
 				}
 
 				// The user session will only live at most for the remaining duration from the
