@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -523,14 +522,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	opts := []grpc.DialOption{
-		// 🚨 SECURITY: We use insecure connections to the symbols service. During the
-		// grpc prototyping phase - we're leaving TLS authentication out of scope.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	opts = append(opts, defaults.DialOptions()...)
-	conn, err := grpc.DialContext(ctx, u.Host, opts...)
+	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}
