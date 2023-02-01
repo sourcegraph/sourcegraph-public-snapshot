@@ -22,6 +22,7 @@ import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 
 import { filterHighlight } from './codemirror/syntax-highlighting'
+import { modeScope } from './modes'
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
@@ -179,7 +180,7 @@ function createEditor(
                 keymap.of(historyKeymap),
                 keymap.of(defaultKeymap),
                 codemirrorHistory(),
-                Prec.low([querySyntaxHighlighting, filterHighlight]),
+                Prec.low([querySyntaxHighlighting, modeScope(filterHighlight, [null])]),
                 EditorView.theme({
                     '&': {
                         flex: 1,
@@ -195,6 +196,9 @@ function createEditor(
                         fontFamily: 'var(--code-font-family)',
                         fontSize: 'var(--code-font-size)',
                         color: 'var(--search-query-text-color)',
+                    },
+                    '.cm-line': {
+                        paddingLeft: '0.25rem',
                     },
                 }),
                 querySettingsCompartment.of(queryExtensions),

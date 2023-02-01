@@ -22,7 +22,7 @@ const FilterValueOption: React.FunctionComponent<{ option: Option }> = ({ option
     return (
         <span className={styles.filterOption}>
             <span className={styles.filterField}>
-                {option.matches ? <HighlightedLabel label={field} matches={option.matches} /> : option.label}
+                {field}
                 <span className={styles.separator}>:</span>
             </span>
             {option.matches ? <HighlightedLabel label={value} matches={option.matches} /> : option.label}

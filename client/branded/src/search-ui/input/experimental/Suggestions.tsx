@@ -104,7 +104,7 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                             <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
                                         </div>
                                     )}
-                                    <div className={classnames(!option.multiline && 'd-flex', 'flex-wrap')}>
+                                    <div className="d-flex flex-wrap">
                                         <div role="gridcell" className={styles.label}>
                                             {option.render ? (
                                                 option.render(option)

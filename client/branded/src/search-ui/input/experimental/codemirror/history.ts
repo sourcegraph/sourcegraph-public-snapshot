@@ -8,28 +8,23 @@ import { pluralize } from '@sourcegraph/common'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 
+import { clearMode, getSelectedMode, ModeDefinition, modesFacet, setMode } from '../modes'
 import { queryRenderer } from '../optionRenderer'
-import {
-    clearMode,
-    getSelectedMode,
-    setMode,
-    Source,
-    suggestionSources,
-    Option,
-    ModeDefinition,
-    suggestionModes,
-} from '../suggestionsExtension'
+import { Source, suggestionSources, Option } from '../suggestionsExtension'
 
 const theme = EditorView.theme({
     '.sg-history-button': {
-        border: 'none',
+        boxSizing: 'content-box',
+        border: '0',
         backgroundColor: 'transparent',
         padding: 0,
-        marginRight: '0.5rem',
+        marginRight: '0.25rem',
+        paddingRight: '0.25rem',
         width: 'var(--icon-inline-size)',
         height: 'var(--icon-inline-size)',
         color: 'var(--icon-color)',
         verticalAlign: 'text-top',
+        borderRight: '1px solid var(--border-color-2)',
     },
     '.sg-history-button > svg': {
         // Setting this simplifies event handling for the history button widget
@@ -38,8 +33,9 @@ const theme = EditorView.theme({
         verticalAlign: 'initial',
     },
     '.sg-mode-History .sg-history-button': {
-        marginRight: '0.125rem',
         color: 'var(--logo-purple)',
+        marginRight: '0',
+        border: '0',
     },
 })
 
@@ -155,7 +151,7 @@ export function searchHistoryExtension(config: {
     submitQuery: (query: string) => void
 }): Extension {
     return [
-        suggestionModes.of([config.mode]),
+        modesFacet.of([config.mode]),
         theme,
         Prec.highest(historyButton),
         suggestionSources.of({

@@ -30,13 +30,13 @@ function showWhenEmpty(state: EditorState): boolean {
 
 interface PlaceholderConfig {
     content: string
-    show: (state: EditorState) => boolean
+    show?: (state: EditorState) => boolean
 }
 
-const placeholderConfigFacet = Facet.define<PlaceholderConfig, PlaceholderConfig>({
+export const placeholderConfig = Facet.define<PlaceholderConfig, Required<PlaceholderConfig>>({
     combine(configs) {
         // Keep highest priority config
-        return configs.length > 0 ? configs[0] : { content: '', show: showWhenEmpty }
+        return configs.length > 0 ? { show: showWhenEmpty, ...configs[0] } : { content: '', show: showWhenEmpty }
     },
     enables: facet =>
         ViewPlugin.fromClass(
@@ -67,7 +67,7 @@ const placeholderConfigFacet = Facet.define<PlaceholderConfig, PlaceholderConfig
                     return Decoration.widget({ widget: new Placeholder(content), side: 1 })
                 }
 
-                private createDecorationSet(state: EditorState, config: PlaceholderConfig): DecorationSet {
+                private createDecorationSet(state: EditorState, config: Required<PlaceholderConfig>): DecorationSet {
                     return config.show(state)
                         ? Decoration.set([this.placeholderDecoration.range(state.doc.length)])
                         : Decoration.none
@@ -82,5 +82,5 @@ const placeholderConfigFacet = Facet.define<PlaceholderConfig, PlaceholderConfig
  * default it will show the placeholder when the document is empty.
  */
 export function placeholder(content: string, show: (state: EditorState) => boolean = showWhenEmpty): Extension {
-    return placeholderConfigFacet.of({ content, show })
+    return placeholderConfig.of({ content, show })
 }
