@@ -80,7 +80,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			return nil, errors.Newf("requested dependency of precise index record without data (indexid=%d)", v2)
 		}
 
-		dependencyOf = int(v)
+		dependencyOf = v
 		skipIndexes = true
 	}
 	var dependentOf int
@@ -93,7 +93,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			return nil, errors.Newf("requested dependent of precise index record without data (indexid=%d)", v2)
 		}
 
-		dependentOf = int(v)
+		dependentOf = v
 		skipIndexes = true
 	}
 

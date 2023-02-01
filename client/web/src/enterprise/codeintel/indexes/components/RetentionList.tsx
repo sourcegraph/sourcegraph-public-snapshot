@@ -108,7 +108,6 @@ const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }
             ) : (
                 <>
                     {node.configurationPolicy ? (
-                        // TODO - display protecting commits
                         <Link to={`../configuration/${node.configurationPolicy.id}`} className="p-0">
                             <H3 className="m-0 d-block d-md-inline">{node.configurationPolicy.name}</H3>
                         </Link>
@@ -123,9 +122,6 @@ const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }
                             </small>
                         </>
                     )}
-
-                    {node.protectingCommits.length > 0 &&
-                        node.protectingCommits.map(commit => <span className="d-inline">!!!{commit}!!!</span>)}
                 </>
             )}
         </td>
