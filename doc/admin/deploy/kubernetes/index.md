@@ -53,7 +53,7 @@ $ git checkout -b release
 `cd` into the repository and create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
 
 ```bash
-$ mkdir instance/my-sourcegraph
+$ mkdir instances/my-sourcegraph
 ```
 
 ### **Step 3**: Set up a configuration file
@@ -61,14 +61,14 @@ $ mkdir instance/my-sourcegraph
 Copy [instances/kustomization.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
 
 ```bash
-$ cp instances/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
+$ cp instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
 ```
 
 The new `kustomization.yaml` file will be used to configure your deployment.
 
 ### **Step 4**: Set namespace
 
-Replace `sourcegraph` with a namespace that matches an existing namespace in your cluster. 
+By default, the provided kustomization.yaml template deploys sourcegraph into the `sourcegraph` namespace. If you intend to deploy sourcegraph into a different namespace, replace `sourcegraph` with the name of the existing namespace in your cluster.
 
 Set it to `default` to deploy to the default namespace.
 
@@ -157,7 +157,7 @@ Monitor the deployment status to ensure all components are running properly.
 
 ### **Step 10**: Access Sourcegraph in Browser
 
-To access Sourcegraph in a web browser, you must first forward the remote port temporarily:
+To verify that the deployment was successful, port-forward the frontend pod with the following command:
 
   ```bash
   $ kubectl port-forward svc/sourcegraph-frontend 3080:30080
@@ -177,7 +177,7 @@ After the initial deployment, additional configuration might be required for Sou
 
 Common configurations that are strongly recommended for all Sourcegraph deployments:
 
-- [Add monitoring](kustomize/configure.md#monitoring-stack)
+- [Enable the Sourcegraph monitoring stack](kustomize/configure.md#monitoring-stack)
 - [Allocate resources based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
 - [Configure ingress](kustomize/configure.md#ingress)
 - [Enable TLS](kustomize/configure.md#tls)
