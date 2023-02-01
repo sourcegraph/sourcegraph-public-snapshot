@@ -46,6 +46,7 @@ func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *
 	if origInfo != nil {
 		info = &Info{Info: *origInfo}
 	}
+	info.Tags = []string{"plan:enterprise-extension"}
 	return info, origSignature, origErr
 }
 
@@ -131,6 +132,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastInfo = info
 			lastSignature = signature
 		}
+
 		return info, signature, nil
 	} else {
 		// If no license key, default to free tier

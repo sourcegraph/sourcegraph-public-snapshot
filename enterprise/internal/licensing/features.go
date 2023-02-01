@@ -43,7 +43,7 @@ func (f BasicFeature) Check(info *Info) error {
 		}
 		return false
 	}
-	if !info.Plan().HasFeature(featureTrimmed) && !hasFeature(featureTrimmed) {
+	if !info.Plan().HasFeature(featureTrimmed, info.IsExpired()) && !(!info.IsExpired() && hasFeature(featureTrimmed)) {
 		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f))
 	}
 	return nil
