@@ -75,12 +75,6 @@
             display: inline-block;
         }
 
-        [data-line-decoration-attachment-portal] {
-            span::before {
-                content: attr(data-contents);
-            }
-        }
-
         :global(.top-spacer),
         :global(.bottom-spacer) {
             margin: 0 0 0 -1rem;
@@ -111,4 +105,8 @@
 .clickable-row:hover {
     cursor: pointer;
     background-color: var(--body-bg);
+}
+
+:global(.cm-editor:not(:focus-within) .focus-visible) {
+    box-shadow: none;
 }

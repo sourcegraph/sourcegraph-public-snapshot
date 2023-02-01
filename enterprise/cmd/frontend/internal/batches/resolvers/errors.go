@@ -54,6 +54,12 @@ func (e ErrBatchChangesUnlicensed) Extensions() map[string]any {
 	return map[string]any{"code": "ErrBatchChangesUnlicensed"}
 }
 
+type ErrBatchChangesOverLimit struct{ error }
+
+func (e ErrBatchChangesOverLimit) Extensions() map[string]any {
+	return map[string]any{"code": "ErrBatchChangesOverLimit"}
+}
+
 type ErrBatchChangesDisabledDotcom struct{ error }
 
 func (e ErrBatchChangesDisabledDotcom) Extensions() map[string]any {

@@ -9,8 +9,6 @@
     &--columns {
         column-gap: 1.5rem;
         column-width: 13rem;
-        column-rule: 1px solid var(--border-color);
-        border-right: solid 1px var(--border-color);
 
         @media (--sm-breakpoint-up) {
             column-count: 1;
@@ -21,11 +19,6 @@
         @media (--md-breakpoint-down) {
             column-count: 4;
         }
-    }
-
-    &--no-decorations {
-        column-rule: none;
-        border-right: none;
     }
 }
 

@@ -15,6 +15,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { useChartFilters } from '../useChartFilters'
+import { getByteUnitLabel, getByteUnitValue } from '../utils'
 
 import { DevTimeSaved } from './DevTimeSaved'
 import { OVERVIEW_STATISTICS } from './queries'
@@ -62,7 +63,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                             {productSubscription.license && licenseExpiresAt ? (
                                 <>
                                     <AnchorLink
-                                        to="https://about.sourcegraph.com/pricing"
+                                        to="/help/admin/updates"
                                         target="_blank"
                                         rel="noopener"
                                         className="ml-1"
@@ -131,8 +132,10 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                                             value: data.repositories.totalCount || 0,
                                         },
                                         {
-                                            label: 'Bytes stored',
-                                            value: Number(data.repositoryStats.gitDirBytes),
+                                            label: `${getByteUnitLabel(
+                                                Number(data.repositoryStats.gitDirBytes)
+                                            )} stored`,
+                                            value: getByteUnitValue(Number(data.repositoryStats.gitDirBytes)),
                                         },
                                         {
                                             label: 'Lines of code',

@@ -40,8 +40,8 @@ func (m *migrator) Routines(startupCtx context.Context, observationCtx *observat
 
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
-	if outOfBandMigrationRunner.SynchronizeMetadata(startupCtx); err != nil {
-		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
+	if err := outOfBandMigrationRunner.SynchronizeMetadata(startupCtx); err != nil {
+		return nil, errors.Wrap(err, "failed to synchronize out of band migration metadata")
 	}
 
 	if err := m.registerMigrators(startupCtx, db, outOfBandMigrationRunner); err != nil {

@@ -24,7 +24,41 @@ func TestFileOwnersMatch(t *testing.T) {
 			},
 		},
 		{
+			pattern: "*.md",
+			paths: []string{
+				"/README.md",
+				"/README.md.md",
+				"/nested/index.md",
+				"/weird/but/matching/.md",
+			},
+		},
+		{
+			// Regex components are interpreted literally.
+			pattern: "[^a-z].md",
+			paths: []string{
+				"/[^a-z].md",
+				"/nested/[^a-z].md",
+			},
+		},
+		{
+			pattern: "foo*bar*baz",
+			paths: []string{
+				"/foobarbaz",
+				"/foo-bar-baz",
+				"/foobarbazfoobarbazfoobarbaz",
+			},
+		},
+		{
 			pattern: "directory/path/",
+			paths: []string{
+				"/directory/path/file",
+				"/directory/path/deeply/nested/file",
+				"/prefix/directory/path/file",
+				"/prefix/directory/path/deeply/nested/file",
+			},
+		},
+		{
+			pattern: "directory/path/**",
 			paths: []string{
 				"/directory/path/file",
 				"/directory/path/deeply/nested/file",
@@ -79,10 +113,46 @@ func TestFileOwnersNoMatch(t *testing.T) {
 			paths: []string{
 				"/prefix_filename_suffix",
 				"/src/prefix_filename",
+				"/finemale/nested",
+			},
+		},
+		{
+			pattern: "*.md",
+			paths: []string{
+				"/README.mdf",
+				"/not/matching/without/the/dot/md",
+			},
+		},
+		{
+			// Regex components are interpreted literally.
+			pattern: "[^a-z].md",
+			paths: []string{
+				"/-.md",
+				"/nested/%.md",
+			},
+		},
+		{
+			pattern: "foo*bar*baz",
+			paths: []string{
+				"/foo-ba-baz",
+				"/foobarbaz.md",
 			},
 		},
 		{
 			pattern: "directory/leaf/",
+			paths: []string{
+				// These do not match as the right-most directory name `leaf`
+				// is just a prefix to the corresponding directory on the given path.
+				"/directory/leaf_and_more/file",
+				"/prefix/directory/leaf_and_more/file",
+				// These do not match as the pattern matches anything within
+				// the sub-directory tree, but not the directory itself.
+				"/directory/leaf",
+				"/prefix/directory/leaf",
+			},
+		},
+		{
+			pattern: "directory/leaf/**",
 			paths: []string{
 				// These do not match as the right-most directory name `leaf`
 				// is just a prefix to the corresponding directory on the given path.

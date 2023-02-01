@@ -1,5 +1,7 @@
 package licensing
 
+import "fmt"
+
 // The list of plans.
 const (
 	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
@@ -17,6 +19,9 @@ const (
 	// PlanEnterprise1 is the "Enterprise" plan for 4.0.
 	PlanEnterprise1 Plan = "enterprise-1"
 
+	// PlanEnterpriseExtension is for customers who require an extended trial on a new Sourcegraph 4.4.2 instance.
+	PlanEnterpriseExtension Plan = "enterprise-extension"
+
 	// PlanFree0 is the default plan if no license key is set.
 	PlanFree0 Plan = "free-0"
 )
@@ -29,6 +34,7 @@ var allPlans = []Plan{
 
 	PlanBusiness0,
 	PlanEnterprise1,
+	PlanEnterpriseExtension,
 	PlanFree0,
 }
 
@@ -37,92 +43,187 @@ var allPlans = []Plan{
 const (
 	// FeatureSSO is whether non-builtin authentication may be used, such as GitHub
 	// OAuth, GitLab OAuth, SAML, and OpenID.
-	FeatureSSO Feature = "sso"
+	FeatureSSO BasicFeature = "sso"
 
 	// FeatureACLs is whether the Background Permissions Syncing may be be used for
 	// setting repository permissions.
-	FeatureACLs Feature = "acls"
+	FeatureACLs BasicFeature = "acls"
 
 	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
 	// setting repository permissions.
-	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
+	FeatureExplicitPermissionsAPI BasicFeature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
 	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry Feature = "private-extension-registry"
+	FeatureExtensionRegistry BasicFeature = "private-extension-registry"
 
 	// FeatureRemoteExtensionsAllowDisallow is whether explicitly specify a list of allowed remote
 	// extensions and prevent any other remote extensions from being used has been purchased. It
 	// does not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
+	FeatureRemoteExtensionsAllowDisallow BasicFeature = "remote-extensions-allow-disallow"
 
 	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
-	FeatureBranding Feature = "branding"
+	FeatureBranding BasicFeature = "branding"
 
 	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
 	//
 	// DEPRECATED: See FeatureBatchChanges.
-	FeatureCampaigns Feature = "campaigns"
-
-	// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-	FeatureBatchChanges Feature = "batch-changes"
+	FeatureCampaigns BasicFeature = "campaigns"
 
 	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
-	FeatureMonitoring Feature = "monitoring"
+	FeatureMonitoring BasicFeature = "monitoring"
 
 	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
 	// has been purchased.
-	FeatureBackupAndRestore Feature = "backup-and-restore"
+	FeatureBackupAndRestore BasicFeature = "backup-and-restore"
 
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
-	FeatureCodeInsights Feature = "code-insights"
+	FeatureCodeInsights BasicFeature = "code-insights"
 )
 
-// planFeatures defines the features that are enabled for each plan.
-var planFeatures = map[Plan][]Feature{
-	PlanOldEnterpriseStarter: {},
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
+	MaxNumChangesets int
+}
+
+func (*FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
+
+func (f *FeatureBatchChanges) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the deprecated campaigns are enabled, use unrestricted batch changes
+	if FeatureCampaigns.Check(info) == nil && !info.IsExpired() {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// If the batch changes tag exists on the license, use unrestricted batch changes
+	if info.HasTag(f.FeatureName()) && !info.IsExpired() {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default batch changes feature
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+type PlanDetails struct {
+	Features []Feature
+	// ExpiredFeatures are the features that still work after the plan is expired.
+	ExpiredFeatures []Feature
+}
+
+// planDetails defines the features that are enabled for each plan.
+var planDetails = map[Plan]PlanDetails{
+	PlanOldEnterpriseStarter: {
+		Features: []Feature{
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
+	},
 	PlanOldEnterprise: {
-		FeatureSSO,
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureExtensionRegistry,
-		FeatureRemoteExtensionsAllowDisallow,
-		FeatureBranding,
-		FeatureCampaigns,
-		FeatureBatchChanges,
-		FeatureMonitoring,
-		FeatureBackupAndRestore,
-		FeatureCodeInsights,
+		Features: []Feature{
+			FeatureSSO,
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureExtensionRegistry,
+			FeatureRemoteExtensionsAllowDisallow,
+			FeatureBranding,
+			FeatureCampaigns,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureMonitoring,
+			FeatureBackupAndRestore,
+			FeatureCodeInsights,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanTeam0: {
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise0: {
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 
 	PlanBusiness0: {
-		FeatureACLs,
-		FeatureCampaigns,
-		FeatureBatchChanges,
-		FeatureCodeInsights,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureCodeInsights,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise1: {
-		FeatureACLs,
-		FeatureCampaigns,
-		FeatureCodeInsights,
-		FeatureBatchChanges,
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			FeatureCodeInsights,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
-	PlanFree0: {
+	PlanEnterpriseExtension: {
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			FeatureCodeInsights,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
+	},
+	PlanFree0: {Features: []Feature{
 		FeatureSSO,
 		FeatureMonitoring,
-	},
+		&FeatureBatchChanges{MaxNumChangesets: 10},
+	}},
 }

@@ -47,7 +47,9 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                     className="mt-2"
                                     as={Link}
                                     variant="secondary"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
+                                    }
                                 >
                                     Search private code
                                 </Button>
@@ -74,21 +76,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     </PageHeader.Heading>
                 </PageHeader>
                 {alert && <Alert variant="danger">{alert}</Alert>}
-                <div id="search-context-tabs-list" className="nav nav-tabs">
-                    <div className="nav-item" role="tablist">
-                        <Link
-                            to="/contexts"
-                            role="tab"
-                            aria-selected={true}
-                            aria-controls="search-context-list"
-                            className="nav-link active"
-                        >
-                            <span className="text-content" data-tab-content="Your search contexts">
-                                Available contexts
-                            </span>
-                        </Link>
-                    </div>
-                </div>
                 <div role="tabpanel" id="search-context-list">
                     <SearchContextsList
                         authenticatedUser={authenticatedUser}

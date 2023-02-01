@@ -78,6 +78,10 @@ var (
 		Name: "lsif-dotnet",
 		URN:  "github.com/tcz717/LsifDotnet",
 	}
+	scipRuby = CodeIntelIndexer{
+		Name: "scip-ruby",
+		URN:  "github.com/sourcegraph/scip-ruby",
+	}
 )
 
 var AllIndexers = []CodeIntelIndexer{
@@ -99,6 +103,7 @@ var AllIndexers = []CodeIntelIndexer{
 	lsifPHP,
 	lsifTerraform,
 	lsifDotnet,
+	scipRuby,
 }
 
 // A map of file extension to a list of indexers in order of recommendation
@@ -127,6 +132,7 @@ var LanguageToIndexer = map[string][]CodeIntelIndexer{
 	".php":     {lsifPHP},
 	".tf":      {lsifTerraform},
 	".cs":      {lsifDotnet},
+	".rb":      {scipRuby},
 }
 
 var ImageToIndexer = map[string]CodeIntelIndexer{
@@ -137,7 +143,9 @@ var ImageToIndexer = map[string]CodeIntelIndexer{
 	"sourcegraph/lsif-clang":      lsifClang,
 	"davidrjenni/lsif-php":        lsifPHP,
 	"sourcegraph/lsif-rust":       rustAnalyzer,
+	"sourcegraph/scip-rust":       rustAnalyzer,
 	"sourcegraph/scip-python":     scipPython,
+	"sourcegraph/scip-ruby":       scipRuby,
 }
 
 var PreferredIndexers = map[string]CodeIntelIndexer{
@@ -155,8 +163,10 @@ var PreferredIndexers = map[string]CodeIntelIndexer{
 	"lsif-ocaml":      lsifOcaml,
 	"scip-python":     scipPython,
 	"lsif-rust":       rustAnalyzer,
+	"scip-rust":       rustAnalyzer,
 	"rust-analyzer":   rustAnalyzer,
 	"lsif-php":        lsifPHP,
 	"lsif-terraform":  lsifTerraform,
 	"lsif-dotnet":     lsifDotnet,
+	"scip-ruby":       scipRuby,
 }

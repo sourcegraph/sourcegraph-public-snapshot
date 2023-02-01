@@ -7,16 +7,14 @@ import (
 type repositoryFilterPreviewResolver struct {
 	repositoryResolvers []resolverstubs.RepositoryResolver
 	totalCount          int
-	offset              int
 	totalMatches        int
 	limit               *int
 }
 
-func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, offset, totalMatches int, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
+func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, totalMatches int, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
 	return &repositoryFilterPreviewResolver{
 		repositoryResolvers: repositoryResolvers,
 		totalCount:          totalCount,
-		offset:              offset,
 		totalMatches:        totalMatches,
 		limit:               limit,
 	}
@@ -41,8 +39,4 @@ func (r *repositoryFilterPreviewResolver) Limit() *int32 {
 
 	v := int32(*r.limit)
 	return &v
-}
-
-func (r *repositoryFilterPreviewResolver) PageInfo() resolverstubs.PageInfo {
-	return EncodeIntCursor(toInt32(NextOffset(r.offset, len(r.repositoryResolvers), r.totalCount)))
 }

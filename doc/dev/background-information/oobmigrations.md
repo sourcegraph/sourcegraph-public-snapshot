@@ -10,7 +10,7 @@ Out-of-band migrations allow for application-specific logic to exist in a migrat
 - fetching data from another remote API or data store based on existing data
 - transforming large scale data
 
-Remember - the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
+Remember—the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
 
 Some background tasks may seem initially well-suited for an out-of-band migration, but may actually be better installed as a permanent background job that runs periodically. Such jobs include data transformations that require external state to determine its progress. For example, database encryption jobs were originally written as out-of-band migrations. However, changing the external key in the site configuration can drop progress back to 0%, despite having already ran to completion.
 
@@ -314,7 +314,7 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 #### Step 6: Deprecation
 
-Despite an out of band migration being marked deprecated, it may still need to be executed by multi-version upgrades in a later version. For this reason it is not safe to delete any code from the out of band migrations until _after_ the deprecation version falls out of the [supported multi-version upgrade window](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/blob/internal/database/migration/shared/upgradedata/cmd/generator/consts.go?L24).
+Despite an out of band migration being marked deprecated, it may still need to be executed by multi-version upgrades in a later version. For this reason it is not safe to delete any code from the out of band migrations until _after_ the deprecation version falls out of the [supported multi-version upgrade window](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/blob/internal/database/migration/shared/data/cmd/generator/consts.go?L24).
 
 As an alternative to deleting the code, the out of band migration can be isolated from any dependencies outside of the out of band migration. For example copying any types, functions, and other code that is used to execute the migration. Once isolated, the migration can be considered frozen and effectively ignored. To see an example, [see the Code Insights settings migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/tree/enterprise/internal/oobmigration/migrations/insights)
 

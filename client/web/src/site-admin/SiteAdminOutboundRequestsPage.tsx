@@ -1,10 +1,9 @@
 import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
@@ -36,14 +35,12 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
-import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
+import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS } from './backend'
 import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
-export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps, TelemetryProps {
-    now?: () => Date
-}
+export interface SiteAdminOutboundRequestsPageProps extends TelemetryProps {}
 
 export type OutboundRequest = OutboundRequestsResult['outboundRequests']['nodes'][0]
 
@@ -77,7 +74,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
-> = ({ history, telemetryService }) => {
+> = ({ telemetryService }) => {
     const [items, setItems] = useState<OutboundRequest[]>([])
 
     useEffect(() => {
@@ -90,7 +87,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         OutboundRequestsVariables
     >(OUTBOUND_REQUESTS, {
         variables: { after: lastId },
-        pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL,
+        pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS,
     })
 
     useEffect(() => {
@@ -113,7 +110,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             refetch({ after: newItems[newItems.length - 1]?.id ?? null })
                 .then(() => {})
                 .catch(() => {})
-            startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)
+            startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS)
         }
     }, [data, lastId, items, refetch, startPolling, stopPolling])
 
@@ -166,8 +163,6 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         queryConnection={queryOutboundRequests}
                         nodeComponent={OutboundRequestNode}
                         filters={filters}
-                        history={history}
-                        location={history.location}
                     />
                 ) : (
                     <>

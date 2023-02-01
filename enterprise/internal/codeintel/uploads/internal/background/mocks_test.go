@@ -24,6 +24,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -2501,6 +2502,12 @@ type MockStore struct {
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *StoreReferencesForUploadFunc
+	// ReindexUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexUploadByID.
+	ReindexUploadByIDFunc *StoreReindexUploadByIDFunc
+	// ReindexUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexUploads.
+	ReindexUploadsFunc *StoreReindexUploadsFunc
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *StoreRepoNameFunc
@@ -2757,6 +2764,16 @@ func NewMockStore() *MockStore {
 		},
 		ReferencesForUploadFunc: &StoreReferencesForUploadFunc{
 			defaultHook: func(context.Context, int) (r0 shared1.PackageReferenceScanner, r1 error) {
+				return
+			},
+		},
+		ReindexUploadByIDFunc: &StoreReindexUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		ReindexUploadsFunc: &StoreReindexUploadsFunc{
+			defaultHook: func(context.Context, shared1.ReindexUploadsOptions) (r0 error) {
 				return
 			},
 		},
@@ -3047,6 +3064,16 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.ReferencesForUpload")
 			},
 		},
+		ReindexUploadByIDFunc: &StoreReindexUploadByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockStore.ReindexUploadByID")
+			},
+		},
+		ReindexUploadsFunc: &StoreReindexUploadsFunc{
+			defaultHook: func(context.Context, shared1.ReindexUploadsOptions) error {
+				panic("unexpected invocation of MockStore.ReindexUploads")
+			},
+		},
 		RepoNameFunc: &StoreRepoNameFunc{
 			defaultHook: func(context.Context, int) (string, error) {
 				panic("unexpected invocation of MockStore.RepoName")
@@ -3253,6 +3280,12 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		ReferencesForUploadFunc: &StoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
+		},
+		ReindexUploadByIDFunc: &StoreReindexUploadByIDFunc{
+			defaultHook: i.ReindexUploadByID,
+		},
+		ReindexUploadsFunc: &StoreReindexUploadsFunc{
+			defaultHook: i.ReindexUploads,
 		},
 		RepoNameFunc: &StoreRepoNameFunc{
 			defaultHook: i.RepoName,
@@ -7812,6 +7845,216 @@ func (c StoreReferencesForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreReindexUploadByIDFunc describes the behavior when the
+// ReindexUploadByID method of the parent MockStore instance is invoked.
+type StoreReindexUploadByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []StoreReindexUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) ReindexUploadByID(v0 context.Context, v1 int) error {
+	r0 := m.ReindexUploadByIDFunc.nextHook()(v0, v1)
+	m.ReindexUploadByIDFunc.appendCall(StoreReindexUploadByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexUploadByID
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreReindexUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexUploadByID method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreReindexUploadByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreReindexUploadByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreReindexUploadByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *StoreReindexUploadByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreReindexUploadByIDFunc) appendCall(r0 StoreReindexUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreReindexUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *StoreReindexUploadByIDFunc) History() []StoreReindexUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreReindexUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreReindexUploadByIDFuncCall is an object that describes an invocation
+// of method ReindexUploadByID on an instance of MockStore.
+type StoreReindexUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreReindexUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreReindexUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreReindexUploadsFunc describes the behavior when the ReindexUploads
+// method of the parent MockStore instance is invoked.
+type StoreReindexUploadsFunc struct {
+	defaultHook func(context.Context, shared1.ReindexUploadsOptions) error
+	hooks       []func(context.Context, shared1.ReindexUploadsOptions) error
+	history     []StoreReindexUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexUploads delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) ReindexUploads(v0 context.Context, v1 shared1.ReindexUploadsOptions) error {
+	r0 := m.ReindexUploadsFunc.nextHook()(v0, v1)
+	m.ReindexUploadsFunc.appendCall(StoreReindexUploadsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexUploads
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreReindexUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.ReindexUploadsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexUploads method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreReindexUploadsFunc) PushHook(hook func(context.Context, shared1.ReindexUploadsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreReindexUploadsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared1.ReindexUploadsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreReindexUploadsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared1.ReindexUploadsOptions) error {
+		return r0
+	})
+}
+
+func (f *StoreReindexUploadsFunc) nextHook() func(context.Context, shared1.ReindexUploadsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreReindexUploadsFunc) appendCall(r0 StoreReindexUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreReindexUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreReindexUploadsFunc) History() []StoreReindexUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreReindexUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreReindexUploadsFuncCall is an object that describes an invocation of
+// method ReindexUploads on an instance of MockStore.
+type StoreReindexUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared1.ReindexUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreReindexUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreReindexUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // StoreRepoNameFunc describes the behavior when the RepoName method of the
 // parent MockStore instance is invoked.
 type StoreRepoNameFunc struct {
@@ -9901,12 +10144,6 @@ type MockLsifStore struct {
 	// ScanDocumentsFunc is an instance of a mock function object
 	// controlling the behavior of the method ScanDocuments.
 	ScanDocumentsFunc *LsifStoreScanDocumentsFunc
-	// ScanLocationsFunc is an instance of a mock function object
-	// controlling the behavior of the method ScanLocations.
-	ScanLocationsFunc *LsifStoreScanLocationsFunc
-	// ScanResultChunksFunc is an instance of a mock function object
-	// controlling the behavior of the method ScanResultChunks.
-	ScanResultChunksFunc *LsifStoreScanResultChunksFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *LsifStoreTransactFunc
@@ -9975,17 +10212,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) (r0 error) {
-				return
-			},
-		},
-		ScanLocationsFunc: &LsifStoreScanLocationsFunc{
-			defaultHook: func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) (r0 error) {
-				return
-			},
-		},
-		ScanResultChunksFunc: &LsifStoreScanResultChunksFunc{
-			defaultHook: func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) (r0 error) {
+			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) (r0 error) {
 				return
 			},
 		},
@@ -10072,18 +10299,8 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
-			defaultHook: func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error {
+			defaultHook: func(context.Context, int, func(path string, document *scip.Document) error) error {
 				panic("unexpected invocation of MockLsifStore.ScanDocuments")
-			},
-		},
-		ScanLocationsFunc: &LsifStoreScanLocationsFunc{
-			defaultHook: func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error {
-				panic("unexpected invocation of MockLsifStore.ScanLocations")
-			},
-		},
-		ScanResultChunksFunc: &LsifStoreScanResultChunksFunc{
-			defaultHook: func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error {
-				panic("unexpected invocation of MockLsifStore.ScanResultChunks")
 			},
 		},
 		TransactFunc: &LsifStoreTransactFunc{
@@ -10154,12 +10371,6 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		ScanDocumentsFunc: &LsifStoreScanDocumentsFunc{
 			defaultHook: i.ScanDocuments,
-		},
-		ScanLocationsFunc: &LsifStoreScanLocationsFunc{
-			defaultHook: i.ScanLocations,
-		},
-		ScanResultChunksFunc: &LsifStoreScanResultChunksFunc{
-			defaultHook: i.ScanResultChunks,
 		},
 		TransactFunc: &LsifStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -11072,15 +11283,15 @@ func (c LsifStoreReconcileCandidatesFuncCall) Results() []interface{} {
 // LsifStoreScanDocumentsFunc describes the behavior when the ScanDocuments
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreScanDocumentsFunc struct {
-	defaultHook func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error
-	hooks       []func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error
+	defaultHook func(context.Context, int, func(path string, document *scip.Document) error) error
+	hooks       []func(context.Context, int, func(path string, document *scip.Document) error) error
 	history     []LsifStoreScanDocumentsFuncCall
 	mutex       sync.Mutex
 }
 
 // ScanDocuments delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path string, ranges map[precise.ID]precise.RangeData) error) error {
+func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path string, document *scip.Document) error) error {
 	r0 := m.ScanDocumentsFunc.nextHook()(v0, v1, v2)
 	m.ScanDocumentsFunc.appendCall(LsifStoreScanDocumentsFuncCall{v0, v1, v2, r0})
 	return r0
@@ -11089,7 +11300,7 @@ func (m *MockLsifStore) ScanDocuments(v0 context.Context, v1 int, v2 func(path s
 // SetDefaultHook sets function that is called when the ScanDocuments method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error) {
+func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
 	f.defaultHook = hook
 }
 
@@ -11097,7 +11308,7 @@ func (f *LsifStoreScanDocumentsFunc) SetDefaultHook(hook func(context.Context, i
 // ScanDocuments method of the parent MockLsifStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error) {
+func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, func(path string, document *scip.Document) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11106,19 +11317,19 @@ func (f *LsifStoreScanDocumentsFunc) PushHook(hook func(context.Context, int, fu
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreScanDocumentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error {
+	f.SetDefaultHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreScanDocumentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error {
+	f.PushHook(func(context.Context, int, func(path string, document *scip.Document) error) error {
 		return r0
 	})
 }
 
-func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, func(path string, ranges map[precise.ID]precise.RangeData) error) error {
+func (f *LsifStoreScanDocumentsFunc) nextHook() func(context.Context, int, func(path string, document *scip.Document) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11159,7 +11370,7 @@ type LsifStoreScanDocumentsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 func(path string, ranges map[precise.ID]precise.RangeData) error
+	Arg2 func(path string, document *scip.Document) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -11174,222 +11385,6 @@ func (c LsifStoreScanDocumentsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreScanDocumentsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// LsifStoreScanLocationsFunc describes the behavior when the ScanLocations
-// method of the parent MockLsifStore instance is invoked.
-type LsifStoreScanLocationsFunc struct {
-	defaultHook func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error
-	hooks       []func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error
-	history     []LsifStoreScanLocationsFuncCall
-	mutex       sync.Mutex
-}
-
-// ScanLocations delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanLocations(v0 context.Context, v1 int, v2 func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error {
-	r0 := m.ScanLocationsFunc.nextHook()(v0, v1, v2)
-	m.ScanLocationsFunc.appendCall(LsifStoreScanLocationsFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the ScanLocations method
-// of the parent MockLsifStore instance is invoked and the hook queue is
-// empty.
-func (f *LsifStoreScanLocationsFunc) SetDefaultHook(hook func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ScanLocations method of the parent MockLsifStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LsifStoreScanLocationsFunc) PushHook(hook func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreScanLocationsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreScanLocationsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error {
-		return r0
-	})
-}
-
-func (f *LsifStoreScanLocationsFunc) nextHook() func(context.Context, int, func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreScanLocationsFunc) appendCall(r0 LsifStoreScanLocationsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LsifStoreScanLocationsFuncCall objects
-// describing the invocations of this function.
-func (f *LsifStoreScanLocationsFunc) History() []LsifStoreScanLocationsFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreScanLocationsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreScanLocationsFuncCall is an object that describes an invocation
-// of method ScanLocations on an instance of MockLsifStore.
-type LsifStoreScanLocationsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 func(scheme string, identifier string, monikerType string, locations []precise.LocationData) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreScanLocationsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreScanLocationsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// LsifStoreScanResultChunksFunc describes the behavior when the
-// ScanResultChunks method of the parent MockLsifStore instance is invoked.
-type LsifStoreScanResultChunksFunc struct {
-	defaultHook func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error
-	hooks       []func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error
-	history     []LsifStoreScanResultChunksFuncCall
-	mutex       sync.Mutex
-}
-
-// ScanResultChunks delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLsifStore) ScanResultChunks(v0 context.Context, v1 int, v2 func(idx int, resultChunk precise.ResultChunkData) error) error {
-	r0 := m.ScanResultChunksFunc.nextHook()(v0, v1, v2)
-	m.ScanResultChunksFunc.appendCall(LsifStoreScanResultChunksFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the ScanResultChunks
-// method of the parent MockLsifStore instance is invoked and the hook queue
-// is empty.
-func (f *LsifStoreScanResultChunksFunc) SetDefaultHook(hook func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ScanResultChunks method of the parent MockLsifStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LsifStoreScanResultChunksFunc) PushHook(hook func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreScanResultChunksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreScanResultChunksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error {
-		return r0
-	})
-}
-
-func (f *LsifStoreScanResultChunksFunc) nextHook() func(context.Context, int, func(idx int, resultChunk precise.ResultChunkData) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreScanResultChunksFunc) appendCall(r0 LsifStoreScanResultChunksFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LsifStoreScanResultChunksFuncCall objects
-// describing the invocations of this function.
-func (f *LsifStoreScanResultChunksFunc) History() []LsifStoreScanResultChunksFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreScanResultChunksFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreScanResultChunksFuncCall is an object that describes an
-// invocation of method ScanResultChunks on an instance of MockLsifStore.
-type LsifStoreScanResultChunksFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 func(idx int, resultChunk precise.ResultChunkData) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreScanResultChunksFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreScanResultChunksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -12484,7 +12479,7 @@ type MockWorkerStore[T workerutil.Record] struct {
 func NewMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 	return &MockWorkerStore[T]{
 		AddExecutionLogEntryFunc: &WorkerStoreAddExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -12539,7 +12534,7 @@ func NewMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 			},
 		},
 		UpdateExecutionLogEntryFunc: &WorkerStoreUpdateExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (r0 error) {
+			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (r0 error) {
 				return
 			},
 		},
@@ -12556,7 +12551,7 @@ func NewMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 func NewStrictMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 	return &MockWorkerStore[T]{
 		AddExecutionLogEntryFunc: &WorkerStoreAddExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
+			defaultHook: func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
 				panic("unexpected invocation of MockWorkerStore.AddExecutionLogEntry")
 			},
 		},
@@ -12611,7 +12606,7 @@ func NewStrictMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 			},
 		},
 		UpdateExecutionLogEntryFunc: &WorkerStoreUpdateExecutionLogEntryFunc[T]{
-			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
+			defaultHook: func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
 				panic("unexpected invocation of MockWorkerStore.UpdateExecutionLogEntry")
 			},
 		},
@@ -12674,15 +12669,15 @@ func NewMockWorkerStoreFrom[T workerutil.Record](i store1.Store[T]) *MockWorkerS
 // AddExecutionLogEntry method of the parent MockWorkerStore instance is
 // invoked.
 type WorkerStoreAddExecutionLogEntryFunc[T workerutil.Record] struct {
-	defaultHook func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)
-	hooks       []func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)
+	defaultHook func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)
+	hooks       []func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)
 	history     []WorkerStoreAddExecutionLogEntryFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // AddExecutionLogEntry delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockWorkerStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2 workerutil.ExecutionLogEntry, v3 store1.ExecutionLogEntryOptions) (int, error) {
+func (m *MockWorkerStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2 executor.ExecutionLogEntry, v3 store1.ExecutionLogEntryOptions) (int, error) {
 	r0, r1 := m.AddExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3)
 	m.AddExecutionLogEntryFunc.appendCall(WorkerStoreAddExecutionLogEntryFuncCall[T]{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -12691,7 +12686,7 @@ func (m *MockWorkerStore[T]) AddExecutionLogEntry(v0 context.Context, v1 int, v2
 // SetDefaultHook sets function that is called when the AddExecutionLogEntry
 // method of the parent MockWorkerStore instance is invoked and the hook
 // queue is empty.
-func (f *WorkerStoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)) {
+func (f *WorkerStoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -12700,7 +12695,7 @@ func (f *WorkerStoreAddExecutionLogEntryFunc[T]) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *WorkerStoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)) {
+func (f *WorkerStoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12709,19 +12704,19 @@ func (f *WorkerStoreAddExecutionLogEntryFunc[T]) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WorkerStoreAddExecutionLogEntryFunc[T]) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
+	f.SetDefaultHook(func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WorkerStoreAddExecutionLogEntryFunc[T]) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
+	f.PushHook(func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *WorkerStoreAddExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
+func (f *WorkerStoreAddExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12763,7 +12758,7 @@ type WorkerStoreAddExecutionLogEntryFuncCall[T workerutil.Record] struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 workerutil.ExecutionLogEntry
+	Arg2 executor.ExecutionLogEntry
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 store1.ExecutionLogEntryOptions
@@ -13887,15 +13882,15 @@ func (c WorkerStoreResetStalledFuncCall[T]) Results() []interface{} {
 // UpdateExecutionLogEntry method of the parent MockWorkerStore instance is
 // invoked.
 type WorkerStoreUpdateExecutionLogEntryFunc[T workerutil.Record] struct {
-	defaultHook func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error
-	hooks       []func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error
+	defaultHook func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error
+	hooks       []func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error
 	history     []WorkerStoreUpdateExecutionLogEntryFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // UpdateExecutionLogEntry delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockWorkerStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 int, v3 workerutil.ExecutionLogEntry, v4 store1.ExecutionLogEntryOptions) error {
+func (m *MockWorkerStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int, v2 int, v3 executor.ExecutionLogEntry, v4 store1.ExecutionLogEntryOptions) error {
 	r0 := m.UpdateExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.UpdateExecutionLogEntryFunc.appendCall(WorkerStoreUpdateExecutionLogEntryFuncCall[T]{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -13904,7 +13899,7 @@ func (m *MockWorkerStore[T]) UpdateExecutionLogEntry(v0 context.Context, v1 int,
 // SetDefaultHook sets function that is called when the
 // UpdateExecutionLogEntry method of the parent MockWorkerStore instance is
 // invoked and the hook queue is empty.
-func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error) {
+func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -13913,7 +13908,7 @@ func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error) {
+func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -13922,19 +13917,19 @@ func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
+	f.SetDefaultHook(func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
+	f.PushHook(func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
 		return r0
 	})
 }
 
-func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, int, workerutil.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
+func (f *WorkerStoreUpdateExecutionLogEntryFunc[T]) nextHook() func(context.Context, int, int, executor.ExecutionLogEntry, store1.ExecutionLogEntryOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -13979,7 +13974,7 @@ type WorkerStoreUpdateExecutionLogEntryFuncCall[T workerutil.Record] struct {
 	Arg2 int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 workerutil.ExecutionLogEntry
+	Arg3 executor.ExecutionLogEntry
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 store1.ExecutionLogEntryOptions

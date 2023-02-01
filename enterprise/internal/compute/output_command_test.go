@@ -10,7 +10,6 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,11 +17,11 @@ import (
 
 func Test_output(t *testing.T) {
 	test := func(input string, cmd *Output) string {
-		result, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
+		content, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
 		if err != nil {
 			return err.Error()
 		}
-		return result
+		return content
 	}
 
 	autogold.Want(
@@ -67,7 +66,7 @@ func fileMatch(chunks ...string) result.Match {
 			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
 			Path: "my/awesome/path.ml",
 		},
-		ChunkMatches: result.ChunkMatches(matches),
+		ChunkMatches: matches,
 	}
 }
 
@@ -84,17 +83,17 @@ func commitMatch(content string) result.Match {
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
 		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
+		commandResult, err := computeQuery.Command.Run(context.Background(), m)
 		if err != nil {
 			return err.Error()
 		}
 
-		switch r := res.(type) {
+		switch r := commandResult.(type) {
 		case *Text:
 			return r.Value
 		case *TextExtra:
-			result, _ := json.Marshal(r)
-			return string(result)
+			commandResult, _ := json.Marshal(r)
+			return string(commandResult)
 		}
 		return "Error, unrecognized result type returned"
 	}

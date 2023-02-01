@@ -14,13 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
+var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+
+func defaultFrontendInternal() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return "localhost:3090"
+	}
+	return "sourcegraph-frontend-internal"
+}
 
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
@@ -49,7 +58,14 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 	return externalURL, nil
 }
 
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
+// SendEmail issues a request to send an email. All services outside the frontend should
+// use this to send emails.  Source is used to categorize metrics, and should indicate the
+// product feature that is sending this email.
+//
+// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
+// the email should be verified or not, and conduct the appropriate checks before sending.
+// This helps reduce the chance that we damage email sender reputations when attempting to
+// send emails to nonexistent email addresses.
 func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
 	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
 		Source:  source,

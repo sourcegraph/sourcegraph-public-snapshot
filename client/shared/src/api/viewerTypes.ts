@@ -61,7 +61,7 @@ export interface CodeEditorWithPartialModel extends CodeEditor {
  *
  * How does this relate to editors? A text document is the file, an editor is the
  * window that the file is shown in. Things like the content and language are properties of the
- * text document; things like decorations and the selection ranges are properties of the editor.
+ * text document; things like selection ranges are properties of the editor.
  */
 export interface TextDocumentData extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
 

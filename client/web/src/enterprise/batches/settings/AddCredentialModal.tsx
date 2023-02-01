@@ -27,7 +27,7 @@ export interface AddCredentialModalProps {
     initialStep?: Step
 }
 
-const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-credentials'
+const HELP_TEXT_LINK_URL = '/help/batch_changes/quickstart#configure-code-host-credentials'
 
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
@@ -54,6 +54,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     ),
 
     // These are just for type completeness and serve as placeholders for a bright future.
+    [ExternalServiceKind.AZUREDEVOPS]: <span>Unsupported</span>,
     [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,

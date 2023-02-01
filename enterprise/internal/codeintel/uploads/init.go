@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -17,7 +16,7 @@ import (
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	uploadsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -35,14 +34,14 @@ func NewService(
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient(db))
+	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
-	locker := locker.NewWith(db, "codeintel")
+	ciLocker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		if rankingBucketCredentialsFile == "" {
 			return nil
 		}
 
@@ -69,18 +68,11 @@ func NewService(
 		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
-		locker,
+		ciLocker,
 	)
 	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
 
 	return svc
-}
-
-type serviceDependencies struct {
-	db             database.DB
-	codeIntelDB    codeintelshared.CodeIntelDB
-	gsc            GitserverClient
-	observationCtx *observation.Context
 }
 
 var (
@@ -105,7 +97,7 @@ func NewUploadProcessorJob(
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
 ) goroutine.BackgroundRoutine {
-	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
+	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
 
 	dbworker.InitPrometheusMetric(observationCtx, uploadsProcessorStore, "codeintel", "upload", nil)
 
@@ -166,7 +158,7 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 
 func NewResetters(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
 	metrics := background.NewResetterMetrics(observationCtx)
-	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
+	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
 
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, ConfigJanitorInst.Interval, metrics),

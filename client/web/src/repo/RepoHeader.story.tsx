@@ -2,13 +2,14 @@ import { mdiSourceRepository } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
-import { CopyPathAction } from '@sourcegraph/search-ui'
+import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphContext } from '../jscontext'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
@@ -21,9 +22,13 @@ import repoRevisionContainerStyles from './RepoRevisionContainer.module.scss'
 const mockUser = {
     id: 'userID',
     username: 'username',
-    email: 'user@me.com',
+    emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     siteAdmin: true,
 } as AuthenticatedUser
+
+if (!window.context) {
+    window.context = { enableLegacyExtensions: false } as SourcegraphContext & Mocha.SuiteFunction
+}
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
@@ -158,8 +163,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     repoName: 'sourcegraph/sourcegraph',
     revision: 'main',
     onLifecyclePropsChange,
-    location: LOCATION,
-    history: H.createMemoryHistory(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,

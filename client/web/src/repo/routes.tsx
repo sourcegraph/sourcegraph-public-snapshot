@@ -10,7 +10,7 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
-import { RepoContainerRoute } from './RepoContainer'
+import { RepoContainerRoute, RepoSettingsContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
@@ -89,6 +89,9 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/stats',
         render: context => <RepositoryStatsArea {...context} />,
     },
+]
+
+export const repoSettingsContainerRoutes: readonly RepoSettingsContainerRoute[] = [
     {
         path: '/-/settings',
         render: context => <RepoSettingsArea {...context} />,
@@ -141,15 +144,17 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 }}
             >
                 <RepositoryFileTreePage {...props} />
-                <ActionItemsBar
-                    repo={props.repo}
-                    useActionItemsBar={props.useActionItemsBar}
-                    location={props.location}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
-                    source={routePath === blobPath ? 'blob' : undefined}
-                />
+                {window.context.enableLegacyExtensions && (
+                    <ActionItemsBar
+                        repo={props.repo}
+                        useActionItemsBar={props.useActionItemsBar}
+                        location={props.location}
+                        extensionsController={props.extensionsController}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                        source={routePath === blobPath ? 'blob' : undefined}
+                    />
+                )}
             </TraceSpanProvider>
         ),
     })),
@@ -159,13 +164,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/branch',
-        render: ({ repo, location, history }) => (
-            <RepositoryBranchesTab repo={repo} location={location} history={history} />
-        ),
+        render: ({ repo }) => <RepositoryBranchesTab repo={repo} />,
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
+        render: ({ repo }) => <RepositoryTagTab repo={repo} />,
     },
     {
         path: compareSpecPath,

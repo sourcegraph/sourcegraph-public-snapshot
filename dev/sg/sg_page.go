@@ -124,6 +124,6 @@ func parseOpsGeniePriority(p string) (opsgeniealert.Priority, error) {
 	case "P5":
 		return opsgeniealert.P5, nil
 	default:
-		return opsgeniealert.Priority(""), errors.Errorf("invalid priority %q", p)
+		return "", errors.Errorf("invalid priority %q", p)
 	}
 }

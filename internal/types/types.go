@@ -557,7 +557,20 @@ type GitserverRepo struct {
 	LastChanged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	UpdatedAt     time.Time
+	// Time when corruption of repo was detected
+	CorruptedAt time.Time
+	UpdatedAt   time.Time
+	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
+	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
+	CorruptionLogs []RepoCorruptionLog
+}
+
+// RepoCorruptionLog represents a corruption event that has been detected on a repo.
+type RepoCorruptionLog struct {
+	// When the corruption event was detected
+	Timestamp time.Time `json:"time"`
+	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
+	Reason string `json:"reason"`
 }
 
 // ExternalService is a connection to an external service.
@@ -792,10 +805,24 @@ type User struct {
 	Searchable            bool
 }
 
+// UserForSCIM extends user with email addresses and SCIM external ID.
+type UserForSCIM struct {
+	User
+	Emails         []string
+	SCIMExternalID string
+}
+
+type SystemRole string
+
+var (
+	UserSystemRole              SystemRole = "USER"
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
 type Role struct {
 	ID        int32
 	Name      string
-	ReadOnly  bool
+	System    bool
 	CreatedAt time.Time
 	DeletedAt time.Time
 }
@@ -841,11 +868,6 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -1746,6 +1768,7 @@ type Webhook struct {
 	UpdatedByUserID int32
 }
 
+// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
 type OutboundRequestLogItem struct {
 	ID                 string              `json:"id"`
 	StartedAt          time.Time           `json:"startedAt"`
@@ -1772,4 +1795,22 @@ type SlowRequest struct {
 	Errors    []string       `json:"errors"`
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

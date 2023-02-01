@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
+import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
-import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
@@ -21,9 +20,8 @@ import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboard
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { HomePanels } from '../panels/HomePanels'
 
-import { QueryExamplesHomepage } from './QueryExamplesHomepage'
+import { CloudHomepageCta } from './CloudHomepageCta'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -37,11 +35,8 @@ export interface SearchPageProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
         SearchContextInputProps,
-        HomePanelsProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     autoFocus?: boolean
 
@@ -53,16 +48,24 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
-    const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
         query: '',
     })
+
+    useEffect(() => {
+        if (experimentalQueryInput && props.selectedSearchContextSpec) {
+            setQueryState(state =>
+                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
+            )
+        }
+    }, [experimentalQueryInput, props.selectedSearchContextSpec])
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -77,7 +80,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <div className="mt-3">
                         <Link
                             to={buildCloudTrialURL(props.authenticatedUser)}
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeAboveSearch' })}
                         >
                             Search private code
                         </Link>
@@ -112,22 +115,18 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                <>
-                    {showEnterpriseHomePanels && !!props.authenticatedUser && !props.isSourcegraphDotCom && (
-                        <HomePanels showCollaborators={showCollaborators} {...props} />
-                    )}
-
-                    {((!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom) && (
-                        <QueryExamplesHomepage
+                {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
+                    <div>
+                        {props.isSourcegraphDotCom && <CloudHomepageCta authenticatedUser={props.authenticatedUser} />}
+                        <QueryExamples
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
                             queryState={queryState}
                             setQueryState={setQueryState}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            authenticatedUser={props.authenticatedUser}
                         />
-                    )}
-                </>
+                    </div>
+                )}
             </div>
 
             <SearchPageFooter {...props} />

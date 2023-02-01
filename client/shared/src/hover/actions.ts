@@ -18,7 +18,15 @@ import {
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import {
+    asError,
+    compatNavigate,
+    ErrorLike,
+    HistoryOrNavigate,
+    isErrorLike,
+    isExternalLink,
+    logger,
+} from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
@@ -315,15 +323,17 @@ export const getDefinitionURL =
 export function registerHoverContributions({
     extensionsController,
     platformContext: { urlToFile, requestGraphQL },
-    history,
+    historyOrNavigate,
+    getLocation,
     locationAssign,
 }: {
     extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
     platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
 } & {
-    history: H.History
+    historyOrNavigate: HistoryOrNavigate
+    locationAssign: typeof globalThis.location.assign
+    getLocation: () => H.Location
     /** Implementation of `window.location.assign()` used to navigate to external URLs. */
-    locationAssign: typeof location.assign
 }): { contributionsPromise: Promise<void> } & Unsubscribable {
     const subscriptions = new Subscription()
 
@@ -420,7 +430,7 @@ export function registerHoverContributions({
                         if (!result) {
                             throw new Error('No definition found.')
                         }
-                        if (result.url === H.createPath(history.location)) {
+                        if (result.url === H.createPath(getLocation())) {
                             // The user might be confused if they click "Go to definition" and don't go anywhere, which
                             // occurs if they are *already* on the definition. Give a helpful tip if they do this.
                             //
@@ -437,9 +447,11 @@ export function registerHoverContributions({
                         if (isExternalLink(result.url)) {
                             // External links must be navigated to through the browser
                             locationAssign(result.url)
+                        } else if (typeof historyOrNavigate === 'function') {
+                            // Use react router to handle in-app navigation
+                            historyOrNavigate(result.url)
                         } else {
-                            // Use history library to handle in-app navigation
-                            history.push(result.url)
+                            compatNavigate(historyOrNavigate, result.url)
                         }
                     },
                 })

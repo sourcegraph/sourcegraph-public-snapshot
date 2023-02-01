@@ -4,7 +4,7 @@ Wildcard is a collection of design-approved, accessible and well-tested React co
 
 ## Usage
 
-This library is setup as a `yarn workspace` symlink.
+This library is setup as a `pnpm workspace` symlink.
 
 You can import components from the library like so:
 

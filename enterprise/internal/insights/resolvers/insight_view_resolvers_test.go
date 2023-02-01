@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
-	"sort"
 	"testing"
 	"time"
 
@@ -21,155 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func addrStr(input string) *string {
-	return &input
-}
-
-func TestFilterRepositories(t *testing.T) {
-	ctx := context.Background()
-	tests := []struct {
-		name           string
-		repositories   []string
-		filters        types.InsightViewFilters
-		want           []string
-		searchContexts []struct {
-			name  string
-			query string
-		}
-	}{
-		{
-			name:         "test one exclude",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
-			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr("gitlab.com")},
-			want:         []string{"github.com/sourcegraph/sourcegraph"},
-		},
-		{
-			name:         "test one include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
-			filters:      types.InsightViewFilters{IncludeRepoRegex: addrStr("gitlab.com")},
-			want:         []string{"gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test no filters",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
-			filters:      types.InsightViewFilters{},
-			want:         []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test exclude and include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr("github.*"), IncludeRepoRegex: addrStr("myrepo")},
-			want:         []string{"gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test exclude all",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{ExcludeRepoRegex: addrStr(".*")},
-			want:         []string{},
-		},
-		{
-			name:         "test include all",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{IncludeRepoRegex: addrStr(".*")},
-			want:         []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-		},
-		{
-			name:         "test context include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*"},
-			},
-			want: []string{"github.com/sourcegraph/sourcegraph"},
-		},
-		{
-			name:         "test context exclude",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "-repo:^github\\.com/sourcegraph/.*"},
-			},
-			want: []string{"gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-		},
-		{
-			name:         "test context exclude include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "-repo:^github.* repo:myrepo"},
-			},
-			want: []string{"gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test context exclude regex include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "-repo:^github.*"},
-			},
-			want: []string{"gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test context include regex exclude",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, ExcludeRepoRegex: addrStr("^github.*")},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "repo:myrepo"},
-			},
-			want: []string{"gitlab.com/myrepo/repo"},
-		},
-		{
-			name:         "test context and regex include",
-			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
-			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
-			searchContexts: []struct {
-				name  string
-				query string
-			}{
-				{name: "@dev/mycontext123", query: "repo:gitlab"},
-			},
-			want: []string{"gitlab.com/myrepo/repo"},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mocks := make(map[string]*internalTypes.SearchContext)
-			for _, searchContextDef := range test.searchContexts {
-				mocks[searchContextDef.name] = &internalTypes.SearchContext{Name: searchContextDef.name, Query: searchContextDef.query}
-			}
-
-			got, err := filterRepositories(ctx, test.filters, test.repositories, &fakeSearchContextLoader{mocks: mocks})
-			if err != nil {
-				t.Error(err)
-			}
-			// sort for test determinism
-			sort.Slice(got, func(i, j int) bool {
-				return got[i] < got[j]
-			})
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("unexpected repository result (want/got): %v", diff)
-			}
-		})
-	}
-}
 
 func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 	ctx := context.Background()
@@ -397,14 +248,6 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	})
 }
 
-type fakeSearchContextLoader struct {
-	mocks map[string]*internalTypes.SearchContext
-}
-
-func (f *fakeSearchContextLoader) GetByName(ctx context.Context, name string) (*internalTypes.SearchContext, error) {
-	return f.mocks[name], nil
-}
-
 func TestRemoveClosePoints(t *testing.T) {
 	getPoint := func(month time.Month, day, hour, minute int) store.SeriesPoint {
 		return store.SeriesPoint{
@@ -571,7 +414,7 @@ func TestRemoveClosePoints(t *testing.T) {
 func TestInsightRepoScopeResolver(t *testing.T) {
 
 	makeSeries := func(repoList []string, search string) types.InsightViewSeries {
-		var repoSearch *string = &search
+		repoSearch := &search
 		if search == "" {
 			repoSearch = nil
 		}

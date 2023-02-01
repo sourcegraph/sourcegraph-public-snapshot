@@ -12,31 +12,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type insightsQueryRunnerBaseConfig struct {
-	env.BaseConfig
-
-	enabled bool
-}
-
-func (i *insightsQueryRunnerBaseConfig) Load() {
-	i.enabled = insights.IsEnabled()
-}
-
 type insightsQueryRunnerJob struct {
 	env.BaseConfig
 }
-
-var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
 
 func (s *insightsQueryRunnerJob) Description() string {
 	return ""
 }
 
 func (s *insightsQueryRunnerJob) Config() []env.Config {
-	return []env.Config{insightsQueryRunnerConfigInst}
+	return nil
 }
 
-func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsQueryRunnerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil

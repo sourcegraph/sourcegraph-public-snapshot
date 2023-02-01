@@ -7,7 +7,7 @@ Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and 
 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
 
-- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
+- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md)—they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
 - Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our defaults is encapsulated in a small set of files.
 
 ## Using Kustomize

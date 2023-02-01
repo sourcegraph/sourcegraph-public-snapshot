@@ -80,6 +80,7 @@ const bulkOperationFragment = gql`
                         url
                     }
                     repository {
+                        id
                         name
                         url
                     }

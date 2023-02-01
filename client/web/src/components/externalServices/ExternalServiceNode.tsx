@@ -1,36 +1,29 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiAlertCircle, mdiCircle, mdiCheckCircle, mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
+import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert, ErrorMessage } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
-import { deleteExternalService, useExternalServiceCheckConnectionByIdLazyQuery } from './backend'
-import { defaultExternalServices } from './externalServices'
+import { deleteExternalService } from './backend'
+import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    onDidUpdate: () => void
-    history: H.History
     routingPrefix: string
-    afterDeleteRoute: string
     editingDisabled: boolean
 }
 
 export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
     node,
-    onDidUpdate,
-    history,
     routingPrefix,
-    afterDeleteRoute,
     editingDisabled,
 }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
@@ -42,36 +35,14 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            onDidUpdate()
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
-            history.push(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
+        } finally {
+            window.location.reload()
         }
-    }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
-
-    const [doCheckConnection, { loading, data, error }] = useExternalServiceCheckConnectionByIdLazyQuery(node.id)
-
-    const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
-
-    let externalServiceAvailabilityStatus
-    if (!error && !loading) {
-        if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
-            externalServiceAvailabilityStatus = (
-                <span className="text-success">
-                    <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Code host is reachable.
-                </span>
-            )
-        } else if (checkConnectionNode?.__typename === 'ExternalServiceUnavailable') {
-            externalServiceAvailabilityStatus = (
-                <span className="text-danger">
-                    <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                    <ErrorMessage error={checkConnectionNode.suspectedReason} />
-                </span>
-            )
-        }
-    }
+    }, [node])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -82,7 +53,13 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="align-self-start">
-                    {node.lastSyncError === null && (
+                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
+                        <Tooltip content="Sync is running">
+                            <div aria-label="Sync is running">
+                                <LoadingSpinner className="mr-2" inline={true} />
+                            </div>
+                        </Tooltip>
+                    ) : node.lastSyncError === null ? (
                         <Tooltip content="All good, no errors!">
                             <Icon
                                 svgPath={mdiCircle}
@@ -90,8 +67,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 className="text-success mr-2"
                             />
                         </Tooltip>
-                    )}
-                    {node.lastSyncError !== null && (
+                    ) : (
                         <Tooltip content="Syncing failed, check the error message for details!">
                             <Icon
                                 svgPath={mdiCircle}
@@ -105,7 +81,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <div>
                         <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
                         <strong>
-                            {node.displayName}{' '}
+                            <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
                                 ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
                             </small>
@@ -126,45 +102,15 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                     </>
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}
-                                <br />
-                                {loading && (
-                                    <span className={classNames('text-primary')}>
-                                        <LoadingSpinner /> Checking connection...
-                                    </span>
-                                )}
-                                {!loading && error && (
-                                    <span className="text-danger">
-                                        <Icon aria-hidden={true} svgPath={mdiAlertCircle} />{' '}
-                                        <ErrorMessage error={error} />
-                                    </span>
-                                )}
-                                {externalServiceAvailabilityStatus}
                             </small>
                         </Text>
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip
-                        content={
-                            node.hasConnectionCheck
-                                ? 'Test if code host is reachable from Sourcegraph'
-                                : 'Connection check unavailable'
-                        }
-                    >
-                        <Button
-                            className="test-connection-external-service-button"
-                            variant="secondary"
-                            onClick={() => doCheckConnection()}
-                            disabled={!node.hasConnectionCheck || loading}
-                            size="sm"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiConnection} /> Test
-                        </Button>
-                    </Tooltip>{' '}
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}`}
+                            to={`${routingPrefix}/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -182,6 +128,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             size="sm"
                         >
                             <Icon aria-hidden={true} svgPath={mdiDelete} />
+                            {' Delete'}
                         </Button>
                     </Tooltip>
                 </div>

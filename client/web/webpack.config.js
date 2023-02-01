@@ -103,7 +103,7 @@ const config = {
     IS_PERSISTENT_CACHE_ENABLED &&
     getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
-    minimize: IS_PRODUCTION,
+    minimize: IS_PRODUCTION && !INTEGRATION_TESTS,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
@@ -150,7 +150,9 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
+  // Inline source maps for integration tests to preserve readable stack traces.
+  // See related issue here: https://github.com/puppeteer/puppeteer/issues/985
+  devtool: IS_PRODUCTION ? (INTEGRATION_TESTS ? 'inline-source-map' : 'source-map') : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
@@ -168,6 +170,9 @@ const config = {
       new WebpackManifestPlugin({
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
+        seed: {
+          environment: NODE_ENV,
+        },
         // Only output files that are required to run the application.
         filter: ({ isInitial, name }) =>
           isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
@@ -233,6 +238,11 @@ const config = {
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+      punycode: require.resolve('punycode'),
+      util: require.resolve('util'),
+    },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148

@@ -53,7 +53,6 @@ export const Default: Story = () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
@@ -78,7 +77,6 @@ export const DefaultReadOnly: Story = () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
-                showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}

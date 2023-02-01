@@ -4,11 +4,13 @@ package blobstore
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -26,9 +28,11 @@ type Service struct {
 	Log            log.Logger
 	ObservationCtx *observation.Context
 
-	initOnce      sync.Once
-	bucketLocksMu sync.Mutex
-	bucketLocks   map[string]*sync.RWMutex
+	initOnce              sync.Once
+	bucketLocksMu         sync.Mutex
+	bucketLocks           map[string]*sync.RWMutex
+	mutatePendingUploadMu sync.Mutex
+	MockObjectAge         map[string]time.Time
 }
 
 func (s *Service) init() {
@@ -47,59 +51,25 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricRunning.Inc()
 	defer metricRunning.Dec()
 
-	err := s.serve(w, r)
+	err := s.serveS3(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		s.Log.Error("serving request", sglog.Error(err))
-		fmt.Fprintf(w, "error: %v", err)
+		fmt.Fprintf(w, "blobstore: error: %v", err)
 		return
-	}
-}
-
-func (s *Service) serve(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	path := strings.FieldsFunc(r.URL.Path, func(r rune) bool { return r == '/' })
-	switch r.Method {
-	case "PUT":
-		if len(path) == 1 {
-			// PUT /<bucket>
-			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html
-			if r.ContentLength != 0 {
-				return errors.Newf("expected CreateBucket request to have content length 0: %s %s", r.Method, r.URL)
-			}
-			if err := s.createBucket(ctx, path[0]); err != nil {
-				if err == ErrBucketAlreadyExists {
-					w.WriteHeader(http.StatusConflict)
-					fmt.Fprintf(w, "bucket already exists")
-					return nil
-				}
-				return errors.Wrap(err, "createBucket")
-			}
-			w.WriteHeader(http.StatusOK)
-			return nil
-		}
-		return errors.Newf("unexpected PUT request: %s", r.URL)
-	case "GET":
-		if len(path) == 2 && r.URL.Query().Get("x-id") == "GetObject" {
-			// GET /<bucket>/<key>?x-id=GetObject
-			// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
-			// TODO(blobstore): implement me!
-			w.WriteHeader(http.StatusNotFound)
-			return nil
-		}
-		return errors.Newf("unexpected GET request: %s", r.URL)
-	default:
-		return errors.Newf("unexpected request: %s %s", r.Method, r.URL)
 	}
 }
 
 var (
 	ErrBucketAlreadyExists = errors.New("bucket already exists")
+	ErrNoSuchBucket        = errors.New("no such bucket")
+	ErrNoSuchKey           = errors.New("no such key")
+	ErrNoSuchUpload        = errors.New("no such upload")
+	ErrInvalidPartOrder    = errors.New("invalid part order")
 )
 
 func (s *Service) createBucket(ctx context.Context, name string) error {
 	_ = ctx
-	defer s.Log.Info("created bucket", sglog.String("name", name))
 
 	// Lock the bucket so nobody can read or write to the same bucket while we create it.
 	bucketLock := s.bucketLock(name)
@@ -107,18 +77,134 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 	defer bucketLock.Unlock()
 
 	// Create the bucket storage directory.
-	bucketDir := filepath.Join(s.DataDir, "buckets", name)
+	bucketDir := s.bucketDir(name)
 	if _, err := os.Stat(bucketDir); err == nil {
 		return ErrBucketAlreadyExists
 	}
+
+	defer s.Log.Info("created bucket", sglog.String("name", name), sglog.String("dir", bucketDir))
 	if err := os.Mkdir(bucketDir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "MkdirAll")
 	}
 	return nil
 }
 
-// returns a bucket-level lock which can be used for reading objects in a bucket, or in write-lock
-// mode can be used to create or delete a bucket with the given name.
+type objectMetadata struct {
+	LastModified time.Time
+}
+
+func (s *Service) putObject(ctx context.Context, bucketName, objectName string, data io.ReadCloser) (*objectMetadata, error) {
+	defer data.Close()
+	_ = ctx
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	// Does the bucket exist?
+	bucketDir := s.bucketDir(bucketName)
+	if _, err := os.Stat(bucketDir); err != nil {
+		return nil, ErrNoSuchBucket
+	}
+
+	// Write the object, relying on an atomic filesystem rename operation to prevent any parallel
+	// read/write issues.
+	//
+	// Note that the bucket lock guarantees the bucket (folder) cannot be created/deleted, but does NOT
+	// guarantee that nobody else is writing/deleting/reading the same object (file) within the bucket.
+	tmpFile, err := os.CreateTemp(bucketDir, "*-"+objectFileName(objectName)+".tmp")
+	if err != nil {
+		return nil, errors.Wrap(err, "creating tmp file")
+	}
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
+	if _, err := io.Copy(tmpFile, data); err != nil {
+		return nil, errors.Wrap(err, "copying data into tmp file")
+	}
+	// Ensure file bytes are on disk before renaming
+	// see https://github.com/sourcegraph/sourcegraph/pull/46972#discussion_r1088293666
+	if err := tmpFile.Sync(); err != nil {
+		return nil, errors.Wrap(err, "sync tmp file")
+	}
+	objectFile := s.objectFilePath(bucketName, objectName)
+	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
+		return nil, errors.Wrap(err, "renaming object file")
+	}
+	// fsync the directory to ensure the rename is recorded
+	// see https://github.com/sourcegraph/sourcegraph/pull/46972#discussion_r1088293666
+	if err := fsync(s.bucketDir(bucketName)); err != nil {
+		return nil, errors.Wrap(err, "sync bucket dir")
+	}
+	s.Log.Debug("put object", sglog.String("key", bucketName+"/"+objectName))
+	return &objectMetadata{
+		LastModified: time.Now().UTC(), // logically right now, no reason to consult filesystem
+	}, nil
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
+}
+
+func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
+	_ = ctx
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	// Read the object
+	// Note that we return an io.ReadCloser here, so f.Close is intentionally NOT called.
+	objectFile := s.objectFilePath(bucketName, objectName)
+	f, err := os.Open(objectFile)
+	if err != nil {
+		s.Log.Debug("get object", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))
+		if os.IsNotExist(err) {
+			return nil, ErrNoSuchKey
+		}
+		return nil, errors.Wrap(err, "Open")
+	}
+	s.Log.Debug("get object", sglog.String("key", bucketName+"/"+objectName))
+	return f, nil
+}
+
+func (s *Service) deleteObject(ctx context.Context, bucketName, objectName string) error {
+	_ = ctx
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	// Delete the object
+	objectFile := s.objectFilePath(bucketName, objectName)
+	if err := os.Remove(objectFile); err != nil {
+		if os.IsNotExist(err) {
+			return ErrNoSuchKey
+		}
+		return errors.Wrap(err, "Remove")
+	}
+	s.Log.Debug("delete object", sglog.String("key", bucketName+"/"+objectName))
+	return nil
+}
+
+// Returns a bucket-level lock
+//
+// When locked for reading, you have shared access to the bucket, for reading/writing objects to it.
+// The bucket cannot be created or deleted while you hold a read lock.
+//
+// When locked for writing, you have exclusive ownership of the entire bucket.
 func (s *Service) bucketLock(name string) *sync.RWMutex {
 	s.bucketLocksMu.Lock()
 	defer s.bucketLocksMu.Unlock()
@@ -131,13 +217,23 @@ func (s *Service) bucketLock(name string) *sync.RWMutex {
 	return lock
 }
 
-var (
-	metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "blobstore_service_running",
-		Help: "Number of running blobstore requests.",
-	})
-	metricRequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "blobstore_service_request_total",
-		Help: "Number of returned blobstore requests.",
-	}, []string{"code"})
-)
+func (s *Service) bucketDir(name string) string {
+	return filepath.Join(s.DataDir, "buckets", name)
+}
+
+func (s *Service) objectFilePath(bucketName, objectName string) string {
+	return filepath.Join(s.DataDir, "buckets", bucketName, objectFileName(objectName))
+}
+
+// An object name may not be a valid file path, and may include slashes. We need to keep a flat
+// directory structure <bucket>/<object> and so we URL encode the object name. Note that object
+// listing requests require us to be able to get the original object name back, and require that
+// we be able to perform prefix matching on object keys.
+func objectFileName(objectName string) string {
+	return url.QueryEscape(objectName)
+}
+
+var metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "blobstore_service_running",
+	Help: "Number of running blobstore requests.",
+})

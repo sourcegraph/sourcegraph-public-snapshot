@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -454,7 +454,7 @@ func TestRepositoryComparison(t *testing.T) {
 func TestDiffHunk(t *testing.T) {
 	ctx := context.Background()
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(testDiff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(testDiff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -564,7 +564,7 @@ index 4d14577..10ef458 100644
 +(c) Copyright Sourcegraph 2013-2021.
 \ No newline at end of file
 `
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -650,7 +650,7 @@ index 4d14577..9fe9a4f 100644
 ` + "-" + `
  See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.`
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -750,7 +750,7 @@ index d206c4c..bb06461 100644
 -}
 `
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -932,13 +932,13 @@ func TestFileDiffHighlighter(t *testing.T) {
 
 	file1 := &dummyFileResolver{
 		path: "old.txt",
-		content: func(ctx context.Context) (string, error) {
+		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 			return "old1\nold2\nold3\n", nil
 		},
 	}
 	file2 := &dummyFileResolver{
 		path: "new.txt",
-		content: func(ctx context.Context) (string, error) {
+		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 			return "new1\nnew2\nnew3\n", nil
 		},
 	}
@@ -1002,29 +1002,36 @@ type dummyFileResolver struct {
 	url          string
 	canonicalURL string
 
-	content func(context.Context) (string, error)
+	content func(context.Context, *GitTreeContentPageArgs) (string, error)
 }
 
 func (d *dummyFileResolver) Path() string      { return d.path }
 func (d *dummyFileResolver) Name() string      { return d.name }
 func (d *dummyFileResolver) IsDirectory() bool { return false }
-func (d *dummyFileResolver) Content(ctx context.Context) (string, error) {
-	return d.content(ctx)
+func (d *dummyFileResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+	return d.content(ctx, args)
 }
 
 func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
-	content, err := d.content(ctx)
+	content, err := d.content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len([]byte(content))), nil
+}
+func (d *dummyFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	content, err := d.content(ctx, &GitTreeContentPageArgs{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(strings.Split(content, "\n"))), nil
 }
 
 func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (d *dummyFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (d *dummyFileResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	return d.richHTML, nil
 }
 

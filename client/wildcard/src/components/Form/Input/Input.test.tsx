@@ -31,6 +31,7 @@ describe('Input', () => {
                 aria-label="Loading"
                 aria-live="polite"
                 class="mdi-icon loadingSpinner spinner"
+                data-loading-spinner="true"
                 role="img"
               />
             </div>
@@ -49,39 +50,7 @@ describe('Input', () => {
             />
         )
 
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <label
-              class="label w-100"
-            >
-              <div
-                class="mb-2"
-              >
-                Input label
-              </div>
-              <div
-                class="container loader-input loaderInput"
-              >
-                <input
-                  class="inputLoading form-control with-invalid-icon"
-                  placeholder="loading status input"
-                  title="Input loading"
-                  type="text"
-                  value="Input value"
-                />
-                <div
-                  aria-label="Loading"
-                  aria-live="polite"
-                  class="mdi-icon loadingSpinner spinner"
-                  role="img"
-                />
-              </div>
-              <small
-                class="text-muted form-text font-weight-normal mt-2"
-              >
-                random message
-              </small>
-            </label>
-        `)
+        expect(container.firstChild).toMatchSnapshot()
     })
 
     it.each(STATUS)("Renders status '%s' correctly", status => {

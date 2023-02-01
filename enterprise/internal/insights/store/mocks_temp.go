@@ -9,7 +9,6 @@ package store
 import (
 	"context"
 	"sync"
-	"time"
 
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -1347,6 +1346,10 @@ type MockInterface struct {
 	// CountDataFunc is an instance of a mock function object controlling
 	// the behavior of the method CountData.
 	CountDataFunc *InterfaceCountDataFunc
+	// GetAllDataForInsightViewIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetAllDataForInsightViewID.
+	GetAllDataForInsightViewIDFunc *InterfaceGetAllDataForInsightViewIDFunc
 	// GetInsightSeriesRecordingTimesFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetInsightSeriesRecordingTimes.
@@ -1388,8 +1391,13 @@ func NewMockInterface() *MockInterface {
 				return
 			},
 		},
+		GetAllDataForInsightViewIDFunc: &InterfaceGetAllDataForInsightViewIDFunc{
+			defaultHook: func(context.Context, ExportOpts) (r0 []SeriesPointForExport, r1 error) {
+				return
+			},
+		},
 		GetInsightSeriesRecordingTimesFunc: &InterfaceGetInsightSeriesRecordingTimesFunc{
-			defaultHook: func(context.Context, int, *time.Time, *time.Time) (r0 types.InsightSeriesRecordingTimes, r1 error) {
+			defaultHook: func(context.Context, int, SeriesPointsOpts) (r0 types.InsightSeriesRecordingTimes, r1 error) {
 				return
 			},
 		},
@@ -1440,8 +1448,13 @@ func NewStrictMockInterface() *MockInterface {
 				panic("unexpected invocation of MockInterface.CountData")
 			},
 		},
+		GetAllDataForInsightViewIDFunc: &InterfaceGetAllDataForInsightViewIDFunc{
+			defaultHook: func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
+				panic("unexpected invocation of MockInterface.GetAllDataForInsightViewID")
+			},
+		},
 		GetInsightSeriesRecordingTimesFunc: &InterfaceGetInsightSeriesRecordingTimesFunc{
-			defaultHook: func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error) {
+			defaultHook: func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error) {
 				panic("unexpected invocation of MockInterface.GetInsightSeriesRecordingTimes")
 			},
 		},
@@ -1487,6 +1500,9 @@ func NewMockInterfaceFrom(i Interface) *MockInterface {
 		},
 		CountDataFunc: &InterfaceCountDataFunc{
 			defaultHook: i.CountData,
+		},
+		GetAllDataForInsightViewIDFunc: &InterfaceGetAllDataForInsightViewIDFunc{
+			defaultHook: i.GetAllDataForInsightViewID,
 		},
 		GetInsightSeriesRecordingTimesFunc: &InterfaceGetInsightSeriesRecordingTimesFunc{
 			defaultHook: i.GetInsightSeriesRecordingTimes,
@@ -1727,28 +1743,139 @@ func (c InterfaceCountDataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// InterfaceGetAllDataForInsightViewIDFunc describes the behavior when the
+// GetAllDataForInsightViewID method of the parent MockInterface instance is
+// invoked.
+type InterfaceGetAllDataForInsightViewIDFunc struct {
+	defaultHook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)
+	hooks       []func(context.Context, ExportOpts) ([]SeriesPointForExport, error)
+	history     []InterfaceGetAllDataForInsightViewIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAllDataForInsightViewID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockInterface) GetAllDataForInsightViewID(v0 context.Context, v1 ExportOpts) ([]SeriesPointForExport, error) {
+	r0, r1 := m.GetAllDataForInsightViewIDFunc.nextHook()(v0, v1)
+	m.GetAllDataForInsightViewIDFunc.appendCall(InterfaceGetAllDataForInsightViewIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAllDataForInsightViewID method of the parent MockInterface instance is
+// invoked and the hook queue is empty.
+func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultHook(hook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAllDataForInsightViewID method of the parent MockInterface instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *InterfaceGetAllDataForInsightViewIDFunc) PushHook(hook func(context.Context, ExportOpts) ([]SeriesPointForExport, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InterfaceGetAllDataForInsightViewIDFunc) SetDefaultReturn(r0 []SeriesPointForExport, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InterfaceGetAllDataForInsightViewIDFunc) PushReturn(r0 []SeriesPointForExport, r1 error) {
+	f.PushHook(func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
+		return r0, r1
+	})
+}
+
+func (f *InterfaceGetAllDataForInsightViewIDFunc) nextHook() func(context.Context, ExportOpts) ([]SeriesPointForExport, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceGetAllDataForInsightViewIDFunc) appendCall(r0 InterfaceGetAllDataForInsightViewIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceGetAllDataForInsightViewIDFuncCall
+// objects describing the invocations of this function.
+func (f *InterfaceGetAllDataForInsightViewIDFunc) History() []InterfaceGetAllDataForInsightViewIDFuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceGetAllDataForInsightViewIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceGetAllDataForInsightViewIDFuncCall is an object that describes
+// an invocation of method GetAllDataForInsightViewID on an instance of
+// MockInterface.
+type InterfaceGetAllDataForInsightViewIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExportOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []SeriesPointForExport
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceGetAllDataForInsightViewIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceGetAllDataForInsightViewIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // InterfaceGetInsightSeriesRecordingTimesFunc describes the behavior when
 // the GetInsightSeriesRecordingTimes method of the parent MockInterface
 // instance is invoked.
 type InterfaceGetInsightSeriesRecordingTimesFunc struct {
-	defaultHook func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error)
-	hooks       []func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error)
+	defaultHook func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
+	hooks       []func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	history     []InterfaceGetInsightSeriesRecordingTimesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetInsightSeriesRecordingTimes delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockInterface) GetInsightSeriesRecordingTimes(v0 context.Context, v1 int, v2 *time.Time, v3 *time.Time) (types.InsightSeriesRecordingTimes, error) {
-	r0, r1 := m.GetInsightSeriesRecordingTimesFunc.nextHook()(v0, v1, v2, v3)
-	m.GetInsightSeriesRecordingTimesFunc.appendCall(InterfaceGetInsightSeriesRecordingTimesFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockInterface) GetInsightSeriesRecordingTimes(v0 context.Context, v1 int, v2 SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error) {
+	r0, r1 := m.GetInsightSeriesRecordingTimesFunc.nextHook()(v0, v1, v2)
+	m.GetInsightSeriesRecordingTimesFunc.appendCall(InterfaceGetInsightSeriesRecordingTimesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // GetInsightSeriesRecordingTimes method of the parent MockInterface
 // instance is invoked and the hook queue is empty.
-func (f *InterfaceGetInsightSeriesRecordingTimesFunc) SetDefaultHook(hook func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error)) {
+func (f *InterfaceGetInsightSeriesRecordingTimesFunc) SetDefaultHook(hook func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)) {
 	f.defaultHook = hook
 }
 
@@ -1757,7 +1884,7 @@ func (f *InterfaceGetInsightSeriesRecordingTimesFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *InterfaceGetInsightSeriesRecordingTimesFunc) PushHook(hook func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error)) {
+func (f *InterfaceGetInsightSeriesRecordingTimesFunc) PushHook(hook func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1766,19 +1893,19 @@ func (f *InterfaceGetInsightSeriesRecordingTimesFunc) PushHook(hook func(context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *InterfaceGetInsightSeriesRecordingTimesFunc) SetDefaultReturn(r0 types.InsightSeriesRecordingTimes, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error) {
+	f.SetDefaultHook(func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *InterfaceGetInsightSeriesRecordingTimesFunc) PushReturn(r0 types.InsightSeriesRecordingTimes, r1 error) {
-	f.PushHook(func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error) {
+	f.PushHook(func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error) {
 		return r0, r1
 	})
 }
 
-func (f *InterfaceGetInsightSeriesRecordingTimesFunc) nextHook() func(context.Context, int, *time.Time, *time.Time) (types.InsightSeriesRecordingTimes, error) {
+func (f *InterfaceGetInsightSeriesRecordingTimesFunc) nextHook() func(context.Context, int, SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1821,10 +1948,7 @@ type InterfaceGetInsightSeriesRecordingTimesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *time.Time
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *time.Time
+	Arg2 SeriesPointsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 types.InsightSeriesRecordingTimes
@@ -1836,7 +1960,7 @@ type InterfaceGetInsightSeriesRecordingTimesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c InterfaceGetInsightSeriesRecordingTimesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

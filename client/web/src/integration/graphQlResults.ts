@@ -4,12 +4,6 @@ import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
 import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import {
-    collaboratorsPayload,
-    recentFilesPayload,
-    recentSearchesPayload,
-    savedSearchesPayload,
-} from '../search/panels/utils'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 
@@ -66,7 +60,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             databaseID: 1,
             username: 'test',
             avatarURL: null,
-            email: 'felix@sourcegraph.com',
             displayName: null,
             siteAdmin: true,
             tags: [],
@@ -77,7 +70,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             session: { canSignOut: true },
             viewerCanAdminister: true,
             searchable: true,
-            emails: [],
+            emails: [{ email: 'felix@sourcegraph.com', isPrimary: true, verified: true }],
             latestSettings: null,
         },
     }),
@@ -123,8 +116,12 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             },
         },
     }),
-    savedSearches: () => ({
-        savedSearches: [],
+    SavedSearches: () => ({
+        savedSearches: {
+            nodes: [],
+            totalCount: 0,
+            pageInfo: { startCursor: null, endCursor: null, hasNextPage: false, hasPreviousPage: false },
+        },
     }),
     LogEvents: () => ({
         logEvents: {
@@ -156,16 +153,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],
-    }),
-    HomePanelsQuery: () => ({
-        node: {
-            __typename: 'User',
-            recentlySearchedRepositoriesLogs: recentSearchesPayload(),
-            recentSearchesLogs: recentSearchesPayload(),
-            recentFilesLogs: recentFilesPayload(),
-            collaborators: collaboratorsPayload(),
-        },
-        savedSearches: savedSearchesPayload(),
     }),
     SearchHistoryEventLogsQuery: () => ({
         currentUser: {

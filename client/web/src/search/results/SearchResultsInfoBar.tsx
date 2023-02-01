@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -18,6 +18,7 @@ import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     getCodeMonitoringCreateAction,
@@ -32,17 +33,13 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
-    history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'email'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
 
-    /**
-     * Whether the code insights feature flag is enabled.
-     */
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
@@ -60,8 +57,6 @@ export interface SearchResultsInfoBarProps
 
     // Saved queries
     onSaveQueryClick: () => void
-
-    location: H.Location
 
     className?: string
 
@@ -82,6 +77,7 @@ export interface SearchResultsInfoBarProps
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const location = useLocation()
     const globalTypeFilter = useMemo(
         () => (props.query ? findFilter(props.query, 'type', FilterKind.Global)?.value?.value : undefined),
         [props.query]
@@ -113,16 +109,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
-                getInsightsCreateAction(
-                    props.query,
-                    props.patternType,
-                    props.authenticatedUser,
-                    props.enableCodeInsights
-                ),
+                getInsightsCreateAction(props.query, props.patternType, window.context.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
         [
             props.authenticatedUser,
-            props.enableCodeInsights,
             props.patternType,
             props.query,
             props.batchChangesEnabled,
@@ -174,7 +164,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'SearchResults' })}
                         >
                             try Sourcegraph Cloud
                         </Link>
@@ -188,6 +178,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     {extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <ActionsContainer
                             {...props}
+                            location={location}
                             extensionsController={extensionsController}
                             extraContext={extraContext}
                             menu={ContributableMenu.SearchResultsToolbar}
@@ -198,6 +189,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                         <ActionItem
                                             {...props}
                                             {...actionItem}
+                                            location={location}
                                             extensionsController={extensionsController}
                                             key={actionItem.action.id}
                                             showLoadingSpinnerDuringExecution={false}

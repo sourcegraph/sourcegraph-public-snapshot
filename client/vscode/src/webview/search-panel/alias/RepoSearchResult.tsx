@@ -4,7 +4,7 @@ import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { SearchResultStyles as styles, LastSyncedIcon, LegacyResultContainer } from '@sourcegraph/search-ui'
+import { SearchResultStyles as styles, LastSyncedIcon, LegacyResultContainer } from '@sourcegraph/branded'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Button, Icon } from '@sourcegraph/wildcard'

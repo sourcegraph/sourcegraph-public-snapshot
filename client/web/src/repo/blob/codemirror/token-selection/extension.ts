@@ -1,15 +1,15 @@
 import { Extension } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 
-import { isInteractiveOccurrence, occurrenceAtMouseEvent } from '../occurrence-utils'
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
-import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
+import { codeIntelTooltipsExtension } from './code-intel-tooltips'
+import { interactiveOccurrencesExtension } from './decorations'
+import { definitionExtension, goToDefinitionOnMouseEvent } from './definition'
 import { documentHighlightsExtension } from './document-highlights'
-import { hoveredOccurrenceField, hoverExtension, setHoveredOccurrenceEffect } from './hover'
-import { tokenSelectionKeyBindings } from './keybindings'
-import { modifierClickFacet } from './modifier-click'
-import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, warmupOccurrence } from './selections'
+import { keyboardShortcutsExtension } from './keybindings'
+import { modifierClickExtension } from './modifier-click'
+import { fallbackOccurrences, syncOccurrenceWithURL } from './selections'
 
 const LONG_CLICK_DURATION = 500
 
@@ -33,7 +33,7 @@ class MouseEvents {
 }
 
 // Heuristic to approximate a click event between two mouse events (for
-// exampole, mousedown and mouseup). The heuristic returns true based on the
+// example, mousedown and mouseup). The heuristic returns true based on the
 // distance between the coordinates (clientY/clientX) of the two events.
 function isClickDistance(event1: MouseEvent, event2: MouseEvent): boolean {
     const distanceX = Math.abs(event1.clientX - event2.clientX)
@@ -46,16 +46,16 @@ function isClickDistance(event1: MouseEvent, event2: MouseEvent): boolean {
 
 export function tokenSelectionExtension(): Extension {
     const events = new MouseEvents()
+
     return [
+        fallbackOccurrences,
+        syncOccurrenceWithURL,
         documentHighlightsExtension(),
-        modifierClickFacet.of(false),
-        tokenSelectionTheme,
-        selectedOccurrence.of(null),
-        definitionCache,
-        underlinedDefinitionFacet.of(null),
-        hoverExtension(),
-        keymap.of(tokenSelectionKeyBindings),
-        syncSelectionWithURL,
+        codeIntelTooltipsExtension(),
+        interactiveOccurrencesExtension(),
+        modifierClickExtension(),
+        definitionExtension(),
+        keyboardShortcutsExtension(),
         EditorView.domEventHandlers({
             // Approximate `click` with `mouseup` because `click` does not get
             // triggered in the scenario when the user holds down the meta-key,
@@ -99,21 +99,6 @@ export function tokenSelectionExtension(): Extension {
                 // Without the line below, Cmd+Click gets unpredicable behavior
                 // where it sporadically opens goto-def links in a new tab.
                 event.preventDefault()
-            },
-            mousemove(event, view) {
-                events.mousemove = event
-                const atEvent = occurrenceAtMouseEvent(view, event)
-                const hoveredOccurrence = atEvent ? atEvent.occurrence : null
-                if (hoveredOccurrence !== view.state.field(hoveredOccurrenceField)) {
-                    view.dispatch({ effects: setHoveredOccurrenceEffect.of(hoveredOccurrence) })
-                    // Only pre-fetch/warmup codeintel for interactive tokens.
-                    // Users can still trigger code intel actions for
-                    // non-interactive tokens, the result just won't be
-                    // pre-fetched.
-                    if (hoveredOccurrence && isInteractiveOccurrence(hoveredOccurrence)) {
-                        warmupOccurrence(view, hoveredOccurrence)
-                    }
-                }
             },
         }),
     ]

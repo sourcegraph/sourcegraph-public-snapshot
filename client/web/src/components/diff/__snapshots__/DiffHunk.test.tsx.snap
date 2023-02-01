@@ -114,7 +114,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <div
             class="d-inline-block"
           >
-                    const decorationType = sourcegraph.app.createDecorationType()
+                    const foo = sourcegraph.app.foo()
           </div>
         </td>
       </tr>

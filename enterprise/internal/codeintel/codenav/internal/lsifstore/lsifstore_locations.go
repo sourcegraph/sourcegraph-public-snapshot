@@ -659,9 +659,8 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	references := []*scip.Range{}
 	implementations := []*scip.Range{}
 
-	// Include original symbol names for reference and implementation search below
+	// Include original symbol names for reference search below
 	referencesBySymbol[occurrence.Symbol] = struct{}{}
-	implementationsBySymbol[occurrence.Symbol] = struct{}{}
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -679,13 +678,8 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 			references = append(references, scip.NewRange(occ.Range))
 		}
 
-		// Either one of the following are true:
-		//
-		// (1) The source occurrence is a definition, and this occurrence is
-		//     an implementation of the source interface, or
-		// (2) The source occurrence is a reference, and this occurrence is a
-		//     definition of an conforming interface.
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && (isDefinition || scip.SymbolRole_Definition.Matches(occurrence)) {
+		// This occurrence is a definition of a symbol with an implementation relationship
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
 			implementations = append(implementations, scip.NewRange(occ.Range))
 		}
 	}

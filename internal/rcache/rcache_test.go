@@ -1,7 +1,6 @@
 package rcache
 
 import (
-	"context"
 	"reflect"
 	"strconv"
 	"testing"
@@ -94,59 +93,6 @@ func TestCache_simple(t *testing.T) {
 	}
 }
 
-func TestCache_multi(t *testing.T) {
-	SetupForTest(t)
-
-	c := New("some_prefix")
-	vals := c.GetMulti("k0", "k1", "k2")
-	if got, exp := vals, [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v on initial fetch, got %v", exp, got)
-	}
-
-	c.Set("k0", []byte("b"))
-	if got, exp := c.GetMulti("k0"), bytes("b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "a"})
-	if got, exp := c.GetMulti("k0"), bytes("a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "a"}, [2]string{"k1", "b"})
-	if got, exp := c.GetMulti("k0"), bytes("a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k1"), bytes("b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k0", "k1"), bytes("a", "b"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	if got, exp := c.GetMulti("k1", "k0"), bytes("b", "a"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.SetMulti([2]string{"k0", "x"}, [2]string{"k1", "y"}, [2]string{"k2", "z"})
-	if got, exp := c.GetMulti("k0", "k1", "k2"), bytes("x", "y", "z"); !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-	got, exist := c.Get("k0")
-	if exp := "x"; !exist || string(got) != exp {
-		t.Errorf("Expected %v, but got %v", exp, string(got))
-	}
-
-	c.Delete("k0")
-	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-
-	c.DeleteMulti("k1", "k2")
-	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
-		t.Errorf("Expected %v, but got %v", exp, got)
-	}
-}
-
 func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
@@ -167,7 +113,12 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 			bKeys = append(bKeys, key)
 		}
 
-		c.SetMulti([2]string{key, strconv.Itoa(i)})
+		c.Set(key, []byte(strconv.Itoa(i)))
+	}
+
+	pool, ok := kv().Pool()
+	if !ok {
+		t.Fatal("need redis connection")
 	}
 
 	conn := pool.Get()
@@ -178,12 +129,22 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 		t.Error(err)
 	}
 
-	vals := c.GetMulti(aKeys...)
+	getMulti := func(keys ...string) [][]byte {
+		t.Helper()
+		var vals [][]byte
+		for _, k := range keys {
+			v, _ := c.Get(k)
+			vals = append(vals, v)
+		}
+		return vals
+	}
+
+	vals := getMulti(aKeys...)
 	if got, exp := vals, [][]byte{nil, nil, nil, nil, nil}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 
-	vals = c.GetMulti(bKeys...)
+	vals = getMulti(bKeys...)
 	if got, exp := vals, bytes("1", "3", "5", "7", "9"); !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
@@ -266,27 +227,34 @@ func TestCache_SetWithTTL(t *testing.T) {
 	}
 }
 
-func TestCache_ListKeys(t *testing.T) {
+func TestCache_Hashes(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix", 1)
-	c.SetMulti(
-		[2]string{"foobar", "123"},
-		[2]string{"bazbar", "456"},
-		[2]string{"barfoo", "234"},
-	)
-
-	keys, err := c.ListKeys(context.Background())
+	// Test SetHashItem
+	c := NewWithTTL("simple_hash", 1)
+	err := c.SetHashItem("key", "hashKey1", "value1")
 	assert.NoError(t, err)
-	for _, k := range []string{"foobar", "bazbar", "barfoo"} {
-		assert.Contains(t, keys, k)
-	}
+	err = c.SetHashItem("key", "hashKey2", "value2")
+	assert.NoError(t, err)
+
+	// Test GetHashItem
+	val1, err := c.GetHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", val1)
+	val2, err := c.GetHashItem("key", "hashKey2")
+	assert.NoError(t, err)
+	assert.Equal(t, "value2", val2)
+	val3, err := c.GetHashItem("key", "hashKey3")
+	assert.Error(t, err)
+	assert.Equal(t, "", val3)
+
+	// Test GetHashAll
+	all, err := c.GetHashAll("key")
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"hashKey1": "value1", "hashKey2": "value2"}, all)
 }
 
 func bytes(s ...string) [][]byte {
-	if s == nil {
-		return nil
-	}
 	t := make([][]byte, len(s))
 	for i, v := range s {
 		t[i] = []byte(v)

@@ -38,11 +38,13 @@ describe('Backend insight drill down filters', () => {
             testContext,
             overrides: {
                 // Mock back-end insights with standard gql API handler
-                GetInsights: () => ({
+                GetAllInsightConfigurations: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
                     },
                 }),
 
@@ -123,6 +125,7 @@ describe('Backend insight drill down filters', () => {
             },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: null,
                 sortOptions: {
                     direction: 'DESC',
                     mode: 'RESULT_COUNT',
@@ -134,7 +137,7 @@ describe('Backend insight drill down filters', () => {
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
         const insightWithFilters: InsightViewNode = {
             ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
-            appliedFilters: {
+            defaultFilters: {
                 __typename: 'InsightViewFilters',
                 searchContexts: [],
                 includeRepoRegex: '',
@@ -146,11 +149,13 @@ describe('Backend insight drill down filters', () => {
             testContext,
             overrides: {
                 // Mock back-end insights with standard gql API handler
-                GetInsights: () => ({
+                GetAllInsightConfigurations: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [insightWithFilters],
+                        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                        totalCount: 1,
                     },
                 }),
 
@@ -222,6 +227,7 @@ describe('Backend insight drill down filters', () => {
                 },
                 seriesDisplayOptions: {
                     limit: 20,
+                    numSamples: null,
                     sortOptions: {
                         direction: 'DESC',
                         mode: 'RESULT_COUNT',

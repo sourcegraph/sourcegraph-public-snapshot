@@ -8,6 +8,7 @@
 * [`code-intel`](code-intel/index.md)
 * [`config`](config/index.md)
 * [`debug`](debug.md)
+* [`extensions`](extensions/index.md)
 * [`extsvc`](extsvc/index.md)
 * [`login`](login.md)
 * [`lsif`](lsif.md)
@@ -17,6 +18,6 @@
 * [`serve-git`](serve-git.md)
 * [`snapshot`](snapshot.md)
 * [`users`](users/index.md)
-* [`validate`](validate.md)
+* [`validate`](validate/index.md)
 * [`version`](version.md)
 	

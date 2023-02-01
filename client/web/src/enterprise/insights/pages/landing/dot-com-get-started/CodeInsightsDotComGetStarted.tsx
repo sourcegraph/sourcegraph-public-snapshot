@@ -11,6 +11,7 @@ import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../CodeInsightsLandingPageContext'
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
@@ -28,6 +29,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
 > = props => {
     const { telemetryService } = props
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
@@ -40,16 +42,18 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                 <PageHeader
                     path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                     actions={
-                        <Button
-                            as={Link}
-                            to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
-                        >
-                            Try insights
-                        </Button>
+                        isSourcegraphDotCom ? (
+                            <Button
+                                as={Link}
+                                to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryInsights' })}
+                            >
+                                Try insights
+                            </Button>
+                        ) : null
                     }
                     className="mb-4"
                 />
@@ -86,7 +90,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                             to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'Insights' })}
                         >
                             try Sourcegraph Cloud
                         </Link>

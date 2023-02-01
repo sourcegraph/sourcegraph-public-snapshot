@@ -2,27 +2,27 @@
  * Configuration for the release tool. All fields should align exactly with those in
  * `src/config.ts`. To learn more about the release tool:
  *
- *     yarn run release help
+ *     pnpm run release help
  *
  * A quick sanity-check can be performed to make sure configuration is loaded correctly:
  *
- *     yarn run release _test:config
+ *     pnpm run release _test:config
  */
 {
     // Captain information
     // To get your slack username, navigate to Profile -> More -> Account settings -> Username (at the bottom) -> Expand
-    "captainSlackUsername": "bolaji.olajide",
-    "captainGitHubUsername": "BolajiOlajide",
+    "captainSlackUsername": "thorsten",
+    "captainGitHubUsername": "mrnugget",
     // Release versions
-    "previousRelease": "4.3.0",
-    "upcomingRelease": "4.4.0",
-    "oneWorkingWeekBeforeRelease": "13 January 2022 10:00 PST",
-    "threeWorkingDaysBeforeRelease": "17 January 2022 10:00 PST",
-    "releaseDate": "20 January 2023 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 January 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "27 January 2022 10:00 PST",
+    "previousRelease": "4.4.1",
+    "upcomingRelease": "4.4.2",
+    "oneWorkingWeekBeforeRelease": "25 January 2023 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "27 January 2023 10:00 PST",
+    "releaseDate": "1 February 2023 10:00 PST",
+    "oneWorkingDayAfterRelease": "2 February 2023 10:00 PST",
+    "oneWorkingWeekAfterRelease": "8 February 2023 10:00 PST",
     // Channel where messages from the tooling are posted
-    "slackAnnounceChannel": "eng-announce",
+    "slackAnnounceChannel": "announce-engineering",
     // Email for preparing calendar events
     "teamEmail": "team@sourcegraph.com",
     // Enable dry-running for certain features - useful for testing or sanity-checking.

@@ -16,21 +16,12 @@ def module_style_typings(name, deps = []):
            These could be other .scss files or node_modules deps.
     """
 
-    srcs = native.glob([
-        "src/**/*.module.scss",
-        "webview/**/*.module.scss",  # JetBrains client folder structure slightly different
-    ])
-
+    srcs = native.glob(["src/**/*.module.scss"])
     outs = ["%s.d.ts" % src for src in srcs]
 
-    js_library(
-        name = "%s_sources" % name,
-        srcs = srcs,
-    )
-
     types_scss_modules_bin.tsm(
-        name = name,
-        srcs = [":%s_sources" % name] + deps,
+        name = "%s_types" % name,
+        srcs = srcs + deps,
         outs = outs,
         args = [
             "--logLevel",
@@ -40,4 +31,9 @@ def module_style_typings(name, deps = []):
             "client",
             "node_modules",
         ],
+    )
+
+    js_library(
+        name = name,
+        srcs = [":%s_types" % name],
     )

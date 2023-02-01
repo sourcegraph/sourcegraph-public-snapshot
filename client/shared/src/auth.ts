@@ -10,7 +10,6 @@ export const currentAuthStateQuery = gql`
             databaseID
             username
             avatarURL
-            email
             displayName
             siteAdmin
             tags
@@ -36,6 +35,7 @@ export const currentAuthStateQuery = gql`
             emails {
                 email
                 verified
+                isPrimary
             }
             latestSettings {
                 id

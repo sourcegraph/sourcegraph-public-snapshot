@@ -3,7 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
@@ -13,7 +13,7 @@ import {
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
@@ -38,11 +38,11 @@ interface SearchConsolePageProps
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
-    history: H.History
-    location: H.Location
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
     const extensionHostAPI =
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
@@ -53,21 +53,21 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const searchQuery = useMemo(
-        () => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''),
-        [props.location.search]
+        () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
+        [location.search]
     )
 
     const patternType = useMemo(
-        () => parseSearchURLPatternType(props.location.search) || SearchPatternType.structural,
-        [props.location.search]
+        () => parseSearchURLPatternType(location.search) || SearchPatternType.structural,
+        [location.search]
     )
 
     const triggerSearch = useCallback(() => {
-        props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
-    }, [props.history, searchQuery])
+        navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
+    }, [navigate, searchQuery])
 
     const transformedQuery = useMemo(() => {
-        let query = parseSearchURLQuery(props.location.search)
+        let query = parseSearchURLQuery(location.search)
         query = query?.replace(/\/\/.*/g, '') || ''
 
         return transformSearchQuery({
@@ -76,7 +76,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             enableGoImportsSearchQueryTransform,
             eventLogger,
         })
-    }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
+    }, [location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 
     const autocompletion = useMemo(
         () =>
@@ -140,9 +140,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 {...props}
                                 allExpanded={false}
                                 results={results}
-                                showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                executedQuery={props.location.search}
+                                executedQuery={location.search}
                             />
                         ))}
                 </div>

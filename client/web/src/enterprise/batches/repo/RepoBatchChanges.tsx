@@ -55,8 +55,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     return (
         <Container role="region" aria-label="batch changes">
             <FilteredConnection<RepoBatchChange, Omit<BatchChangeNodeProps, 'node'>>
-                history={history}
-                location={location}
                 nodeComponent={BatchChangeNode}
                 nodeComponentProps={{
                     history,

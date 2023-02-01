@@ -18,14 +18,14 @@ RUN cp ./target/release/syntect_server /syntax_highlighter
 FROM golang:1.19-alpine@sha256:70df3b8f9f099da7f60f0b32480015165e3d0b51bfacf9e255b59f3dd6bd2828 as hss
 
 RUN apk add --no-cache git>=2.26.3
-RUN git clone --branch v1.0.5 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
+RUN git clone --branch v1.1.0 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
 WORKDIR /repo
 RUN go build -o /http-server-stabilizer .
 
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.14:190630_2022-12-22_6988b6221a72@sha256:782f094e3a6397a5f57305efac7b3f0e8c992eece31c98f93c1a518cc6c876e5
+FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa
 COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
 

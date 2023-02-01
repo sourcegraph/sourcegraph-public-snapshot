@@ -1,4 +1,4 @@
-import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
@@ -25,7 +25,6 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import * as update from './update'
 import {
     cacheFolder,
     formatDate,
@@ -36,6 +35,8 @@ import {
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     getLatestTag,
+    getAllUpgradeGuides,
+    updateUpgradeGuides,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -65,6 +66,8 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:release-guide-content'
+    | '_test:release-guide-update'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -99,7 +102,7 @@ const steps: Step[] = [
         run: (_config, all) => {
             console.error('Sourcegraph release tool - https://handbook.sourcegraph.com/engineering/releases')
             console.error('\nUSAGE\n')
-            console.error('\tyarn run release <step>')
+            console.error('\tpnpm run release <step>')
             console.error('\nAVAILABLE STEPS\n')
             console.error(
                 steps
@@ -428,7 +431,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
-            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -513,33 +515,14 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-
-                            // Cut udpate guides with entries from unreleased.
-                            (directory: string, updateDirectory = '/doc/admin/updates') => {
-                                updateDirectory = directory + updateDirectory
-                                for (const file of readdirSync(updateDirectory)) {
-                                    const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath).toString()
-                                    if (notPatchRelease) {
-                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    } else if (previousNotPatchRelease) {
-                                        updateContents = updateContents.replace(previousVersion, release.version)
-                                    } else {
-                                        updateContents = updateContents.replace(previous.version, release.version)
-                                    }
-                                    writeFileSync(fullPath, updateContents)
-                                }
-                            },
+                            updateUpgradeGuides(previousVersion, nextVersion),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
-                                    'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
+                                    'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
                                     'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
@@ -574,6 +557,16 @@ cc @${config.captainGitHubUsername}
                     },
                     {
                         owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-k8s',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`sg ops update-images -pin-tag ${release.version} base/`],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-docker',
                         base: `${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
@@ -583,6 +576,16 @@ cc @${config.captainGitHubUsername}
                         ...prBodyAndDraftState([
                             'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
                         ]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-docker-customer-replica-1',
+                        base: `${release.major}.${release.minor}`,
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [`tools/update-docker-tags.sh ${release.version}`],
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -658,7 +661,7 @@ Batch change: ${batchChangeURL}`,
         id: 'release:add-to-batch-change',
         description: 'Manually add a change to a release batch change',
         argNames: ['changeRepo', 'changeID'],
-        // Example: yarn run release release:add-to-batch-change sourcegraph/about 1797
+        // Example: pnpm run release release:add-to-batch-change sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
             const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
@@ -691,7 +694,11 @@ Batch change: ${batchChangeURL}`,
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
-            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+            for (const repo of [
+                'deploy-sourcegraph',
+                'deploy-sourcegraph-docker',
+                'deploy-sourcegraph-docker-customer-replica-1',
+            ]) {
                 try {
                     await createTag(
                         await getAuthenticatedGitHubClient(),
@@ -801,6 +808,24 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
+        id: '_test:release-guide-content',
+        description: 'Generate upgrade guides',
+        argNames: ['previous', 'next'],
+        run: (config, previous, next) => {
+            for (const content of getAllUpgradeGuides(previous, next)) {
+                console.log(content)
+            }
+        },
+    },
+    {
+        id: '_test:release-guide-update',
+        description: 'Test update the upgrade guides',
+        argNames: ['previous', 'next', 'dir'],
+        run: (config, previous, next, dir) => {
+            updateUpgradeGuides(previous, next)(dir)
+        },
+    },
+    {
         id: '_test:google-calendar',
         description: 'Test Google Calendar integration',
         run: async config => {
@@ -830,7 +855,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:batchchange-create-from-changes',
         description: 'Test batch changes integration',
         argNames: ['batchchangeConfigJSON'],
-        // Example: yarn run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
+        // Example: pnpm run release _test:batchchange-create-from-changes "$(cat ./.secrets/test-batch-change-import.json)"
         run: async (_config, batchchangeConfigJSON) => {
             const batchChangeConfig = JSON.parse(batchchangeConfigJSON) as {
                 changes: CreatedChangeset[]

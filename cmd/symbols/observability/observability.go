@@ -12,7 +12,7 @@ type Operations struct {
 }
 
 func NewOperations(observationCtx *observation.Context) *Operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"codeintel_symbols_api",
 		metrics.WithLabels("op", "parseAmount"),
@@ -24,7 +24,7 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.symbols.api.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

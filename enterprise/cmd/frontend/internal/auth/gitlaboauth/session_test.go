@@ -52,8 +52,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				description: "glUser, allowSignup not set, defaults to true -> new user and session created",
 				glUser: &gitlab.User{
 					ID:       int32(104),
-					Username: string("dan"),
-					Email:    string("dan@example.com"),
+					Username: "dan",
+					Email:    "dan@example.com",
 				},
 			}},
 			expActor: &actor.Actor{UID: 4},
@@ -78,8 +78,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowSignup: signupNotAllowed,
 				glUser: &gitlab.User{
 					ID:       int32(102),
-					Username: string("bob"),
-					Email:    string("bob@example.com"),
+					Username: "bob",
+					Email:    "bob@example.com",
 				},
 			}},
 			expErr: true,
@@ -91,8 +91,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group1"},
 				glUser: &gitlab.User{
 					ID:       int32(102),
-					Username: string("bob"),
-					Email:    string("bob@example.com"),
+					Username: "bob",
+					Email:    "bob@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1"},
@@ -106,8 +106,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowSignup: signupAllowed,
 				glUser: &gitlab.User{
 					ID:       int32(103),
-					Username: string("cindy"),
-					Email:    string("cindy@example.com"),
+					Username: "cindy",
+					Email:    "cindy@example.com",
 				},
 			}},
 			expActor: &actor.Actor{UID: 3},
@@ -131,8 +131,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				description: "glUser, allowedGroups not set -> session created",
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 			}},
 			expActor: &actor.Actor{UID: 1},
@@ -157,8 +157,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group2"},
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1"},
@@ -172,8 +172,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group1"},
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1"},
@@ -189,8 +189,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group1"},
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1"},
@@ -219,8 +219,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group1/subgroup1"},
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1/subgroup2"},
@@ -234,8 +234,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				allowGroups: []string{"group1/subgroup2"},
 				glUser: &gitlab.User{
 					ID:       int32(101),
-					Username: string("alice"),
-					Email:    string("alice@example.com"),
+					Username: "alice",
+					Email:    "alice@example.com",
 				},
 				glUserGroups: []*gitlab.Group{
 					{FullPath: "group1/subgroup2"},

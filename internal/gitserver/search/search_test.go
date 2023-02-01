@@ -41,7 +41,7 @@ func initGitRepository(t testing.TB, cmds ...string) string {
 func gitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1", "HOME=/dev/null")
 	return c
 }
 
@@ -66,6 +66,15 @@ func TestSearch(t *testing.T) {
 			"GIT_AUTHOR_EMAIL=camden2@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit2",
+		"mv file1 file1a",
+		"git add -A",
+		"GIT_COMMITTER_NAME=camden3 " +
+			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
+			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+			"GIT_AUTHOR_NAME=camden3 " +
+			"GIT_AUTHOR_EMAIL=camden3@ccheek.com " +
+			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+			"git commit -m commit3",
 	}
 	dir := initGitRepository(t, cmds...)
 
@@ -99,9 +108,10 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden2")
-		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, matches, 3)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden2")
+		require.Equal(t, matches[2].Author.Name, "camden1")
 	})
 
 	t.Run("and with no operands matches all", func(t *testing.T) {
@@ -117,7 +127,7 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
+		require.Len(t, matches, 3)
 	})
 
 	t.Run("match diff content", func(t *testing.T) {
@@ -133,8 +143,9 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
 	t.Run("author matches", func(t *testing.T) {
@@ -159,16 +170,18 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
-			RepoDir: dir,
-			Query:   tree,
+			RepoDir:              dir,
+			Query:                tree,
+			IncludeModifiedFiles: true,
 		}
 		var matches []*protocol.CommitMatch
 		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
 	t.Run("and match", func(t *testing.T) {
@@ -188,12 +201,13 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden1")
-		require.Len(t, strings.Split(matches[0].Diff.Content, "\n"), 4)
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, strings.Split(matches[1].Diff.Content, "\n"), 4)
 	})
 
-	t.Run("match both, in order with modified files", func(t *testing.T) {
+	t.Run("match all, in order with modified files", func(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "c"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
@@ -207,94 +221,165 @@ func TestSearch(t *testing.T) {
 			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden2")
-		require.Equal(t, matches[1].Author.Name, "camden1")
-		require.Equal(t, []string{"file2", "file3"}, matches[0].ModifiedFiles)
-		require.Equal(t, []string{"file1"}, matches[1].ModifiedFiles)
+		require.Len(t, matches, 3)
+		require.Equal(t, matches[0].Author.Name, "camden3")
+		require.Equal(t, matches[1].Author.Name, "camden2")
+		require.Equal(t, matches[2].Author.Name, "camden1")
+		require.Equal(t, []string{"file1", "file1a"}, matches[0].ModifiedFiles)
+		require.Equal(t, []string{"file2", "file3"}, matches[1].ModifiedFiles)
+		require.Equal(t, []string{"file1"}, matches[2].ModifiedFiles)
 	})
 }
 
 func TestCommitScanner(t *testing.T) {
+	cmds := []string{
+		"echo lorem ipsum dolor sit amet > file1",
+		"git add -A",
+		"GIT_COMMITTER_NAME=camden1 " +
+			"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
+			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+			"GIT_AUTHOR_NAME=camden1 " +
+			"GIT_AUTHOR_EMAIL=camden1@ccheek.com " +
+			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+			"git commit -m commit1 ",
+		"echo consectetur adipiscing elit > file2",
+		"echo consectetur adipiscing elit again > file3",
+		"git add -A",
+		"GIT_COMMITTER_NAME=camden2 " +
+			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
+			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+			"GIT_AUTHOR_NAME=camden2 " +
+			"GIT_AUTHOR_EMAIL=camden2@ccheek.com " +
+			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+			"git commit -m commit2",
+		"mv file1 file1a",
+		"git add -A",
+		"GIT_COMMITTER_NAME=camden3 " +
+			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
+			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+			"GIT_AUTHOR_NAME=camden3 " +
+			"GIT_AUTHOR_EMAIL=camden3@ccheek.com " +
+			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+			"git commit -m commit3",
+	}
+	dir := initGitRepository(t, cmds...)
+
+	getRaw := func(dir string, includeModifiedFiles bool) []byte {
+		var buf bytes.Buffer
+		cmd := exec.Command("git", (&CommitSearcher{IncludeModifiedFiles: includeModifiedFiles}).gitArgs()...)
+		cmd.Dir = dir
+		cmd.Stdout = &buf
+		cmd.Run()
+		return buf.Bytes()
+	}
+
 	cases := []struct {
 		input    []byte
 		expected []*RawCommit
 	}{
 		{
-			input: []byte(
-				"\x1E2061ba96d63cba38f20a76f039cf29ef68736b8a\x00\x00HEAD\x00Camden Cheek\x00camden@sourcegraph.com\x001632251505\x00Camden Cheek\x00camden@sourcegraph.com\x001632251505\x00fix import\n\x005230097b75dcbb2c214618dd171da4053aff18a6\x00\x00" +
-					"\x1E5230097b75dcbb2c214618dd171da4053aff18a6\x00\x00HEAD\x00Camden Cheek\x00camden@sourcegraph.com\x001632248499\x00Camden Cheek\x00camden@sourcegraph.com\x001632248499\x00only set matches if they exist\n\x00\x00",
-			),
+			input: getRaw(dir, true),
 			expected: []*RawCommit{
 				{
-					Hash:           []byte("2061ba96d63cba38f20a76f039cf29ef68736b8a"),
-					RefNames:       []byte(""),
+					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
+					RefNames:       []byte("HEAD -> refs/heads/master"),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("Camden Cheek"),
-					AuthorEmail:    []byte("camden@sourcegraph.com"),
-					AuthorDate:     []byte("1632251505"),
-					CommitterName:  []byte("Camden Cheek"),
-					CommitterEmail: []byte("camden@sourcegraph.com"),
-					CommitterDate:  []byte("1632251505"),
-					Message:        []byte("fix import"),
-					ParentHashes:   []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
-					ModifiedFiles:  [][]byte{{}, {}},
+					AuthorName:     []byte("camden3"),
+					AuthorEmail:    []byte("camden3@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden3"),
+					CommitterEmail: []byte("camden3@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit3"),
+					ParentHashes:   []byte("fa733abad75875e568c949f54f03a38748435e9b"),
+					ModifiedFiles: [][]byte{
+						[]byte("R100"),
+						[]byte("file1"),
+						[]byte("file1a"),
+					},
 				},
 				{
-					Hash:           []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
+					Hash:           []byte("fa733abad75875e568c949f54f03a38748435e9b"),
 					RefNames:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("Camden Cheek"),
-					AuthorEmail:    []byte("camden@sourcegraph.com"),
-					AuthorDate:     []byte("1632248499"),
-					CommitterName:  []byte("Camden Cheek"),
-					CommitterEmail: []byte("camden@sourcegraph.com"),
-					CommitterDate:  []byte("1632248499"),
-					Message:        []byte("only set matches if they exist"),
+					AuthorName:     []byte("camden2"),
+					AuthorEmail:    []byte("camden2@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden2"),
+					CommitterEmail: []byte("camden2@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit2"),
+					ParentHashes:   []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					ModifiedFiles: [][]byte{
+						[]byte("A"),
+						[]byte("file2"),
+						[]byte("A"),
+						[]byte("file3"),
+					},
+				},
+				{
+					Hash:           []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					RefNames:       []byte(""),
+					SourceRefs:     []byte("HEAD"),
+					AuthorName:     []byte("camden1"),
+					AuthorEmail:    []byte("camden1@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden1"),
+					CommitterEmail: []byte("camden1@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit1"),
 					ParentHashes:   []byte(""),
-					ModifiedFiles:  [][]byte{{}},
+					ModifiedFiles: [][]byte{
+						[]byte("A"),
+						[]byte("file1"),
+					},
 				},
 			},
 		},
 		{
-			input: []byte(
-				"\x1E2061ba96d63cba38f20a76f039cf29ef68736b8a\x00\x00HEAD\x00Camden Cheek\x00camden@sourcegraph.com\x001632251505\x00Camden Cheek\x00camden@sourcegraph.com\x001632251505\x00fix import\n\x005230097b75dcbb2c214618dd171da4053aff18a6\x00\x00file1" +
-					"\x1E5230097b75dcbb2c214618dd171da4053aff18a6\x00\x00HEAD\x00Camden Cheek\x00camden@sourcegraph.com\x001632248499\x00Camden Cheek\x00camden@sourcegraph.com\x001632248499\x00only set matches if they exist\n\x00\x00file1\x00file2",
-			),
+			input: getRaw(dir, false),
 			expected: []*RawCommit{
 				{
-					Hash:           []byte("2061ba96d63cba38f20a76f039cf29ef68736b8a"),
-					RefNames:       []byte(""),
+					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
+					RefNames:       []byte("HEAD -> refs/heads/master"),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("Camden Cheek"),
-					AuthorEmail:    []byte("camden@sourcegraph.com"),
-					AuthorDate:     []byte("1632251505"),
-					CommitterName:  []byte("Camden Cheek"),
-					CommitterEmail: []byte("camden@sourcegraph.com"),
-					CommitterDate:  []byte("1632251505"),
-					Message:        []byte("fix import"),
-					ParentHashes:   []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
-					ModifiedFiles: [][]byte{
-						{},
-						[]byte("file1"),
-					},
+					AuthorName:     []byte("camden3"),
+					AuthorEmail:    []byte("camden3@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden3"),
+					CommitterEmail: []byte("camden3@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit3"),
+					ParentHashes:   []byte("fa733abad75875e568c949f54f03a38748435e9b"),
+					ModifiedFiles:  [][]byte{},
 				},
 				{
-					Hash:           []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
+					Hash:           []byte("fa733abad75875e568c949f54f03a38748435e9b"),
 					RefNames:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("Camden Cheek"),
-					AuthorEmail:    []byte("camden@sourcegraph.com"),
-					AuthorDate:     []byte("1632248499"),
-					CommitterName:  []byte("Camden Cheek"),
-					CommitterEmail: []byte("camden@sourcegraph.com"),
-					CommitterDate:  []byte("1632248499"),
-					Message:        []byte("only set matches if they exist"),
+					AuthorName:     []byte("camden2"),
+					AuthorEmail:    []byte("camden2@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden2"),
+					CommitterEmail: []byte("camden2@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit2"),
+					ParentHashes:   []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					ModifiedFiles:  [][]byte{},
+				},
+				{
+					Hash:           []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					RefNames:       []byte(""),
+					SourceRefs:     []byte("HEAD"),
+					AuthorName:     []byte("camden1"),
+					AuthorEmail:    []byte("camden1@ccheek.com"),
+					AuthorDate:     []byte("1136214245"),
+					CommitterName:  []byte("camden1"),
+					CommitterEmail: []byte("camden1@ccheek.com"),
+					CommitterDate:  []byte("1136214245"),
+					Message:        []byte("commit1"),
 					ParentHashes:   []byte(""),
-					ModifiedFiles: [][]byte{
-						[]byte("file1"),
-						[]byte("file2"),
-					},
+					ModifiedFiles:  [][]byte{},
 				},
 			},
 		},
@@ -302,6 +387,7 @@ func TestCommitScanner(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
+			println(dir)
 			scanner := NewCommitScanner(bytes.NewReader(tc.input))
 			var output []*RawCommit
 			for scanner.Scan() {
@@ -369,6 +455,12 @@ index 0000000000..7e54670557
 	lc := &LazyCommit{
 		RawCommit: &RawCommit{
 			AuthorName: []byte("Camden Cheek"),
+			ModifiedFiles: [][]byte{
+				[]byte("M"),
+				[]byte("internal/compute/match.go"),
+				[]byte("M"),
+				[]byte("internal/compute/match_test.go"),
+			},
 		},
 		diff: parsedDiff,
 	}

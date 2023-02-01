@@ -11,6 +11,7 @@ export const ALL_INSIGHTS_DASHBOARD: VirtualInsightsDashboard = {
 }
 
 export const MAX_NUMBER_OF_SERIES = 20
+export const MAX_NUMBER_OF_SAMPLES = 90
 
 export const DATA_SERIES_COLORS = {
     RED: 'var(--oc-red-7)',

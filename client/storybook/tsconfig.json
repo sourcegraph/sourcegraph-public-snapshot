@@ -8,6 +8,22 @@
     "baseUrl": "./src",
     "jsx": "react-jsx",
   },
-  "references": [{ "path": "../shared" }, { "path": "../build-config" }, { "path": "../http-client" }],
+  "references": [
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../wildcard",
+    },
+  ],
   "include": ["./src/**/*", "./*.ts"],
 }

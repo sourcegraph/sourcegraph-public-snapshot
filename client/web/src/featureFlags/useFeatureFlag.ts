@@ -47,7 +47,7 @@ export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false):
         }
 
         getValue().catch(error => {
-            if (isMounted()) {
+            if (isMounted() && status !== 'error') {
                 setResult(({ value }) => ({ value, status: 'error', error }))
             }
         })

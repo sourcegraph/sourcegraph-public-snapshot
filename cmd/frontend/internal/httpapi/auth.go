@@ -1,8 +1,10 @@
 package httpapi
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -43,9 +45,26 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 			if err != nil {
 				if authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
+					// 🚨 SECURITY: md5sum the authorization header value so we redact it
+					// while still retaining the ability to link it back to a token, assuming
+					// the logs reader has the value in clear.
+					var redactedValue string
+					h := sha256.New()
+					if _, err := io.WriteString(h, headerValue); err != nil {
+						redactedValue = "[REDACTED]"
+					} else {
+						// for sake of identification, we only need around 10 characters
+						redactedValue = fmt.Sprintf("sha256:%x", h.Sum(nil)[0:10])
+					}
+					// TODO: It is possible for the unrecognized header to be legitimate, in the case
+					// of a customer setting up a HTTP header based authentication and decide to still
+					// use the "Authorization" key.
+					//
+					// We should parse the configuration to see if that's the case and only log if it's
+					// not defined over there.
 					logger.Warn(
-						"ignoring unrecognized Authorization header",
-						log.String("value", headerValue),
+						"ignoring unrecognized Authorization header, passing it down to the next layer",
+						log.String("redacted_value", redactedValue),
 						log.Error(err),
 					)
 					next.ServeHTTP(w, r)

@@ -74,7 +74,7 @@ func startAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	}
 }
 
-// stopAll calls each routine's Stop method in its own goroutine and and registers
+// stopAll calls each routine's Stop method in its own goroutine and registers
 // each running goroutine with the given waitgroup.
 func stopAll(wg *sync.WaitGroup, routines ...BackgroundRoutine) {
 	for _, r := range routines {

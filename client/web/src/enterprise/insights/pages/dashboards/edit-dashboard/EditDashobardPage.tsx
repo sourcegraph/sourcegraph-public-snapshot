@@ -14,6 +14,8 @@ import {
     CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightsDashboardOwner,
+    InsightsDashboardOwnerType,
+    isGlobalOwner,
     isPersonalOwner,
     isVirtualDashboard,
     useInsightDashboard,
@@ -131,6 +133,20 @@ function getDashboardInitialValues(
     availableOwners: InsightsDashboardOwner[]
 ): DashboardCreationFields | undefined {
     const { title } = dashboard
+
+    const isGlobal = dashboard.owners.some(isGlobalOwner)
+    const availableGlobalOwner = availableOwners.find(
+        availableOwner => availableOwner.type === InsightsDashboardOwnerType.Global
+    )
+
+    if (isGlobal && availableGlobalOwner) {
+        // Pick any global owner from the list
+        return {
+            name: title,
+            owner: availableGlobalOwner,
+        }
+    }
+
     const owner = dashboard.owners.find(owner => availableOwners.some(availableOwner => availableOwner.id === owner.id))
 
     return {

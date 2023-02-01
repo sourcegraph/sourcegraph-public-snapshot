@@ -60,6 +60,10 @@ type DockerOptions struct {
 	// DockerAuthConfig, if set, will be used to configure the docker CLI to authenticate to
 	// registries.
 	DockerAuthConfig executor.DockerAuthConfig
+	// AddHostGateway, if set, will add a host entry and route to the daemon host to the
+	// container. This can be useful to add host.docker.internal as an endpoint inside
+	// the container.
+	AddHostGateway bool
 }
 
 type FirecrackerOptions struct {

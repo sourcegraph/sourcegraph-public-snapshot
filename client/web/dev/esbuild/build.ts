@@ -25,6 +25,8 @@ import { manifestPlugin } from './manifestPlugin'
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
+const forceTreeShaking = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING
+
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
         // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
@@ -92,8 +94,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     // otherwise fixed), we can return to using tree shaking. Right now, esbuild's tree shaking has
     // a bug where the NavBar CSS is not loaded because the @sourcegraph/wildcard uses `export *
     // from` and has `"sideEffects": false` in its package.json.
-    ignoreAnnotations: true,
-    treeShaking: false,
+    ignoreAnnotations: !forceTreeShaking,
+    treeShaking: forceTreeShaking,
 }
 
 export const build = async (): Promise<void> => {

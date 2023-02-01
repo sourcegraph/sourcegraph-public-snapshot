@@ -1,10 +1,10 @@
 import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -34,7 +34,7 @@ import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -59,12 +59,10 @@ export interface GlobalNavbarProps
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps {
-    history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: readonly LayoutRouteProps[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -129,8 +127,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     isLightTheme,
     branding,
-    location,
-    history,
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
@@ -145,6 +141,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
+    const location = useLocation()
+
     const routeMatch = useRoutesMatch(props.routes)
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch,
@@ -154,10 +152,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
-    const showSearchContext =
-        useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled
+    const showSearchNotebook = notebooksEnabled
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -228,7 +225,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -241,7 +238,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
@@ -293,7 +290,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             className={styles.signUp}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
                         >
                             Search private code
                         </ButtonLink>
@@ -322,11 +319,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(
-                                                history.location.pathname +
-                                                    history.location.search +
-                                                    history.location.hash
-                                            )
+                                            encodeURI(location.pathname + location.search + location.hash)
                                         }
                                         variant="secondary"
                                         outline={true}
@@ -368,8 +361,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 <div className="w-100 px-3 py-2 border-bottom">
                     <SearchNavbarItem
                         {...props}
-                        location={location}
-                        history={history}
                         isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
