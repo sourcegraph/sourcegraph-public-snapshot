@@ -170,9 +170,12 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
+		if sourcegraphoperator.AddSourcegraphOperatorExternalAccount == nil {
+			return nil, errors.New("AddSourcegraphOperatorExternalAccount unimplemented in Sourcegraph OSS")
+		}
 		err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to add Sourcegraph Operator external account")
 		}
 
 	default:

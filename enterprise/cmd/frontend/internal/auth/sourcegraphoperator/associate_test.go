@@ -13,11 +13,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
+	assert.NotNil(t, osssourcegraphoperator.AddSourcegraphOperatorExternalAccount)
+}
 
 func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 	ctx := context.Background()
@@ -160,7 +165,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			uid, db := tc.setup(t)
 			details, err := json.Marshal(tc.accountDetails)
 			require.NoError(t, err)
-			err = AddSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
+			err = addSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
 			if err != nil {
 				tc.expectErr.Equal(t, err.Error())
 			} else {

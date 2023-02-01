@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,9 +19,16 @@ type accountDetailsBody struct {
 	ExternalAccountData
 }
 
-// AddSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
+func init() {
+	// Register enterprise handler implementation in OSS
+	osssourcegraphoperator.AddSourcegraphOperatorExternalAccount = addSourcegraphOperatorExternalAccount
+}
+
+// addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
 // provider, if and only if it already exists. The provider can only be added through
 // Enterprise Sourcegraph Cloud config, so this essentially no-ops outside of Cloud.
+//
+// It implements internal/auth/sourcegraphoperator.AddSourcegraphOperatorExternalAccount
 //
 // 🚨 SECURITY: Some important things to note:
 //   - The caller must check that the user is a site administrator.
@@ -28,7 +36,7 @@ type accountDetailsBody struct {
 //   - The operation will fail if the user is already a SOAP user, which prevents escalating
 //     time-bound accounts to permanent service accounts.
 //   - Both the client ID and the service ID must match the SOAP configuration exactly.
-func AddSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
+func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
 	p := providers.GetProviderByConfigID(providers.ConfigID{
 		Type: auth.SourcegraphOperatorProviderType,
 		ID:   serviceID,

@@ -54,6 +54,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   4. riley, who is an expired SOAP user (will be cleaned up)
 	//   5. cris, who has a non-SOAP external account
 	//   6. cami, who is an expired SOAP user on the permanent accounts list
+	//      (is a service account)
 	// All the above except riley will be deleted.
 	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
 

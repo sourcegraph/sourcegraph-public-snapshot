@@ -113,11 +113,15 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			wantErr:         true,
 			wantErrContains: "must be site admin",
 		},
-		"SOAP provider not found": {
+		// OSS packages cannot import enterprise packages, but when we build the entire
+		// application this will be implemented.
+		//
+		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
+		"SOAP unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},
 			serviceType:     auth.SourcegraphOperatorProviderType,
 			wantErr:         true,
-			wantErrContains: "provider does not exist",
+			wantErrContains: "unimplemented in Sourcegraph OSS",
 		},
 	}
 
