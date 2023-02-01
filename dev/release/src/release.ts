@@ -523,7 +523,7 @@ cc @${config.captainGitHubUsername}
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
-                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
+                                    'Re-run the build on this branch (using either `sg ci build` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
