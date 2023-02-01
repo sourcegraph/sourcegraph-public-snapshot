@@ -9,9 +9,9 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 <div class="getting-started">
 <a class="btn btn-primary" href="#installation">★ Installation</a>
-<a class="btn" href="operations">Operations guides</a>
-<a class="btn" href="#about">About Kubernetes</a>
-<a class="btn" href="../../../#get-help">Get help</a>
+<a class="btn" href="../operations">Operations guides</a>
+<a class="btn" href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">About Kubernetes</a>
+<a class="btn" href="../../../../#get-help">Get help</a>
 </div>
 
 ## Requirements for using Kubernetes

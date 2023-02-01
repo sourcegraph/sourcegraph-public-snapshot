@@ -1,24 +1,18 @@
-# Scaling Sourcegraph with Kubernetes
+# Scaling Sourcegraph on Kubernetes
 
-Sourcegraph can be configured to scale to very large codebases and large numbers of
-users. If you notice latency for search or code navigation is higher than desired, changing these
-parameters can yield a drastic improvement in performance.
+Sourcegraph can scale to accommodate large codebases and many users. 
 
-See [Scaling Overview for Services](../scale.md) for more information about scaling.
+Increase resources according to the [Scaling Overview per Service](../scale.md) if you notice slower search or navigation.
 
-> NOTE: For assistance when scaling and tuning Sourcegraph, [contact us](https://about.sourcegraph.com/contact/). We're happy to help!
+## Cluster resource guidelines
 
----
-
-## Cluster resource allocation guidelines
-
-For production environments, we recommend allocate resources for your instance based on your [instance size](../instance-size.md). You can also refer to our [resource estimator](../resource_estimator.md) for more information regarding resources allocation for your Sourcegraph deployment.
+For production environments, we recommend allocate resources based on your [instance size](../instance-size.md). See our [resource estimator](../resource_estimator.md) for estimates.
 
 ---
 
 ## Improving performance with a large number of repositories
 
-When you're using Sourcegraph with many repositories (100s-10,000s), the most important parameters to tune are:
+Here is a simplified list of the key parameters to tune when scaling Sourcegraph to many repositories:
 
 - `sourcegraph-frontend` CPU/memory resource allocations
 - `searcher` replica count
@@ -30,20 +24,16 @@ When you're using Sourcegraph with many repositories (100s-10,000s), the most im
 
 Notes:
 
-- If your change requires `gitserver` pods to be restarted and they are scheduled on another node
-  when they restart, they may go offline for 60-90 seconds (and temporarily show a `Multi-Attach`
-  error). This delay is caused by Kubernetes detaching and reattaching the volume. Mitigation
-  steps depend on your cloud provider; [contact us](https://about.sourcegraph.com/contact/) for
-  advice.
-
-- For context on what each service does, see [Sourcegraph Architecture Overview](https://docs.sourcegraph.com/dev/architecture) and [Scaling Overview for Services](../scale.md).
+- If your change requires restarting `gitserver` pods and they are rescheduled to other nodes, they may go offline briefly (showing a `Multi-Attach` error). This is due to volume detach/reattach. [Contact us](https://about.sourcegraph.com/contact/) for mitigation steps depending on your cloud provider.
+- See the docs to understand each service's role:
+  - [Sourcegraph Architecture Overview](https://docs.sourcegraph.com/dev/architecture)
+  - [Scaling Overview per Service](../scale.md)
 
 ---
 
 ## Improving performance with large monorepos
 
-When you're using Sourcegraph with a large monorepo (or several large monorepos), the most important parameters to tune
-are:
+Here is a simplified list of key parameters to tune when scaling Sourcegraph to large monorepos:
 
 - `sourcegraph-frontend` CPU/memory resource allocations
 - `searcher` CPU/memory resource allocations (allocate enough memory to hold all non-binary files in your repositories)

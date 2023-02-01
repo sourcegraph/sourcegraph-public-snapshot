@@ -1,6 +1,6 @@
 # Configure Sourcegraph with Kustomize
 
-This guide will demonstrate how to customize your Sourcegraph deployment by creating a [Kustomize overlay](#create-an-overlay-for-sourcegraph).
+This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components.
 
 <div class="getting-started">
   <a class="btn text-center" href="../">Installation</a>
