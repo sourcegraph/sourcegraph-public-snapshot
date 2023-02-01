@@ -247,15 +247,30 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 	if err == io.EOF {
 		statusCode, err := strconv.Atoi(c.trailer.Get("X-Exec-Exit-Status"))
 		if err != nil {
-			return n, errors.Wrap(err, "failed to parse exit status")
+			return n, errors.Wrap(err, "failed to parse exit status code")
 		}
 
-		return n, &CommandStatusError{
-			Stderr:     c.trailer.Get("X-Exec-Stderr"),
-			StatusCode: int32(statusCode),
-			Message:    c.trailer.Get("X-Exec-Error"),
+		errorMessage := c.trailer.Get("X-Exec-Error")
+
+		// did the command exit cleanly?
+		if statusCode == 0 && errorMessage == "" {
+			// yes - propagate io.EOF
+
+			return n, io.EOF
 		}
+
+		// no - report it
+
+		stderr := c.trailer.Get("X-Exec-Stderr")
+		err = &CommandStatusError{
+			Stderr:     stderr,
+			StatusCode: int32(statusCode),
+			Message:    errorMessage,
+		}
+
+		return n, err
 	}
+
 	return n, err
 }
 
