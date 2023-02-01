@@ -22,6 +22,7 @@ interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSe
         isBranch: boolean
         isExpanded: boolean
         handleSelect: (event: React.MouseEvent) => {}
+        handleExpand: (event: React.MouseEvent) => {}
         props: { className: string; tabIndex: number }
     }) => React.ReactNode
 
@@ -66,12 +67,12 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             isBranch: boolean
             isExpanded: boolean
             isSelected: boolean
-            getNodeProps: (props: { onClick: (event: Event) => {} }) => {
+            getNodeProps: (props: { onClick: (event: React.MouseEvent) => {} }) => {
                 onClick: (event: React.MouseEvent) => {}
             }
             level: number
             handleSelect: (event: React.MouseEvent) => {}
-            handleExpand: (event: Event) => {}
+            handleExpand: (event: React.MouseEvent) => {}
         }): React.ReactNode => {
             const { onClick, ...props } = getNodeProps({ onClick: handleExpand })
             return (
@@ -104,6 +105,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                               isBranch,
                               isExpanded,
                               handleSelect,
+                              handleExpand,
                               props: {
                                   className: classNames(styles.content, { [styles.contentInBranch]: isBranch }),
                                   // We don't want links or any other item inside the Tree to be focusable, as focus
@@ -131,14 +133,16 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
 }
 
 function getMarginLeft(level: number, isBranch: boolean): string {
-    // The level starts with 1 but we subtract 1.25 to make room for the folder
-    // chevron icon so to make sure we don't have a negative margin, we need to
-    // increase the level by the remaining 0.25.
-    level += 0.25
+    // The level starts with 1 so the least margin by this logic is 0.75 * 1.
+    //
+    // Since folders render a chevron icon that is 1.25rem wide and we want to
+    // render it to the left of the item, we need to add 0.5rem so we don't have
+    // a negative margin
+    level += 0.5
 
     if (isBranch) {
-        return `${level - 1.25}rem`
+        return `${0.75 * level - 1.25}rem`
     } else {
-        return `${level}rem`
+        return `${0.75 * level}rem`
     }
 }
