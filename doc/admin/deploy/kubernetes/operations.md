@@ -2,7 +2,12 @@
 
 Operations guides specific to managing [Sourcegraph with Kubernetes](./index.md) installations.
 
-Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](./index.md#installation).
+<div class="getting-started">
+  <a class="btn text-center" href="index">Installation</a>
+  <a class="btn text-center" href="kustomize">Introduction</a>
+  <a class="btn text-center" href="kustomize/configure">Configuration</a>
+  <a class="btn text-center btn-primary" href="#">★ Maintenance</a>
+</div>
 
 ## Featured guides
 
@@ -25,6 +30,8 @@ Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](
    Troubleshoot common issues with your Sourcegraph instance.
   </a>
 </div>
+
+Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](./index.md#installation).
 
 ## Configure
 

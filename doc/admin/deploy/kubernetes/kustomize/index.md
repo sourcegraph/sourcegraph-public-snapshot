@@ -1,13 +1,17 @@
 # Kustomize for Sourcegraph
 
- Kustomize enables us to decompose our **[base](#base)** application into smaller building blocks, with multiple versions of each block preconfigured as **[components](#components)** for various use cases. This modular approach enables the mixing and matching of the building blocks to construct a customized version of the application by creating **[overlays](#overlay)**. This feature provides a high degree of flexibility and facilitates the maintenance and evolution of the application over time.
+An introduction to Kustomize created for Sourcegraph.
 
 <div class="getting-started">
-<a class="btn btn-primary text-center" href="#">★ Introduction</a>
-<a class="btn text-center" href="../">Installation</a>
-<a class="btn text-center" href="configure">Configuration</a>
-<a class="btn text-center" href="../operations">Operation</a>
+  <a class="btn text-center" href="../">Installation</a>
+  <a class="btn btn-primary text-center" href="#">★ Introduction</a>
+  <a class="btn text-center" href="configure">Configuration</a>
+  <a class="btn text-center" href="../operations">Maintenance</a>
 </div>
+
+## Overview
+
+ Kustomize enables us to decompose our **[base](#base)** application into smaller building blocks, with multiple versions of each block preconfigured as **[components](#components)** for various use cases. This modular approach enables the mixing and matching of the building blocks to construct a customized version of the application by creating **[overlays](#overlay)**. This feature provides a high degree of flexibility and facilitates the maintenance and evolution of the application over time.
 
 ## Build process
 
@@ -105,7 +109,7 @@ The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a
 
 To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment. These sections include:
 
-#### BUILD CONFIGURATIONS
+### BUILD CONFIGURATIONS
 
 Certain components may require additional input from users to construct the overlay for Sourcegraph deployments. These inputs are typically configurations that are specific to the user's environment, use case, or preferences. The `BUILD CONFIGURATIONS` section should only be updated when instructed by the components defined in the overlay. This is because not all components require additional configurations and some may even have default values that are suitable for most use cases. Updating the section unnecessarily can cause errors or unexpected behavior. Always refer to the component's documentation or the comments in the [kustomization.yaml file](#kustomization-yaml) before making changes to this section.
 
@@ -150,6 +154,21 @@ An overlay in Kustomize is a set of configuration files that are used to customi
 
 Most of our components are designed to be reusable for different environments and use cases. They can be used to add common labels and annotations, apply common configurations, or even generate resources. By using these components, you can minimize the amount of duplicated code in your overlays and make them more maintainable.
 
+### Rule of thumbs
+
+It is important to understand how each component covered in the [configuration guide](configure.md) is used to configure your Sourcegraph deployment. Each component has specific configuration options and settings that need to be configured correctly in order for your deployment to function properly. By reading the details and understanding how each component is used, you can make informed decisions about which components to enable or disable in your overlay file, and how to configure them to meet your needs. It also helps to learn how to troubleshoot if something goes wrong.
+
+Here are some **rule of thumbs** to follow when combining different components to ensure that they work together seamlessly and avoid any conflicts:
+
+- Understand the dependencies between components: Some components may depend on others to function properly. For example, if you include a component to remove a daemonset, you should also include the monitoring component to make sure that there is something for the component to remove. If you don't, the overlay build process will fail because there is nothing for the component to remove.
+
+- Be aware of the configuration settings of each component: Each component has its own configuration settings that need to be configured correctly. For example, if you include a component that adds RBAC resources to your deployment when your cluster is RBAC-disabled, it will cause the overlay build process to fail.
+
+- Understand the resources each component creates: Each component creates its own set of resources that need to be managed. For example, if you include a component that creates a service and another component that creates a deployment, you need to make sure that the service points to the deployment.
+
+- Be careful when disabling components: Some components may depend on others to function properly. When disabling a component, you need to consider the impact it may have on other components.
+
+By following these rule of thumbs, you can ensure that the components you include in your overlay work together seamlessly and avoid any conflicts. It is also a good practice to review the manifests generated by the overlay before deploying them to the production environment, to make sure that the overlay is configured as desired.
 
 ## Remote build
 
