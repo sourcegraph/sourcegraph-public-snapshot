@@ -100,13 +100,13 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 	}
 
 	// If the deprecated campaigns are enabled, use unrestricted batch changes
-	if FeatureCampaigns.Check(info) == nil {
+	if FeatureCampaigns.Check(info) == nil && !info.IsExpired() {
 		f.Unrestricted = true
 		return nil
 	}
 
 	// If the batch changes tag exists on the license, use unrestricted batch changes
-	if info.HasTag(f.FeatureName()) {
+	if info.HasTag(f.FeatureName()) && !info.IsExpired() {
 		f.Unrestricted = true
 		return nil
 	}
