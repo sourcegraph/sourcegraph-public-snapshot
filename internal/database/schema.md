@@ -3858,6 +3858,7 @@ Foreign-key constraints:
     u.num_failures,
     u.associated_index_id,
     u.content_type,
+    u.should_reindex,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,
