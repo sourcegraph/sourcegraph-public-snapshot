@@ -1163,22 +1163,31 @@ func (u *userStore) getBySQLWithEmailsAndSCIMExternalID(ctx context.Context, que
 	// Convert results to users
 	users := []*types.UserForSCIM{}
 	for rows.Next() {
-		var u types.UserForSCIM
-		var displayName, avatarURL, scimExternalID sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.Emails, &scimExternalID)
+		u, err := scanUserForSCIM(rows)
 		if err != nil {
 			return nil, err
 		}
-		u.DisplayName = displayName.String
-		u.AvatarURL = avatarURL.String
-		u.SCIMExternalID = scimExternalID.String
-		users = append(users, &u)
+		users = append(users, u)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
 	return users, nil
+}
+
+// scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
+func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
+	var u types.UserForSCIM
+	var displayName, avatarURL, scimExternalID sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.Emails, &scimExternalID)
+	if err != nil {
+		return nil, err
+	}
+	u.DisplayName = displayName.String
+	u.AvatarURL = avatarURL.String
+	u.SCIMExternalID = scimExternalID.String
+	return &u, nil
 }
 
 func (u *userStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
