@@ -64,31 +64,6 @@ func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient http
 	}, nil
 }
 
-// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
-type ListRepositoriesByProjectOrOrgArgs struct {
-	// Should be in the form of 'org/project' for projects and 'org' for orgs.
-	ProjectOrOrgName string
-}
-
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var repos ListRepositoriesResponse
-	if _, err = c.do(ctx, req, "", &repos); err != nil {
-		return nil, err
-	}
-
-	return repos.Value, nil
-}
-
 // AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
 func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
 	queryParams := make(url.Values)
@@ -121,6 +96,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		}
 	}
 	req.URL = u.ResolveReference(req.URL)
+
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	// Add Basic Auth headers for authenticated requests.
 	c.auth.Authenticate(req)
@@ -176,42 +155,6 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 // Services (https://dev.azure.com
 func (c *Client) IsAzureDevOpsServices() bool {
 	return c.URL.String() == azureDevOpsServicesURL
-}
-
-type ListRepositoriesResponse struct {
-	Value []Repository `json:"value"`
-	Count int          `json:"count"`
-}
-
-type Repository struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	CloneURL   string  `json:"remoteURL"`
-	APIURL     string  `json:"url"`
-	SSHURL     string  `json:"sshUrl"`
-	WebURL     string  `json:"webUrl"`
-	IsDisabled bool    `json:"isDisabled"`
-	Project    Project `json:"project"`
-}
-
-type Project struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	State      string `json:"state"`
-	Revision   int    `json:"revision"`
-	Visibility string `json:"visibility"`
-}
-
-type Profile struct {
-	ID           string `json:"id"`
-	DisplayName  string `json:"displayName"`
-	EmailAddress string `json:"emailAddress"`
-}
-
-type httpError struct {
-	StatusCode int
-	URL        *url.URL
-	Body       []byte
 }
 
 func (e *httpError) Error() string {
