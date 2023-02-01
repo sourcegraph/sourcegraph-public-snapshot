@@ -210,6 +210,12 @@ type NewUser struct {
 	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
+type NewUserForSCIM struct {
+	NewUser
+	AdditionalVerifiedEmails []string
+	SCIMExternalID           string
+}
+
 // Create creates a new user in the database.
 //
 // If a password is given, then unauthenticated users can sign into the account using the
@@ -1160,7 +1166,7 @@ SELECT u.id,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.searchable,
-       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id) AS emails,
+       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
        (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
   FROM users u %s`
 
@@ -1194,7 +1200,7 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.Emails, &scimExternalID)
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
 	if err != nil {
 		return nil, err
 	}
