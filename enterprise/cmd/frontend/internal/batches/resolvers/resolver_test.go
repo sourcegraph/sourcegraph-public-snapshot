@@ -129,7 +129,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	license := func(tags ...string) *licensing.Info { return &licensing.Info{Info: license.Info{Tags: tags}} }
+	licensingInfo := func(tags ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -179,22 +181,22 @@ func TestCreateBatchSpec(t *testing.T) {
 	}{
 		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter"),
+			licenseInfo:    licensingInfo("starter"),
 			wantErr:        true,
 		},
 		"batch changes license, restricted, under the limit": {
 			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
-			licenseInfo:    license("starter"),
+			licenseInfo:    licensingInfo("starter"),
 			wantErr:        false,
 		},
 		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter", "batch-changes"),
+			licenseInfo:    licensingInfo("starter", "batch-changes"),
 			wantErr:        false,
 		},
 		"campaigns license, no limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter", "campaigns"),
+			licenseInfo:    licensingInfo("starter", "campaigns"),
 			wantErr:        false,
 		},
 		"no license": {
