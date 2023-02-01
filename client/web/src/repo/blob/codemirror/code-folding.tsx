@@ -160,7 +160,13 @@ export function codeFoldingExtension(): Extension {
         })),
 
         EditorView.theme({
+            '.cm-foldGutter': {
+                height: '1rem',
+                width: '1rem',
+            },
             '.cm-foldGutter .fold-icon': {
+                width: '100%',
+                height: '100%',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
             },
