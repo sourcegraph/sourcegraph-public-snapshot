@@ -52960,6 +52960,9 @@ type MockUserStore struct {
 	// ListDatesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListDates.
 	ListDatesFunc *UserStoreListDatesFunc
+	// ListForSCIMFunc is an instance of a mock function object controlling
+	// the behavior of the method ListForSCIM.
+	ListForSCIMFunc *UserStoreListForSCIMFunc
 	// RandomizePasswordAndClearPasswordResetRateLimitFunc is an instance of
 	// a mock function object controlling the behavior of the method
 	// RandomizePasswordAndClearPasswordResetRateLimit.
@@ -53127,6 +53130,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: func(context.Context) (r0 []types.UserDates, r1 error) {
+				return
+			},
+		},
+		ListForSCIMFunc: &UserStoreListForSCIMFunc{
+			defaultHook: func(context.Context, *UsersListOptions) (r0 []*types.UserForSCIM, r1 error) {
 				return
 			},
 		},
@@ -53322,6 +53330,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.ListDates")
 			},
 		},
+		ListForSCIMFunc: &UserStoreListForSCIMFunc{
+			defaultHook: func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error) {
+				panic("unexpected invocation of MockUserStore.ListForSCIM")
+			},
+		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.RandomizePasswordAndClearPasswordResetRateLimit")
@@ -53461,6 +53474,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		ListDatesFunc: &UserStoreListDatesFunc{
 			defaultHook: i.ListDates,
+		},
+		ListForSCIMFunc: &UserStoreListForSCIMFunc{
+			defaultHook: i.ListForSCIM,
 		},
 		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
 			defaultHook: i.RandomizePasswordAndClearPasswordResetRateLimit,
@@ -56282,6 +56298,114 @@ func (c UserStoreListDatesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreListDatesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreListForSCIMFunc describes the behavior when the ListForSCIM
+// method of the parent MockUserStore instance is invoked.
+type UserStoreListForSCIMFunc struct {
+	defaultHook func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error)
+	hooks       []func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error)
+	history     []UserStoreListForSCIMFuncCall
+	mutex       sync.Mutex
+}
+
+// ListForSCIM delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserStore) ListForSCIM(v0 context.Context, v1 *UsersListOptions) ([]*types.UserForSCIM, error) {
+	r0, r1 := m.ListForSCIMFunc.nextHook()(v0, v1)
+	m.ListForSCIMFunc.appendCall(UserStoreListForSCIMFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListForSCIM method
+// of the parent MockUserStore instance is invoked and the hook queue is
+// empty.
+func (f *UserStoreListForSCIMFunc) SetDefaultHook(hook func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListForSCIM method of the parent MockUserStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreListForSCIMFunc) PushHook(hook func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreListForSCIMFunc) SetDefaultReturn(r0 []*types.UserForSCIM, r1 error) {
+	f.SetDefaultHook(func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreListForSCIMFunc) PushReturn(r0 []*types.UserForSCIM, r1 error) {
+	f.PushHook(func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreListForSCIMFunc) nextHook() func(context.Context, *UsersListOptions) ([]*types.UserForSCIM, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreListForSCIMFunc) appendCall(r0 UserStoreListForSCIMFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreListForSCIMFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreListForSCIMFunc) History() []UserStoreListForSCIMFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreListForSCIMFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreListForSCIMFuncCall is an object that describes an invocation of
+// method ListForSCIM on an instance of MockUserStore.
+type UserStoreListForSCIMFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *UsersListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.UserForSCIM
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreListForSCIMFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreListForSCIMFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

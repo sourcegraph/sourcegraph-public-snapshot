@@ -77,6 +77,7 @@ type UserStore interface {
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
+	ListForSCIM(context.Context, *UsersListOptions) (_ []*types.UserForSCIM, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
@@ -916,6 +917,23 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 	return u.getBySQL(ctx, q)
 }
 
+// ListForSCIM lists users along with their email addresses and SCIM ExternalID.
+func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	conditions := u.listSQL(*opt)
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
+	return u.getBySQLWithEmailsAndSCIMExternalID(ctx, q)
+}
+
 // ListDates lists all user's created and deleted dates, used by usage stats.
 func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
 	rows, err := u.Query(ctx, sqlf.Sprintf(listDatesQuery))
@@ -1120,6 +1138,40 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 		}
 		u.DisplayName = displayName.String
 		u.AvatarURL = avatarURL.String
+		users = append(users, &u)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// getBySQLWithEmailsAndSCIMExternalID returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
+func (u *userStore) getBySQLWithEmailsAndSCIMExternalID(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
+	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
+	q := sqlf.Sprintf(`SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable,
+       	ARRAY(SELECT email FROM user_emails WHERE user_id = u.id) AS emails,
+       	(SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+  FROM users u %s`, query)
+	rows, err := u.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Convert results to users
+	users := []*types.UserForSCIM{}
+	for rows.Next() {
+		var u types.UserForSCIM
+		var displayName, avatarURL, scimExternalID sql.NullString
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.Emails, &scimExternalID)
+		if err != nil {
+			return nil, err
+		}
+		u.DisplayName = displayName.String
+		u.AvatarURL = avatarURL.String
+		u.SCIMExternalID = scimExternalID.String
 		users = append(users, &u)
 	}
 	if err = rows.Err(); err != nil {
