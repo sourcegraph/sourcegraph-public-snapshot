@@ -24,7 +24,7 @@ type accountDetailsBody struct {
 //
 // 🚨 SECURITY: Some important things to note:
 //   - The caller must check that the user is a site administrator.
-//   - Being a SOAP user does not grant significant privileges over being a site admin.
+//   - Being a SOAP user does not grant any extra privilege over being a site admin.
 //   - The operation will fail if the user is already a SOAP user, which prevents escalating
 //     time-bound accounts to permanent service accounts.
 //   - Both the client ID and the service ID must match the SOAP configuration exactly.
