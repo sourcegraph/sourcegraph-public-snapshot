@@ -13,7 +13,7 @@ go_library(
         "subscriptions_graphql.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",

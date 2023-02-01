@@ -7,7 +7,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks/resolvers/apitest",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/notebooks",

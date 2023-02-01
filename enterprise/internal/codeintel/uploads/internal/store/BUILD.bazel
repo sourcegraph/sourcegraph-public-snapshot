@@ -20,7 +20,7 @@ go_library(
         "workerutil.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/internal/commitgraph",

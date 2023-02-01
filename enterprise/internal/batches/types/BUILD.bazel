@@ -24,7 +24,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/sources/bitbucketcloud",
