@@ -5,7 +5,7 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
 <div class="getting-started">
   <a class="btn btn-primary text-center" href="#prerequisites">★ Installation</a>
   <a class="btn text-center" href="kustomize">Introduction</a>
-  <a class="btn text-center" href="kustomize/configure">Configuration</a>
+  <a class="btn text-center" href="./configure">Configuration</a>
   <a class="btn text-center" href="operations">Maintenance</a>
 </div>
 
@@ -81,7 +81,7 @@ We recommend using a preconfigured storage class component for your cloud provid
     - ../../components/storage-class/gke
   ```
 
-See our [configurations guide](kustomize/configure.md) for a list of available storage class components and configuration options.
+See our [configurations guide](configure.md) for a list of available storage class components and configuration options.
 
 #### Option 2: Use an existing storage class
 
@@ -165,17 +165,17 @@ After the initial deployment, additional configuration might be required for Sou
 
 Common configurations that are strongly recommended for all Sourcegraph deployments:
 
-- [Enable the Sourcegraph monitoring stack](kustomize/configure.md#monitoring-stack)
-- [Adjust resource allocations based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
-- [Configure ingress](kustomize/configure.md#ingress)
-- [Enable TLS](kustomize/configure.md#tls)
+- [Enable the Sourcegraph monitoring stack](configure.md#monitoring-stack)
+- [Adjust resource allocations based on your instance size](configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
+- [Configure ingress](configure.md#ingress)
+- [Enable TLS](configure.md#tls)
 
 Other common configurations include:
 
-- [Set up an external PostgreSQL Database](kustomize/configure.md#external-postgres)
-- [Set up SSH connection for cloning repositories](kustomize/configure.md#ssh-for-cloning)
+- [Set up an external PostgreSQL Database](configure.md#external-postgres)
+- [Set up SSH connection for cloning repositories](configure.md#ssh-for-cloning)
 
-See the [configuration guide for Kustomize](kustomize/configure.md) for more configuration options.
+See the [configuration guide for Kustomize](configure.md) for more configuration options.
 
 ## Helm Chart
 

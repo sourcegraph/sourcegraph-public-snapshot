@@ -5,7 +5,7 @@ An introduction to Kustomize created for Sourcegraph.
 <div class="getting-started">
   <a class="btn text-center" href="../">Installation</a>
   <a class="btn btn-primary text-center" href="#">★ Introduction</a>
-  <a class="btn text-center" href="configure">Configuration</a>
+  <a class="btn text-center" href="../configure">Configuration</a>
   <a class="btn text-center" href="../operations">Maintenance</a>
 </div>
 
@@ -105,7 +105,7 @@ All custom overlays built for a specific instance should be stored in the [insta
 
 ### kustomization.yaml
 
-The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a Kustomize overlay. It is situated in the root directory of the overlay and serves as a means of customizing and configuring the resources defined in the base manifests, as outlined in our [configuration documentation](./configure.md).
+The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a Kustomize overlay. It is situated in the root directory of the overlay and serves as a means of customizing and configuring the resources defined in the base manifests, as outlined in our [configuration documentation](../configure.md).
 
 To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment. These sections include:
 
@@ -146,7 +146,7 @@ $ mkdir instances/$INSTANCE_NAME
 $ cp instances/template/kustomization.template.yaml instances/$INSTANCE_NAME/kustomization.yaml
 ```
 
-**Step 3**: You can begin customizing your Sourcegraph deployment by updating the [kustomization.yaml file](#kustomization-yaml) inside your overlay, following our [configuration guides](./configure.md) for guidance.
+**Step 3**: You can begin customizing your Sourcegraph deployment by updating the [kustomization.yaml file](#kustomization-yaml) inside your overlay, following our [configuration guides](../configure.md) for guidance.
 
 ## Components
 
@@ -156,7 +156,7 @@ Most of our components are designed to be reusable for different environments an
 
 ### Rule of thumbs
 
-It is important to understand how each component covered in the [configuration guide](configure.md) is used to configure your Sourcegraph deployment. Each component has specific configuration options and settings that need to be configured correctly in order for your deployment to function properly. By reading the details and understanding how each component is used, you can make informed decisions about which components to enable or disable in your overlay file, and how to configure them to meet your needs. It also helps to learn how to troubleshoot if something goes wrong.
+It is important to understand how each component covered in the [configuration guide](../configure.md) is used to configure your Sourcegraph deployment. Each component has specific configuration options and settings that need to be configured correctly in order for your deployment to function properly. By reading the details and understanding how each component is used, you can make informed decisions about which components to enable or disable in your overlay file, and how to configure them to meet your needs. It also helps to learn how to troubleshoot if something goes wrong.
 
 Here are some **rule of thumbs** to follow when combining different components to ensure that they work together seamlessly and avoid any conflicts:
 

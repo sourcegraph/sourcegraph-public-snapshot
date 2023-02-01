@@ -3,10 +3,10 @@
 This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components.
 
 <div class="getting-started">
-  <a class="btn text-center" href="../">Installation</a>
-  <a class="btn text-center" href="../kustomize">Introduction</a>
+  <a class="btn text-center" href="./">Installation</a>
+  <a class="btn text-center" href="./kustomize">Introduction</a>
   <a class="btn text-center btn-primary" href="#">★ Configuration</a>
-  <a class="btn text-center" href="../operations">Maintenance</a>
+  <a class="btn text-center" href="./operations">Maintenance</a>
 </div>
 
 ## Overview
