@@ -50,6 +50,22 @@ http_archive(
 )
 
 http_archive(
+    name = "rules_buf",
+    sha256 = "523a4e06f0746661e092d083757263a249fedca535bd6dd819a8c50de074731a",
+    strip_prefix = "rules_buf-0.1.1",
+    urls = [
+        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.1.1.zip",
+    ],
+)
+
+# http_archive(
+#     name = "rules_proto_grpc",
+#     sha256 = "fb7fc7a3c19a92b2f15ed7c4ffb2983e956625c1436f57a3430b897ba9864059",
+#     strip_prefix = "rules_proto_grpc-4.3.0",
+#     urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.3.0.tar.gz"],
+# )
+
+http_archive(
     name = "bazel_gazelle",
     sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
@@ -113,6 +129,22 @@ load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
 jest_npm_repositories()
 
 # Go toolchain setup
+
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(version = "v1.11.0")
+
+load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
+
+gazelle_buf_dependencies()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
