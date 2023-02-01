@@ -805,6 +805,131 @@ func TestUsers_Delete(t *testing.T) {
 	}
 }
 
+func TestUsers_RecoverUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherUser, err := db.Users().Create(ctx, NewUser{Username: "other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
+		extsvc.AccountSpec{
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+			AccountID:   "alice_github",
+		},
+		extsvc.AccountData{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//Test reviving a user that does not exist
+	t.Run("fails on nonexistent user", func(t *testing.T) {
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{65})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 0 {
+			t.Errorf("got %d recovered users, want 0", len(ru))
+		}
+	})
+	//Test reviving a user that does exist and hasn't not been deleted
+	t.Run("fails on non-deleted user", func(t *testing.T) {
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
+		if err == nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 0 {
+			t.Errorf("got %d users, want 0", len(ru))
+		}
+	})
+
+	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
+	t.Run("revives user with no additional resources", func(t *testing.T) {
+		err := db.Users().Delete(ctx, user.ID)
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 1 {
+			t.Errorf("got %d users, want 1", len(ru))
+		}
+		if ru[0] != user.ID {
+			t.Errorf("got user %d, want %d", ru[0], user.ID)
+		}
+
+		users, err := db.Users().List(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(users) > 2 {
+			// The otherUser should still exist, which is why we check for 1 not 0.
+			t.Errorf("got %d users, want 1", len(users))
+		}
+	})
+	//Test reviving a user that does exist and does have additional resources deleted in the same timeframe
+	t.Run("revives user and additional resources", func(t *testing.T) {
+		err := db.Users().Delete(ctx, otherUser.ID)
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+
+		_, err = db.UserExternalAccounts().Get(ctx, otherUser.ID)
+		if err == nil {
+			t.Fatal("got err nil, want non-nil")
+		}
+
+		ru, err := db.Users().RecoverUsersList(ctx, []int32{otherUser.ID})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if len(ru) != 1 {
+			t.Errorf("got %d users, want 1", len(ru))
+		}
+		if ru[0] != otherUser.ID {
+			t.Errorf("got user %d, want %d", ru[0], otherUser.ID)
+		}
+
+		extAcc, err := db.UserExternalAccounts().Get(ctx, 1)
+		if err != nil {
+			t.Fatal("got err nil, want non-nil")
+		}
+		if extAcc.UserID != otherUser.ID {
+			t.Errorf("got user %d, want %d", extAcc.UserID, otherUser.ID)
+		}
+
+		users, err := db.Users().List(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(users) > 2 {
+			t.Errorf("got %d users, want 2", len(users))
+		}
+	})
+}
+
 func TestUsers_HasTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
