@@ -129,10 +129,10 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 		return nil, errors.New("only site admins can update teams")
 	}
 	if args.ID == nil && args.Name == nil {
-		return nil, errors.New("team to update is identifier by either id or name, but neither was specified")
+		return nil, errors.New("team to update is identified by either id or name, but neither was specified")
 	}
 	if args.ID != nil && args.Name != nil {
-		return nil, errors.New("team to update is identifier by either id or name, but both were specified")
+		return nil, errors.New("team to update is identified by either id or name, but both were specified")
 	}
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("parent team is identified by either id or name, but both were specified")
@@ -205,8 +205,34 @@ type DeleteTeamArgs struct {
 	Name *string
 }
 
-func (r *schemaResolver) DeleteTeam(args *DeleteTeamArgs) *EmptyResponse {
-	return &EmptyResponse{}
+func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: For now we only allow site admins to create teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can delete teams")
+	}
+	if args.ID == nil && args.Name == nil {
+		return nil, errors.New("team to delete is identified by either id or name, but neither was specified")
+	}
+	if args.ID != nil && args.Name != nil {
+		return nil, errors.New("team to delete is identified by either id or name, but both were specified")
+	}
+	var id int32
+	if args.ID != nil {
+		err := relay.UnmarshalSpec(*args.ID, &id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot interpret team id: %q", *args.ID)
+		}
+	} else {
+		t, err := r.db.Teams().GetTeamByName(ctx, *args.Name)
+		if err != nil {
+			return nil, err
+		}
+		id = t.ID
+	}
+	if err := r.db.Teams().DeleteTeam(ctx, id); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 type TeamMembersArgs struct {
