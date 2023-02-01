@@ -38,15 +38,15 @@ Upgrade your current instance to the latest version of Sourcegraph using the old
 
 #### Step 2: Set up a release branch
 
-Set up a release branch from the latest version branch in your local forked copy of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
+Set up a release branch from the latest version branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
 
 ```bash
 $ git checkout -b release
 ```
 
-#### Step 3: Create a new overlay
+#### Step 3: Set up a directory
 
-`cd` into the repository and create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
+Create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
 
 ```bash
 $ mkdir instance/my-sourcegraph
@@ -54,7 +54,7 @@ $ mkdir instance/my-sourcegraph
 
 #### Step 4: Set up the kustomization file
 
-Copy [instances/kustomization.template.yaml](index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
+Copy [instances/template/kustomization.template.yaml](index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
 
 ```bash
 $ cp instances/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
@@ -75,7 +75,7 @@ Set it to `default` to deploy to the default namespace.
 
 #### Step 6: Set storage class
 
-Add storage class name that your current instance is using for all associated resources:
+To add the storage class name that your current instance is using for all associated resources:
 
 1. Include the `storage-class/update-class-name` component under the components list
 2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
