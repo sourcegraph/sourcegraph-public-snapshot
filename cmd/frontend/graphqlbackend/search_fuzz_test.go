@@ -102,15 +102,12 @@ func FuzzTestSearch(f *testing.F) {
 		gsClient.ResolveRevisionFunc.SetDefaultHook(ftc.repoRevsMock)
 
 		sr := newSchemaResolver(db, gsClient)
-		schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
+		sc, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		result := schema.Exec(context.Background(), tcq, "", vars)
-		if len(result.Errors) > 0 {
-			t.Log(err)
-		}
+		sc.Exec(context.Background(), tcq, "", vars)
 	})
 }
 

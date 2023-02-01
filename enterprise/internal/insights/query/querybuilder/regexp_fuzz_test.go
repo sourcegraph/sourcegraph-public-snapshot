@@ -38,7 +38,7 @@ func FuzzTest_replaceCaptureGroupsWithString(f *testing.F) {
 		f.Add(test.pattern)
 	}
 	f.Fuzz(func(t *testing.T, pattern string) {
-		reg, err := regexp.Compile(pattern)
+		reg, _ := regexp.Compile(pattern)
 		matches := reg.FindStringSubmatch("sometextwith need to match one because you know why")
 
 		if len(matches) > 1 {
