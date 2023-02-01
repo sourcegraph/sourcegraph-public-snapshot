@@ -9,18 +9,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDeleteUser(t *testing.T) {
@@ -129,6 +130,16 @@ func TestDeleteUser(t *testing.T) {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
 
+	// Disable event logging, which is triggered for SOAP users
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EventLogging: "disabled",
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
 	tests := []struct {
 		name     string
 		setup    func(t *testing.T)
@@ -199,17 +210,12 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 		{
-			name: "non-soap user cannot delete soap user",
+			name: "non-SOAP user cannot delete SOAP user",
 			setup: func(t *testing.T) {
 				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
 
 				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
-					switch opts.UserID {
-					case 1:
-						// actor is just a normal user
-						assert.Equal(t, opts.ServiceType, auth.SourcegraphOperatorProviderType)
-						return []*extsvc.Account{}, nil
-					case aliceUID:
+					if opts.UserID == aliceUID {
 						// delete target is a SOAP user
 						return []*extsvc.Account{{
 							AccountSpec: extsvc.AccountSpec{
@@ -244,22 +250,29 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 		{
-			name: "soap user deletes soap user",
+			name: "SOAP user deletes SOAP user",
 			setup: func(t *testing.T) {
 				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
 
-				// everyone's a SOAP user!
-				externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: auth.SourcegraphOperatorProviderType,
-						ServiceID:   "soap",
-						AccountID:   "soap_soap",
-					},
-				}}, nil)
+				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+					if opts.UserID == aliceUID {
+						// delete target is a SOAP user
+						return []*extsvc.Account{{
+							AccountSpec: extsvc.AccountSpec{
+								ServiceType: auth.SourcegraphOperatorProviderType,
+								ServiceID:   "soap",
+								AccountID:   "alice_soap",
+							},
+						}}, nil
+					}
+					return nil, errors.Newf("unexpected user %d", opts.UserID)
+				})
 			},
 			gqlTests: []*Test{
 				{
 					Schema: mustParseGraphQLSchema(t, db),
+					Context: actor.WithActor(context.Background(),
+						&actor.Actor{UID: 1, SourcegraphOperator: true}),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2") {

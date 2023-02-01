@@ -126,11 +126,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			// If the delete target is a SOAP user, make sure the actor is also a SOAP
 			// user - regular users should not be able to delete SOAP users.
 			if acct.ServiceType == auth.SourcegraphOperatorProviderType {
-				actorSoapAccts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-					UserID:      a.UID,
-					ServiceType: auth.SourcegraphOperatorProviderType,
-				})
-				if err != nil || len(actorSoapAccts) == 0 {
+				if !a.SourcegraphOperator {
 					return nil, errors.Newf("%[1]q users cannot be deleted by non-%[1]q users",
 						auth.SourcegraphOperatorProviderType)
 				}
