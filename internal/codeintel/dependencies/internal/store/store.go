@@ -188,21 +188,16 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 	}
 
 	// then collapse
-	nonDupes := 1
-	var displacementAmount int
-	for i, dep := range deps[1:] {
-		if dep.Name == "" && dep.Scheme == "" {
-			displacementAmount++
-		} else {
-			nonDupes++
-			deps[i+1-displacementAmount] = dep
+	nonDupes := deps[:0]
+	for _, dep := range deps {
+		if dep.Name != "" && dep.Scheme != "" {
+			nonDupes = append(nonDupes, dep)
 		}
 	}
+	// replace the originals :wave
+	deps = nonDupes
 
-	// lob off the remainder :wave
-	deps = deps[:nonDupes]
-
-	db, err := s.db.Handle().Transact(ctx)
+	db, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,7 +217,7 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		db,
+		db.Handle(),
 		"lsif_dependency_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},
@@ -243,27 +238,31 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		return nil, nil, errors.Wrapf(err, "failed to insert package repos")
 	}
 
-	remainingParams := batch.MaxNumPostgresParameters - len(newDeps)
+	// we need the IDs of all newly inserted and already existing package repo references
+	// for all of the references in `deps`, so that we have the package repo reference ID that
+	// we need for the package repo reference versions table.
+	// We already have the IDs of newly inserted ones (in `newDeps`), but for simplicity we'll
+	// just search based on (scheme, name) tuple in `deps`.
+
+	// we slice into `deps`, which will continuously shrink as we batch based on the amount of
+	// postgres parameters we can fit. Divide by 2 because for each entry in the batch, we need 2 free params
+	const maxBatchSize = batch.MaxNumPostgresParameters / 2
 	remainingDeps := deps
-	var applyOffset int
 
-	packageIDs := make([]int, 0, len(newDeps))
-	for _, newDep := range newDeps {
-		packageIDs = append(packageIDs, newDep.ID)
-	}
-
-	allIDs := make([]int, len(deps))
+	allIDs := make([]int, 0, len(deps))
 
 	for len(remainingDeps) > 0 {
+		// avoid slice out of bounds nonsense
 		var batch []shared.MinimalPackageRepoRef
-		if len(remainingDeps) <= remainingParams {
+		if len(remainingDeps) <= maxBatchSize {
 			batch, remainingDeps = remainingDeps, nil
 		} else {
-			batch, remainingDeps = remainingDeps[:remainingParams], remainingDeps[remainingParams:]
+			batch, remainingDeps = remainingDeps[:maxBatchSize], remainingDeps[maxBatchSize:]
 		}
 
-		max := remainingParams
-		if len(remainingDeps) < remainingParams {
+		// dont over-allocate
+		max := maxBatchSize
+		if len(remainingDeps) < maxBatchSize {
 			max = len(remainingDeps)
 		}
 		params := make([]*sqlf.Query, 0, max)
@@ -273,18 +272,14 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 
 		query := sqlf.Sprintf(
 			getAttemptedInsertDependencyReposQuery,
-			pq.Array(packageIDs),
 			sqlf.Join(params, ", "),
 		)
 
-		allIDsWindow, err := basestore.ScanInts(db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
+		allIDsWindow, err := basestore.ScanInts(db.Query(ctx, query))
 		if err != nil {
 			return nil, nil, err
 		}
-		for _, id := range allIDsWindow {
-			allIDs[applyOffset] = id
-			applyOffset++
-		}
+		allIDs = append(allIDs, allIDsWindow...)
 	}
 
 	// rough estimate of 1 version per dependency
@@ -300,7 +295,7 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		db,
+		db.Handle(),
 		"package_repo_versions",
 		batch.MaxNumPostgresParameters,
 		[]string{"package_id", "version"},
@@ -325,18 +320,9 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 }
 
 const getAttemptedInsertDependencyReposQuery = `
-SELECT id FROM (
-	(
-		SELECT id, scheme, name FROM lsif_dependency_repos
-		WHERE id IN (SELECT UNNEST(%s::bigint[]))
-	)
-UNION
-	(
-		SELECT id, scheme, name FROM lsif_dependency_repos
-		WHERE (scheme, name) IN (VALUES %s)
-	)
-	ORDER BY scheme, name
-) AS matched;
+SELECT id FROM lsif_dependency_repos
+WHERE (scheme, name) IN (VALUES %s)
+ORDER BY scheme, name
 `
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.

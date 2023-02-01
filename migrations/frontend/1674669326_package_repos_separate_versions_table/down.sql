@@ -15,12 +15,12 @@ BEGIN
         )
         INSERT INTO lsif_dependency_repos (scheme, name, version)
         SELECT * FROM matched_triplets;
-
-        DELETE FROM lsif_dependency_repos
-        WHERE version = '👁️ temporary_sentintel_value 👁️';
     END IF;
 END
 $$;
+
+DELETE FROM lsif_dependency_repos
+WHERE version = '👁️ temporary_sentintel_value 👁️';
 
 ALTER TABLE lsif_dependency_repos
 ALTER COLUMN version SET NOT NULL;

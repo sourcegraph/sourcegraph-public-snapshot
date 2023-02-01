@@ -24,6 +24,16 @@ ON package_repo_versions (package_id);
 CREATE UNIQUE INDEX IF NOT EXISTS package_repo_versions_unique_version_per_package
 on package_repo_versions (package_id, version);
 
+INSERT INTO package_repo_versions (package_id, version)
+SELECT (
+    SELECT MIN(id)
+    FROM lsif_dependency_repos
+    WHERE
+        scheme = lr.scheme AND
+        name = lr.name
+) AS package_id, version
+FROM lsif_dependency_repos lr;
+
 -- fill in the sentinel value for all existing dependency repos, so they will trigger ON CONFLICT
 INSERT INTO lsif_dependency_repos (scheme, name, version)
 SELECT DISTINCT scheme, name, '👁️ temporary_sentintel_value 👁️'
