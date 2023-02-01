@@ -157,11 +157,13 @@ func TestDeleteUser(t *testing.T) {
 					}
 				}
 			`,
-					ExpectedResult: `{ "deleteUser": null }`,
-					ExpectedErrors: []*gqlerrors.QueryError{{
-						Path:    []any{"deleteUser"},
-						Message: fmt.Sprintf("no users found with IDs: [%d]", notFoundUID),
-					}},
+					ExpectedResult: `
+				{
+					"deleteUser": {
+						"alwaysNil": null
+					}
+				}
+			`,
 				},
 			},
 		},
@@ -242,8 +244,8 @@ func TestDeleteUser(t *testing.T) {
 					ExpectedErrors: []*gqlerrors.QueryError{
 						{
 							Path: []any{"deleteUser"},
-							Message: fmt.Sprintf("%[1]q users cannot be deleted by non-%[1]q users",
-								auth.SourcegraphOperatorProviderType),
+							Message: fmt.Sprintf("%[1]q user %d cannot be deleted by a non-%[1]q user",
+								auth.SourcegraphOperatorProviderType, aliceUID),
 						},
 					},
 				},

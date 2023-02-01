@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -100,6 +102,9 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		ids[index] = id
 	}
 
+	logger := r.logger.Scoped("DeleteUsers", "delete users mutation").
+		With(log.Int32s("users", ids))
+
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
@@ -110,7 +115,9 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		return nil, errors.Wrap(err, "list users by IDs")
 	}
 	if len(users) == 0 {
-		return nil, errors.Newf("no users found with IDs: %+v", ids)
+		logger.Info("requested users to delete do not exist")
+	} else {
+		logger.Debug("attempting to delete requested users")
 	}
 
 	accountsList := make([][]*extsvc.Accounts, len(users))
@@ -127,8 +134,8 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			// user - regular users should not be able to delete SOAP users.
 			if acct.ServiceType == auth.SourcegraphOperatorProviderType {
 				if !a.SourcegraphOperator {
-					return nil, errors.Newf("%[1]q users cannot be deleted by non-%[1]q users",
-						auth.SourcegraphOperatorProviderType)
+					return nil, errors.Newf("%[1]q user %[2]d cannot be deleted by a non-%[1]q user",
+						auth.SourcegraphOperatorProviderType, user.ID)
 				}
 			}
 
