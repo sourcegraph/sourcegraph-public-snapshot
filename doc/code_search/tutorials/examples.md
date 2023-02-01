@@ -1,6 +1,6 @@
 # Search examples
 
-Below are examples that search repositories on [Sourcegraph.com](https://sourcegraph.com/search), our open source code search solution for GitHub and GitLab. You can copy and adapt the following search queries for use on your company’s private instance.
+The examples below search repositories on [Sourcegraph.com](https://sourcegraph.com/search), our open-source code search solution for GitHub and GitLab. You can copy and adapt these search queries for use on your company’s private instance.
 
 > See [**search query syntax**](../reference/queries.md) reference.
 
@@ -40,7 +40,7 @@ type:diff after:"1 week ago" \.subscribe\( lang:typescript
 repo:github\.com/sourcegraph/sourcegraph$ (test AND http AND NewRequest) lang:go
 ```
 
-[Recent quality related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28eslint-disable%29&patternType=regexp)<br/>
+[Recent quality-related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28eslint-disable%29&patternType=regexp)<br/>
 
 ```sgquery
 repo:@*refs/heads/:^master type:diff after:"1 week ago" (eslint-disable)
@@ -64,7 +64,7 @@ licensed to the apache software foundation select:file
 file:package.json type:diff after:"1 week ago" select:repo
 ```
 
-[Search changes in a files that contain a keyword](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+file:contains.content%28%22golang%5C.org/x/sync/errgroup%22%29+.Go&patternType=literal)
+[Search changes in files that contain a keyword](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+file:contains.content%28%22golang%5C.org/x/sync/errgroup%22%29+.Go&patternType=literal)
 
 ```sgquery
 repo:^github\.com/sourcegraph/sourcegraph$ type:diff file:contains.content("golang\.org/x/sync/errgroup") .Go
@@ -91,7 +91,7 @@ repo:^github\.com/sourcegraph/sourcegraph$ \bbtn-secondary\b
 
 Use structural search when you want to match code boundaries such as () or {}:
 
-[Finding try catch statements with varying content](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+try+%7B+:%5Bmatched_statements%5D+%7D+catch+%7B+:%5Bmatched_catch%5D+%7D&patternType=structural)<br/>
+[Finding try-catch statements with varying content](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+try+%7B+:%5Bmatched_statements%5D+%7D+catch+%7B+:%5Bmatched_catch%5D+%7D&patternType=structural)<br/>
 ```sgquery
 repo:^github\.com/sourcegraph/sourcegraph$
 try { :[matched_statements] } catch { :[matched_catch] }
