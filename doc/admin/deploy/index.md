@@ -43,9 +43,9 @@ Customized machine images allow you to spin up a preconfigured and customized So
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-#### [Install-script](single-node/script.md)
+### [Install-script](single-node/script.md)
 
-If you would like to build your own machine images, you can set up Linux virtual machines using our [install-script](single-node/script.md).
+The [install-script](single-node/script.md) is recommended for on-premises deployments and deployments to unsupported cloud environments. You can also use it to set up Linux VMs for your own machine images.
 
 >NOTE: Deploying with machine images require the necessary technical expertise and resources to maintain and manage their own infrastructure.
 
