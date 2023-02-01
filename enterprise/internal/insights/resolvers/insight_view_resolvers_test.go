@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestFrozenInsightDataSeriesResolver(t *testing.T) {
@@ -249,14 +248,6 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	})
 }
 
-type fakeSearchContextLoader struct {
-	mocks map[string]*internalTypes.SearchContext
-}
-
-func (f *fakeSearchContextLoader) GetByName(ctx context.Context, name string) (*internalTypes.SearchContext, error) {
-	return f.mocks[name], nil
-}
-
 func TestRemoveClosePoints(t *testing.T) {
 	getPoint := func(month time.Month, day, hour, minute int) store.SeriesPoint {
 		return store.SeriesPoint{
@@ -423,7 +414,7 @@ func TestRemoveClosePoints(t *testing.T) {
 func TestInsightRepoScopeResolver(t *testing.T) {
 
 	makeSeries := func(repoList []string, search string) types.InsightViewSeries {
-		var repoSearch *string = &search
+		repoSearch := &search
 		if search == "" {
 			repoSearch = nil
 		}

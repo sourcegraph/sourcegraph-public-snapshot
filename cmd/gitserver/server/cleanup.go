@@ -260,7 +260,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 			return false, err
 		}
 
-		err = s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason))
+		err = s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), s.Hostname)
 		if err != nil {
 			repoName := string(s.name(dir))
 			logger.Warn("failed to log repo corruption", log.String("repo", repoName), log.Error(err))

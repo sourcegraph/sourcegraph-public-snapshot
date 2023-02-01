@@ -1,37 +1,96 @@
-import React from 'react'
+import { FC, useCallback, useId, useState } from 'react'
 
-import { H3, H4, MultiSelect, MultiSelectOption, MultiSelectProps } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
+
+import {
+    H3,
+    H4,
+    Label,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxEmptyList,
+    MultiComboboxOption,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../../graphql-operations'
 
-export const OPEN_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Open', value: BatchChangeState.OPEN }
-export const DRAFT_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Draft', value: BatchChangeState.DRAFT }
-export const CLOSED_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Closed', value: BatchChangeState.CLOSED }
+import styles from './BatchChangeListFilter.module.scss'
 
-export const STATUS_OPTIONS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, DRAFT_STATUS, CLOSED_STATUS]
-// Drafts are a new feature of severside execution that for now should not be shown if
-// execution is not enabled.
-const STATUS_OPTIONS_NO_DRAFTS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, CLOSED_STATUS]
+/** Returns string with capitalized first letter */
+const format = (filter: BatchChangeState): string => upperFirst(filter.toLowerCase())
 
-interface BatchChangeListFiltersProps
-    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'value'>> {
+interface BatchChangeListFiltersProps {
+    filters: BatchChangeState[]
+    selectedFilters: BatchChangeState[]
+    onFiltersChange: (filters: BatchChangeState[]) => void
     className?: string
-    isExecutionEnabled: boolean
 }
 
-export const BatchChangeListFilters: React.FunctionComponent<React.PropsWithChildren<BatchChangeListFiltersProps>> = ({
-    isExecutionEnabled,
-    ...props
-}) => (
-    <>
-        {/* TODO: This should be a proper label. MultiSelect currently doesn't support that being inline though, so this is for later. */}
-        <H4 as={H3} className="mb-0 mr-2">
-            Status
-        </H4>
-        <MultiSelect
-            {...props}
-            options={isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS}
-            aria-label="Select batch change status to filter."
-        />
-    </>
-)
+export const BatchChangeListFilters: FC<BatchChangeListFiltersProps> = props => {
+    const { filters, selectedFilters, onFiltersChange, className } = props
+
+    const id = useId()
+    const [searchTerm, setSearchTerm] = useState('')
+
+    const handleFilterChange = useCallback(
+        (newFilters: BatchChangeState[]) => {
+            if (newFilters.length > selectedFilters.length) {
+                // Reset value when we add new filter
+                // see https://github.com/sourcegraph/sourcegraph/pull/46450#discussion_r1070840089
+                setSearchTerm('')
+            }
+
+            onFiltersChange(newFilters)
+        },
+        [selectedFilters, onFiltersChange]
+    )
+
+    // Render only non-selected filters and filters that match with search term value
+    const suggestions = filters.filter(
+        filter => !selectedFilters.includes(filter) && filter.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    return (
+        <Label htmlFor={id} className={classNames(className, styles.root)}>
+            <H4 as={H3} className="mb-0 mr-2">
+                Status
+            </H4>
+
+            <MultiCombobox
+                selectedItems={selectedFilters}
+                getItemName={format}
+                getItemKey={format}
+                onSelectedItemsChange={handleFilterChange}
+                aria-label="Select batch change status to filter."
+            >
+                <MultiComboboxInput
+                    id={id}
+                    value={searchTerm}
+                    autoCorrect="false"
+                    autoComplete="off"
+                    placeholder="Select filter..."
+                    onChange={event => setSearchTerm(event.target.value)}
+                />
+
+                <MultiComboboxPopover>
+                    <MultiComboboxList items={suggestions}>
+                        {filters =>
+                            filters.map((filter, index) => (
+                                <MultiComboboxOption key={filter.toString()} value={format(filter)} index={index} />
+                            ))
+                        }
+                    </MultiComboboxList>
+
+                    {suggestions.length === 0 && (
+                        <MultiComboboxEmptyList>
+                            {!searchTerm ? <>All filters are selected</> : <>No options</>}
+                        </MultiComboboxEmptyList>
+                    )}
+                </MultiComboboxPopover>
+            </MultiCombobox>
+        </Label>
+    )
+}

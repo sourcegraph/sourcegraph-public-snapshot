@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
@@ -44,30 +43,13 @@ export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 
 
 export const BatchChangeBatchSpecList: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeBatchSpecListProps>
-> = ({
-    history,
-    location,
-    batchChangeID,
-    currentSpecID,
-    isLightTheme,
-    queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs,
-    now,
-}) => {
+> = ({ batchChangeID, currentSpecID, isLightTheme, queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs, now }) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
-    return (
-        <BatchSpecList
-            history={history}
-            location={location}
-            queryBatchSpecs={query}
-            isLightTheme={isLightTheme}
-            currentSpecID={currentSpecID}
-            now={now}
-        />
-    )
+    return <BatchSpecList queryBatchSpecs={query} isLightTheme={isLightTheme} currentSpecID={currentSpecID} now={now} />
 }
 
-export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchSpecListProps extends ThemeProps {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
@@ -75,8 +57,6 @@ export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps
 }
 
 export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<BatchSpecListProps>> = ({
-    history,
-    location,
     currentSpecID,
     isLightTheme,
     queryBatchSpecs = _queryBatchSpecs,
@@ -96,8 +76,6 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     )
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>
-            history={history}
-            location={location}
             nodeComponent={BatchSpecNode}
             nodeComponentProps={{ currentSpecID, isLightTheme, now }}
             queryConnection={query}

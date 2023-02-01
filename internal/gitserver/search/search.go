@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
@@ -123,8 +123,8 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	// submitted to the job queue
 	g.Go(func() error {
 		for resultChan := range resultChans {
-			for result := range resultChan {
-				onMatch(result)
+			for res := range resultChan {
+				onMatch(res)
 			}
 		}
 
@@ -437,12 +437,12 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 	}, nil
 }
 
-func filterRawDiff(rawDiff []*diff.FileDiff, filterFunc func(string) (bool, error)) []*diff.FileDiff {
+func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
 	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
 	if filterFunc == nil {
 		return rawDiff
 	}
-	filtered := make([]*diff.FileDiff, 0, len(rawDiff))
+	filtered := make([]*godiff.FileDiff, 0, len(rawDiff))
 	for _, fileDiff := range rawDiff {
 		if filterFunc != nil {
 			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {

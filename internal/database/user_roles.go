@@ -35,11 +35,19 @@ type (
 	GetUserRoleOpts    UserRoleOpts
 )
 
+type BulkCreateForUserOpts struct {
+	UserID  int32
+	RoleIDs []int32
+}
+
 type UserRoleStore interface {
 	basestore.ShareableStore
 
 	// Create inserts the given user and role relationship into the database.
 	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
+	// BulkCreateForUser assigns multiple roles to a single user. This is useful
+	// when we want to assign a user more than one role.
+	BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -49,7 +57,7 @@ type UserRoleStore interface {
 	// Delete deletes the user and role relationship from the database.
 	Delete(ctx context.Context, opts DeleteUserRoleOpts) error
 	// Transact creates a transaction for the UserRoleStore.
-	Transact(context.Context) (UserRoleStore, error)
+	WithTransact(context.Context, func(UserRoleStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
 	With(basestore.ShareableStore) UserRoleStore
 }
@@ -68,18 +76,16 @@ func (r *userRoleStore) With(other basestore.ShareableStore) UserRoleStore {
 	return &userRoleStore{Store: r.Store.With(other)}
 }
 
-func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
-	tx, err := r.Store.Transact(ctx)
-	return &userRoleStore{Store: tx}, err
+func (r *userRoleStore) WithTransact(ctx context.Context, f func(UserRoleStore) error) error {
+	return r.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&userRoleStore{Store: tx})
+	})
 }
 
 const userRoleCreateQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
-VALUES (
-	%s,
-	%s
-)
+VALUES %s
 RETURNING %s;
 `
 
@@ -95,8 +101,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	q := sqlf.Sprintf(
 		userRoleCreateQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
-		opts.UserID,
-		opts.RoleID,
+		sqlf.Sprintf("( %s, %s )", opts.UserID, opts.RoleID),
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
@@ -105,6 +110,46 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 		return nil, errors.Wrap(err, "scanning user role")
 	}
 	return rm, nil
+}
+
+func (r *userRoleStore) BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if len(opts.RoleIDs) == 0 {
+		return nil, errors.New("missing role ids")
+	}
+
+	var urs []*sqlf.Query
+
+	for _, roleId := range opts.RoleIDs {
+		urs = append(urs, sqlf.Sprintf("(%s, %s)", opts.UserID, roleId))
+	}
+
+	q := sqlf.Sprintf(
+		userRoleCreateQueryFmtStr,
+		sqlf.Join(userRoleInsertColumns, ", "),
+		sqlf.Join(urs, ", "),
+		sqlf.Join(userRoleColumns, ", "),
+	)
+
+	rows, err := r.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+
+	var userRoles []*types.UserRole
+	for rows.Next() {
+		ur, err := scanUserRole(rows)
+		if err != nil {
+			return userRoles, err
+		}
+		userRoles = append(userRoles, ur)
+	}
+
+	return userRoles, nil
 }
 
 type UserRoleNotFoundErr struct {
@@ -176,7 +221,7 @@ func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) (
 }
 
 func (r *userRoleStore) GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
-	role, err := RolesWith(r).GetByID(ctx, GetRoleOpts{
+	role, err := RolesWith(r).Get(ctx, GetRoleOpts{
 		ID: opts.RoleID,
 	})
 	if err != nil {
@@ -248,12 +293,12 @@ WHERE %s
 `
 
 func (r *userRoleStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	whereClause := sqlf.Sprintf("%s AND users.deleted_at IS NULL", w)
+	conds := sqlf.Sprintf("%s AND users.deleted_at IS NULL", w)
 	q := sqlf.Sprintf(
 		getUserRoleQueryFmtStr,
 		sqlf.Join(userRoleColumns, ", "),
 		sqlf.Sprintf("INNER JOIN users ON user_roles.user_id = users.id"),
-		whereClause,
+		conds,
 	)
 
 	rows, err := r.Query(ctx, q)

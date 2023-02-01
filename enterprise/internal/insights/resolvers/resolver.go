@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -19,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -47,7 +45,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
-	scheduler := scheduler.NewScheduler(insightsDB)
+	insightsScheduler := scheduler.NewScheduler(insightsDB)
 	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
 
 	return &baseInsightResolver{
@@ -55,7 +53,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 		timeSeriesStore: timeSeriesStore,
 		dashboardStore:  dashboardStore,
 		workerBaseStore: workerBaseStore,
-		scheduler:       scheduler,
+		scheduler:       insightsScheduler,
 		insightsDB:      insightsDB,
 		postgresDB:      primaryDB,
 	}

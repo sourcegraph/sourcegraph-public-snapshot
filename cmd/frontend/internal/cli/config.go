@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,10 +19,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -29,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -492,20 +496,35 @@ var (
 
 func gitservers() *endpoint.Map {
 	gitserversOnce.Do(func() {
-		gitserversVal = endpoint.New(func() string {
-			v := os.Getenv("SRC_GIT_SERVERS")
-			if v == "" {
-				// Detect 'go test' and setup default addresses in that case.
-				p, err := os.Executable()
-				if err == nil && strings.HasSuffix(p, ".test") {
-					return "gitserver:3178"
-				}
-				return "k8s+rpc://gitserver:3178?kind=sts"
-			}
-			return v
-		}())
+		addr, err := gitserverAddr(os.Environ())
+		if err != nil {
+			gitserversVal = endpoint.Empty(errors.Wrap(err, "failed to parse SRC_GIT_SERVERS"))
+		} else {
+			gitserversVal = endpoint.New(addr)
+		}
 	})
 	return gitserversVal
+}
+
+func gitserverAddr(environ []string) (string, error) {
+	const (
+		serviceName = "gitserver"
+		port        = "3178"
+	)
+
+	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Detect 'go test' and setup default addresses in that case.
+	p, err := os.Executable()
+	if err == nil && strings.HasSuffix(p, ".test") {
+		return "gitserver:3178", nil
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+rpc://gitserver:3178?kind=sts", nil
 }
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
@@ -533,6 +552,12 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
 	}
 
+	symbolsMap := computeSymbolsEndpoints()
+	symbolsAddrs, err := symbolsMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
+	}
+
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
 	if err != nil {
@@ -545,16 +570,18 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 		Searchers:            searcherAddrs,
+		Symbols:              symbolsAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
 }
 
 var (
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
+
+	symbolsURLsOnce sync.Once
+	symbolsURLs     *endpoint.Map
 
 	indexedEndpointsOnce sync.Once
 	indexedEndpoints     *endpoint.Map
@@ -572,49 +599,142 @@ var (
 	}()
 )
 
+func computeSymbolsEndpoints() *endpoint.Map {
+	symbolsURLsOnce.Do(func() {
+		addr, err := symbolsAddr(os.Environ())
+		if err != nil {
+			symbolsURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SYMBOLS_URL"))
+		} else {
+			symbolsURLs = endpoint.New(addr)
+		}
+	})
+	return symbolsURLs
+}
+
+func symbolsAddr(environ []string) (string, error) {
+	const (
+		serviceName = "symbols"
+		port        = "3184"
+	)
+
+	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Not set, use the default (non-service discovery on symbols)
+	return "http://symbols:3184", nil
+}
+
+func LoadConfig() {
+	highlight.LoadConfig()
+	symbols.LoadConfig()
+}
+
 func computeSearcherEndpoints() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		addr, err := searcherAddr(os.Environ())
+		if err != nil {
+			searcherURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SEARCHER_URL"))
 		} else {
-			searcherURLs = endpoint.New(searcherURL)
+			searcherURLs = endpoint.New(addr)
 		}
 	})
 	return searcherURLs
 }
 
+func searcherAddr(environ []string) (string, error) {
+	const (
+		serviceName = "searcher"
+		port        = "3181"
+	)
+
+	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
+		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
+		return addrs, err
+	}
+
+	// Not set, use the default (service discovery on searcher)
+	return "k8s+http://searcher:3181", nil
+}
+
 func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedEndpoints = endpoint.New(addr)
+		addr, err := zoektAddr(os.Environ())
+		if err != nil {
+			indexedEndpoints = endpoint.Empty(errors.Wrap(err, "failed to parse INDEXED_SEARCH_SERVERS"))
 		} else {
-			// It is OK to have no indexed search endpoints.
-			indexedEndpoints = endpoint.Static()
+			if addr != "" {
+				indexedEndpoints = endpoint.New(addr)
+			} else {
+				// It is OK to have no indexed search endpoints.
+				indexedEndpoints = endpoint.Static()
+			}
 		}
 	})
 	return indexedEndpoints
 }
 
-func zoektAddr(environ []string) string {
+func zoektAddr(environ []string) (string, error) {
+	deployType := deploy.Type()
+
+	const port = "6070"
+	var baseName = "indexed-search"
+	if deployType == deploy.DockerCompose {
+		baseName = "zoekt-webserver"
+	}
+
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
-		return addr
+		addrs, err := replicaAddrs(deployType, addr, baseName, port)
+		return addrs, err
 	}
 
 	// Backwards compatibility: We used to call this variable ZOEKT_HOST
 	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
-		return addr
+		return addr, nil
 	}
 
 	// Not set, use the default (service discovery on the indexed-search
 	// statefulset)
-	return "k8s+rpc://indexed-search:6070?kind=sts"
+	return "k8s+rpc://indexed-search:6070?kind=sts", nil
+}
+
+// Generate endpoints based on replica number when set
+func replicaAddrs(deployType, countStr, serviceName, port string) (string, error) {
+	count, err := strconv.Atoi(countStr)
+	// If countStr is not an int, return string without error
+	if err != nil {
+		return countStr, nil
+	}
+
+	fmtStrHead := ""
+	switch serviceName {
+	case "searcher", "symbols":
+		fmtStrHead = "http://"
+	}
+
+	var fmtStrTail string
+	switch deployType {
+	case deploy.Kubernetes, deploy.Helm, deploy.Kustomize:
+		fmtStrTail = fmt.Sprintf(".%s:%s", serviceName, port)
+	case deploy.DockerCompose:
+		fmtStrTail = fmt.Sprintf(":%s", port)
+	default:
+		return "", errors.New("Error: unsupported deployment type: " + deployType)
+	}
+
+	var addrs []string
+	for i := 0; i < count; i++ {
+		addrs = append(addrs, strings.Join([]string{fmtStrHead, serviceName, "-", strconv.Itoa(i), fmtStrTail}, ""))
+	}
+	return strings.Join(addrs, " "), nil
 }
 
 func getEnv(environ []string, key string) (string, bool) {
 	key = key + "="
-	for _, env := range environ {
-		if strings.HasPrefix(env, key) {
-			return env[len(key):], true
+	for _, envVar := range environ {
+		if strings.HasPrefix(envVar, key) {
+			return envVar[len(key):], true
 		}
 	}
 	return "", false

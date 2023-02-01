@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -11,7 +10,7 @@ import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryBranchesAreaPageProps {}
 
 /** A page that shows all of a repository's branches. */
 export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
@@ -35,8 +34,6 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
                     }
                     defaultFirst={20}
                     autoFocus={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )

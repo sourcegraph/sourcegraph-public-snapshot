@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
+import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -21,7 +21,7 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { QueryExamplesHomepage } from './QueryExamplesHomepage'
+import { CloudHomepageCta } from './CloudHomepageCta'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -37,8 +37,6 @@ export interface SearchPageProps
         SearchContextInputProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     autoFocus?: boolean
 
@@ -54,11 +52,20 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
         query: '',
     })
+
+    useEffect(() => {
+        if (experimentalQueryInput && props.selectedSearchContextSpec) {
+            setQueryState(state =>
+                state.query === '' ? { query: `context:${props.selectedSearchContextSpec} ` } : state
+            )
+        }
+    }, [experimentalQueryInput, props.selectedSearchContextSpec])
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -109,14 +116,16 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
-                    <QueryExamplesHomepage
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        telemetryService={props.telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        authenticatedUser={props.authenticatedUser}
-                    />
+                    <div>
+                        {props.isSourcegraphDotCom && <CloudHomepageCta authenticatedUser={props.authenticatedUser} />}
+                        <QueryExamples
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                    </div>
                 )}
             </div>
 

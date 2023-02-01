@@ -146,7 +146,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		t := time.Now()
-		out, err := runWith(ctx, cmd, true, nil)
+		out, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 
 		logger := logger.With(
 			log.String("prefix", prefix),

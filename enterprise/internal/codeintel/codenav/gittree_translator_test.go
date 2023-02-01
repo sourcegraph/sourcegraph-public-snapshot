@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -389,7 +389,7 @@ func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 		name := fmt.Sprintf("%s : %s", testCase.diffName, testCase.description)
 
 		t.Run(name, func(t *testing.T) {
-			diff, err := diff.NewFileDiffReader(bytes.NewReader([]byte(testCase.diff))).Read()
+			diff, err := godiff.NewFileDiffReader(bytes.NewReader([]byte(testCase.diff))).Read()
 			if err != nil {
 				t.Fatalf("unexpected error reading file diff: %s", err)
 			}

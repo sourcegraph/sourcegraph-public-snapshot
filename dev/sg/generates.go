@@ -14,7 +14,7 @@ var allGenerateTargets = generateTargets{
 		// Protocol Buffer generation runs before go, as otherwise
 		// go mod tidy errors on generated protobuf go code directories.
 		Name:   "buf",
-		Help:   "Re-generate protcol buffer bindings using buf",
+		Help:   "Re-generate protocol buffer bindings using buf",
 		Runner: generateProtoRunner,
 		Completer: func() (options []string) {
 			root, err := root.RepositoryRoot()
@@ -51,5 +51,5 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-	return proto.Generate(ctx)
+	return proto.Generate(ctx, verbose)
 }

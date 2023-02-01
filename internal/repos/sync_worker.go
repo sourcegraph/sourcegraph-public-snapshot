@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type SyncWorkerOptions struct {
@@ -53,11 +53,11 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store", ""), observationCtx)
 
-	store := workerstore.New(observationCtx, dbHandle, workerstore.Options[*SyncJob]{
+	store := dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
-		Scan:              workerstore.BuildWorkerScan(scanJob),
+		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
@@ -67,6 +67,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
 		Name:              "repo_sync_worker",
+		Description:       "syncs repos in a streaming fashion",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
 		HeartbeatInterval: 15 * time.Second,

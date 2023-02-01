@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
@@ -51,6 +51,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         if (provider.serviceType === 'sourcegraph-operator') {
             return new URLSearchParams(location.search).has('sourcegraph-operator')
         }
+        if (provider.serviceType === 'gerrit') {
+            return false
+        }
         return true
     }
 
@@ -93,6 +96,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 {provider.serviceType === 'gitlab' && (
                                     <>
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
+                                    </>
+                                )}
+                                {provider.serviceType === 'bitbucketCloud' && (
+                                    <>
+                                        <Icon aria-hidden={true} svgPath={mdiBitbucket} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}

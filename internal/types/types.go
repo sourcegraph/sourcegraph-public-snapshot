@@ -805,10 +805,17 @@ type User struct {
 	Searchable            bool
 }
 
+type SystemRole string
+
+var (
+	UserSystemRole              SystemRole = "USER"
+	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+)
+
 type Role struct {
 	ID        int32
 	Name      string
-	ReadOnly  bool
+	System    bool
 	CreatedAt time.Time
 	DeletedAt time.Time
 }
@@ -854,11 +861,6 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -1786,4 +1788,22 @@ type SlowRequest struct {
 	Errors    []string       `json:"errors"`
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

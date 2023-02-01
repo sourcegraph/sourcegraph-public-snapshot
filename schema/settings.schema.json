@@ -57,6 +57,14 @@
             "pointer": true
           }
         },
+        "setupWizard": {
+          "description": "Experimental setup wizard",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
@@ -123,14 +131,6 @@
         },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableMergedFileSymbolSidebar": {
-          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
           "type": "boolean",
           "default": false,
           "!go": {

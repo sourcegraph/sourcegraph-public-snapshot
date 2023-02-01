@@ -93,7 +93,10 @@ func NewMetrics(observationCtx *observation.Context, prefix string, opts ...Obse
 			Help: help,
 		}, keys)
 
-		observationCtx.Registerer.MustRegister(gaugeVec)
+		// TODO(sqs): TODO(single-binary): Ideally we would be using MustRegister here, not the
+		// IgnoreDuplicate variant. This is a bit of a hack to allow 2 executor instances to run in a
+		// single binary deployment.
+		gaugeVec = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, gaugeVec)
 		return gaugeVec.WithLabelValues(values...)
 	}
 
@@ -111,7 +114,7 @@ func NewMetrics(observationCtx *observation.Context, prefix string, opts ...Obse
 }
 
 func newOperations(observationCtx *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),
@@ -123,7 +126,7 @@ func newOperations(observationCtx *observation.Context, prefix string, keys, val
 		return observationCtx.Operation(observation.Op{
 			Name:              name,
 			MetricLabelValues: append(append([]string{}, values...), name),
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

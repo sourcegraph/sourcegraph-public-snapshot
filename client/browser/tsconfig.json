@@ -22,13 +22,32 @@
     "src/end-to-end",
   ],
   "references": [
-    { "path": "../shared" },
-    { "path": "../branded" },
-    { "path": "../../schema" },
-    { "path": "../http-client" },
-    { "path": "../common" },
-    { "path": "../codeintellify" },
-    { "path": "../client-api" },
-    { "path": "../wildcard" },
+    {
+      "path": "../branded",
+    },
+    {
+      "path": "../build-config",
+    },
+    {
+      "path": "../client-api",
+    },
+    {
+      "path": "../codeintellify",
+    },
+    {
+      "path": "../common",
+    },
+    {
+      "path": "../extension-api-types",
+    },
+    {
+      "path": "../http-client",
+    },
+    {
+      "path": "../shared",
+    },
+    {
+      "path": "../wildcard",
+    },
   ],
 }

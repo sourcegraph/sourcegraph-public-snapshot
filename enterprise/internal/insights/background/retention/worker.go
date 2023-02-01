@@ -81,6 +81,7 @@ func getMaximumSampleSize(logger log.Logger) int {
 func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], insightsStore *store.Store, metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "insights_data_retention_worker",
+		Description:       "archives code insights data points over the maximum sample size",
 		NumHandlers:       5,
 		Interval:          30 * time.Minute,
 		HeartbeatInterval: 15 * time.Second,

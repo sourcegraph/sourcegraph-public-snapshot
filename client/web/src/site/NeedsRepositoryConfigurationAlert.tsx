@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { useExperimentalFeatures } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
 const onClickCTA = (): void => {
@@ -17,15 +18,23 @@ const onClickCTA = (): void => {
  */
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string }>
-> = ({ className }) => (
-    <DismissibleAlert
-        partialStorageKey="needsRepositoryConfiguration"
-        variant="success"
-        className={classNames('d-flex align-items-center', className)}
-    >
-        <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
-            <span className="underline">Connect a code host</span>
-        </Link>
-        &nbsp;to connect repositories to Sourcegraph.
-    </DismissibleAlert>
-)
+> = ({ className }) => {
+    const isSetupWizardEnabled = useExperimentalFeatures(features => features.setupWizard)
+
+    return (
+        <DismissibleAlert
+            partialStorageKey="needsRepositoryConfiguration"
+            variant="success"
+            className={classNames('d-flex align-items-center', className)}
+        >
+            <Link
+                className="site-alert__link"
+                to={isSetupWizardEnabled ? '/setup' : '/site-admin/external-services'}
+                onClick={onClickCTA}
+            >
+                <span className="underline">Connect a code host</span>
+            </Link>
+            &nbsp;to connect repositories to Sourcegraph.
+        </DismissibleAlert>
+    )
+}

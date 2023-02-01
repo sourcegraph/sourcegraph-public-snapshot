@@ -357,6 +357,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
+		Description:       "syncs Bitbucket Projects via Explicit Permissions API",
 		NumHandlers:       cfg.WorkerConcurrency,
 		Interval:          cfg.WorkerPollInterval,
 		HeartbeatInterval: 15 * time.Second,
@@ -428,16 +429,16 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 	})
 	observationCtx.Registerer.MustRegister(resets)
 
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
+	errorCounter := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_errors_total",
 		Help: "The number of errors that occur during job.",
 	})
-	observationCtx.Registerer.MustRegister(errors)
+	observationCtx.Registerer.MustRegister(errorCounter)
 
 	return bitbucketProjectPermissionsMetrics{
 		workerMetrics: workerutil.NewMetrics(observationCtx, "explicit_permissions_bitbucket_project_queries"),
 		resets:        resets,
 		resetFailures: resetFailures,
-		errors:        errors,
+		errors:        errorCounter,
 	}
 }

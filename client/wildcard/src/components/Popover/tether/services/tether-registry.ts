@@ -1,7 +1,7 @@
 import { render } from './tether-render'
 import { Tether } from './types'
 
-interface TetherInstanceAPI {
+export interface TetherInstanceAPI {
     unsubscribe: () => void
     forceUpdate: () => void
 }

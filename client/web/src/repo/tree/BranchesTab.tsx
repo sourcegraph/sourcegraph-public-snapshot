@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
-import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -16,14 +15,10 @@ import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
 interface RepositoryBranchesTabProps {
     repo?: TreePageRepositoryFields
-    location?: H.Location
-    history?: H.History
 }
 
 interface Props {
     repo: TreePageRepositoryFields
-    location?: H.Location
-    history?: H.History
 }
 
 interface OverviewTabProps {
@@ -42,8 +37,6 @@ interface Data {
  */
 export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<RepositoryBranchesTabProps>> = ({
     repo,
-    history,
-    location,
 }) => {
     const [showAll, setShowAll] = useState(false)
 
@@ -75,7 +68,7 @@ export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChild
             </ul>
             {repo &&
                 (showAll ? (
-                    <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
+                    <RepositoryBranchesAllTab repo={repo} />
                 ) : (
                     <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
                 ))}
@@ -83,11 +76,7 @@ export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChild
     )
 }
 
-export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    repo,
-    history,
-    location,
-}) => {
+export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ repo }) => {
     const queryBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_BRANCH })
 
@@ -102,8 +91,6 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithCh
                 nodeComponent={GitReferenceNode}
                 defaultFirst={20}
                 autoFocus={true}
-                history={history}
-                location={location}
             />
         </div>
     )

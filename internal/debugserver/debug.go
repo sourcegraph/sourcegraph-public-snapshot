@@ -50,6 +50,9 @@ type Endpoint struct {
 	Name string
 	// Path is passed to http.Mux.Handle as the pattern.
 	Path string
+	// IsPrefix, if true, indicates that the Path should be treated as a prefix matcher. All
+	// requests with the given prefix should be routed to Handler.
+	IsPrefix bool
 	// Handler is the debug handler
 	Handler http.Handler
 }
@@ -131,6 +134,11 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
 
 		for _, e := range extra {
+			if e.IsPrefix {
+				router.PathPrefix(e.Path).Handler(e.Handler)
+				continue
+			}
+
 			router.Handle(e.Path, e.Handler)
 		}
 	})

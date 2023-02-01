@@ -365,7 +365,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 />
             )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} />
+                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
                 <Card className={styles.commits}>
                     <CardHeader className={panelStyles.cardColHeaderWrapper}>
@@ -376,7 +376,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         GitCommitFields,
                         Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
                     >
-                        location={props.location}
                         listClassName="list-group list-group-flush"
                         noun="commit in this tree"
                         pluralNoun="commits in this tree"

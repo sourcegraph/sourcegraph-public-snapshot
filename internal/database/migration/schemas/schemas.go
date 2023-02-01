@@ -25,12 +25,12 @@ var (
 )
 
 func mustResolveSchema(name string) *Schema {
-	fs, err := fs.Sub(migrations.QueryDefinitions, name)
+	fsys, err := fs.Sub(migrations.QueryDefinitions, name)
 	if err != nil {
 		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
 	}
 
-	schema, err := ResolveSchema(fs, name)
+	schema, err := ResolveSchema(fsys, name)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -22,9 +22,11 @@ export {
     Form,
     Input,
     LoaderInput,
+    InputDescription,
+    InputErrorMessage,
+    InputElement,
     RadioButton,
     Select,
-    MultiSelect,
     TextArea,
     InputStatus,
     getInputStatus,
@@ -39,6 +41,7 @@ export { SourcegraphIcon } from './SourcegraphIcon'
 export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
 export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
+export { Tree } from './Tree'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
@@ -72,6 +75,14 @@ export {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
+    MultiCombobox,
+    MultiComboboxInput,
+    MultiComboboxPopover,
+    MultiComboboxList,
+    MultiComboboxEmptyList,
+    MultiComboboxOptionGroup,
+    MultiComboboxOption,
+    MultiComboboxOptionText,
 } from './Combobox'
 
 /**
@@ -80,9 +91,9 @@ export {
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
+export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
 export type { PopoverOpenEvent, Rectangle } from './Popover'
@@ -90,10 +101,13 @@ export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'
 export type { Point } from './Popover'
+export type { TreeNode } from './Tree'
 export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+export type { MultiComboboxProps } from './Combobox'
+export type { RadioButtonProps } from './Form/RadioButton'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

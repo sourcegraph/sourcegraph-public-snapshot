@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webhooks",
+    srcs = [
+        "batch_change.go",
+        "changeset.go",
+        "event_types.go",
+        "util.go",
+        "webhooks.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/batches/graphql",
+        "//enterprise/internal/batches/types",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
+        "//internal/webhooks/outbound",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

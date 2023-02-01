@@ -106,7 +106,7 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		allNodes = append(allNodes, node)
 	}
 
-	if _, err := setArrayToCache(cacheKey, allNodes); err != nil {
+	if err := setArrayToCache(cacheKey, allNodes); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +151,7 @@ func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, erro
 
 	summary := &AnalyticsSummary{data}
 
-	if _, err := setItemToCache(cacheKey, summary); err != nil {
+	if err := setItemToCache(cacheKey, summary); err != nil {
 		return nil, err
 	}
 

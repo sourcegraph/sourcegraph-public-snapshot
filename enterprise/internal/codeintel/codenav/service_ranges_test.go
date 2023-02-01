@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -39,9 +39,9 @@ func TestRanges(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitServer := NewMockGitserverClient()
-	mockGitServer.DiffPathFunc.SetDefaultHook(func(ctx context.Context, srpc authz.SubRepoPermissionChecker, rn api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	mockGitServer.DiffPathFunc.SetDefaultHook(func(ctx context.Context, srpc authz.SubRepoPermissionChecker, rn api.RepoName, sourceCommit, targetCommit, path string) ([]*godiff.Hunk, error) {
 		if path == "sub3/changed.go" {
-			fileDiff, err := diff.ParseFileDiff([]byte(rangesDiff))
+			fileDiff, err := godiff.ParseFileDiff([]byte(rangesDiff))
 			if err != nil {
 				return nil, err
 			}

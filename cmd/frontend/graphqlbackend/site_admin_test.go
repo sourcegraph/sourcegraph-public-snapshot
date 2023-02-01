@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	errors "github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestDeleteUser(t *testing.T) {
@@ -30,7 +30,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -52,7 +52,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -215,7 +215,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "must be site admin",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -271,7 +271,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -324,7 +324,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "current user is not an org member",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -370,7 +370,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is not supported",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -399,7 +399,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "soft deleting organization is not supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})

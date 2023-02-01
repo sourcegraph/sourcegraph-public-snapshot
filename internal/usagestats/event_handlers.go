@@ -177,7 +177,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			return nil, err
 		}
 
-		url, err := redactSensitiveInfoFromCloudURL(event.URL)
+		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +186,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			EventName:        event.EventName,
 			UserID:           int(event.UserID),
 			AnonymousUserID:  event.UserCookieID,
-			URL:              url,
+			URL:              saferUrl,
 			FirstSourceURL:   firstSourceURL,
 			LastSourceURL:    lastSourceURL,
 			Referrer:         referrer,
