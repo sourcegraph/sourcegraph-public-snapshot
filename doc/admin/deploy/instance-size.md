@@ -4,7 +4,7 @@ title: Instance Size
 
 # Instance Size
 
-You should configure your Sourcegraph instance based on the number of users and repositories you have using our size chart shown below.
+When sizing your Sourcegraph deployment, it is important to take into account the number of users and repositories in your environment. Below is our sizing chart with our sizing recommendations for different size environments.
 
 ## Size chart
 

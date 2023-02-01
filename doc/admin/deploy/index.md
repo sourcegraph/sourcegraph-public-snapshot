@@ -8,7 +8,7 @@ Sourcegraph provides a variety of deployment options to meet the diverse needs o
 
 ## Deployment types
 
-When planning to deploy Sourcegraph, it is important to first determine the appropriate deployment method for your organization. For example, if you choose to deploy using Kubernetes, you will need to make a decision on whether to use Helm or not, as they are mutually exclusive. Once a deployment type is selected and implemented, it cannot be changed for a running instance.
+When planning to deploy Sourcegraph, it is important to first determine the appropriate deployment method for your organization. For example, if you choose to deploy using Kubernetes, you will need to make a decision on whether or not to use Helm. Once a deployment type is selected and implemented, it **cannot** be changed.
 
 The deployment types available for Sourcegraph have varying levels of capabilities. When selecting a deployment type, it is important to consider both the needs of your business as well as the technical expertise available within your organization. As previously mentioned, it is not possible to change the deployment type of a running instance, so it's important to make an informed decision. The following sections provide more detailed recommendations for each deployment type to assist you in making your decision.
 
@@ -28,18 +28,18 @@ Currently available in the following hosts:
   <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
-Please note that machine images are recommended for organizations who have the necessary technical expertise and resources to maintain and manage their own infrastructure.
+Machine images are our recommended deployment method for organizations that require a simple on-premise solution, but would still like to maintain and manage their own infrastructure. 
 
 ### [Kubernetes](kubernetes/index.md)
 
-Kubernetes is recommended for non-standard deployments where setting up a Sourcegraph instance with our Machine Images or install-script is not a viable option.
+Kubernetes is recommended for non-standard deployments where deploying Sourcegraph with our Machine Images or install-script is not a viable option.
 
 Below are the supported methods to deploy Sourcegraph on Kubernetes:
 
-- **Kustomize** utilize the built-in feature of the `kubectl` command tool and provides the flexibility to configure your deployment
-- **Helm** provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience
+- **Kustomize** our recommended approach. Kustomize provides a simple, yet highly flexible way to configure your deployment using the native features of `kubectl`.
+- **Helm** provides a widely used mechanism for deployment customizations and managing upgrades.
 
-Both paths require extensive Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
+Both paths require in-depth Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
 
 <div class="getting-started">
   <a class="btn btn-secondary text-center" href="kubernetes/index"><span>Kustomize</span></a>
@@ -50,7 +50,7 @@ Both paths require extensive Kubernetes knowledge to set up and maintain. For te
 
 ### ARM / ARM64 support
 
-Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+Running Sourcegraph on ARM / ARM64 images is not supported for production deployments at this time.
 
 ---
 

@@ -4,7 +4,7 @@ title: Install Sourcegraph locally with minikube
 
 # Install Sourcegraph with minikube
 
-This guide will take you through how to set up a Sourcegraph instance locally with [minikube](https://minikube.sigs.k8s.io/docs/), a tool that lets you run a single-node Kubernetes cluster on your local machine, using our [minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/main/examples/minikube).
+This guide will take you through how to set up a Sourcegraph deployment locally with [minikube](https://minikube.sigs.k8s.io/docs/), a tool that lets you run a single-node Kubernetes cluster on your local machine, using our [minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/main/examples/minikube).
 
 ## Sourcegraph minikube overlay
 
