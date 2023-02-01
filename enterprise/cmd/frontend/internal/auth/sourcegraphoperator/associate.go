@@ -53,15 +53,17 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		return errors.Wrap(err, "invalid account details")
 	}
 
-	// Simple validation
+	// Additionally check client ID matches - service ID was already checked in the
+	// initial GetProviderByConfigID call
 	if details.ClientID != p.CachedInfo().ClientID {
 		return errors.Newf("unknown client ID %q", details.ClientID)
 	}
+	// Make sure this user has no other SOAP accounts.
 	soapAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID: userID,
-		// Provider
+		// For provider matching, we explicitly do not provider the service ID - there
+		// should only be one SOAP registered.
 		ServiceType: auth.SourcegraphOperatorProviderType,
-		ServiceID:   serviceID,
 	})
 	if err != nil {
 		return err

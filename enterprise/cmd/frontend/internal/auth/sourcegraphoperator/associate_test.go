@@ -12,12 +12,12 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
@@ -26,7 +26,10 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 
 func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 	ctx := context.Background()
-	serviceID := (fakeSoapProvider{}).ConfigID().ID
+	soap := NewProvider(cloud.SchemaAuthProviderSourcegraphOperator{
+		ClientID: "soap_client",
+	})
+	serviceID := soap.ConfigID().ID
 
 	for _, tc := range []struct {
 		name string
@@ -49,7 +52,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 		{
 			name: "incorrect details for SOAP provider",
 			setup: func(t *testing.T) (int32, database.DB) {
-				providers.MockProviders = []providers.Provider{fakeSoapProvider{}}
+				providers.MockProviders = []providers.Provider{soap}
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				return 42, database.NewMockDB()
@@ -70,7 +73,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 					t.Skip()
 				}
 
-				providers.MockProviders = []providers.Provider{fakeSoapProvider{}}
+				providers.MockProviders = []providers.Provider{soap}
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
@@ -115,7 +118,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 					t.Skip()
 				}
 
-				providers.MockProviders = []providers.Provider{fakeSoapProvider{}}
+				providers.MockProviders = []providers.Provider{soap}
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
@@ -176,40 +179,4 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			}
 		})
 	}
-}
-
-type fakeSoapProvider struct{}
-
-// ConfigID returns the identifier for this provider's config in the auth.providers site
-// configuration array.
-//
-// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
-// and anonymous clients.
-func (p fakeSoapProvider) ConfigID() providers.ConfigID {
-	return providers.ConfigID{
-		Type: auth.SourcegraphOperatorProviderType,
-		ID:   "soap",
-	}
-}
-
-// Config is the entry in the site configuration "auth.providers" array that this provider
-// represents.
-//
-// 🚨 SECURITY: This value contains secret information that must not be shown to
-// non-site-admins.
-func (p fakeSoapProvider) Config() schema.AuthProviders { return schema.AuthProviders{} }
-
-// CachedInfo returns cached information about the provider.
-func (p fakeSoapProvider) CachedInfo() *providers.Info {
-	return &providers.Info{
-		ClientID: "soap_client",
-	}
-}
-
-// Refresh refreshes the provider's information with an external service, if any.
-func (p fakeSoapProvider) Refresh(ctx context.Context) error { return nil }
-
-// Provides basic external account from this auth provider
-func (p fakeSoapProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	return nil, nil
 }
