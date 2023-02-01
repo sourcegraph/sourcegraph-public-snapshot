@@ -226,7 +226,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
 
 	if uploadID != 0 {
-		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, int(uploadID))
+		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, uploadID)
 		if err != nil || !ok {
 			return nil, err
 		}
@@ -234,7 +234,7 @@ func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ r
 		return NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, &upload, nil)
 	}
 	if indexID != 0 {
-		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, int(indexID))
+		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, indexID)
 		if err != nil || !ok {
 			return nil, err
 		}
