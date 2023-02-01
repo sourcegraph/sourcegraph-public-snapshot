@@ -238,7 +238,7 @@ func makeDeleteIndexesOptions(args *resolverstubs.DeleteLSIFIndexesArgs) (shared
 	}
 
 	return shared.DeleteIndexesOptions{
-		State:        strings.ToLower(derefString(args.State, "")),
+		States:       []string{strings.ToLower(derefString(args.State, ""))},
 		Term:         derefString(args.Query, ""),
 		RepositoryID: repository,
 	}, nil
@@ -257,7 +257,7 @@ func makeReindexIndexesOptions(args *resolverstubs.ReindexLSIFIndexesArgs) (shar
 	}
 
 	return shared.ReindexIndexesOptions{
-		State:        strings.ToLower(derefString(args.State, "")),
+		States:       []string{strings.ToLower(derefString(args.State, ""))},
 		Term:         derefString(args.Query, ""),
 		RepositoryID: repository,
 	}, nil

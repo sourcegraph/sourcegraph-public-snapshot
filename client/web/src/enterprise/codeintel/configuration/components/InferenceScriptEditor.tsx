@@ -19,7 +19,7 @@ export interface InferenceScriptEditorProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<InferenceScriptEditorProps>> = ({
+export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps> = ({
     authenticatedUser,
     telemetryService,
 }) => {
