@@ -390,6 +390,68 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
         getFilterFromURL(new URLSearchParams(location.search), filters)
     )
 
+    const [searchQuery, setSearchQuery] = useState<string>(
+        () => new URLSearchParams(location.search).get('query') || ''
+    )
+
+    useEffect(() => {
+        const searchFragment = getUrlQuery({
+            query: searchQuery,
+            filters,
+            filterValues,
+            search: location.search,
+        })
+        const searchFragmentParams = new URLSearchParams(searchFragment)
+        searchFragmentParams.sort()
+
+        const oldParams = new URLSearchParams(location.search)
+        oldParams.sort()
+
+        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+            history.replace({
+                search: searchFragment,
+                hash: location.hash,
+                // Do not throw away flash messages
+                state: location.state,
+            })
+        }
+    }, [filters, filterValues, searchQuery, location, history])
+
+    const variables = useMemo<RepositoriesVariables>(() => {
+        const args = buildFilterArgs(filterValues)
+
+        return {
+            ...args,
+            query: searchQuery,
+            indexed: args.indexed ?? true,
+            notIndexed: args.notIndexed ?? true,
+            failedFetch: args.failedFetch ?? false,
+            corrupted: args.corrupted ?? false,
+            cloneStatus: args.cloneStatus ?? null,
+            externalService: args.externalService ?? null,
+        } as RepositoriesVariables
+    }, [searchQuery, filterValues])
+
+    const {
+        connection,
+        loading: reposLoading,
+        error: reposError,
+        refetch,
+        ...paginationProps
+    } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
+        query: REPOSITORIES_QUERY,
+        variables,
+        getConnection: ({ data }) => data?.repositories || undefined,
+        options: { pollInterval: 5000 },
+    })
+
+    useEffect(() => {
+        refetch(variables)
+    }, [refetch, variables])
+
+    const error = repoStatsError || extSvcError || reposError
+    const loading = repoStatsLoading || extSvcLoading || reposLoading
+
     const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
         if (!data) {
             return undefined
@@ -484,79 +546,21 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
                     }),
             })
         }
-        return items
-    }, [data, setFilterValues])
-
-    const [searchQuery, setSearchQuery] = useState<string>(
-        () => new URLSearchParams(location.search).get('query') || ''
-    )
-
-    useEffect(() => {
-        const searchFragment = getUrlQuery({
-            query: searchQuery,
-            filters,
-            filterValues,
-            search: location.search,
-        })
-        const searchFragmentParams = new URLSearchParams(searchFragment)
-        searchFragmentParams.sort()
-
-        const oldParams = new URLSearchParams(location.search)
-        oldParams.sort()
-
-        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-            history.replace({
-                search: searchFragment,
-                hash: location.hash,
-                // Do not throw away flash messages
-                state: location.state,
+        if (loading && !error) {
+            items.splice(0, 1, {
+                value: <LoadingSpinner />,
+                description: 'Repositories',
             })
         }
-    }, [filters, filterValues, searchQuery, location, history])
-
-    const variables = useMemo<RepositoriesVariables>(() => {
-        const args = buildFilterArgs(filterValues)
-
-        return {
-            ...args,
-            query: searchQuery,
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            failedFetch: args.failedFetch ?? false,
-            corrupted: args.corrupted ?? false,
-            cloneStatus: args.cloneStatus ?? null,
-            externalService: args.externalService ?? null,
-        } as RepositoriesVariables
-    }, [searchQuery, filterValues])
-
-    const {
-        connection,
-        loading: reposLoading,
-        error: reposError,
-        refetch,
-        ...paginationProps
-    } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
-        query: REPOSITORIES_QUERY,
-        variables,
-        getConnection: ({ data }) => data?.repositories || undefined,
-        options: { pollInterval: 5000 },
-    })
-
-    useEffect(() => {
-        refetch(variables)
-    }, [refetch, variables])
-
-    const error = repoStatsError || extSvcError || reposError
-    const loading = repoStatsLoading || extSvcLoading || reposLoading
+        return items
+    }, [data, setFilterValues, loading, error])
 
     return (
         <>
             {children}
             <Container className="py-3 mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
-                {/* TODO: Refactor <ValueLegendList so loading spinner covers first value instead of dropping content down vert */}
-                {loading && !error && <LoadingSpinner />}
-                {legends && <ValueLegendList className="mb-3" items={legends} />}
+                {legends && <ValueLegendList items={legends} />}
             </Container>
             {extSvcs && (
                 <Container>
