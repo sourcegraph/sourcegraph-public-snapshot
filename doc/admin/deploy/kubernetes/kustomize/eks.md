@@ -98,7 +98,7 @@ Once you have created a new overlay using the kustomization file from our quick-
 - create a DNS A record for your Sourcegraph instance domain
 - enable TLS is highly recommended. 
 
-If you would like to enable TLS with your own certificate, please read the [TLS configuration guide](configure.md#tls) for detailed instructions. 
+If you would like to enable TLS with your own certificate, please read the [TLS configuration guide](../configure.md#tls) for detailed instructions. 
 
 ##### AWS-managed certificate
 

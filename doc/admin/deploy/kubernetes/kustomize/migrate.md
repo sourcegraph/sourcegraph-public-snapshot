@@ -117,7 +117,7 @@ resources:
 
 #### Step 8: Recreate instance resources
 
-Follow our [configuration guide](configure.md) to recreate your running instance with the provided components.
+Follow our [configuration guide](../configure.md) to recreate your running instance with the provided components.
 
 Please keep in mind that you should not introduce any changes to the characteristics during the migration process. For example, if your cluster is currently running in privileged mode with root users, deploying the instance in non-privileged mode will cause permission issues.
 
@@ -134,7 +134,7 @@ components:
 
 The default cluster now runs in non-privileged mode.
 
-If your instance was deployed using the non-privileged overlay, you can follow the [configuration guide](configure.md) without adding the `clusters/old-base` component.
+If your instance was deployed using the non-privileged overlay, you can follow the [configuration guide](../configure.md) without adding the `clusters/old-base` component.
 
 >NOTE: `pgsql`, `codeinsights-db`, `searcher`, `symbols`, and `codeintel-db` have been changed from `Deployments` to `StatefulSets`. However, redeploying these services as StatefulSets should not affect your existing deployment as they are all configured to use the same PVCs.
 
