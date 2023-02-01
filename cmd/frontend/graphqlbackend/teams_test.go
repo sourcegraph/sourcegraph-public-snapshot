@@ -613,7 +613,7 @@ func TestDeleteTeamNotFound(t *testing.T) {
 		}`,
 		ExpectedErrors: []*gqlerrors.QueryError{
 			{
-				Message: "team not found: <nil>",
+				Message: `team name="does-not-exist" not found: team not found: <nil>`,
 				Path:    []any{"deleteTeam"},
 			},
 		},

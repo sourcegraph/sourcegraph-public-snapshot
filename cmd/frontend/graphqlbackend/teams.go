@@ -216,20 +216,11 @@ func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (
 	if args.ID != nil && args.Name != nil {
 		return nil, errors.New("team to delete is identified by either id or name, but both were specified")
 	}
-	var id int32
-	if args.ID != nil {
-		err := relay.UnmarshalSpec(*args.ID, &id)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot interpret team id: %q", *args.ID)
-		}
-	} else {
-		t, err := r.db.Teams().GetTeamByName(ctx, *args.Name)
-		if err != nil {
-			return nil, err
-		}
-		id = t.ID
+	t, err := findTeam(ctx, r.db.Teams(), args.ID, args.Name)
+	if err != nil {
+		return nil, err
 	}
-	if err := r.db.Teams().DeleteTeam(ctx, id); err != nil {
+	if err := r.db.Teams().DeleteTeam(ctx, t.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
