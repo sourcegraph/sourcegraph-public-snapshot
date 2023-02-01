@@ -19,7 +19,8 @@ import (
 const (
 	azureDevOpsServicesURL = "https://dev.azure.com/"
 	// TODO: @varsanojidan look into which API version/s we want to support.
-	apiVersion = "7.0"
+	apiVersion              = "7.0"
+	continuationTokenHeader = "x-ms-continuationtoken"
 )
 
 // Client used to access an AzureDevOps code host via the REST API.

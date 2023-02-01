@@ -56,6 +56,17 @@ type ListRepositoriesResponse struct {
 	Count int          `json:"count"`
 }
 
+type ListRefsResponse struct {
+	Value []Ref `json:"value"`
+	Count int   `json:"count"`
+}
+
+type Ref struct {
+	Name      string      `json:"name"`
+	CommitSHA string      `json:"objectId"`
+	Creator   CreatorInfo `json:"creator"`
+}
+
 type CreatePullRequestInput struct {
 	SourceRefName string     `json:"sourceRefName"`
 	TargetRefName string     `json:"targetRefName"`
@@ -76,30 +87,22 @@ type PullRequestCommonArgs struct {
 }
 
 type PullRequest struct {
-	Repository            Repository           `json:"repository"`
-	ID                    int                  `json:"pullRequestId"`
-	CodeReviewID          int                  `json:"codeReviewId"`
-	Status                string               `json:"status"`
-	CreationDate          string               `json:"creationDate"`
-	Title                 string               `json:"title"`
-	CreatedBy             PullRequestCreatedBy `json:"createdBy"`
-	SourceRefName         string               `json:"sourceRefName"`
-	TargetRefName         string               `json:"targetRefName"`
-	MergeStatus           string               `json:"mergeStatus"`
-	MergeID               string               `json:"mergeId"`
-	LastMergeSourceCommit PullRequestCommit    `json:"lastMergeSourceCommit"`
-	LastMergeTargetCommit PullRequestCommit    `json:"lastMergeTargetCommit"`
-	SupportsIterations    bool                 `json:"supportsIterations"`
-	ArtifactID            string               `json:"artifactId"`
-	Reviewers             []Reviewer           `json:"reviewers"`
-}
-
-type PullRequestCreatedBy struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
-	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
+	Repository            Repository        `json:"repository"`
+	ID                    int               `json:"pullRequestId"`
+	CodeReviewID          int               `json:"codeReviewId"`
+	Status                string            `json:"status"`
+	CreationDate          string            `json:"creationDate"`
+	Title                 string            `json:"title"`
+	CreatedBy             CreatorInfo       `json:"createdBy"`
+	SourceRefName         string            `json:"sourceRefName"`
+	TargetRefName         string            `json:"targetRefName"`
+	MergeStatus           string            `json:"mergeStatus"`
+	MergeID               string            `json:"mergeId"`
+	LastMergeSourceCommit PullRequestCommit `json:"lastMergeSourceCommit"`
+	LastMergeTargetCommit PullRequestCommit `json:"lastMergeTargetCommit"`
+	SupportsIterations    bool              `json:"supportsIterations"`
+	ArtifactID            string            `json:"artifactId"`
+	Reviewers             []Reviewer        `json:"reviewers"`
 }
 
 type PullRequestCommit struct {
@@ -183,7 +186,7 @@ type PullRequestBuildStatus struct {
 	Description  string                 `json:"description"`
 	CreationDate string                 `json:"creationDate"`
 	UpdateDate   string                 `json:"updateDate"`
-	CreatedBy    PullRequestCreatedBy   `json:"createdBy"`
+	CreatedBy    CreatorInfo            `json:"createdBy"`
 }
 
 type PullRequestStatusState string
@@ -213,6 +216,14 @@ type Profile struct {
 	EmailAddress string    `json:"emailAddress"`
 	LastChanged  time.Time `json:"timestamp"`
 	PublicAlias  string    `json:"publicAlias"`
+}
+
+type CreatorInfo struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	UniqueName  string `json:"uniqueName"`
+	URL         string `json:"url"`
+	ImageURL    string `json:"imageUrl"`
 }
 
 type httpError struct {
