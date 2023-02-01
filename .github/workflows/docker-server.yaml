@@ -59,7 +59,7 @@ jobs:
         working-directory: ./cmd/server
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          VERSION: v4.4.1
+          VERSION: v4.4.2
 
       - name: Tag and push Docker images
         run: |
