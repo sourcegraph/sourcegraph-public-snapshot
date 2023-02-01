@@ -4831,6 +4831,8 @@ CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs 
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
 
+CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id);
+
 CREATE INDEX lsif_indexes_repository_id_commit ON lsif_indexes USING btree (repository_id, commit);
 
 CREATE INDEX lsif_indexes_state ON lsif_indexes USING btree (state);
@@ -4869,7 +4871,7 @@ CREATE UNIQUE INDEX lsif_uploads_repository_id_commit_root_indexer ON lsif_uploa
 
 CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 
-CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at);
+CREATE INDEX lsif_uploads_uploaded_at_id ON lsif_uploads USING btree (uploaded_at DESC, id) WHERE (state <> 'deleted'::text);
 
 CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch;
 

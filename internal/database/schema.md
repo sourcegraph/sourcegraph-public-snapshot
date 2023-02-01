@@ -1869,6 +1869,7 @@ Stores the configuration used for code intel index jobs for a repository.
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
     "lsif_indexes_state" btree (state)
 Check constraints:
@@ -2099,7 +2100,7 @@ Indexes:
     "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_uploads_state" btree (state)
-    "lsif_uploads_uploaded_at" btree (uploaded_at)
+    "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:

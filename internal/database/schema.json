@@ -13129,6 +13129,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "lsif_indexes_queued_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_indexes_repository_id_commit",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -14287,12 +14297,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "lsif_uploads_uploaded_at",
+          "Name": "lsif_uploads_uploaded_at_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at)",
+          "IndexDefinition": "CREATE INDEX lsif_uploads_uploaded_at_id ON lsif_uploads USING btree (uploaded_at DESC, id) WHERE state \u003c\u003e 'deleted'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
