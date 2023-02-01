@@ -55,8 +55,6 @@ export async function initializeSearchPanelWebview({
     // Expose the "Core" extension API to the Webview.
     Comlink.expose(extensionCoreAPI, expose)
 
-    const nonce = getNonce()
-
     panel.iconPath = vscode.Uri.joinPath(extensionUri, 'images', 'logo.svg')
 
     // Apply Content-Security-Policy
@@ -67,7 +65,7 @@ export async function initializeSearchPanelWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style nonce="${nonce}">
+        <style>
             @font-face {
                 font-family: 'codicon';
                 src: url(${codiconFontSource.toString()})
@@ -75,7 +73,7 @@ export async function initializeSearchPanelWebview({
         </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             panel.webview.cspSource
-        }; img-src data: vscode-resource: https:; script-src 'nonce-${nonce}'; style-src data: ${
+        }; img-src data: vscode-resource: https:; script-src ${panel.webview.cspSource}; style-src data: ${
         panel.webview.cspSource
     } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:; frame-src https:; font-src ${
         panel.webview.cspSource
@@ -86,7 +84,7 @@ export async function initializeSearchPanelWebview({
     </head>
     <body class="search-panel">
         <div id="root" />
-        <script type="module" nonce="${nonce}" src="${scriptSource.toString()}"></script>
+        <script type="module" src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 
@@ -212,13 +210,4 @@ export function initializeHelpSidebarWebview({
     return {
         helpSidebarAPI,
     }
-}
-
-export function getNonce(): string {
-    let text = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let index = 0; index < 32; index++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
-    return text
 }
