@@ -259,11 +259,11 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		return nil, err
 	}
 	if uploadID != 0 {
-		if _, err := r.uploadSvc.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+		if _, err := r.uploadSvc.DeleteUploadByID(ctx, uploadID); err != nil {
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
+		if _, err := r.autoindexSvc.DeleteIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -343,11 +343,11 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		return nil, err
 	}
 	if uploadID != 0 {
-		if err := r.uploadSvc.ReindexUploadByID(ctx, int(uploadID)); err != nil {
+		if err := r.uploadSvc.ReindexUploadByID(ctx, uploadID); err != nil {
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if err := r.autoindexSvc.ReindexIndexByID(ctx, int(indexID)); err != nil {
+		if err := r.autoindexSvc.ReindexIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
