@@ -931,7 +931,7 @@ func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ [
 	conditions := u.listSQL(*opt)
 
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
-	return u.getBySQLWithEmailsAndSCIMExternalID(ctx, q)
+	return u.getBySQLForSCIM(ctx, q)
 }
 
 // ListDates lists all user's created and deleted dates, used by usage stats.
@@ -1147,13 +1147,27 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	return users, nil
 }
 
-// getBySQLWithEmailsAndSCIMExternalID returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
-func (u *userStore) getBySQLWithEmailsAndSCIMExternalID(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
+const userForSCIMQueryFmtStr = `
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id) AS emails,
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+  FROM users u %s`
+
+// getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
+func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
 	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
-	q := sqlf.Sprintf(`SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable,
-       	ARRAY(SELECT email FROM user_emails WHERE user_id = u.id) AS emails,
-       	(SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
-  FROM users u %s`, query)
+	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
