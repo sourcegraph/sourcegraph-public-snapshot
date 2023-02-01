@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	osssoap "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -142,7 +141,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	serializedData, err := json.Marshal(&osssoap.ExternalAccountData{
+	accountData, err := sourcegraphoperator.MarshalAccountData(sourcegraphoperator.ExternalAccountData{
 		ServiceAccount: true,
 	})
 	require.NoError(t, err)
@@ -157,9 +156,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 			ClientID:    "soap",
 			AccountID:   "cami",
 		},
-		extsvc.AccountData{
-			Data: extsvc.NewUnencryptedData(serializedData),
-		},
+		accountData,
 	)
 	require.NoError(t, err)
 	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), camiID)
