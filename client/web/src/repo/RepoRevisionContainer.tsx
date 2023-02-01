@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
 import { Route, Routes, useLocation } from 'react-router-dom-v5-compat'
 
@@ -116,9 +116,9 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevision: ResolvedRevision | undefined
 }
 
-export const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
-    React.PropsWithChildren<RepoRevisionBreadcrumbProps>
-> = ({ revision, resolvedRevision, repoName, repo }) => {
+export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = props => {
+    const { revision, resolvedRevision, repoName, repo } = props
+
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
@@ -204,48 +204,42 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const { filePath } = parseBrowserRepoURL(location.pathname)
 
     return (
-        <>
-            <RepoRevisionWrapper className="pl-3">
-                <Routes>
-                    {routes.map(
-                        ({ path, render, condition = () => true }) =>
-                            condition(repoRevisionContainerContext) && (
-                                <Route key="hardcoded-key" path={path} element={render(repoRevisionContainerContext)} />
-                            )
-                    )}
-                </Routes>
+        <RepoRevisionWrapper className="pl-3">
+            <Routes>
+                {routes.map(
+                    ({ path, render, condition = () => true }) =>
+                        condition(repoRevisionContainerContext) && (
+                            <Route key="hardcoded-key" path={path} element={render(repoRevisionContainerContext)} />
+                        )
+                )}
+            </Routes>
+            <RepoHeaderContributionPortal
+                position="left"
+                id="copy-path"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {() => (
+                    <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
+                )}
+            </RepoHeaderContributionPortal>
+            {resolvedRevision && (
                 <RepoHeaderContributionPortal
-                    position="left"
-                    id="copy-path"
+                    position="right"
+                    priority={3}
+                    id="go-to-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => (
-                        <CopyPathAction
-                            telemetryService={eventLogger}
-                            filePath={filePath || repoName}
-                            key="copy-path"
+                    {context => (
+                        <GoToPermalinkAction
+                            key="go-to-permalink"
+                            telemetryService={props.telemetryService}
+                            revision={props.revision}
+                            commitID={resolvedRevision.commitID}
+                            {...context}
                         />
                     )}
                 </RepoHeaderContributionPortal>
-                {resolvedRevision && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={3}
-                        id="go-to-permalink"
-                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                    >
-                        {context => (
-                            <GoToPermalinkAction
-                                key="go-to-permalink"
-                                telemetryService={props.telemetryService}
-                                revision={props.revision}
-                                commitID={resolvedRevision.commitID}
-                                {...context}
-                            />
-                        )}
-                    </RepoHeaderContributionPortal>
-                )}
-            </RepoRevisionWrapper>
-        </>
+            )}
+        </RepoRevisionWrapper>
     )
 }

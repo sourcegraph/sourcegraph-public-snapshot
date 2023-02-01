@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
@@ -16,7 +17,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
-import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
 
 function queryRepositoryComparison(args: {
     repo: Scalars['ID']

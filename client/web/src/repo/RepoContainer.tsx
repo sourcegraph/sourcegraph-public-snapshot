@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useState } from 'react'
+import { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -54,8 +54,6 @@ import { commitsPath } from './repoRevisionContainerRoutes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
-import { redirectToExternalHost } from '.'
-
 import styles from './RepoContainer.module.scss'
 
 /**
@@ -96,10 +94,6 @@ export interface RepoContainerContext
 /** A sub-route of {@link RepoContainer}. */
 export interface RepoContainerRoute extends RouteV6Descriptor<RepoContainerContext> {}
 
-const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
-)
-
 interface RepoContainerProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
@@ -136,8 +130,9 @@ export interface HoverThresholdProps {
 /**
  * Renders a horizontal bar and content for a repository page.
  */
-export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
-    const { extensionsController, globbing } = props
+export const RepoContainer: FC<RepoContainerProps> = props => {
+    const { extensionsController, globbing, repoContainerRoutes, repoRevisionContainerRoutes, authenticatedUser } =
+        props
 
     const location = useLocation()
 
@@ -279,12 +274,13 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         if (!window.context.enableLegacyExtensions) {
             return true
         }
-        const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
+        const paths = [...repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
+
         return paths.some(path => matchPath(location.pathname, { path: repoMatchURL + path }))
-    }, [props.repoContainerRoutes, repoMatchURL, location.pathname])
+    }, [repoContainerRoutes, repoMatchURL, location.pathname])
 
     if (isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)) {
-        const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
+        const viewerCanAdminister = !!authenticatedUser && authenticatedUser.siteAdmin
 
         return (
             <RepoContainerError
@@ -315,7 +311,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const repoRevisionContainerPaths = [
         ...(rawRevision ? [{ path: `@${rawRevision}` }] : []), // must exactly match how the revision was encoded in the URL
-        ...props.repoRevisionContainerRoutes,
+        ...repoRevisionContainerRoutes,
     ].map(({ path }) => `${repoMatchURL}${path}/*`)
 
     const perforceCodeHostUrlToSwarmUrlMap =
@@ -341,7 +337,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 revision={revision}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 settingsCascade={props.settingsCascade}
-                authenticatedUser={props.authenticatedUser}
+                authenticatedUser={authenticatedUser}
                 platformContext={props.platformContext}
                 extensionsController={extensionsController}
                 telemetryService={props.telemetryService}
@@ -411,7 +407,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 }
                             />
                         ))}
-                        {props.repoContainerRoutes.map(({ path, render, condition = () => true }) => (
+                        {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 path={repoMatchURL + path}
@@ -464,4 +460,20 @@ function getIsCodeIntelRepositoryBadgeVisible(options: {
         matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
 
     return isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute
+}
+
+const RepoPageNotFound: FC = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
+)
+
+/**
+ * Performs a redirect to the host of the given URL with the path, query etc. properties of the current URL.
+ */
+function redirectToExternalHost(externalRedirectURL: string): void {
+    const externalHostURL = new URL(externalRedirectURL)
+    const redirectURL = new URL(window.location.href)
+    // Preserve the path of the current URL and redirect to the repo on the external host.
+    redirectURL.host = externalHostURL.host
+    redirectURL.protocol = externalHostURL.protocol
+    window.location.replace(redirectURL.href)
 }
