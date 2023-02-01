@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps, useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { Subject } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -30,7 +30,7 @@ import { useReindexLsifIndexes } from '../hooks/useReindexLsifIndexes'
 
 import styles from './CodeIntelIndexesPage.module.scss'
 
-export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface CodeIntelIndexesPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     queryLsifIndexListByRepository?: typeof defaultQueryLsifIndexListByRepository
@@ -86,8 +86,9 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     now,
     telemetryService,
 }) => {
+    const location = useLocation()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryIndexes = useCallback(

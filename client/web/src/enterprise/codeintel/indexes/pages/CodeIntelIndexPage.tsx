@@ -1,7 +1,7 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate, useParams, useNavigate } from 'react-router-dom-v5-compat'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -20,7 +20,7 @@ import { CodeIntelIndexTimeline } from '../components/CodeIntelIndexTimeline'
 import { queryLisfIndex as defaultQueryLsifIndex } from '../hooks/queryLisfIndex'
 import { useDeleteLsifIndex } from '../hooks/useDeleteLsifIndex'
 
-export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
+export interface CodeIntelIndexPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryLisfIndex?: typeof defaultQueryLsifIndex
     now?: () => Date
@@ -32,15 +32,14 @@ const variantByState = new Map<LSIFIndexState, CodeIntelStateBannerProps['varian
 ])
 
 export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexPageProps>> = ({
-    match: {
-        params: { id },
-    },
     authenticatedUser,
     queryLisfIndex = defaultQueryLsifIndex,
     telemetryService,
     now,
-    history,
 }) => {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
 
     const apolloClient = useApolloClient()
@@ -55,7 +54,7 @@ export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeI
 
     const indexOrError = useObservable(
         useMemo(
-            () => queryLisfIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            () => queryLisfIndex(id!, apolloClient).pipe(takeWhile(shouldReload, true)),
             [id, queryLisfIndex, apolloClient]
         )
     )
@@ -74,29 +73,35 @@ export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeI
 
         try {
             await handleDeleteLsifIndex({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setDeletionOrError('deleted')
-            history.push({
-                state: {
-                    modal: 'SUCCESS',
-                    message: `Auto-index record for commit ${autoIndexCommit} has been deleted.`,
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'SUCCESS',
+                        message: `Auto-index record for commit ${autoIndexCommit} has been deleted.`,
+                    },
+                }
+            )
         } catch (error) {
             setDeletionOrError(error)
-            history.push({
-                state: {
-                    modal: 'ERROR',
-                    message: `There was an error while saving auto-index record for commit: ${autoIndexCommit}.`,
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'ERROR',
+                        message: `There was an error while saving auto-index record for commit: ${autoIndexCommit}.`,
+                    },
+                }
+            )
         }
-    }, [id, indexOrError, handleDeleteLsifIndex, history])
+    }, [id, indexOrError, handleDeleteLsifIndex, navigate])
 
     return deletionOrError === 'deleted' ? (
-        <Redirect to="." />
+        <Navigate to="." />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} />
     ) : (

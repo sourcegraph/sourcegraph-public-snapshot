@@ -2,11 +2,10 @@ import React, { Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { matchPath, Route, Switch } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { matchPath } from 'react-router'
+import { Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -23,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -37,12 +36,13 @@ import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
-import { RouteDescriptor } from '../util/contributions'
+import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, ResolvedRevision, resolveRepoRevision } from './backend'
 import { RepoContainerError } from './RepoContainerError'
+import { compareSpecPath } from './repoContainerRoutes'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import {
@@ -50,7 +50,7 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
-import { commitsPath, compareSpecPath } from './routes'
+import { commitsPath } from './repoRevisionContainerRoutes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -84,9 +84,6 @@ export interface RepoContainerContext
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
 
-    /** The URL route match for {@link RepoContainer}. */
-    routePrefix: string
-
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
@@ -97,7 +94,7 @@ export interface RepoContainerContext
 }
 
 /** A sub-route of {@link RepoContainer}. */
-export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> {}
+export interface RepoContainerRoute extends RouteV6Descriptor<RepoContainerContext> {}
 
 const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
@@ -143,6 +140,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     const { extensionsController, globbing } = props
 
     const location = useLocation()
+
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -312,53 +310,26 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         repoName,
         revision: revision || '',
         resolvedRevision: resolvedRevisionOrError,
-        routePrefix: repoMatchURL,
         useActionItemsBar,
-        location,
     }
 
-    /**
-     * `RepoContainerContextRoutes` depend on `repoOrError`. We render these routes only when
-     * the `repoOrError` value is resolved.
-     */
-    const getRepoContainerContextRoutes = (): (false | JSX.Element)[] | null => {
-        if (repoOrError) {
-            const repoContainerContext: RepoContainerContext = {
-                ...repoRevisionContainerContext,
-                repo: repoOrError,
-                resolvedRevisionOrError,
-                onDidUpdateExternalLinks: setExternalLinks,
-            }
-
-            return [
-                ...props.repoContainerRoutes.map(
-                    ({ path, render, exact, condition = () => true }) =>
-                        condition(repoContainerContext) && (
-                            <Route
-                                path={repoContainerContext.routePrefix + path}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={exact}
-                                render={routeComponentProps =>
-                                    render({
-                                        ...repoContainerContext,
-                                        ...routeComponentProps,
-                                    })
-                                }
-                            />
-                        )
-                ),
-                <Route key="hardcoded-key" component={RepoPageNotFound} />,
-            ]
-        }
-
-        return null
-    }
+    const repoRevisionContainerPaths = [
+        ...(rawRevision ? [{ path: `@${rawRevision}` }] : []), // must exactly match how the revision was encoded in the URL
+        ...props.repoRevisionContainerRoutes,
+    ].map(({ path }) => `${repoMatchURL}${path}/*`)
 
     const perforceCodeHostUrlToSwarmUrlMap =
         (props.settingsCascade.final &&
             !isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.['perforce.codeHostToSwarmMap']) ||
         {}
+
+    const repoContainerContext: RepoContainerContext = {
+        ...repoRevisionContainerContext,
+        repo: repoOrError!,
+        resolvedRevisionOrError,
+        onDidUpdateExternalLinks: setExternalLinks,
+    }
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
@@ -419,47 +390,48 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 filePath={filePath || ''}
                                 settingsCascade={props.settingsCascade}
                             />
-                        ) : (
-                            <></>
-                        )
+                        ) : null
                     }
                 </RepoHeaderContributionPortal>
             )}
 
             <ErrorBoundary location={location}>
                 <Suspense fallback={null}>
-                    <Switch>
-                        {[
-                            '',
-                            ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
-                            '/-/blob',
-                            '/-/tree',
-                            '/-/commits',
-                            '/-/docs',
-                            '/-/branch',
-                            '/-/contributors',
-                            '/-/compare',
-                            '/-/tag',
-                            '/-/home',
-                        ].map(routePath => (
+                    <Routes>
+                        {repoRevisionContainerPaths.map(path => (
                             <Route
-                                path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={routePath === ''}
-                                render={routeComponentProps => (
+                                path={path}
+                                element={
                                     <RepoRevisionContainer
-                                        {...routeComponentProps}
                                         {...repoRevisionContainerContext}
                                         {...childBreadcrumbSetters}
                                         routes={props.repoRevisionContainerRoutes}
-                                        // must exactly match how the revision was encoded in the URL
-                                        routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                     />
-                                )}
+                                }
                             />
                         ))}
-                        {getRepoContainerContextRoutes()}
-                    </Switch>
+                        {props.repoContainerRoutes.map(({ path, render, condition = () => true }) => (
+                            <Route
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                path={repoMatchURL + path}
+                                /**
+                                 * `RepoContainerContextRoutes` depend on `repoOrError`. We render these routes only when
+                                 * the `repoOrError` value is resolved.
+                                 */
+                                element={
+                                    repoOrError ? (
+                                        condition(repoContainerContext) ? (
+                                            render(repoContainerContext)
+                                        ) : null
+                                    ) : (
+                                        <LoadingSpinner />
+                                    )
+                                }
+                            />
+                        ))}
+                        <Route element={<RepoPageNotFound />} />,
+                    </Routes>
                 </Suspense>
             </ErrorBoundary>
         </div>
@@ -468,7 +440,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
 function getIsCodeIntelRepositoryBadgeVisible(options: {
     settingsCascade: RepoContainerProps['settingsCascade']
-    location: H.Location
+    location: Location
     repoName: string
     revision: string | undefined
 }): boolean {

@@ -1,6 +1,5 @@
 import { mdiSourceRepository } from '@mdi/js'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -75,12 +74,7 @@ const useActionItemsToggle = () => ({
     toggleReference: () => null,
     barInPage: false,
 })
-const LOCATION: H.Location = {
-    hash: '',
-    pathname: '/github.com/sourcegraph/sourcegraph/-/tree/',
-    search: '',
-    state: undefined,
-}
+
 const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) => {
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
         id: 'copy-path',
@@ -95,8 +89,6 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 revision="main"
                 commitID="123"
-                location={LOCATION}
-                history={H.createMemoryHistory()}
                 repoName="sourcegraph/sourcegraph"
                 actionType="nav"
             />

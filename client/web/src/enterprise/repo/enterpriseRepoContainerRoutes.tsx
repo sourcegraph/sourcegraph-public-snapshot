@@ -1,10 +1,8 @@
-import { Redirect } from 'react-router'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { RedirectRoute } from '../../components/RedirectRoute'
 import { RepoContainerRoute } from '../../repo/RepoContainer'
-import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
-import { repoContainerRoutes, repoRevisionContainerRoutes } from '../../repo/routes'
+import { repoContainerRoutes } from '../../repo/repoContainerRoutes'
 
 const RepositoryCodeIntelArea = lazyComponent(
     () => import('../codeintel/repo/RepositoryCodeIntelArea'),
@@ -21,12 +19,14 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
 
     {
         path: '/-/code-intelligence',
-        exact: false,
-        render: props => <Redirect to={props.location.pathname.replace('/code-intelligence', '/code-graph')} />,
+        render: () => (
+            <RedirectRoute
+                getRedirectURL={({ location }) => location.pathname.replace('/code-intelligence', '/code-graph')}
+            />
+        ),
     },
     {
-        path: '/-/code-graph',
-        exact: false,
+        path: '/-/code-graph/*',
         render: context => <RepositoryCodeIntelArea {...context} />,
     },
 
@@ -36,5 +36,3 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => <RepositoryBatchChangesArea {...context} />,
     },
 ]
-
-export const enterpriseRepoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = repoRevisionContainerRoutes

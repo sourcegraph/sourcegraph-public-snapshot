@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { of, Subject } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -101,10 +101,10 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
     queryCommitGraphMetadata = defaultQueryCommitGraphMetadata,
     now,
     telemetryService,
-    ...props
 }) => {
+    const location = useLocation()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryLsifUploads = useCallback(

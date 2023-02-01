@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiInformationOutline, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate, useParams, useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
 
@@ -52,7 +52,7 @@ import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
 
 import styles from './CodeIntelUploadPage.module.scss'
 
-export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
+export interface CodeIntelUploadPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryLisfUploadFields?: typeof defaultQueryLisfUploadFields
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
@@ -76,18 +76,16 @@ enum RetentionPolicyMatcherState {
 }
 
 export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadPageProps>> = ({
-    match: {
-        params: { id },
-    },
     authenticatedUser,
     queryLisfUploadFields = defaultQueryLisfUploadFields,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
     queryRetentionMatches = defaultQueryRetentionMatches,
     telemetryService,
     now,
-    history,
-    ...props
 }) => {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
 
     const apolloClient = useApolloClient()
@@ -104,7 +102,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
 
     const uploadOrError = useObservable(
         useMemo(
-            () => queryLisfUploadFields(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            () => queryLisfUploadFields(id!, apolloClient).pipe(takeWhile(shouldReload, true)),
             [id, queryLisfUploadFields, apolloClient]
         )
     )
@@ -127,26 +125,32 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
 
         try {
             await handleDeleteLsifUpload({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setDeletionOrError('deleted')
-            history.push({
-                state: {
-                    modal: 'SUCCESS',
-                    message: `Upload for commit ${description} is deleting.`,
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'SUCCESS',
+                        message: `Upload for commit ${description} is deleting.`,
+                    },
+                }
+            )
         } catch (error) {
             setDeletionOrError(error)
-            history.push({
-                state: {
-                    modal: 'ERROR',
-                    message: `There was an error while deleting upload for commit ${description}.`,
-                },
-            })
+            navigate(
+                {},
+                {
+                    state: {
+                        modal: 'ERROR',
+                        message: `There was an error while deleting upload for commit ${description}.`,
+                    },
+                }
+            )
         }
-    }, [id, uploadOrError, handleDeleteLsifUpload, history])
+    }, [id, uploadOrError, handleDeleteLsifUpload, navigate])
 
     const queryDependencies = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<LsifUploadConnectionFields> => {
@@ -172,7 +176,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
     const queryRetentionPoliciesCallback = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<Connection<NormalizedUploadRetentionMatch>> => {
             if (uploadOrError && !isErrorLike(uploadOrError)) {
-                return queryRetentionMatches(apolloClient, id, {
+                return queryRetentionMatches(apolloClient, id!, {
                     matchesOnly: retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowMatchingOnly,
                     ...args,
                 })
@@ -184,7 +188,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
     )
 
     return deletionOrError === 'deleted' ? (
-        <Redirect to="." />
+        <Navigate to="." />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (

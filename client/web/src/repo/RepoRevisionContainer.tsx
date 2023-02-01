@@ -1,7 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useMemo, useState } from 'react'
 
-import * as H from 'history'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router-dom-v5-compat'
 
 import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
@@ -24,7 +23,7 @@ import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
 import { SearchStreamingProps } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
-import { RouteDescriptor } from '../util/contributions'
+import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -64,9 +63,6 @@ export interface RepoRevisionContainerContext
 
     repoName: string
 
-    /** The URL route match for {@link RepoRevisionContainer}. */
-    routePrefix: string
-
     globbing: boolean
 
     isMacPlatform: boolean
@@ -75,11 +71,10 @@ export interface RepoRevisionContainerContext
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
-export interface RepoRevisionContainerRoute extends RouteDescriptor<RepoRevisionContainerContext> {}
+export interface RepoRevisionContainerRoute extends RouteV6Descriptor<RepoRevisionContainerContext> {}
 
 interface RepoRevisionContainerProps
-    extends RouteComponentProps<{}>,
-        RepoHeaderContributionsLifecycleProps,
+    extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
@@ -101,7 +96,6 @@ interface RepoRevisionContainerProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     repo: RepositoryFields | undefined
     authenticatedUser: AuthenticatedUser | null
-    routePrefix: string
 
     /**
      * The resolved revision or an error if it could not be resolved.
@@ -110,8 +104,6 @@ interface RepoRevisionContainerProps
 
     /** The repoName from the URL */
     repoName: string
-
-    history: H.History
 
     globbing: boolean
 
@@ -178,13 +170,13 @@ export const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChildren<RepoRevisionContainerProps>> = ({
-    useBreadcrumb,
-    ...props
-}) => {
+export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
+    const { useBreadcrumb, resolvedRevision, revision, repo, repoName, routes } = props
+    const location = useLocation()
+
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
-            if (isErrorLike(props.resolvedRevision)) {
+            if (isErrorLike(resolvedRevision)) {
                 return
             }
 
@@ -193,47 +185,35 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                 divider: <span className={styles.divider}>@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
-                        resolvedRevision={props.resolvedRevision}
-                        revision={props.revision}
-                        repoName={props.repoName}
-                        repo={props.repo}
+                        resolvedRevision={resolvedRevision}
+                        revision={revision}
+                        repoName={repoName}
+                        repo={repo}
                     />
                 ),
             }
-        }, [props.resolvedRevision, props.revision, props.repo, props.repoName])
+        }, [resolvedRevision, revision, repo, repoName])
     )
 
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
-        resolvedRevision: props.resolvedRevision,
+        resolvedRevision,
     }
 
-    const resolvedRevision = props.resolvedRevision
-
-    const { repoName, filePath } = parseBrowserRepoURL(location.pathname)
+    const { filePath } = parseBrowserRepoURL(location.pathname)
 
     return (
         <>
-            <RepoRevisionWrapper className="px-3">
-                <Switch>
-                    {props.routes.map(
-                        ({ path, render, exact, condition = () => true }) =>
+            <RepoRevisionWrapper className="pl-3">
+                <Routes>
+                    {routes.map(
+                        ({ path, render, condition = () => true }) =>
                             condition(repoRevisionContainerContext) && (
-                                <Route
-                                    path={props.routePrefix + path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
-                                    render={routeComponentProps =>
-                                        render({
-                                            ...repoRevisionContainerContext,
-                                            ...routeComponentProps,
-                                        })
-                                    }
-                                />
+                                <Route key="hardcoded-key" path={path} element={render(repoRevisionContainerContext)} />
                             )
                     )}
-                </Switch>
+                </Routes>
                 <RepoHeaderContributionPortal
                     position="left"
                     id="copy-path"
@@ -260,8 +240,6 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                                 telemetryService={props.telemetryService}
                                 revision={props.revision}
                                 commitID={resolvedRevision.commitID}
-                                location={props.location}
-                                history={props.history}
                                 {...context}
                             />
                         )}

@@ -152,7 +152,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     canEdit={false}
                     height={800}
                     isLightTheme={isLightTheme}
-                    history={history}
                     readOnly={true}
                     telemetryService={telemetryService}
                 />
