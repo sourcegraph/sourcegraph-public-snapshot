@@ -24,14 +24,12 @@ import styles from './Dependencies.module.scss'
 export interface DependencyListProps {
     index: PreciseIndexFields
     history: H.History
-    location: H.Location
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     index,
     history,
-    location,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -47,7 +45,6 @@ export const DependenciesList: FunctionComponent<DependencyListProps> = ({
             pluralNoun="dependencies"
             queryConnection={queryDependencies}
             history={history}
-            location={location}
         />
     )
 }
@@ -55,14 +52,12 @@ export const DependenciesList: FunctionComponent<DependencyListProps> = ({
 export interface DependentListProps {
     index: PreciseIndexFields
     history: H.History
-    location: H.Location
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependentsList: FunctionComponent<DependentListProps> = ({
     index,
     history,
-    location,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -78,7 +73,6 @@ export const DependentsList: FunctionComponent<DependentListProps> = ({
             pluralNoun="dependents"
             queryConnection={queryDependents}
             history={history}
-            location={location}
         />
     )
 }
@@ -88,7 +82,6 @@ interface DependencyOrDependentsPanelProps {
     pluralNoun: string
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<Connection<PreciseIndexFields>>
     history: H.History
-    location: H.Location
 }
 
 const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanelProps> = ({
@@ -96,7 +89,6 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
     pluralNoun,
     queryConnection,
     history,
-    location,
 }) => (
     <FilteredConnection
         listComponent="div"
@@ -106,8 +98,6 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
         nodeComponent={DependencyOrDependentNode}
         nodeComponentProps={{ history }}
         queryConnection={queryConnection}
-        history={history}
-        location={location}
         cursorPaging={true}
         useURLQuery={false}
         emptyElement={<EmptyDependencyOrDependents pluralNoun={pluralNoun} />}

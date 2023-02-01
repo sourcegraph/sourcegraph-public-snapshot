@@ -340,19 +340,19 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             <>
                                 <TabPanel>
                                     <div className="mt-2">
-                                        <DependenciesList index={indexOrError} history={history} location={location} />
+                                        <DependenciesList index={indexOrError} history={history} />
                                     </div>
                                 </TabPanel>
 
                                 <TabPanel>
                                     <div className="mt-2">
-                                        <DependentsList index={indexOrError} history={history} location={location} />
+                                        <DependentsList index={indexOrError} history={history} />
                                     </div>
                                 </TabPanel>
 
                                 <TabPanel>
                                     <div className="mt-2">
-                                        <RetentionList index={indexOrError} history={history} location={location} />
+                                        <RetentionList index={indexOrError} />
                                     </div>
                                 </TabPanel>
 

@@ -369,8 +369,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                             </div>
                         )}
                         queryConnection={queryConnection}
-                        history={history}
-                        location={location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyIndex />}

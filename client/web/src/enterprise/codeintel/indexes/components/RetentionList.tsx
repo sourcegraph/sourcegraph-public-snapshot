@@ -2,7 +2,6 @@ import { FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheck, mdiClose, mdiMapSearch } from '@mdi/js'
-import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -22,8 +21,6 @@ import {
 
 export interface RetentionListProps {
     index: PreciseIndexFields
-    history: H.History
-    location: H.Location
     queryPreciseIndexRetention?: typeof defaultQueryPreciseIndexRetention
 }
 
@@ -31,8 +28,6 @@ const NumReferencesToShow = 5
 
 export const RetentionList: FunctionComponent<RetentionListProps> = ({
     index,
-    history,
-    location,
     queryPreciseIndexRetention = defaultQueryPreciseIndexRetention,
 }) => {
     const apolloClient = useApolloClient()
@@ -68,8 +63,6 @@ export const RetentionList: FunctionComponent<RetentionListProps> = ({
             pluralNoun="policies"
             nodeComponent={RetentionMatchNode}
             queryConnection={queryRetentionPoliciesCallback}
-            history={history}
-            location={location}
             cursorPaging={true}
             useURLQuery={false}
             hideSearch={true}
@@ -112,13 +105,17 @@ const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }
                         .
                     </small>
                 </div>
+            ) : node.configurationPolicy ? (
+                // TODO - display protecting commits
+                <Link to={`../configuration/${node.configurationPolicy.id}`} className="p-0">
+                    <H3 className="m-0 d-block d-md-inline">{node.configurationPolicy.name}</H3>
+                </Link>
             ) : (
-                node.configurationPolicy && (
-                    // TODO - display protecting commits
-                    <Link to={`../configuration/${node.configurationPolicy.id}`} className="p-0">
-                        <H3 className="m-0 d-block d-md-inline">{node.configurationPolicy.name}</H3>
-                    </Link>
-                )
+                <>
+                    <p>matchType: {node.matchType}</p>
+                    <p>protectingCommits: {node.protectingCommits.join(',')}</p>
+                    <p>matches:{node.matches}</p>
+                </>
             )}
         </td>
 
@@ -157,7 +154,7 @@ const ReferenceList: FunctionComponent<ReferenceListProps> = ({ items, totalCoun
         </>
     ) : (
         <>
-            {[...items.slice(0, - 1), <>and {items[items.length - 1]}</>].map((item, index) => (
+            {[...items.slice(0, -1), <>and {items[items.length - 1]}</>].map((item, index) => (
                 <>
                     {index !== 0 && <>, </>}
                     {item}
