@@ -1217,6 +1217,96 @@ func encodeMetrics(t *testing.T, data ...*dto.MetricFamily) string {
 	return buf.String()
 }
 
+func TestHandler_HandleCanceledJobs(t *testing.T) {
+	tests := []struct {
+		name                 string
+		body                 string
+		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord])
+		expectedStatusCode   int
+		expectedResponseBody string
+		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord])
+	}{
+		{
+			name: "Cancel Jobs",
+			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
+			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: "[42,7]",
+			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, store.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name: "Invalid worker hostname",
+			body: `{"knownJobIds": [42,7], "executorName": ""}`,
+			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
+			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, mockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name: "Failed to cancel Jobs",
+			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
+			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"dbworkerstore.CanceledJobs: failed"}`,
+			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockStore := workerstoremocks.NewMockStore[testRecord]()
+
+			h := handler.NewHandler(
+				database.NewMockExecutorStore(),
+				executor.NewMockJobTokenStore(),
+				metricsstore.NewMockDistributedStore(),
+				handler.QueueHandler[testRecord]{Store: mockStore},
+			)
+
+			router := mux.NewRouter()
+			router.HandleFunc("/{queueName}", h.HandleCanceledJobs)
+
+			req, err := http.NewRequest(http.MethodPost, "/test", strings.NewReader(test.body))
+			require.NoError(t, err)
+
+			rw := httptest.NewRecorder()
+
+			if test.mockFunc != nil {
+				test.mockFunc(mockStore)
+			}
+
+			router.ServeHTTP(rw, req)
+
+			assert.Equal(t, test.expectedStatusCode, rw.Code)
+
+			b, err := io.ReadAll(rw.Body)
+			require.NoError(t, err)
+
+			if len(test.expectedResponseBody) > 0 {
+				assert.JSONEq(t, test.expectedResponseBody, string(b))
+			} else {
+				assert.Empty(t, string(b))
+			}
+
+			if test.assertionFunc != nil {
+				test.assertionFunc(t, mockStore)
+			}
+		})
+	}
+}
+
 type testRecord struct {
 	id int
 }
@@ -1225,12 +1315,4 @@ func (r testRecord) RecordID() int { return r.id }
 
 func newIntPtr(i int) *int {
 	return &i
-}
-
-func newMetricsTypePtr(val dto.MetricType) *dto.MetricType {
-	return &val
-}
-
-func newStringPtr(val string) *string {
-	return &val
 }
