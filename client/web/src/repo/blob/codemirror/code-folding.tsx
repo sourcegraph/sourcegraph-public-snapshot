@@ -131,7 +131,9 @@ export function codeFoldingExtension(): Extension {
             markerDOM(open: boolean): HTMLElement {
                 const container = document.createElement('div')
                 const root = createRoot(container)
-                root.render(<Icon svgPath={open ? mdiMenuDown : mdiMenuRight} className="fold-icon" />)
+                root.render(
+                    <Icon aria-hidden={true} svgPath={open ? mdiMenuDown : mdiMenuRight} className="fold-icon" />
+                )
                 return container
             },
         }),
