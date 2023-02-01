@@ -63,7 +63,7 @@ export const RetentionList: FunctionComponent<RetentionListProps> = ({
                     </tr>
                 </thead>
             )}
-            listClassName={'table mb-3 bt-0'}
+            listClassName="table mb-3 bt-0"
             noun="policy"
             pluralNoun="policies"
             nodeComponent={RetentionMatchNode}
@@ -157,7 +157,7 @@ const ReferenceList: FunctionComponent<ReferenceListProps> = ({ items, totalCoun
         </>
     ) : (
         <>
-            {[...items.slice(0, items.length - 1), <>and {items[items.length - 1]}</>].map((item, index) => (
+            {[...items.slice(0, - 1), <>and {items[items.length - 1]}</>].map((item, index) => (
                 <>
                     {index !== 0 && <>, </>}
                     {item}

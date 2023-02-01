@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
+import { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
@@ -13,12 +14,12 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
 import { PreciseIndexFields } from '../../../../graphql-operations'
-import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
-import { ProjectDescription } from '../components/ProjectDescription'
 import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 
+import { PreciseIndexLastUpdated } from './CodeIntelLastUpdated'
+import { ProjectDescription } from './ProjectDescription'
+
 import styles from './Dependencies.module.scss'
-import { Observable } from 'rxjs'
 
 export interface DependencyListProps {
     index: PreciseIndexFields
@@ -126,6 +127,7 @@ const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProp
                 history.push(`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`)
             }
         }}
+        aria-hidden={true}
     >
         <div>
             <H3 className="m-0 mb-1">

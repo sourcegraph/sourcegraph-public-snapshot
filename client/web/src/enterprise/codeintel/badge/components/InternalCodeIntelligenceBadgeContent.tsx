@@ -6,7 +6,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { MenuDivider, Code, H3, Link } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
-import { CodeIntelIndexer } from '../../shared/components/CodeIntelIndexer'
 import { UseCodeIntelStatusPayload } from '../hooks/useCodeIntelStatus'
 
 import { UploadOrIndexMetaTable } from './UploadOrIndexMetaTable'

@@ -1,6 +1,7 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps, useLocation } from 'react-router'
@@ -38,6 +39,7 @@ import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
 import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
+import { EnqueueForm } from '../components/EnqueueForm'
 import { ProjectDescription } from '../components/ProjectDescription'
 import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
 import { queryPreciseIndexes as defaultQueryPreciseIndexes, statesFromString } from '../hooks/queryPreciseIndexes'
@@ -46,9 +48,7 @@ import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../ho
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
 import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 
-import { EnqueueForm } from '../components/EnqueueForm'
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
-import { mdiMapSearch } from '@mdi/js'
 
 export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -182,14 +182,14 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 })
             )
         },
-        [queryPreciseIndexes, apolloClient]
+        [repo?.id, queryPreciseIndexes, apolloClient]
     )
 
-    const onRawDelete = () => {
+    const onRawDelete = async (): Promise<void> => {
         if (selection === 'all') {
             if (args !== undefined && confirm(`Delete ${totalCount} indexes?`)) {
                 const typedStates = statesFromString(args?.states)
-                return handleDeletePreciseIndexes({
+                await handleDeletePreciseIndexes({
                     variables: {
                         repo: args.repo ?? null,
                         query: args.query ?? null,
@@ -200,10 +200,10 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 })
             }
 
-            return Promise.resolve()
+            return
         }
 
-        return Promise.all(
+        await Promise.all(
             [...selection].map(id =>
                 handleDeletePreciseIndex({
                     variables: { id },
@@ -213,11 +213,11 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         )
     }
 
-    const onRawReindex = () => {
+    const onRawReindex = async (): Promise<void> => {
         if (selection === 'all') {
             if (args !== undefined && confirm(`Mark ${totalCount} indexes as replaceable by auto-indexing?`)) {
                 const typedStates = statesFromString(args?.states)
-                return handleReindexPreciseIndexes({
+                await handleReindexPreciseIndexes({
                     variables: {
                         repo: args.repo ?? null,
                         query: args.query ?? null,
@@ -228,10 +228,10 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                 })
             }
 
-            return Promise.resolve()
+            return
         }
 
-        return Promise.all(
+        await Promise.all(
             [...selection].map(id =>
                 handleReindexPreciseIndex({
                     variables: { id },
@@ -241,8 +241,14 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
         )
     }
 
-    const onDelete = () => onRawDelete().then(() => refresh.next())
-    const onReindex = () => onRawReindex().then(() => refresh.next())
+    const onDelete = async (): Promise<void> => {
+        await onRawDelete()
+        refresh.next()
+    }
+    const onReindex = async (): Promise<void> => {
+        await onRawReindex()
+        refresh.next()
+    }
 
     return (
         <div>
@@ -385,8 +391,12 @@ interface IndexNodeProps {
 
 const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, onCheckboxToggle, history }) => (
     <>
-        <div className={classNames(styles.grid, 'px-4')} onClick={() => history.push(`./indexes/${node.id}`)}>
-            <div className="px-3 py-4" onClick={event => event.stopPropagation()}>
+        <div
+            className={classNames(styles.grid, 'px-4')}
+            onClick={() => history.push(`./indexes/${node.id}`)}
+            aria-hidden={true}
+        >
+            <div className="px-3 py-4" onClick={event => event.stopPropagation()} aria-hidden={true}>
                 <Checkbox
                     label=""
                     id="disabledFieldsetCheck"
