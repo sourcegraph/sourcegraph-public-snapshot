@@ -169,9 +169,9 @@ func (r *packageRepoReferenceVersionResolver) Version() string {
 func dependencyRepoToRepoName(dep dependencies.PackageRepoReference) (repoName api.RepoName, _ error) {
 	switch dep.Scheme {
 	case "python":
-		repoName = reposource.NewPythonVersionedPackage(dep.Name, "").RepoName()
+		repoName = reposource.ParsePythonPackageFromName(dep.Name).RepoName()
 	case "scip-ruby":
-		repoName = reposource.NewRubyVersionedPackage(dep.Name, "").RepoName()
+		repoName = reposource.ParseRubyPackageFromName(dep.Name).RepoName()
 	case "semanticdb":
 		pkg, err := reposource.ParseMavenPackageFromName(dep.Name)
 		if err != nil {
