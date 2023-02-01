@@ -24,7 +24,7 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 interface Props
     extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
-        Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
+        Pick<RouteComponentProps<{}>, 'match'>,
         TelemetryProps {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
@@ -44,8 +44,6 @@ interface Props
  */
 export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    history,
-    location,
     match,
     authenticatedUser,
     user,
@@ -108,8 +106,6 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                     updates={accessTokenUpdates}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={history}
-                    location={location}
                     emptyElement={
                         <Text alignment="center" className="text-muted w-100 mb-0">
                             You don't have any access tokens.

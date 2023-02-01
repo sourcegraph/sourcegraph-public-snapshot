@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import * as H from 'history'
 import { isEqual, uniq } from 'lodash'
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -34,7 +35,7 @@ import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
  * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.
  */
 interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, ConnectionFormProps {
-    history: H.History
+    navigate: NavigateFunction
     location: H.Location
 
     /** CSS class name for the root element. */
@@ -141,6 +142,15 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
     visible?: number
 }
 
+export function FilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Connection<N>>(
+    props: Omit<FilteredConnectionProps<C, N, NP, HP>, 'location' | 'navigate'>
+): JSX.Element | null {
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    return <InnerFilteredConnection<N, NP, HP, C> {...props} location={location} navigate={navigate} />
+}
+
 /**
  * Displays a collection of items with filtering and pagination. It is called
  * "connection" because it is intended for use with GraphQL, which calls it that
@@ -151,12 +161,10 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
  * @template HP Props passed to `headComponent` in addition to `{ nodes: N[]; totalCount?: number | null }`.
  * @template C The GraphQL connection type, such as `GQL.IRepositoryConnection`.
  */
-export class FilteredConnection<
-    N,
-    NP = {},
-    HP = {},
-    C extends Connection<N> = Connection<N>
-> extends React.PureComponent<FilteredConnectionProps<C, N, NP, HP>, FilteredConnectionState<C, N>> {
+class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Connection<N>> extends React.PureComponent<
+    FilteredConnectionProps<C, N, NP, HP>,
+    FilteredConnectionState<C, N>
+> {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
         useURLQuery: true,
@@ -365,12 +373,17 @@ export class FilteredConnection<
                             oldParams.sort()
 
                             if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-                                this.props.history.replace({
-                                    search: searchFragment,
-                                    hash: this.props.location.hash,
-                                    // Do not throw away flash messages
-                                    state: this.props.location.state,
-                                })
+                                this.props.navigate(
+                                    {
+                                        search: searchFragment,
+                                        hash: this.props.location.hash,
+                                    },
+                                    {
+                                        replace: true,
+                                        // Do not throw away flash messages
+                                        state: this.props.location.state,
+                                    }
+                                )
                             }
                         }
                         if (this.props.onUpdate) {
@@ -579,7 +592,6 @@ export class FilteredConnection<
                             noShowMore={this.props.noShowMore}
                             noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
                             onShowMore={this.onClickShowMore}
-                            location={this.props.location}
                             emptyElement={this.props.emptyElement}
                             totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                             withCenteredSummary={this.props.withCenteredSummary}

@@ -10,3 +10,4 @@ export type {
 } from './suggestionsExtension'
 export { getEditorConfig } from './suggestionsExtension'
 export * from './optionRenderer'
+export * from './utils'

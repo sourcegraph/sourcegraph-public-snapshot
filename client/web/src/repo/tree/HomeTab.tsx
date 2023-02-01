@@ -269,7 +269,6 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                     | 'wrapperElement'
                 >
             >
-                location={props.location}
                 className="mt-2 p0 m-0"
                 listClassName="list-group list-group-flush"
                 noun="commit in this tree"

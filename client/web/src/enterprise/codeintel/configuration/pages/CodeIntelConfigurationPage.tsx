@@ -73,9 +73,7 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     telemetryService: TelemetryService
 }
 
-export const CodeIntelConfigurationPage: FunctionComponent<
-    React.PropsWithChildren<CodeIntelConfigurationPageProps>
-> = ({
+export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
     authenticatedUser,
     queryPolicies = defaultQueryPolicies,
     repo,
@@ -170,8 +168,6 @@ export const CodeIntelConfigurationPage: FunctionComponent<
                     nodeComponent={PoliciesNode}
                     nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
                     queryConnection={queryPoliciesCallback}
-                    history={history}
-                    location={props.location}
                     cursorPaging={true}
                     filters={filters}
                     inputClassName="ml-2 flex-1"
@@ -210,9 +206,12 @@ interface PoliciesNodeProps {
     indexingEnabled?: boolean
 }
 
-const PoliciesNode: FunctionComponent<
-    React.PropsWithChildren<PoliciesNodeProps & { node: CodeIntelligenceConfigurationPolicyFields }>
-> = ({ node: policy, isDeleting, onDelete, indexingEnabled = false }) => (
+const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligenceConfigurationPolicyFields }> = ({
+    node: policy,
+    isDeleting,
+    onDelete,
+    indexingEnabled = false,
+}) => (
     <>
         <span className={styles.separator} />
 

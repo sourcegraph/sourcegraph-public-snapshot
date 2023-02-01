@@ -159,11 +159,22 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	}
 
 	sort.Slice(potentialMatches, func(i, j int) bool {
+		// Sort implicit policy at the top
 		if potentialMatches[i].ConfigurationPolicy == nil {
 			return true
 		} else if potentialMatches[j].ConfigurationPolicy == nil {
 			return false
 		}
+
+		// Then sort matches first
+		if potentialMatches[i].Matched {
+			return !potentialMatches[j].Matched
+		}
+		if potentialMatches[j].Matched {
+			return false
+		}
+
+		// Then sort by ids
 		return potentialMatches[i].ID < potentialMatches[j].ID
 	})
 

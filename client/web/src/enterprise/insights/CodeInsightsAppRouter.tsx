@@ -63,7 +63,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
 
                 <Route
-                    path={['/insights/dashboards/:dashboardId?', '/insights/all', '/insights/about`']}
+                    path={['/insights/dashboards/:dashboardId?', '/insights/all', '/insights/about']}
                     render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
                             dashboardId={props.match.params.dashboardId}

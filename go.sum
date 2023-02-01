@@ -1238,7 +1238,6 @@ github.com/googleapis/gax-go/v2 v2.3.0/go.mod h1:b8LNqSzNabLiUpXKkY7HAR5jr6bIT99
 github.com/googleapis/gax-go/v2 v2.4.0/go.mod h1:XOTVJ59hdnfJLIP/dh8n5CGryZR2LxK9wbMD5+iXC6c=
 github.com/googleapis/gax-go/v2 v2.7.0 h1:IcsPKeInNvYi7eqSaDjiZqDDKu5rsmunY0Y1YupQSSQ=
 github.com/googleapis/gax-go/v2 v2.7.0/go.mod h1:TEop28CZZQ2y+c0VxMUmu1lV+fQx57QpBWsYpwqHJx8=
-github.com/googleapis/gnostic v0.5.5 h1:9fHAtK0uDfpveeqqo1hkEZJcFvYXAiCN3UutL8F9xHw=
 github.com/googleapis/gnostic v0.5.5/go.mod h1:7+EbHbldMins07ALC74bsA81Ovc97DwqyJO1AENw9kA=
 github.com/googleapis/go-type-adapters v1.0.0/go.mod h1:zHW75FOG2aur7gAO2B+MLby+cLsWGBF62rFAi7WjWO4=
 github.com/googleapis/google-cloud-go-testing v0.0.0-20200911160855-bcd43fbb19e8/go.mod h1:dvDLG8qkwmyD9a/MJJN3XJcT3xFxOKAvTZGvuZmac9g=
@@ -2143,8 +2142,8 @@ github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef h1:fWPxLkDObzzK
 github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef/go.mod h1:ymcTuv+6D5OEZB/84TRPQvUpDK7v7zXnWBJl79hb7ns=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230127201130-f6d0aa0032d5 h1:MEvC8UWR19i4EQWMdN4AYNCkubEZYn86MPZ+ENp6JDI=
-github.com/sourcegraph/zoekt v0.0.0-20230127201130-f6d0aa0032d5/go.mod h1:EgK9KLlvkj/fXQYqnhlh8JuMDQxmlyhRSLchbbH/BJo=
+github.com/sourcegraph/zoekt v0.0.0-20230201120440-2845327550c5 h1:4rjMUDipqCd15HbuFuB17tt42otd0WxH+rFs0pPb8mc=
+github.com/sourcegraph/zoekt v0.0.0-20230201120440-2845327550c5/go.mod h1:EgK9KLlvkj/fXQYqnhlh8JuMDQxmlyhRSLchbbH/BJo=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
