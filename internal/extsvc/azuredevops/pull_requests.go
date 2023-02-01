@@ -155,7 +155,7 @@ func (c *Client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 	return pr, nil
 }
 
-// CompletePullRequest abandons (closes) the specified PR, returns the updated PR. The PullRequestUpdateInput input just needs to specify the LastMergeSourceCommit.ID.
+// CompletePullRequest completes(merges) the specified PR, returns the updated PR.
 func (c *Client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommitRef) (PullRequest, error) {
 	queryParams := make(url.Values)
 	queryParams.Set("api-version", apiVersion)
