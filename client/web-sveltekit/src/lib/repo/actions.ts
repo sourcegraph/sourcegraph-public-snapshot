@@ -7,11 +7,15 @@ interface Action {
     component: ComponentType
 }
 
+export interface ActionStore extends Readable<Action[]> {
+    setAction(action: Action): void
+}
+
 /**
  * Creates a context via which repo subpages can add "actions" to the shared
  * header.
  */
-export function createActionContext(): Readable<Action[]> & { setAction(action: Action): void } {
+export function createActionStore(): ActionStore {
     const actions = writable<Action[]>([])
     const sortedActions = derived(actions, $actions => [...$actions].sort((a, b) => a.priority - b.priority))
 

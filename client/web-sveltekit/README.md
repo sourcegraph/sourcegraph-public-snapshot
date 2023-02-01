@@ -37,7 +37,7 @@ packages:
   specific features during module initialization, can even cause the dev build
   to fail.
 - Reusing code is great, but also potentially exposes someone who modifies the
-  resused code to this package and therefore Svelte (if the reused code changes
+  reused code to this package and therefore Svelte (if the reused code changes
   in an incompatible way, this package needs to be updated too). To limit the
   exposure, a module of any `@sourcegraph/*` package should only be imported
   once into this package and only into a TypeScript file.
@@ -63,6 +63,12 @@ pnpm run format
 ```
 
 inside this directory.
+
+There is also the `pnpm run check` command which uses `svelte-check` to validate
+TypeScript, CSS, etc in Svelte components. This currently produces many errors
+because it also validates imported modules from other packages, and we are not
+explicitly marking type-only imports with `type` in other parts of the code
+base (which is required by this package).
 
 ## Production build
 

@@ -16,7 +16,7 @@
 
 <div class="content">
     <h1>
-        <Icon svgPath={mdiFolder} ariaLabel="" />
+        <Icon svgPath={mdiFolder} />
         <span class="ml-2">{$page.params.path}</span>
     </h1>
     <h2>Files and directories</h2>

@@ -9,9 +9,10 @@ export {
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 export {
+    type ContentMatch,
+    type Skipped,
     getFileMatchUrl,
     getRepositoryUrl,
-    type ContentMatch,
     aggregateStreamingSearch,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,

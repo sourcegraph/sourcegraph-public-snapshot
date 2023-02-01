@@ -1,7 +1,7 @@
 <script lang="ts">
     import { setContext } from 'svelte'
 
-    import {logoLight, logoDark} from '$lib/images'
+    import { logoLight, logoDark } from '$lib/images'
     import SearchBox from '$lib/search/SearchBox.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'

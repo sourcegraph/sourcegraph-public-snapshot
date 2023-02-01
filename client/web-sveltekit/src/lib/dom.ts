@@ -6,7 +6,7 @@ import type { ActionReturn } from 'svelte/action'
  */
 export function onClickOutside(
     node: HTMLElement
-): ActionReturn<void, { 'on:click-outside': (event: CustomEvent<EventTarget>) => void }> {
+): ActionReturn<void, { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }> {
     function handler(event: MouseEvent): void {
         if (event.target && !node.contains(event.target as HTMLElement)) {
             node.dispatchEvent(new CustomEvent('click-outside', { detail: event.target }))

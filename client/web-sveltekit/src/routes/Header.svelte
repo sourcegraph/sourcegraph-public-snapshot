@@ -1,7 +1,7 @@
 <script lang="ts">
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
-    import {mark} from '$lib/images'
+    import { mark } from '$lib/images'
     import UserAvatar from '$lib/UserAvatar.svelte'
     import type { AuthenticatedUser } from '$lib/shared'
     import { PUBLIC_SG_ENTERPRISE } from '$env/static/public'

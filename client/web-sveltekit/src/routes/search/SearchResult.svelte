@@ -25,7 +25,7 @@
     <div class="header">
         {#if icon.svgPath}
             <Tooltip tooltip={icon.hostName}>
-                <Icon class="text-muted" ariaLabel={icon.hostName} svgPath={icon.svgPath} inline />{' '}
+                <Icon class="text-muted" aria-label={icon.hostName} svgPath={icon.svgPath} inline />{' '}
             </Tooltip>
         {/if}
         <div class="title">

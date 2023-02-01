@@ -142,7 +142,7 @@
         </div>
     </Popover>
     <button class="submit">
-        <Icon ariaLabel="search" svgPath={mdiMagnify} inline />
+        <Icon aria-label="search" svgPath={mdiMagnify} inline />
     </button>
 </form>
 

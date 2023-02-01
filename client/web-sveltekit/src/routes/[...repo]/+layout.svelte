@@ -1,19 +1,11 @@
 <script lang="ts">
-    import {
-        mdiAccount,
-        mdiChevronRight,
-        mdiCodeTags,
-        mdiSourceBranch,
-        mdiSourceCommit,
-        mdiSourceRepository,
-        mdiTag,
-    } from '@mdi/js'
+    import { mdiAccount, mdiCodeTags, mdiSourceBranch, mdiSourceCommit, mdiSourceRepository, mdiTag } from '@mdi/js'
     import { setContext } from 'svelte'
 
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import { displayRepoName, isRepoNotFoundErrorLike } from '$lib/shared'
-    import { createActionContext } from '$lib/repo/actions'
+    import { createActionStore, type ActionStore } from '$lib/repo/actions'
     import { getRevisionLabel, navFromPath } from '$lib/repo/utils'
     import Icon from '$lib/Icon.svelte'
 
@@ -37,8 +29,8 @@
     }
 
     // Sets up a context for other components to add add buttons to the header
-    const repoActions = createActionContext()
-    setContext('repo-actions', repoActions)
+    const repoActions = createActionStore()
+    setContext<ActionStore>('repo-actions', repoActions)
 
     $: viewerCanAdminister = data.user?.siteAdmin ?? false
     $: ({ repo, path } = $page.params)

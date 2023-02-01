@@ -28,7 +28,9 @@
         trigger = node
     }
 
-    $: instance = isOpen && trigger && content ? createInstance(trigger, content) : null
+    $: if (isOpen && trigger && content) {
+        createInstance(trigger, content)
+    }
 </script>
 
 <slot {toggle} {registerTrigger} />

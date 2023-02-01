@@ -8,7 +8,7 @@ import { getWebGraphQLClient } from '$lib/web'
 export interface SourcegraphContext {
     settings: Readable<SettingsCascade['final'] | null>
     user: Readable<AuthenticatedUser | null>
-    platformContext: Readable<PlatformContext | null>
+    platformContext: Readable<Pick<PlatformContext, 'requestGraphQL'>>
     isLightTheme: Readable<boolean>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
 }
@@ -36,7 +36,7 @@ export const settings = {
 }
 
 export const platformContext = {
-    subscribe(subscriber: (platformContext: PlatformContext | null) => void) {
+    subscribe(subscriber: (platformContext: Pick<PlatformContext, 'requestGraphQL'>) => void) {
         const { platformContext } = getStores()
         return platformContext.subscribe(subscriber)
     },

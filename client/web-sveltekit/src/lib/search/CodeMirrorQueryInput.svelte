@@ -46,11 +46,7 @@
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 globbing: false,
                 isSourcegraphDotCom: false,
-                history: {
-                    push(url) {
-                        goto(url.toString())
-                    },
-                },
+                navigate: url => goto(url.toString()),
                 applyOnEnter: true,
             }),
         ]

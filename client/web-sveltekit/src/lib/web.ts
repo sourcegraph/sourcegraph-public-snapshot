@@ -15,6 +15,7 @@ export { parseSearchURL } from '@sourcegraph/web/src/search/index'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 export type { ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
+export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
 
 // Copy of non-reusable code
 

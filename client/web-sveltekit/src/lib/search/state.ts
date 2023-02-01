@@ -3,6 +3,7 @@ import { writable, type Readable } from 'svelte/store'
 import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { buildSearchURLQuery, type SettingsCascade } from '$lib/shared'
+import { defaultSearchModeFromSettings } from '$lib/web'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
 export enum SearchMode {
@@ -54,7 +55,11 @@ export class QueryState {
 
     public get searchMode(): SearchMode {
         return (
-            this.options.searchMode ?? (this.settings?.['search.defaultMode'] as SearchMode) ?? this.defaultSearchMode
+            // {final: this.settings, subjects} is a workaround to make our
+            // settings representation work with defaultSearchModeFromSettings
+            this.options.searchMode ??
+            (this.settings ? defaultSearchModeFromSettings({ final: this.settings, subjects: [] }) : null) ??
+            this.defaultSearchMode
         )
     }
 

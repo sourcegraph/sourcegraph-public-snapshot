@@ -14,7 +14,7 @@ export function fetchFileRangeMatches(args: {
     result: Result
     format?: HighlightResponseFormat
     ranges: HighlightLineRange[]
-    platformContext: PlatformContext
+    platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<string[][]> {
     return fetchHighlightedFileLineRanges(
         {

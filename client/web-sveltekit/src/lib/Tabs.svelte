@@ -32,7 +32,7 @@
         selectedTab: derived([tabs, selectedTab], ([$tabs, $selectedTab]) => $tabs[$selectedTab]?.id ?? null),
         register(tab: Tab) {
             tabs.update(tabs => {
-                if (tabs.includes(existingTab => existingTab.id === tab.id)) {
+                if (tabs.some(existingTab => existingTab.id === tab.id)) {
                     return tabs
                 }
                 return [...tabs, tab]

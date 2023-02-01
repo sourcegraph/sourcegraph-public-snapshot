@@ -6,7 +6,7 @@
     import Popover from '$lib/Popover.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import { limitHit, sortBySeverity } from '$lib/branded'
-    import type { Progress } from '$lib/shared'
+    import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
 
     export let progress: Progress
@@ -32,7 +32,7 @@
     $: hasSkippedItems = progress.skipped.length > 0
     $: sortedItems = sortBySeverity(progress.skipped)
     $: openItems = sortedItems.map((_, index) => index === 0)
-    $: suggestedItems = sortedItems.filter(skipped => skipped.suggested)
+    $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
 </script>
 

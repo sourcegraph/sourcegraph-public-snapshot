@@ -16,7 +16,8 @@ export const ssr = false
 
 if (browser) {
     // Necessary to make authenticated GrqphQL requests work
-    globalThis.context = {
+    // No idea why TS picks up Mocha.SuiteFunction for this
+    window.context = {
         xhrHeaders: {
             'X-Requested-With': 'Sourcegraph',
         },

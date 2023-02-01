@@ -22,7 +22,7 @@
     function fetchHighlightedSymbolMatchLineRanges(startLine: number, endLine: number) {
         return fetchFileRangeMatches({
             result,
-            platformContext: $platformContext!,
+            platformContext: $platformContext,
             format: HighlightResponseFormat.HTML_HIGHLIGHT,
             ranges: result.symbols.map(symbol => ({
                 startLine: symbol.line - 1,

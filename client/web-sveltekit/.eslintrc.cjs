@@ -1,5 +1,6 @@
 const baseConfig = require('../../.eslintrc')
 module.exports = {
+    root: true,
     extends: '../../.eslintrc.js',
     parserOptions: {
         ...baseConfig.parserOptions,

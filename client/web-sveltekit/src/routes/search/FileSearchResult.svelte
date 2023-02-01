@@ -79,7 +79,7 @@
             }}
             class:expanded
         >
-            <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} ariaLabel="" inline />
+            <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
             <span>{expandButtonText}</span>
         </button>
     {/if}
