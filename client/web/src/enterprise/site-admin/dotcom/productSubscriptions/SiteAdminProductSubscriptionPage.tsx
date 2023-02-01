@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
@@ -45,14 +43,14 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props {
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -61,14 +59,11 @@ const LOADING = 'loading' as const
  * Displays a product subscription in the site admin area.
  */
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
+    const navigate = useNavigate()
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
@@ -104,14 +99,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     switchMap(() =>
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
-                            tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
                 )
             },
-            [history, productSubscription]
+            [navigate, productSubscription]
         )
     )
 

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { isEqual } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -54,6 +53,7 @@ import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -109,7 +109,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
     </li>
 )
 
-interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+interface Props extends TelemetryProps {}
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -218,10 +218,11 @@ const FILTERS: FilteredConnectionFilter[] = [
  * A page displaying the repositories on this site.
  */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     telemetryService,
 }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
@@ -415,14 +416,19 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
         oldParams.sort()
 
         if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-            history.replace({
-                search: searchFragment,
-                hash: location.hash,
-                // Do not throw away flash messages
-                state: location.state,
-            })
+            navigate(
+                {
+                    search: searchFragment,
+                    hash: location.hash,
+                },
+                {
+                    replace: true,
+                    // Do not throw away flash messages
+                    state: location.state,
+                }
+            )
         }
-    }, [filters, filterValues, searchQuery, location, history])
+    }, [filters, filterValues, searchQuery, location, navigate])
 
     const variables = useMemo<RepositoriesVariables>(() => {
         const args = buildFilterArgs(filterValues)

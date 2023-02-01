@@ -1,6 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
-import * as H from 'history'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -35,7 +34,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_BY_ID),
                 variables: {
-                    id: '1',
+                    id: '',
                 },
             },
             result: {
@@ -53,7 +52,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
                     after: null,
                     onlyErrors: false,
                     onlyUnmatched: false,
-                    webhookID: '1',
+                    webhookID: '',
                 },
             },
             result: {
@@ -111,12 +110,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
         <WebStory>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
-                    <SiteAdminWebhookPage
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        match={args.match}
-                        history={H.createMemoryHistory()}
-                        location={{} as any}
-                    />
+                    <SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />
                 </MockedTestProvider>
             )}
         </WebStory>
@@ -124,13 +118,6 @@ export const SiteAdminWebhookPageStory: Story = args => {
 }
 
 SiteAdminWebhookPageStory.storyName = 'Incoming webhook'
-SiteAdminWebhookPageStory.args = {
-    match: {
-        params: {
-            id: '1',
-        },
-    },
-}
 
 export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
     const buildWebhookLogsMock = new WildcardMockLink([
@@ -138,7 +125,7 @@ export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_BY_ID),
                 variables: {
-                    id: '1',
+                    id: '',
                 },
             },
             result: {
@@ -168,7 +155,7 @@ export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_BY_ID_LOG_PAGE_HEADER),
                 variables: {
-                    webhookID: '1',
+                    webhookID: '',
                 },
             },
             result: {
@@ -186,12 +173,7 @@ export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
         <WebStory>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
-                    <SiteAdminWebhookPage
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        match={args.match}
-                        history={H.createMemoryHistory()}
-                        location={{} as any}
-                    />
+                    <SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />
                 </MockedTestProvider>
             )}
         </WebStory>
@@ -199,13 +181,6 @@ export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
 }
 
 SiteAdminWebhookPageWithoutLogsStory.storyName = 'Incoming webhook without logs'
-SiteAdminWebhookPageWithoutLogsStory.args = {
-    match: {
-        params: {
-            id: '1',
-        },
-    },
-}
 
 function buildWebhookLogs(): WebhookLogFields[] {
     const logs: WebhookLogFields[] = []

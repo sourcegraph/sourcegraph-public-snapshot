@@ -1,7 +1,7 @@
 import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Switch } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -20,25 +20,25 @@ const GlobalExecutorSecretsListPage = lazyComponent<
     'GlobalExecutorSecretsListPage'
 >(() => import('./secrets/ExecutorSecretsListPage'), 'GlobalExecutorSecretsListPage')
 
-export interface ExecutorsSiteAdminAreaProps<RouteProps extends {} = {}> extends RouteComponentProps<RouteProps> {}
+interface Props {}
 
 /** The page area for all executors settings in site-admin. */
-export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<ExecutorsSiteAdminAreaProps>> = ({
-    match,
-    ...outerProps
-}) => (
-    <>
-        <Switch>
-            <Route render={props => <ExecutorsListPage {...outerProps} {...props} />} path={match.url} exact={true} />
-            <Route
-                path={`${match.url}/secrets`}
-                render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
-                exact={true}
-            />
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
-    </>
-)
+export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ ...outerProps }) => {
+    const url = '/site-admin/executors'
+    return (
+        <>
+            <Switch>
+                <Route render={props => <ExecutorsListPage {...outerProps} {...props} />} path={url} exact={true} />
+                <Route
+                    path={`${url}/secrets`}
+                    render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
+                    exact={true}
+                />
+                <Route component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
+        </>
+    )
+}
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />

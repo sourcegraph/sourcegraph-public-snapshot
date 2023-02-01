@@ -1,6 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -57,12 +56,7 @@ export const WebhookCreatePage: Story = () => {
         <WebStory>
             {() => (
                 <MockedTestProvider link={mocks}>
-                    <SiteAdminWebhookCreatePage
-                        match={{} as any}
-                        history={H.createMemoryHistory()}
-                        location={{} as any}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
+                    <SiteAdminWebhookCreatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
                 </MockedTestProvider>
             )}
         </WebStory>
@@ -85,12 +79,7 @@ export const WebhookCreatePageWithError: Story = () => {
         <WebStory>
             {() => (
                 <MockedTestProvider mocks={mockedResponse}>
-                    <SiteAdminWebhookCreatePage
-                        match={{} as any}
-                        history={H.createMemoryHistory()}
-                        location={{} as any}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
+                    <SiteAdminWebhookCreatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
                 </MockedTestProvider>
             )}
         </WebStory>

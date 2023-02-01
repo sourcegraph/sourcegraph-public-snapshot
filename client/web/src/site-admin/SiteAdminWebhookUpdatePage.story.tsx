@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -69,7 +68,7 @@ export const WebhookUpdatePage: Story = args => (
                             request: {
                                 query: getDocumentNode(WEBHOOK_BY_ID),
                                 variables: {
-                                    id: '1',
+                                    id: '',
                                 },
                             },
                             result: {
@@ -85,22 +84,10 @@ export const WebhookUpdatePage: Story = args => (
                     ])
                 }
             >
-                <SiteAdminWebhookUpdatePage
-                    match={args.match}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>
 )
 
 WebhookUpdatePage.storyName = 'Update webhook'
-WebhookUpdatePage.args = {
-    match: {
-        params: {
-            id: '1',
-        },
-    },
-}

@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react'
 
 import { mdiCog } from '@mdi/js'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,10 +14,12 @@ import { generateSecret } from '../../util/security'
 import { CREATE_OUTBOUND_WEBHOOK } from './backend'
 import { EventTypes } from './create-edit/EventTypes'
 import { SubmitButton } from './create-edit/SubmitButton'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
-export interface CreatePageProps extends TelemetryProps, RouteComponentProps<{}> {}
+export interface CreatePageProps extends TelemetryProps {}
 
-export const CreatePage: FC<CreatePageProps> = ({ telemetryService, history }) => {
+export const CreatePage: FC<CreatePageProps> = ({ telemetryService }) => {
+    const navigate = useNavigate()
     useEffect(() => {
         telemetryService.logPageView('OutboundWebhooksCreatePage')
     }, [telemetryService])
@@ -40,7 +41,7 @@ export const CreatePage: FC<CreatePageProps> = ({ telemetryService, history }) =
                 url,
             },
         },
-        onCompleted: () => history.push('/site-admin/outbound-webhooks'),
+        onCompleted: () => navigate('/site-admin/outbound-webhooks'),
     })
 
     return (

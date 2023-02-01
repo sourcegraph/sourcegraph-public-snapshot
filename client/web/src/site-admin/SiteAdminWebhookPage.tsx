@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react'
 
 import { mdiCog, mdiDelete } from '@mdi/js'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -39,17 +38,15 @@ import { WebhookInformation } from './WebhookInformation'
 import { WebhookLogNode } from './webhooks/WebhookLogNode'
 
 import styles from './SiteAdminWebhookPage.module.scss'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
-export interface WebhookPageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
+export interface WebhookPageProps extends TelemetryProps {}
 
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
-    const {
-        match: {
-            params: { id },
-        },
-        telemetryService,
-        history,
-    } = props
+    const { telemetryService } = props
+
+    const { id = '' } = useParams<{ id: string }>()
+    const navigate = useNavigate()
 
     const [onlyErrors, setOnlyErrors] = useState(false)
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(id, 20, onlyErrors)
@@ -62,7 +59,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
         DeleteWebhookResult,
         DeleteWebhookVariables
-    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => history.push('/site-admin/webhooks') })
+    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => navigate('/site-admin/webhooks') })
 
     return (
         <Container>

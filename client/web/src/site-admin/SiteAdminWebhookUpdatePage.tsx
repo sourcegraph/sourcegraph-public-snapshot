@@ -1,7 +1,6 @@
 import { FC, useEffect } from 'react'
 
 import { mdiCog } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -12,19 +11,16 @@ import { PageTitle } from '../components/PageTitle'
 
 import { useWebhookQuery } from './backend'
 import { WebhookCreateUpdatePage } from './WebhookCreateUpdatePage'
+import { useParams } from 'react-router-dom-v5-compat'
 
-export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
+export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps {}
 
-export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({
-    match: {
-        params: { id },
-    },
-    telemetryService,
-    history,
-}) => {
+export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = ({ telemetryService }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhookUpdatePage')
     }, [telemetryService])
+
+    const { id = '' } = useParams<{ id: string }>()
 
     const { loading, data } = useWebhookQuery(id)
 
@@ -52,7 +48,7 @@ export const SiteAdminWebhookUpdatePage: FC<SiteAdminWebhookUpdatePageProps> = (
                         className="mb-3"
                         headingElement="h2"
                     />
-                    <WebhookCreateUpdatePage existingWebhook={webhook} history={history} />
+                    <WebhookCreateUpdatePage existingWebhook={webhook} />
                 </>
             )}
         </Container>

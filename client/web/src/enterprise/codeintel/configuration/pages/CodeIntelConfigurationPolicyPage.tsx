@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { ApolloError } from '@apollo/client'
 import { mdiDelete, mdiGraveStone } from '@mdi/js'
 import { debounce } from 'lodash'
-import { RouteComponentProps, useHistory, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
@@ -50,15 +50,13 @@ import {
     PREVIEW_GIT_OBJECT_FILTER,
 } from '../hooks/usePreviewGitObjectFilter'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 const DEBOUNCED_WAIT = 250
 
 const MS_IN_HOURS = 60 * 60 * 1000
 
-export interface CodeIntelConfigurationPolicyPageProps
-    extends RouteComponentProps<{ id: string }>,
-        ThemeProps,
-        TelemetryProps {
+export interface CodeIntelConfigurationPolicyPageProps extends ThemeProps, TelemetryProps {
     repo?: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
@@ -69,19 +67,19 @@ type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>
     [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
 }) => void
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
-    match: {
-        params: { id },
-    },
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
+> = ({
     repo,
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
 }) => {
+    const { id = '' } = useParams<{ id: string }>()
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation<{ message: string; modal: string }>()
 
     // Handle local policy state
@@ -104,20 +102,27 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
         return savePolicyConfiguration({ variables })
             .then(() =>
-                history.push({
-                    pathname: './',
-                    state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
-                })
+                navigate(
+                    {
+                        pathname: './',
+                    },
+                    {
+                        state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
+                    }
+                )
             )
             .catch((error: ApolloError) =>
-                history.push({
-                    state: {
-                        modal: 'ERROR',
-                        message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
-                    },
-                })
+                navigate(
+                    {},
+                    {
+                        state: {
+                            modal: 'ERROR',
+                            message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
+                        },
+                    }
+                )
             )
-    }, [policy, repo, savePolicyConfiguration, history])
+    }, [policy, repo, savePolicyConfiguration, navigate])
 
     const handleDelete = useCallback(
         async (id: string, name: string) => {
@@ -129,13 +134,17 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 variables: { id },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() =>
-                history.push({
-                    pathname: './',
-                    state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
-                })
+                navigate(
+                    {
+                        pathname: './',
+                    },
+                    {
+                        state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                    }
+                )
             )
         },
-        [policy, handleDeleteConfig, history]
+        [policy, handleDeleteConfig, navigate]
     )
 
     // Set initial policy state
@@ -277,7 +286,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         type="button"
                         className="ml-2"
                         variant="secondary"
-                        onClick={() => history.push('./')}
+                        onClick={() => navigate('./')}
                         disabled={isSaving}
                     >
                         Cancel

@@ -3,7 +3,6 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { gql, useMutation } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -38,18 +37,20 @@ import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
-export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentProps<{ name: string }>, TelemetryProps {
+export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
 
 export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
-> = ({ match: { params }, fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
-    const history = useHistory()
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
+    const { name = '' } = useParams<{ name: string }>()
+    const navigate = useNavigate()
     const productGitVersion = parseProductReference(productVersion)
-    const isCreateFeatureFlag = params.name === 'new'
+    const isCreateFeatureFlag = name === 'new'
 
     // Load the initial feature flag, unless we are creating a new feature flag.
     const featureFlagOrError = useObservable(
@@ -58,16 +59,16 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                 isCreateFeatureFlag
                     ? of(undefined)
                     : fetchFeatureFlags().pipe(
-                          map(flags => flags.find(flag => flag.name === params.name)),
+                          map(flags => flags.find(flag => flag.name === name)),
                           map(flag => {
                               if (flag === undefined) {
-                                  throw new Error(`Could not find feature flag with name '${params.name}'.`)
+                                  throw new Error(`Could not find feature flag with name '${name}'.`)
                               }
                               return flag
                           }),
                           catchError((error): [ErrorLike] => [asError(error)])
                       ),
-            [isCreateFeatureFlag, params.name, fetchFeatureFlags]
+            [isCreateFeatureFlag, name, fetchFeatureFlags]
         )
     )
 
@@ -127,7 +128,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                             ...flagValue,
                         },
                     }).then(() => {
-                        history.push(`./${flagName || 'new'}`)
+                        navigate(`./${flagName || 'new'}`)
                     })
                 }
             >
@@ -167,7 +168,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 ...flagValue,
                             },
                         }).then(() => {
-                            history.push(`./${flagName}`)
+                            navigate(`./${flagName}`)
                         })
                     }
                 >
@@ -190,7 +191,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 name: flagName,
                             },
                         }).then(() => {
-                            history.push('../')
+                            navigate('../')
                         })
                     }
                 >
@@ -236,7 +237,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
 
             <div className="mt-3">
                 {actions}
-                <Button type="button" className="ml-2" variant="secondary" onClick={() => history.push('../')}>
+                <Button type="button" className="ml-2" variant="secondary" onClick={() => navigate('../')}>
                     Cancel
                 </Button>
             </div>
