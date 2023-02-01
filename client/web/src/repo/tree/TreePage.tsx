@@ -288,6 +288,8 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         </>
     )
 
+    console.log('tree page', treeOrError)
+
     return (
         <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>

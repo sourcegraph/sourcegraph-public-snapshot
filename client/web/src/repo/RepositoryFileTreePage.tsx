@@ -30,10 +30,13 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
+    console.log('RepositoryFileTreePage')
     const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
     const { '*': filePath = '' } = useParams<{ '*': string }>()
+
+    console.log({ filePath, repo, maybeObjectType })
 
     // Redirect tree and blob routes pointing to the root to the repo page
     if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
@@ -67,6 +70,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
         const url = appendLineRangeQueryParameter(location.pathname + location.search, range ? `L${range}` : undefined)
         return <Navigate to={url + formatHash(hashParameters)} />
     }
+
+    console.log(objectType, resolvedRevision)
 
     return (
         <>

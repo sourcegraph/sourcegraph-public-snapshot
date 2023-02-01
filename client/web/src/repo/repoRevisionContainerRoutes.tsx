@@ -18,7 +18,7 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
 const routeToObjectType = {
     '/-/blob/*': 'blob',
     '/-/tree/*': 'tree',
-    '': undefined,
+    '*': undefined,
 } as const
 
 export const commitsPath = '/-/commits/*'

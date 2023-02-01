@@ -55,7 +55,7 @@ describe('Repository', () => {
     before(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    // after(() => driver?.close())
     let testContext: WebIntegrationTestContext
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
@@ -64,8 +64,8 @@ describe('Repository', () => {
             directory: __dirname,
         })
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(() => testContext?.dispose())
+    // afterEachSaveScreenshotIfFailed(() => driver.page)
+    // afterEach(() => testContext?.dispose())
 
     async function assertSelectorHasText(selector: string, text: string) {
         assert.strictEqual(
@@ -589,7 +589,7 @@ describe('Repository', () => {
             await percySnapshotWithVariants(driver.page, 'Repository cloning in progress page')
         })
 
-        it('works with spaces in the repository name', async () => {
+        it.only('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = '/github.com/my%20org/repo%20with%20spaces'

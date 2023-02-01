@@ -267,7 +267,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
+    const repoNameURL = '/' + encodeURIPathComponent(repoName)
 
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
@@ -276,8 +276,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         }
         const paths = [...repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
 
-        return paths.some(path => matchPath(location.pathname, { path: repoMatchURL + path }))
-    }, [repoContainerRoutes, repoMatchURL, location.pathname])
+        return paths.some(path => matchPath(location.pathname, { path: repoNameURL + path }))
+    }, [repoContainerRoutes, repoNameURL, location.pathname])
 
     if (isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)) {
         const viewerCanAdminister = !!authenticatedUser && authenticatedUser.siteAdmin
@@ -309,11 +309,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         useActionItemsBar,
     }
 
-    const repoRevisionContainerPaths = [
-        ...(rawRevision ? [{ path: `@${rawRevision}` }] : []), // must exactly match how the revision was encoded in the URL
-        ...repoRevisionContainerRoutes,
-    ].map(({ path }) => `${repoMatchURL}${path}/*`)
-
     const perforceCodeHostUrlToSwarmUrlMap =
         (props.settingsCascade.final &&
             !isErrorLike(props.settingsCascade.final) &&
@@ -326,6 +321,11 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         resolvedRevisionOrError,
         onDidUpdateExternalLinks: setExternalLinks,
     }
+
+    const repoRevisionContainerSplats = [
+        ...(rawRevision ? [repoNameURL + `@${rawRevision}/*`] : []), // must exactly match how the revision was encoded in the URL
+        repoNameURL + '/*',
+    ]
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
@@ -394,10 +394,10 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             <ErrorBoundary location={location}>
                 <Suspense fallback={null}>
                     <Routes>
-                        {repoRevisionContainerPaths.map(path => (
+                        {repoRevisionContainerSplats.map(splatPath => (
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={path}
+                                path={(console.log('RepoContainer splat path', splatPath), splatPath)}
                                 element={
                                     <RepoRevisionContainer
                                         {...repoRevisionContainerContext}
@@ -410,7 +410,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={repoMatchURL + path}
+                                path={repoNameURL + path}
                                 /**
                                  * `RepoContainerContextRoutes` depend on `repoOrError`. We render these routes only when
                                  * the `repoOrError` value is resolved.
