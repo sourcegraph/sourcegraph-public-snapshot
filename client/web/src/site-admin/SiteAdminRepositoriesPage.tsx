@@ -68,6 +68,8 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
         status = 'cloned'
     } else if (node.mirrorInfo.cloneInProgress) {
         status = 'cloning'
+    } else if (node.mirrorInfo.lastError) {
+        status = 'error'
     }
 
     return (
@@ -91,6 +93,12 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
                     </div>
                 </div>
+
+                {node.mirrorInfo.cloneInProgress && (
+                    <small className="ml-2 text-primary">
+                        <LoadingSpinner /> Cloning...
+                    </small>
+                )}
 
                 <div className="repository-node__actions">
                     {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
@@ -546,6 +554,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
             {children}
             <Container className="py-3 mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
+                {/* TODO: Refactor <ValueLegendList so loading spinner covers first value instead of dropping content down vert */}
                 {loading && !error && <LoadingSpinner />}
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
             </Container>

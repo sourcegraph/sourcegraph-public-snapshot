@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiCloudOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -14,11 +14,6 @@ export const RepoMirrorInfo: React.FunctionComponent<
     }>
 > = ({ mirrorInfo }) => (
     <>
-        {mirrorInfo.cloneInProgress && (
-            <small className="ml-2 text-success">
-                <LoadingSpinner /> Cloning
-            </small>
-        )}
         {!mirrorInfo.cloneInProgress && !mirrorInfo.cloned && (
             <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
                 <small className="ml-2 text-muted">

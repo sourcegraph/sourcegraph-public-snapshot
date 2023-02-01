@@ -150,7 +150,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         location.pathname === PageRoutes.SignUp ||
         location.pathname === PageRoutes.PasswordReset ||
         location.pathname === PageRoutes.Welcome
-    const isSetup = location.pathname === PageRoutes.Setup
+    const isSetupAndSetupEnabled =
+        location.pathname === PageRoutes.Setup && getExperimentalFeatures(props.settingsCascade.final).setupWizard
 
     const themeProps = useThemeProps()
     const themeState = useTheme()
@@ -223,17 +224,19 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 />
             )}
 
-            {!isSetup && (
+            {!isSetupAndSetupEnabled && (
                 <GlobalAlerts
                     authenticatedUser={props.authenticatedUser}
                     settingsCascade={props.settingsCascade}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && !isSetup && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
-            )}
-            {!isSiteInit && !isSignInOrUp && !isSetup && (
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !isSetupAndSetupEnabled &&
+                !props.isSourcegraphDotCom &&
+                !disableFeedbackSurvey && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && !isSignInOrUp && !isSetupAndSetupEnabled && (
                 <GlobalNavbar
                     {...props}
                     {...themeProps}

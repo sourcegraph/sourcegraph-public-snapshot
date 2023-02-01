@@ -8,22 +8,18 @@
 }
 
 .tab {
+    border-bottom: none !important;
+
     &[data-selected] {
         color: var(--body-color);
-        border-bottom: 2px solid var(--primary) !important;
     }
 
     &--completed {
         color: var(--body-color);
-        border-bottom: 2px solid var(--primary) !important;
     }
 
     &[data-reach-tab] {
         color: var(--body-color);
-
-        &:hover {
-            border-bottom: none !important;
-        }
     }
 }
 

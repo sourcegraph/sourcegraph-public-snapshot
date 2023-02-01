@@ -3,6 +3,7 @@ import { FC, useState } from 'react'
 import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { PageTitle } from '../components/PageTitle'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesPage'
 
 import { SetupSteps, SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
@@ -15,6 +16,7 @@ export const SetupWizard: FC = props => {
 
     return (
         <div className={styles.root}>
+            <PageTitle title="Setup" />
             <header className={styles.header}>
                 <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 

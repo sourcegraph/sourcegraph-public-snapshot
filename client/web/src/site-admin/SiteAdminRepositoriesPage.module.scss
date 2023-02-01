@@ -19,4 +19,7 @@
     color: var(--text-muted) !important;
 }
 
-// TODO: Error status style
+.error {
+    background-color: var(--warning ) !important;
+    color: var(--white) !important;
+}
