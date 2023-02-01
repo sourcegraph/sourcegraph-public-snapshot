@@ -130,6 +130,10 @@ var planDetails = map[Plan]PlanDetails{
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanOldEnterprise: {
 		Features: []Feature{
@@ -145,6 +149,10 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureBackupAndRestore,
 			FeatureCodeInsights,
 		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanTeam0: {
 		Features: []Feature{
@@ -153,6 +161,10 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise0: {
 		Features: []Feature{
@@ -160,6 +172,10 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
 		},
 	},
 
@@ -171,6 +187,10 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeInsights,
 			FeatureSSO,
 		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise1: {
 		Features: []Feature{
@@ -179,6 +199,10 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
 			FeatureSSO,
 		},
 	},
