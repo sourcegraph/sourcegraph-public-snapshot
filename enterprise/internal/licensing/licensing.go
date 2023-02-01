@@ -46,7 +46,6 @@ func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *
 	if origInfo != nil {
 		info = &Info{Info: *origInfo}
 	}
-	info.Tags = []string{"plan:enterprise-extension"}
 	return info, origSignature, origErr
 }
 
