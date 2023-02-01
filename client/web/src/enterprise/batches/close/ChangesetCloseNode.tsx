@@ -1,7 +1,5 @@
 import React from 'react'
 
-import * as H from 'history'
-
 import { ChangesetFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
@@ -13,8 +11,6 @@ import styles from './ChangesetCloseNode.module.scss'
 export interface ChangesetCloseNodeProps {
     node: ChangesetFields
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
     willClose: boolean
 }

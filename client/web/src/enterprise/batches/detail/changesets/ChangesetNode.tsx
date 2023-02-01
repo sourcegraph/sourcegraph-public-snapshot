@@ -1,7 +1,5 @@
 import React from 'react'
 
-import * as H from 'history'
-
 import { ChangesetFields } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 
@@ -13,8 +11,6 @@ import styles from './ChangesetNode.module.scss'
 export interface ChangesetNodeProps {
     node: ChangesetFields
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     selectable?: {
         onSelect: (id: string) => void
         isSelected: (id: string) => boolean

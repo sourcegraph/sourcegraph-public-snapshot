@@ -65,8 +65,6 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     updates={this.externalAccountUpdates}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )

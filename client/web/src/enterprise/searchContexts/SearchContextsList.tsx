@@ -2,7 +2,6 @@ import React, { PropsWithChildren, useCallback, useMemo, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { useHistory, useLocation } from 'react-router'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
@@ -155,9 +154,6 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
         [ownerNamespaceFilterValues]
     )
 
-    const history = useHistory()
-    const location = useLocation()
-
     const [contextsOrError, setContextsOrError] = useState<
         Connection<SearchContextMinimalFields> | ErrorLike | undefined
     >()
@@ -195,8 +191,6 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             listComponent="table"
             contentWrapperComponent={SearchContextsTableWrapper}
             headComponent={SearchContextsTableHeader}
-            history={history}
-            location={location}
             defaultFirst={10}
             compact={false}
             queryConnection={queryConnection}

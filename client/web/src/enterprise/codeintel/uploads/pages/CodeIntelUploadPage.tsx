@@ -281,8 +281,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                                 pluralNoun="dependencies"
                                                 nodeComponent={DependencyOrDependentNode}
                                                 queryConnection={queryDependencies}
-                                                history={history}
-                                                location={props.location}
                                                 cursorPaging={true}
                                                 useURLQuery={false}
                                                 emptyElement={<EmptyDependencies />}
@@ -308,8 +306,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                                 pluralNoun="dependents"
                                                 nodeComponent={DependencyOrDependentNode}
                                                 queryConnection={queryDependents}
-                                                history={history}
-                                                location={props.location}
                                                 cursorPaging={true}
                                                 useURLQuery={false}
                                                 emptyElement={<EmptyDependents />}
@@ -354,8 +350,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                         pluralNoun="matches"
                                         nodeComponent={RetentionMatchNode}
                                         queryConnection={queryRetentionPoliciesCallback}
-                                        history={history}
-                                        location={props.location}
                                         cursorPaging={true}
                                         useURLQuery={false}
                                         emptyElement={<EmptyUploadRetentionMatchStatus />}

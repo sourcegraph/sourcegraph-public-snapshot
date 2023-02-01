@@ -170,8 +170,6 @@ export const CodeIntelConfigurationPage: FunctionComponent<
                     nodeComponent={PoliciesNode}
                     nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
                     queryConnection={queryPoliciesCallback}
-                    history={history}
-                    location={props.location}
                     cursorPaging={true}
                     filters={filters}
                     inputClassName="ml-2 flex-1"
