@@ -79,8 +79,8 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
                     {...props}
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{
-                        marginLeft: getMarginLeft(level),
-                        minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level)})`,
+                        marginLeft: getMarginLeft(level, isBranch),
+                        minWidth: `calc(100% - 0.5rem - ${getMarginLeft(level, isBranch)})`,
                     }}
                     data-tree-node-id={element.id}
                     className={classNames(styles.node, isSelected && styles.selected)}
@@ -130,6 +130,15 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
     )
 }
 
-function getMarginLeft(level: number): string {
-    return `${0.75 * (level - 1)}rem`
+function getMarginLeft(level: number, isBranch: boolean): string {
+    // The level starts with 1 but we subtract 1.25 to make room for the folder
+    // chevron icon so to make sure we don't have a negative margin, we need to
+    // increase the level by the remaining 0.25.
+    level += 0.25
+
+    if (isBranch) {
+        return `${level - 1.25}rem`
+    } else {
+        return `${level}rem`
+    }
 }
