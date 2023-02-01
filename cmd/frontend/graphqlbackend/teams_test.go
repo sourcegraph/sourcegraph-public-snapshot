@@ -141,7 +141,7 @@ func TestQuerySiteAdminCanAdminister(t *testing.T) {
 					node(id: $id) {
 						__typename
 						... on Team {
-						viewerCanAdminister
+							viewerCanAdminister
 						}
 					}
 				}`,
