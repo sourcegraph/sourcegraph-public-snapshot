@@ -54,9 +54,9 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   3. jordan, who is a SOAP user that has not expired
 	//   4. riley, who is an expired SOAP user (will be cleaned up)
 	//   5. cris, who has a non-SOAP external account
-	//   6. robert, who is an expired SOAP user on the permanent accounts list
+	//   6. cami, who is an expired SOAP user on the permanent accounts list
 	// All the above except riley will be deleted.
-	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "robert"}
+	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
 
 	_, err := db.Users().Create(
 		ctx,
@@ -146,23 +146,23 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		ServiceAccount: true,
 	})
 	require.NoError(t, err)
-	robertID, err := db.UserExternalAccounts().CreateUserAndSave(
+	camiID, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
-			Username: "robert",
+			Username: "cami",
 		},
 		extsvc.AccountSpec{
 			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
-			AccountID:   "robert",
+			AccountID:   "cami",
 		},
 		extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), robertID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), camiID)
 	require.NoError(t, err)
 
 	t.Run("handle with cleanup", func(t *testing.T) {
