@@ -16,15 +16,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// JobTokenStore is the store for interacting with the executor_job_tokens table.
 type JobTokenStore interface {
+	// Create creates a new JobToken.
 	Create(ctx context.Context, jobId int, queue string) (string, error)
+	// Regenerate creates a new value for the matching JobToken.
 	Regenerate(ctx context.Context, jobId int, queue string) (string, error)
+	// Exists checks if the JobToken exists.
 	Exists(ctx context.Context, jobId int, queue string) (bool, error)
+	// Get retrieves the JobToken matching the specified values.
 	Get(ctx context.Context, jobId int, queue string) (JobToken, error)
+	// GetByToken retrieves the JobToken matching the value of token.
 	GetByToken(ctx context.Context, tokenHexEncoded string) (JobToken, error)
+	// Delete deletes the matching JobToken.
 	Delete(ctx context.Context, jobId int, queue string) error
 }
 
+// JobToken is the token for the specific Job.
 type JobToken struct {
 	Id    int64
 	Value []byte
@@ -39,6 +47,7 @@ type jobTokenStore struct {
 	observationCtx *observation.Context
 }
 
+// NewJobTokenStore creates a new JobTokenStore.
 func NewJobTokenStore(observationCtx *observation.Context, db database.DB) JobTokenStore {
 	return &jobTokenStore{
 		Store:          basestore.NewWithHandle(db.Handle()),
