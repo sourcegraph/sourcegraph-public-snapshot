@@ -291,7 +291,7 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 }
 
 func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, false) // dont care for now
 }
 
 func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {

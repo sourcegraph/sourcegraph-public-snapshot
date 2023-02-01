@@ -167,14 +167,30 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		didInsertNewCrates = didInsertNewCrates || len(newCrates) != 0 || len(newVersions) != 0
 	}
 
+	nextSync := time.Now()
 	if didInsertNewCrates {
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
-		nextSync := time.Now()
 		externalService.NextSyncAt = nextSync
 		if err := b.extSvcStore.Upsert(ctx, externalService); err != nil {
 			return err
 		}
 	}
+
+	attemptsRemaining := 5
+	for {
+		externalService, err = b.extSvcStore.GetByID(ctx, externalService.ID)
+		if err != nil && attemptsRemaining == 0 {
+			return err
+		} else if err != nil || externalService.LastSyncAt.After(nextSync) {
+			attemptsRemaining--
+			// mirrors backoff in job_dependency_indexing_scheduler.go
+			time.Sleep(time.Second * 30)
+			continue
+		}
+
+		break
+	}
+
 	return nil
 }
 

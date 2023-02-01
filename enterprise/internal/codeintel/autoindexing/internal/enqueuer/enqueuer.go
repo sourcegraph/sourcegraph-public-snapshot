@@ -71,7 +71,7 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package, assumeSynced bool) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
@@ -90,16 +90,26 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		attribute.String("repoName", string(repoName)),
 		attribute.String("revision", revision))
 
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
+	var repoID int
+	if assumeSynced {
+		resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil
+			}
 
-		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+			return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+		}
+		repoID = int(resp.ID)
+	} else {
+		repo, err := s.store.GetUnsafeDB().Repos().GetByName(ctx, repoName)
+		if err != nil {
+			return errors.Wrap(err, "store.Repos.GetByName")
+		}
+		repoID = int(repo.ID)
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
+	commit, err := s.gitserverClient.ResolveRevision(ctx, int(repoID), revision)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -108,7 +118,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(repoID), string(commit), "", false, false)
 	return err
 }
 

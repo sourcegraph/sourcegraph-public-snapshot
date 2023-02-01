@@ -46,7 +46,7 @@ type PoliciesService interface {
 
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []codeinteltypes.Index, err error)
-	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package, assumeSynced bool) (err error)
 }
 
 type RepoUpdaterClient interface {
