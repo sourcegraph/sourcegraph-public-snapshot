@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, ReactNode } from 'react'
 
-import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
+import { mdiCloudDownload, mdiCog, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import { RouteComponentProps, useHistory, useLocation } from 'react-router'
@@ -13,7 +13,6 @@ import {
     Alert,
     Badge,
     Button,
-    Code,
     Container,
     H4,
     Icon,
@@ -69,7 +68,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
     } else if (node.mirrorInfo.cloneInProgress) {
         status = 'cloning'
     } else if (node.mirrorInfo.lastError) {
-        status = 'error'
+        status = 'failed'
     }
 
     return (
@@ -79,7 +78,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             data-test-cloned={node.mirrorInfo.cloned}
         >
             <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex">
+                <div className="d-flex col-7 pl-0">
                     <Badge
                         className={classNames(styles[status], 'h-100 py-0 px-1 mr-3 text-uppercase font-weight-normal')}
                     >
@@ -95,38 +94,41 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 </div>
 
                 {node.mirrorInfo.cloneInProgress && (
-                    <small className="ml-2 text-primary">
+                    <small className="col-2 mx-auto text-primary">
                         <LoadingSpinner /> Cloning...
                     </small>
                 )}
 
-                <div className="repository-node__actions">
-                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                <div className="col-auto pr-0">
+                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && !node.mirrorInfo.lastError && (
                         <Button to={node.url} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
                     )}{' '}
-                    <Tooltip content="Repository code graph data">
-                        <Button to={`/${node.name}/-/code-graph`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
+                    {!node.mirrorInfo.lastError && (
+                        <Tooltip content="Repository settings">
+                            <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                            </Button>
+                        </Tooltip>
+                    )}
+                    {/* TODO: See logs error action (get rid of lastError alertWrapper)
+                    {node.mirrorInfo.lastError && (
+                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See logs
                         </Button>
-                    </Tooltip>{' '}
-                    <Tooltip content="Repository settings">
-                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                        </Button>
-                    </Tooltip>
+                    )} */}
                 </div>
             </div>
 
-            {node.mirrorInfo.lastError && (
+            {/* {node.mirrorInfo.lastError && (
                 <div className={styles.alertWrapper}>
                     <Alert variant="warning">
                         <Text className="font-weight-bold">Error syncing repository:</Text>
                         <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
                     </Alert>
                 </div>
-            )}
+            )} */}
             {node.mirrorInfo.isCorrupted && (
                 <div className={styles.alertWrapper}>
                     <Alert variant="danger">
