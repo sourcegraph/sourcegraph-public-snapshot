@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	soap "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -112,7 +111,7 @@ HAVING COUNT(*) = 1
 		if err != nil {
 			return err
 		}
-		data, err := soap.GetAccountData(ctx, soapAccount.AccountData)
+		data, err := sourcegraphoperator.GetAccountData(ctx, soapAccount.AccountData)
 		if err == nil && data.ServiceAccount {
 			continue // do not delete this user, it is a service account
 		}
