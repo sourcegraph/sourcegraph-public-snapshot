@@ -56,7 +56,6 @@ import {
 } from './RepoRevisionContainer'
 import { commitsPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { RepoSettingsContainerContext, RepoSettingsContainerRoute } from './settings/RepoSettingsContainer'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
@@ -101,8 +100,16 @@ export interface RepoContainerContext
     isSourcegraphDotCom: boolean
 }
 
+/**
+ * Props passed to sub-routes of {@link RepoContainer} which are specific to repository settings.
+ */
+export interface RepoSettingsContainerContext extends Omit<RepoContainerContext, 'repo' | 'resolvedRevisionOrError'> {}
+
 /** A sub-route of {@link RepoContainer}. */
 export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> {}
+
+/** A sub-route of {@link RepoContainer} specific to repository settings. */
+export interface RepoSettingsContainerRoute extends RouteDescriptor<RepoSettingsContainerContext> {}
 
 const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
@@ -349,36 +356,37 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
      * then we return Empty Repository
      */
     const getRepoContainerContextRoutes = (): (false | JSX.Element)[] | null => {
-        if (repoOrError) {
-            if (repo) {
-                const repoContainerContext: RepoContainerContext = {
-                    ...repoRevisionContainerContext,
-                    repo,
-                    resolvedRevisionOrError,
-                    onDidUpdateExternalLinks: setExternalLinks,
-                    repoName,
-                }
-
-                return [
-                    ...props.repoContainerRoutes.map(
-                        ({ path, render, exact, condition = () => true }) =>
-                            condition(repoContainerContext) && (
-                                <Route
-                                    path={repoContainerContext.routePrefix + path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
-                                    render={routeComponentProps =>
-                                        render({
-                                            ...repoContainerContext,
-                                            ...routeComponentProps,
-                                        })
-                                    }
-                                />
-                            )
-                    ),
-                    <Route key="hardcoded-key" component={RepoPageNotFound} />,
-                ]
+        if (repo) {
+            const repoContainerContext: RepoContainerContext = {
+                ...repoRevisionContainerContext,
+                repo,
+                resolvedRevisionOrError,
+                onDidUpdateExternalLinks: setExternalLinks,
+                repoName,
             }
+
+            return [
+                ...props.repoContainerRoutes.map(
+                    ({ path, render, exact, condition = () => true }) =>
+                        condition(repoContainerContext) && (
+                            <Route
+                                path={repoContainerContext.routePrefix + path}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={exact}
+                                render={routeComponentProps =>
+                                    render({
+                                        ...repoContainerContext,
+                                        ...routeComponentProps,
+                                    })
+                                }
+                            />
+                        )
+                ),
+                <Route key="hardcoded-key" component={RepoPageNotFound} />,
+            ]
+        }
+
+        if (repoOrError) {
             // We cannot render these routes for an empty repository
             return [<Route key="hardcoded-key" component={EmptyRepo} />]
         }

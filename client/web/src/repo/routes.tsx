@@ -10,10 +10,9 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
-import { RepoContainerRoute } from './RepoContainer'
+import { RepoContainerRoute, RepoSettingsContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
-import { RepoSettingsContainerRoute } from './settings/RepoSettingsContainer'
 import { RepositoryTagTab } from './tree/TagTab'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
