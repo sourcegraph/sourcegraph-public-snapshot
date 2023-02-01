@@ -56,7 +56,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={classNames('form-inline', this.props.className)}>
-                <div className={classNames('input-group', this.props.flex && 'flex-1')}>
+                <div className={classNames('input-group', { 'flex-1': this.props.flex })}>
                     <Input
                         type={this.resolveInputType()}
                         inputClassName={styles.input}
