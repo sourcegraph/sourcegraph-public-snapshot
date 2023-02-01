@@ -4,6 +4,7 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Switch } from 'react-router'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -30,7 +31,6 @@ import { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
 
 function queryOrganization(args: {
     name: string

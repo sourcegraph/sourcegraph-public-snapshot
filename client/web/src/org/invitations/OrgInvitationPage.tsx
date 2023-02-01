@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
@@ -24,7 +24,6 @@ import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 interface Props {
     authenticatedUser: AuthenticatedUser

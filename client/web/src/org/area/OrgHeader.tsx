@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Location } from 'history'
 import { match } from 'react-router'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
