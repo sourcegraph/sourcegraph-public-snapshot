@@ -14,23 +14,19 @@ import (
 )
 
 func TestSetupRoutes(t *testing.T) {
-	router := mux.NewRouter()
-	h := new(testExecutorHandler)
-	handler.SetupRoutes(h, router)
-
 	tests := []struct {
 		name               string
 		method             string
 		path               string
 		expectedStatusCode int
-		expectationsFunc   func()
+		expectationsFunc   func(h *testExecutorHandler)
 	}{
 		{
 			name:               "Dequeue",
 			method:             http.MethodPost,
 			path:               "/test/dequeue",
 			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func() {
+			expectationsFunc: func(h *testExecutorHandler) {
 				h.On("HandleDequeue").Once()
 			},
 		},
@@ -39,7 +35,7 @@ func TestSetupRoutes(t *testing.T) {
 			method:             http.MethodPost,
 			path:               "/test/heartbeat",
 			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func() {
+			expectationsFunc: func(h *testExecutorHandler) {
 				h.On("HandleHeartbeat").Once()
 			},
 		},
@@ -48,19 +44,129 @@ func TestSetupRoutes(t *testing.T) {
 			method:             http.MethodPost,
 			path:               "/test/canceledJobs",
 			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func() {
+			expectationsFunc: func(h *testExecutorHandler) {
 				h.On("HandleCanceledJobs").Once()
 			},
+		},
+		{
+			name:               "Invalid root",
+			method:             http.MethodPost,
+			path:               "/test1/dequeue",
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			name:               "Invalid path",
+			method:             http.MethodPost,
+			path:               "/test/foo",
+			expectedStatusCode: http.StatusNotFound,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			router := mux.NewRouter()
+			h := new(testExecutorHandler)
+			handler.SetupRoutes(h, router)
+
 			req, err := http.NewRequest(test.method, test.path, nil)
 			require.NoError(t, err)
 			responseRecorder := httptest.NewRecorder()
 
-			h.On("AuthMiddleware").Times(0)
-			test.expectationsFunc()
+			if test.expectationsFunc != nil {
+				test.expectationsFunc(h)
+			}
+			router.ServeHTTP(responseRecorder, req)
+
+			assert.Equal(t, test.expectedStatusCode, responseRecorder.Code)
+
+			h.AssertExpectations(t)
+		})
+	}
+}
+
+func TestSetupJobRoutes(t *testing.T) {
+	tests := []struct {
+		name               string
+		method             string
+		path               string
+		expectedStatusCode int
+		expectationsFunc   func(h *testExecutorHandler)
+	}{
+		{
+			name:               "AddExecutionLogEntry",
+			method:             http.MethodPost,
+			path:               "/test/addExecutionLogEntry",
+			expectedStatusCode: http.StatusOK,
+			expectationsFunc: func(h *testExecutorHandler) {
+				h.On("AuthMiddleware").Once()
+				h.On("HandleAddExecutionLogEntry").Once()
+			},
+		},
+		{
+			name:               "UpdateExecutionLogEntry",
+			method:             http.MethodPost,
+			path:               "/test/updateExecutionLogEntry",
+			expectedStatusCode: http.StatusOK,
+			expectationsFunc: func(h *testExecutorHandler) {
+				h.On("AuthMiddleware").Once()
+				h.On("HandleUpdateExecutionLogEntry").Once()
+			},
+		},
+		{
+			name:               "MarkComplete",
+			method:             http.MethodPost,
+			path:               "/test/markComplete",
+			expectedStatusCode: http.StatusOK,
+			expectationsFunc: func(h *testExecutorHandler) {
+				h.On("AuthMiddleware").Once()
+				h.On("HandleMarkComplete").Once()
+			},
+		},
+		{
+			name:               "MarkErrored",
+			method:             http.MethodPost,
+			path:               "/test/markErrored",
+			expectedStatusCode: http.StatusOK,
+			expectationsFunc: func(h *testExecutorHandler) {
+				h.On("AuthMiddleware").Once()
+				h.On("HandleMarkErrored").Once()
+			},
+		},
+		{
+			name:               "MarkFailed",
+			method:             http.MethodPost,
+			path:               "/test/markFailed",
+			expectedStatusCode: http.StatusOK,
+			expectationsFunc: func(h *testExecutorHandler) {
+				h.On("AuthMiddleware").Once()
+				h.On("HandleMarkFailed").Once()
+			},
+		},
+		{
+			name:               "Invalid root",
+			method:             http.MethodPost,
+			path:               "/test1/addExecutionLogEntry",
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			name:               "Invalid path",
+			method:             http.MethodPost,
+			path:               "/test/foo",
+			expectedStatusCode: http.StatusNotFound,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			router := mux.NewRouter()
+			h := new(testExecutorHandler)
+			handler.SetupJobRoutes(h, router)
+
+			req, err := http.NewRequest(test.method, test.path, nil)
+			require.NoError(t, err)
+			responseRecorder := httptest.NewRecorder()
+
+			if test.expectationsFunc != nil {
+				test.expectationsFunc(h)
+			}
 			router.ServeHTTP(responseRecorder, req)
 
 			assert.Equal(t, test.expectedStatusCode, responseRecorder.Code)
@@ -79,6 +185,7 @@ func (t *testExecutorHandler) Name() string {
 }
 
 func (t *testExecutorHandler) AuthMiddleware(next http.Handler) http.Handler {
+	t.Called()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
 	})
