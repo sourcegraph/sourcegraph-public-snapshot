@@ -120,7 +120,7 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 }
 
 type PlanDetails struct {
-	Features        []Feature
+	Features []Feature
 	// ExpiredFeatures are the features that still work after the plan is expired.
 	ExpiredFeatures []Feature
 }
