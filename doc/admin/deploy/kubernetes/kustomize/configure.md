@@ -45,7 +45,7 @@ To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-en
 This will enable Kubernetes service discovery for the frontend and also provide privileged access and run all Sourcegraph services as the root user by adding [cadvisor component](#deploy-cadvisor) in the list.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # Deploy monitoring services for Sourcegraph
 - ../../components/monitoring
@@ -79,7 +79,7 @@ This will allow the frontend service to discover endpoints for each service repl
 The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed seperately with privileged access.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # Deploy monitoring services for Sourcegraph
 - ../../components/monitoring
@@ -94,7 +94,7 @@ cAdvisor requires a service account and certain permissions to access and gather
 To deploy cAdvisor with privileged access, include the monitoring/cadvisor component **in addition to** the [monitoring component](#monitoring-stack) in your overlay.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # Deploy monitoring services for Sourcegraph
 - ../../components/monitoring
@@ -120,7 +120,7 @@ Follow the steps below to add namespace to all your Sourcegraph resources:
 2. Include the namespace field in the file, and set it to an exisiting namespace in your cluster. For example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ns-sourcegraph
@@ -133,7 +133,7 @@ namespace: ns-sourcegraph
 To create a new namespace, include the [utils/namespace](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/resources/namespace) component in your overlay.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/resources/namespace
 ```
@@ -147,7 +147,7 @@ Properly allocating resources is crucial for ensuring optimal performance of you
 To allocate resources based on your [instance size](../../instance-size.md):
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # Include ONE of the sizes component based on your instance size
 - ../../components/sizes/xs
@@ -165,15 +165,15 @@ In cases where custom resource allocation is necessary, it is important to follo
 
 ```bash
 # rename the directory from 'custom/resources' to 'custom-resources'
-$ cp -R components/custom/resources overlays/$INSTANCE_NAME/custom-resources
+$ cp -R components/custom/resources instances/$INSTANCE_NAME/custom-resources
 ```
 
 **Step 2**: In the copied version of the `resources.yaml` file, located in the `configs subdirectory` of the `custom-resources` directory, uncomment the desired service and update the resource values as necessary.
 
-**Step 3**: In the `overlays/$INSTANCE_NAME/kustomization.yaml` file, include the `custom-resources component` in the components list.
+**Step 3**: In the `instances/$INSTANCE_NAME/kustomization.yaml` file, include the `custom-resources component` in the components list.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - custom-resources
 ```
@@ -185,7 +185,7 @@ components:
 The `remove/security-context` component removes all the `securityContext` configurations pre-defined in base.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/remove/security-context
 ```
@@ -195,7 +195,7 @@ components:
 If you do not have permission to deploy DaemonSets, you can include the remove/daemonset component to remove all services with DaemonSets resources (e.g. node-exporter and otel) from the [monitoring component](#monitoring-stack):
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # monitoring component
 - ../../components/monitoring
@@ -220,7 +220,7 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 2. Include the GCP storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/gcp
 ```
@@ -244,7 +244,7 @@ It also update the storage class name for all resources to `sourcegraph`.
 
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/aws/eks
 - ../../components/storage-class/aws/ebs
@@ -261,7 +261,7 @@ components:
 2. Include the azure storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/azure
 ```
@@ -273,7 +273,7 @@ components:
 Configure to use the default storage class `local-path` in a k3s cluster:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/k3s
 ```
@@ -285,7 +285,7 @@ If you are using Trident as your storage orchestrator, you must have [fsType](ht
 Add one of the available `storage-class/trident/$FSTYPE` components to the `kustomization.yaml` file for your Kustomize overlay based on your fsType:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 # -- fsType: ext3
 - ../../components/storage-class/trident/ext3
@@ -308,7 +308,7 @@ The `storage-class/update-class-name` component updates the `storageClassName` f
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
   ```yaml
-  # overlays/$INSTANCE_NAME/kustomization.yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
   components:
     # Update storageClassName to the STORAGECLASS_NAME value set below
     - ../../components/storage-class/update-class-name
@@ -328,7 +328,7 @@ To create a custom storage class:
 1. Include the `storage-class/cloud` component to your overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/cloud
 ```
@@ -336,7 +336,7 @@ components:
 Update the following variables under the [BUILD CONFIGURATIONS](index.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
+# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
 configMapGenerator:
   # Handle updating configs using env vars for kustomize
   - name: sourcegraph-kustomize-env
@@ -394,12 +394,12 @@ To ensure secure communication, it is recommended to enable Transport Layer Secu
 
 To manually configure a certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets), follow these steps:
 
-**Step 1**: Move the `tls.crt` and `tls.key` files to the root of your overlay directory (e.g. `overlays/$INSTANCE_NAME`).
+**Step 1**: Move the `tls.crt` and `tls.key` files to the root of your overlay directory (e.g. `instances/$INSTANCE_NAME`).
 
 **Step 2**: Include the following lines in your overlay to generate secrets with the provided files:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
+# instances/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
 secretGenerator:
 - name: sourcegraph-frontend-tls
   behavior: create
@@ -435,7 +435,7 @@ data:
 Example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
+# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
 configMapGenerator:
   # Handle updating configs using env vars for kustomize
   - name: sourcegraph-kustomize-env
@@ -450,7 +450,7 @@ configMapGenerator:
 Step 4: Include the tls component:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/tls
 ```
@@ -468,7 +468,7 @@ Configuration options for ingress installed for sourcegraph-frontend.
 Component to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly by updating annotation to `kubernetes.io/ingress.class: alb` in frontend ingress. 
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/ingress/alb
 ```
@@ -480,7 +480,7 @@ Component to configure network access for GKE clusters with HTTP load balancing 
 It also adds a [BackendConfig CRD](https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration#create_backendconfig). This is necessary to instruct the GCP load balancer on how to perform health checks on our deployment.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/ingress/gke
 ```
@@ -490,7 +490,7 @@ components:
 Component to configure Ingress to use the default HTTP reverse proxy and load balancer `traefik` in k3s clusters.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/ingress/k3s
 ```
@@ -502,7 +502,7 @@ To configure the hostname for your Sourcegraph ingress, follow these steps:
 **Step 1**: Under the [BUILD CONFIGURATIONS](index.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
+# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
 configMapGenerator:
   # Handle updating configs using env vars for kustomize
   - name: sourcegraph-kustomize-env
@@ -514,7 +514,7 @@ configMapGenerator:
 **Step 2**: Include the hostname component in your components.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/ingress/hostname
 ```
@@ -530,7 +530,7 @@ The Sourcegraph frontend service is configured as a [ClusterIP](https://kubernet
 The `network/nodeport` component creates a frontend service of [type NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport), making it accessible by using the IP address of any node in the cluster, along with the specified nodePort value (30080).
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/nodeport/30080
 ```
@@ -540,7 +540,7 @@ components:
 The `network/loadbalancer` component sets the type of the frontend service as [LoadBalancer](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer), which provisions a load balancer and makes the service accessible from outside the cluster.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/loadbalancer
 ```
@@ -552,13 +552,13 @@ To configure ingress-nginx annotations for the Sourcegraph frontend ingress:
 **Step 1**: Create a subdirectory called 'patches' within the directory of your overlay
 
 ```bash
-$ mkdir -p overlays/$INSTANCE_NAME/patches
+$ mkdir -p instances/$INSTANCE_NAME/patches
 ```
 
 **Step 2**: Copy the `frontend-ingress-annotations.yaml` patch file from the components/patches directory to the new [patches subdirectory](index.md#patches-directory)
 
 ```bash
-$ cp components/patches/frontend-ingress-annotations.yaml overlays/$INSTANCE_NAME/patches/frontend-ingress-annotations.yaml
+$ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NAME/patches/frontend-ingress-annotations.yaml
 ```
 
 **Step 3**: Add the additional annotations at the end of the new patch file 
@@ -566,7 +566,7 @@ $ cp components/patches/frontend-ingress-annotations.yaml overlays/$INSTANCE_NAM
 **Step 4**: Include the patch file in your overlay under `patchesStrategicMerge`:
    
   ```yaml
-  # overlays/$INSTANCE_NAME/kustomization.yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
   components:
   - ../../components/...
   ...
@@ -585,7 +585,7 @@ To configure network policy for your Sourcegraph installation, you will need to 
 2. Include the network-policy component:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network-policy
 ```
@@ -611,7 +611,7 @@ $ gcloud compute --project=$PROJECT firewall-rules create sourcegraph-frontend-h
 - Include the nodeport component to change the type of the `sourcegraph-frontend` service from `ClusterIP` to `NodePort` with the `nodeport` component:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/nodeport/30080
 ```
@@ -648,7 +648,7 @@ Learn more about [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC
 If your [Rancher Kubernetes Engine (RKE)](https://rancher.com/docs/rke/latest/en/) cluster is configured to use [NodePort](https://docs.ranchermanager.rancher.io/v2.0-v2.4/how-to-guides/new-user-guides/migrate-from-v1.6-v2.x/expose-services#nodeport), include the [network/nodeport/custom component](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/network/nodeport/custom) to change the port type for `sourcegraph-frontend` service from `ClusterIP` to `NodePort` to use `nodePort: 30080`:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/nodeport/30080
 ```
@@ -660,7 +660,7 @@ components:
 There are a few [known issues](../troubleshoot.md#service-mesh) when running Sourcegraph with service mesh. We recommend including the `network/envoy` component in your components list to bypass the issue where Envoy, the proxy used by Istio, breaks Sourcegraph search function by dropping proxied trailers for requests made over HTTP/1.1 protocol.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/network/envoy
 ```
@@ -670,7 +670,7 @@ components:
 To update the environment variables for the **sourcegraph-frontend** service, edit the [FRONTEND ENV VARS](index.md#frontend-env-vars) section at the bottom of your [kustomization file](index.md#kustomizationyaml). For example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
+# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -697,13 +697,13 @@ To connect Sourcegraph to an existing PostgreSQL instance, add the relevant envi
 **Step 1**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
 
 ```bash
-$ cp components/patches/frontend-vars.yaml overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
+$ cp components/patches/frontend-vars.yaml instances/$INSTANCE_NAME/patches/frontend-vars.yaml
 ```
 
 **Step 2**: Add environment variables at the end of the new patch file `frontend-vars.yaml`. For example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
+# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -717,9 +717,9 @@ data:
 **Step 3**: Include the patch file in your overlay under `patchesStrategicMerge`:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 patchesStrategicMerge:
-  - patches/frontend-env-vars.yaml
+  - patches/frontend-vars.yaml
 ```
 
 > WARNING: You must restart frontend for the updated values to be activiated
@@ -747,7 +747,7 @@ When using an external Redis server, the corresponding environment variable must
 This adds the new environment variables for redis to the services listed above.
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/services/redis
 ```
@@ -755,13 +755,13 @@ components:
 **Step 2**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
 
 ```bash
-$ cp components/patches/frontend-vars.yaml overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
+$ cp components/patches/frontend-vars.yaml instances/$INSTANCE_NAME/patches/frontend-vars.yaml
 ```
 
 **Step 3**: Add the additional annotations at the end of the new patch file `frontend-vars.yaml`. For example:
 
 ```yaml
-# overlays/$INSTANCE_NAME/patches/frontend-vars.yaml
+# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -775,9 +775,9 @@ data:
 **Step 4**: Include the patch file in your overlay under `patchesStrategicMerge`:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 patchesStrategicMerge:
-  - patches/frontend-env-vars.yaml
+  - patches/frontend-vars.yaml
 ```
 
 ## SSH for cloning
@@ -793,7 +793,7 @@ To mount the files through Kustomize:
 **Step 2:** Include the following in your overlay to [generate secrets](https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kustomize/) that base64 encoded the values in those files
 
   ```yaml
-  # overlays/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
+  # instances/$INSTANCE_NAME/kustomization.yaml > [SECRETS GENERATOR]
   secretGenerator:
   - name: gitserver-ssh
     files:
@@ -804,7 +804,7 @@ To mount the files through Kustomize:
 **Step 3:** Include the following component to mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
 
   ```yaml
-  # overlays/$INSTANCE_NAME/kustomization.yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
   components:
     # Enable SSH to clon repositories as non-root user
     - ../../components/enable/ssh/non-root
@@ -847,7 +847,7 @@ By default, the collector is [configured to export trace data by logging](https:
 4. Include the following in your overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/otel-collector/backend
 ...
@@ -875,7 +875,7 @@ cAdvisor can pick up metrics for services unrelated to the Sourcegraph deploymen
 4. Include the following in your overlay:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 patchesStrategicMerge:
 - patches/prometheus.ConfigMap.yaml
 ```
@@ -887,7 +887,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not from
 To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/enable/private-registry
 ```
@@ -895,7 +895,7 @@ components:
 Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
+# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
 configMapGenerator:
   # Handle updating configs using env vars for kustomize
   - name: sourcegraph-kustomize-env
@@ -910,7 +910,7 @@ configMapGenerator:
 In order to perform a [multi-version upgrade](../../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
 
 ```yaml
-# overlays/$INSTANCE_NAME/kustomization.yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/utils/multi-version-upgrade
 ```
