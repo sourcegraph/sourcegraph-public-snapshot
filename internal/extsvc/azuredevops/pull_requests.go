@@ -12,7 +12,8 @@ import (
 )
 
 // CreatePullRequest creates a new PR with the specified properties, returns the newly created PR.
-func (c *Client) CreatePullRequest(ctx context.Context, args CreatePullRequestArgs, input CreatePullRequestInput) (PullRequest, error) {
+// NOTE: this API needs repository ID specified not repository Name in OrgProjectRepoArgs.
+func (c *Client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error) {
 	queryParams := make(url.Values)
 	queryParams.Set("api-version", apiVersion)
 

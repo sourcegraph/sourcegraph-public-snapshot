@@ -30,12 +30,6 @@ type OrgProjectRepoArgs struct {
 	RepoNameOrID string
 }
 
-type CreatePullRequestArgs struct {
-	Org     string
-	Project string
-	RepoID  string
-}
-
 // ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
 type ListRepositoriesByProjectOrOrgArgs struct {
 	// Should be in the form of 'org/project' for projects and 'org' for orgs.
