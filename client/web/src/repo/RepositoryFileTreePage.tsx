@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { NotebookProps } from '../notebooks'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { formatHash, formatLineOrPositionOrRange } from '../util/url'
+import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -34,7 +34,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
-    const { '*': filePath = '' } = useParams<{ '*': string }>()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     console.log({ filePath, repo, maybeObjectType })
 

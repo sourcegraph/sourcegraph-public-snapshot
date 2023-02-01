@@ -323,8 +323,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     }
 
     const repoRevisionContainerSplats = [
-        ...(rawRevision ? [repoNameURL + `@${rawRevision}/*`] : []), // must exactly match how the revision was encoded in the URL
-        repoNameURL + '/*',
+        ...(rawRevision ? [`@${rawRevision}/*`] : []), // must exactly match how the revision was encoded in the URL
+        '*',
     ]
 
     return (
