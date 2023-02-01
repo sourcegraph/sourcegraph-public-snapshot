@@ -83,20 +83,20 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, _ log.Logger, record *da
 	// is not used anywhere in `syncer.syncPerms()`, therefore it is okay for now
 	// to pass old priority enum values.
 	// `requestQueue` can also be removed as it is only used by the old perms syncer.
-	return h.handlePermsSync(ctx, reqType, reqID, record.InvalidateCaches)
+	return h.handlePermsSync(ctx, reqType, reqID, record.NoPerms, record.InvalidateCaches)
 }
 
 // handlePermsSync is effectively a sync version of `perms_syncer.syncPerms`
 // which calls `perms_syncer.syncUserPerms` or `perms_syncer.syncRepoPerms`
 // depending on a request type and logs/adds metrics of sync statistics
 // afterwards.
-func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType requestType, reqID int32, invalidateCaches bool) error {
+func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType requestType, reqID int32, noPerms, invalidateCaches bool) error {
 	switch reqType {
 	case requestTypeUser:
-		providerStatuses, err := h.syncer.syncUserPerms(ctx, reqID, false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
+		providerStatuses, err := h.syncer.syncUserPerms(ctx, reqID, noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
 		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
 	case requestTypeRepo:
-		providerStatuses, err := h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), false, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
+		providerStatuses, err := h.syncer.syncRepoPerms(ctx, api.RepoID(reqID), noPerms, authz.FetchPermsOptions{InvalidateCaches: invalidateCaches})
 		return h.handleSyncResults(reqType, reqID, providerStatuses, err)
 	default:
 		return errors.Newf("unexpected request type: %q", reqType)
