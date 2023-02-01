@@ -142,7 +142,6 @@ function getMarginLeft(level: number, isBranch: boolean): string {
 
     if (isBranch) {
         return `${0.75 * level - 1.25}rem`
-    } else {
-        return `${0.75 * level}rem`
     }
+    return `${0.75 * level}rem`
 }
