@@ -18,11 +18,28 @@ CREATE TABLE IF NOT EXISTS package_repo_versions (
     CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos (id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS package_repo_versions_fk_idx
-ON package_repo_versions (package_id);
+CREATE INDEX IF NOT EXISTS package_repo_versions_fk_idx ON package_repo_versions (package_id);
+CREATE UNIQUE INDEX IF NOT EXISTS package_repo_versions_unique_version_per_package ON package_repo_versions (package_id, version);
 
-CREATE UNIQUE INDEX IF NOT EXISTS package_repo_versions_unique_version_per_package
-on package_repo_versions (package_id, version);
+CREATE INDEX IF NOT EXISTS lsif_dependency_repos_name_idx ON lsif_dependency_repos (name);
+
+-- if any rows were inserted into lsif_dependency_repos an instance on a version older than this
+-- schema after the migration happened but before the instance was ugpraded, then we need this trigger
+-- to copy over anything added _after_ the migration but before the _instance upgrade_
+CREATE OR REPLACE FUNCTION func_lsif_dependency_repos_backfill() RETURNS TRIGGER AS $$
+    BEGIN
+        INSERT INTO package_repo_versions (package_id, version)
+        VALUES (NEW.id, NEW.version);
+
+        RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS lsif_dependency_repos_backfill ON lsif_dependency_repos;
+CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos
+FOR EACH ROW
+WHEN (NEW.version <> NULL AND NEW.version <> '👁️ temporary_sentintel_value 👁️')
+EXECUTE FUNCTION func_lsif_dependency_repos_backfill();
 
 INSERT INTO package_repo_versions (package_id, version)
 SELECT (

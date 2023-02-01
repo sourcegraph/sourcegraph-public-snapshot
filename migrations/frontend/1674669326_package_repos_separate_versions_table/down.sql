@@ -26,5 +26,11 @@ ALTER TABLE lsif_dependency_repos
 ALTER COLUMN version SET NOT NULL;
 
 DROP INDEX IF EXISTS package_repo_versions_fk_idx;
+DROP INDEX IF EXISTS package_repo_versions_unique_version_per_package;
+
+DROP INDEX IF EXISTS lsif_dependency_repos_name_idx;
 
 DROP TABLE IF EXISTS package_repo_versions;
+
+DROP TRIGGER IF EXISTS lsif_dependency_repos_backfill;
+DROP FUNCTION IF EXISTS func_lsif_dependency_repos_backfill;
