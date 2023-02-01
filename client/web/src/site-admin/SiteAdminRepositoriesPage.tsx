@@ -20,7 +20,6 @@ import {
     Link,
     LoadingSpinner,
     PageHeader,
-    Text,
     Tooltip,
     ErrorAlert,
     LinkOrSpan,
@@ -63,7 +62,7 @@ interface RepositoryNodeProps {
 
 const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     let status: string = 'queued'
-    if (node.mirrorInfo.cloned) {
+    if (node.mirrorInfo.cloned && !node.mirrorInfo.lastError) {
         status = 'cloned'
     } else if (node.mirrorInfo.cloneInProgress) {
         status = 'cloning'
@@ -100,35 +99,27 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 )}
 
                 <div className="col-auto pr-0">
-                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && !node.mirrorInfo.lastError && (
+                    {/* TODO: What does this truly do? */}
+                    {node.mirrorInfo.cloneInProgress && (
                         <Button to={node.url} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
                     )}{' '}
-                    {!node.mirrorInfo.lastError && (
+                    {node.mirrorInfo.cloned && !node.mirrorInfo.lastError && !node.mirrorInfo.cloneInProgress && (
                         <Tooltip content="Repository settings">
                             <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
                                 <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                             </Button>
                         </Tooltip>
                     )}
-                    {/* TODO: See logs error action (get rid of lastError alertWrapper)
                     {node.mirrorInfo.lastError && (
-                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                        <Button to={`/${node.name}/-/settings/mirror`} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See logs
                         </Button>
-                    )} */}
+                    )}
                 </div>
             </div>
 
-            {/* {node.mirrorInfo.lastError && (
-                <div className={styles.alertWrapper}>
-                    <Alert variant="warning">
-                        <Text className="font-weight-bold">Error syncing repository:</Text>
-                        <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
-                    </Alert>
-                </div>
-            )} */}
             {node.mirrorInfo.isCorrupted && (
                 <div className={styles.alertWrapper}>
                     <Alert variant="danger">
