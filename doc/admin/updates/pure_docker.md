@@ -16,10 +16,10 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## v4.4.1 ➔ v4.4.2
 
-As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.1...v4.4.2)
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.4.1...v4.4.2)
 
 For non-standard replica builds: 
-- [`Customer Replica 1: ➔ v4.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.1...v4.4.2)
+- [`Customer Replica 1: ➔ v4.4.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v4.4.1...v4.4.2)
 
 #### Notes:
 
