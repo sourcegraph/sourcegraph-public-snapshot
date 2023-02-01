@@ -36,7 +36,7 @@ import {
     ensureSrcCliUpToDate,
     getLatestTag,
     getAllUpgradeGuides,
-    updateUpgradeGuides,
+    updateUpgradeGuides, fetchTags,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -68,6 +68,7 @@ export type StepID =
     | '_test:srccliensure'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
+    | '_test:tags'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -388,6 +389,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
+            fetchTags()
             try {
                 await createTag(
                     await getAuthenticatedGitHubClient(),
@@ -403,6 +405,14 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             } catch (error) {
                 console.error(`Failed to create tag: ${tag}`, error)
             }
+        },
+    },
+    {
+        id: '_test:tags',
+        description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
+        argNames: ['candidate'],
+        run: (config, candidate) => {
+            fetchTags("$PWD")
         },
     },
     {
