@@ -1,7 +1,6 @@
 import { FC } from 'react'
 
-import { Redirect } from 'react-router'
-import { useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -34,15 +33,11 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
-    const { '*': splat } = useParams<{ '*': string }>()
+    const { '*': filePath = '' } = useParams<{ '*': string }>()
 
-    // The decoding depends on the pinned `history` version.
-    // See https://github.com/sourcegraph/sourcegraph/issues/4408
-    // and https://github.com/ReactTraining/history/issues/505
-    const filePath = decodeURIComponent(splat || '') // empty string is root
     // Redirect tree and blob routes pointing to the root to the repo page
     if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
-        return <Redirect to={toRepoURL({ repoName, revision: context.revision })} />
+        return <Navigate to={toRepoURL({ repoName, revision: context.revision })} />
     }
 
     const objectType = maybeObjectType || 'tree'
@@ -57,7 +52,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
             location.pathname + location.search,
             `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
         )
-        return <Redirect to={url} />
+        return <Navigate to={url} />
     }
 
     // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
@@ -70,7 +65,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
         }
         const range = formatLineOrPositionOrRange(parsedQuery)
         const url = appendLineRangeQueryParameter(location.pathname + location.search, range ? `L${range}` : undefined)
-        return <Redirect to={url + formatHash(hashParameters)} />
+        return <Navigate to={url + formatHash(hashParameters)} />
     }
 
     return (

@@ -48,7 +48,7 @@ export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
 
     let spec: { base: string | null; head: string | null } | null | undefined
     if (splat) {
-        spec = parseComparisonSpec(decodeURIComponent(splat))
+        spec = parseComparisonSpec(splat)
     }
 
     // Parse out the optional filePath search param, which is used to show only a single file in the compare view
@@ -87,9 +87,11 @@ function parseComparisonSpec(spec: string): { base: string | null; head: string 
     if (!spec.includes('...')) {
         return null
     }
-    const parts = spec.split('...', 2).map(decodeURIComponent)
+
+    const [base, head] = spec.split('...', 2)
+
     return {
-        base: parts[0] || null,
-        head: parts[1] || null,
+        base,
+        head,
     }
 }

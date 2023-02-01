@@ -2,8 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
-import { Redirect } from 'react-router-dom'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
@@ -301,7 +300,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
+                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )

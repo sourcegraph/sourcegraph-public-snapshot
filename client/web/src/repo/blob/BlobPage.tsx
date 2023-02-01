@@ -4,8 +4,7 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect } from 'react-router'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
@@ -443,7 +442,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
         // they cannot easily determine eagerly if a file path is a tree or a blob.
         // We don't have error names on GraphQL errors.
         if (/not a blob/i.test(blobInfoOrError.message)) {
-            return <Redirect to={toTreeURL(props)} />
+            return <Navigate to={toTreeURL(props)} />
         }
         return (
             <>
