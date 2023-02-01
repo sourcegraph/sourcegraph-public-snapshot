@@ -81,13 +81,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 
 	resources := make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resource, err := h.convertUserToSCIMResource(user)
-		if err != nil {
-			// Log error and skip user
-			h.observationCtx.Logger.Error("Error converting user to SCIM resource", log.String("username", user.Username), log.Error(err))
-			continue
-		}
-		resources = append(resources, *resource)
+		resources = append(resources, *h.convertUserToSCIMResource(user))
 	}
 
 	return scim.Page{
@@ -97,7 +91,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) (*scim.Resource, error) {
+func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) *scim.Resource {
 	// Convert names
 	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
 
@@ -129,7 +123,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 			"emails":      emailMap,
 			"active":      true,
 		},
-	}, nil
+	}
 }
 
 // displayNameToPieces splits a display name into first, middle, and last name.
