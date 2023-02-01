@@ -111,7 +111,7 @@ func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 
 		if info != nil {
 			if info.IsExpired() {
-				return errors.New("The sourcegraph license has expired. No site admins can be created until the license is updated.")
+				return errors.New("The Sourcegraph license has expired. No site-admins can be created until the license is updated.")
 			}
 			if info.Plan() != licensing.PlanFree0 {
 				return nil
