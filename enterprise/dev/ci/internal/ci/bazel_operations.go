@@ -17,6 +17,7 @@ func BazelOperations() *operations.Set {
 		"//lib/...",
 		"//internal/...",
 		"//cmd/...",
+		"//enterprise/...",
 	))
 	ops.Append(bazelTest("//monitoring/..."))
 	return ops
