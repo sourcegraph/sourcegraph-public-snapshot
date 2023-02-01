@@ -1,10 +1,12 @@
-import { foldGutter, foldKeymap, foldService } from '@codemirror/language'
+import { foldEffect, foldGutter, foldKeymap, foldService } from '@codemirror/language'
 import { EditorState, Extension, Line, StateField } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
+import { getCodeIntelTooltipState } from './token-selection/code-intel-tooltips'
+import { rangeToCmSelection } from './occurrence-utils'
 
 enum CharCode {
     /**
@@ -122,7 +124,9 @@ function getFoldRange(state: EditorState, lineStart: number): { from: number; to
 export function codeFoldingExtension(): Extension {
     return [
         foldingRanges,
+
         foldService.of(getFoldRange),
+
         foldGutter({
             markerDOM(open: boolean): HTMLElement {
                 const container = document.createElement('div')
@@ -131,7 +135,30 @@ export function codeFoldingExtension(): Extension {
                 return container
             },
         }),
+
         keymap.of(foldKeymap),
+
+        ViewPlugin.define(view => ({
+            update(update: ViewUpdate) {
+                for (const transaction of update.transactions) {
+                    for (const effect of transaction.effects) {
+                        if (effect.is(foldEffect)) {
+                            const focusedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
+                            if (focusedOccurrence) {
+                                const range = rangeToCmSelection(view.state, focusedOccurrence.range)
+                                if (range.from >= effect.value.from && range.to <= effect.value.to) {
+                                    // Occurrence is inside the folded range.
+                                    // It will be removed from DOM triggering editor's blur.
+                                    // Focus it back for the keyboard navigation to work.
+                                    view.contentDOM.focus()
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        })),
+
         EditorView.theme({
             '.cm-foldGutter .fold-icon': {
                 color: 'var(--text-muted)',
