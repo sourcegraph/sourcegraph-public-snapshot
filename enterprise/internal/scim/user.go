@@ -81,7 +81,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 
 	resources := make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resources = append(resources, *h.convertUserToSCIMResource(user))
+		resources = append(resources, h.convertUserToSCIMResource(user))
 	}
 
 	return scim.Page{
@@ -91,7 +91,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) *scim.Resource {
+func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert names
 	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
 
@@ -107,7 +107,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 		emailMap = append(emailMap, map[string]interface{}{"value": email})
 	}
 
-	return &scim.Resource{
+	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
 		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{
