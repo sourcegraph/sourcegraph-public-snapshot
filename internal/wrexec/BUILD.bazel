@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "wrexec",
+    srcs = [
+        "cmd.go",
+        "recording_cmd.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/wrexec",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/rcache",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "wrexec_test",
+    srcs = [
+        "cmd_test.go",
+        "recording_cmd_test.go",
+    ],
+    deps = [
+        ":wrexec",
+        "//internal/rcache",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

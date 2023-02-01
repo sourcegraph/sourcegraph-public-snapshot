@@ -91,9 +91,9 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			"type:commit a or b repo:c context:global",
 		}
 
-		for _, query := range queries {
+		for _, q := range queries {
 			t.Run("", func(t *testing.T) {
-				test(t, query)
+				test(t, q)
 			})
 		}
 	})

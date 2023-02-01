@@ -21,6 +21,8 @@ protected_services:
       # other stuff we just know about
       - search-indexer
       - indexed-searcher
+      # observability
+      - prometheus
 
   # $ go run ./dev/depgraph/ summary internal/redispool
   # $ go run ./dev/depgraph/ summary internal/rcache
@@ -36,7 +38,8 @@ protected_services:
       - searcher
       - symbols
       - worker
-      # other stuff we just know about
+      # observability
+      - prometheus
       - redis-exporter
 
   # $ go run ./dev/depgraph/ summary internal/database
@@ -51,3 +54,6 @@ protected_services:
       - symbols
       - worker
       - precise-code-intel-worker
+      # observability
+      - prometheus
+      - postgres-exporter

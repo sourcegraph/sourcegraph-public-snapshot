@@ -65,7 +65,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	operations := command.NewOperations(&observation.TestContext)
 
 	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
-	workspace, err := workspace.NewFirecrackerWorkspace(
+	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
 		ctx,
 		// No need for files store in the test.
 		nil,
@@ -94,7 +94,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	fopts := firecrackerOptions(config)
 	fopts.Enabled = true
 
-	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
+	runner := command.NewRunner(firecrackerWorkspace.Path(), commandLogger, command.Options{
 		ExecutorName:       name,
 		ResourceOptions:    resourceOptions(config),
 		DockerOptions:      dockerOptions(config),

@@ -1128,10 +1128,11 @@ commandsets:
       - otel-collector
       - jaeger
 
-  enterprise-single-program:
+  app:
     requiresDevPrivate: true
     checks:
       - docker
+      # TODO: App's dependency on Redis will be removed.
       - redis
       - postgres
       - git
@@ -1139,19 +1140,7 @@ commandsets:
       - sourcegraph
       - docsite
       - web
-      - syntax-highlighter
-      - caddy
-
-  oss-single-program:
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - sourcegraph-oss
-      - docsite
-      - oss-web
+      # TODO: App's dependency on syntax-highlighter will be removed.
       - syntax-highlighter
       - caddy
 

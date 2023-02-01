@@ -414,7 +414,7 @@ func TestRemoveClosePoints(t *testing.T) {
 func TestInsightRepoScopeResolver(t *testing.T) {
 
 	makeSeries := func(repoList []string, search string) types.InsightViewSeries {
-		var repoSearch *string = &search
+		repoSearch := &search
 		if search == "" {
 			repoSearch = nil
 		}

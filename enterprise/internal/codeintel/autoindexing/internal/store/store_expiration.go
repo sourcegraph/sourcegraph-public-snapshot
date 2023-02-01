@@ -19,7 +19,7 @@ func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIn
 	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return (s.db.Exec(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize)))
+	return s.db.Exec(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize))
 }
 
 const expireFailedRecordsQuery = `

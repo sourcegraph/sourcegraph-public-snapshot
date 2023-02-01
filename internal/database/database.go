@@ -35,7 +35,6 @@ type DB interface {
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
-	OrgStats() OrgStatsStore
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
@@ -64,9 +63,7 @@ type DB interface {
 	ZoektRepos() ZoektReposStore
 	Teams() TeamStore
 
-	Transact(context.Context) (DB, error)
 	WithTransact(context.Context, func(tx DB) error) error
-	Done(error) error
 }
 
 var _ DB = (*db)(nil)
@@ -177,10 +174,6 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
-}
-
-func (d *db) OrgStats() OrgStatsStore {
-	return OrgStatsWith(d.Store)
 }
 
 func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {

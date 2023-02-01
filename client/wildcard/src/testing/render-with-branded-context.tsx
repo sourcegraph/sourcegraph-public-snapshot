@@ -1,9 +1,10 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useLayoutEffect, useRef } from 'react'
 
 import { RenderResult, render } from '@testing-library/react'
 import { MemoryHistory, createMemoryHistory } from 'history'
+import * as H from 'history'
 import { Router } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { CompatRouter, useLocation } from 'react-router-dom-v5-compat'
 
 import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
 
@@ -14,6 +15,7 @@ export interface RenderWithBrandedContextResult extends RenderResult {
 interface RenderWithBrandedContextOptions {
     route?: string
     history?: MemoryHistory<unknown>
+    onLocationChange?: (location: H.Location) => void
 }
 
 const wildcardTheme: WildcardTheme = {
@@ -22,16 +24,35 @@ const wildcardTheme: WildcardTheme = {
 
 export function renderWithBrandedContext(
     children: ReactNode,
-    { route = '/', history = createMemoryHistory({ initialEntries: [route] }) }: RenderWithBrandedContextOptions = {}
+    {
+        route = '/',
+        history = createMemoryHistory({ initialEntries: [route] }),
+        onLocationChange = (_location: H.Location) => {},
+    }: RenderWithBrandedContextOptions = {}
 ): RenderWithBrandedContextResult {
     return {
         ...render(
             <WildcardThemeContext.Provider value={wildcardTheme}>
                 <Router history={history}>
-                    <CompatRouter>{children}</CompatRouter>
+                    <CompatRouter>
+                        {children}
+                        <ExtractCurrentPathname onLocationChange={onLocationChange} />
+                    </CompatRouter>
                 </Router>
             </WildcardThemeContext.Provider>
         ),
         history,
     }
+}
+
+function ExtractCurrentPathname({ onLocationChange }: { onLocationChange: (location: H.Location) => void }): null {
+    const onLocationChangeRef = useRef(onLocationChange)
+    useLayoutEffect(() => {
+        onLocationChangeRef.current = onLocationChange
+    }, [onLocationChange])
+    const location = useLocation()
+    useEffect(() => {
+        onLocationChangeRef.current(location)
+    }, [location, onLocationChange])
+    return null
 }

@@ -1,7 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-package(default_visibility = ["//client/shared:__subpackages__"])
+package(default_visibility = [
+    "//client/shared:__subpackages__",
+    "//cmd/frontend:__subpackages__",
+])
 
 js_library(
     name = "graphql_schema",
@@ -138,6 +141,7 @@ go_library(
         "survey_responses.go",
         "symbols.go",
         "tags.go",
+        "teams.go",
         "temporary_settings.go",
         "testing.go",
         "types.go",
@@ -196,6 +200,7 @@ go_library(
         "//internal/codeintel/resolvers",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/encryption",
         "//internal/encryption/keyring",
@@ -203,6 +208,7 @@ go_library(
         "//internal/errcode",
         "//internal/executor",
         "//internal/extsvc",
+        "//internal/extsvc/gerrit/externalaccount",
         "//internal/extsvc/github",
         "//internal/extsvc/phabricator",
         "//internal/extsvc/versions",
@@ -340,6 +346,7 @@ go_test(
         "site_test.go",
         "slow_requests_tracer_test.go",
         "status_messages_test.go",
+        "teams_test.go",
         "temporary_settings_test.go",
         "testutil_test.go",
         "user_collaborators_test.go",
@@ -372,6 +379,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/encryption",
         "//internal/extsvc",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/featureflag",
         "//internal/fileutil",

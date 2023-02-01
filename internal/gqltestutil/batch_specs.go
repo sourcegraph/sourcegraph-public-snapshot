@@ -263,7 +263,10 @@ query GetBatchSpecDeep($id: ID!) {
 				  ifCondition
 				  cachedResultFound
 				  skipped
-				  outputLines
+				  outputLines {
+					nodes
+					totalCount
+				  }
 				  startedAt
 				  finishedAt
 				  exitCode
@@ -374,6 +377,11 @@ type BatchSpecWorkspace struct {
 	Executor             Executor
 }
 
+type WorkspaceOutputLines struct {
+	Nodes      []string
+	TotalCount int
+}
+
 type BatchSpecWorkspaceStep struct {
 	Number            int
 	Run               string
@@ -381,7 +389,7 @@ type BatchSpecWorkspaceStep struct {
 	IfCondition       string
 	CachedResultFound bool
 	Skipped           bool
-	OutputLines       []string
+	OutputLines       WorkspaceOutputLines
 	StartedAt         string
 	FinishedAt        string
 	ExitCode          int

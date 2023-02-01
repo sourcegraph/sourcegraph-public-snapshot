@@ -20,16 +20,19 @@ import (
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -274,7 +277,7 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			zoekt := &searchbackend.FakeSearcher{
+			fakeZoekt := &searchbackend.FakeSearcher{
 				Result: &zoekt.SearchResult{Files: tt.args.results},
 				Repos:  zoektRepos,
 			}
@@ -294,7 +297,7 @@ func TestIndexedSearch(t *testing.T) {
 				context.Background(),
 				logtest.Scoped(t),
 				tt.args.repos,
-				zoekt,
+				fakeZoekt,
 				search.TextRequest,
 				query.Yes,
 				query.ContainsRefGlobs(q),
@@ -316,7 +319,7 @@ func TestIndexedSearch(t *testing.T) {
 				Since:          tt.args.since,
 			}
 
-			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -490,6 +493,107 @@ func TestZoektResultCountFactor(t *testing.T) {
 			}).resultCountFactor()
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestZoektSearchOptions(t *testing.T) {
+	cases := []struct {
+		name        string
+		context     context.Context
+		options     *Options
+		ranksWeight float64
+		want        *zoekt.SearchOptions
+	}{
+		{
+			name:    "test defaults",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 500000,
+				TotalMaxMatchCount: 500000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 2500,
+				ChunkMatches:       true,
+			},
+		},
+		{
+			name:    "test defaults with ranking feature enabled",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
+		},
+		{
+			name:    "test repo search defaults",
+			context: context.Background(),
+			options: &Options{
+				Selector:       []string{filter.Repository},
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardRepoMaxMatchCount: 1,
+				MaxWallTime:            20000000000,
+				ChunkMatches:           true,
+			},
+		},
+		{
+			name:        "test document ranks weight",
+			context:     context.Background(),
+			ranksWeight: 42.0,
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 42,
+			},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.ranksWeight > 0.0 {
+				cfg := conf.Get()
+				cfg.ExperimentalFeatures.Ranking = &schema.Ranking{
+					DocumentRanksWeight: &tt.ranksWeight,
+				}
+				conf.Mock(cfg)
+			}
+			got := tt.options.ToSearch(tt.context)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -887,7 +991,7 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 		},
 		// One chunk per line, not one per fragment
 		output: result.ChunkMatches{{
-			Content:      string("testing 1 2 3"),
+			Content:      "testing 1 2 3",
 			ContentStart: result.Location{0, 0, 0},
 			Ranges: result.Ranges{{
 				Start: result.Location{8, 0, 8},

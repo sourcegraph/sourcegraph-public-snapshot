@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )

@@ -161,13 +161,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/branch',
-        render: ({ repo, location, history }) => (
-            <RepositoryBranchesTab repo={repo} location={location} history={history} />
-        ),
+        render: ({ repo }) => <RepositoryBranchesTab repo={repo} />,
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history }) => <RepositoryTagTab repo={repo} location={location} history={history} />,
+        render: ({ repo }) => <RepositoryTagTab repo={repo} />,
     },
     {
         path: compareSpecPath,
