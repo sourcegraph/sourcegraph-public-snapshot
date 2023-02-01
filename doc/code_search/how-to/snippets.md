@@ -13,8 +13,8 @@ _NOTE: Search snippets are temporarily named search.scopes in site configuration
 Custom search snippets can be specified at 3 different levels:
 
 - By site admins for all users: in the **Global settings** in the site admin area.
-- By organization admins for all organization members: in the organization profile **Settings** section
-- By users for themselves only: in the user profile **Settings** section
+- By organization admins for all organization members: in the organization profile **Settings** section.
+- By users for themselves only: in the user profile **Settings** section.
 
 You can configure search snippets by setting the `search.scopes` to a JSON array of `{name, value}` objects.
 
