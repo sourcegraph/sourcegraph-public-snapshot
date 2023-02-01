@@ -4,65 +4,17 @@ title: Deployment Overview
 
 # Deployment Overview
 
-Sourcegraph provides a variety of deployment options to meet the diverse needs of our users. Each method requires varying levels of technical expertise and investment. The appropriate choice for your organization will depend on your specific goals and requirements. The following section provides an overview of the available deployment options and the associated level of investment and technical understanding required.
+Sourcegraph offers multiple deployment options to suit different needs. The appropriate option for your organization depends on your goals and requirements, as well as the technical expertise and resources available. The following sections overview the available options and their associated investments and technical demands.
 
 ## Deployment types
 
-When planning to deploy Sourcegraph, it is important to first determine the appropriate deployment method for your organization. For example, if you choose to deploy using Kubernetes, you will need to make a decision on whether or not to use Helm. Once a deployment type is selected and implemented, it **cannot** be changed.
+Carefully consider your organization's needs and technical expertise when selecting a Sourcegraph deployment method. The method you choose cannot be changed for a running instance, so make an informed decision. The available methods have different capabilities, and the following sections provide recommendations to help you choose.
 
-The deployment types available for Sourcegraph have varying levels of capabilities. When selecting a deployment type, it is important to consider both the needs of your business as well as the technical expertise available within your organization. As previously mentioned, it is not possible to change the deployment type of a running instance, so it's important to make an informed decision. The following sections provide more detailed recommendations for each deployment type to assist you in making your decision.
+### [Sourcegraph Cloud](https://signup.sourcegraph.com/)
 
-### [Install-script for single-machine](single-node/script.md) 
+**For Enterprises looking for a cloud solution.**
 
-Quickly install Sourcegraph onto a single Linux machine using our install script.
-
-### [Machine Images](machine-images/index.md) 
-
-<span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
-
-Currently available in the following hosts:
-
-<div class="getting-started">
-  <a class="btn btn-secondary text-center" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
-  <a class="btn btn-secondary text-center" href="machine-images/azure"><span>Azure Images</span></a>
-  <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
-</div>
-
-Machine images are our recommended deployment method for organizations that require a simple on-premise solution, but would still like to maintain and manage their own infrastructure. 
-
-### [Kubernetes](kubernetes/index.md)
-
-Kubernetes is recommended for non-standard deployments where deploying Sourcegraph with our Machine Images or install-script is not a viable option.
-
-Below are the supported methods to deploy Sourcegraph on Kubernetes:
-
-- **Kustomize** our recommended approach. Kustomize provides a simple, yet highly flexible way to configure your deployment using the native features of `kubectl`.
-- **Helm** provides a widely used mechanism for deployment customizations and managing upgrades.
-
-Both paths require in-depth Kubernetes knowledge to set up and maintain. For teams without the ability to support this, please speak to your Sourcegraph representative to learn about other deployment methods that we offer.
-
-<div class="getting-started">
-  <a class="btn btn-secondary text-center" href="kubernetes/index"><span>Kustomize</span></a>
-  <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
-</div>
-
- We strongly recommended you to contact us at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to learn more about the technical complexities involved to make sure Kubernetes is the best option for you and your teams. We do not recommend this method if you do not have an established infrastructure that is built on Kubernetes.
-
-### ARM / ARM64 support
-
-Running Sourcegraph on ARM / ARM64 images is not supported for production deployments at this time.
-
----
-
-## Recommendations
-
-Some of the options below are recommended for individuals/teams who have the necessary technical expertise and resources to maintain and manage their own infrastructure, while Sourcegraph Cloud and Sourcegraph App are more suitable for users who don't want to manage the infrastructure themselves.
-
-### Cloud solution
-
-For Enterprises looking for a cloud solution:
-
-  - [Sourcegraph Cloud](https://signup.sourcegraph.com/) - A cloud instance hosted and maintained by Sourcegraph
+A cloud instance hosted and maintained by Sourcegraph
 
 <div>
   <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
@@ -77,29 +29,53 @@ For Enterprises looking for a cloud solution:
   </a>
 </div>
   
-### Self-hosted solution - single-node
+### [Machine Images](machine-images/index.md) 
 
-For Enterprises looking for a self-hosted solution:
-  
-  - [Machine images](machine-images/index.md) - An option to run Sourcegraph on your own infrastructure using pre-configured machine images
-  - Linux Virtual Machines with our [install-script](single-node/script.md) - An option to set up a single-node Sourcegraph deployment using a script provided by Sourcegraph
-  
-### Self-hosted solution - multi-node
+**For Enterprises looking for a self-hosted solution.** 
 
-For large Enterprises that require a multi-node, self-hosted solution
+<span class="badge badge-note">RECOMMENDED</span> An option to run Sourcegraph on your own infrastructure using pre-configured machine images.
 
-  - [Kubernetes with Kustomize](kubernetes/index.md) - A multi-node deployment option using Kubernetes and Kustomize
-  - [Kubernetes with Helm](kubernetes/helm.md) - A multi-node deployment option using Kubernetes and Helm
+Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes! Currently available in the following hosts:
 
-We strongly recommended you to contact us at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to learn more about the technical complexities involved to make sure Kubernetes is the best option for you and your teams.
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/azure"><span>Azure Images</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
+</div>
 
-### Non-production environments on local machines
+#### [Install-script](single-node/script.md)
 
-  - Sourcegraph App (Coming soon) - A standalone application for local development and experimentation
+If you would like to build your own machine images, you can set up Linux virtual machines using our [install-script](single-node/script.md).
+
+>NOTE: Deploying with machine images require the necessary technical expertise and resources to maintain and manage their own infrastructure.
+
+### [Kubernetes](kubernetes/index.md)
+
+**For large Enterprises that require a multi-node, self-hosted solution.**
+
+- **Kustomize** utilizes the built-in features of kubectl to provide maximum flexibility in configuring your deployment
+- **Helm** offers a simpler deployment process but with less customization flexibility
+
+We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides.
+
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="kubernetes/index"><span>Kustomize</span></a>
+  <a class="btn btn-secondary text-center" href="kubernetes/helm"><span>Helm</span></a>
+</div>
+
+>NOTE: Given the technical knowledge required to deploy and maintain on Kubernetes, teams without these resources should contact their Sourcegraph representative at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to discuss alternative deployment options.
+
+## Non-production environments on local machines
+
   - [Docker Compose](docker-compose/index.md) - A deployment option using Docker Compose
   - [Docker Single Container](docker-single-container/index.md) - A deployment option using a single Docker container
-  
+  - [Minikube](single-node/minikube.md) - A deployment option using Minikube with Docker container
+
 ---
+
+## ARM / ARM64 support
+
+Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
 
 ## Reference repositories
 

@@ -1,4 +1,4 @@
-# Sourcegraph with Kubernetes
+# Sourcegraph on Kubernetes
 
 Deploying on Kubernetes is for organizations that need highly scalable and available code search and code navigation. 
 
@@ -70,7 +70,7 @@ A storage class must be created and configured before deploying Sourcegraph. SSD
 
 #### Option 1: Create a new storage class
 
-We recommend creating a new storage class for your Sourcegraph instance using one of the preconfigured components for the cloud providers listed below if you have permission to create cluster-wide resources:
+We recommend using a preconfigured storage class component for your cloud provider if you can create cluster-wide resources:
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
@@ -85,7 +85,7 @@ See our [configurations guide](kustomize/configure.md) for a list of available s
 
 #### Option 2: Use an existing storage class
 
-If creating a storage class is not an option and/or you'd like to use an existing storage class that is provisioned with SSDs available:
+If you cannot create a storage class or want to use an existing one with SSDs:
 
 1. Include the `storage-class/update-class-name` component under the components list
 2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
