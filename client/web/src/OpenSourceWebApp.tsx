@@ -6,7 +6,7 @@ import { orgAreaRoutes } from './org/area/routes'
 import { orgSettingsAreaRoutes } from './org/settings/routes'
 import { orgSettingsSideBarItems } from './org/settings/sidebaritems'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { repoContainerRoutes, repoRevisionContainerRoutes } from './repo/routes'
+import { repoContainerRoutes, repoSettingsContainerRoutes, repoRevisionContainerRoutes } from './repo/routes'
 import { repoSettingsAreaRoutes } from './repo/settings/routes'
 import { repoSettingsSideBarGroups } from './repo/settings/sidebaritems'
 import { routes } from './routes'
@@ -34,6 +34,7 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
         orgAreaRoutes={orgAreaRoutes}
         orgAreaHeaderNavItems={orgAreaHeaderNavItems}
         repoContainerRoutes={repoContainerRoutes}
+        repoSettingsContainerRoutes={repoSettingsContainerRoutes}
         repoRevisionContainerRoutes={repoRevisionContainerRoutes}
         repoHeaderActionButtons={repoHeaderActionButtons}
         repoSettingsAreaRoutes={repoSettingsAreaRoutes}
