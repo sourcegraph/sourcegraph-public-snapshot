@@ -652,3 +652,78 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 		},
 	})
 }
+
+func TestTeamByName(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				name
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"name": "team"
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "team",
+		},
+	})
+}
+
+func TestTeamByNameNotFound(t *testing.T) {
+	db, _ := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				name
+			}
+		}`,
+		ExpectedResult: `{
+			"team": null
+		}`,
+		Variables: map[string]any{
+			"name": "does-not-exist",
+		},
+	})
+}
+
+func TestTeamByNameUnauthorized(t *testing.T) {
+	db, ts := setupDB()
+	// false in the next line indicates not-site-admin
+	ctx, _, _ := fakeUser(t, context.Background(), db, false)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				id
+			}
+		}`,
+		ExpectedResult: `{
+			"team": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: "only site admins can view teams",
+				Path:    []any{"team"},
+			},
+		},
+		Variables: map[string]any{
+			"name": "team",
+		},
+	})
+}
