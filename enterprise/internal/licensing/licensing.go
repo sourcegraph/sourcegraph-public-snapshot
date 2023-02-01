@@ -131,7 +131,6 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastInfo = info
 			lastSignature = signature
 		}
-
 		return info, signature, nil
 	} else {
 		// If no license key, default to free tier
