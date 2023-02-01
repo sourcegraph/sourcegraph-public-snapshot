@@ -116,6 +116,12 @@ func (h *handler[T]) validateJobRequest(w http.ResponseWriter, r *http.Request) 
 	}
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
+	if len(body) == 0 {
+		log15.Error("no request body provided")
+		http.Error(w, "No request body provided", http.StatusBadRequest)
+		return false
+	}
+
 	// Every job requests has the basics. Parse out the info we need to see whether the request is valid/authenticated.
 	var payload executor.JobOperationRequest
 	if err = json.Unmarshal(body, &payload); err != nil {
@@ -422,7 +428,7 @@ func (h *handler[T]) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ErrUnknownJob
+// ErrUnknownJob error when the job does not exist.
 var ErrUnknownJob = errors.New("unknown job")
 
 func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorName string, jobID int, errorMessage string) error {
@@ -478,7 +484,7 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), mux.Vars(r)["queueName"], e, payload.JobIDs)
+		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), e, payload.JobIDs)
 
 		if payload.Version == executor.ExecutorAPIVersion2 {
 			return http.StatusOK, executor.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
@@ -489,7 +495,7 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *handler[T]) heartbeat(ctx context.Context, queueName string, executor types.Executor, ids []int) ([]int, []int, error) {
+func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []int) ([]int, []int, error) {
 	if err := validateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
