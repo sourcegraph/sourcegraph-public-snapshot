@@ -32,7 +32,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
    - [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
 * A [Kubernetes](https://kubernetes.io/) cluster
    - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/)
-   - Support for Persistent Volumes (SSDs recommended)
+   - Support for Persistent Volumes with SSDs
    - You can optionally refer to our [terraform configurations](https://github.com/sourcegraph/tf-k8s-configs) for setting up clusters on:
      - [Amazon Web Services EKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws)
      - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
@@ -42,23 +42,23 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 
 ### **Step 1**: Set up a release branch
 
-Set up a release branch from the default branch in your local forked copy of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository.
+Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository. Refer to the [reference repository's docs](../repositories.md) for instructions on creating a local fork.
 
 ```bash
 $ git checkout -b release
 ```
 
-### **Step 2**: Set up an overlay
+### **Step 2**: Set up a directory for your instance
 
-`cd` into the repository and create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
+Create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
 
 ```bash
 $ mkdir instances/my-sourcegraph
 ```
 
-### **Step 3**: Set up a configuration file
+### **Step 3**: Set up the kustomization file
 
-Copy [instances/kustomization.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
+Copy [instances/template/kustomization.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
 
 ```bash
 $ cp instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
@@ -68,9 +68,9 @@ The new `kustomization.yaml` file will be used to configure your deployment.
 
 ### **Step 4**: Set namespace
 
-By default, the provided kustomization.yaml template deploys sourcegraph into the `sourcegraph` namespace. If you intend to deploy sourcegraph into a different namespace, replace `sourcegraph` with the name of the existing namespace in your cluster.
+By default, the provided `kustomization.yaml` template deploys Sourcegraph into the `sourcegraph` namespace. 
 
-Set it to `default` to deploy to the default namespace.
+If you intend to deploy Sourcegraph into a different namespace, replace `sourcegraph` with the name of the existing namespace in your cluster, or set it to `default` to deploy into the default namespace.
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml
@@ -79,27 +79,11 @@ Set it to `default` to deploy to the default namespace.
 
 ### **Step 5**: Set storage class
 
-Sourcegraph requires a storage class that supports SSDs for proper storage and instance performance.
+A storage class must be created and configured before deploying Sourcegraph.
 
-Here are the options to set the storage class for your instance:
+#### Option 1: Use an existing storage class
 
-#### Option 1: Create a new storage class
-
-If you have the ability to create a new storage class, choose a storage-class component that corresponds to your cluster provider:
-
-  ```yaml
-  # instances/my-sourcegraph/kustomization.yaml
-  components:
-    - ../../components/storage-class/aws
-    - ../../components/storage-class/azure
-    - ../../components/storage-class/gke
-  ```
-
-Please refer to our [configurations guide](kustomize/configure.md) for a complete list of available storage class components and other specific configuration options.
-
-#### Option 2: Use an existing storage class
-
-If you'd like to use an exisiting storage class:
+To use an exisiting storage class:
 
 1. Include the `storage-class/update-class-name` component under the components list
 2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
@@ -119,9 +103,23 @@ For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of
       - STORAGECLASS_NAME=sourcegraph # Set STORAGECLASS_NAME value to 'sourcegraph'
   ```
 
+#### Option 2: Create a new storage class
+
+To create a new storage class, select a component that corresponds to your cluster provider.
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+  components:
+    - ../../components/storage-class/aws
+    - ../../components/storage-class/azure
+    - ../../components/storage-class/gke
+  ```
+
+See our [configurations guide](kustomize/configure.md) for a list of available storage class components and configuration options.
+
 #### Option 3: Use default storage class
 
-Skip this step to use the default storage class without SSD support for non-prod environment; however, you must recreate the cluster with SSDs configured for a production environment later.
+Skip this step to use the default storage class without SSD support for non-production environment; however, you must recreate the cluster with SSDs configured for production environment later.
 
 ### **Step 6**: Build manifests with Kustomize
 
@@ -178,7 +176,7 @@ After the initial deployment, additional configuration might be required for Sou
 Common configurations that are strongly recommended for all Sourcegraph deployments:
 
 - [Enable the Sourcegraph monitoring stack](kustomize/configure.md#monitoring-stack)
-- [Allocate resources based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
+- [Adjust resource allocations based on your instance size](kustomize/configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
 - [Configure ingress](kustomize/configure.md#ingress)
 - [Enable TLS](kustomize/configure.md#tls)
 
