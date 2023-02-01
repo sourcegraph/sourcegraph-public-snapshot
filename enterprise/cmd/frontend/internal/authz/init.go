@@ -146,7 +146,7 @@ func Init(
 		}
 		if info != nil && info.IsExpiringSoon() {
 			return []*graphqlbackend.Alert{{
-				TypeValue:    graphqlbackend.AlertTypeError,
+				TypeValue:    graphqlbackend.AlertTypeWarning,
 				MessageValue: fmt.Sprintf("Sourcegraph license will expire soon! Expires on: %s. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.", info.ExpiresAt.UTC().Truncate(time.Hour).Format(time.UnixDate)),
 			}}
 		}
