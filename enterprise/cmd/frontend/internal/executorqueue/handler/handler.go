@@ -521,7 +521,7 @@ func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) 
 	var payload executor.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.cancelJobs(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.KnownJobIDs)
+		canceledIDs, err := h.cancelJobs(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
 		return http.StatusOK, canceledIDs, err
 	})
 }
@@ -615,7 +615,7 @@ type errorResponse struct {
 
 // cancelJobs reaches to the queueHandlers.FetchCanceled to determine jobs that need to be canceled.
 // This endpoint is deprecated and should be removed in Sourcegraph 4.4.
-func (h *handler[T]) cancelJobs(ctx context.Context, queueName string, executorName string, knownIDs []int) ([]int, error) {
+func (h *handler[T]) cancelJobs(ctx context.Context, executorName string, knownIDs []int) ([]int, error) {
 	if err := validateWorkerHostname(executorName); err != nil {
 		return nil, err
 	}
