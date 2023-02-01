@@ -440,6 +440,53 @@ func TestUsers_List_Query(t *testing.T) {
 	}
 }
 
+func TestUsers_ListForSCIM_Query(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create users
+	newUsers := []NewUserForSCIM{
+		{NewUser: NewUser{Email: "alice@example.com", Username: "alice", EmailIsVerified: true}},
+		{NewUser: NewUser{Email: "bob@example.com", Username: "bob", EmailVerificationCode: "bb"}, SCIMExternalID: "BOB"},
+		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
+	}
+	for _, newUser := range newUsers {
+		id, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		for _, email := range newUser.AdditionalVerifiedEmails {
+			verificationCode := "x"
+			err := db.UserEmails().Add(ctx, id, email, &verificationCode)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = db.UserEmails().Verify(ctx, id, email, verificationCode)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := db.Users().ListForSCIM(ctx, &UsersListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Len(t, users, 3)
+	assert.Equal(t, "alice", users[0].Username)
+	assert.Equal(t, "", users[0].SCIMExternalID)
+	assert.Equal(t, "BOB", users[1].SCIMExternalID)
+	assert.Equal(t, "CHARLIE", users[2].SCIMExternalID)
+	assert.Len(t, users[0].Emails, 1)
+	assert.Len(t, users[1].Emails, 0)
+	assert.Len(t, users[2].Emails, 2)
+}
+
 func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
