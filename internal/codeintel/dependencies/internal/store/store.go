@@ -197,37 +197,29 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 	// replace the originals :wave
 	deps = nonDupes
 
-	db, err := s.db.Transact(ctx)
+	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer func() {
-		err = db.Done(err)
+		err = tx.Done(err)
 	}()
 
-	newDeps = make([]shared.PackageRepoReference, 0, len(deps))
-	dependencyScanner := func(rows dbutil.Scanner) error {
-		var dep shared.PackageRepoReference
-		if err := rows.Scan(&dep.ID, &dep.Scheme, &dep.Name); err != nil {
-			return err
+	for _, tempTableQuery := range []string{temporaryPackageRepoRefsTableQuery, temporaryPackageRepoRefVersionsTableQuery} {
+		if err := tx.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
+			return nil, nil, errors.Wrap(err, "failed to create temporary tables")
 		}
-		newDeps = append(newDeps, dep)
-		return nil
 	}
 
-	err = batch.WithInserterWithReturn(
+	err = batch.WithInserter(
 		ctx,
-		db.Handle(),
-		"lsif_dependency_repos",
+		tx.Handle(),
+		"t_package_repo_refs",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version"},
-		"ON CONFLICT DO NOTHING",
-		[]string{"id", "scheme", "name"},
-		dependencyScanner,
+		[]string{"scheme", "name"},
 		func(inserter *batch.Inserter) error {
 			for _, pkg := range deps {
-				// temporary sentinel value so ON CONFLICT still works
-				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name, "👁️ temporary_sentintel_value 👁️"); err != nil {
+				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name); err != nil {
 					return err
 				}
 			}
@@ -235,7 +227,15 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		},
 	)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to insert package repos")
+		return nil, nil, errors.Wrap(err, "failed to insert package repos in temporary table")
+	}
+
+	newDeps, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (dep shared.PackageRepoReference, err error) {
+		err = rows.Scan(&dep.ID, &dep.Scheme, &dep.Name)
+		return
+	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefsQuery)))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
 	}
 
 	// we need the IDs of all newly inserted and already existing package repo references
@@ -275,33 +275,19 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 			sqlf.Join(params, ", "),
 		)
 
-		allIDsWindow, err := basestore.ScanInts(db.Query(ctx, query))
+		allIDsWindow, err := basestore.ScanInts(tx.Query(ctx, query))
 		if err != nil {
 			return nil, nil, err
 		}
 		allIDs = append(allIDs, allIDsWindow...)
 	}
 
-	// rough estimate of 1 version per dependency
-	newVersions = make([]shared.PackageRepoRefVersion, 0, len(deps))
-	versionScanner := func(rows dbutil.Scanner) error {
-		var version shared.PackageRepoRefVersion
-		if err := rows.Scan(&version.ID, &version.PackageRefID, &version.Version); err != nil {
-			return err
-		}
-		newVersions = append(newVersions, version)
-		return nil
-	}
-
-	err = batch.WithInserterWithReturn(
+	err = batch.WithInserter(
 		ctx,
-		db.Handle(),
-		"package_repo_versions",
+		tx.Handle(),
+		"t_package_repo_versions",
 		batch.MaxNumPostgresParameters,
 		[]string{"package_id", "version"},
-		"ON CONFLICT DO NOTHING",
-		[]string{"id", "package_id", "version"},
-		versionScanner,
 		func(inserter *batch.Inserter) error {
 			for i, dep := range deps {
 				for _, version := range dep.Versions {
@@ -313,11 +299,68 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 			return nil
 		})
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to insert package repo versions")
+		return nil, nil, errors.Wrapf(err, "failed to insert package repo versions in temporary table")
+	}
+
+	newVersions, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (version shared.PackageRepoRefVersion, err error) {
+		err = rows.Scan(&version.ID, &version.PackageRefID, &version.Version)
+		return
+	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefVersionsQuery)))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
 	}
 
 	return newDeps, newVersions, err
 }
+
+const temporaryPackageRepoRefsTableQuery = `
+CREATE TEMPORARY TABLE t_package_repo_refs (
+	scheme TEXT NOT NULL,
+	name TEXT NOT NULL
+) ON COMMIT DROP
+`
+
+const temporaryPackageRepoRefVersionsTableQuery = `
+CREATE TEMPORARY TABLE t_package_repo_versions (
+	package_id BIGINT NOT NULL,
+	version TEXT NOT NULL
+) ON COMMIT DROP
+`
+
+const transferPackageRepoRefsQuery = `
+INSERT INTO lsif_dependency_repos (scheme, name, version)
+SELECT scheme, name, '👁️ temporary_sentintel_value 👁️'
+FROM (
+	SELECT scheme, name
+	FROM t_package_repo_refs t
+	-- we reduce all package repo refs before insert, so this is fine
+	EXCEPT ALL
+	(
+		SELECT scheme, name
+		FROM lsif_dependency_repos
+	)
+	-- we order by ID in list as we use ID-based pagination,
+	-- but unit tests rely on name ordering when paginating
+	ORDER BY name
+) diff
+RETURNING id, scheme, name
+`
+
+const transferPackageRepoRefVersionsQuery = `
+INSERT INTO package_repo_versions (package_id, version)
+SELECT package_id, version
+FROM t_package_repo_versions
+-- we dont reduce package repo versions,
+-- so omit 'ALL' here to avoid conflict
+EXCEPT
+(
+	SELECT package_id, version
+	FROM package_repo_versions
+)
+-- unit tests rely on a certain order
+ORDER BY package_id, version
+RETURNING id, package_id, version
+`
 
 const getAttemptedInsertDependencyReposQuery = `
 SELECT id FROM lsif_dependency_repos

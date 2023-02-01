@@ -53,8 +53,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	want := []shared.PackageRepoReference{
 		{ID: 1, Scheme: "npm", Name: "bar"},
-		// 3 because serial is incremented even ON CONFLICT
-		{ID: 3, Scheme: "npm", Name: "foo"},
+		{ID: 2, Scheme: "npm", Name: "foo"},
 	}
 	if diff := cmp.Diff(want, allNewDeps); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
@@ -62,9 +61,9 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	wantV := []shared.PackageRepoRefVersion{
 		{ID: 1, PackageRefID: 1, Version: "2.0.0"},
-		{ID: 3, PackageRefID: 1, Version: "3.0.0"},
-		{ID: 4, PackageRefID: 3, Version: "1.0.0"},
-		{ID: 6, PackageRefID: 3, Version: "2.0.0"},
+		{ID: 2, PackageRefID: 1, Version: "3.0.0"},
+		{ID: 3, PackageRefID: 2, Version: "1.0.0"},
+		{ID: 4, PackageRefID: 2, Version: "2.0.0"},
 	}
 	if diff := cmp.Diff(wantV, allNewVersions); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
@@ -77,8 +76,8 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want[0].Versions = []shared.PackageRepoRefVersion{{ID: 1, PackageRefID: 1, Version: "2.0.0"}, {ID: 3, PackageRefID: 1, Version: "3.0.0"}}
-	want[1].Versions = []shared.PackageRepoRefVersion{{ID: 4, PackageRefID: 3, Version: "1.0.0"}, {ID: 6, PackageRefID: 3, Version: "2.0.0"}}
+	want[0].Versions = []shared.PackageRepoRefVersion{{ID: 1, PackageRefID: 1, Version: "2.0.0"}, {ID: 2, PackageRefID: 1, Version: "3.0.0"}}
+	want[1].Versions = []shared.PackageRepoRefVersion{{ID: 3, PackageRefID: 2, Version: "1.0.0"}, {ID: 4, PackageRefID: 2, Version: "2.0.0"}}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
