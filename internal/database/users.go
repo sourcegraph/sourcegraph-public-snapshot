@@ -1174,26 +1174,8 @@ SELECT u.id,
 func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
 	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
 	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
-	rows, err := u.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Convert results to users
-	users := []*types.UserForSCIM{}
-	for rows.Next() {
-		u, err := scanUserForSCIM(rows)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, u)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return users, nil
+	scanUsersForSCIM := basestore.NewSliceScanner(scanUserForSCIM)
+	return scanUsersForSCIM(u.Query(ctx, q))
 }
 
 // scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
