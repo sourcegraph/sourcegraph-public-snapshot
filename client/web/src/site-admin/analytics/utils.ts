@@ -43,7 +43,7 @@ export const getByteUnitValue = (value: number): number => {
     switch (true) {
         case (value < 1000):
             return value
-        case (value > 999 && value < 1000000):
+        case (value >= 1000 && value < 1000000):
             return value / 1000
         case (value < 1000000000):
             return value / 1000000
@@ -54,11 +54,11 @@ export const getByteUnitValue = (value: number): number => {
 
 export const getByteUnitLabel = (value: number): string => {
     switch (true) {
-        case (value <= 999):
+        case (value < 1000):
             return "Bytes"
-        case (value <= 999999):
+        case (value < 1000000):
             return "KB"
-        case (value <= 999999999):
+        case (value < 1000000000):
             return "MB"
         default:
             return "GB"
