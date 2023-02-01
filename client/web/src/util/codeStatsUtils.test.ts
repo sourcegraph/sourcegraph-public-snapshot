@@ -1,17 +1,17 @@
-import { getByteUnitLabel, getByteUnitValue } from "../site-admin/analytics/utils"
+import { getByteUnitLabel, getByteUnitValue } from '../site-admin/analytics/utils'
 
 describe('getByteUnitLabel', () => {
     it('should determine the correct label from the number of bytes', () => {
-        expect(getByteUnitLabel(886)).toEqual("Bytes")
-        expect(getByteUnitLabel(1234)).toEqual("KB")
-        expect(getByteUnitLabel(12343)).toEqual("KB")
-        expect(getByteUnitLabel(123432)).toEqual("KB")
-        expect(getByteUnitLabel(8234333)).toEqual("MB")
-        expect(getByteUnitLabel(82343253)).toEqual("MB")
-        expect(getByteUnitLabel(823433335)).toEqual("MB")
-        expect(getByteUnitLabel(6234325223)).toEqual("GB")
-        expect(getByteUnitLabel(62343252236)).toEqual("GB")
-        expect(getByteUnitLabel(623432522396)).toEqual("GB")
+        expect(getByteUnitLabel(886)).toEqual('Bytes')
+        expect(getByteUnitLabel(1234)).toEqual('KB')
+        expect(getByteUnitLabel(12343)).toEqual('KB')
+        expect(getByteUnitLabel(123432)).toEqual('KB')
+        expect(getByteUnitLabel(8234333)).toEqual('MB')
+        expect(getByteUnitLabel(82343253)).toEqual('MB')
+        expect(getByteUnitLabel(823433335)).toEqual('MB')
+        expect(getByteUnitLabel(6234325223)).toEqual('GB')
+        expect(getByteUnitLabel(62343252236)).toEqual('GB')
+        expect(getByteUnitLabel(623432522396)).toEqual('GB')
     })
 })
 

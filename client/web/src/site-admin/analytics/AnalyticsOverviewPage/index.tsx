@@ -132,7 +132,9 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history
                                             value: data.repositories.totalCount || 0,
                                         },
                                         {
-                                            label: `${getByteUnitLabel(Number(data.repositoryStats.gitDirBytes))} stored`, 
+                                            label: `${getByteUnitLabel(
+                                                Number(data.repositoryStats.gitDirBytes)
+                                            )} stored`,
                                             value: getByteUnitValue(Number(data.repositoryStats.gitDirBytes)),
                                         },
                                         {
