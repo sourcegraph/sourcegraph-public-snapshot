@@ -783,8 +783,8 @@ func TestUsers_Delete(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				assert.Equal(t, user.ID, webhook.CreatedByUserID)
-				assert.Equal(t, user.ID, webhook.UpdatedByUserID)
+				assert.Equal(t, int32(0), webhook.CreatedByUserID)
+				assert.Equal(t, int32(0), webhook.UpdatedByUserID)
 			} else {
 				// Event logs are unchanged
 				if int32(eventLog.UserID) != user.ID {
