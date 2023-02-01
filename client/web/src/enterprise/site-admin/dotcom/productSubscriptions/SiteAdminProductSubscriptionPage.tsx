@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
@@ -43,7 +44,6 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 interface Props {
     /** For mocking in tests only. */

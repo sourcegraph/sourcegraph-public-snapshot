@@ -3,6 +3,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
@@ -25,7 +26,6 @@ import { generateSecret } from '../util/security'
 import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
-import { useNavigate } from 'react-router-dom-v5-compat'
 
 interface WebhookCreateUpdatePageProps {
     // existingWebhook is present when this page is used as an update page.

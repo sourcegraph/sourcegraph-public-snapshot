@@ -1,9 +1,10 @@
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
@@ -192,7 +193,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]
 
-function NavigateToCodeGraph() {
+function NavigateToCodeGraph(): JSX.Element {
     const location = useLocation()
     return <Navigate to={location.pathname.replace('/code-intelligence', '/code-graph')} />
 }

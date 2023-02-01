@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { isEqual } from 'lodash'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -53,7 +54,6 @@ import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields

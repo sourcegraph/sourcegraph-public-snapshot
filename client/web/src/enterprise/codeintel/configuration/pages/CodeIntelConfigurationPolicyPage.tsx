@@ -4,6 +4,7 @@ import { ApolloError } from '@apollo/client'
 import { mdiDelete, mdiGraveStone } from '@mdi/js'
 import { debounce } from 'lodash'
 import { useLocation } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
@@ -50,7 +51,6 @@ import {
     PREVIEW_GIT_OBJECT_FILTER,
 } from '../hooks/usePreviewGitObjectFilter'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 const DEBOUNCED_WAIT = 250
 

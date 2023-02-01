@@ -2,6 +2,7 @@ import { FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiCog } from '@mdi/js'
 import { noop } from 'lodash'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,7 +22,6 @@ import { EventTypes } from './create-edit/EventTypes'
 import { SubmitButton } from './create-edit/SubmitButton'
 import { DeleteButton } from './delete/DeleteButton'
 import { Logs } from './logs/Logs'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 export interface EditPageProps extends TelemetryProps {}
 

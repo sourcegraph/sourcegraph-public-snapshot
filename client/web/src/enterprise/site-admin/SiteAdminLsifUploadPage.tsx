@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect, useMemo } from 'react'
 
+import { Navigate, useParams } from 'react-router-dom-v5-compat'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -9,7 +10,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchLsifUpload } from './backend'
-import { Navigate, useParams } from 'react-router-dom-v5-compat'
 
 interface Props {}
 

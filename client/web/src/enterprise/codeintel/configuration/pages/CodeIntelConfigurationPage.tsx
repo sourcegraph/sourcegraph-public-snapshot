@@ -14,6 +14,7 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -37,7 +38,6 @@ import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
-import { useNavigate } from 'react-router-dom-v5-compat'
 
 const filters: FilteredConnectionFilter[] = [
     {

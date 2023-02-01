@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react'
 
 import { mdiCog, mdiDelete } from '@mdi/js'
 import { noop } from 'lodash'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -38,7 +39,6 @@ import { WebhookInformation } from './WebhookInformation'
 import { WebhookLogNode } from './webhooks/WebhookLogNode'
 
 import styles from './SiteAdminWebhookPage.module.scss'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 export interface WebhookPageProps extends TelemetryProps {}
 

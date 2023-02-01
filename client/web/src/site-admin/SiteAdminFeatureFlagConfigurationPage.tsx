@@ -3,6 +3,7 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { gql, useMutation } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -37,7 +38,6 @@ import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags

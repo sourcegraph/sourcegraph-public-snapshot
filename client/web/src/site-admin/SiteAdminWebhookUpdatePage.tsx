@@ -1,6 +1,7 @@
 import { FC, useEffect } from 'react'
 
 import { mdiCog } from '@mdi/js'
+import { useParams } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -11,7 +12,6 @@ import { PageTitle } from '../components/PageTitle'
 
 import { useWebhookQuery } from './backend'
 import { WebhookCreateUpdatePage } from './WebhookCreateUpdatePage'
-import { useParams } from 'react-router-dom-v5-compat'
 
 export interface SiteAdminWebhookUpdatePageProps extends TelemetryProps {}
 

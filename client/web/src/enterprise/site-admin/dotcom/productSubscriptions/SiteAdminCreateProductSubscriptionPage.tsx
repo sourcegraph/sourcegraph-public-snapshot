@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
+import { Navigate } from 'react-router-dom-v5-compat'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
@@ -20,7 +21,6 @@ import {
     CreateProductSubscriptionResult,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { Navigate } from 'react-router-dom-v5-compat'
 
 interface UserCreateSubscriptionNodeProps {
     /**
