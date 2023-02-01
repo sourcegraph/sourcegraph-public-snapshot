@@ -1442,18 +1442,3 @@ func useFastPasswordMocks() {
 		return hash == strconv.FormatUint(h.Sum64(), 16)
 	}
 }
-
-func missingUserIds(id, affectedIds []int32) []string {
-	maffectedIds := make(map[int32]struct{}, len(affectedIds))
-	for _, x := range affectedIds {
-		maffectedIds[x] = struct{}{}
-	}
-	var diff []string
-	for _, x := range id {
-		if _, found := maffectedIds[x]; !found {
-			strId := strconv.Itoa(int(x))
-			diff = append(diff, strId)
-		}
-	}
-	return diff
-}
