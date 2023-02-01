@@ -1,10 +1,10 @@
-import { foldGutter, foldService } from '@codemirror/language'
+import { foldGutter, foldKeymap, foldService } from '@codemirror/language'
 import { EditorState, Extension, Line, StateField } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
-import { EditorView } from '@codemirror/view'
 
 enum CharCode {
     /**
@@ -131,6 +131,7 @@ export function codeFoldingExtension(): Extension {
                 return container
             },
         }),
+        keymap.of(foldKeymap),
         EditorView.theme({
             '.cm-foldGutter .fold-icon': {
                 color: 'var(--text-muted)',
