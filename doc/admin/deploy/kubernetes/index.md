@@ -1,30 +1,17 @@
 # Sourcegraph with Kubernetes
 
-<p class="lead">
-Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code navigation. We recommend deploying Sourcegraph on Kubernetes with Kustomize.
-</p>
+Deploying on Kubernetes is for organizations that need highly scalable and available code search and code navigation. 
 
 <div class="getting-started">
-  <a href="./kustomize" class="btn btn-primary" alt="Configure">
-   <span>★ Kustomize</span>
-   </br>
-   Deploy Sourcegraph with simple kubectl commands
-  </a>
-  <a href="./helm" class="btn" alt="instance">
-   <span>Helm</span>
-   </br>
-   Deploy Sourcegraph with Helm
-  </a>
+  <a class="btn btn-primary text-center" href="#prerequisites">★ Installation</a>
+  <a class="btn text-center" href="kustomize">Introduction</a>
+  <a class="btn text-center" href="kustomize/configure">Configuration</a>
+  <a class="btn text-center" href="operations">Maintenance</a>
 </div>
 
-<div class="getting-started">
-<a class="btn btn-primary text-center" href="#prerequisites">★ Installation</a>
-<a class="btn text-center" href="kustomize/configure">Configuration</a>
-<a class="btn text-center" href="../instance-size">Instance Sizes</a>
-<a class="btn text-center" href="operations">Operations</a>
-</div>
+Below is an overview of installing Sourcegraph using Kustomize.
 
-> WARNING: If you are currently on Sourcegraph version 4.5.0 or below, please refer to the [deprecated deployment docs for Kubernetes](../deprecated/index.md).
+>WARNING: If you are currently on Sourcegraph version 4.5.0 or below, please refer to the [deprecated deployment docs for Kubernetes](deprecated/index.md).
 
 ### Prerequisites
 
@@ -38,13 +25,13 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
      - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
      - [Google Cloud Platform GKE](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp)
 
----
-
 ### **Step 1**: Set up a release branch
 
 Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository. Refer to the [reference repository's docs](../repositories.md) for instructions on creating a local fork.
 
 ```bash
+$ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
+$ cd deploy-sourcegraph-k8s
 $ git checkout -b release
 ```
 
@@ -79,11 +66,26 @@ If you intend to deploy Sourcegraph into a different namespace, replace `sourceg
 
 ### **Step 5**: Set storage class
 
-A storage class must be created and configured before deploying Sourcegraph.
+A storage class must be created and configured before deploying Sourcegraph. SSD storage is not required but is strongly recommended for optimal performance.
 
-#### Option 1: Use an existing storage class
+#### Option 1: Create a new storage class
 
-To use an exisiting storage class:
+We recommend creating a new storage class for your Sourcegraph instance using one of the preconfigured components for the cloud providers listed below if you have permission to create cluster-wide resources:
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+  # Select a component that corresponds to your cluster provider.
+  components:
+    - ../../components/storage-class/aws
+    - ../../components/storage-class/azure
+    - ../../components/storage-class/gke
+  ```
+
+See our [configurations guide](kustomize/configure.md) for a list of available storage class components and configuration options.
+
+#### Option 2: Use an existing storage class
+
+If creating a storage class is not an option and/or you'd like to use an existing storage class that is provisioned with SSDs available:
 
 1. Include the `storage-class/update-class-name` component under the components list
 2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
@@ -103,23 +105,11 @@ For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of
       - STORAGECLASS_NAME=sourcegraph # Set STORAGECLASS_NAME value to 'sourcegraph'
   ```
 
-#### Option 2: Create a new storage class
-
-To create a new storage class, select a component that corresponds to your cluster provider.
-
-  ```yaml
-  # instances/my-sourcegraph/kustomization.yaml
-  components:
-    - ../../components/storage-class/aws
-    - ../../components/storage-class/azure
-    - ../../components/storage-class/gke
-  ```
-
-See our [configurations guide](kustomize/configure.md) for a list of available storage class components and configuration options.
-
 #### Option 3: Use default storage class
 
-Skip this step to use the default storage class without SSD support for non-production environment; however, you must recreate the cluster with SSDs configured for production environment later.
+Skip this step to use the default storage class without SSD support for non-production environments. However, you must recreate the cluster with SSDs configured for production environments later.
+
+>WARNING: Search performance will suffer tremendously without SSDs provisioned.
 
 ### **Step 6**: Build manifests with Kustomize
 
@@ -187,6 +177,10 @@ Other common configurations include:
 
 See the [configuration guide for Kustomize](kustomize/configure.md) for more configuration options.
 
+## Helm Chart
+
+We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexibility it provides. If your organization uses Helm to deploy on Kubernetes, please refer to the documentation for the [Sourcegraph Helm chart](helm.md) instead.
+
 ## Learn more
 
 - [Migrate from deploy-sourcegraph to deploy-sourcegraph-k8s](kustomize/migrate.md)
@@ -195,5 +189,4 @@ See the [configuration guide for Kustomize](kustomize/configure.md) for more con
   - [Google GKE](kustomize/gke.md)
   - [Minikube](../single-node/minikube.md)
 - [Troubleshooting](troubleshoot.md)
-
-Not sure if Kubernetes is the best choice for you? Check out our [deployment documentations](../index.md) to learn about other available deployment options.
+- [Other deployment options](../index.md)
