@@ -129,10 +129,10 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 		return nil, errors.New("only site admins can update teams")
 	}
 	if args.ID == nil && args.Name == nil {
-		return nil, errors.New("team to update is identifier by either id or name, but neither was specified")
+		return nil, errors.New("team to update is identified by either id or name, but neither was specified")
 	}
 	if args.ID != nil && args.Name != nil {
-		return nil, errors.New("team to update is identifier by either id or name, but both were specified")
+		return nil, errors.New("team to update is identified by either id or name, but both were specified")
 	}
 	if args.ParentTeam != nil && args.ParentTeamName != nil {
 		return nil, errors.New("parent team is identified by either id or name, but both were specified")
@@ -205,8 +205,25 @@ type DeleteTeamArgs struct {
 	Name *string
 }
 
-func (r *schemaResolver) DeleteTeam(args *DeleteTeamArgs) *EmptyResponse {
-	return &EmptyResponse{}
+func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: For now we only allow site admins to create teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can delete teams")
+	}
+	if args.ID == nil && args.Name == nil {
+		return nil, errors.New("team to delete is identified by either id or name, but neither was specified")
+	}
+	if args.ID != nil && args.Name != nil {
+		return nil, errors.New("team to delete is identified by either id or name, but both were specified")
+	}
+	t, err := findTeam(ctx, r.db.Teams(), args.ID, args.Name)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.db.Teams().DeleteTeam(ctx, t.ID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }
 
 type TeamMembersArgs struct {
