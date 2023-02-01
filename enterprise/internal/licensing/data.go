@@ -90,10 +90,6 @@ type FeatureBatchChanges struct {
 	MaxNumChangesets int
 }
 
-type FeatureExpiredFeatures struct {
-	ExpiredFeatures []Feature
-}
-
 func (*FeatureBatchChanges) FeatureName() string {
 	return "batch-changes"
 }
