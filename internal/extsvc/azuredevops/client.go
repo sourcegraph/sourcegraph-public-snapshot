@@ -65,14 +65,15 @@ func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient http
 	}, nil
 }
 
+// do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
+//
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (*http.Response, error) {
-	var err error
+func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
 	u := c.URL
 	if urlOverride != "" {
 		u, err = url.Parse(urlOverride)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 	req.URL = u.ResolveReference(req.URL)
@@ -85,30 +86,28 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	c.auth.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, &httpError{
+		return "", &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
 		}
 	}
 
-	return resp, json.Unmarshal(bs, result)
+	return resp.Header.Get(continuationTokenHeader), json.Unmarshal(bs, result)
 }
 
 // WithAuthenticator returns a new Client that uses the same configuration,

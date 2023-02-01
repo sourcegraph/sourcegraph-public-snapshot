@@ -93,13 +93,12 @@ func (c *Client) GetCommitForRepositoryBranchHead(ctx context.Context, args OrgP
 		}
 
 		var refs ListRefsResponse
-		response, err := c.do(ctx, req, "", &refs)
+		continuationToken, err = c.do(ctx, req, "", &refs)
 		if err != nil {
 			return Ref{}, err
 		}
 		allRefs = append(allRefs, refs.Value...)
 
-		continuationToken = response.Header.Get(continuationTokenHeader)
 		if continuationToken == "" {
 			break
 		}
