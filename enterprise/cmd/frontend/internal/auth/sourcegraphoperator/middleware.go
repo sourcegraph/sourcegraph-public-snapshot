@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
-	soap "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -114,20 +113,11 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// If the "sourcegraph-operator" (SOAP) is the only external account associated
 			// with the user, that means the user is a pure Sourcegraph Operator which should
 			// have designated and aggressive session expiry - unless that account is designated
-			// as a service account.
+			// as a service account. However, because service accounts are not "real" users and
+			// cannot log in through the user interface (instead, we provision access entirely
+			// via API tokens), we do not add special handling here to avoid deleting service
+			// accounts.
 			if len(extAccts) == 1 && extAccts[0].ServiceType == internalauth.SourcegraphOperatorProviderType {
-				soapAccount := extAccts[0]
-
-				// Unmarshal associated SOAP account data.
-				data, err := soap.GetAccountData(r.Context(), soapAccount.AccountData)
-				isServiceAccount := err == nil && data.ServiceAccount
-				logger = logger.With(
-					log.String("soap.accountID", soapAccount.AccountID),
-					log.Bool("soap.serviceAccount", isServiceAccount))
-				if err != nil {
-					logger.Warn("failed to parse SOAP account data", log.Error(err))
-				}
-
 				// The user session will only live at most for the remaining duration from the
 				// "users.created_at" compared to the current time.
 				//
@@ -138,7 +128,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				//   - If the same operator signs out and signs back in again after 10 minutes,
 				//       the second session only lives for 50 minutes.
 				expiry = time.Until(result.User.CreatedAt.Add(p.lifecycleDuration()))
-				if expiry <= 0 && !isServiceAccount {
+				if expiry <= 0 {
 					// Let's do a proactive hard delete since the background worker hasn't caught up
 
 					// Help exclude Sourcegraph operator related events from analytics
