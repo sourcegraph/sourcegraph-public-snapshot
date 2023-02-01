@@ -78,7 +78,7 @@ func TestClient_GetPullRequestStatuses(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "2",
+		PullRequestID: "8",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
 		RepoNameOrID:  "sgtestazure3",
