@@ -80,6 +80,14 @@
           "outfile": {
             "description": "The path to the LSIF index relative to the index root.",
             "type": "string"
+          },
+          "requested_env_vars": {
+            "description": "Env vars to load from executor secrets.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "additionalItems": false
           }
         },
         "additionalProperties": false,
