@@ -1,7 +1,7 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiMapSearch } from '@mdi/js'
+import { mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps, useLocation } from 'react-router'
@@ -331,7 +331,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                             // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                             onClick={onDelete}
                                         >
-                                            Delete{' '}
+                                            <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete{' '}
                                             {(selection === 'all' ? totalCount : selection.size) === 0 ? (
                                                 ''
                                             ) : (
@@ -351,7 +351,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                             // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                             onClick={onReindex}
                                         >
-                                            Reindex{' '}
+                                            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
                                             {(selection === 'all' ? totalCount : selection.size) === 0 ? (
                                                 ''
                                             ) : (
@@ -361,7 +361,8 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                                         ? 'index'
                                                         : 'indexes'}
                                                 </>
-                                            )}
+                                            )}{' '}
+                                            as replaceable by auto-indexing
                                         </Button>
                                     </div>
                                 )}
