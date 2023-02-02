@@ -40,7 +40,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 	}
 
 	if accountDetails == "" {
-		return errors.New("invalid account details")
+		return errors.New("account details are required")
 	}
 	var details accountDetailsBody
 	if err := json.Unmarshal([]byte(accountDetails), &details); err != nil {
