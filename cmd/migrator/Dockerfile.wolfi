@@ -2,7 +2,7 @@
 # This is currently being tested in parallel to Alpine - you don't need to update this
 #   file if you change the regular Dockerfile.
 
-FROM sourcegraph-wolfi/sourcegraph-base:latest
+FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
