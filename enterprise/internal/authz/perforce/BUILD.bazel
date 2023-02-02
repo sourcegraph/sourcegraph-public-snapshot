@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
         "//internal/authz",
-        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/perforce",
         "//internal/gitserver",
@@ -42,7 +42,6 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/conf",
-        "//internal/database",
         "//internal/encryption/testing",
         "//internal/extsvc",
         "//internal/extsvc/perforce",

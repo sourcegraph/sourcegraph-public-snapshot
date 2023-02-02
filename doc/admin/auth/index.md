@@ -7,6 +7,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Cloud](#bitbucket-cloud)
+- [Gerrit](#gerrit)
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -323,6 +324,7 @@ You can use the following filters to control how users can create accounts and s
   ```
 
 ## Bitbucket Cloud
+
 [Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
 
@@ -333,6 +335,7 @@ Sourcegraph instance:
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
 Then add the following lines to your [site configuration](config/site_config.md):
+
 ```json
 {
     // ...
@@ -347,6 +350,25 @@ Then add the following lines to your [site configuration](config/site_config.md)
     ]
 ```
 Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
+
+## Gerrit
+
+To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
+add the following lines to your [site configuration](config/site_config.md):
+
+```json
+{
+    // ...
+    "auth.providers": [
+      {
+        "type": "gerrit",
+        "displayName": "Gerrit",
+        "url": "https://example.gerrit.com" // Must match the URL of the code host connection for which authorization is required
+      }
+    ]
+```
+
+Users can then add Gerrit credentials by visiting their **Settings** > **Account security**.
 
 ## OpenID Connect
 

@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { Button, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -22,15 +21,13 @@ export interface ExternalChangesetCloseNodeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 export const ExternalChangesetCloseNode: React.FunctionComponent<
     React.PropsWithChildren<ExternalChangesetCloseNodeProps>
-> = ({ node, willClose, viewerCanAdminister, history, location, queryExternalChangesetWithFileDiffs }) => {
+> = ({ node, willClose, viewerCanAdminister, queryExternalChangesetWithFileDiffs }) => {
     const [isExpanded, setIsExpanded] = useState(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
@@ -98,8 +95,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                     {node.error && <ErrorAlert error={node.error} />}
                     <ChangesetFileDiff
                         changesetID={node.id}
-                        history={history}
-                        location={location}
                         repositoryID={node.repository.id}
                         repositoryName={node.repository.name}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}

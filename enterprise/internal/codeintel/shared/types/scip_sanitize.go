@@ -97,6 +97,6 @@ func sanitizeString(s string) string {
 		return s
 	}
 
-	// magic
+	// This seems redundant, but it isn't: it magically makes the string valid UTF-8
 	return string([]rune(s))
 }

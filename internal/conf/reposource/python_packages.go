@@ -22,7 +22,7 @@ func NewPythonVersionedPackage(name PackageName, version string) *PythonVersione
 
 // ParseVersionedPackage parses a string in a '<name>(==<version>)?' format into an
 // PythonVersionedPackage.
-func ParseVersionedPackage(dependency string) (*PythonVersionedPackage, error) {
+func ParseVersionedPackage(dependency string) *PythonVersionedPackage {
 	var dep PythonVersionedPackage
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
 		dep.Name = PackageName(dependency)
@@ -30,10 +30,10 @@ func ParseVersionedPackage(dependency string) (*PythonVersionedPackage, error) {
 		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+2:])
 	}
-	return &dep, nil
+	return &dep
 }
 
-func ParsePythonPackageFromName(name PackageName) (*PythonVersionedPackage, error) {
+func ParsePythonPackageFromName(name PackageName) *PythonVersionedPackage {
 	return ParseVersionedPackage(string(name))
 }
 
@@ -44,7 +44,7 @@ func ParsePythonPackageFromRepoName(name api.RepoName) (*PythonVersionedPackage,
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
 	}
-	return ParseVersionedPackage(dependency)
+	return ParseVersionedPackage(dependency), nil
 }
 
 func (p *PythonVersionedPackage) Scheme() string {

@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import { useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 import { delay, repeatWhen, tap } from 'rxjs/operators'
 
@@ -56,8 +55,6 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
         [externalServiceID, queryExternalServiceSyncJobs, updateSyncInProgress, updateNumberOfRepos]
     )
 
-    const history = useHistory()
-
     return (
         <>
             <H2 className="mt-3">Recent sync jobs</H2>
@@ -76,9 +73,7 @@ export const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServic
                 nodeComponentProps={{ onUpdate: updates }}
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
-                history={history}
                 updates={updates}
-                location={history.location}
             />
         </>
     )

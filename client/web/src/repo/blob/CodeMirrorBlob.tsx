@@ -29,10 +29,12 @@ import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
+import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
-import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
+import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
@@ -246,18 +248,22 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 return
             }
 
-            // Sync editor selection with the URL so that triggering
+            // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
             // command in VS Code.
-            const { range } = selectionFromLocation(editor, historyRef.current.location)
-            if (range) {
-                selectRange(editor, range)
-                // Automatically focus the content DOM to enable keyboard
-                // navigation. Without this automatic focus, users need to click
-                // on the blob view with the mouse.
-                // NOTE: this focus statment does not seem to have an effect
-                // when using macOS VoiceOver.
-                editor.contentDOM.focus({ preventScroll: true })
+            const { selection } = selectionFromLocation(editor, historyRef.current.location)
+            if (selection) {
+                const position = positionAtCmPosition(editor, selection.from)
+                const occurrence = occurrenceAtPosition(editor.state, position)
+                if (occurrence) {
+                    selectOccurrence(editor, occurrence)
+                    // Automatically focus the content DOM to enable keyboard
+                    // navigation. Without this automatic focus, users need to click
+                    // on the blob view with the mouse.
+                    // NOTE: this focus statment does not seem to have an effect
+                    // when using macOS VoiceOver.
+                    editor.contentDOM.focus({ preventScroll: true })
+                }
             }
         }
         // editor is not provided because this should only be triggered after the

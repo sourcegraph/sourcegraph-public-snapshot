@@ -222,15 +222,16 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 		}
 
 		indexes = append(indexes, types.Index{
-			Commit:       commit,
-			RepositoryID: repositoryID,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
+			Commit:           commit,
+			RepositoryID:     repositoryID,
+			State:            "queued",
+			DockerSteps:      dockerSteps,
+			LocalSteps:       indexJob.LocalSteps,
+			Root:             indexJob.Root,
+			Indexer:          indexJob.Indexer,
+			IndexerArgs:      indexJob.IndexerArgs,
+			Outfile:          indexJob.Outfile,
+			RequestedEnvVars: indexJob.RequestedEnvVars,
 		})
 	}
 

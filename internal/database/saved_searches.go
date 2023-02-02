@@ -25,7 +25,7 @@ type SavedSearchStore interface {
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
 	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error)
-	Transact(context.Context) (SavedSearchStore, error)
+	WithTransact(context.Context, func(SavedSearchStore) error) error
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
 	With(basestore.ShareableStore) SavedSearchStore
 	basestore.ShareableStore
@@ -44,9 +44,10 @@ func (s *savedSearchStore) With(other basestore.ShareableStore) SavedSearchStore
 	return &savedSearchStore{Store: s.Store.With(other)}
 }
 
-func (s *savedSearchStore) Transact(ctx context.Context) (SavedSearchStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &savedSearchStore{Store: txBase}, err
+func (s *savedSearchStore) WithTransact(ctx context.Context, f func(SavedSearchStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&savedSearchStore{Store: tx})
+	})
 }
 
 // IsEmpty tells if there are no saved searches (at all) on this Sourcegraph

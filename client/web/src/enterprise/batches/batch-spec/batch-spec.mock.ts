@@ -237,7 +237,6 @@ export const mockStep = (
     finishedAt: subMinutes(now, 1).toISOString(),
     ifCondition: null,
     number,
-    outputLines: ['stdout: Hello World', 'stdout: '],
     outputVariables: [],
     run: `echo Hello World Step ${number} | tee -a $(find -name README.md)`,
     skipped: false,
@@ -616,3 +615,47 @@ export const LARGE_SUCCESS_CONNECTION_MOCKS: MockedResponses = [
         nMatches: Number.POSITIVE_INFINITY,
     },
 ]
+
+const generateMockOutputLines = (start: number, end: number): string[] => {
+    const result: string[] = []
+
+    for (let index = start; index <= end; index++) {
+        result.push(`stdout: Hello world ${index}`)
+    }
+
+    return result
+}
+
+export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE = {
+    node: {
+        __typename: 'VisibleBatchSpecWorkspace',
+        step: {
+            outputLines: {
+                __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
+                nodes: generateMockOutputLines(1, 500),
+                totalCount: 10,
+                pageInfo: {
+                    endCursor: '500',
+                    hasNextPage: true,
+                },
+            },
+        },
+    },
+}
+
+export const WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO = {
+    node: {
+        __typename: 'VisibleBatchSpecWorkspace',
+        step: {
+            outputLines: {
+                __typename: 'BatchSpecWorkspaceStepOutputLineConnection',
+                nodes: generateMockOutputLines(501, 1000),
+                totalCount: 10,
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+            },
+        },
+    },
+}

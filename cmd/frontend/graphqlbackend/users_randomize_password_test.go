@@ -154,7 +154,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "must be site admin",
-						Path:    []any{string("randomizeUserPassword")},
+						Path:    []any{"randomizeUserPassword"},
 					},
 				},
 				Variables: map[string]any{"user": userIDBase64},
@@ -184,7 +184,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "cannot parse user ID: illegal base64 data at input byte 4",
-						Path:    []any{string("randomizeUserPassword")},
+						Path:    []any{"randomizeUserPassword"},
 					},
 				},
 				Variables: map[string]any{"user": "alice"},

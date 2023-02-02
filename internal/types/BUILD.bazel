@@ -21,9 +21,9 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/encryption",
+        "//internal/executor",
         "//internal/extsvc",
         "//internal/jsonc",
-        "//internal/workerutil",
         "//lib/errors",
         "//schema",
         "@com_github_google_uuid//:uuid",

@@ -40,13 +40,13 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
 	}
 
-	keyring := keyring.Default()
+	defaultKeyring := keyring.Default()
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
 		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
-		keyring:        &keyring,
+		keyring:        &defaultKeyring,
 	})
 }
 
@@ -90,7 +90,7 @@ type dependencies struct {
 }
 
 func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
-	return migrations.RegisterAll(runner, noDelay, []migrations.TaggedMigrator{
+	migrators := []migrations.TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
@@ -99,8 +99,13 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		codeintel.NewSCIPMigrator(deps.store, deps.codeIntelStore),
-		insights.NewMigrator(deps.store, deps.insightsStore),
-		insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
-		insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
-	})
+	}
+	if deps.insightsStore != nil {
+		migrators = append(migrators,
+			insights.NewMigrator(deps.store, deps.insightsStore),
+			insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
+			insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
+		)
+	}
+	return migrations.RegisterAll(runner, noDelay, migrators)
 }

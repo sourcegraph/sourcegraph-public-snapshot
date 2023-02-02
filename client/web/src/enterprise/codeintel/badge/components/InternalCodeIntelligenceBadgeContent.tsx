@@ -3,10 +3,9 @@ import React from 'react'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { MenuDivider, Code, H3 } from '@sourcegraph/wildcard'
+import { MenuDivider, Code, H3, Link } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
-import { CodeIntelIndexer } from '../../shared/components/CodeIntelIndexer'
 import { UseCodeIntelStatusPayload } from '../hooks/useCodeIntelStatus'
 
 import { UploadOrIndexMetaTable } from './UploadOrIndexMetaTable'
@@ -67,7 +66,12 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
                                         .map(support =>
                                             support.indexers?.map(indexer => (
                                                 <li key={`precise-support-level-${supportLevel}-${indexer.name}`}>
-                                                    <CodeIntelIndexer indexer={indexer} /> (
+                                                    {indexer.url === '' ? (
+                                                        indexer.name
+                                                    ) : (
+                                                        <Link to={indexer.url}>{indexer.name}</Link>
+                                                    )}{' '}
+                                                    (
                                                     {support.confidence && (
                                                         <span className="text-muted">{support.confidence}</span>
                                                     )}

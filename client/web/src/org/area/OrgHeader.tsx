@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Location } from 'history'
 import { match } from 'react-router'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -12,7 +12,7 @@ import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext {
     isSourcegraphDotCom: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
@@ -40,7 +40,6 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     batchChangesWebhookLogsEnabled,
     org,
     navItems,
-    match,
     className = '',
     isSourcegraphDotCom,
 }) => {
@@ -51,6 +50,8 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         org,
         isSourcegraphDotCom,
     }
+
+    const url = `/organizations/${org.name}`
 
     return (
         <div className={className}>
@@ -89,7 +90,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                         condition(context) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
-                                                    to={match.url + to}
+                                                    to={url + to}
                                                     className="nav-link"
                                                     activeClassName="active"
                                                     exact={exact}

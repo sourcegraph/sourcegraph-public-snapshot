@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
+
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
-import { createLocation, createMemoryHistory } from 'history'
+import * as H from 'history'
+import { MemoryRouter, useLocation } from 'react-router-dom-v5-compat'
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
 
@@ -29,7 +32,6 @@ function fakeConnection<N>({
 const defaultConnectionNodesProps = {
     connectionQuery: '',
     first: 0,
-    location: createLocation('/'),
     noSummaryIfAllNodesVisible: true,
     nodeComponent: () => null,
     nodeComponentProps: {},
@@ -43,28 +45,29 @@ describe('FilteredConnection', () => {
     afterAll(cleanup)
 
     describe('useURLQuery', () => {
-        it('does not update the history if searchFragment didnt change', async () => {
-            const history = createMemoryHistory()
-            history.push('/?foo=bar')
-
-            // Hook into history.replace to detect when FilteredConnection updates search
-            // fragment
-            const oldReplaceHistory = history.replace.bind(history)
-            const fakeReplaceHistory = sinon.spy(args => oldReplaceHistory(args))
-            history.replace = fakeReplaceHistory
+        it('does not update the history if searchFragment didnt change', () => {
+            let currentLocation: null | H.Location = null
+            function ExtractCurrentPathname(): null {
+                const location = useLocation()
+                useEffect(() => {
+                    currentLocation = location
+                }, [location])
+                return null
+            }
 
             // This is the fake connection
             const connection = fakeConnection({ hasNextPage: true, totalCount: 2, nodes: [{}] })
             const connectionSubject = new BehaviorSubject(connection)
 
             render(
-                <FilteredConnection
-                    {...defaultConnectionNodesProps}
-                    location={history.location}
-                    history={history}
-                    useURLQuery={true}
-                    queryConnection={() => connectionSubject}
-                />
+                <MemoryRouter initialEntries={['/?foo=bar']}>
+                    <FilteredConnection
+                        {...defaultConnectionNodesProps}
+                        useURLQuery={true}
+                        queryConnection={() => connectionSubject}
+                    />
+                    <ExtractCurrentPathname />
+                </MemoryRouter>
             )
 
             act(() => {
@@ -77,11 +80,9 @@ describe('FilteredConnection', () => {
 
             // Click "Show more" button, should cause history to be updated
             fireEvent.click(screen.getByRole('button')!)
-            expect(history.location.search).toEqual('?foo=bar&first=40')
+            expect(currentLocation!.search).toEqual('?foo=bar&first=40')
             fireEvent.click(screen.getByRole('button')!)
-            expect(history.location.search).toEqual('?foo=bar&first=80')
-
-            await waitFor(() => sinon.assert.calledTwice(fakeReplaceHistory))
+            expect(currentLocation!.search).toEqual('?foo=bar&first=80')
         })
     })
 })

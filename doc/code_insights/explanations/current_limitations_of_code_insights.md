@@ -73,6 +73,10 @@ There are a few factors to consider with respect to scale and expected performan
 
 Code Insights does not yet support running over specific revisions. 
 
+## VCS limitations
+
+Code Insights only supports git based repositories and does not support perforce repositories that have sub-repo permissions enabled.
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories

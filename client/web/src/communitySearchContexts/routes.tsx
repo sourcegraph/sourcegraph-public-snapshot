@@ -31,7 +31,7 @@ const BackstageCommunitySearchContextPage = lazyComponent(
 )
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
+export const communitySearchContextsRoutes: readonly LayoutRouteProps[] = [
     {
         path: '/kubernetes',
         render: props => <KubernetesCommunitySearchContextPage {...props} />,

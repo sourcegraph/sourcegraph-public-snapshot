@@ -3,7 +3,7 @@ import { isSearchMatchOfType, SearchMatch } from '../stream'
 
 import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
+import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
 
 expect.addSnapshotSerializer({
@@ -321,7 +321,27 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
-        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
+        ).toStrictEqual([
+            {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'contains.content(${1:TODO}) ',
+                label: 'contains.content(...)',
+            },
+            {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.content(${1:TODO}) ',
+                label: 'has.content(...)',
+            },
+            {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.owner(${1}) ',
+                label: 'has.owner(...)',
+            },
+            {
+                insertText: '^connect\\.go$ ',
+                label: 'connect.go',
+            },
+        ])
     })
 
     test('sets current filter value as filterText', async () => {
@@ -340,7 +360,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['^jsonrpc'])
+        ).toStrictEqual(['contains.content(...)', 'has.content(...)', 'has.owner(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -359,7 +379,15 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^some/path/main\\.go$ '])
+        ).toStrictEqual([
+            // eslint-disable-next-line no-template-curly-in-string
+            'contains.content(${1:TODO}) ',
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.content(${1:TODO}) ',
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.owner(${1}) ',
+            '^some/path/main\\.go$ ',
+        ])
     })
 
     test('escapes spaces in repo value', async () => {

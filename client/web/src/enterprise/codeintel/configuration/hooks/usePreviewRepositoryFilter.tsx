@@ -11,7 +11,14 @@ interface SearchRepositoriesResult {
 }
 
 interface RepositoryPreviewResult {
-    repositoryNames: string[]
+    repositories: {
+        name: string
+        url: string
+        externalRepository?: {
+            serviceID: string
+            serviceType: string
+        }
+    }[]
     totalCount: number
     totalMatches: number
     limit: number | null
@@ -22,6 +29,11 @@ export const PREVIEW_REPOSITORY_FILTER = gql`
         previewRepositoryFilter(patterns: $patterns) {
             nodes {
                 name
+                url
+                externalRepository {
+                    serviceID
+                    serviceType
+                }
             }
             totalCount
             totalMatches
@@ -44,7 +56,11 @@ export const usePreviewRepositoryFilter = (patterns: string[]): SearchRepositori
         previewResult: data
             ? {
                   ...data.previewRepositoryFilter,
-                  repositoryNames: data.previewRepositoryFilter.nodes.map(({ name }) => name),
+                  repositories: data.previewRepositoryFilter.nodes.map(({ name, url, externalRepository }) => ({
+                      name,
+                      url,
+                      externalRepository: externalRepository ?? undefined,
+                  })),
               }
             : null,
         isLoadingPreview: loading,

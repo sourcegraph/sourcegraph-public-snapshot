@@ -106,10 +106,13 @@ type SchemaAuthProviders struct {
 // SchemaAuthProviderSourcegraphOperator contains configuration for the
 // Sourcegraph Operator authentication provider.
 type SchemaAuthProviderSourcegraphOperator struct {
-	Issuer            string `json:"issuer"`
-	ClientID          string `json:"clientID"`
-	ClientSecret      string `json:"clientSecret"`
-	LifecycleDuration int    `json:"lifecycleDuration"`
+	Issuer       string `json:"issuer"`
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+
+	// LifecycleDuration indicates duration in minutes before accounts created
+	// through SOAP are expired and removed.
+	LifecycleDuration int `json:"lifecycleDuration"`
 }
 
 // SourcegraphOperatorAuthProviderEnabled returns true if the Sourcegraph

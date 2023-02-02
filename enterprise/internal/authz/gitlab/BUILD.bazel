@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/auth/providers",
+        "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
         "//internal/authz",
         "//internal/database",

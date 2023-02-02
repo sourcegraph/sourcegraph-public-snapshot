@@ -178,6 +178,8 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
         case 'has.key':
             return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
+        case 'has.owner':
+            return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
     }
     return ''
 }

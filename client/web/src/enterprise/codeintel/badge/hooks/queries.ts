@@ -1,7 +1,162 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { lsifIndexFieldsFragment } from '../../indexes/hooks/types'
-import { lsifUploadFieldsFragment } from '../../uploads/hooks/types'
+export const lsifIndexFieldsFragment = gql`
+    fragment LsifIndexFields on LSIFIndex {
+        __typename
+        id
+        inputCommit
+        tags
+        inputRoot
+        inputIndexer
+        indexer {
+            name
+            url
+        }
+        projectRoot {
+            url
+            path
+            repository {
+                url
+                name
+            }
+            commit {
+                url
+                oid
+                abbreviatedOID
+            }
+        }
+        steps {
+            ...LsifIndexStepsFields
+        }
+        state
+        failure
+        queuedAt
+        startedAt
+        finishedAt
+        placeInQueue
+        associatedUpload {
+            id
+            state
+            uploadedAt
+            startedAt
+            finishedAt
+            placeInQueue
+        }
+        shouldReindex
+    }
+
+    fragment LsifIndexStepsFields on IndexSteps {
+        setup {
+            ...ExecutionLogEntryFields
+        }
+        preIndex {
+            root
+            image
+            commands
+            logEntry {
+                ...ExecutionLogEntryFields
+            }
+        }
+        index {
+            indexerArgs
+            outfile
+            logEntry {
+                ...ExecutionLogEntryFields
+            }
+        }
+        upload {
+            ...ExecutionLogEntryFields
+        }
+        teardown {
+            ...ExecutionLogEntryFields
+        }
+    }
+
+    fragment ExecutionLogEntryFields on ExecutionLogEntry {
+        key
+        command
+        startTime
+        exitCode
+        out
+        durationMilliseconds
+    }
+`
+
+export const lsifUploadAuditLogsFieldsFragment = gql`
+    fragment LsifUploadsAuditLogsFields on LSIFUploadAuditLog {
+        logTimestamp
+        reason
+        changedColumns {
+            column
+            old
+            new
+        }
+        operation
+    }
+`
+
+export const lsifUploadFieldsFragment = gql`
+    fragment LsifUploadFields on LSIFUpload {
+        __typename
+        id
+        inputCommit
+        tags
+        inputRoot
+        inputIndexer
+        indexer {
+            name
+            url
+        }
+        projectRoot {
+            url
+            path
+            repository {
+                url
+                name
+            }
+            commit {
+                url
+                oid
+                abbreviatedOID
+            }
+        }
+        state
+        failure
+        isLatestForRepo
+        uploadedAt
+        startedAt
+        finishedAt
+        placeInQueue
+        associatedIndex {
+            id
+            state
+            queuedAt
+            startedAt
+            finishedAt
+            placeInQueue
+        }
+        auditLogs {
+            ...LsifUploadsAuditLogsFields
+        }
+    }
+
+    ${lsifUploadAuditLogsFieldsFragment}
+`
+
+export const lsifUploadConnectionFieldsFragment = gql`
+    fragment LsifUploadConnectionFields on LSIFUploadConnection {
+        nodes {
+            ...LsifUploadFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+
+    ${lsifUploadFieldsFragment}
+`
 
 export const codeIntelStatusQuery = gql`
     query CodeIntelStatus($repository: String!, $commit: String!, $path: String!) {

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -53,18 +52,13 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
     </li>
 )
 
-export interface UserEventLogsPageProps
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
-        Pick<RouteComponentProps, 'history' | 'location'>,
-        TelemetryProps {}
+export interface UserEventLogsPageProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
 export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
     telemetryService,
-    history,
-    location,
     user,
 }) => {
     useMemo(() => {
@@ -133,8 +127,6 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
                     pluralNoun="user events"
                     queryConnection={queryUserEventLogs}
                     nodeComponent={UserEventNode}
-                    history={history}
-                    location={location}
                 />
             </Container>
         </>
