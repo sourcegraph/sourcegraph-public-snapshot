@@ -9,24 +9,24 @@ service GitserverService {
 }
 
 message ExecRequest {
-    string repo = 1;
-    string ensure_revision = 2;
-    repeated string args = 3;
-    bytes stdin = 4;
-    bool no_timeout = 5;
+  string repo = 1;
+  string ensure_revision = 2;
+  repeated string args = 3;
+  bytes stdin = 4;
+  bool no_timeout = 5;
 }
 
 message ExecResponse {
-    bytes data = 1;
+  bytes data = 1;
 }
 
 message NotFoundPayload {
-    string repo = 1;
-    bool clone_in_progress = 2;
-    string clone_progress = 3;
+  string repo = 1;
+  bool clone_in_progress = 2;
+  string clone_progress = 3;
 }
 
 message ExecStatusPayload {
-    int32 status_code = 1;
-    string stderr = 2;
+  int32 status_code = 1;
+  string stderr = 2;
 }
