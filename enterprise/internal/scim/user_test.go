@@ -18,8 +18,10 @@ func TestUserResourceHandler_Get(t *testing.T) {
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user1, err := userResourceHandler.Get(&http.Request{}, "1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	user2, err := userResourceHandler.Get(&http.Request{}, "2")
-
 	if err != nil {
 		t.Fatal(err)
 	}

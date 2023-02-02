@@ -2,8 +2,10 @@ package filter
 
 import (
 	"fmt"
-	"github.com/scim2/filter-parser/v2"
 	"strings"
+
+	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func cmpInt(ref int, cmp func(v, ref int) error) func(interface{}) error {
@@ -35,63 +37,63 @@ func cmpInteger(e *filter.AttributeExpression, ref int) (func(interface{}) error
 	case filter.EQ:
 		return cmpInt(ref, func(v, ref int) error {
 			if v != ref {
-				return fmt.Errorf("%d is not equal to %d", v, ref)
+				return errors.Newf("%d is not equal to %d", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.NE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v == ref {
-				return fmt.Errorf("%d is equal to %d", v, ref)
+				return errors.Newf("%d is equal to %d", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.CO:
 		return cmpIntStr(ref, func(v, ref string) error {
 			if !strings.Contains(v, ref) {
-				return fmt.Errorf("%s does not contain %s", v, ref)
+				return errors.Newf("%s does not contain %s", v, ref)
 			}
 			return nil
 		})
 	case filter.SW:
 		return cmpIntStr(ref, func(v, ref string) error {
 			if !strings.HasPrefix(v, ref) {
-				return fmt.Errorf("%s does not start with %s", v, ref)
+				return errors.Newf("%s does not start with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.EW:
 		return cmpIntStr(ref, func(v, ref string) error {
 			if !strings.HasSuffix(v, ref) {
-				return fmt.Errorf("%s does not end with %s", v, ref)
+				return errors.Newf("%s does not end with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.GT:
 		return cmpInt(ref, func(v, ref int) error {
 			if v <= ref {
-				return fmt.Errorf("%d is not greater than %d", v, ref)
+				return errors.Newf("%d is not greater than %d", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.LT:
 		return cmpInt(ref, func(v, ref int) error {
 			if v >= ref {
-				return fmt.Errorf("%d is not less than %d", v, ref)
+				return errors.Newf("%d is not less than %d", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.GE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v < ref {
-				return fmt.Errorf("%d is not greater or equal to %d", v, ref)
+				return errors.Newf("%d is not greater or equal to %d", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.LE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v > ref {
-				return fmt.Errorf("%d is not less or equal to %d", v, ref)
+				return errors.Newf("%d is not less or equal to %d", v, ref)
 			}
 			return nil
 		}), nil

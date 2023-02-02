@@ -2,10 +2,12 @@ package filter
 
 import (
 	"fmt"
-	datetime "github.com/di-wu/xsd-datetime"
-	"github.com/scim2/filter-parser/v2"
 	"strings"
 	"time"
+
+	datetime "github.com/di-wu/xsd-datetime"
+	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // cmpDateTime returns a compare function that compares a given value to the reference string/time based on the given
@@ -18,63 +20,63 @@ func cmpDateTime(e *filter.AttributeExpression, date string, ref time.Time) (fun
 	case filter.EQ:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if !v.Equal(ref) {
-				return fmt.Errorf("%s is not equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is not equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil
 	case filter.NE:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if v.Equal(ref) {
-				return fmt.Errorf("%s is equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil
 	case filter.CO:
 		return cmpStr(date, false, func(v, ref string) error {
 			if !strings.Contains(v, ref) {
-				return fmt.Errorf("%s does not contain %s", v, ref)
+				return errors.Newf("%s does not contain %s", v, ref)
 			}
 			return nil
 		})
 	case filter.SW:
 		return cmpStr(date, false, func(v, ref string) error {
 			if !strings.HasPrefix(v, ref) {
-				return fmt.Errorf("%s does not start with %s", v, ref)
+				return errors.Newf("%s does not start with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.EW:
 		return cmpStr(date, false, func(v, ref string) error {
 			if !strings.HasSuffix(v, ref) {
-				return fmt.Errorf("%s does not end with %s", v, ref)
+				return errors.Newf("%s does not end with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.GT:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if !v.After(ref) {
-				return fmt.Errorf("%s is not greater than %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is not greater than %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil
 	case filter.LT:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if !v.Before(ref) {
-				return fmt.Errorf("%s is not less than %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is not less than %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil
 	case filter.GE:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if !v.After(ref) && !v.Equal(ref) {
-				return fmt.Errorf("%s is not greater or equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is not greater or equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil
 	case filter.LE:
 		return cmpTime(ref, func(v, ref time.Time) error {
 			if !v.Before(ref) && !v.Equal(ref) {
-				return fmt.Errorf("%s is not less or equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
+				return errors.Newf("%s is not less or equal to %s", v.Format(time.RFC3339), ref.Format(time.RFC3339))
 			}
 			return nil
 		}), nil

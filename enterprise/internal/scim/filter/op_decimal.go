@@ -2,8 +2,10 @@ package filter
 
 import (
 	"fmt"
-	"github.com/scim2/filter-parser/v2"
 	"strings"
+
+	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // cmpDecimal returns a compare function that compares a given value to the reference float based on the given attribute
@@ -16,63 +18,63 @@ func cmpDecimal(e *filter.AttributeExpression, ref float64) (func(interface{}) e
 	case filter.EQ:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v != ref {
-				return fmt.Errorf("%f is not equal to %f", v, ref)
+				return errors.Newf("%f is not equal to %f", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.NE:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v == ref {
-				return fmt.Errorf("%f is equal to %f", v, ref)
+				return errors.Newf("%f is equal to %f", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.CO:
 		return cmpFloatStr(ref, func(v, ref string) error {
 			if !strings.Contains(v, ref) {
-				return fmt.Errorf("%s does not contain %s", v, ref)
+				return errors.Newf("%s does not contain %s", v, ref)
 			}
 			return nil
 		})
 	case filter.SW:
 		return cmpFloatStr(ref, func(v, ref string) error {
 			if !strings.HasPrefix(v, ref) {
-				return fmt.Errorf("%s does not start with %s", v, ref)
+				return errors.Newf("%s does not start with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.EW:
 		return cmpFloatStr(ref, func(v, ref string) error {
 			if !strings.HasSuffix(v, ref) {
-				return fmt.Errorf("%s does not end with %s", v, ref)
+				return errors.Newf("%s does not end with %s", v, ref)
 			}
 			return nil
 		})
 	case filter.GT:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v <= ref {
-				return fmt.Errorf("%f is not greater than %f", v, ref)
+				return errors.Newf("%f is not greater than %f", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.LT:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v >= ref {
-				return fmt.Errorf("%f is not less than %f", v, ref)
+				return errors.Newf("%f is not less than %f", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.GE:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v < ref {
-				return fmt.Errorf("%f is not greater or equal to %f", v, ref)
+				return errors.Newf("%f is not greater or equal to %f", v, ref)
 			}
 			return nil
 		}), nil
 	case filter.LE:
 		return cmpFloat(ref, func(v, ref float64) error {
 			if v > ref {
-				return fmt.Errorf("%f is not less or equal to %f", v, ref)
+				return errors.Newf("%f is not less or equal to %f", v, ref)
 			}
 			return nil
 		}), nil

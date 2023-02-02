@@ -198,7 +198,6 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
-	github.com/di-wu/xsd-datetime v1.0.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
@@ -228,6 +227,7 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
+	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
 	github.com/frankban/quicktest v1.14.3

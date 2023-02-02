@@ -104,10 +104,6 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 				resources = append(resources, resource)
 			}
 		}
-		return scim.Page{
-			TotalResults: totalCount,
-			Resources:    resources,
-		}, nil
 	}
 	if err != nil {
 		return scim.Page{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}

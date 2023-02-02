@@ -5,11 +5,12 @@ import (
 
 	"github.com/elimity-com/scim/schema"
 	"github.com/scim2/filter-parser/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This is almost unmodified copy-pasta from https://github.com/elimity-com/scim/
-// The only changes to the package are the package names and imports in the test files.
-// Non-test files are unchanged from the original.
+// The only changes to the package are the package names and imports in the test files,
+// and some cosmetics to comply with our CI checks.
 // Elimity's SCIM package has the following licensing information:
 // ----------------------------------------------------------------------------
 // MIT License
@@ -35,12 +36,12 @@ import (
 // validateAttributePath checks whether the given attribute path is a valid path within the given reference schema.
 func validateAttributePath(ref schema.Schema, attrPath filter.AttributePath) (schema.CoreAttribute, error) {
 	if uri := attrPath.URI(); uri != "" && uri != ref.ID {
-		return schema.CoreAttribute{}, fmt.Errorf("the uri does not match the schema id: %s", uri)
+		return schema.CoreAttribute{}, errors.Newf("the uri does not match the schema id: %s", uri)
 	}
 
 	attr, ok := ref.Attributes.ContainsAttribute(attrPath.AttributeName)
 	if !ok {
-		return schema.CoreAttribute{}, fmt.Errorf(
+		return schema.CoreAttribute{}, errors.Newf(
 			"the reference schema does not have an attribute with the name: %s",
 			attrPath.AttributeName,
 		)
@@ -99,11 +100,11 @@ func validateExpression(ref schema.Schema, e filter.Expression) error {
 // validateSubAttribute checks whether the given attribute name is a attribute within the given reference attribute.
 func validateSubAttribute(attr schema.CoreAttribute, subAttrName string) error {
 	if !attr.HasSubAttributes() {
-		return fmt.Errorf("the attribute has no sub-attributes")
+		return errors.Newf("the attribute has no sub-attributes")
 	}
 
 	if _, ok := attr.SubAttributes().ContainsAttribute(subAttrName); !ok {
-		return fmt.Errorf("the attribute has no sub-attributes named: %s", subAttrName)
+		return errors.Newf("the attribute has no sub-attributes named: %s", subAttrName)
 	}
 	return nil
 }
@@ -148,10 +149,10 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 	case *filter.ValuePath:
 		ref, attr, ok := v.referenceContains(e.AttributePath)
 		if !ok {
-			return fmt.Errorf("could not find an attribute that matches the attribute path: %s", e.AttributePath)
+			return errors.Newf("could not find an attribute that matches the attribute path: %s", e.AttributePath)
 		}
 		if !attr.MultiValued() {
-			return fmt.Errorf("value path filters can only be applied to multi-valued attributes")
+			return errors.Newf("value path filters can only be applied to multi-valued attributes")
 		}
 
 		value, ok := resource[attr.Name()]
@@ -159,7 +160,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 			// Also try with the id as prefix.
 			value, ok = resource[fmt.Sprintf("%s:%s", ref.ID, attr.Name())]
 			if !ok {
-				return fmt.Errorf("the resource does contain the attribute specified in the filter")
+				return errors.Newf("the resource does contain the attribute specified in the filter")
 			}
 		}
 		valueFilter := Validator{
@@ -174,7 +175,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 			for _, a := range value {
 				attr, ok := a.(map[string]interface{})
 				if !ok {
-					return fmt.Errorf("the target is not a complex attribute")
+					return errors.Newf("the target is not a complex attribute")
 				}
 				if err := valueFilter.PassesFilter(attr); err == nil {
 					// Found an attribute that passed the value filter.
@@ -182,11 +183,11 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 				}
 			}
 		}
-		return fmt.Errorf("the resource does not pass the filter")
+		return errors.Newf("the resource does not pass the filter")
 	case *filter.AttributeExpression:
 		ref, attr, ok := v.referenceContains(e.AttributePath)
 		if !ok {
-			return fmt.Errorf("could not find an attribute that matches the attribute path: %s", e.AttributePath)
+			return errors.Newf("could not find an attribute that matches the attribute path: %s", e.AttributePath)
 		}
 
 		value, ok := resource[attr.Name()]
@@ -194,7 +195,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 			// Also try with the id as prefix.
 			value, ok = resource[fmt.Sprintf("%s:%s", ref.ID, attr.Name())]
 			if !ok {
-				return fmt.Errorf("the resource does contain the attribute specified in the filter")
+				return errors.Newf("the resource does contain the attribute specified in the filter")
 			}
 		}
 
@@ -209,20 +210,20 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 		if subAttrName != "" {
 			if !attr.HasSubAttributes() {
 				// The attribute has no sub-attributes.
-				return fmt.Errorf("the specified attribute has no sub-attributes")
+				return errors.Newf("the specified attribute has no sub-attributes")
 			}
 			subAttr, ok = attr.SubAttributes().ContainsAttribute(subAttrName)
 			if !ok {
-				return fmt.Errorf("the resource has no sub-attribute named: %s", subAttrName)
+				return errors.Newf("the resource has no sub-attribute named: %s", subAttrName)
 			}
 
 			attr, ok := value.(map[string]interface{})
 			if !ok {
-				return fmt.Errorf("the target is not a complex attribute")
+				return errors.Newf("the target is not a complex attribute")
 			}
 			value, ok = attr[subAttr.Name()]
 			if !ok {
-				return fmt.Errorf("the resource does contain the attribute specified in the filter")
+				return errors.Newf("the resource does contain the attribute specified in the filter")
 			}
 
 			cmpAttr = subAttr
@@ -241,7 +242,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 
 		if !attr.MultiValued() {
 			if err := cmp(value); err != nil {
-				return fmt.Errorf("the resource does not pass the filter: %s", err)
+				return errors.Newf("the resource does not pass the filter: %s", err)
 			}
 			return nil
 		}
@@ -254,7 +255,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 					return nil
 				}
 			}
-			return fmt.Errorf("the resource does not pass the filter: %s", err)
+			return errors.Newf("the resource does not pass the filter: %s", err)
 		default:
 			panic(fmt.Sprintf("given value is not a []interface{}: %v", value))
 		}
@@ -291,7 +292,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 			}
 			return rightValidator.PassesFilter(resource)
 		}
-		return fmt.Errorf("the resource does not pass the filter")
+		return errors.Newf("the resource does not pass the filter")
 	case *filter.NotExpression:
 		validator := Validator{
 			e.Expression,
@@ -301,7 +302,7 @@ func (v Validator) PassesFilter(resource map[string]interface{}) error {
 		if err := validator.PassesFilter(resource); err != nil {
 			return nil
 		}
-		return fmt.Errorf("the resource does not pass the filter")
+		return errors.Newf("the resource does not pass the filter")
 	default:
 		panic(fmt.Sprintf("unknown expression type: %s", e))
 	}
