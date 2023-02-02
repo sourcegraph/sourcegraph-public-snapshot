@@ -65,45 +65,55 @@ We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to th
 
 >NOTE: Given the technical knowledge required to deploy and maintain on Kubernetes, teams without these resources should contact their Sourcegraph representative at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to discuss alternative deployment options.
 
-## Non-production environments on local machines
+### Local machines
+
+**For setting up non-production environments on local machines.**
 
   - [Docker Compose](docker-compose/index.md) - A deployment option using Docker Compose
   - [Docker Single Container](docker-single-container/index.md) - A deployment option using a single Docker container
   - [Minikube](single-node/minikube.md) - A deployment option using Minikube with Docker container
+  - [Sourcegraph App (Experimental)](../../app/index.md) - A standalone application for local development and experimentation
 
----
-
-## ARM / ARM64 support
+### ARM / ARM64 support
 
 Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
 
+---
+
 ## Reference repositories
 
-Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy for each supported deployment type. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
-
-For more information, please read [our docs on setting up your own copy of the reference repository](repositories.md) for deploying purpose, and then follow the installation and configuration docs for your specific deployment type.
+Sourcegraph provides reference repositories with branches matching the version you want to deploy. Follow the installation and configuration docs for your deployment type to spin up and configure your instance using the reference repo.
+The reference repo contains everything needed to deploy and upgrade Sourcegraph. See the [docs](repositories.md) on setting up your repo copy for more details.
 
 ## Configuration
 
-Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. You can find your instance size using the size chart in our [Instance Size docs](instance-size.md). Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
+Configuration focuses on ensuring your Sourcegraph deployment operates optimally, based on the size of your repositories and number of users.
 
-Sourcegraph also provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+Your instance size can be found using the size chart in our [Instance Size docs](instance-size.md). Configuration options will vary based on the chosen deployment. Consult the specific configuration deployment sections for additional information.
+Sourcegraph also provides a [resource estimator](resource_estimator.md) to help predict and plan required resources for deployment.
 
-In addition you can review our [configuration docs](../config/index.md) for overall Sourcegraph configuration.
+You can also review our [configuration docs](../config/index.md) for overall Sourcegraph configuration.
 
 ## Operation
 
-In general, operation activities for your Sourcegraph deployment will consist of storage management, database access, database migrations, and backup and restore. Details are provided with the instructions for each deployment type.
+In general, operational activities for your Sourcegraph deployment will consist of:
+
+- Storage management
+- Database access
+- Database migrations
+- Backup and restore
+- 
+Details are provided with the instructions for each deployment type.
 
 ## Monitoring
 
-Sourcegraph provides a number of options to monitor the health and usage of your deployment. While high-level guidance is provided as part of your deployment type, you can also review our [Observability docs](../observability/index.md) for more detailed instruction.
+Sourcegraph provides monitoring options to track the health and usage of your deployment. While general guidance is provided for your deployment type, you can also review the [Observability docs](../observability/index.md) for more detailed instructions.
 
 ## Upgrades
 
-A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
+Sourcegraph releases a new version every month (with patch releases as needed). The project maintains the two most recent monthly releases. The [changelog](../../CHANGELog.md) details all changes in each release.
 
-Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
+Upgrade instructions and requirements depend on your current version and desired upgrade. See the [upgrade docs](../updates/index.md) for details.
 
 ## External services
 

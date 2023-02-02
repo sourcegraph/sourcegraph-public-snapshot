@@ -3,7 +3,7 @@
 This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components.
 
 <div class="getting-started">
-  <a class="btn text-center" href="./">Installation</a>
+  <a class="btn text-center" href="./index">Installation</a>
   <a class="btn text-center" href="./kustomize">Introduction</a>
   <a class="btn text-center btn-primary" href="#">★ Configuration</a>
   <a class="btn text-center" href="./operations">Maintenance</a>
@@ -87,15 +87,20 @@ If RBAC is enabled in your cluster, it is highly recommended to deploy cAdvisor 
 
 cAdvisor requires a service account and certain permissions to access and gather information about the Kubernetes cluster in order to display key metrics such as resource usage and performance data. Removing the service account for cAdvisor could impede its ability to collect this information, resulting in missing data on Grafana dashboards and potentially impacting visibility and monitoring capabilities for the cluster and its pods. This could negatively impact the level of monitoring and visibility into the cluster's state that cAdvisor is able to provide.
 
-To deploy cAdvisor with privileged access, include the monitoring/cadvisor component **in addition to** the [monitoring component](#monitoring-stack) in your overlay.
+To deploy cAdvisor with privileged access, include all the components listed below:
 
+- [monitoring component](#monitoring-stack)
+- [monitoring/privileged component](#monitoring-stack)
+- [privileged component](#privileged)
+- [cadvisor component](#deploy-cadvisor)
+  
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
 components:
-# Deploy monitoring services for Sourcegraph
-- ../../components/monitoring
 # Run Sourcegraph main stack with privilege and root
 - ../../components/privileged
+# Deploy monitoring services for Sourcegraph
+- ../../components/monitoring
 # Run monitoring services with privilege and root
 # This also adds RBAC resources to the monitoring stack
 - ../../components/monitoring/privileged
@@ -103,10 +108,6 @@ components:
 # cadvisor includes RBAC resources and must be run with privileges
 - ../../components/monitoring/cadvisor
 ```
-
-> NOTE: Make sure to exclude `cAdvisor` from your components as it contains DaemonSet.
-
-ℹ️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to remove.
 
 ## Namespace
 
@@ -155,6 +156,10 @@ components:
 
 ### Custom resources allocation
 
+<div class="warning-banner"> 
+⛔️ Only available in v4.5.0 or above
+</div>
+
 In cases where custom resource allocation is necessary, it is important to follow the instructions provided below:
 
 **Step 1**: Create a copy of the `components/custom/resources` directory inside your overlay directory, and name it `custom-resources`:
@@ -200,6 +205,10 @@ components:
 # Make sure the cadvisor is excluded from the components list
 # - ../../components/monitoring/cadvisor
 ```
+
+> NOTE: Make sure to exclude `cAdvisor` from your components as it contains DaemonSet.
+
+ℹ️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to remove.
 
 ## Storage class
 
